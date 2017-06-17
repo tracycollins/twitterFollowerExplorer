@@ -293,7 +293,6 @@ var os = require('os');
 var util = require('util');
 var moment = require('moment');
 // var StateMachine = require('javascript-state-machine');
-var Dropbox = require("dropbox");
 var Twit = require('twit');
 var twit;
 
@@ -673,6 +672,8 @@ console.log("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN)
 console.log("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
 console.log("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
+
+var Dropbox = require("dropbox");
 var dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
 function quit(){
