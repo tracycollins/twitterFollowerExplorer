@@ -331,7 +331,6 @@ var chalkRss = chalk.blue;
 var chalkDbBold = chalk.bold.black;
 var chalkDb = chalk.gray;
 
-var print = require('printable-string');
 var request = require('request');
 var fs = require('fs');
 var yaml = require('yamljs');
