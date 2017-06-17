@@ -1,0 +1,32 @@
+{
+  "name": "twitterfollowerexplorer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "twitterFollowerExplorer.js",
+  "dependencies": {
+    "@google-cloud/language": "^0.10.5",
+    "co": "^4.6.0",
+    "hashtag-regex": "^1.0.0",
+    "intervalometer": "^1.0.4",
+    "keyword-extractor": "0.0.13",
+    "mentions-regex": "^2.0.3",
+    "mongoose-paginate": "^5.0.3",
+    "once": "^1.4.0",
+    "personify": "^1.0.3",
+    "sort-on": "^2.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tracycollins/twitterFollowerExplorer.git"
+  },
+  "author": "tc",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tracycollins/twitterFollowerExplorer/issues"
+  },
+  "homepage": "https://github.com/tracycollins/twitterFollowerExplorer#readme"
+}
