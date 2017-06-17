@@ -3,7 +3,7 @@
   {
     "name": "tfe",
     "script": "twitterFollowerExplorer.js",
-    "cwd": "/home/tc/wordAssoSocketTest",
+    "cwd": "/home/tc/twitterFollowerExplorer",
     "autorestart": false,
     "env": {
       "NODE_ENV": "production",
