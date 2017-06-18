@@ -4,14 +4,14 @@
 var TWITTER_DEFAULT_USER = "altthreecee00";
 
 var neuralNetworkInitialized = false;
-var nextTwitterUser;
+// var nextTwitterUser;
 var currentTwitterUser ;
 var twitterUsersArray = [];
 
 var ONE_SECOND = 1000 ;
 var ONE_MINUTE = ONE_SECOND*60 ;
 var ONE_HOUR = ONE_MINUTE*60 ;
-var ONE_DAY = ONE_HOUR*24 ;
+// var ONE_DAY = ONE_HOUR*24 ;
 
 var TFE_USER_DB_CRAWL = false;
 
@@ -21,8 +21,8 @@ configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
 configuration.neuralNetworkFile = "";
 
-var co = require("co");
-var once = require("once");
+// var co = require("co");
+// var once = require("once");
 
 var stdin;
 
@@ -30,12 +30,12 @@ var quitOnComplete = false;
 var langAnalyzerIdle = false;
 var abortCursor = false;
 
-var MAX_Q = 500;
+// var MAX_Q = 500;
 
-var defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
+// var defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
 var compactDateTimeFormat = "YYYYMMDD HHmmss ZZ";
 
-var intervalometer = require('intervalometer');
+var intervalometer = require("intervalometer");
 var timerIntervalometer = intervalometer.timerIntervalometer;
 var waitLanguageAnalysisReadyInterval;
 
@@ -47,8 +47,8 @@ var langAnalyzer;
 
 var keywordExtractor = require("keyword-extractor");
 
-var Personify = require('personify');
-var personifyClient;
+// var Personify = require("personify");
+// var personifyClient;
 
 var descriptionHistogram = {};
 
@@ -222,7 +222,7 @@ var descriptionMentionsArray = [
   "@washingtonpost",
   "@whitehouse",
   "@whitehouse",
-  "@wsj",
+  "@wsj"
 ];
 
 var descriptionHashtagsArray = [
@@ -277,7 +277,7 @@ var descriptionHashtagsArray = [
   "#trump2020",
   "#trumprussia",
   "#trumptrain",
-  "#wethepeople",
+  "#wethepeople"
 ];
 
 var descriptionArrays = [];
@@ -286,14 +286,14 @@ descriptionArrays.push({type: "mentions", array: descriptionMentionsArray});
 descriptionArrays.push({type: "hashtags", array: descriptionHashtagsArray});
 descriptionArrays.push({type: "words", array: descriptionWordsArray});
 
-var mentionsRegex = require('mentions-regex');
-var hashtagRegex = require('hashtag-regex');
+var mentionsRegex = require("mentions-regex");
+var hashtagRegex = require("hashtag-regex");
 
-var os = require('os');
-var util = require('util');
-var moment = require('moment');
-// var StateMachine = require('javascript-state-machine');
-var Twit = require('twit');
+var os = require("os");
+var util = require("util");
+var moment = require("moment");
+// var StateMachine = require("javascript-state-machine");
+var Twit = require("twit");
 var twit;
 
 var totalFriendsSortedFollowersArray = [];
@@ -302,58 +302,58 @@ var totalFriendsSortedFollowingArray = [];
 var cursorUser;
 var socket;
 
-var async = require('async');
-var http = require('http');
-var sortOn = require('sort-on');
+var async = require("async");
+// var http = require("http");
+var sortOn = require("sort-on");
 
-var chalk = require('chalk');
+var chalk = require("chalk");
 // var chalkFsm = chalk.bold.black;
 var chalkTwitter = chalk.blue;
 var chalkTwitterBold = chalk.bold.blue;
-var chalkBlk = chalk.black;
+// var chalkBlk = chalk.black;
 var chalkRed = chalk.red;
 var chalkRedBold = chalk.bold.red;
-var chalkGreen = chalk.green;
+// var chalkGreen = chalk.green;
 var chalkError = chalk.bold.red;
 var chalkAlert = chalk.red;
 var chalkWarn = chalk.red;
 var chalkLog = chalk.black;
 var chalkInfo = chalk.gray;
-var chalkTestInfo = chalk.bold.red;
+// var chalkTestInfo = chalk.bold.red;
 var chalkConnect = chalk.bold.green;
-var chalkConnectPrimary = chalk.bold.green;
+// var chalkConnectPrimary = chalk.bold.green;
 var chalkDisconnect = chalk.yellow;
-var chalkPrompt = chalk.green;
-var chalkResponse = chalk.green;
-var chalkRssBold = chalk.bold.blue;
+// var chalkPrompt = chalk.green;
+// var chalkResponse = chalk.green;
+// var chalkRssBold = chalk.bold.blue;
 var chalkRss = chalk.blue;
-var chalkDbBold = chalk.bold.black;
-var chalkDb = chalk.gray;
+// var chalkDbBold = chalk.bold.black;
+// var chalkDb = chalk.gray;
 
-var request = require('request');
-var fs = require('fs');
-var yaml = require('yamljs');
+// var request = require("request");
+var fs = require("fs");
+var yaml = require("yamljs");
 
-var config = require('./config/config');
-var keypress = require('keypress');
+var config = require("./config/config");
+var keypress = require("keypress");
 
 var events = require("events");
 var EventEmitter = require("events").EventEmitter;
-var EventEmitter2 = require('eventemitter2').EventEmitter2;
+var EventEmitter2 = require("eventemitter2").EventEmitter2;
 
-var debug = require('debug')('rssFeedCrawler');
-var debugVerbose = require('debug')('rssFeedCrawler:verbose');
+var debug = require("debug")("rssFeedCrawler");
+var debugVerbose = require("debug")("rssFeedCrawler:verbose");
 
-var debugRss = require('debug')('mw');
-var debugRssVerbose = require('debug')('mwVerbose');
-var debugCache = require('debug')('cache');
-var debugQ = require('debug')('queue');
-var debugDb = require('debug')('db');
+var debugRss = require("debug")("mw");
+var debugRssVerbose = require("debug")("mwVerbose");
+var debugCache = require("debug")("cache");
+var debugQ = require("debug")("queue");
+var debugDb = require("debug")("db");
 
-var error = debug('app:error');
+var error = debug("app:error");
 
-var express = require('./config/express');
-var mongoose = require('./config/mongoose');
+var express = require("./config/express");
+var mongoose = require("./config/mongoose");
 
 var twitterConfig = {};
 
@@ -365,7 +365,7 @@ var followerUpdateQueue = [];
 
 var langAnalyzerMessageRxQueue = [];
 
-var HashMap = require('hashmap');
+var HashMap = require("hashmap");
 
 var autoClassifiedUserHashmap = {};
 var classifiedUserHashmap = {};
@@ -388,20 +388,20 @@ var trendingCache = new NodeCache( { stdTTL: 300, checkperiod: 10 } );
 
 var db = mongoose();
 
-var Group = require('mongoose').model('Group');
-var Entity = require('mongoose').model('Entity');
-var User = require('mongoose').model('User');
-var Word = require('mongoose').model('Word');
+var Group = require("mongoose").model("Group");
+var Entity = require("mongoose").model("Entity");
+var User = require("mongoose").model("User");
+var Word = require("mongoose").model("Word");
 
-var groupServer = require('./app/controllers/group.server.controller');
-var entityServer = require('./app/controllers/entity.server.controller');
-var userServer = require('./app/controllers/user.server.controller');
-var wordServer = require('./app/controllers/word.server.controller');
+var groupServer = require("./app/controllers/group.server.controller");
+var entityServer = require("./app/controllers/entity.server.controller");
+var userServer = require("./app/controllers/user.server.controller");
+var wordServer = require("./app/controllers/word.server.controller");
 
 var hostname = os.hostname();
-hostname = hostname.replace(/\.local/g, '');
-hostname = hostname.replace(/\.home/g, '');
-hostname = hostname.replace(/word0-instance-1/g, 'google');
+hostname = hostname.replace(/\.local/g, "");
+hostname = hostname.replace(/\.home/g, "");
+hostname = hostname.replace(/word0-instance-1/g, "google");
 
 var neuralNetworkFile = "neuralNetwork_" + hostname + ".json";
 var defaultNeuralNetworkFile = "neuralNetwork.json";
@@ -411,7 +411,7 @@ configuration.neuralNetworkFile = defaultNeuralNetworkFile;
 var checkRateLimitInterval;
 var checkRateLimitIntervalTime = 30*ONE_SECOND;
 var pollTwitterFriendsIntervalTime = 15*ONE_MINUTE;
-var fetchTwitterFriendsIntervalTime = ONE_MINUTE;  // twit.get('friends/list'...) cursor
+var fetchTwitterFriendsIntervalTime = ONE_MINUTE;  // twit.get("friends/list"...) cursor
 
 var langAnalyzerMessageRxQueueInterval;
 var langAnalyzerMessageRxQueueReady = true;
@@ -423,8 +423,9 @@ function indexOfMax(arr) {
 
   var max = arr[0];
   var maxIndex = 0;
+  var i=1;
 
-  for (var i = 1; i < arr.length; i++) {
+  for (i = 1; i < arr.length; i+=1) {
     if (arr[i] > max) {
       maxIndex = i;
       max = arr[i];
@@ -433,9 +434,9 @@ function indexOfMax(arr) {
   return maxIndex;
 }
 
-function reset(callback){
-  callback();
-}
+// function reset(callback){
+//   callback();
+// }
 
 var jsonPrint = function (obj){
   if (obj) {
@@ -447,8 +448,8 @@ var jsonPrint = function (obj){
 };
 
 
-var USER_ID = 'TFE_' + hostname + '_' + process.pid;
-var SCREEN_NAME = 'TFE_' + hostname + '_' + process.pid;
+var USER_ID = "TFE_" + hostname + "_" + process.pid;
+var SCREEN_NAME = "TFE_" + hostname + "_" + process.pid;
 
 var serverUserObj = { 
   name: USER_ID, 
@@ -460,12 +461,12 @@ var serverUserObj = {
   tags: {}
 } ;
 
-serverUserObj.tags.entity = 'muxstream_' + hostname + '_' + process.pid;
-serverUserObj.tags.mode = 'muxed';
-serverUserObj.tags.channel = 'twitter';
+serverUserObj.tags.entity = "muxstream_" + hostname + "_" + process.pid;
+serverUserObj.tags.mode = "muxed";
+serverUserObj.tags.channel = "twitter";
 
 
-var commandLineArgs = require('command-line-args');
+var cla = require("command-line-args");
 
 var enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
 var quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
@@ -476,17 +477,17 @@ var targetServer = { name: "targetServer", alias: "t", type: String};
 
 var optionDefinitions = [enableStdin, quitOnError, loadNeuralNetworkFilePID, userDbCrawl, testMode, targetServer];
 
-var commandLineConfig = commandLineArgs(optionDefinitions);
+var commandLineConfig = cla(optionDefinitions);
 
 console.log(chalkInfo("COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
 
 console.log("COMMAND LINE OPTIONS\n" + jsonPrint(commandLineConfig));
 
-if (commandLineConfig.targetServer == 'LOCAL'){
-  commandLineConfig.targetServer = 'http://localhost:9997/util';
+if (commandLineConfig.targetServer == "LOCAL"){
+  commandLineConfig.targetServer = "http://localhost:9997/util";
 }
-if (commandLineConfig.targetServer == 'REMOTE'){
-  commandLineConfig.targetServer = 'http://word.threeceelabs.com/util';
+if (commandLineConfig.targetServer == "REMOTE"){
+  commandLineConfig.targetServer = "http://word.threeceelabs.com/util";
 }
 
 console.log("\n\n=================================");
@@ -504,10 +505,10 @@ var languageAnalysisQueueEmpty = false;
 var dbIncMentions = false;
 
 // process.on("message", function(msg) {
-//   if (msg == 'shutdown') {
-//     console.log('\n\n!!!!! RECEIVED PM2 SHUTDOWN !!!!!\n\n***** Closing all connections *****\n\n');
+//   if (msg == "shutdown") {
+//     console.log("\n\n!!!!! RECEIVED PM2 SHUTDOWN !!!!!\n\n***** Closing all connections *****\n\n");
 //     setTimeout(function() {
-//       console.log('**** Finished closing connections ****\n\n ***** RELOADING twitterFollowerExplorer.js NOW *****\n\n');
+//       console.log("**** Finished closing connections ****\n\n ***** RELOADING twitterFollowerExplorer.js NOW *****\n\n");
 //       process.exit(0);
 //     }, 1500);
 //   }
@@ -540,7 +541,7 @@ process.on("message", function(msg) {
   }
 });
 
-process.on( 'SIGINT', function() {
+process.on( "SIGINT", function() {
   quit("SIGINT");
 });
 
@@ -549,18 +550,18 @@ process.on("exit", function() {
 });
 
 // var fsm = new StateMachine({
-//   initial: 'idle',
+//   initial: "idle",
 //   transitions: [
-//     { name: 'reset', from: '*', to: 'idle' },
-//     { name: 'fetchTwitterFriendsInit', from: ['idle'], to: 'fetchTwitterFriends' },
-//     { name: 'fetchTwitterFriendsEnd', from: ['fetchTwitterFriends'], to: 'idle' },
-//     { name: 'fetchTwitterFriendsError', from: ['fetchTwitterFriends'], to: 'idle' },
-//     { name: 'cursorUserInit', from: ['idle'], to: 'cursorUser' },
-//     { name: 'cursorUserError', from: ['cursorUser'], to: 'idle' },
-//     { name: 'cursorUserEnd', from: ['cursorUser'], to: 'idle' },
-//     { name: 'twitterExceedLimit', from: ['idle', 'fetchTwitterFriends', 'waitLimitReset'], to: 'waitLimitReset' },
-//     { name: 'twitterLimitReset',  from: 'waitLimitReset', to: 'fetchTwitterFriends' },
-//     { name: 'twitterError', from: ['poll', 'waitLimitReset'], to: 'idle' },
+//     { name: "reset", from: "*", to: "idle" },
+//     { name: "fetchTwitterFriendsInit", from: ["idle"], to: "fetchTwitterFriends" },
+//     { name: "fetchTwitterFriendsEnd", from: ["fetchTwitterFriends"], to: "idle" },
+//     { name: "fetchTwitterFriendsError", from: ["fetchTwitterFriends"], to: "idle" },
+//     { name: "cursorUserInit", from: ["idle"], to: "cursorUser" },
+//     { name: "cursorUserError", from: ["cursorUser"], to: "idle" },
+//     { name: "cursorUserEnd", from: ["cursorUser"], to: "idle" },
+//     { name: "twitterExceedLimit", from: ["idle", "fetchTwitterFriends", "waitLimitReset"], to: "waitLimitReset" },
+//     { name: "twitterLimitReset",  from: "waitLimitReset", to: "fetchTwitterFriends" },
+//     { name: "twitterError", from: ["poll", "waitLimitReset"], to: "idle" },
 // ]});
 
 // fsm.onenterstate = function(event, from, to){
@@ -574,7 +575,7 @@ var configEvents = new EventEmitter2({
   maxListeners: 20
 });
 
-configEvents.on('newListener', function(data){
+configEvents.on("newListener", function(data){
   console.log("*** NEW CONFIG EVENT LISTENER: " + data);
 });
 
@@ -611,7 +612,7 @@ statsObj.classification.auto.other = 0;
 statsObj.users = {};
 statsObj.users.classifiedAuto = 0;
 statsObj.users.classified = 0;
-statsObj.users.percentFetched
+statsObj.users.percentFetched = 0;
 statsObj.users.totalFriendsFetched = 0;
 
 statsObj.user = {};
@@ -642,11 +643,11 @@ statsObj.twitterErrors = 0;
 var DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
 var DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY ;
 var DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
-var DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || 'twitterFollowerExplorerConfig.json';
-var DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || 'twitterFollowerExplorerStats.json';
+var DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
+var DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || "twitterFollowerExplorerStats.json";
 
-var DROPBOX_WA_GROUPS_CONFIG_FILE = process.env.DROPBOX_WA_GROUPS_CONFIG_FILE || 'groups.json';
-var DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE = process.env.DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE || 'entityChannelGroups.json';
+var DROPBOX_WA_GROUPS_CONFIG_FILE = process.env.DROPBOX_WA_GROUPS_CONFIG_FILE || "groups.json";
+var DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE = process.env.DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE || "entityChannelGroups.json";
 
 var defaultDropboxGroupsConfigFile = DROPBOX_WA_GROUPS_CONFIG_FILE;
 var dropboxGroupsConfigFile = hostname +  "_" + DROPBOX_WA_GROUPS_CONFIG_FILE;
@@ -771,7 +772,7 @@ function getTimeNow() {
 function getTimeStamp(inputTime) {
   var currentTimeStamp ;
 
-  if (typeof inputTime === 'undefined') {
+  if (typeof inputTime === "undefined") {
     currentTimeStamp = moment().format(compactDateTimeFormat);
     return currentTimeStamp;
   }
@@ -803,7 +804,7 @@ function saveFile (path, file, jsonObj, callback){
   dropboxClient.filesUpload(options)
     .then(function(response){
       debug(chalkLog("... SAVED DROPBOX JSON | " + options.path));
-      callback(null, response);
+      if (callback !== undefined) { callback(null, response); }
     })
     .catch(function(error){
 
@@ -813,7 +814,7 @@ function saveFile (path, file, jsonObj, callback){
         + " | ERROR: " + errorText
         // + " ERROR\n" + jsonPrint(error.error)
       ));
-      callback(error, null);
+      if (callback !== undefined) { callback(error, null); }
     });
 }
 
@@ -851,16 +852,18 @@ function loadFile(path, file, callback) {
                 ));
 
                 var payload = data.fileBinary;
+                var fileObj;
 
                 debug(payload);
 
                 if (file.match(/\.json$/gi)) {
                   debug("FOUND JSON FILE: " + file);
-                  var fileObj = JSON.parse(payload);
+                  fileObj = JSON.parse(payload);
                   return(callback(null, fileObj));
                 }
-                else if (file.match(/\.yml/gi)) {
-                  var fileObj = yaml.load(payload);
+                
+                if (file.match(/\.yml/gi)) {
+                  fileObj = yaml.load(payload);
                   debug(chalkAlert("FOUND YAML FILE: " + file));
                   debug("FOUND YAML FILE\n" + jsonPrint(fileObj));
                   debug("FOUND YAML FILE\n" + jsonPrint(payload));
@@ -873,11 +876,11 @@ function loadFile(path, file, callback) {
                 console.log(chalkError("!!! DROPBOX READ " + file + " ERROR"));
                 console.log(chalkError(jsonPrint(error)));
 
-                if (error["status"] === 404) {
+                if (error.status === 404) {
                   console.error(chalkError("!!! DROPBOX READ FILE " + file + " NOT FOUND ... SKIPPING ..."));
                   return(callback(null, null));
                 }
-                if (error["status"] === 0) {
+                if (error.status === 0) {
                   console.error(chalkError("!!! DROPBOX NO RESPONSE ... NO INTERNET CONNECTION? ... SKIPPING ..."));
                   return(callback(null, null));
                 }
@@ -887,14 +890,15 @@ function loadFile(path, file, callback) {
           else {
             console.error(chalkError("*** FILE DOES NOT EXIST: " + path + "/" + file));
             console.log(chalkError("*** FILE DOES NOT EXIST: " + path + "/" + file));
-            var err = {};
-            err.code = 404;
-            err.status = "FILE DOES NOT EXIST";
-            return(callback(err, null));
+            // var err = {};
+            // err.code = 404;
+            // err.status = "FILE DOES NOT EXIST";
+            return(callback({code: 404, status: "FILE DOES NOT EXIST"}, null));
           }
         });
     })
     .catch(function(error) {
+        console.error(chalkError("*** ERROR LOAD FILE : " + error));
     });
 }
 
@@ -913,7 +917,7 @@ function initStatsUpdate(cnf, callback){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
-    saveFile(statsFolder, statsFile, statsObj, function(){});
+    saveFile(statsFolder, statsFile, statsObj);
     showStats();
 
     saveFile(dropboxConfigHostFolder, classifiedUsersFile, classifiedUserHashmap, function(err){
@@ -993,7 +997,7 @@ function initTwitterUsers(cnf, callback){
 
   if (!configuration.twitterUsers){
     console.log(chalkWarn("??? NO FEEDS"));
-    callback(null, null);
+    if (callback !== undefined) {callback(null, null);}
   }
   else{
 
@@ -1031,12 +1035,12 @@ function initTwitterUsers(cnf, callback){
 
     });
 
-    callback(null, twitterUserHashMap);
+    if (callback !== undefined) {callback(null, twitterUserHashMap);}
   }
 }
 
 function socketReconnect(cnf, sckt){
-  if (typeof sckt !== 'undefined'){
+  if (typeof sckt !== "undefined"){
     setTimeout(function(){
       console.log(chalkConnect("==> RECONNECT ATTEMPT | " + cnf.targetServer));
       sckt.connect(cnf.targetServer, { reconnection: false });
@@ -1054,11 +1058,11 @@ function initialize(cnf, callback){
     console.log("\n%%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
   }
 
-  cnf.processName = process.env.TFE_PROCESS_NAME || 'twitterFollowerExplorer';
+  cnf.processName = process.env.TFE_PROCESS_NAME || "twitterFollowerExplorer";
   cnf.quitOnError = process.env.TFE_QUIT_ON_ERROR || false ;
   cnf.enableStdin = process.env.TFE_ENABLE_STDIN || true ;
   cnf.userDbCrawl = process.env.TFE_USER_DB_CRAWL || TFE_USER_DB_CRAWL ;
-  cnf.targetServer = process.env.TFE_UTIL_TARGET_SERVER || 'http://localhost:9997/util' ;
+  cnf.targetServer = process.env.TFE_UTIL_TARGET_SERVER || "http://localhost:9997/util" ;
 
   cnf.twitterDefaultUser = process.env.TFE_TWITTER_DEFAULT_USER || TWITTER_DEFAULT_USER ;
   cnf.twitterUsers = process.env.TFE_TWITTER_USERS || { "altthreecee00": "altthreecee00", "ninjathreecee": "ninjathreecee" } ;
@@ -1070,15 +1074,19 @@ function initialize(cnf, callback){
   cnf.neuralNetworkFile = defaultNeuralNetworkFile;
 
   loadFile(dropboxConfigHostFolder, dropboxConfigFile, function(err, loadedConfigObj){
+
+    var commandLineArgs;
+    var configArgs;
+
     if (!err) {
       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
 
-      if (typeof loadedConfigObj.TFE_UTIL_TARGET_SERVER !== 'undefined'){
+      if (typeof loadedConfigObj.TFE_UTIL_TARGET_SERVER !== "undefined"){
         console.log("LOADED TFE_UTIL_TARGET_SERVER: " + loadedConfigObj.TFE_UTIL_TARGET_SERVER);
         cnf.targetServer = loadedConfigObj.TFE_UTIL_TARGET_SERVER;
       }
 
-      if (typeof loadedConfigObj.TFE_ENABLE_STDIN !== 'undefined'){
+      if (typeof loadedConfigObj.TFE_ENABLE_STDIN !== "undefined"){
         console.log("LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_ENABLE_STDIN);
         cnf.enableStdin = loadedConfigObj.TFE_ENABLE_STDIN;
       }
@@ -1088,41 +1096,41 @@ function initialize(cnf, callback){
         cnf.loadNeuralNetworkFilePID = loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID;
       }
 
-      if (typeof loadedConfigObj.TFE_USER_DB_CRAWL !== 'undefined'){
+      if (typeof loadedConfigObj.TFE_USER_DB_CRAWL !== "undefined"){
         console.log("LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_USER_DB_CRAWL);
         cnf.userDbCrawl = loadedConfigObj.TFE_USER_DB_CRAWL;
       }
 
-      if (typeof loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER !== 'undefined'){
+      if (typeof loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER !== "undefined"){
         console.log("LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER: " 
           + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER));
         cnf.twitterConfigFolder = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER;
       }
 
-      if (typeof loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE !== 'undefined'){
+      if (typeof loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE !== "undefined"){
         console.log("LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE: " 
           + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE));
         cnf.twitterConfigFile = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE;
       }
 
-      if (typeof loadedConfigObj.TFE_TWITTER_USERS !== 'undefined'){
+      if (typeof loadedConfigObj.TFE_TWITTER_USERS !== "undefined"){
         console.log("LOADED TFE_TWITTER_USERS: " + jsonPrint(loadedConfigObj.TFE_TWITTER_USERS));
         cnf.twitterUsers = loadedConfigObj.TFE_TWITTER_USERS;
       }
 
-      if (typeof loadedConfigObj.TFE_TWITTER_DEFAULT_USER !== 'undefined'){
+      if (typeof loadedConfigObj.TFE_TWITTER_DEFAULT_USER !== "undefined"){
         console.log("LOADED TFE_TWITTER_DEFAULT_USER: " + jsonPrint(loadedConfigObj.TFE_TWITTER_DEFAULT_USER));
         cnf.twitterDefaultUser = loadedConfigObj.TFE_TWITTER_DEFAULT_USER;
       }
 
-      if (typeof loadedConfigObj.TFE_KEEPALIVE_INTERVAL !== 'undefined') {
+      if (typeof loadedConfigObj.TFE_KEEPALIVE_INTERVAL !== "undefined") {
         console.log("LOADED TFE_KEEPALIVE_INTERVAL: " + loadedConfigObj.TFE_KEEPALIVE_INTERVAL);
         cnf.keepaliveInterval = loadedConfigObj.TFE_KEEPALIVE_INTERVAL;
       }
 
       // OVERIDE CONFIG WITH COMMAND LINE ARGS
 
-      var commandLineArgs = Object.keys(commandLineConfig);
+      commandLineArgs = Object.keys(commandLineConfig);
 
       commandLineArgs.forEach(function(arg){
         cnf[arg] = commandLineConfig[arg];
@@ -1131,7 +1139,7 @@ function initialize(cnf, callback){
 
       console.log(chalkLog("USER\n" + jsonPrint(serverUserObj)));
 
-      var configArgs = Object.keys(cnf);
+      configArgs = Object.keys(cnf);
       configArgs.forEach(function(arg){
         console.log("FINAL CONFIG | " + arg + ": " + cnf[arg]);
       });
@@ -1141,18 +1149,18 @@ function initialize(cnf, callback){
         console.log("STDIN ENABLED");
 
         stdin = process.stdin;
-        if(typeof stdin.setRawMode !== 'undefined') {
+        if(typeof stdin.setRawMode !== "undefined") {
           stdin.setRawMode( true );
         }
         stdin.resume();
-        stdin.setEncoding( 'utf8' );
-        stdin.on( 'data', function( key ){
+        stdin.setEncoding( "utf8" );
+        stdin.on( "data", function( key ){
 
           switch (key) {
-            case '\u0003':
+            case "\u0003":
               process.exit();
             break;
-            case 'a':
+            case "a":
               abortCursor = true;
               console.log(chalkAlert("ABORT: " + abortCursor));
             break;
@@ -1166,16 +1174,16 @@ function initialize(cnf, callback){
             //   }
             //   console.log(chalkRedBold("CURSOR USER PAUSE: " + configuration.cursorUserPause));
             // break;
-            case 'q':
+            case "q":
               quit();
             break;
-            case 'Q':
+            case "Q":
               quit();
             break;
-            case 's':
+            case "s":
               showStats();
             break;
-            case 'S':
+            case "S":
               showStats(true);
             break;
             default:
@@ -1184,7 +1192,6 @@ function initialize(cnf, callback){
                 + "\n" + "s: showStats"
                 + "\n" + "S: showStats verbose"
                 );
-            break;
           }
         });
       }
@@ -1201,10 +1208,10 @@ function initialize(cnf, callback){
           cnf2.twitterConfig = {};
           cnf2.twitterConfig = tc;
 
-          console.log(chalkInfo(getTimeStamp() + ' | TWITTER CONFIG FILE ' 
+          console.log(chalkInfo(getTimeStamp() + " | TWITTER CONFIG FILE " 
             + cnf2.twitterConfigFolder
             + cnf2.twitterConfigFile
-            // + '\n' + jsonPrint(cnf2.twitterConfig )
+            // + "\n" + jsonPrint(cnf2.twitterConfig )
           ));
 
           return(callback(err, cnf2));
@@ -1216,7 +1223,7 @@ function initialize(cnf, callback){
 
       // OVERIDE CONFIG WITH COMMAND LINE ARGS
 
-      var commandLineArgs = Object.keys(commandLineConfig);
+      commandLineArgs = Object.keys(commandLineConfig);
 
       commandLineArgs.forEach(function(arg){
         cnf[arg] = commandLineConfig[arg];
@@ -1225,7 +1232,7 @@ function initialize(cnf, callback){
 
       console.log(chalkLog("USER\n" + jsonPrint(serverUserObj)));
 
-      var configArgs = Object.keys(cnf);
+      configArgs = Object.keys(cnf);
       configArgs.forEach(function(arg){
         console.log("FINAL CONFIG | " + arg + ": " + cnf[arg]);
       });
@@ -1235,18 +1242,18 @@ function initialize(cnf, callback){
         console.log("STDIN ENABLED");
 
         stdin = process.stdin;
-        if(typeof stdin.setRawMode !== 'undefined') {
+        if(typeof stdin.setRawMode !== "undefined") {
           stdin.setRawMode( true );
         }
         stdin.resume();
-        stdin.setEncoding( 'utf8' );
-        stdin.on( 'data', function( key ){
+        stdin.setEncoding( "utf8" );
+        stdin.on( "data", function( key ){
 
           switch (key) {
-            case '\u0003':
+            case "\u0003":
               process.exit();
             break;
-            case 'a':
+            case "a":
               abortCursor = true;
               console.log(chalkAlert("ABORT: " + abortCursor));
             break;
@@ -1260,16 +1267,16 @@ function initialize(cnf, callback){
             //   }
             //   console.log(chalkRedBold("CURSOR USER PAUSE: " + configuration.cursorUserPause));
             // break;
-            case 'q':
+            case "q":
               quit();
             break;
-            case 'Q':
+            case "Q":
               quit();
             break;
-            case 's':
+            case "s":
               showStats();
             break;
-            case 'S':
+            case "S":
               showStats(true);
             break;
             default:
@@ -1278,7 +1285,6 @@ function initialize(cnf, callback){
                 + "\n" + "s: showStats"
                 + "\n" + "S: showStats verbose"
                 );
-            break;
           }
         });
       }
@@ -1314,7 +1320,7 @@ function initTwitter(currentTwitterUser, cnf, callback){
     if (err) {
       console.log(chalkError("*** LOADED TWITTER CONFIG ERROR: FILE:  " + twitterConfigFolder + "/" + twitterConfigFile));
       console.log(chalkError("*** LOADED TWITTER CONFIG ERROR: ERROR: " + err));
-      callback(null, "INIT_TWIT_FOR_DM_ERROR");
+      if (callback !== undefined) {callback(null, "INIT_TWIT_FOR_DM_ERROR");}
     }
     else {
       console.log(chalkTwitter("LOADED TWITTER CONFIG | " + twitterConfigFile + "\n" + jsonPrint(twitterConfig)));
@@ -1326,52 +1332,55 @@ function initTwitter(currentTwitterUser, cnf, callback){
         access_token_secret: twitterConfig.TOKEN_SECRET
       });
 
-      twit.get('account/settings', function(err, data, response) {
+      twit.get("account/settings", function(err, data, response) {
         if (err){
-          console.log('!!!!! TWITTER ACCOUNT ERROR | ' + getTimeStamp() + '\n' + jsonPrint(err));
-          callback(null, "INIT_TWIT_FOR_DM_ERROR");
+          console.log("!!!!! TWITTER ACCOUNT ERROR | " + getTimeStamp() + "\n" + jsonPrint(err));
+          if (callback !== undefined) {callback(null, "INIT_TWIT_FOR_DM_ERROR");}
         }
         else {
           console.log(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: " + data.screen_name));
-          debug(chalkTwitter('TWITTER ACCOUNT SETTINGS\n' + jsonPrint(data)));
+          debug(chalkTwitter("TWITTER ACCOUNT SETTINGS\n" + jsonPrint(data)));
 
-          twit.get('users/show', {screen_name: data.screen_name}, function(err, data, response) {
+          twit.get("users/show", {screen_name: data.screen_name}, function(err, data, response) {
             if (err){
-              console.log('!!!!! TWITTER SHOW USER ERROR | @' + data.screen_name + ' | ' + getTimeStamp() 
-                + '\n' + jsonPrint(err));
-              return(callback(null, "INIT_TWIT_FOR_DM_ERROR"));
+              console.log("!!!!! TWITTER SHOW USER ERROR | @" + data.screen_name + " | " + getTimeStamp() 
+                + "\n" + jsonPrint(err));
+              if (callback !== undefined) {callback(null, "INIT_TWIT_FOR_DM_ERROR");}
+              return;
             }
-            else{
+            // else{
 
-              debug(chalkTwitter('TWITTER USER\n' + jsonPrint(data)));
+            debug(chalkTwitter("TWITTER USER\n" + jsonPrint(data)));
 
-              statsObj.user[currentTwitterUser] = {};
-              statsObj.user[currentTwitterUser] = data;
+            statsObj.user[currentTwitterUser] = {};
+            statsObj.user[currentTwitterUser] = data;
 
-              console.log(chalkTwitterBold("TWITTER USER\n==================="
-                + "\nID: " + statsObj.user[currentTwitterUser].id_str 
-                + "\n" + statsObj.user[currentTwitterUser].name 
-                + "\n@" + statsObj.user[currentTwitterUser].screen_name 
-                + "\n" + statsObj.user[currentTwitterUser].description 
-                + "\n" + statsObj.user[currentTwitterUser].url 
-                + "\nTWEETS:    " + statsObj.user[currentTwitterUser].statuses_count 
-                + "\nFOLLOWING: " + statsObj.user[currentTwitterUser].friends_count 
-                + "\nFOLLOWERS: " + statsObj.user[currentTwitterUser].followers_count 
-                // + "\n" + jsonPrint(data)
-              ));
-            }
+            console.log(chalkTwitterBold("TWITTER USER\n==================="
+              + "\nID: " + statsObj.user[currentTwitterUser].id_str 
+              + "\n" + statsObj.user[currentTwitterUser].name 
+              + "\n@" + statsObj.user[currentTwitterUser].screen_name 
+              + "\n" + statsObj.user[currentTwitterUser].description 
+              + "\n" + statsObj.user[currentTwitterUser].url 
+              + "\nTWEETS:    " + statsObj.user[currentTwitterUser].statuses_count 
+              + "\nFOLLOWING: " + statsObj.user[currentTwitterUser].friends_count 
+              + "\nFOLLOWERS: " + statsObj.user[currentTwitterUser].followers_count 
+              // + "\n" + jsonPrint(data)
+            ));
+            // }
           });
 
-          twit.get('application/rate_limit_status', function(err, data, response) {
+          twit.get("application/rate_limit_status", function(err, data, response) {
             if (err){
-              console.log('!!!!! TWITTER ACCOUNT ERROR | ' + getTimeStamp() 
-                + '\n' + jsonPrint(err));
-              return(callback(null, "INIT_TWIT_FOR_DM_ERROR"));
+              console.log("!!!!! TWITTER ACCOUNT ERROR | " + getTimeStamp() 
+                + "\n" + jsonPrint(err));
+              if (callback !== undefined) {callback(null, "INIT_TWIT_FOR_DM_ERROR");}
+              return;
             }
-            else{
-              callback(null, "INIT_TWIT_FOR_DM_COMPLETE");
+            // else{
+             if (callback !== undefined) {callback(null, "INIT_TWIT_FOR_DM_COMPLETE");}
+             // callback(null, "INIT_TWIT_FOR_DM_COMPLETE");
               // configEvents.emit("INIT_TWIT_FOR_DM_COMPLETE");
-            }
+            // }
           });
         }
       });
@@ -1380,17 +1389,17 @@ function initTwitter(currentTwitterUser, cnf, callback){
   });
 }
 
-function sendKeepAlive(userObj, callback){
+function sendKeepAlive(userObj){
   if (statsObj.userReadyAck && statsObj.serverConnected){
     debug(chalkLog("TX KEEPALIVE"
       + " | " + moment().format(compactDateTimeFormat)
     ));
     socket.emit("SESSION_KEEPALIVE", userObj);
-    callback(null, null);
+    // callback(null, null);
   }
-  else {
-    callback("ERROR", null);
-  }
+  // else {
+  //   callback("ERROR", null);
+  // }
 }
 
 function initSocket(cnf, callback){
@@ -1400,9 +1409,9 @@ function initSocket(cnf, callback){
     + " | " + jsonPrint(serverUserObj)
   ));
 
-  socket = require('socket.io-client')(cnf.targetServer, { reconnection: true });
+  socket = require("socket.io-client")(cnf.targetServer, { reconnection: true });
 
-  socket.on('connect', function(){
+  socket.on("connect", function(){
 
     statsObj.serverConnected = true ;
     statsObj.socketId = socket.id;
@@ -1434,7 +1443,7 @@ function initSocket(cnf, callback){
     ));
   });
 
-  socket.on('USER_READY_ACK', function(userId) {
+  socket.on("USER_READY_ACK", function(userId) {
     statsObj.userReadyAck = true ;
     console.log(chalkInfo(socket.id 
       + " | RX USER_READY_ACK"
@@ -1442,7 +1451,7 @@ function initSocket(cnf, callback){
     ));
 
     primarySocketKeepaliveInterval = setInterval(function(){ // TX KEEPALIVE
-      sendKeepAlive(serverUserObj, function(){});
+      sendKeepAlive(serverUserObj);
     }, cnf.keepaliveInterval);
 
   });
@@ -1459,7 +1468,7 @@ function initSocket(cnf, callback){
     // socketReconnect(cnf);
   });
 
-  socket.on('connect_error', function(err){
+  socket.on("connect_error", function(err){
     statsObj.userReadyAck = false ;
     statsObj.serverConnected = false ;
     console.error(chalkError("*** CONNECT ERROR " 
@@ -1468,12 +1477,10 @@ function initSocket(cnf, callback){
       + " | " + err.description
       // + "\n" + jsonPrint(err)
     ));
-    reset(function(){
-      // initGlobalTransmitWordQueue(50);
-    });
+    // reset();
   });
 
-  socket.on('reconnect_error', function(err){
+  socket.on("reconnect_error", function(err){
     statsObj.userReadyAck = false ;
     statsObj.serverConnected = false ;
     debug(chalkError("*** RECONNECT ERROR" 
@@ -1483,11 +1490,11 @@ function initSocket(cnf, callback){
     // socketReconnect(cnf);
   });
 
-  socket.on('SESSION_ABORT', function(sessionId){
+  socket.on("SESSION_ABORT", function(sessionId){
     console.log(chalkDisconnect("@@@@@ RX SESSION_ABORT | " + sessionId));
   });
 
-  socket.on('SESSION_EXPIRED', function(sessionId){
+  socket.on("SESSION_EXPIRED", function(sessionId){
     console.log(chalkDisconnect("@@@@@ RX SESSION_EXPIRED | " + sessionId));
     socket.disconnect();
     statsObj.userReadyAck = false ;
@@ -1503,11 +1510,11 @@ function initSocket(cnf, callback){
     // socketReconnect(cnf);
   });
 
-  socket.on('HEARTBEAT', function(heartbeat){
-    statsObj.heartbeatsReceived++;
+  socket.on("HEARTBEAT", function(heartbeat){
+    statsObj.heartbeatsReceived+= 1;
   });
 
-  socket.on('KEEPALIVE_ACK', function(userId) {
+  socket.on("KEEPALIVE_ACK", function(userId) {
     debug(chalkLog("RX KEEPALIVE_ACK | " + userId));
   });
 
@@ -1516,15 +1523,15 @@ function initSocket(cnf, callback){
 
 function checkRateLimit(callback){
 
-  twit.get('application/rate_limit_status', function(err, data, response) {
+  twit.get("application/rate_limit_status", function(err, data, response) {
     if (err){
-      console.error('!!!!! TWITTER ACCOUNT ERROR | ' + getTimeStamp() + '\n' + JSON.stringify(err, null, 3));
-      statsObj.twitterErrors++;
+      console.error("!!!!! TWITTER ACCOUNT ERROR | " + getTimeStamp() + "\n" + JSON.stringify(err, null, 3));
+      statsObj.twitterErrors+= 1;
       callback(err, null);
       // return;
     }
     else {
-      debug(chalkTwitter('\n-------------------------------------\nTWITTER RATE LIMIT STATUS\n' 
+      debug(chalkTwitter("\n-------------------------------------\nTWITTER RATE LIMIT STATUS\n" 
         + JSON.stringify(data, null, 3)
       ));
 
@@ -1639,6 +1646,8 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
 
   console.log(chalkInfo("INIT LANG ANALIZER QUEUE INTERVAL: " + interval + " ms"));
 
+  var langEntityKeys = [];
+
   langAnalyzerMessageRxQueueInterval = setInterval(function () {
 
     if (langAnalyzerMessageRxQueueReady && (langAnalyzerMessageRxQueue.length > 0)) {
@@ -1650,6 +1659,8 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
       var params = {
         noInc: true
       };
+
+      langEntityKeys = [];
 
       switch (m.op) {
         case "LANG_RESULTS":
@@ -1672,13 +1683,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
             break;
           }
 
-          var langEntityKeys = [];
 
           if (m.results.entities !== undefined) {
             langEntityKeys = Object.keys(m.results.entities);
-          }
-          else {
-
           }
 
           async.each(langEntityKeys, function(entityKey, cb) {
@@ -1705,7 +1712,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
 
             m.obj.languageAnalysis = m.results;
 
-            userServer.findOneUser(m.obj, params, function(err, updatedUserObj){
+            userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
               if (err) { 
                 console.log(chalkError("ERROR DB UPDATE USER"
                   + "\n" + err
@@ -1801,14 +1808,15 @@ function fetchTwitterFriends(cnf, callback){
     + " | READY: " + languageAnalysisReadyFlag
   ));
 
+  var params = {};
+
   if (!statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag && languageAnalysisReadyFlag) {
 
-    var params = {};
     params.count = 200;
 
     if (statsObj.nextCursorValid) { params.cursor = parseInt(nextCursor); }
 
-    twitPromise = twit.get('friends/list', params, function(err, data, response){
+    twitPromise = twit.get("friends/list", params, function(err, data, response){
 
       if (err) {
         console.log(chalkError(getTimeStamp()
@@ -1851,7 +1859,7 @@ function fetchTwitterFriends(cnf, callback){
         + " | MORE: " + statsObj.nextCursorValid
       ));
 
-      var subFriendsSortedArray = sortOn(data.users, '-followers_count');
+      var subFriendsSortedArray = sortOn(data.users, "-followers_count");
 
       subFriendsSortedArray.forEach(function(friend){
 
@@ -1900,7 +1908,7 @@ function fetchTwitterFriends(cnf, callback){
           userObj.isTwitterUser = true;
           userObj.threeceeFollowing = { 
             userId: statsObj.user[currentTwitterUser].id_str, 
-            screenName: statsObj.user[currentTwitterUser].screen_name, 
+            screenName: statsObj.user[currentTwitterUser].screen_name
           };
           userObj.nodeId = friend.id_str;
           userObj.userId = friend.id_str;
@@ -1915,12 +1923,12 @@ function fetchTwitterFriends(cnf, callback){
           userObj.description = friend.description;
           userObj.entities = friend.entities;
           userObj.tags.user = friend.screen_name.toLowerCase();
-          userObj.tags.channel = 'twitter';
+          userObj.tags.channel = "twitter";
           userObj.tags.twitter = {};
           userObj.tags.twitter.tweets = friend.statuses_count;
           userObj.tags.twitter.friends = friend.friends_count;
           userObj.tags.twitter.followers = friend.followers_count;
-          userObj.tags.group = '';
+          userObj.tags.group = "";
           userObj.keywords = kws;
 
           if (classifiedUserHashmap[userObj.userId] !== undefined){
@@ -1933,11 +1941,7 @@ function fetchTwitterFriends(cnf, callback){
             ));
           }
 
-          var userFindParams = {
-            noInc: true
-          };
-
-          userServer.findOneUser(userObj, userFindParams, function(err, updatedUserObj){
+          userServer.findOneUser(userObj, {noInc: true}, function(err, updatedUserObj){
 
             debug(chalkInfo("<DB USER"
               + " | " + updatedUserObj.userId
@@ -1951,11 +1955,7 @@ function fetchTwitterFriends(cnf, callback){
 
                 generateAutoKeywords(user, function(err, uObj){
 
-                    var params = {
-                      noInc: true
-                    };
-
-                    userServer.findOneUser(uObj, params, function(err, updatedUserObj){
+                    userServer.findOneUser(uObj, {noInc: true}, function(err, updatedUserObj){
                       if (err) { 
                         console.log(chalkError("ERROR DB UPDATE USER - generateAutoKeywords"
                           + "\n" + err
@@ -1998,8 +1998,8 @@ function fetchTwitterFriends(cnf, callback){
         ));
 
 
-        totalFriendsSortedFollowersArray = sortOn(totalFriendsArray, '-followers_count');
-        totalFriendsSortedFollowingArray = sortOn(totalFriendsArray, '-friends_count');
+        totalFriendsSortedFollowersArray = sortOn(totalFriendsArray, "-followers_count");
+        totalFriendsSortedFollowingArray = sortOn(totalFriendsArray, "-friends_count");
 
         console.log(chalkTwitter("TOTAL FRIENDS"
           + " [" + totalFriendsArray.length + "]"
@@ -2016,7 +2016,7 @@ function fetchTwitterFriends(cnf, callback){
             + " | FLWING: " + friend.friends_count
             + " | Ts: " + friend.statuses_count
           ));
-          index++;
+          index+= 1;
         });
 
         console.log(chalkTwitterBold("TOTAL FRIENDS - FOLLOWING"
@@ -2033,7 +2033,7 @@ function fetchTwitterFriends(cnf, callback){
             + " | FLWRs: " + friend.followers_count
             + " | Ts: " + friend.statuses_count
           ));
-          index++;
+          index+= 1;
         });
 
         var totalFriends = totalFriendsArray.length;
@@ -2049,8 +2049,7 @@ function fetchTwitterFriends(cnf, callback){
           ));
           statsObj.nextCursorValid = false;
           nextCursor = false;
-          initTwitter(currentTwitterUser, cnf, function(err, response){
-          });
+          initTwitter(currentTwitterUser, cnf);
         }
         else {
           // fsm.fetchTwitterFriendsEnd();
@@ -2076,7 +2075,7 @@ function initFetchTwitterFriendsInterval(interval){
 
   console.log(chalkAlert("INIT GET TWITTER FRIENDS"
     + " | INTERVAL: " + interval + " MS"
-    + " | RUN AT: " + moment().add(interval, 'ms').format(compactDateTimeFormat)
+    + " | RUN AT: " + moment().add(interval, "ms").format(compactDateTimeFormat)
   ));
 
   if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag) {
@@ -2086,7 +2085,9 @@ function initFetchTwitterFriendsInterval(interval){
   fetchTwitterFriendsIntervalRunning = true;
 
   fetchTwitterFriendsIntervalometer = timerIntervalometer(function(){
-    fetchTwitterFriends(configuration, function(){});
+    fetchTwitterFriends(configuration, function(){
+      debug("fetchTwitterFriends done");
+    });
   }, interval);
 
 
@@ -2273,6 +2274,10 @@ function processUser(user, callback){
 
   statsObj.analyzer.total += 1;
 
+  var chalkCurrent;
+  var classText;
+  var langAnalyzerText;
+
   if (user.keywords && (Object.keys(user.keywords).length > 0)) {
 
     debug("KWS\n" + jsonPrint(user.keywords));
@@ -2280,9 +2285,7 @@ function processUser(user, callback){
     classifiedUserHashmap[user.userId] = user.keywords;
     statsObj.users.classified = Object.keys(classifiedUserHashmap).length;
 
-    var chalkCurrent = chalkLog;
-
-    var classText;
+    chalkCurrent = chalkLog;
 
     switch (Object.keys(user.keywords)[0]) {
       case "right":
@@ -2338,9 +2341,7 @@ function processUser(user, callback){
     autoClassifiedUserHashmap[user.userId] = user.keywordsAuto;
     statsObj.users.classifiedAuto = Object.keys(autoClassifiedUserHashmap).length;
 
-    var chalkCurrent = chalkLog;
-
-    var classText;
+    chalkCurrent = chalkLog;
 
     switch (Object.keys(user.keywordsAuto)[0]) {
       case "right":
@@ -2395,8 +2396,12 @@ function processUser(user, callback){
 
     if ((user.languageAnalysis !== undefined)
       && (user.languageAnalysis.sentiment !== undefined)) {
-      sentiment = "M: " + (10*user.languageAnalysis.sentiment.magnitude).toFixed(2)
-        + " S: " + (10*user.languageAnalysis.sentiment.score).toFixed(2);
+
+      var mag = 10*user.languageAnalysis.sentiment.magnitude;
+      var score = 10*user.languageAnalysis.sentiment.score ;
+
+      sentiment = "M: " + mag.toFixed(2) + " S: " + score.toFixed(2);
+
     }
     else {
       sentiment = Object.keys(user.languageAnalysis);
@@ -2404,7 +2409,7 @@ function processUser(user, callback){
 
     var kws = user.keywords || {};
 
-    var langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description;
+    langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description;
 
     parseDescription(user.description);
 
@@ -2427,7 +2432,7 @@ function processUser(user, callback){
 
     parseDescription(user.description);
 
-    var langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description;
+    langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description;
 
     langAnalyzerText = langAnalyzerText.replace(/@/g, "");
 
@@ -2495,11 +2500,7 @@ function initCursorUser(interval){
 
         generateAutoKeywords(user, function(err, uObj){
 
-            var params = {
-              noInc: true
-            };
-
-            userServer.findOneUser(uObj, params, function(err, updatedUserObj){
+            userServer.findOneUser(uObj, {noInc: true}, function(err, updatedUserObj){
               if (err) { 
                 console.log(chalkError("ERROR DB UPDATE USER - generateAutoKeywords"
                   + "\n" + err
@@ -2541,7 +2542,7 @@ function initCursorUser(interval){
   });
 
   cursorUser.pause();
-};
+}
 
 function loadNeuralNetworkFile(cnf, callback){
 
@@ -2739,7 +2740,3 @@ initialize(configuration, function(err, cnf){
 
   });
 });
-
-
-
-
