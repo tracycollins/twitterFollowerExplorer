@@ -15,6 +15,16 @@ var ONE_HOUR = ONE_MINUTE*60 ;
 
 var TFE_USER_DB_CRAWL = false;
 
+var os = require("os");
+var util = require("util");
+var moment = require("moment");
+
+var hostname = os.hostname();
+hostname = hostname.replace(/\.local/g, "");
+hostname = hostname.replace(/\.home/g, "");
+hostname = hostname.replace(/word0-instance-1/g, "google");
+
+
 var configuration = {};
 
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
@@ -52,246 +62,10 @@ var keywordExtractor = require("keyword-extractor");
 
 var descriptionHistogram = {};
 
-var descriptionWordsArray = [
-  "activist",
-  "africa",
-  "america",
-  "asia",
-  "ayn",
-  "bernie",
-  "brexit",
-  "brotherhood",
-  "business",
-  "businessman",
-  "christ",
-  "christian",
-  "christians",
-  "christianity",
-  "class",
-  "clinton",
-  "community",
-  "columnist",
-  "congress",
-  "congressional",
-  "conservative",
-  "conversation",
-  "courage",
-  "courageous",
-  "coward",
-  "cowards",
-  "dem",
-  "demexit",
-  "dems",
-  "democrat",
-  "democrats",
-  "district",
-  "enemy",
-  "establishment",
-  "europe",
-  "expert",
-  "facts",
-  "fakenews",
-  "family",
-  "father",
-  "fiscal",
-  "fox",
-  "freedom",
-  "god",
-  "government",
-  "great",
-  "hate",
-  "husband",
-  "i",
-  "immigration",
-  "immigrant",
-  "israel",
-  "israeli",
-  "israelis",
-  "islam",
-  "islamic",
-  "justice",
-  "labor",
-  "leader",
-  "leaders",
-  "leadership",
-  "learn",
-  "left",
-  "leftist",
-  "leftists",
-  "liberal",
-  "libertarian",
-  "life",
-  "love",
-  "matter",
-  "member",
-  "middle",
-  "military",
-  "mission",
-  "mother",
-  "movement",
-  "msm",
-  "muslim",
-  "news",
-  "obama",
-  "occupy",
-  "organization",
-  "palestine",
-  "palestinian",
-  "palestinians",
-  "parent",
-  "parenthood",
-  "parody",
-  "patriot",
-  "people",
-  "personal",
-  "political",
-  "politics",
-  "power",
-  "powerful",
-  "president",
-  "protect",
-  "protects",
-  "protecting",
-  "protection",
-  "proud",
-  "proudly",
-  "racist",
-  "rand",
-  "real",
-  "rep",
-  "represent",
-  "representing",
-  "repub",
-  "republican",
-  "republicans",
-  "resistance",
-  "rights",
-  "sanders",
-  "sciene",
-  "scientist",
-  "sercure",
-  "sercurity",
-  "served",
-  "service",
-  "serving",
-  "sexist",
-  "smart",
-  "social",
-  "socialism",
-  "socialist",
-  "tax",
-  "terror",
-  "terrorism",
-  "terrorist",
-  "terrorists",
-  "them",
-  "they",
-  "think",
-  "together",
-  "trump",
-  "trust",
-  "us",
-  "wall",
-  "we",
-  "wife",
-  "win",
-  "work",
-  "working",
-  "world",
-  "zion",
-  "zionism",
-  "zionist",
-  "zionists"
-];
-
-var descriptionMentionsArray = [
-  "@barackobama",
-  "@berniesanders",
-  "@breitbartnews",
-  "@cnn",
-  "@dnc",
-  "@foxnews",
-  "@gop",
-  "@hillaryclinton",
-  "@msnbc",
-  "@nytimes",
-  "@potus",
-  "@realdonaldtrump",
-  "@sensanders",
-  "@thedemocrats",
-  "@washingtonpost",
-  "@whitehouse",
-  "@whitehouse",
-  "@wsj"
-];
-
-var descriptionHashtagsArray = [
-  "#1",
-  "#1a",
-  "#2a",
-  "#aca",
-  "#alllivesmatter",
-  "#americafirst",
-  "#badhombre",
-  "#blacklivesmatter",
-  "#bluelivesmatter",
-  "#boycotttrump",
-  "#breitbart",
-  "#breitbartnews",
-  "#constitution",
-  "#deplorable",
-  "#deplorables",
-  "#draintheswamp",
-  "#fakenews",
-  "#fox",
-  "#free",
-  "#freepalestine",
-  "#freedom",
-  "#freedoms",
-  "#gun",
-  "#guns",
-  "#gunrights",
-  "#hate",
-  "#humanitarian",
-  "#imwithher",
-  "#lgbt",
-  "#love",
-  "#maga",
-  "#makeamericagreatagain",
-  "#military",
-  "#msm",
-  "#nastywoman",
-  "#nastywomen",
-  "#neverthelessshepersisted",
-  "#shepersisted",
-  "#nevertrump",
-  "#notmypresident",
-  "#nra",
-  "#obama",
-  "#politics",
-  "#presidenttrump",
-  "#resist",
-  "#resistance",
-  "#science",
-  "#tcot",
-  "#trump2020",
-  "#trumprussia",
-  "#trumptrain",
-  "#wethepeople"
-];
-
-var descriptionArrays = [];
-
-descriptionArrays.push({type: "mentions", array: descriptionMentionsArray});
-descriptionArrays.push({type: "hashtags", array: descriptionHashtagsArray});
-descriptionArrays.push({type: "words", array: descriptionWordsArray});
 
 var mentionsRegex = require("mentions-regex");
 var hashtagRegex = require("hashtag-regex");
 
-var os = require("os");
-var util = require("util");
-var moment = require("moment");
 // var StateMachine = require("javascript-state-machine");
 var Twit = require("twit");
 var twit;
@@ -398,15 +172,257 @@ var entityServer = require("./app/controllers/entity.server.controller");
 var userServer = require("./app/controllers/user.server.controller");
 var wordServer = require("./app/controllers/word.server.controller");
 
-var hostname = os.hostname();
-hostname = hostname.replace(/\.local/g, "");
-hostname = hostname.replace(/\.home/g, "");
-hostname = hostname.replace(/word0-instance-1/g, "google");
-
 var neuralNetworkFile = "neuralNetwork_" + hostname + ".json";
 var defaultNeuralNetworkFile = "neuralNetwork.json";
 
 configuration.neuralNetworkFile = defaultNeuralNetworkFile;
+
+// var descriptionWordsArray = [
+//   "activist",
+//   "africa",
+//   "america",
+//   "asia",
+//   "ayn",
+//   "bernie",
+//   "brexit",
+//   "brotherhood",
+//   "business",
+//   "businessman",
+//   "christ",
+//   "christian",
+//   "christians",
+//   "christianity",
+//   "class",
+//   "clinton",
+//   "community",
+//   "columnist",
+//   "congress",
+//   "congressional",
+//   "conservative",
+//   "conversation",
+//   "courage",
+//   "courageous",
+//   "coward",
+//   "cowards",
+//   "dem",
+//   "demexit",
+//   "dems",
+//   "democrat",
+//   "democrats",
+//   "district",
+//   "enemy",
+//   "establishment",
+//   "europe",
+//   "expert",
+//   "facts",
+//   "fakenews",
+//   "family",
+//   "father",
+//   "fiscal",
+//   "fox",
+//   "freedom",
+//   "god",
+//   "government",
+//   "great",
+//   "hate",
+//   "husband",
+//   "i",
+//   "immigration",
+//   "immigrant",
+//   "israel",
+//   "israeli",
+//   "israelis",
+//   "islam",
+//   "islamic",
+//   "justice",
+//   "labor",
+//   "leader",
+//   "leaders",
+//   "leadership",
+//   "learn",
+//   "left",
+//   "leftist",
+//   "leftists",
+//   "liberal",
+//   "libertarian",
+//   "life",
+//   "love",
+//   "matter",
+//   "member",
+//   "middle",
+//   "military",
+//   "mission",
+//   "mother",
+//   "movement",
+//   "msm",
+//   "muslim",
+//   "news",
+//   "obama",
+//   "occupy",
+//   "organization",
+//   "palestine",
+//   "palestinian",
+//   "palestinians",
+//   "parent",
+//   "parenthood",
+//   "parody",
+//   "patriot",
+//   "people",
+//   "personal",
+//   "political",
+//   "politics",
+//   "power",
+//   "powerful",
+//   "president",
+//   "protect",
+//   "protects",
+//   "protecting",
+//   "protection",
+//   "proud",
+//   "proudly",
+//   "racist",
+//   "rand",
+//   "real",
+//   "rep",
+//   "represent",
+//   "representing",
+//   "repub",
+//   "republican",
+//   "republicans",
+//   "resistance",
+//   "rights",
+//   "sanders",
+//   "sciene",
+//   "scientist",
+//   "sercure",
+//   "sercurity",
+//   "served",
+//   "service",
+//   "serving",
+//   "sexist",
+//   "smart",
+//   "social",
+//   "socialism",
+//   "socialist",
+//   "tax",
+//   "terror",
+//   "terrorism",
+//   "terrorist",
+//   "terrorists",
+//   "them",
+//   "they",
+//   "think",
+//   "together",
+//   "trump",
+//   "trust",
+//   "us",
+//   "wall",
+//   "we",
+//   "wife",
+//   "win",
+//   "work",
+//   "working",
+//   "world",
+//   "zion",
+//   "zionism",
+//   "zionist",
+//   "zionists"
+// ];
+
+// var descriptionMentionsArray = [
+//   "@barackobama",
+//   "@berniesanders",
+//   "@breitbartnews",
+//   "@cnn",
+//   "@dnc",
+//   "@foxnews",
+//   "@gop",
+//   "@hillaryclinton",
+//   "@msnbc",
+//   "@nytimes",
+//   "@potus",
+//   "@realdonaldtrump",
+//   "@sensanders",
+//   "@thedemocrats",
+//   "@washingtonpost",
+//   "@whitehouse",
+//   "@whitehouse",
+//   "@wsj"
+// ];
+
+// var descriptionHashtagsArray = [
+//   "#1",
+//   "#1a",
+//   "#2a",
+//   "#aca",
+//   "#alllivesmatter",
+//   "#americafirst",
+//   "#badhombre",
+//   "#blacklivesmatter",
+//   "#bluelivesmatter",
+//   "#boycotttrump",
+//   "#breitbart",
+//   "#breitbartnews",
+//   "#constitution",
+//   "#deplorable",
+//   "#deplorables",
+//   "#draintheswamp",
+//   "#fakenews",
+//   "#fox",
+//   "#free",
+//   "#freepalestine",
+//   "#freedom",
+//   "#freedoms",
+//   "#gun",
+//   "#guns",
+//   "#gunrights",
+//   "#hate",
+//   "#humanitarian",
+//   "#imwithher",
+//   "#lgbt",
+//   "#love",
+//   "#maga",
+//   "#makeamericagreatagain",
+//   "#military",
+//   "#msm",
+//   "#nastywoman",
+//   "#nastywomen",
+//   "#neverthelessshepersisted",
+//   "#shepersisted",
+//   "#nevertrump",
+//   "#notmypresident",
+//   "#nra",
+//   "#obama",
+//   "#politics",
+//   "#presidenttrump",
+//   "#resist",
+//   "#resistance",
+//   "#science",
+//   "#tcot",
+//   "#trump2020",
+//   "#trumprussia",
+//   "#trumptrain",
+//   "#wethepeople"
+// ];
+
+// var descriptionArrays = [];
+
+// descriptionArrays.push({type: "mentions", array: descriptionMentionsArray});
+// descriptionArrays.push({type: "hashtags", array: descriptionHashtagsArray});
+// descriptionArrays.push({type: "words", array: descriptionWordsArray});
+
+var descriptionWordsFile = "defaultDescriptionWords.json";
+var descriptionWordsArray = [];
+
+var descriptionMentionsFile = "defaultDescriptionMentions.json";
+var descriptionMentionsArray = [];
+
+var descriptionHashtagsFile = "defaultDescriptionHashtags.json";
+var descriptionHashtagsArray = [];
+
+var descriptionArrays = [];
+var descriptionArraysFile = "descriptionArraysFile_" + hostname + "_" + process.pid + ".json";
+
 
 var checkRateLimitInterval;
 var checkRateLimitIntervalTime = 30*ONE_SECOND;
@@ -908,6 +924,58 @@ var autoClassifiedUsersDefaultFile = "autoClassifiedUsers_" + hostname + ".json"
 var autoClassifiedUsersFile = "autoClassifiedUsers_" + hostname + "_" + process.pid + ".json";
 var descriptionHistogramFile = "descriptionHistogram_" + hostname + "_" + process.pid + ".json";
 
+function initDescriptionArrays(callback){
+
+  console.log(chalkTwitter("INIT DESCRIPTION ARRAYS"));
+
+  async.each([descriptionWordsFile, descriptionMentionsFile, descriptionHashtagsFile], function(file, cb){
+
+    console.log("INIT " + file);
+
+    loadFile(dropboxConfigDefaultFolder, file, function(err, loadedArrayObj){
+      if (!err) {
+        debug(jsonPrint(loadedArrayObj));
+        if (loadedArrayObj["words"] !== undefined) { 
+          descriptionWordsArray = loadedArrayObj["words"].sort();
+          console.log(chalkAlert("LOADED WORDS ARRAY | " + descriptionWordsArray.length + " WORDS"));
+        }
+        if (loadedArrayObj["mentions"] !== undefined) { 
+          descriptionMentionsArray = loadedArrayObj["mentions"].sort();
+          console.log(chalkAlert("LOADED MENTIONS ARRAY | " + descriptionMentionsArray.length + " MENTIONS"));
+        }
+        if (loadedArrayObj["hashtags"] !== undefined) { 
+          descriptionHashtagsArray = loadedArrayObj["hashtags"].sort();
+          console.log(chalkAlert("LOADED HASHTAGS ARRAY | " + descriptionHashtagsArray.length + " HASHTAGS"));
+        }
+        cb();
+      }
+      else {
+        console.log(chalkError("ERROR: loadFile: " + dropboxConfigFolder + "/" + file));
+        cb(err);
+      }
+    });
+  }, function(err){
+    if (err){
+      console.log(chalkError("ERR\n" + jsonPrint(err)));
+      return(callback(err));
+    }
+    else {
+      descriptionArrays.push({type: "mentions", array: descriptionMentionsArray});
+      descriptionArrays.push({type: "hashtags", array: descriptionHashtagsArray});
+      descriptionArrays.push({type: "words", array: descriptionWordsArray});
+
+      console.log(chalkAlert("LOADED DESCRIPTION ARRAY FILES"));
+
+      saveFile(statsFolder, descriptionArraysFile, descriptionArrays, function(){
+        statsObj.descriptionArraysFile = descriptionArraysFile;
+        debug("descriptionArrays\n" + jsonPrint(descriptionArrays));
+        return(callback(null));
+      });
+    }
+  });
+}
+
+
 function initStatsUpdate(cnf, callback){
 
   console.log(chalkAlert("INIT STATS UPDATE INTERVAL | " + cnf.statsUpdateIntervalTime + " MS"));
@@ -1214,7 +1282,10 @@ function initialize(cnf, callback){
             // + "\n" + jsonPrint(cnf2.twitterConfig )
           ));
 
-          return(callback(err, cnf2));
+          initDescriptionArrays(function(err){
+            return(callback(err, cnf2));
+          });
+
         });
       });
     }
@@ -1290,7 +1361,9 @@ function initialize(cnf, callback){
       }
 
       initStatsUpdate(cnf, function(err, cnf2){
-        return(callback(err, cnf));
+        initDescriptionArrays(function(err){
+          return(callback(err, cnf));
+        });
       });
      }
   });
