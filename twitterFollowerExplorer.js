@@ -172,244 +172,12 @@ var entityServer = require("./app/controllers/entity.server.controller");
 var userServer = require("./app/controllers/user.server.controller");
 var wordServer = require("./app/controllers/word.server.controller");
 
-var neuralNetworkFile = "neuralNetwork_" + hostname + ".json";
+var neuralNetworkFile = "neuralNetwork_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+
 var defaultNeuralNetworkFile = "neuralNetwork.json";
 
 configuration.neuralNetworkFile = defaultNeuralNetworkFile;
 
-// var descriptionWordsArray = [
-//   "activist",
-//   "africa",
-//   "america",
-//   "asia",
-//   "ayn",
-//   "bernie",
-//   "brexit",
-//   "brotherhood",
-//   "business",
-//   "businessman",
-//   "christ",
-//   "christian",
-//   "christians",
-//   "christianity",
-//   "class",
-//   "clinton",
-//   "community",
-//   "columnist",
-//   "congress",
-//   "congressional",
-//   "conservative",
-//   "conversation",
-//   "courage",
-//   "courageous",
-//   "coward",
-//   "cowards",
-//   "dem",
-//   "demexit",
-//   "dems",
-//   "democrat",
-//   "democrats",
-//   "district",
-//   "enemy",
-//   "establishment",
-//   "europe",
-//   "expert",
-//   "facts",
-//   "fakenews",
-//   "family",
-//   "father",
-//   "fiscal",
-//   "fox",
-//   "freedom",
-//   "god",
-//   "government",
-//   "great",
-//   "hate",
-//   "husband",
-//   "i",
-//   "immigration",
-//   "immigrant",
-//   "israel",
-//   "israeli",
-//   "israelis",
-//   "islam",
-//   "islamic",
-//   "justice",
-//   "labor",
-//   "leader",
-//   "leaders",
-//   "leadership",
-//   "learn",
-//   "left",
-//   "leftist",
-//   "leftists",
-//   "liberal",
-//   "libertarian",
-//   "life",
-//   "love",
-//   "matter",
-//   "member",
-//   "middle",
-//   "military",
-//   "mission",
-//   "mother",
-//   "movement",
-//   "msm",
-//   "muslim",
-//   "news",
-//   "obama",
-//   "occupy",
-//   "organization",
-//   "palestine",
-//   "palestinian",
-//   "palestinians",
-//   "parent",
-//   "parenthood",
-//   "parody",
-//   "patriot",
-//   "people",
-//   "personal",
-//   "political",
-//   "politics",
-//   "power",
-//   "powerful",
-//   "president",
-//   "protect",
-//   "protects",
-//   "protecting",
-//   "protection",
-//   "proud",
-//   "proudly",
-//   "racist",
-//   "rand",
-//   "real",
-//   "rep",
-//   "represent",
-//   "representing",
-//   "repub",
-//   "republican",
-//   "republicans",
-//   "resistance",
-//   "rights",
-//   "sanders",
-//   "sciene",
-//   "scientist",
-//   "sercure",
-//   "sercurity",
-//   "served",
-//   "service",
-//   "serving",
-//   "sexist",
-//   "smart",
-//   "social",
-//   "socialism",
-//   "socialist",
-//   "tax",
-//   "terror",
-//   "terrorism",
-//   "terrorist",
-//   "terrorists",
-//   "them",
-//   "they",
-//   "think",
-//   "together",
-//   "trump",
-//   "trust",
-//   "us",
-//   "wall",
-//   "we",
-//   "wife",
-//   "win",
-//   "work",
-//   "working",
-//   "world",
-//   "zion",
-//   "zionism",
-//   "zionist",
-//   "zionists"
-// ];
-
-// var descriptionMentionsArray = [
-//   "@barackobama",
-//   "@berniesanders",
-//   "@breitbartnews",
-//   "@cnn",
-//   "@dnc",
-//   "@foxnews",
-//   "@gop",
-//   "@hillaryclinton",
-//   "@msnbc",
-//   "@nytimes",
-//   "@potus",
-//   "@realdonaldtrump",
-//   "@sensanders",
-//   "@thedemocrats",
-//   "@washingtonpost",
-//   "@whitehouse",
-//   "@whitehouse",
-//   "@wsj"
-// ];
-
-// var descriptionHashtagsArray = [
-//   "#1",
-//   "#1a",
-//   "#2a",
-//   "#aca",
-//   "#alllivesmatter",
-//   "#americafirst",
-//   "#badhombre",
-//   "#blacklivesmatter",
-//   "#bluelivesmatter",
-//   "#boycotttrump",
-//   "#breitbart",
-//   "#breitbartnews",
-//   "#constitution",
-//   "#deplorable",
-//   "#deplorables",
-//   "#draintheswamp",
-//   "#fakenews",
-//   "#fox",
-//   "#free",
-//   "#freepalestine",
-//   "#freedom",
-//   "#freedoms",
-//   "#gun",
-//   "#guns",
-//   "#gunrights",
-//   "#hate",
-//   "#humanitarian",
-//   "#imwithher",
-//   "#lgbt",
-//   "#love",
-//   "#maga",
-//   "#makeamericagreatagain",
-//   "#military",
-//   "#msm",
-//   "#nastywoman",
-//   "#nastywomen",
-//   "#neverthelessshepersisted",
-//   "#shepersisted",
-//   "#nevertrump",
-//   "#notmypresident",
-//   "#nra",
-//   "#obama",
-//   "#politics",
-//   "#presidenttrump",
-//   "#resist",
-//   "#resistance",
-//   "#science",
-//   "#tcot",
-//   "#trump2020",
-//   "#trumprussia",
-//   "#trumptrain",
-//   "#wethepeople"
-// ];
-
-// var descriptionArrays = [];
-
-// descriptionArrays.push({type: "mentions", array: descriptionMentionsArray});
-// descriptionArrays.push({type: "hashtags", array: descriptionHashtagsArray});
-// descriptionArrays.push({type: "words", array: descriptionWordsArray});
 
 var descriptionWordsFile = "defaultDescriptionWords.json";
 var descriptionWordsArray = [];
@@ -421,7 +189,7 @@ var descriptionHashtagsFile = "defaultDescriptionHashtags.json";
 var descriptionHashtagsArray = [];
 
 var descriptionArrays = [];
-var descriptionArraysFile = "descriptionArraysFile_" + hostname + "_" + process.pid + ".json";
+var descriptionArraysFile = "descriptionArraysFile_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
 
 
 var checkRateLimitInterval;
@@ -450,9 +218,6 @@ function indexOfMax(arr) {
   return maxIndex;
 }
 
-// function reset(callback){
-//   callback();
-// }
 
 var jsonPrint = function (obj){
   if (obj) {
@@ -919,10 +684,10 @@ function loadFile(path, file, callback) {
 }
 
 var classifiedUsersDefaultFile = "classifiedUsers.json";
-var classifiedUsersFile = "classifiedUsers_" + hostname + "_" + process.pid + ".json";
+var classifiedUsersFile = "classifiedUsers_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
 var autoClassifiedUsersDefaultFile = "autoClassifiedUsers_" + hostname + ".json";
-var autoClassifiedUsersFile = "autoClassifiedUsers_" + hostname + "_" + process.pid + ".json";
-var descriptionHistogramFile = "descriptionHistogram_" + hostname + "_" + process.pid + ".json";
+var autoClassifiedUsersFile = "autoClassifiedUsers_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+var descriptionHistogramFile = "descriptionHistogram_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
 
 function initDescriptionArrays(callback){
 
