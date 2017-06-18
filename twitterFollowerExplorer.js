@@ -43,7 +43,7 @@ var abortCursor = false;
 // var MAX_Q = 500;
 
 // var defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
-var compactDateTimeFormat = "YYYYMMDD HHmmss ZZ";
+var compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 var intervalometer = require("intervalometer");
 var timerIntervalometer = intervalometer.timerIntervalometer;
