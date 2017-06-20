@@ -9,7 +9,7 @@
       "NODE_ENV": "production",
       "GCLOUD_PROJECT": "graphic-tangent-627",
       "GOOGLE_PROJECT": "graphic-tangent-627",
-      "GOOGLE_APPLICATION_CREDENTIALS": "languageAnalyzerKey.json",
+      "GOOGLE_PROJECT_ID": "graphic-tangent-627",
       "TFE_UTIL_TARGET_SERVER": "http://word.threeceelabs.com/util",
       "TFE_STATS_UPDATE_INTERVAL": 60000,
       "TFE_USER_DB_CRAWL": true,
