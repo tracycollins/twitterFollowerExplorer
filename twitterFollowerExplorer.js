@@ -15,6 +15,7 @@ var ONE_HOUR = ONE_MINUTE*60 ;
 
 var TFE_USER_DB_CRAWL = false;
 
+var Dropbox = require("dropbox");
 var os = require("os");
 var util = require("util");
 var moment = require("moment");
@@ -32,9 +33,6 @@ var configuration = {};
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
 configuration.neuralNetworkFile = "";
-
-// var co = require("co");
-// var once = require("once");
 
 var stdin;
 
@@ -59,16 +57,12 @@ var langAnalyzer;
 
 var keywordExtractor = require("keyword-extractor");
 
-// var Personify = require("personify");
-// var personifyClient;
-
 var descriptionHistogram = {};
 
 
 var mentionsRegex = require("mentions-regex");
 var hashtagRegex = require("hashtag-regex");
 
-// var StateMachine = require("javascript-state-machine");
 var Twit = require("twit");
 var twit;
 
@@ -79,14 +73,11 @@ var cursorUser;
 var socket;
 
 var async = require("async");
-// var http = require("http");
 var sortOn = require("sort-on");
 
 var chalk = require("chalk");
-// var chalkFsm = chalk.bold.black;
 var chalkTwitter = chalk.blue;
 var chalkTwitterBold = chalk.bold.blue;
-// var chalkBlk = chalk.black;
 var chalkRed = chalk.red;
 var chalkRedBold = chalk.bold.red;
 // var chalkGreen = chalk.green;
@@ -457,7 +448,6 @@ console.log("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
 console.log("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 
-var Dropbox = require("dropbox");
 var dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
 function quit(){
