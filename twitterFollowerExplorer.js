@@ -2093,8 +2093,8 @@ function generateAutoKeywords(user, callback){
     + " | L: " + networkOutput[0].toFixed(3)
     + " | N: " + networkOutput[1].toFixed(3)
     + " | R: " + networkOutput[2].toFixed(3)
-    + " | KWs: " + Object.keys.keywords
-    + " | AKWs: " + Object.keys.keywordsAuto
+    + " | KWs: " + Object.keys(keywords)
+    + " | AKWs: " + Object.keys(keywordsAuto)
   ));
 
   callback(null, user);
