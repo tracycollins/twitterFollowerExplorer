@@ -387,7 +387,7 @@ statsObj.users = {};
 statsObj.users.classifiedAuto = 0;
 statsObj.users.classified = 0;
 statsObj.users.percentFetched = 0;
-statsObj.users.totalFriendsFetched = 0;
+statsObj.users.grandTotalFriendsFetched = 0;
 
 statsObj.user = {};
 statsObj.user.ninjathreecee = {};
@@ -1184,6 +1184,7 @@ function initTwitter(currentTwitterUser, cnf, callback){
 
             statsObj.user[currentTwitterUser] = {};
             statsObj.user[currentTwitterUser] = data;
+            statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
 
             console.log(chalkTwitterBold("TWITTER USER\n==================="
               + "\nID: " + statsObj.user[currentTwitterUser].id_str 
@@ -1677,14 +1678,16 @@ function fetchTwitterFriends(cnf, callback){
       }
 
       nextCursor = data.next_cursor_str;
-      statsObj.users.totalFriendsFetched += data.users.length;
-      statsObj.users.percentFetched = 100*(statsObj.users.totalFriendsFetched/statsObj.user[currentTwitterUser].friends_count); 
+      statsObj.users.grandTotalFriendsFetched += data.users.length;
+      statsObj.user[currentTwitterUser].totalFriendsFetched += data.users.length;
+      statsObj.user[currentTwitterUser].percentFetched = 100*(statsObj.user[currentTwitterUser].totalFriendsFetched/statsObj.user[currentTwitterUser].friends_count); 
 
       console.log(chalkRed("@" + statsObj.user[currentTwitterUser].screen_name
         + " | TOTAL FRIENDS: " + statsObj.user[currentTwitterUser].friends_count
         + " | COUNT: " + count
         + " | FETCHED: " + data.users.length
-        + " | TOTAL FETCHED: " + statsObj.users.totalFriendsFetched
+        + " | TOTAL FETCHED: " + statsObj.user[currentTwitterUser].totalFriendsFetched
+        + " | GRAND TOTAL FETCHED: " + statsObj.users.grandTotalFriendsFetched
         + " [ " + statsObj.users.percentFetched.toFixed(1) + "% ]"
         + " | MORE: " + statsObj.nextCursorValid
       ));
@@ -1819,8 +1822,9 @@ function fetchTwitterFriends(cnf, callback){
 
       if (!statsObj.nextCursorValid 
         || abortCursor 
-        || (cnf.testMode && (statsObj.users.totalFriendsFetched >= 147))
-        || (statsObj.users.totalFriendsFetched >= statsObj.user[currentTwitterUser].friends_count)) {
+        || (cnf.testMode && (statsObj.user[currentTwitterUser].totalFriendsFetched >= 147))
+        // || (statsObj.users.totalFriendsFetched >= statsObj.user[currentTwitterUser].friends_count)) {
+        || (statsObj.user[currentTwitterUser].totalFriendsFetched >= statsObj.user[currentTwitterUser].friends_count)) {
 
 
         console.log(chalkError("===== END TWITTER USER @" + currentTwitterUser + " ====="
