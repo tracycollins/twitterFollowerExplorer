@@ -31,6 +31,7 @@ exports.findOneUser = function (user, params, callback) {
 			threeceeFollowing: user.threeceeFollowing,
 			tags: user.tags,
 			entities: user.entities,
+			keywordsAuto: user.keywordsAuto,
 			isTwitterUser: user.isTwitterUser,
 			screenName: user.screenName,
 			name: user.name,
@@ -55,7 +56,6 @@ exports.findOneUser = function (user, params, callback) {
 		},
 		"$max": {
 			keywords: user.keywords,
-			keywordsAuto: user.keywordsAuto,
 			languageAnalysis: user.languageAnalysis
 		}
 	};

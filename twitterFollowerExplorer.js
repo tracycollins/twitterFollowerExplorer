@@ -2046,25 +2046,25 @@ function generateAutoKeywords(user, callback){
   var maxOutputIndex = indexOfMax(networkOutput);
 
   var keywords = user.keywords ? Object.keys(user.keywords) : "";
-  var keywordsAuto;
+  var keywordsAuto = {};
   var currentChalk;
 
   switch (maxOutputIndex) {
     case 0:
       user.keywordsAuto = { "left": 100 };
-      keywordsAuto = "left";
+      keywordsAuto = {"left": 100};
       currentChalk = chalk.blue;
       if (keywords[0] === "left") { currentChalk = chalk.bold.blue;}
     break;
     case 1:
       user.keywordsAuto = { "neutral": 100 };
-      keywordsAuto = "neutral";
+      keywordsAuto = {"neutral": 100};
       currentChalk = chalk.black;
       if (keywords[0] === "neutral") { currentChalk = chalk.bold.black;}
     break;
     case 2:
       user.keywordsAuto = { "right": 100 };
-      keywordsAuto = "right";
+      keywordsAuto = {"right": 100};
       currentChalk = chalk.yellow;
       if (keywords[0] === "neutral") { currentChalk = chalk.bold.yellow;}
     break;
@@ -2093,8 +2093,8 @@ function generateAutoKeywords(user, callback){
     + " | L: " + networkOutput[0].toFixed(3)
     + " | N: " + networkOutput[1].toFixed(3)
     + " | R: " + networkOutput[2].toFixed(3)
-    + " | KWs: " + keywords
-    + " | AKWs: " + keywordsAuto
+    + " | KWs: " + Object.keys.keywords
+    + " | AKWs: " + Object.keys.keywordsAuto
   ));
 
   callback(null, user);
