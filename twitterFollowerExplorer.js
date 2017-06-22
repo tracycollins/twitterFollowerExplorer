@@ -2321,18 +2321,21 @@ function processUser(cnf, user, callback){
       sentiment = Object.keys(user.languageAnalysis);
     }
 
-    var kws = user.keywords || {};
+    // var kws = user.keywords || {};
+    // var kwsAuto = user.keywordsAuto || {};
+
+    var kws = user.keywords && (user.keywords !== undefined) ? Object.keys(user.keywords) : [];
+    var kwsAuto = user.keywordsAuto && (user.keywordsAuto !== undefined) ? Object.keys(user.keywordsAuto) : [];
 
     parseDescription(user.description);
 
-    if (user.status) { 
-      parseDescription(user.status.text);
-      langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description + " | " + user.status.text;
-    }
-    else {
-      langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description;
-    }
-
+    // if (user.status) { 
+    //   parseDescription(user.status.text);
+    //   langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description + " | " + user.status.text;
+    // }
+    // else {
+    //   langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description;
+    // }
 
     var threeceeFollowing = (user.threeceeFollowing !== undefined) && user.threeceeFollowing && (Object.keys(user.threeceeFollowing).length > 0) ? user.threeceeFollowing.screenName : "-";
 
@@ -2341,7 +2344,8 @@ function processUser(cnf, user, callback){
     console.log(chalkInfo("* LA HIT ... SKIP"
       + " [" + statsObj.analyzer.analyzed + " ANLs | " + statsObj.analyzer.skipped + " SKPs | " + statsObj.analyzer.total + " TOT]"
       + " | 3C FLW: " + threeceeFollowing
-      + " | Ks: " + Object.keys(kws)
+      + " | Ks: " + kws
+      + " | KAs: " + kwsAuto
       + " | LA: " + sentiment
       + " | " + user.userId
       + " | " + user.screenName
