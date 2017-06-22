@@ -887,7 +887,9 @@ function socketReconnect(cnf, sckt){
 function initialize(cnf, callback){
 
   initClassifiedUserHashmap(classifiedUsersFolder, classifiedUsersDefaultFile, function(err, classifiedUsersObj){
-    classifiedUserHashmap = classifiedUsersObj;
+    if (!err) {
+      classifiedUserHashmap = classifiedUsersObj;
+    }
   });
 
   if (debug.enabled || debugCache.enabled || debugQ.enabled){
