@@ -1574,7 +1574,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
 
                 console.log(chalkLog("DB UPDATE USER"
                   + " | UID: " + updatedUserObj.userId
-                  + " | NID: " + updatedUserObj.nodeId
+                  // + " | NID: " + updatedUserObj.nodeId
                   + " | SN: " + updatedUserObj.screenName
                   + " | N: " + updatedUserObj.name
                   + " | KWs: " + kws
@@ -2326,13 +2326,14 @@ function processUser(cnf, user, callback){
 
     statsObj.analyzer.skipped += 1;
 
-    debug(chalkInfo("* LA HIT ... SKIP"
+    console.log(chalkInfo("* LA HIT ... SKIP"
       + " [" + statsObj.analyzer.analyzed + " ANLs | " + statsObj.analyzer.skipped + " SKPs | " + statsObj.analyzer.total + " TOT]"
       + " | 3C FLW: " + threeceeFollowing
       + " | Ks: " + Object.keys(kws)
       + " | LA: " + sentiment
       + " | " + user.userId
       + " | " + user.screenName
+      + " | " + user.languageAnalyzed
     ));
 
     callback(null, user);
