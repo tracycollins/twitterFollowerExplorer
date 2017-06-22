@@ -52,11 +52,11 @@ exports.findOneUser = function (user, params, callback) {
 			sessionId: user.sessionId,
 			sessions: user.sessions,
 			lastSession: user.lastSession,
-			languageAnalyzed: user.languageAnalyzed,
 			lastSeen: moment().valueOf()
 		},
 		"$max": {
 			keywords: user.keywords,
+			languageAnalyzed: user.languageAnalyzed,
 			languageAnalysis: user.languageAnalysis
 		}
 	};
