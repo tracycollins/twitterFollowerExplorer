@@ -805,7 +805,7 @@ function initStatsUpdate(cnf, callback){
         console.error(chalkError("SAVE DESCRIPTION HISTOGRAM FILE ERROR | " + descriptionHistogramFile + " | " + err));
       }
       else{
-        console.log(chalkLog("SAVED | " descriptionHistogramFolder + "/" + descriptionHistogramFile));
+        console.log(chalkLog("SAVED | " + descriptionHistogramFolder + "/" + descriptionHistogramFile));
 
         if (quitOnComplete && langAnalyzerIdle && !cnf.testMode && !statsObj.nextCursorValid) {
           console.log(chalkTwitterBold(moment().format(compactDateTimeFormat)
