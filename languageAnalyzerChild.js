@@ -10,20 +10,12 @@ var ONE_MINUTE = ONE_SECOND*60 ;
 var defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
 var compactDateTimeFormat = "YYYYMMDD HHmmss ZZ";
 
-// var GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyAo5FYOZGoZqPNEhGQdf_wofZrC_DHbOyc";
-// var google = require('googleapis');
-
 var analyzeLanguageRunning = false;
 var analyzeLanguageReady = true;
 var analyzeLanguageInterval;
 var statsUpdateInterval;
 
 var languageClient = require('@google-cloud/language')();
-
-// var languageClient = language({
-//   projectId: process.env.GOOGLE_PROJECT,
-//   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
-// });
 
 
 var EventEmitter2 = require("eventemitter2").EventEmitter2;
@@ -581,7 +573,7 @@ function initAnalyzeLanguageInterval(interval){
 
           console.log(chalkInfoBold("\nLANG RESULTS\n[RXLQ: " + rxLangObjQueue.length + "]"
             // + " | MAG: " + 10*results.sentiment.magnitude.toFixed(1)
-            + " | MAG: " + 10*results.sentiment.magnitude
+            + " | MAG: " + 10*results.sentiment.magnitude.toFixed(2)
             + " | SCORE: " + 10*results.sentiment.score.toFixed(1)
             + " | C: " + results.sentiment.comp.toFixed(2)
             + "\nTEXT: " + results.text + "\n"

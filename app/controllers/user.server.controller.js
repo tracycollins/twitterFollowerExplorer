@@ -52,6 +52,7 @@ exports.findOneUser = function (user, params, callback) {
 			sessionId: user.sessionId,
 			sessions: user.sessions,
 			lastSession: user.lastSession,
+			languageAnalyzed: user.languageAnalyzed,
 			lastSeen: moment().valueOf()
 		},
 		"$max": {
@@ -95,6 +96,7 @@ exports.findOneUser = function (user, params, callback) {
 					+ " | Ts: " + us.statusesCount 
 					+ " | FLRs: " + us.followersCount 
 					+ " | Ms: " + us.mentions 
+					+ " | LAd: " + us.languageAnalyzed 
 					+ " | LS: " + moment(new Date(us.lastSeen)).format(compactDateTimeFormat) 
 				);
 				var mentionsString = us.mentions.toString() ;

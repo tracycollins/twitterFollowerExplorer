@@ -46,6 +46,7 @@ var UserSchema = new Schema({
 	keywords: { type: Object, default: {} },
 	keywordsAuto: { type: Object, default: {} },
 
+	languageAnalyzed: { type: Boolean, default: false },
 	languageAnalysis: { type: Object, default: {} }
 });
 
