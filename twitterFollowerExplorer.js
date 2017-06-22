@@ -523,12 +523,6 @@ function showStats(options){
         + " | ACL Us: " + Object.keys(autoClassifiedUserHashmap).length
         + " | CL Us: " + Object.keys(classifiedUserHashmap).length
         + " || " + statsObj.analyzer.analyzed + " ANLs | " + statsObj.analyzer.skipped + " SKPs | " + statsObj.analyzer.total + " TOT"
-        // + " | " + statsObj.user.name
-        // + " | " + statsObj.user.screen_name
-        // + " | TWEETS: " + statsObj.user.statuses_count
-        // + " | FOLLOWING: " + statsObj.user.friends_count
-        // + " | FOLLOWERS: " + statsObj.user.followers_count
-        // + " | TWEETS: " + statsObj.user.statuses_count
       ));
     }
     else {
@@ -580,7 +574,7 @@ function saveFile (path, file, jsonObj, callback){
   dropboxClient.filesUpload(options)
     .then(function(response){
       debug(chalkLog("... SAVED DROPBOX JSON | " + options.path));
-      if (callback !== undefined) { callback(null, response); }
+      if (callback !== undefined) { callback(null); }
     })
     .catch(function(error){
 
@@ -590,7 +584,7 @@ function saveFile (path, file, jsonObj, callback){
         + " | ERROR: " + errorText
         // + " ERROR\n" + jsonPrint(error.error)
       ));
-      if (callback !== undefined) { callback(error, null); }
+      if (callback !== undefined) { callback(error); }
     });
 }
 
@@ -748,6 +742,8 @@ function initStatsUpdate(cnf, callback){
 
   console.log(chalkAlert("INIT STATS UPDATE INTERVAL | " + cnf.statsUpdateIntervalTime + " MS"));
 
+  clearInterval(statsUpdateInterval);
+
   statsUpdateInterval = setInterval(function () {
 
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
@@ -758,13 +754,13 @@ function initStatsUpdate(cnf, callback){
 
     saveFile(classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap, function(err){
       if (err){
-        console.error(chalkError("SAVE CLASSIFED FILE ERROR"
-          + " | " + classifiedUsersFile
+        console.error(chalkError("SAVE DEFAULT CLASSIFED FILE ERROR"
+          + " | " + classifiedUsersDefaultFile
           + " | " + err.error_summary
         ));
       }
       else{
-        console.log(chalkLog("SAVED | " + classifiedUsersFolder + "/" + classifiedUsersFile));
+        console.log(chalkLog("SAVED | " + classifiedUsersFolder + "/" + classifiedUsersDefaultFile));
       }
     });
 
@@ -809,7 +805,7 @@ function initStatsUpdate(cnf, callback){
         console.error(chalkError("SAVE DESCRIPTION HISTOGRAM FILE ERROR | " + descriptionHistogramFile + " | " + err));
       }
       else{
-        console.log(chalkLog("SAVED | " + descriptionHistogramFile));
+        console.log(chalkLog("SAVED | " descriptionHistogramFolder + "/" + descriptionHistogramFile));
 
         if (quitOnComplete && langAnalyzerIdle && !cnf.testMode && !statsObj.nextCursorValid) {
           console.log(chalkTwitterBold(moment().format(compactDateTimeFormat)
@@ -828,6 +824,7 @@ function initStatsUpdate(cnf, callback){
         }
       }
     });
+
   }, cnf.statsUpdateIntervalTime);
 
   loadFile(statsFolder, statsFile, function(err, loadedStatsObj){
@@ -1110,16 +1107,6 @@ function initialize(cnf, callback){
               abortCursor = true;
               console.log(chalkAlert("ABORT: " + abortCursor));
             break;
-            // case "c":
-            //   configuration.cursorUserPause = !configuration.cursorUserPause;
-            //   if (configuration.cursorUserPause) {
-            //     cursorUser.pause();
-            //   }
-            //   else {
-            //     cursorUser.resume();
-            //   }
-            //   console.log(chalkRedBold("CURSOR USER PAUSE: " + configuration.cursorUserPause));
-            // break;
             case "q":
               quit();
             break;
