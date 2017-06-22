@@ -756,6 +756,18 @@ function initStatsUpdate(cnf, callback){
     saveFile(statsFolder, statsFile, statsObj);
     showStats();
 
+    saveFile(classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap, function(err){
+      if (err){
+        console.error(chalkError("SAVE CLASSIFED FILE ERROR"
+          + " | " + classifiedUsersFile
+          + " | " + err.error_summary
+        ));
+      }
+      else{
+        console.log(chalkLog("SAVED | " + classifiedUsersFolder + "/" + classifiedUsersFile));
+      }
+    });
+
     saveFile(classifiedUsersFolder, classifiedUsersFile, classifiedUserHashmap, function(err){
       if (err){
         console.error(chalkError("SAVE CLASSIFED FILE ERROR"
