@@ -556,12 +556,23 @@ function initAnalyzeLanguageInterval(interval){
             // + "\n" + jsonPrint(langObj)
             // + "\n" + jsonPrint(err)
           ));
-          process.send({op: "LANG_RESULTS", obj: langObj.obj, error: err});
-          analyzeLanguageReady = true;
 
-          if (rxLangObjQueue.length === 0){
-            process.send({op: "IDLE", queue: rxLangObjQueue.length});
-          }
+          let messageObj = {};
+          messageObj.op = "LANG_RESULTS";
+          messageObj.obj = {};
+          messageObj.obj = langObj.obj;
+          messageObj.error = {};
+          messageObj.error = err;
+          messageObj.results = {};
+          messageObj.results = results;
+
+          process.send(messageObj, function(){
+            debug(chalkInfo("SENT LANG_RESULTS"));
+            analyzeLanguageReady = true;
+            if (rxLangObjQueue.length === 0){
+              process.send({op: "IDLE", queue: rxLangObjQueue.length});
+            }
+          });
 
         }
         else {
@@ -580,7 +591,7 @@ function initAnalyzeLanguageInterval(interval){
             // + "\n" + jsonPrint(langObj.obj)
           ));
 
-          var messageObj = {};
+          let messageObj = {};
           messageObj.op = "LANG_RESULTS";
           messageObj.obj = {};
           messageObj.obj = langObj.obj;

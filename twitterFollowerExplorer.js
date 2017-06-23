@@ -1522,7 +1522,39 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
             // console.error(chalkError("*** LANG ERROR"
             //   + "\n" + jsonPrint(m.error)
             // ));
-            langAnalyzerMessageRxQueueReady = true;
+
+            m.obj.languageAnalysis = m.results;
+            m.obj.languageAnalyzed = true;
+
+            userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
+              if (err) { 
+                console.log(chalkError("ERROR DB UPDATE USER"
+                  + "\n" + err
+                  + "\n" + jsonPrint(m.obj)
+                ));
+              }
+              else {
+                var laEnts = 0;
+                if (updatedUserObj.languageAnalysis.entities !== undefined) {
+                  laEnts = Object.keys(updatedUserObj.languageAnalysis.entities);
+                }
+                var kws = updatedUserObj.keywords && (updatedUserObj.keywords !== undefined) ? Object.keys(updatedUserObj.keywords) : [];
+                var kwsAuto = updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined) ? Object.keys(updatedUserObj.keywordsAuto) : [];
+
+                console.log(chalkLog("DB UPDATE USER"
+                  + " | UID: " + updatedUserObj.userId
+                  // + " | NID: " + updatedUserObj.nodeId
+                  + " | SN: " + updatedUserObj.screenName
+                  + " | N: " + updatedUserObj.name
+                  + " | KWs: " + kws
+                  + " | KWAuto: " + kwsAuto
+                  + " | LAd: " + updatedUserObj.languageAnalyzed
+                  + "\nLA Es: " + laEnts
+                ));
+              }
+              langAnalyzerMessageRxQueueReady = true;
+            }); 
+
             break;
           }
 
@@ -1584,6 +1616,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
               }
               langAnalyzerMessageRxQueueReady = true;
             }); 
+
           });
 
         break;
