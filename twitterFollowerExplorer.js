@@ -45,7 +45,7 @@ var configuration = {};
 
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
-configuration.forceLanguageAnalysis = true;
+configuration.forceLanguageAnalysis = false;
 configuration.enableLanguageAnalysis = true;
 
 
@@ -851,7 +851,7 @@ function initStatsUpdate(cnf, callback){
         if (currentHistogram[k] >= 100) { console.log("H | " + currentHistogram[k] + " | " + k); }
       });
 
-      const currentHistogramFolder = dropboxConfigHostFolder + "/" + histogramName + "Histogram";
+      const currentHistogramFolder = dropboxConfigHostFolder + "/histograms/" + histogramName + "Histogram";
       const currentHistogramFile = histogramName + "Histogram_" + statsObj.runId + ".json";
 
       saveFile(currentHistogramFolder, currentHistogramFile, currentHistogram);
@@ -2438,11 +2438,12 @@ function processUser(cnf, user, callback){
 
     if (user.status && user.status.entities) {
       if (user.status.entities.hashtags.length > 0) {
-        user.status.entities.hashtags.forEach(function(ht){
+        user.status.entities.hashtags.forEach(function(h){
+          const ht = "#" + h.text.toLowerCase();
           console.log(chalkAlert("USER STATUS ENTITIES HASHTAG"
-            + " | " + ht.text.toLowerCase()
+            + " | " + ht
           ));
-          histograms.hashtag[ht.text.toLowerCase()] = (histograms.hashtag[ht.text.toLowerCase()] === undefined) ? 1 : histograms.hashtag[ht.text.toLowerCase()]+1;
+          histograms.hashtag[ht] = (histograms.hashtag[ht] === undefined) ? 1 : histograms.hashtag[ht]+1;
         });
       }
       if (user.status.entities.urls.length > 0) {
