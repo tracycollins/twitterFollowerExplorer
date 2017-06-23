@@ -52,8 +52,9 @@ var timerIntervalometer = intervalometer.timerIntervalometer;
 var waitLanguageAnalysisReadyInterval;
 
 var network;
-var neataptic = require("./js/neataptic/neataptic.js");
-
+// var neataptic = require("./js/neataptic/neataptic.js");
+var neataptic = require("neataptic");
+// 
 var cp = require("child_process");
 var langAnalyzer;
 
@@ -82,24 +83,15 @@ var chalkTwitter = chalk.blue;
 var chalkTwitterBold = chalk.bold.blue;
 var chalkRed = chalk.red;
 var chalkRedBold = chalk.bold.red;
-// var chalkGreen = chalk.green;
 var chalkError = chalk.bold.red;
 var chalkAlert = chalk.red;
 var chalkWarn = chalk.red;
 var chalkLog = chalk.black;
 var chalkInfo = chalk.gray;
-// var chalkTestInfo = chalk.bold.red;
 var chalkConnect = chalk.bold.green;
-// var chalkConnectPrimary = chalk.bold.green;
 var chalkDisconnect = chalk.yellow;
-// var chalkPrompt = chalk.green;
-// var chalkResponse = chalk.green;
-// var chalkRssBold = chalk.bold.blue;
 var chalkRss = chalk.blue;
-// var chalkDbBold = chalk.bold.black;
-// var chalkDb = chalk.gray;
 
-// var request = require("request");
 var fs = require("fs");
 var yaml = require("yamljs");
 
@@ -110,16 +102,7 @@ var events = require("events");
 var EventEmitter = require("events").EventEmitter;
 var EventEmitter2 = require("eventemitter2").EventEmitter2;
 
-var debug = require("debug")("rssFeedCrawler");
-var debugVerbose = require("debug")("rssFeedCrawler:verbose");
-
-var debugRss = require("debug")("mw");
-var debugRssVerbose = require("debug")("mwVerbose");
-var debugCache = require("debug")("cache");
-var debugQ = require("debug")("queue");
-var debugDb = require("debug")("db");
-
-var error = debug("app:error");
+var debug = require("debug")("tfe");
 
 var express = require("./config/express");
 var mongoose = require("./config/mongoose");
@@ -901,7 +884,7 @@ function initialize(cnf, callback){
     }
   });
 
-  if (debug.enabled || debugCache.enabled || debugQ.enabled){
+  if (debug.enabled){
     console.log("\n%%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
   }
 
@@ -1790,8 +1773,8 @@ function fetchTwitterFriends(cnf, callback){
           userObj.isTwitterUser = true;
 
           userObj.threeceeFollowing = {};
-          userObj.userId: statsObj.user[currentTwitterUser].id_str;
-          userObj.screenName: statsObj.user[currentTwitterUser].screen_name;
+          userObj.threeceeFollowing.userId = statsObj.user[currentTwitterUser].id_str;
+          userObj.threeceeFollowing.screenName = statsObj.user[currentTwitterUser].screen_name;
 
           userObj.nodeId = friend.id_str;
           userObj.userId = friend.id_str;
