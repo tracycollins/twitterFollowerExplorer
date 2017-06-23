@@ -1376,7 +1376,7 @@ function checkRateLimit(callback){
         // + "\n" + jsonPrint(data)
       ));
 
-      var remainingTime = 1000*data.resources.application["/application/rate_limit_status"].reset - Date.now();
+      // var remainingTime = 1000*data.resources.application["/application/rate_limit_status"].reset - Date.now();
       // debug(chalkInfo(getTimeStamp() 
       //   + " | TWITTER ACCOUNT RATE: LIMIT: " + data.resources.application["/application/rate_limit_status"].limit
       //   + " | REMAINING: " + data.resources.application["/application/rate_limit_status"].remaining
@@ -1506,7 +1506,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
             //   + "\n" + jsonPrint(m.error)
             // ));
 
-            m.obj.languageAnalysis = m.results;
+            m.obj.languageAnalysis = {err: m.error};
             m.obj.languageAnalyzed = true;
 
             userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
@@ -2127,7 +2127,7 @@ function generateAutoKeywords(user, callback){
   var magnitudeText;
   var scoreText;
 
-  if (user.languageAnalysis.sentiment){
+  if (user.languageAnalysis.sentiment && user.languageAnalysis.sentiment.magnitude && user.languageAnalysis.sentiment.score){
     magnitudeText = user.languageAnalysis.sentiment.magnitude.toFixed(3);
     scoreText = user.languageAnalysis.sentiment.score.toFixed(3);
   }
@@ -2470,7 +2470,7 @@ function initLangAnalyzer(callback){
   langAnalyzer = cp.fork(`languageAnalyzerChild.js`);
 
   langAnalyzer.on("message", function(m){
-    console.log(chalkLog("langAnalyzer RX"
+    debug(chalkLog("langAnalyzer RX"
       + " [" + langAnalyzerMessageRxQueue.length + "]"
       + " | " + m.op
       // + " | " + m.obj.userId
