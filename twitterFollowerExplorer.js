@@ -20,6 +20,9 @@ var os = require("os");
 var util = require("util");
 var moment = require("moment");
 
+var compactDateTimeFormat = "YYYYMMDD_HHmmss";
+
+
 var hostname = os.hostname();
 hostname = hostname.replace(/.local/g, "");
 hostname = hostname.replace(/.home/g, "");
@@ -27,12 +30,22 @@ hostname = hostname.replace(/.at.net/g, "");
 hostname = hostname.replace(/.fios-router.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 
+var statsObj = {};
+statsObj.hostname = hostname;
+statsObj.startTimeMoment = moment();
+statsObj.pid = process.pid;
+
+const TFE_RUN_ID = hostname + "_" + process.pid + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat);
+
+statsObj.runId = TFE_RUN_ID;
+
+statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
 
 var configuration = {};
 
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
-configuration.forceLanguageAnalysis = false;
+configuration.forceLanguageAnalysis = true;
 configuration.enableLanguageAnalysis = true;
 
 
@@ -45,7 +58,6 @@ var abortCursor = false;
 // var MAX_Q = 500;
 
 // var defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
-var compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 var intervalometer = require("intervalometer");
 var timerIntervalometer = intervalometer.timerIntervalometer;
@@ -60,11 +72,18 @@ var langAnalyzer;
 
 var keywordExtractor = require("keyword-extractor");
 
-var descriptionHistogram = {};
-
+let histograms = {};
+histograms.word = {};
+histograms.url = {};
+histograms.hashtag = {};
+histograms.mention = {};
 
 var mentionsRegex = require("mentions-regex");
 var hashtagRegex = require("hashtag-regex");
+var getUrls = require("get-urls");
+
+var Regex = require("regex");
+var ignoreWordRegex = new Regex(/(#|=|&amp|http)/igm);
 
 var Twit = require("twit");
 var twit;
@@ -150,7 +169,7 @@ var entityServer = require("./app/controllers/entity.server.controller");
 var userServer = require("./app/controllers/user.server.controller");
 var wordServer = require("./app/controllers/word.server.controller");
 
-var neuralNetworkFile = "neuralNetwork_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+var neuralNetworkFile = "neuralNetwork_" + statsObj.runId + ".json";
 
 var defaultNeuralNetworkFile = "neuralNetwork.json";
 
@@ -206,8 +225,8 @@ var jsonPrint = function (obj){
 };
 
 
-var USER_ID = "TFE_" + hostname + "_" + process.pid;
-var SCREEN_NAME = "TFE_" + hostname + "_" + process.pid;
+var USER_ID = "TFE_" + TFE_RUN_ID;
+var SCREEN_NAME = "TFE_" + TFE_RUN_ID;
 
 var serverUserObj = { 
   name: USER_ID, 
@@ -219,7 +238,7 @@ var serverUserObj = {
   tags: {}
 } ;
 
-serverUserObj.tags.entity = "muxstream_" + hostname + "_" + process.pid;
+serverUserObj.tags.entity = "muxstream_" + TFE_RUN_ID;
 serverUserObj.tags.mode = "muxed";
 serverUserObj.tags.channel = "twitter";
 
@@ -230,10 +249,10 @@ var enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue
 var quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
 var userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean, defaultValue: false};
 var testMode = { name: "testMode", alias: "T", type: Boolean, defaultValue: false};
-var loadNeuralNetworkFilePID = { name: "loadNeuralNetworkFilePID", alias: "N", type: Number };
+var loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
 var targetServer = { name: "targetServer", alias: "t", type: String};
 
-var optionDefinitions = [enableStdin, quitOnError, loadNeuralNetworkFilePID, userDbCrawl, testMode, targetServer];
+var optionDefinitions = [enableStdin, quitOnError, loadNeuralNetworkID, userDbCrawl, testMode, targetServer];
 
 var commandLineConfig = cla(optionDefinitions);
 
@@ -251,6 +270,7 @@ if (commandLineConfig.targetServer == "REMOTE"){
 console.log("\n\n=================================");
 console.log("HOST:          " + hostname);
 console.log("PROCESS ID:    " + process.pid);
+console.log("RUN ID:        " + statsObj.runId);
 console.log("PROCESS ARGS" + util.inspect(process.argv, {showHidden: false, depth: 1}));
 console.log("=================================");
 
@@ -342,13 +362,6 @@ configEvents.on("newListener", function(data){
 var initTwitterUsersComplete = false;
 
 // stats
-var statsObj = {};
-statsObj.hostname = hostname;
-statsObj.pid = process.pid;
-statsObj.startTime = moment().valueOf();
-
-statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
-
 statsObj.classification = {};
 statsObj.classification.auto = {};
 statsObj.classification.manual = {};
@@ -478,6 +491,35 @@ function msToTime(duration) {
   return days + ":" + hours + ":" + minutes + ":" + seconds;
 }
 
+const sortedObjectValues = function(params) {
+
+  return new Promise(function(resolve, reject) {
+
+    const keys = Object.keys(params.obj);
+
+    const sortedKeys = keys.sort(function(a,b){
+      const objA = params.obj[a];
+      const objB = params.obj[b];
+      if (params.sortKey) { return objB[params.sortKey] - objA[params.sortKey]; }
+      return objB - objA;
+    });
+
+    if (keys.length !== undefined) {
+      if (params.max) { 
+        resolve({sortKey: params.sortKey, sortedKeys: sortedKeys.slice(0,params.max)});
+      }
+      else { 
+        resolve({sortKey: params.sortKey, sortedKeys: sortedKeys});
+      }
+    }
+    else {
+      reject(new Error("ERROR"));
+    }
+
+  });
+};
+
+
 function showStats(options){
   if (langAnalyzer !== undefined) {
     langAnalyzer.send({op: "STATS", options: options});
@@ -485,24 +527,36 @@ function showStats(options){
   if (options) {
     console.log("STATS\n" + jsonPrint(statsObj));
 
-    var keys = Object.keys(descriptionHistogram);
+    async.each(Object.keys(histograms), function(histogramName, cb) {
 
-    var sortedKeys = keys.sort(function(a,b){
-      var valA = descriptionHistogram[a];
-      var valB = descriptionHistogram[b];
-      return valB - valA;
+      const currentHistogram = histograms[histogramName];
+
+      const keys = Object.keys(currentHistogram);
+
+      const sortedKeys = keys.sort(function(a,b){
+        var valA = currentHistogram[a];
+        var valB = currentHistogram[b];
+        return valB - valA;
+      });
+
+      console.log("\nHIST " + histogramName.toUpperCase() + " | " + keys.length + " ----------");
+      sortedKeys.forEach(function(k, i){
+        if ((keys.length < 20) || (currentHistogram[k] >= 10) || (i<20)) { console.log(currentHistogram[k] + " | " + k); }
+      });
+
+      cb();
+
+    }, function() {
     });
 
-    console.log("HIST");
-    sortedKeys.forEach(function(k){
-      if (descriptionHistogram[k] >= 100) { console.log(descriptionHistogram[k] + " | " + k); }
-    });
+
+
   }
   else {
     if (statsObj.user !== undefined) {
       console.log(chalkLog("- FE S"
         + " | E: " + statsObj.elapsed
-        + " | S: " + moment(parseInt(statsObj.startTime)).format(compactDateTimeFormat)
+        + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
         + " | ACL Us: " + Object.keys(autoClassifiedUserHashmap).length
         + " | CL Us: " + Object.keys(classifiedUserHashmap).length
         + " || " + statsObj.analyzer.analyzed + " ANLs | " + statsObj.analyzer.skipped + " SKPs | " + statsObj.analyzer.total + " TOT"
@@ -510,7 +564,7 @@ function showStats(options){
     }
     else {
       console.log(chalkLog("- FE S"
-        + " | START: " + moment(statsObj.startTime).format(compactDateTimeFormat)
+        + " | START: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
         + " | ELAPSED: " + statsObj.elapsed
       ));
     }
@@ -666,8 +720,17 @@ var classifiedUsersFile = "classifiedUsers_" + hostname + "_" + process.pid + "_
 var autoClassifiedUsersDefaultFile = "autoClassifiedUsers_" + hostname + ".json";
 var autoClassifiedUsersFile = "autoClassifiedUsers_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
 
-var descriptionHistogramFolder = dropboxConfigHostFolder + "/descriptionHistogram";
-var descriptionHistogramFile = "descriptionHistogram_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+var wordHistogramFolder = dropboxConfigHostFolder + "/wordHistogram";
+var wordHistogramFile = "wordHistogram_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+
+var mentionHistogramFolder = dropboxConfigHostFolder + "/mentionHistogram";
+var mentionHistogramFile = "mentionHistogram_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+
+var hashtagHistogramFolder = dropboxConfigHostFolder + "/hashtagHistogram";
+var hashtagHistogramFile = "hashtagHistogram_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+
+var urlHistogramFolder = dropboxConfigHostFolder + "/urlHistogram";
+var urlHistogramFile = "urlHistogram_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
 
 function initDescriptionArrays(callback){
 
@@ -729,7 +792,7 @@ function initStatsUpdate(cnf, callback){
 
   statsUpdateInterval = setInterval(function () {
 
-    statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
+    statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
     saveFile(statsFolder, statsFile, statsObj);
@@ -771,42 +834,49 @@ function initStatsUpdate(cnf, callback){
       }
     });
 
-    var keys = Object.keys(descriptionHistogram);
 
-    var sortedKeys = keys.sort(function(a,b){
-      var valA = descriptionHistogram[a];
-      var valB = descriptionHistogram[b];
-      return valB - valA;
+    Object.keys(histograms).forEach(function(histogramName){
+
+      const currentHistogram = histograms[histogramName];
+
+      let keys = Object.keys(currentHistogram);
+
+      var sortedKeys = keys.sort(function(a,b){
+        var valA = currentHistogram[a];
+        var valB = currentHistogram[b];
+        return valB - valA;
+      });
+
+      sortedKeys.forEach(function(k){
+        if (currentHistogram[k] >= 100) { console.log("H | " + currentHistogram[k] + " | " + k); }
+      });
+
+      const currentHistogramFolder = dropboxConfigHostFolder + "/" + histogramName + "Histogram";
+      const currentHistogramFile = histogramName + "Histogram_" + statsObj.runId + ".json";
+
+      saveFile(currentHistogramFolder, currentHistogramFile, currentHistogram);
+
     });
 
-    sortedKeys.forEach(function(k){
-      if (descriptionHistogram[k] >= 100) { console.log("H | " + descriptionHistogram[k] + " | " + k); }
-    });
 
-    saveFile(descriptionHistogramFolder, descriptionHistogramFile, sortedKeys, function(err){
-      if (err){
-        console.error(chalkError("SAVE DESCRIPTION HISTOGRAM FILE ERROR | " + descriptionHistogramFile + " | " + err));
-      }
-      else{
-        console.log(chalkLog("SAVED | " + descriptionHistogramFolder + "/" + descriptionHistogramFile));
+    if (quitOnComplete && langAnalyzerIdle && !cnf.testMode && !statsObj.nextCursorValid) {
+      console.log(chalkTwitterBold(moment().format(compactDateTimeFormat)
+        + " | QUITTING ON COMPLETE"
+      ));
 
-        if (quitOnComplete && langAnalyzerIdle && !cnf.testMode && !statsObj.nextCursorValid) {
-          console.log(chalkTwitterBold(moment().format(compactDateTimeFormat)
-            + " | QUITTING ON COMPLETE"
-          ));
+      fetchTwitterFriendsIntervalRunning = false;
+      fetchTwitterFriendsIntervalometer.stop();
 
-          saveFile(classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap, function(err){
+      clearInterval(waitLanguageAnalysisReadyInterval);
+      clearInterval(statsUpdateInterval);
 
-            fetchTwitterFriendsIntervalRunning = false;
-            clearInterval(waitLanguageAnalysisReadyInterval);
-            fetchTwitterFriendsIntervalometer.stop();
+      saveFile(classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap, function(err){
+        setTimeout(function(){
+          quit("QUIT ON COMPLETE");
+        }, 2000);
+      });
 
-            quit("QUIT ON COMPLETE");
-          });
-
-        }
-      }
-    });
+    }
 
   }, cnf.statsUpdateIntervalTime);
 
@@ -923,7 +993,7 @@ function initialize(cnf, callback){
 
       if (loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID  !== undefined){
         console.log("LOADED TFE_NEURAL_NETWORK_FILE_PID: " + loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID);
-        cnf.loadNeuralNetworkFilePID = loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID;
+        cnf.loadNeuralNetworkID = loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID;
       }
 
       if (typeof loadedConfigObj.TFE_USER_DB_CRAWL !== "undefined"){
@@ -1979,31 +2049,70 @@ var wordExtractionOptions = {
   remove_duplicates: true
 };
 
-function parseDescription(description){
+function parseText(text){
+
   var mRegEx = mentionsRegex();
   var hRegEx = hashtagRegex();
-  var mentionArray = mRegEx.exec(description);
-  var hashtagArray = hRegEx.exec(description);
-  var wordArray = keywordExtractor.extract(description, wordExtractionOptions);
+
+  var mentionArray = mRegEx.exec(text);
+  var hashtagArray = hRegEx.exec(text);
+
+  let urlArray = Array.from(getUrls(text));
+
+  // console.log(chalkAlert("urlArray: " + jsonPrint(urlArray)));
+
+  var wordArray = keywordExtractor.extract(text, wordExtractionOptions);
  
   if (wordArray) {
-    wordArray.forEach(function(word){
-      word = word.toLowerCase();
-      descriptionHistogram[word] = (descriptionHistogram[word] === undefined) ? 1 : descriptionHistogram[word]+1;
-      debug(chalkAlert("->- DESC Ws"
-        + " | " + descriptionHistogram[word]
-        + " | " + word
-      ));
+    const histogram = histograms.word;
+    wordArray.forEach(function(w){
+      const word = w.toLowerCase();
+      const m = mRegEx.exec(word);
+      const h = hRegEx.exec(word);
+      const rgx = ignoreWordRegex.test(word);
+      const u = (Array.from(getUrls(text)).length > 0) ? Array.from(getUrls(text)) : null;
+      if (m || h || u || rgx 
+        || (word === "/") 
+        || word.includes("--") 
+        || word.includes("|") 
+        || word.includes("#") 
+        || word.includes("w/") 
+        || word.includes("≠") 
+        || word.includes("http") 
+        || word.includes("+")) {
+        if (rgx) { console.log(chalkAlert("-- REGEX SKIP WORD"
+          + " | M: " + m
+          + " | H: " + h
+          + " | U: " + u
+          + " | RGX: " + rgx
+          + " | " + word
+        )) };
+        debug(chalkAlert("-- SKIP WORD"
+          + " | M: " + m
+          + " | H: " + h
+          + " | U: " + u
+          + " | RGX: " + rgx
+          + " | " + word
+        ));
+      }
+      else {
+        histogram[word] = (histogram[word] === undefined) ? 1 : histogram[word]+1;
+        debug(chalkAlert("->- DESC Ws"
+          + " | " + histogram[word]
+          + " | " + word
+        ));
+      }
     });
   }
 
   if (mentionArray) {
+    const histogram = histograms.mention;
     mentionArray.forEach(function(userId){
       if (!userId.match("@")) {
         userId = "@" + userId.toLowerCase();
-        descriptionHistogram[userId] = (descriptionHistogram[userId] === undefined) ? 1 : descriptionHistogram[userId]+1;
+        histogram[userId] = (histogram[userId] === undefined) ? 1 : histogram[userId]+1;
         debug(chalkAlert("->- DESC Ms"
-          + " | " + descriptionHistogram[userId]
+          + " | " + histogram[userId]
           + " | " + userId
         ));
       }
@@ -2011,13 +2120,28 @@ function parseDescription(description){
   }
 
   if (hashtagArray) {
+    const histogram = histograms.hashtag;
     hashtagArray.forEach(function(hashtag){
       // if (!userId.match("@")) {
         hashtag = hashtag.toLowerCase();
-        descriptionHistogram[hashtag] = (descriptionHistogram[hashtag] === undefined) ? 1 : descriptionHistogram[hashtag]+1;
+        histogram[hashtag] = (histogram[hashtag] === undefined) ? 1 : histogram[hashtag]+1;
         debug(chalkAlert("->- DESC Hs"
-          + " | " + descriptionHistogram[hashtag]
+          + " | " + histogram[hashtag]
           + " | " + hashtag
+        ));
+      // }
+    });
+  }
+
+  if (urlArray) {
+    const histogram = histograms.url;
+    urlArray.forEach(function(url){
+      // if (!userId.match("@")) {
+        url = url.toLowerCase();
+        histogram[url] = (histogram[url] === undefined) ? 1 : histogram[url]+1;
+        debug(chalkAlert("->- DESC Us"
+          + " | " + histogram[url]
+          + " | " + url
         ));
       // }
     });
@@ -2047,7 +2171,7 @@ function generateAutoKeywords(user, callback){
       text = user.description;
     }
 
-    parseDescription(text, function(err, histogram){
+    parseText(text, function(err, histogram){
 
       debug("user.description + status\n" + jsonPrint(text));
 
@@ -2276,10 +2400,10 @@ function processUser(cnf, user, callback){
   if ((!user.languageAnalyzed && cnf.enableLanguageAnalysis) 
     || cnf.forceLanguageAnalysis) {
 
-    parseDescription(user.description);
+    parseText(user.description);
 
     if (user.status) { 
-      parseDescription(user.status.text);
+      parseText(user.status.text);
       langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description + " | " + user.status.text;
     }
     else {
@@ -2291,15 +2415,48 @@ function processUser(cnf, user, callback){
     // REMOVE URLS FROM DESCRIPTION. MONGO DB HATES URLs as object keys on writes
     if (user.entities && user.entities.description && (user.entities.description.urls.length > 0)) {
       debug(chalkAlert("USER ENTITIES DESC URLS: " + jsonPrint(user.entities.description.urls)));
+
       user.entities.description.urls.forEach(function(urlObj){
-        console.log(chalkAlert("langAnalyzerText: " + langAnalyzerText
+        console.log(chalkAlert("USER ENTITIES DESC URL"
           + " | " + urlObj.url
         ));
         var regex = new RegExp(urlObj.url);
+        histograms.url[urlObj.url] = (histograms.url[urlObj.url] === undefined) ? 1 : histograms.url[urlObj.url]+1;
         langAnalyzerText = langAnalyzerText.replace(regex, "");
       });
     }
     
+    if (user.entities && user.entities.url && (user.entities.url.urls.length > 0)) {
+      debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.entities.url.urls)));
+      user.entities.url.urls.forEach(function(urlObj){
+        console.log(chalkAlert("USER ENTITIES URL"
+          + " | " + urlObj.url
+        ));
+        histograms.url[urlObj.url] = (histograms.url[urlObj.url] === undefined) ? 1 : histograms.url[urlObj.url]+1;
+      });
+    }
+
+    if (user.status && user.status.entities) {
+      if (user.status.entities.hashtags.length > 0) {
+        user.status.entities.hashtags.forEach(function(ht){
+          console.log(chalkAlert("USER STATUS ENTITIES HASHTAG"
+            + " | " + ht.text.toLowerCase()
+          ));
+          histograms.hashtag[ht.text.toLowerCase()] = (histograms.hashtag[ht.text.toLowerCase()] === undefined) ? 1 : histograms.hashtag[ht.text.toLowerCase()]+1;
+        });
+      }
+      if (user.status.entities.urls.length > 0) {
+        debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.status.entities.urls)));
+        user.status.entities.urls.forEach(function(urlObj){
+          console.log(chalkAlert("USER ENTITIES URL"
+            + " | " + urlObj.url
+          ));
+          histograms.url[urlObj.url] = (histograms.url[urlObj.url] === undefined) ? 1 : histograms.url[urlObj.url]+1;
+        });
+      }
+    }
+
+
     debug(chalkAlert("FINAL langAnalyzerText: " + langAnalyzerText));
 
     langAnalyzer.send({op: "LANG_ANALIZE", obj: user, text: langAnalyzerText}, function(){
@@ -2328,7 +2485,7 @@ function processUser(cnf, user, callback){
     var kws = user.keywords && (user.keywords !== undefined) ? Object.keys(user.keywords) : [];
     var kwsAuto = user.keywordsAuto && (user.keywordsAuto !== undefined) ? Object.keys(user.keywordsAuto) : [];
 
-    parseDescription(user.description);
+    parseText(user.description);
 
     var threeceeFollowing = ((user.threeceeFollowing !== undefined) && user.threeceeFollowing && (Object.keys(user.threeceeFollowing).length > 0)) ? user.threeceeFollowing.screenName : "-";
 
@@ -2563,8 +2720,8 @@ initialize(configuration, function(err, cnf){
     + "\n" + jsonPrint(cnf)
   ));
 
-  if (cnf.loadNeuralNetworkFilePID) {
-    cnf.neuralNetworkFile = "neuralNetwork_" + hostname + "_" + cnf.loadNeuralNetworkFilePID + ".json";
+  if (cnf.loadNeuralNetworkID) {
+    cnf.neuralNetworkFile = "neuralNetwork_" + cnf.loadNeuralNetworkID + ".json";
   }
   else {
     cnf.neuralNetworkFile = defaultNeuralNetworkFile;
