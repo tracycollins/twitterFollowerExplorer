@@ -1755,10 +1755,11 @@ function fetchTwitterFriends(cnf, callback){
           var userObj = new User();
 
           userObj.isTwitterUser = true;
-          userObj.threeceeFollowing = { 
-            userId: statsObj.user[currentTwitterUser].id_str, 
-            screenName: statsObj.user[currentTwitterUser].screen_name
-          };
+
+          userObj.threeceeFollowing = {};
+          userObj.userId: statsObj.user[currentTwitterUser].id_str;
+          userObj.screenName: statsObj.user[currentTwitterUser].screen_name;
+
           userObj.nodeId = friend.id_str;
           userObj.userId = friend.id_str;
           userObj.screenName = friend.screen_name.toLowerCase();
@@ -2308,23 +2309,12 @@ function processUser(cnf, user, callback){
       sentiment = Object.keys(user.languageAnalysis);
     }
 
-    // var kws = user.keywords || {};
-    // var kwsAuto = user.keywordsAuto || {};
-
     var kws = user.keywords && (user.keywords !== undefined) ? Object.keys(user.keywords) : [];
     var kwsAuto = user.keywordsAuto && (user.keywordsAuto !== undefined) ? Object.keys(user.keywordsAuto) : [];
 
     parseDescription(user.description);
 
-    // if (user.status) { 
-    //   parseDescription(user.status.text);
-    //   langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description + " | " + user.status.text;
-    // }
-    // else {
-    //   langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description;
-    // }
-
-    var threeceeFollowing = (user.threeceeFollowing !== undefined) && user.threeceeFollowing && (Object.keys(user.threeceeFollowing).length > 0) ? user.threeceeFollowing.screenName : "-";
+    var threeceeFollowing = ((user.threeceeFollowing !== undefined) && user.threeceeFollowing && (Object.keys(user.threeceeFollowing).length > 0)) ? user.threeceeFollowing.screenName : "-";
 
     statsObj.analyzer.skipped += 1;
 
