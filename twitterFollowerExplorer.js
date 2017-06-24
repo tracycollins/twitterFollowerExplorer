@@ -2231,15 +2231,15 @@ function generateAutoKeywords(user, callback){
 
       debug("user.description + status\n" + jsonPrint(text));
 
-      async.eachSeries(inputArrays, function(descArray, cb1){
+      async.eachSeries(inputArrays, function(inputArray, cb1){
 
-        const type = descArray.type;
+        const type = Object.keys(inputArray)[0];
 
-        debug(chalkAlert("START ARRAY: " + type + " | " + descArray.array.length));
+        debug(chalkAlert("START ARRAY: " + type + " | " + inputArray[type].length));
 
-        async.eachSeries(descArray.array, function(element, cb2){
-          if (histogram[element]) {
-            // console.log("ARRAY: " + descArray.type + " | + " + element);
+        async.eachSeries(inputArray[type], function(element, cb2){
+          if (histogram[type][element]) {
+            console.log("ARRAY: " + type + " | + " + element);
             networkInput.push(1);
             cb2();
           }
@@ -2260,8 +2260,12 @@ function generateAutoKeywords(user, callback){
     });
   }
   else {
-    inputArrays.forEach(function(descArray){
-      descArray.forEach(networkInput.push(0));
+    async.eachSeries(inputArrays, function(inputArray, cb1){
+      const type = Object.keys(inputArray)[0];
+      inputArray[type].forEach(function(){
+        console.log("ARRAY: " + type + " | + " + 0);
+        networkInput.push(0);
+      });
     });
   }
 
