@@ -45,7 +45,15 @@ let configuration = {};
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
 configuration.forceLanguageAnalysis = false;
-configuration.enableLanguageAnalysis = true;
+
+if (process.env.TFE_FORCE_LANG_ANALYSIS !== undefined) {
+  if (process.env.TFE_FORCE_LANG_ANALYSIS === "true") {
+    configuration.enableLanguageAnalysis = true;
+  }
+  else {
+    configuration.enableLanguageAnalysis = false;
+  }
+}
 
 
 let stdin;
