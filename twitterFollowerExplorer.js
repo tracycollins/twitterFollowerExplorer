@@ -175,18 +175,9 @@ var defaultNeuralNetworkFile = "neuralNetwork.json";
 
 configuration.neuralNetworkFile = defaultNeuralNetworkFile;
 
+let inputArrays = [];
 
-var descriptionWordsFile = "defaultDescriptionWords.json";
-var descriptionWordsArray = [];
-
-var descriptionMentionsFile = "defaultDescriptionMentions.json";
-var descriptionMentionsArray = [];
-
-var descriptionHashtagsFile = "defaultDescriptionHashtags.json";
-var descriptionHashtagsArray = [];
-
-var descriptionArrays = [];
-
+var defaultInputArraysFile = "defaultInputArrays.json";
 
 var checkRateLimitInterval;
 var checkRateLimitIntervalTime = 30*ONE_SECOND;
@@ -710,51 +701,94 @@ function loadFile(path, file, callback) {
     });
 }
 
-var descriptionArraysFolder = dropboxConfigHostFolder + "/descriptionArrays";
-var descriptionArraysFile = "descriptionArraysFile_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+var inputArraysFolder = dropboxConfigHostFolder + "/inputArrays";
+var inputArraysFile = "inputArraysFile_" + statsObj.runId + ".json";
 
 var classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
 var classifiedUsersDefaultFile = "classifiedUsers.json";
-var classifiedUsersFile = "classifiedUsers_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+var classifiedUsersFile = "classifiedUsers_" +  + ".json";
 
 var autoClassifiedUsersDefaultFile = "autoClassifiedUsers_" + hostname + ".json";
-var autoClassifiedUsersFile = "autoClassifiedUsers_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+var autoClassifiedUsersFile = "autoClassifiedUsers_" + statsObj.runId + ".json";
 
 var wordHistogramFolder = dropboxConfigHostFolder + "/wordHistogram";
-var wordHistogramFile = "wordHistogram_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+var wordHistogramFile = "wordHistogram_" + statsObj.runId + ".json";
 
 var mentionHistogramFolder = dropboxConfigHostFolder + "/mentionHistogram";
-var mentionHistogramFile = "mentionHistogram_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+var mentionHistogramFile = "mentionHistogram_" + statsObj.runId + ".json";
 
 var hashtagHistogramFolder = dropboxConfigHostFolder + "/hashtagHistogram";
-var hashtagHistogramFile = "hashtagHistogram_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+var hashtagHistogramFile = "hashtagHistogram_" + statsObj.runId + ".json";
 
 var urlHistogramFolder = dropboxConfigHostFolder + "/urlHistogram";
-var urlHistogramFile = "urlHistogram_" + hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat) + ".json";
+var urlHistogramFile = "urlHistogram_" + statsObj.runId + ".json";
 
-function initDescriptionArrays(callback){
+const jsUcfirst = function(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
 
-  console.log(chalkTwitter("INIT DESCRIPTION ARRAYS"));
+const inputTypes = ["hashtags", "mentions", "urls", "words"];
 
-  async.each([descriptionWordsFile, descriptionMentionsFile, descriptionHashtagsFile], function(file, cb){
+function initInputArrays(callback){
 
-    console.log("INIT " + file);
+  console.log(chalkTwitter("INIT INPUT ARRAYS"));
 
-    loadFile(dropboxConfigDefaultFolder, file, function(err, loadedArrayObj){
+  // loadFile(dropboxConfigDefaultFolder, defaultInputArraysFile, function(err, loadedInputArraysObj){
+  //   if (!err) {
+  //     debug(jsonPrint(loadedInputArraysObj));
+  //     if (loadedInputArraysObj.words !== undefined) { 
+  //       inputWordsArray = loadedInputArraysObj.words.sort();
+  //       console.log(chalkAlert("LOADED WORDS ARRAY | " + inputWordsArray.length + " WORDS"));
+  //     }
+  //     if (loadedInputArraysObj.mentions !== undefined) { 
+  //       inputMentionsArray = loadedInputArraysObj.mentions.sort();
+  //       console.log(chalkAlert("LOADED MENTIONS ARRAY | " + inputMentionsArray.length + " MENTIONS"));
+  //     }
+  //     if (loadedInputArraysObj.hashtags !== undefined) { 
+  //       inputHashtagsArray = loadedInputArraysObj.hashtags.sort();
+  //       console.log(chalkAlert("LOADED HASHTAGS ARRAY | " + inputHashtagsArray.length + " HASHTAGS"));
+  //     }
+  //     if (loadedInputArraysObj.urls !== undefined) { 
+  //       inputUrlsArray = loadedInputArraysObj.urls.sort();
+  //       console.log(chalkAlert("LOADED URLS ARRAY | " + inputUrlsArray.length + " HASHTAGS"));
+  //     }
+  //     cb();
+  //   }
+  //   else {
+  //     console.log(chalkError("ERROR: loadFile: " + dropboxConfigFolder + "/" + file));
+  //     cb(err);
+  //   }
+  // });
+
+
+  async.each(inputTypes, function(inputType, cb){
+
+    const inputFile = "defaultInput" + jsUcfirst(inputType) + ".json";
+
+    console.log("INIT " + inputType.toUpperCase() + " INPUT ARRAY: " + inputFile);
+
+    loadFile(dropboxConfigDefaultFolder, inputFile, function(err, inputArrayObj){
       if (!err) {
-        debug(jsonPrint(loadedArrayObj));
-        if (loadedArrayObj["words"] !== undefined) { 
-          descriptionWordsArray = loadedArrayObj["words"].sort();
-          console.log(chalkAlert("LOADED WORDS ARRAY | " + descriptionWordsArray.length + " WORDS"));
-        }
-        if (loadedArrayObj["mentions"] !== undefined) { 
-          descriptionMentionsArray = loadedArrayObj["mentions"].sort();
-          console.log(chalkAlert("LOADED MENTIONS ARRAY | " + descriptionMentionsArray.length + " MENTIONS"));
-        }
-        if (loadedArrayObj["hashtags"] !== undefined) { 
-          descriptionHashtagsArray = loadedArrayObj["hashtags"].sort();
-          console.log(chalkAlert("LOADED HASHTAGS ARRAY | " + descriptionHashtagsArray.length + " HASHTAGS"));
-        }
+        debug(jsonPrint(inputArrayObj));
+
+        inputArrays.push(inputArrayObj);
+
+        console.log(chalkAlert("LOADED " + inputType.toUpperCase() + " ARRAY"
+          + " | " + inputArrayObj[inputType].length + " " + inputType.toUpperCase()
+        ));
+
+        // if (loadedArrayObj["words"] !== undefined) { 
+        //   descriptionWordsArray = loadedArrayObj["words"].sort();
+        //   console.log(chalkAlert("LOADED WORDS ARRAY | " + descriptionWordsArray.length + " WORDS"));
+        // }
+        // if (loadedArrayObj["mentions"] !== undefined) { 
+        //   descriptionMentionsArray = loadedArrayObj["mentions"].sort();
+        //   console.log(chalkAlert("LOADED MENTIONS ARRAY | " + descriptionMentionsArray.length + " MENTIONS"));
+        // }
+        // if (loadedArrayObj["hashtags"] !== undefined) { 
+        //   descriptionHashtagsArray = loadedArrayObj["hashtags"].sort();
+        //   console.log(chalkAlert("LOADED HASHTAGS ARRAY | " + descriptionHashtagsArray.length + " HASHTAGS"));
+        // }
         cb();
       }
       else {
@@ -768,15 +802,15 @@ function initDescriptionArrays(callback){
       return(callback(err));
     }
     else {
-      descriptionArrays.push({type: "mentions", array: descriptionMentionsArray});
-      descriptionArrays.push({type: "hashtags", array: descriptionHashtagsArray});
-      descriptionArrays.push({type: "words", array: descriptionWordsArray});
+      // descriptionArrays.push({type: "mentions", array: descriptionMentionsArray});
+      // descriptionArrays.push({type: "hashtags", array: descriptionHashtagsArray});
+      // descriptionArrays.push({type: "words", array: descriptionWordsArray});
 
-      console.log(chalkAlert("LOADED DESCRIPTION ARRAY FILES"));
+      console.log(chalkAlert("LOADED INPUT ARRAY FILES"));
 
-      saveFile(descriptionArraysFolder, descriptionArraysFile, descriptionArrays, function(){
-        statsObj.descriptionArraysFile = descriptionArraysFile;
-        debug("descriptionArrays\n" + jsonPrint(descriptionArrays));
+      saveFile(dropboxConfigDefaultFolder, defaultInputArraysFile, inputArrays, function(){
+        statsObj.inputArraysFile = defaultInputArraysFile;
+        debug("descriptionArrays\n" + jsonPrint(inputArrays));
         return(callback(null));
       });
     }
@@ -1114,7 +1148,7 @@ function initialize(cnf, callback){
             // + "\n" + jsonPrint(cnf2.twitterConfig )
           ));
 
-          initDescriptionArrays(function(err){
+          initInputArrays(function(err){
             return(callback(err, cnf2));
           });
 
@@ -1183,7 +1217,7 @@ function initialize(cnf, callback){
       }
 
       initStatsUpdate(cnf, function(err, cnf2){
-        initDescriptionArrays(function(err){
+        initInputArrays(function(err){
           return(callback(err, cnf));
         });
       });
@@ -2175,7 +2209,7 @@ function generateAutoKeywords(user, callback){
 
       debug("user.description + status\n" + jsonPrint(text));
 
-      async.eachSeries(descriptionArrays, function(descArray, cb1){
+      async.eachSeries(inputArrays, function(descArray, cb1){
 
         var type = descArray.type;
 
@@ -2532,7 +2566,6 @@ function initCursorUser(interval){
       userIndex += 1;
 
       if (userIndex % 1 === 0) {
-
         debug(chalkTwitter("US<"
           + " [" + userIndex + "/" + totalUsers + "]"
           + " | " + user.userId
@@ -2547,48 +2580,41 @@ function initCursorUser(interval){
       }
 
       if (neuralNetworkInitialized) {
-
         generateAutoKeywords(user, function(err, uObj){
+          userServer.findOneUser(uObj, {noInc: true}, function(err, updatedUserObj){
+            if (err) { 
+              console.log(chalkError("ERROR DB UPDATE USER - generateAutoKeywords"
+                + "\n" + err
+                + "\n" + jsonPrint(uObj)
+              ));
+            }
+            else {
+              var keywords = user.keywords ? Object.keys(updatedUserObj.keywords) : "";
+              var keywordsAuto = user.keywordsAuto ? Object.keys(updatedUserObj.keywordsAuto) : "";
 
-            userServer.findOneUser(uObj, {noInc: true}, function(err, updatedUserObj){
-              if (err) { 
-                console.log(chalkError("ERROR DB UPDATE USER - generateAutoKeywords"
-                  + "\n" + err
-                  + "\n" + jsonPrint(uObj)
-                ));
-              }
-              else {
-                var keywords = user.keywords ? Object.keys(updatedUserObj.keywords) : "";
-                var keywordsAuto = user.keywordsAuto ? Object.keys(updatedUserObj.keywordsAuto) : "";
-
-                console.log(chalkInfo("US UPD<"
-                  + " | " + updatedUserObj.userId
-                  + " | TW: " + (updatedUserObj.isTwitterUser || "-")
-                  + " | @" + updatedUserObj.screenName
-                  // + " | LA " + Object.keys(updatedUserObj.languageAnalysis)
-                  + " | KWs " + keywords
-                  + " | AKWs " + keywordsAuto
-                ));
-              }
-            });
-
-            // var keywords = user.keywords ? Object.keys(updatedUserObj.keywords) : "";
+              console.log(chalkInfo("US UPD<"
+                + " | " + updatedUserObj.userId
+                + " | TW: " + (updatedUserObj.isTwitterUser || "-")
+                + " | @" + updatedUserObj.screenName
+                // + " | LA " + Object.keys(updatedUserObj.languageAnalysis)
+                + " | KWs " + keywords
+                + " | AKWs " + keywordsAuto
+              ));
+            }
+          });
         });
       }
     });
   });
 
   cursorUser.on("error", function(err){
-    // fsm.cursorUserError();
     console.log(chalkError("*** CURSOR USER ERROR"
       + " | " + err
     ));
   });
 
   cursorUser.on("end", function(){
-    // fsm.endCursorUser();
-    console.log(chalkTwitter("=== CURSOR USER END"
-    ));
+    console.log(chalkTwitter("=== CURSOR USER END"));
   });
 
   cursorUser.pause();
@@ -2734,22 +2760,6 @@ initialize(configuration, function(err, cnf){
     }
   });
 
-  // loadFile(dropboxConfigDefaultFolder, classifiedUsersDefaultFile, function(err, loadedClassifiedUsersObj){
-  //   if (err) {
-  //     console.log(chalkError("*** LOAD CLASSIFED USER FILE ERROR"
-  //       + " | " + err
-  //       + "\n" + jsonPrint(err)
-  //     ));
-  //   }
-  //   else {
-  //     console.log(chalkLog("LOADED DEFAULT CLASSIFED USER FILE"
-  //       + " | " + dropboxConfigDefaultFolder + "/" + classifiedUsersDefaultFile
-  //       + " | " + Object.keys(loadedClassifiedUsersObj).length + " USERS"
-  //       // + "\n" + jsonPrint(loadedClassifiedUsersObj)
-  //     ));
-  //   }
-  // });
-
   initTwitterUsers(cnf, function(err, tuhm){
     if (err){ }
 
@@ -2777,12 +2787,10 @@ initialize(configuration, function(err, cnf){
         if (cnf.userDbCrawl) { 
           console.log(chalkAlert("\n\n*** CRAWLING USER DB ***\n\n"));
           initCursorUser(5000);
-          // fsm.cursorUserInit();
         }
         else {
           console.log(chalkAlert("\n\n*** GET TWITTER FRIENDS *** | @" + statsObj.user[currentTwitterUser].screen_name + "\n\n"));
           initFetchTwitterFriendsInterval(fetchTwitterFriendsIntervalTime);
-          // fsm.fetchTwitterFriendsInit();
         }
 
       });
