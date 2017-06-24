@@ -46,15 +46,6 @@ configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
 configuration.forceLanguageAnalysis = false;
 
-if (process.env.TFE_FORCE_LANG_ANALYSIS !== undefined) {
-  if (process.env.TFE_FORCE_LANG_ANALYSIS === "true") {
-    configuration.enableLanguageAnalysis = true;
-  }
-  else {
-    configuration.enableLanguageAnalysis = false;
-  }
-}
-
 
 let stdin;
 
@@ -958,6 +949,20 @@ function initialize(cnf, callback){
   cnf.userDbCrawl = process.env.TFE_USER_DB_CRAWL || TFE_USER_DB_CRAWL ;
   cnf.targetServer = process.env.TFE_UTIL_TARGET_SERVER || "http://localhost:9997/util" ;
 
+  cnf.enableLanguageAnalysis = process.env.TFE_ENABLE_LANG_ANALYSIS || true ;
+  cnf.forceLanguageAnalysis = process.env.TFE_FORCE_LANG_ANALYSIS || false ;
+
+  // if (process.env.TFE_FORCE_LANG_ANALYSIS !== undefined) {
+  //   if (process.env.TFE_FORCE_LANG_ANALYSIS === "true") {
+  //     configuration.enableLanguageAnalysis = true;
+  //   }
+  //   else {
+  //     configuration.enableLanguageAnalysis = false;
+  //   }
+  // }
+  console.log(chalkAlert("FORCE LANG ANALYSIS: " + cnf.forceLanguageAnalysis));
+
+
   cnf.twitterDefaultUser = process.env.TFE_TWITTER_DEFAULT_USER || TWITTER_DEFAULT_USER ;
   cnf.twitterUsers = process.env.TFE_TWITTER_USERS || { "altthreecee00": "altthreecee00", "ninjathreecee": "ninjathreecee" } ;
   cnf.statsUpdateIntervalTime = process.env.TFE_STATS_UPDATE_INTERVAL || ONE_MINUTE;
@@ -975,12 +980,22 @@ function initialize(cnf, callback){
     if (!err) {
       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
 
-      if (typeof loadedConfigObj.TFE_UTIL_TARGET_SERVER !== "undefined"){
+      if (loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS !== undefined){
+        console.log("LOADED TFE_ENABLE_LANG_ANALYSIS: " + loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS);
+        cnf.enableLanguageAnalysis = loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS;
+      }
+
+      if (loadedConfigObj.TFE_FORCE_LANG_ANALYSIS !== undefined){
+        console.log("LOADED TFE_FORCE_LANG_ANALYSIS: " + loadedConfigObj.TFE_FORCE_LANG_ANALYSIS);
+        cnf.forceLanguageAnalysis = loadedConfigObj.TFE_FORCE_LANG_ANALYSIS;
+      }
+
+      if (loadedConfigObj.TFE_UTIL_TARGET_SERVER !== undefined){
         console.log("LOADED TFE_UTIL_TARGET_SERVER: " + loadedConfigObj.TFE_UTIL_TARGET_SERVER);
         cnf.targetServer = loadedConfigObj.TFE_UTIL_TARGET_SERVER;
       }
 
-      if (typeof loadedConfigObj.TFE_ENABLE_STDIN !== "undefined"){
+      if (loadedConfigObj.TFE_ENABLE_STDIN !== undefined){
         console.log("LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_ENABLE_STDIN);
         cnf.enableStdin = loadedConfigObj.TFE_ENABLE_STDIN;
       }
@@ -990,34 +1005,34 @@ function initialize(cnf, callback){
         cnf.loadNeuralNetworkID = loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID;
       }
 
-      if (typeof loadedConfigObj.TFE_USER_DB_CRAWL !== "undefined"){
+      if (loadedConfigObj.TFE_USER_DB_CRAWL !== undefined){
         console.log("LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_USER_DB_CRAWL);
         cnf.userDbCrawl = loadedConfigObj.TFE_USER_DB_CRAWL;
       }
 
-      if (typeof loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER !== "undefined"){
+      if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER !== undefined){
         console.log("LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER: " 
           + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER));
         cnf.twitterConfigFolder = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER;
       }
 
-      if (typeof loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE !== "undefined"){
+      if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE !== undefined){
         console.log("LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE: " 
           + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE));
         cnf.twitterConfigFile = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE;
       }
 
-      if (typeof loadedConfigObj.TFE_TWITTER_USERS !== "undefined"){
+      if (loadedConfigObj.TFE_TWITTER_USERS !== undefined){
         console.log("LOADED TFE_TWITTER_USERS: " + jsonPrint(loadedConfigObj.TFE_TWITTER_USERS));
         cnf.twitterUsers = loadedConfigObj.TFE_TWITTER_USERS;
       }
 
-      if (typeof loadedConfigObj.TFE_TWITTER_DEFAULT_USER !== "undefined"){
+      if (loadedConfigObj.TFE_TWITTER_DEFAULT_USER !== undefined){
         console.log("LOADED TFE_TWITTER_DEFAULT_USER: " + jsonPrint(loadedConfigObj.TFE_TWITTER_DEFAULT_USER));
         cnf.twitterDefaultUser = loadedConfigObj.TFE_TWITTER_DEFAULT_USER;
       }
 
-      if (typeof loadedConfigObj.TFE_KEEPALIVE_INTERVAL !== "undefined") {
+      if (loadedConfigObj.TFE_KEEPALIVE_INTERVAL !== undefined) {
         console.log("LOADED TFE_KEEPALIVE_INTERVAL: " + loadedConfigObj.TFE_KEEPALIVE_INTERVAL);
         cnf.keepaliveInterval = loadedConfigObj.TFE_KEEPALIVE_INTERVAL;
       }
