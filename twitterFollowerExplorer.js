@@ -2239,7 +2239,7 @@ function generateAutoKeywords(user, callback){
 
         async.eachSeries(inputArray[type], function(element, cb2){
           if (histogram[type][element]) {
-            console.log("ARRAY: " + type + " | + " + element);
+            console.log("ARRAY: " + type + " | " + element + " | " + histogram[type][element]);
             networkInput.push(1);
             cb2();
           }
