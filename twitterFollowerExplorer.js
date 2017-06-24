@@ -1,36 +1,35 @@
   /*jslint node: true */
 "use strict";
 
-var TWITTER_DEFAULT_USER = "altthreecee00";
+const TWITTER_DEFAULT_USER = "altthreecee00";
 
-var neuralNetworkInitialized = false;
-// var nextTwitterUser;
-var currentTwitterUser ;
-var twitterUsersArray = [];
+let neuralNetworkInitialized = false;
+// let nextTwitterUser;
+let currentTwitterUser ;
+let twitterUsersArray = [];
 
-var ONE_SECOND = 1000 ;
-var ONE_MINUTE = ONE_SECOND*60 ;
-var ONE_HOUR = ONE_MINUTE*60 ;
-// var ONE_DAY = ONE_HOUR*24 ;
+const ONE_SECOND = 1000 ;
+const ONE_MINUTE = ONE_SECOND*60 ;
+const ONE_HOUR = ONE_MINUTE*60 ;
+// let ONE_DAY = ONE_HOUR*24 ;
 
-var TFE_USER_DB_CRAWL = false;
+let TFE_USER_DB_CRAWL = false;
 
-var Dropbox = require("dropbox");
-var os = require("os");
-var util = require("util");
-var moment = require("moment");
+const Dropbox = require("dropbox");
+const os = require("os");
+const util = require("util");
+const moment = require("moment");
 
-var compactDateTimeFormat = "YYYYMMDD_HHmmss";
+const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
-
-var hostname = os.hostname();
+let hostname = os.hostname();
 hostname = hostname.replace(/.local/g, "");
 hostname = hostname.replace(/.home/g, "");
 hostname = hostname.replace(/.at.net/g, "");
 hostname = hostname.replace(/.fios-router.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 
-var statsObj = {};
+let statsObj = {};
 statsObj.hostname = hostname;
 statsObj.startTimeMoment = moment();
 statsObj.pid = process.pid;
@@ -41,7 +40,7 @@ statsObj.runId = TFE_RUN_ID;
 
 statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
 
-var configuration = {};
+let configuration = {};
 
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
@@ -49,152 +48,150 @@ configuration.forceLanguageAnalysis = false;
 configuration.enableLanguageAnalysis = true;
 
 
-var stdin;
+let stdin;
 
-var quitOnComplete = false;
-var langAnalyzerIdle = false;
-var abortCursor = false;
+let quitOnComplete = false;
+let langAnalyzerIdle = false;
+let abortCursor = false;
 
-// var MAX_Q = 500;
+// let MAX_Q = 500;
 
-// var defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
+// let defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
 
-var intervalometer = require("intervalometer");
-var timerIntervalometer = intervalometer.timerIntervalometer;
-var waitLanguageAnalysisReadyInterval;
+const intervalometer = require("intervalometer");
+let timerIntervalometer = intervalometer.timerIntervalometer;
+let waitLanguageAnalysisReadyInterval;
 
-var network;
-// var neataptic = require("./js/neataptic/neataptic.js");
-var neataptic = require("neataptic");
+let network;
+// let neataptic = require("./js/neataptic/neataptic.js");
+const neataptic = require("neataptic");
 // 
-var cp = require("child_process");
-var langAnalyzer;
+const cp = require("child_process");
+let langAnalyzer;
 
-var keywordExtractor = require("keyword-extractor");
+const keywordExtractor = require("keyword-extractor");
 
 let histograms = {};
-histograms.word = {};
-histograms.url = {};
-histograms.hashtag = {};
-histograms.mention = {};
+histograms.words = {};
+histograms.urls = {};
+histograms.hashtags = {};
+histograms.mentions = {};
 
-var mentionsRegex = require("mentions-regex");
-var hashtagRegex = require("hashtag-regex");
-var getUrls = require("get-urls");
+const mentionsRegex = require("mentions-regex");
+const hashtagRegex = require("hashtag-regex");
+const getUrls = require("get-urls");
 
-var Regex = require("regex");
-var ignoreWordRegex = new Regex(/(#|=|&amp|http)/igm);
+const Regex = require("regex");
+const ignoreWordRegex = new Regex(/(#|=|&amp|http)/igm);
 
-var Twit = require("twit");
-var twit;
+const Twit = require("twit");
+let twit;
 
-var totalFriendsSortedFollowersArray = [];
-var totalFriendsSortedFollowingArray = [];
+let totalFriendsSortedFollowersArray = [];
+let totalFriendsSortedFollowingArray = [];
 
-var cursorUser;
-var socket;
+let cursorUser;
+let socket;
 
-var async = require("async");
-var sortOn = require("sort-on");
+const async = require("async");
+const sortOn = require("sort-on");
 
-var chalk = require("chalk");
-var chalkTwitter = chalk.blue;
-var chalkTwitterBold = chalk.bold.blue;
-var chalkRed = chalk.red;
-var chalkRedBold = chalk.bold.red;
-var chalkError = chalk.bold.red;
-var chalkAlert = chalk.red;
-var chalkWarn = chalk.red;
-var chalkLog = chalk.black;
-var chalkInfo = chalk.gray;
-var chalkConnect = chalk.bold.green;
-var chalkDisconnect = chalk.yellow;
-var chalkRss = chalk.blue;
+const chalk = require("chalk");
+const chalkTwitter = chalk.blue;
+const chalkTwitterBold = chalk.bold.blue;
+const chalkRed = chalk.red;
+const chalkRedBold = chalk.bold.red;
+const chalkError = chalk.bold.red;
+const chalkAlert = chalk.red;
+const chalkWarn = chalk.red;
+const chalkLog = chalk.black;
+const chalkInfo = chalk.gray;
+const chalkConnect = chalk.bold.green;
+const chalkDisconnect = chalk.yellow;
+const chalkRss = chalk.blue;
 
-var fs = require("fs");
-var yaml = require("yamljs");
+const fs = require("fs");
+const yaml = require("yamljs");
 
-var config = require("./config/config");
-var keypress = require("keypress");
+const config = require("./config/config");
+const keypress = require("keypress");
 
-var events = require("events");
-var EventEmitter = require("events").EventEmitter;
-var EventEmitter2 = require("eventemitter2").EventEmitter2;
+const events = require("events");
+const EventEmitter = require("events").EventEmitter;
+const EventEmitter2 = require("eventemitter2").EventEmitter2;
 
-var debug = require("debug")("tfe");
+const debug = require("debug")("tfe");
 
-var express = require("./config/express");
-var mongoose = require("./config/mongoose");
+const express = require("./config/express");
+const mongoose = require("./config/mongoose");
 
-var twitterConfig = {};
+let twitterConfig = {};
 
-var primarySocketKeepaliveInterval;
-var statsUpdateInterval;
+let primarySocketKeepaliveInterval;
+let statsUpdateInterval;
 
-var followerUpdateQueueInterval;
-var followerUpdateQueue = [];
+let followerUpdateQueueInterval;
+let followerUpdateQueue = [];
 
-var langAnalyzerMessageRxQueue = [];
+let langAnalyzerMessageRxQueue = [];
 
-var HashMap = require("hashmap");
+const HashMap = require("hashmap");
 
-var autoClassifiedUserHashmap = {};
-var classifiedUserHashmap = {};
-var topicHashMap = new HashMap();
+let autoClassifiedUserHashmap = {};
+let classifiedUserHashmap = {};
+const topicHashMap = new HashMap();
 
-var groupHashMap = new HashMap();
-var serverGroupHashMap = new HashMap(); // server specific keywords
-var entityHashMap = new HashMap();
-var serverentityHashMap = new HashMap();
+const groupHashMap = new HashMap();
+const serverGroupHashMap = new HashMap(); // server specific keywords
+const entityHashMap = new HashMap();
+const serverentityHashMap = new HashMap();
 
-var twitterUserHashMap = {};
-var initTweetHashMapComplete = false;
+let twitterUserHashMap = {};
+let initTweetHashMapComplete = false;
 
-var NodeCache = require( "node-cache" );
-var trendingCache = new NodeCache( { stdTTL: 300, checkperiod: 10 } );
+const NodeCache = require( "node-cache" );
+const trendingCache = new NodeCache( { stdTTL: 300, checkperiod: 10 } );
 
 // ==================================================================
 // MONGO DATABASE CONFIG
 // ==================================================================
 
-var db = mongoose();
+const db = mongoose();
 
-var Group = require("mongoose").model("Group");
-var Entity = require("mongoose").model("Entity");
-var User = require("mongoose").model("User");
-var Word = require("mongoose").model("Word");
+const Group = require("mongoose").model("Group");
+const Entity = require("mongoose").model("Entity");
+const User = require("mongoose").model("User");
+const Word = require("mongoose").model("Word");
 
-var groupServer = require("./app/controllers/group.server.controller");
-var entityServer = require("./app/controllers/entity.server.controller");
-var userServer = require("./app/controllers/user.server.controller");
-var wordServer = require("./app/controllers/word.server.controller");
+const groupServer = require("./app/controllers/group.server.controller");
+const entityServer = require("./app/controllers/entity.server.controller");
+const userServer = require("./app/controllers/user.server.controller");
+const wordServer = require("./app/controllers/word.server.controller");
 
-var neuralNetworkFile = "neuralNetwork_" + statsObj.runId + ".json";
+let neuralNetworkFile = "neuralNetwork_" + statsObj.runId + ".json";
 
-var defaultNeuralNetworkFile = "neuralNetwork.json";
+let defaultNeuralNetworkFile = "neuralNetwork.json";
 
 configuration.neuralNetworkFile = defaultNeuralNetworkFile;
 
 let inputArrays = [];
 
-var defaultInputArraysFile = "defaultInputArrays.json";
+let checkRateLimitInterval;
+let checkRateLimitIntervalTime = 30*ONE_SECOND;
+let pollTwitterFriendsIntervalTime = 15*ONE_MINUTE;
+let fetchTwitterFriendsIntervalTime = ONE_MINUTE;  // twit.get("friends/list"...) cursor
 
-var checkRateLimitInterval;
-var checkRateLimitIntervalTime = 30*ONE_SECOND;
-var pollTwitterFriendsIntervalTime = 15*ONE_MINUTE;
-var fetchTwitterFriendsIntervalTime = ONE_MINUTE;  // twit.get("friends/list"...) cursor
-
-var langAnalyzerMessageRxQueueInterval;
-var langAnalyzerMessageRxQueueReady = true;
+let langAnalyzerMessageRxQueueInterval;
+let langAnalyzerMessageRxQueueReady = true;
 
 function indexOfMax(arr) {
   if (arr.length === 0) {
     return -1;
   }
 
-  var max = arr[0];
-  var maxIndex = 0;
-  var i=1;
+  let max = arr[0];
+  let maxIndex = 0;
+  let i=1;
 
   for (i = 1; i < arr.length; i+=1) {
     if (arr[i] > max) {
@@ -206,7 +203,7 @@ function indexOfMax(arr) {
 }
 
 
-var jsonPrint = function (obj){
+const jsonPrint = function (obj){
   if (obj) {
     return JSON.stringify(obj, null, 2);
   }
@@ -216,10 +213,10 @@ var jsonPrint = function (obj){
 };
 
 
-var USER_ID = "TFE_" + TFE_RUN_ID;
-var SCREEN_NAME = "TFE_" + TFE_RUN_ID;
+const USER_ID = "TFE_" + TFE_RUN_ID;
+const SCREEN_NAME = "TFE_" + TFE_RUN_ID;
 
-var serverUserObj = { 
+let serverUserObj = { 
   name: USER_ID, 
   nodeId: USER_ID, 
   userId: USER_ID, 
@@ -234,18 +231,18 @@ serverUserObj.tags.mode = "muxed";
 serverUserObj.tags.channel = "twitter";
 
 
-var cla = require("command-line-args");
+const cla = require("command-line-args");
 
-var enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
-var quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
-var userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean, defaultValue: false};
-var testMode = { name: "testMode", alias: "T", type: Boolean, defaultValue: false};
-var loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
-var targetServer = { name: "targetServer", alias: "t", type: String};
+const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
+const quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
+const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean, defaultValue: false};
+const testMode = { name: "testMode", alias: "T", type: Boolean, defaultValue: false};
+const loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
+const targetServer = { name: "targetServer", alias: "t", type: String};
 
-var optionDefinitions = [enableStdin, quitOnError, loadNeuralNetworkID, userDbCrawl, testMode, targetServer];
+const optionDefinitions = [enableStdin, quitOnError, loadNeuralNetworkID, userDbCrawl, testMode, targetServer];
 
-var commandLineConfig = cla(optionDefinitions);
+const commandLineConfig = cla(optionDefinitions);
 
 console.log(chalkInfo("COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
 
@@ -267,11 +264,11 @@ console.log("=================================");
 
 
 
-var languageAnalysisReadyFlag = false;
-var languageAnalysisQueueFull = false;
-var languageAnalysisQueueEmpty = false;
+let languageAnalysisReadyFlag = false;
+let languageAnalysisQueueFull = false;
+let languageAnalysisQueueEmpty = false;
 
-var dbIncMentions = false;
+let dbIncMentions = false;
 
 // process.on("message", function(msg) {
 //   if (msg == "shutdown") {
@@ -318,7 +315,7 @@ process.on("exit", function() {
   if (langAnalyzer !== undefined) { langAnalyzer.kill("SIGINT"); }
 });
 
-// var fsm = new StateMachine({
+// let fsm = new StateMachine({
 //   initial: "idle",
 //   transitions: [
 //     { name: "reset", from: "*", to: "idle" },
@@ -338,7 +335,7 @@ process.on("exit", function() {
 // };
 
 
-var configEvents = new EventEmitter2({
+const configEvents = new EventEmitter2({
   wildcard: true,
   newListener: true,
   maxListeners: 20
@@ -350,7 +347,7 @@ configEvents.on("newListener", function(data){
 
 // MONGO DB
 
-var initTwitterUsersComplete = false;
+let initTwitterUsersComplete = false;
 
 // stats
 statsObj.classification = {};
@@ -402,28 +399,28 @@ statsObj.twitterErrors = 0;
 // ==================================================================
 // DROPBOX
 // ==================================================================
-var DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
-var DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY ;
-var DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
-var DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
-var DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || "twitterFollowerExplorerStats.json";
+const DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
+const DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY ;
+const DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
+const DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
+const DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || "twitterFollowerExplorerStats.json";
 
-var DROPBOX_WA_GROUPS_CONFIG_FILE = process.env.DROPBOX_WA_GROUPS_CONFIG_FILE || "groups.json";
-var DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE = process.env.DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE || "entityChannelGroups.json";
+const DROPBOX_WA_GROUPS_CONFIG_FILE = process.env.DROPBOX_WA_GROUPS_CONFIG_FILE || "groups.json";
+const DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE = process.env.DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE || "entityChannelGroups.json";
 
-var defaultDropboxGroupsConfigFile = DROPBOX_WA_GROUPS_CONFIG_FILE;
-var dropboxGroupsConfigFile = hostname +  "_" + DROPBOX_WA_GROUPS_CONFIG_FILE;
+let defaultDropboxGroupsConfigFile = DROPBOX_WA_GROUPS_CONFIG_FILE;
+let dropboxGroupsConfigFile = hostname +  "_" + DROPBOX_WA_GROUPS_CONFIG_FILE;
 
-var defaultDropboxEntityChannelGroupsConfigFile = DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE;
-var dropboxEntityChannelGroupsConfigFile = hostname +  "_" + DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE;
+let defaultDropboxEntityChannelGroupsConfigFile = DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE;
+let dropboxEntityChannelGroupsConfigFile = hostname +  "_" + DROPBOX_WA_ENTITY_CHANNEL_GROUPS_CONFIG_FILE;
 
-var dropboxConfigFolder = "/config/utility";
-var dropboxConfigDefaultFolder = "/config/utility/default";
-var dropboxConfigHostFolder = "/config/utility/" + hostname;
+let dropboxConfigFolder = "/config/utility";
+let dropboxConfigDefaultFolder = "/config/utility/default";
+let dropboxConfigHostFolder = "/config/utility/" + hostname;
 
-var dropboxConfigFile = hostname + "_" + DROPBOX_TFE_CONFIG_FILE;
-var statsFolder = "/stats/" + hostname;
-var statsFile = DROPBOX_TFE_STATS_FILE;
+let dropboxConfigFile = hostname + "_" + DROPBOX_TFE_CONFIG_FILE;
+let statsFolder = "/stats/" + hostname;
+let statsFile = DROPBOX_TFE_STATS_FILE;
 
 configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetwork";
 configuration.neuralNetworkFile = "";
@@ -438,7 +435,7 @@ console.log("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
 console.log("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 
-var dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
+const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
 function quit(){
   console.log( "\n... QUITTING ..." );
@@ -469,10 +466,10 @@ function pause(){
 }
 
 function msToTime(duration) {
-  var seconds = parseInt((duration / 1000) % 60);
-  var minutes = parseInt((duration / (1000 * 60)) % 60);
-  var hours = parseInt((duration / (1000 * 60 * 60)) % 24);
-  var days = parseInt(duration / (1000 * 60 * 60 * 24));
+  let seconds = parseInt((duration / 1000) % 60);
+  let minutes = parseInt((duration / (1000 * 60)) % 60);
+  let hours = parseInt((duration / (1000 * 60 * 60)) % 24);
+  let days = parseInt(duration / (1000 * 60 * 60 * 24));
 
   days = (days < 10) ? "0" + days : days;
   hours = (hours < 10) ? "0" + hours : hours;
@@ -510,7 +507,6 @@ const sortedObjectValues = function(params) {
   });
 };
 
-
 function showStats(options){
   if (langAnalyzer !== undefined) {
     langAnalyzer.send({op: "STATS", options: options});
@@ -525,8 +521,8 @@ function showStats(options){
       const keys = Object.keys(currentHistogram);
 
       const sortedKeys = keys.sort(function(a,b){
-        var valA = currentHistogram[a];
-        var valB = currentHistogram[b];
+        const valA = currentHistogram[a];
+        const valB = currentHistogram[b];
         return valB - valA;
       });
 
@@ -563,12 +559,12 @@ function showStats(options){
 }
 
 function getTimeNow() {
-  var d = new Date();
+  const d = new Date();
   return d.getTime();
 }
 
 function getTimeStamp(inputTime) {
-  var currentTimeStamp ;
+  let currentTimeStamp ;
 
   if (typeof inputTime === "undefined") {
     currentTimeStamp = moment().format(compactDateTimeFormat);
@@ -586,13 +582,13 @@ function getTimeStamp(inputTime) {
 
 function saveFile (path, file, jsonObj, callback){
 
-  var fullPath = path + "/" + file;
+  const fullPath = path + "/" + file;
 
   debug(chalkInfo("LOAD FOLDER " + path));
   debug(chalkInfo("LOAD FILE " + file));
   debug(chalkInfo("FULL PATH " + fullPath));
 
-  var options = {};
+  let options = {};
 
   options.contents = JSON.stringify(jsonObj, null, 2);
   options.path = fullPath;
@@ -601,12 +597,12 @@ function saveFile (path, file, jsonObj, callback){
 
   dropboxClient.filesUpload(options)
     .then(function(response){
-      debug(chalkLog("... SAVED DROPBOX JSON | " + options.path));
+      debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
       if (callback !== undefined) { callback(null); }
     })
     .catch(function(error){
 
-      var errorText = (error[error_summary] !== undefined) ? error[error_summary] : jsonPrint(error);
+      const errorText = (error[error_summary] !== undefined) ? error[error_summary] : jsonPrint(error);
       console.error(chalkError(moment().format(compactDateTimeFormat) 
         + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
         + " | ERROR: " + errorText
@@ -622,7 +618,7 @@ function loadFile(path, file, callback) {
   console.log(chalkInfo("LOAD FILE " + file));
   console.log(chalkInfo("FULL PATH " + path + "/" + file));
 
-  var fileExists = false;
+  let fileExists = false;
 
   dropboxClient.filesListFolder({path: path})
     .then(function(response) {
@@ -649,8 +645,8 @@ function loadFile(path, file, callback) {
                   // + "\n" + jsonPrint(data)
                 ));
 
-                var payload = data.fileBinary;
-                var fileObj;
+                const payload = data.fileBinary;
+                let fileObj;
 
                 debug(payload);
 
@@ -688,7 +684,7 @@ function loadFile(path, file, callback) {
           else {
             console.error(chalkError("*** FILE DOES NOT EXIST: " + path + "/" + file));
             console.log(chalkError("*** FILE DOES NOT EXIST: " + path + "/" + file));
-            // var err = {};
+            // let err = {};
             // err.code = 404;
             // err.status = "FILE DOES NOT EXIST";
             return(callback({code: 404, status: "FILE DOES NOT EXIST"}, null));
@@ -701,27 +697,27 @@ function loadFile(path, file, callback) {
     });
 }
 
-var inputArraysFolder = dropboxConfigHostFolder + "/inputArrays";
-var inputArraysFile = "inputArraysFile_" + statsObj.runId + ".json";
+const inputArraysFolder = dropboxConfigHostFolder + "/inputArrays";
+const inputArraysFile = "inputArraysFile_" + statsObj.runId + ".json";
 
-var classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
-var classifiedUsersDefaultFile = "classifiedUsers.json";
-var classifiedUsersFile = "classifiedUsers_" +  + ".json";
+const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
+const classifiedUsersDefaultFile = "classifiedUsers.json";
+const classifiedUsersFile = "classifiedUsers_" + statsObj.runId + ".json";
 
-var autoClassifiedUsersDefaultFile = "autoClassifiedUsers_" + hostname + ".json";
-var autoClassifiedUsersFile = "autoClassifiedUsers_" + statsObj.runId + ".json";
+const autoClassifiedUsersDefaultFile = "autoClassifiedUsers_" + hostname + ".json";
+const autoClassifiedUsersFile = "autoClassifiedUsers_" + statsObj.runId + ".json";
 
-var wordHistogramFolder = dropboxConfigHostFolder + "/wordHistogram";
-var wordHistogramFile = "wordHistogram_" + statsObj.runId + ".json";
+const wordHistogramFolder = dropboxConfigHostFolder + "/wordHistogram";
+const wordHistogramFile = "wordHistogram_" + statsObj.runId + ".json";
 
-var mentionHistogramFolder = dropboxConfigHostFolder + "/mentionHistogram";
-var mentionHistogramFile = "mentionHistogram_" + statsObj.runId + ".json";
+const mentionHistogramFolder = dropboxConfigHostFolder + "/mentionHistogram";
+const mentionHistogramFile = "mentionHistogram_" + statsObj.runId + ".json";
 
-var hashtagHistogramFolder = dropboxConfigHostFolder + "/hashtagHistogram";
-var hashtagHistogramFile = "hashtagHistogram_" + statsObj.runId + ".json";
+const hashtagHistogramFolder = dropboxConfigHostFolder + "/hashtagHistogram";
+const hashtagHistogramFile = "hashtagHistogram_" + statsObj.runId + ".json";
 
-var urlHistogramFolder = dropboxConfigHostFolder + "/urlHistogram";
-var urlHistogramFile = "urlHistogram_" + statsObj.runId + ".json";
+const urlHistogramFolder = dropboxConfigHostFolder + "/urlHistogram";
+const urlHistogramFile = "urlHistogram_" + statsObj.runId + ".json";
 
 const jsUcfirst = function(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
@@ -759,7 +755,6 @@ function initInputArrays(callback){
   //     cb(err);
   //   }
   // });
-
 
   async.each(inputTypes, function(inputType, cb){
 
@@ -808,15 +803,14 @@ function initInputArrays(callback){
 
       console.log(chalkAlert("LOADED INPUT ARRAY FILES"));
 
-      saveFile(dropboxConfigDefaultFolder, defaultInputArraysFile, inputArrays, function(){
-        statsObj.inputArraysFile = defaultInputArraysFile;
+      saveFile(dropboxConfigHostFolder, inputArraysFile, inputArrays, function(){
+        statsObj.inputArraysFile = inputArraysFile;
         debug("descriptionArrays\n" + jsonPrint(inputArrays));
         return(callback(null));
       });
     }
   });
 }
-
 
 function initStatsUpdate(cnf, callback){
 
@@ -873,11 +867,11 @@ function initStatsUpdate(cnf, callback){
 
       const currentHistogram = histograms[histogramName];
 
-      let keys = Object.keys(currentHistogram);
+      const keys = Object.keys(currentHistogram);
 
-      var sortedKeys = keys.sort(function(a,b){
-        var valA = currentHistogram[a];
-        var valB = currentHistogram[b];
+      const sortedKeys = keys.sort(function(a,b){
+        const valA = currentHistogram[a];
+        const valB = currentHistogram[b];
         return valB - valA;
       });
 
@@ -888,7 +882,9 @@ function initStatsUpdate(cnf, callback){
       const currentHistogramFolder = dropboxConfigHostFolder + "/histograms/" + histogramName + "Histogram";
       const currentHistogramFile = histogramName + "Histogram_" + statsObj.runId + ".json";
 
-      saveFile(currentHistogramFolder, currentHistogramFile, currentHistogram);
+      saveFile(currentHistogramFolder, currentHistogramFile, currentHistogram, function(err){
+        console.log(chalkLog("SAVED | " + currentHistogramFolder + "/" + currentHistogramFile));
+      });
 
     });
 
@@ -933,7 +929,7 @@ function initTwitterUsers(cnf, callback){
   }
   else{
 
-    var twitterDefaultUser = cnf.twitterDefaultUser;
+    let twitterDefaultUser = cnf.twitterDefaultUser;
     twitterUsersArray = Object.keys(cnf.twitterUsers);
 
     // if (!currentTwitterUser) { currentTwitterUser = twitterUsersArray[0]; }
@@ -948,7 +944,7 @@ function initTwitterUsers(cnf, callback){
 
       userId = userId.toLowerCase();
 
-      var twitterUserObj = {};
+      let twitterUserObj = {};
 
       debug("userId: " + userId);
       debug("screenName: " + cnf.twitterUsers[userId]);
@@ -1009,8 +1005,8 @@ function initialize(cnf, callback){
 
   loadFile(dropboxConfigHostFolder, dropboxConfigFile, function(err, loadedConfigObj){
 
-    var commandLineArgs;
-    var configArgs;
+    let commandLineArgs;
+    let configArgs;
 
     if (!err) {
       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
@@ -1229,12 +1225,12 @@ function loadYamlConfig(yamlFile, callback){
   console.log(chalkInfo("LOADING YAML CONFIG FILE: " + yamlFile));
   fs.exists(yamlFile, function(exists) {
     if (exists) {
-      var cnf = yaml.load(yamlFile);
+      let cnf = yaml.load(yamlFile);
       console.log(chalkInfo("FOUND FILE " + yamlFile));
       callback(null, cnf);
     }
     else {
-      var err = "FILE DOES NOT EXIST: " + yamlFile ;
+      const err = "FILE DOES NOT EXIST: " + yamlFile ;
       callback(err, null);
     }
   });
@@ -1242,7 +1238,7 @@ function loadYamlConfig(yamlFile, callback){
 
 function initTwitter(currentTwitterUser, cnf, callback){
 
-  var twitterConfigFile =  currentTwitterUser + ".json";
+  let twitterConfigFile =  currentTwitterUser + ".json";
 
   loadFile(cnf.twitterConfigFolder, twitterConfigFile, function(err, twitterConfig){
 
@@ -1480,7 +1476,7 @@ function checkRateLimit(callback){
         // + "\n" + jsonPrint(data)
       ));
 
-      // var remainingTime = 1000*data.resources.application["/application/rate_limit_status"].reset - Date.now();
+      // let remainingTime = 1000*data.resources.application["/application/rate_limit_status"].reset - Date.now();
       // debug(chalkInfo(getTimeStamp() 
       //   + " | TWITTER ACCOUNT RATE: LIMIT: " + data.resources.application["/application/rate_limit_status"].limit
       //   + " | REMAINING: " + data.resources.application["/application/rate_limit_status"].remaining
@@ -1576,7 +1572,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
 
   console.log(chalkInfo("INIT LANG ANALIZER QUEUE INTERVAL: " + interval + " ms"));
 
-  var langEntityKeys = [];
+  let langEntityKeys = [];
 
   langAnalyzerMessageRxQueueInterval = setInterval(function () {
 
@@ -1584,9 +1580,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
 
       langAnalyzerMessageRxQueueReady = false;
 
-      var m = langAnalyzerMessageRxQueue.shift();
+      let m = langAnalyzerMessageRxQueue.shift();
 
-      var params = {
+      let params = {
         noInc: true
       };
 
@@ -1621,12 +1617,12 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
                 ));
               }
               else {
-                var laEnts = 0;
+                let laEnts = 0;
                 if (updatedUserObj.languageAnalysis.entities !== undefined) {
                   laEnts = Object.keys(updatedUserObj.languageAnalysis.entities);
                 }
-                var kws = updatedUserObj.keywords && (updatedUserObj.keywords !== undefined) ? Object.keys(updatedUserObj.keywords) : [];
-                var kwsAuto = updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined) ? Object.keys(updatedUserObj.keywordsAuto) : [];
+                const kws = updatedUserObj.keywords && (updatedUserObj.keywords !== undefined) ? Object.keys(updatedUserObj.keywords) : [];
+                const kwsAuto = updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined) ? Object.keys(updatedUserObj.keywordsAuto) : [];
 
                 console.log(chalkLog("DB UPDATE USER"
                   + " | UID: " + updatedUserObj.userId
@@ -1655,8 +1651,8 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
               cb(); 
             }
             else {
-              var newKey = entityKey.replace(/\./g, "");
-              var oldValue = m.results.entities[entityKey];
+              const newKey = entityKey.replace(/\./g, "");
+              const oldValue = m.results.entities[entityKey];
 
               m.results.entities[newKey] = oldValue;
               delete(m.results.entities[entityKey]);
@@ -1683,12 +1679,12 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
                 ));
               }
               else {
-                var laEnts = 0;
+                let laEnts = 0;
                 if (updatedUserObj.languageAnalysis.entities !== undefined) {
                   laEnts = Object.keys(updatedUserObj.languageAnalysis.entities);
                 }
-                var kws = updatedUserObj.keywords && (updatedUserObj.keywords !== undefined) ? Object.keys(updatedUserObj.keywords) : [];
-                var kwsAuto = updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined) ? Object.keys(updatedUserObj.keywordsAuto) : [];
+                const kws = updatedUserObj.keywords && (updatedUserObj.keywords !== undefined) ? Object.keys(updatedUserObj.keywords) : [];
+                const kwsAuto = updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined) ? Object.keys(updatedUserObj.keywordsAuto) : [];
 
                 console.log(chalkLog("DB UPDATE USER"
                   + " | UID: " + updatedUserObj.userId
@@ -1759,14 +1755,14 @@ function initClassifiedUserHashmap(folder, file, callback){
   });
 }
 
-var fetchTwitterFriendsIntervalRunning = false;
-var fetchTwitterFriendsIntervalometer;
+let fetchTwitterFriendsIntervalRunning = false;
+let fetchTwitterFriendsIntervalometer;
 
 statsObj.nextCursorValid = false;
-var totalFriendsArray = [];
-var nextCursor = false;
-var count = 200;
-var twitPromise;
+let totalFriendsArray = [];
+let nextCursor = false;
+let count = 200;
+let twitPromise;
 
 function fetchTwitterFriends(cnf, callback){
 
@@ -1775,7 +1771,7 @@ function fetchTwitterFriends(cnf, callback){
     + " | READY: " + languageAnalysisReadyFlag
   ));
 
-  var params = {};
+  let params = {};
 
   if (!statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag && languageAnalysisReadyFlag) {
 
@@ -1828,7 +1824,7 @@ function fetchTwitterFriends(cnf, callback){
         + " | MORE: " + statsObj.nextCursorValid
       ));
 
-      var subFriendsSortedArray = sortOn(data.users, "-followers_count");
+      const subFriendsSortedArray = sortOn(data.users, "-followers_count");
 
       subFriendsSortedArray.forEach(function(friend){
 
@@ -1847,7 +1843,7 @@ function fetchTwitterFriends(cnf, callback){
 
         Word.findOne({nodeId: friend.screen_name.toLowerCase()}, function(err, word){
 
-          var kws = {};
+          let kws = {};
 
           if (!err && (word)) {
 
@@ -1872,7 +1868,7 @@ function fetchTwitterFriends(cnf, callback){
             }
           }
 
-          var userObj = new User();
+          let userObj = new User();
 
           userObj.isTwitterUser = true;
 
@@ -1934,8 +1930,8 @@ function fetchTwitterFriends(cnf, callback){
                         ));
                       }
                       else {
-                        var keywords = user.keywords ? Object.keys(updatedUserObj.keywords) : "";
-                        var keywordsAuto = user.keywordsAuto ? Object.keys(updatedUserObj.keywordsAuto) : "";
+                        const keywords = user.keywords ? Object.keys(updatedUserObj.keywords) : "";
+                        const keywordsAuto = user.keywordsAuto ? Object.keys(updatedUserObj.keywordsAuto) : "";
 
                         console.log(chalkInfo("US UPD<"
                           + " | " + updatedUserObj.userId
@@ -1948,7 +1944,7 @@ function fetchTwitterFriends(cnf, callback){
                       }
                     });
 
-                    // var keywords = user.keywords ? Object.keys(updatedUserObj.keywords) : "";
+                    // let keywords = user.keywords ? Object.keys(updatedUserObj.keywords) : "";
                 });
               }
 
@@ -1977,7 +1973,7 @@ function fetchTwitterFriends(cnf, callback){
           + " [" + totalFriendsArray.length + "]"
         ));
 
-        var index = 1;
+        let index = 1;
         totalFriendsSortedFollowersArray.forEach(function(friend){
           debug(chalkTwitter("FRIEND"
             + " [" + index + "/" + totalFriendsArray.length + "]"
@@ -2008,7 +2004,7 @@ function fetchTwitterFriends(cnf, callback){
           index+= 1;
         });
 
-        var totalFriends = totalFriendsArray.length;
+        let totalFriends = totalFriendsArray.length;
         totalFriendsArray = [];
 
         if (twitterUsersArray.length > 0) {
@@ -2076,115 +2072,141 @@ function initFetchTwitterFriendsInterval(interval){
   // });
 }
 
-var wordExtractionOptions = {
+const wordExtractionOptions = {
   language:"english",
   remove_digits: true,
   return_changed_case: true,
   remove_duplicates: true
 };
 
-function parseText(text){
+function parseText(text, callback){
 
-  var mRegEx = mentionsRegex();
-  var hRegEx = hashtagRegex();
+  const mRegEx = mentionsRegex();
+  const hRegEx = hashtagRegex();
 
-  var mentionArray = mRegEx.exec(text);
-  var hashtagArray = hRegEx.exec(text);
+  const mentionArray = mRegEx.exec(text);
+  const hashtagArray = hRegEx.exec(text);
+  const urlArray = Array.from(getUrls(text));
+  const wordArray = keywordExtractor.extract(text, wordExtractionOptions);
 
-  let urlArray = Array.from(getUrls(text));
-
-  // console.log(chalkAlert("urlArray: " + jsonPrint(urlArray)));
-
-  var wordArray = keywordExtractor.extract(text, wordExtractionOptions);
- 
-  if (wordArray) {
-    const histogram = histograms.word;
-    wordArray.forEach(function(w){
-      const word = w.toLowerCase();
-      const m = mRegEx.exec(word);
-      const h = hRegEx.exec(word);
-      const rgx = ignoreWordRegex.test(word);
-      const u = (Array.from(getUrls(text)).length > 0) ? Array.from(getUrls(text)) : null;
-      if (m || h || u || rgx 
-        || (word === "/") 
-        || word.includes("--") 
-        || word.includes("|") 
-        || word.includes("#") 
-        || word.includes("w/") 
-        || word.includes("≠") 
-        || word.includes("http") 
-        || word.includes("+")) {
-        if (rgx) { console.log(chalkAlert("-- REGEX SKIP WORD"
-          + " | M: " + m
-          + " | H: " + h
-          + " | U: " + u
-          + " | RGX: " + rgx
-          + " | " + word
-        )) };
-        debug(chalkAlert("-- SKIP WORD"
-          + " | M: " + m
-          + " | H: " + h
-          + " | U: " + u
-          + " | RGX: " + rgx
-          + " | " + word
-        ));
+  async.parallel({
+    mentions: function(cb){
+      if (mentionArray) {
+        const histogram = histograms.mentions;
+        mentionArray.forEach(function(userId){
+          if (!userId.match("@")) {
+            userId = "@" + userId.toLowerCase();
+            histogram[userId] = (histogram[userId] === undefined) ? 1 : histogram[userId]+1;
+            debug(chalkAlert("->- DESC Ms"
+              + " | " + histogram[userId]
+              + " | " + userId
+            ));
+          }
+        });
+        cb(null, histogram);
       }
       else {
-        histogram[word] = (histogram[word] === undefined) ? 1 : histogram[word]+1;
-        debug(chalkAlert("->- DESC Ws"
-          + " | " + histogram[word]
-          + " | " + word
-        ));
+        cb(null, histograms.mentions);
       }
-    });
-  }
-
-  if (mentionArray) {
-    const histogram = histograms.mention;
-    mentionArray.forEach(function(userId){
-      if (!userId.match("@")) {
-        userId = "@" + userId.toLowerCase();
-        histogram[userId] = (histogram[userId] === undefined) ? 1 : histogram[userId]+1;
-        debug(chalkAlert("->- DESC Ms"
-          + " | " + histogram[userId]
-          + " | " + userId
-        ));
+    },
+    hashtags: function(cb){
+      if (hashtagArray) {
+        const histogram = histograms.hashtags;
+        hashtagArray.forEach(function(hashtag){
+          hashtag = hashtag.toLowerCase();
+          histogram[hashtag] = (histogram[hashtag] === undefined) ? 1 : histogram[hashtag]+1;
+          debug(chalkAlert("->- DESC Hs"
+            + " | " + histogram[hashtag]
+            + " | " + hashtag
+          ));
+        });
+        cb(null, histogram);
       }
-    });
-  }
+      else {
+        cb(null, histograms.hashtags);
+      }
+    },
+    words: function(cb){
+      if (wordArray) {
 
-  if (hashtagArray) {
-    const histogram = histograms.hashtag;
-    hashtagArray.forEach(function(hashtag){
-      // if (!userId.match("@")) {
-        hashtag = hashtag.toLowerCase();
-        histogram[hashtag] = (histogram[hashtag] === undefined) ? 1 : histogram[hashtag]+1;
-        debug(chalkAlert("->- DESC Hs"
-          + " | " + histogram[hashtag]
-          + " | " + hashtag
-        ));
-      // }
-    });
-  }
+        const histogram = histograms.words;
 
-  if (urlArray) {
-    const histogram = histograms.url;
-    urlArray.forEach(function(url){
-      // if (!userId.match("@")) {
-        url = url.toLowerCase();
-        histogram[url] = (histogram[url] === undefined) ? 1 : histogram[url]+1;
-        debug(chalkAlert("->- DESC Us"
-          + " | " + histogram[url]
-          + " | " + url
-        ));
-      // }
+        wordArray.forEach(function(w){
+          const word = w.toLowerCase();
+          const m = mRegEx.exec(word);
+          const h = hRegEx.exec(word);
+          const rgx = ignoreWordRegex.test(word);
+          const u = (Array.from(getUrls(text)).length > 0) ? Array.from(getUrls(text)) : null;
+          if (m || h || u || rgx 
+            || (word === "/") 
+            || word.includes("--") 
+            || word.includes("|") 
+            || word.includes("#") 
+            || word.includes("w/") 
+            || word.includes("≠") 
+            || word.includes("http") 
+            || word.includes("+")) {
+            if (rgx) { console.log(chalkAlert("-- REGEX SKIP WORD"
+              + " | M: " + m
+              + " | H: " + h
+              + " | U: " + u
+              + " | RGX: " + rgx
+              + " | " + word
+            )) };
+            debug(chalkAlert("-- SKIP WORD"
+              + " | M: " + m
+              + " | H: " + h
+              + " | U: " + u
+              + " | RGX: " + rgx
+              + " | " + word
+            ));
+          }
+          else {
+            histogram[word] = (histogram[word] === undefined) ? 1 : histogram[word]+1;
+            debug(chalkAlert("->- DESC Ws"
+              + " | " + histogram[word]
+              + " | " + word
+            ));
+          }
+        });
+
+        cb(null, histogram);
+      }
+      else {
+        cb(null, histograms.words);
+      }
+    },
+    urls: function(cb){
+      if (urlArray) {
+        const histogram = histograms.urls;
+        urlArray.forEach(function(url){
+          url = url.toLowerCase();
+          histogram[url] = (histogram[url] === undefined) ? 1 : histogram[url]+1;
+          debug(chalkAlert("->- DESC Us"
+            + " | " + histogram[url]
+            + " | " + url
+          ));
+        });
+        cb(null, histogram);
+      }
+      else {
+        cb(null, histograms.urls);
+      }
+    }
+  }, function(err, results){
+    let text = "HISTOGRAMS";
+    // console.log("PARSE TEXT RESULTS");
+    Object.keys(results).forEach(function(key){
+      if (results[key]) {text = text + " | " + key.toUpperCase() + ": " + Object.keys(results[key]).length;}
     });
-  }
+    console.log(chalkLog(text));
+    callback(err, results);
+  });
 }
 
 function generateAutoKeywords(user, callback){
 
-  var networkInput = [ 0, 0 ];
+  let networkInput = [ 0, 0 ];
 
   if (user.languageAnalysis.sentiment){
     networkInput[0] = user.languageAnalysis.sentiment.magnitude;
@@ -2193,7 +2215,7 @@ function generateAutoKeywords(user, callback){
 
   if (user.description || user.status){
 
-    var text;
+    let text;
 
     if (user.status && user.description) {
       text = user.description + " " + user.status.text;
@@ -2211,7 +2233,7 @@ function generateAutoKeywords(user, callback){
 
       async.eachSeries(inputArrays, function(descArray, cb1){
 
-        var type = descArray.type;
+        const type = descArray.type;
 
         debug(chalkAlert("START ARRAY: " + type + " | " + descArray.array.length));
 
@@ -2238,24 +2260,18 @@ function generateAutoKeywords(user, callback){
     });
   }
   else {
-    descriptionWordsArray.forEach(function(word){
-      networkInput.push(0);
-    });
-    descriptionMentionsArray.forEach(function(word){
-      networkInput.push(0);
-    });
-    descriptionHashtagsArray.forEach(function(word){
-      networkInput.push(0);
+    inputArrays.forEach(function(descArray){
+      descArray.forEach(networkInput.push(0));
     });
   }
 
-  var networkOutput = network.activate(networkInput); // 0.0275
+  let networkOutput = network.activate(networkInput); // 0.0275
 
-  var maxOutputIndex = indexOfMax(networkOutput);
+  let maxOutputIndex = indexOfMax(networkOutput);
 
-  var keywords = user.keywords ? Object.keys(user.keywords) : "";
-  var keywordsAuto = {};
-  var currentChalk;
+  let keywords = user.keywords ? Object.keys(user.keywords) : "";
+  let keywordsAuto = {};
+  let currentChalk;
 
   switch (maxOutputIndex) {
     case 0:
@@ -2282,8 +2298,8 @@ function generateAutoKeywords(user, callback){
       keywordsAuto = "";
   }
 
-  var magnitudeText;
-  var scoreText;
+  let magnitudeText;
+  let scoreText;
 
   if (user.languageAnalysis.sentiment && user.languageAnalysis.sentiment.magnitude && user.languageAnalysis.sentiment.score){
     magnitudeText = user.languageAnalysis.sentiment.magnitude.toFixed(3);
@@ -2308,13 +2324,71 @@ function generateAutoKeywords(user, callback){
   callback(null, user);
 }
 
+function parseUserEntities(user){
+  // ??? KLUDGE: make into function
+  // REMOVE URLS FROM DESCRIPTION. MONGO DB HATES URLs as object keys on writes
+  if (user.entities && user.entities.description && (user.entities.description.urls.length > 0)) {
+    debug(chalkAlert("USER ENTITIES DESC URLS: " + jsonPrint(user.entities.description.urls)));
+
+    user.entities.description.urls.forEach(function(urlObj){
+      console.log(chalkAlert("USER ENTITIES DESC URL"
+        + " | " + urlObj.url
+      ));
+      const regex = new RegExp(urlObj.url);
+      histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
+    });
+  }
+  
+  if (user.entities && user.entities.url && (user.entities.url.urls.length > 0)) {
+    debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.entities.url.urls)));
+    user.entities.url.urls.forEach(function(urlObj){
+      console.log(chalkAlert("USER ENTITIES URL"
+        + " | " + urlObj.url
+      ));
+      histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
+    });
+  }
+
+  if (user.status && user.status.entities) {
+    if (user.status.entities.hashtags.length > 0) {
+      user.status.entities.hashtags.forEach(function(h){
+        const ht = "#" + h.text.toLowerCase();
+        console.log(chalkAlert("USER STATUS ENTITIES HASHTAG"
+          + " | " + ht
+        ));
+        histograms.hashtags[ht] = (histograms.hashtags[ht] === undefined) ? 1 : histograms.hashtags[ht]+1;
+      });
+    }
+    if (user.status.entities.urls.length > 0) {
+      debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.status.entities.urls)));
+      user.status.entities.urls.forEach(function(urlObj){
+        console.log(chalkAlert("USER ENTITIES URL"
+          + " | " + urlObj.url
+        ));
+        histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
+      });
+    }
+    if (user.status.entities.user_mentions.length > 0) {
+      debug(chalkAlert("USER ENTITIES USER MENTIONS: " + jsonPrint(user.status.entities.user_mentions)));
+      user.status.entities.user_mentions.forEach(function(userObj){
+        const screenName = "@" + userObj.screen_name.toLowerCase();
+        console.log(chalkAlert("USER ENTITIES USER MENTION"
+          + " | " + screenName
+          + " | " + userObj.name
+        ));
+        histograms.mentions[screenName] = (histograms.mentions[screenName] === undefined) ? 1 : histograms.mentions[screenName]+1;
+      });
+    }
+  }
+}
+
 function processUser(cnf, user, callback){
 
   statsObj.analyzer.total += 1;
 
-  var chalkCurrent;
-  var classText;
-  var langAnalyzerText;
+  let chalkCurrent;
+  let classText;
+  let langAnalyzerText;
 
   if (user.keywords && (Object.keys(user.keywords).length > 0)) {
 
@@ -2434,10 +2508,10 @@ function processUser(cnf, user, callback){
   if ((!user.languageAnalyzed && cnf.enableLanguageAnalysis) 
     || cnf.forceLanguageAnalysis) {
 
-    parseText(user.description);
+    parseText(user.description, function(){});
 
     if (user.status) { 
-      parseText(user.status.text);
+      parseText(user.status.text, function(){});
       langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description + " | " + user.status.text;
     }
     else {
@@ -2454,8 +2528,8 @@ function processUser(cnf, user, callback){
         console.log(chalkAlert("USER ENTITIES DESC URL"
           + " | " + urlObj.url
         ));
-        var regex = new RegExp(urlObj.url);
-        histograms.url[urlObj.url] = (histograms.url[urlObj.url] === undefined) ? 1 : histograms.url[urlObj.url]+1;
+        const regex = new RegExp(urlObj.url);
+        histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
         langAnalyzerText = langAnalyzerText.replace(regex, "");
       });
     }
@@ -2466,7 +2540,7 @@ function processUser(cnf, user, callback){
         console.log(chalkAlert("USER ENTITIES URL"
           + " | " + urlObj.url
         ));
-        histograms.url[urlObj.url] = (histograms.url[urlObj.url] === undefined) ? 1 : histograms.url[urlObj.url]+1;
+        histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
       });
     }
 
@@ -2477,7 +2551,7 @@ function processUser(cnf, user, callback){
           console.log(chalkAlert("USER STATUS ENTITIES HASHTAG"
             + " | " + ht
           ));
-          histograms.hashtag[ht] = (histograms.hashtag[ht] === undefined) ? 1 : histograms.hashtag[ht]+1;
+          histograms.hashtags[ht] = (histograms.hashtags[ht] === undefined) ? 1 : histograms.hashtags[ht]+1;
         });
       }
       if (user.status.entities.urls.length > 0) {
@@ -2486,11 +2560,21 @@ function processUser(cnf, user, callback){
           console.log(chalkAlert("USER ENTITIES URL"
             + " | " + urlObj.url
           ));
-          histograms.url[urlObj.url] = (histograms.url[urlObj.url] === undefined) ? 1 : histograms.url[urlObj.url]+1;
+          histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
+        });
+      }
+      if (user.status.entities.user_mentions.length > 0) {
+        debug(chalkAlert("USER ENTITIES USER MENTIONS: " + jsonPrint(user.status.entities.user_mentions)));
+        user.status.entities.user_mentions.forEach(function(userObj){
+          const screenName = "@" + userObj.screen_name.toLowerCase();
+          console.log(chalkAlert("USER ENTITIES USER MENTION"
+            + " | " + screenName
+            + " | " + userObj.name
+          ));
+          histograms.mentions[screenName] = (histograms.mentions[screenName] === undefined) ? 1 : histograms.mentions[screenName]+1;
         });
       }
     }
-
 
     debug(chalkAlert("FINAL langAnalyzerText: " + langAnalyzerText));
 
@@ -2502,48 +2586,53 @@ function processUser(cnf, user, callback){
 
   else {
 
-    var sentiment;
+    let sentiment;
 
     if ((user.languageAnalysis !== undefined)
       && (user.languageAnalysis.sentiment !== undefined)) {
 
-      var mag = 10*user.languageAnalysis.sentiment.magnitude;
-      var score = 10*user.languageAnalysis.sentiment.score ;
+      const mag = 10*user.languageAnalysis.sentiment.magnitude;
+      const score = 10*user.languageAnalysis.sentiment.score ;
 
       sentiment = "M: " + mag.toFixed(2) + " S: " + score.toFixed(2);
-
     }
     else {
       sentiment = Object.keys(user.languageAnalysis);
     }
 
-    var kws = user.keywords && (user.keywords !== undefined) ? Object.keys(user.keywords) : [];
-    var kwsAuto = user.keywordsAuto && (user.keywordsAuto !== undefined) ? Object.keys(user.keywordsAuto) : [];
+    const kws = user.keywords && (user.keywords !== undefined) ? Object.keys(user.keywords) : [];
+    const kwsAuto = user.keywordsAuto && (user.keywordsAuto !== undefined) ? Object.keys(user.keywordsAuto) : [];
 
-    parseText(user.description);
+    parseText(user.description, function(){});
 
-    var threeceeFollowing = ((user.threeceeFollowing !== undefined) && user.threeceeFollowing && (Object.keys(user.threeceeFollowing).length > 0)) ? user.threeceeFollowing.screenName : "-";
+    if (user.status) { 
+      parseText(user.status.text, function(){});
+    }
+
+    parseUserEntities(user);
+
+    const threeceeFollowing = ((user.threeceeFollowing !== undefined) && user.threeceeFollowing && (Object.keys(user.threeceeFollowing).length > 0)) ? user.threeceeFollowing.screenName : "-";
 
     statsObj.analyzer.skipped += 1;
 
-    console.log(chalkInfo("* LA HIT ... SKIP"
+    console.log(chalkInfo("LA HIT"
       + " [" + statsObj.analyzer.analyzed + " ANLs | " + statsObj.analyzer.skipped + " SKPs | " + statsObj.analyzer.total + " TOT]"
       + " | 3C FLW: " + threeceeFollowing
       + " | Ks: " + kws
       + " | KAs: " + kwsAuto
       + " | LA: " + sentiment
-      + " | " + user.userId
-      + " | " + user.screenName
-      + " | " + user.languageAnalyzed
+      + " | @" + user.screenName
+      + " | " + user.name
+      // + " | LAd: " + user.languageAnalyzed
     ));
 
     callback(null, user);
   }
 }
 
-var currentUserId = 1;
-var totalUsers = 0;
-var userIndex = 0;
+let currentUserId = 1;
+let totalUsers = 0;
+let userIndex = 0;
 User.count({}, function(err, count) {
   totalUsers = count;
 });
@@ -2589,8 +2678,8 @@ function initCursorUser(interval){
               ));
             }
             else {
-              var keywords = user.keywords ? Object.keys(updatedUserObj.keywords) : "";
-              var keywordsAuto = user.keywordsAuto ? Object.keys(updatedUserObj.keywordsAuto) : "";
+              const keywords = user.keywords ? Object.keys(updatedUserObj.keywords) : "";
+              const keywordsAuto = user.keywordsAuto ? Object.keys(updatedUserObj.keywordsAuto) : "";
 
               console.log(chalkInfo("US UPD<"
                 + " | " + updatedUserObj.userId
@@ -2778,8 +2867,6 @@ initialize(configuration, function(err, cnf){
         initCheckRateLimitInterval(checkRateLimitIntervalTime);
         initLangAnalyzerMessageRxQueueInterval(100);
         initLangAnalyzer();
-
-        var twitterUserIds = Object.keys(twitterUserHashMap);
         
         initTwitterUsersComplete = true;
         initTweetHashMapComplete = true;
