@@ -729,33 +729,6 @@ function initInputArrays(callback){
 
   console.log(chalkTwitter("INIT INPUT ARRAYS"));
 
-  // loadFile(dropboxConfigDefaultFolder, defaultInputArraysFile, function(err, loadedInputArraysObj){
-  //   if (!err) {
-  //     debug(jsonPrint(loadedInputArraysObj));
-  //     if (loadedInputArraysObj.words !== undefined) { 
-  //       inputWordsArray = loadedInputArraysObj.words.sort();
-  //       console.log(chalkAlert("LOADED WORDS ARRAY | " + inputWordsArray.length + " WORDS"));
-  //     }
-  //     if (loadedInputArraysObj.mentions !== undefined) { 
-  //       inputMentionsArray = loadedInputArraysObj.mentions.sort();
-  //       console.log(chalkAlert("LOADED MENTIONS ARRAY | " + inputMentionsArray.length + " MENTIONS"));
-  //     }
-  //     if (loadedInputArraysObj.hashtags !== undefined) { 
-  //       inputHashtagsArray = loadedInputArraysObj.hashtags.sort();
-  //       console.log(chalkAlert("LOADED HASHTAGS ARRAY | " + inputHashtagsArray.length + " HASHTAGS"));
-  //     }
-  //     if (loadedInputArraysObj.urls !== undefined) { 
-  //       inputUrlsArray = loadedInputArraysObj.urls.sort();
-  //       console.log(chalkAlert("LOADED URLS ARRAY | " + inputUrlsArray.length + " HASHTAGS"));
-  //     }
-  //     cb();
-  //   }
-  //   else {
-  //     console.log(chalkError("ERROR: loadFile: " + dropboxConfigFolder + "/" + file));
-  //     cb(err);
-  //   }
-  // });
-
   async.each(inputTypes, function(inputType, cb){
 
     const inputFile = "defaultInput" + jsUcfirst(inputType) + ".json";
@@ -771,19 +744,6 @@ function initInputArrays(callback){
         console.log(chalkAlert("LOADED " + inputType.toUpperCase() + " ARRAY"
           + " | " + inputArrayObj[inputType].length + " " + inputType.toUpperCase()
         ));
-
-        // if (loadedArrayObj["words"] !== undefined) { 
-        //   descriptionWordsArray = loadedArrayObj["words"].sort();
-        //   console.log(chalkAlert("LOADED WORDS ARRAY | " + descriptionWordsArray.length + " WORDS"));
-        // }
-        // if (loadedArrayObj["mentions"] !== undefined) { 
-        //   descriptionMentionsArray = loadedArrayObj["mentions"].sort();
-        //   console.log(chalkAlert("LOADED MENTIONS ARRAY | " + descriptionMentionsArray.length + " MENTIONS"));
-        // }
-        // if (loadedArrayObj["hashtags"] !== undefined) { 
-        //   descriptionHashtagsArray = loadedArrayObj["hashtags"].sort();
-        //   console.log(chalkAlert("LOADED HASHTAGS ARRAY | " + descriptionHashtagsArray.length + " HASHTAGS"));
-        // }
         cb();
       }
       else {
@@ -797,10 +757,6 @@ function initInputArrays(callback){
       return(callback(err));
     }
     else {
-      // descriptionArrays.push({type: "mentions", array: descriptionMentionsArray});
-      // descriptionArrays.push({type: "hashtags", array: descriptionHashtagsArray});
-      // descriptionArrays.push({type: "words", array: descriptionWordsArray});
-
       console.log(chalkAlert("LOADED INPUT ARRAY FILES"));
 
       saveFile(dropboxConfigHostFolder, inputArraysFile, inputArrays, function(){
@@ -2239,7 +2195,7 @@ function generateAutoKeywords(user, callback){
 
         async.eachSeries(inputArray[type], function(element, cb2){
           if (histogram[type][element]) {
-            console.log("ARRAY: " + type + " | " + element + " | " + histogram[type][element]);
+            debug("ARRAY: " + type + " | " + element + " | " + histogram[type][element]);
             networkInput.push(1);
             cb2();
           }
@@ -2263,7 +2219,7 @@ function generateAutoKeywords(user, callback){
     async.eachSeries(inputArrays, function(inputArray, cb1){
       const type = Object.keys(inputArray)[0];
       inputArray[type].forEach(function(){
-        console.log("ARRAY: " + type + " | + " + 0);
+        debug("ARRAY: " + type + " | + " + 0);
         networkInput.push(0);
       });
     });
