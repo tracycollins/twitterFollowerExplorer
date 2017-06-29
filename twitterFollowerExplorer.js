@@ -13,7 +13,7 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 const ONE_HOUR = ONE_MINUTE*60 ;
 // let ONE_DAY = ONE_HOUR*24 ;
 
-let TFE_USER_DB_CRAWL = false;
+let TFE_USER_DB_CRAWL = true;
 
 const Dropbox = require("dropbox");
 const os = require("os");
@@ -185,11 +185,12 @@ let langAnalyzerMessageRxQueueReady = true;
 
 function indexOfMax(arr) {
   if (arr.length === 0) {
+    console.log(chalkAlert("indexOfMax: 0 LENG ARRAY: -1"));
     return -1;
   }
 
-  let max = arr[0];
-  let maxIndex = 0;
+  let max = 0;
+  let maxIndex = -1;
   let i=1;
 
   for (i = 1; i < arr.length; i+=1) {
@@ -198,7 +199,10 @@ function indexOfMax(arr) {
       max = arr[i];
     }
   }
-  return maxIndex;
+  if (i === arr.length) { 
+    console.log(chalk.blue("indexOfMax: " + maxIndex + " | " + arr[maxIndex] + " | " + arr));
+    return maxIndex; 
+  }
 }
 
 
@@ -421,7 +425,7 @@ let dropboxConfigFile = hostname + "_" + DROPBOX_TFE_CONFIG_FILE;
 let statsFolder = "/stats/" + hostname;
 let statsFile = DROPBOX_TFE_STATS_FILE;
 
-configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetwork";
+configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
 console.log("DROPBOX_TFE_CONFIG_FILE: " + DROPBOX_TFE_CONFIG_FILE);
@@ -1576,9 +1580,14 @@ function initLangAnalyzerMessageRxQueueInterval(interval){
             + " | UID: " + m.obj.userId
             + " | SN: " + m.obj.screenName
             + " | N: " + m.obj.name
+            // + " | KWs: " + Object.keys(m.obj.keywords)
             // + " | ENTs: " + Object.keys(m.results.entities).length
             // + "\nENTITIES\n" + jsonPrint(m.results.entities)
           ));
+
+          if (m.obj.keywords) {
+            console.log(chalkAlert("KWs\n" + jsonPrint(m.obj.keywords)));
+          }
 
           if (m.error) {
             // console.error(chalkError("*** LANG ERROR"
@@ -1889,10 +1898,11 @@ function fetchTwitterFriends(cnf, callback){
 
           userServer.findOneUser(userObj, {noInc: true}, function(err, updatedUserObj){
 
-            debug(chalkInfo("<DB USER"
+            console.log(chalkInfo("<DB USER"
               + " | " + updatedUserObj.userId
               + " | " + updatedUserObj.screenName
-              + " | LA: " + jsonPrint(updatedUserObj.languageAnalysis)
+              + "\nKWs: " + jsonPrint(updatedUserObj.keywords)
+              // + " | LA: " + jsonPrint(updatedUserObj.languageAnalysis)
             ));
 
             processUser(configuration, updatedUserObj, function(err, user){
@@ -2068,10 +2078,16 @@ function parseText(text, callback){
   const urlArray = Array.from(getUrls(text));
   const wordArray = keywordExtractor.extract(text, wordExtractionOptions);
 
+  const userHistograms = {};
+  userHistograms.words = {};
+  userHistograms.urls = {};
+  userHistograms.hashtags = {};
+  userHistograms.mentions = {};
+
   async.parallel({
     mentions: function(cb){
       if (mentionArray) {
-        const histogram = histograms.mentions;
+        const histogram = userHistograms.mentions;
         mentionArray.forEach(function(userId){
           if (!userId.match("@")) {
             userId = "@" + userId.toLowerCase();
@@ -2090,7 +2106,7 @@ function parseText(text, callback){
     },
     hashtags: function(cb){
       if (hashtagArray) {
-        const histogram = histograms.hashtags;
+        const histogram = userHistograms.hashtags;
         hashtagArray.forEach(function(hashtag){
           hashtag = hashtag.toLowerCase();
           histogram[hashtag] = (histogram[hashtag] === undefined) ? 1 : histogram[hashtag]+1;
@@ -2108,7 +2124,7 @@ function parseText(text, callback){
     words: function(cb){
       if (wordArray) {
 
-        const histogram = histograms.words;
+        const histogram = userHistograms.words;
 
         wordArray.forEach(function(w){
           const word = w.toLowerCase();
@@ -2157,7 +2173,7 @@ function parseText(text, callback){
     },
     urls: function(cb){
       if (urlArray) {
-        const histogram = histograms.urls;
+        const histogram = userHistograms.urls;
         urlArray.forEach(function(url){
           url = url.toLowerCase();
           histogram[url] = (histogram[url] === undefined) ? 1 : histogram[url]+1;
@@ -2183,6 +2199,39 @@ function parseText(text, callback){
   });
 }
 
+function printDatum(input){
+
+  let row = "";
+  let col = 0;
+  let rowNum = 0;
+  const COLS = 50;
+
+  input.forEach(function(bit, i){
+    if (i === 0) {
+      row = row + bit.toFixed(10) + " | " ;
+    }
+    else if (i === 1) {
+      row = row + bit.toFixed(10);
+    }
+    else if (i === 2) {
+      console.log("ROW " + rowNum + " | " + row);
+      row = bit ? "X" : ".";
+      col = 1;
+      rowNum += 1;
+    }
+    else if (col < COLS){
+      row = row + (bit ? "X" : ".");
+      col += 1;
+    }
+    else {
+      console.log("ROW " + rowNum + " | " + row);
+      row = bit ? "X" : ".";
+      col = 1;
+      rowNum += 1;
+    }
+  });
+}
+
 function generateAutoKeywords(user, callback){
 
   let networkInput = [ 0, 0 ];
@@ -2197,7 +2246,7 @@ function generateAutoKeywords(user, callback){
     let text;
 
     if (user.status && user.description) {
-      text = user.description + " " + user.status.text;
+      text = user.description + "\n" + user.status.text;
     }
     else if (user.status) {
       text = user.status.text;
@@ -2208,22 +2257,39 @@ function generateAutoKeywords(user, callback){
 
     parseText(text, function(err, histogram){
 
-      debug("user.description + status\n" + jsonPrint(text));
+      user.inputHits = 0;
+
+      console.log(chalkError("USER DESC/STATUS"
+        + " | @" + user.screenName
+        + "\n" + jsonPrint(text)
+      ));
 
       async.eachSeries(inputArrays, function(inputArray, cb1){
 
         const type = Object.keys(inputArray)[0];
 
-        debug(chalkAlert("START ARRAY: " + type + " | " + inputArray[type].length));
+        console.log(chalkAlert("START ARRAY: " + type + " | " + inputArray[type].length));
 
         async.eachSeries(inputArray[type], function(element, cb2){
           if (histogram[type][element]) {
-            debug("ARRAY: " + type + " | " + element + " | " + histogram[type][element]);
+            user.inputHits += 1;
+            console.log(chalkAlert("U HITS"
+              + " | @" + user.screenName 
+              + " | " + user.inputHits 
+              + " | ARRAY: " + type 
+              + " | " + element 
+              + " | " + histogram[type][element]
+            ));
             networkInput.push(1);
             cb2();
           }
           else {
-            // console.log("ARRAY: " + descArray.type + " | - " + element);
+            debug(chalkInfo("U HITS" 
+              + " | @" + user.screenName 
+              + " | " + user.inputHits 
+              + " | ARRAY: " + type 
+              + " | " + element
+            ));
             networkInput.push(0);
             cb2();
           }
@@ -2247,6 +2313,8 @@ function generateAutoKeywords(user, callback){
       });
     });
   }
+
+  printDatum(networkInput);
 
   let networkOutput = network.activate(networkInput); // 0.0275
 
@@ -2707,6 +2775,11 @@ function loadNeuralNetworkFile(cnf, callback){
     }
     else {
       console.log(chalkAlert("LOADED NETWORK FILE: " + cnf.neuralNetworkFolder + "/" + cnf.neuralNetworkFile));
+
+      Object.keys(loadedNetworkObj).forEach(function(key){
+        console.log(chalkAlert("NETWORK OBJ KEY: " + key));
+      });
+
       if (loadedNetworkObj.normalization) {
         cnf.normalization = loadedNetworkObj.normalization;
         console.log(chalkAlert("LOADED NORMALIZATION\n" + jsonPrint(cnf.normalization)));
