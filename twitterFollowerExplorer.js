@@ -2161,9 +2161,9 @@ function parseText(text, options, callback){
             word = word.replace(/'s/gi, "");
             const m = mentionsRegex().exec(word);
             const h = hashtagRegex().exec(word);
-            const rgx = ignoreWordRegex.test(word);
+            // const rgx = ignoreWordRegex.test(word);
             const u = (Array.from(getUrls(text)).length > 0) ? Array.from(getUrls(text)) : null;
-            if (m || h || u || rgx 
+            if (m || h || u 
               || (word === "/") 
               || word.includes("--") 
               || word.includes("|") 
@@ -2172,18 +2172,18 @@ function parseText(text, options, callback){
               || word.includes("≠") 
               || word.includes("http") 
               || word.includes("+")) {
-              if (rgx) { console.log(chalkAlert("-- REGEX SKIP WORD"
-                + " | M: " + m
-                + " | H: " + h
-                + " | U: " + u
-                + " | RGX: " + rgx
-                + " | " + word
-              )) };
+              // if (rgx) { console.log(chalkAlert("-- REGEX SKIP WORD"
+              //   + " | M: " + m
+              //   + " | H: " + h
+              //   + " | U: " + u
+              //   + " | RGX: " + rgx
+              //   + " | " + word
+              // )) };
               debug(chalkAlert("-- SKIP WORD"
                 + " | M: " + m
                 + " | H: " + h
                 + " | U: " + u
-                + " | RGX: " + rgx
+                // + " | RGX: " + rgx
                 + " | " + word
               ));
             }
@@ -2281,67 +2281,131 @@ function generateAutoKeywords(user, callback){
     networkInput[1] = user.languageAnalysis.sentiment.score;
   }
 
-  if (user.status || user.retweeted_status || user.description){
+  // if (user.status || user.retweeted_status || user.description){
 
-    let text = user.name + " " + user.screenName;
+  //   let text = user.name + " " + user.screenName;
 
-    if (user.status) {
-      text = text + " " + user.status.text;
-    }
+  //   if (user.status) {
+  //     text = text + " " + user.status.text;
+  //   }
     
-    if (user.retweeted_status) {
-      text = text + " " + user.retweeted_status.text;
-    }
+  //   if (user.retweeted_status) {
+  //     text = text + " " + user.retweeted_status.text;
+  //   }
 
-    if (user.description) {
-      text = text + " " + user.description;
-    }
+  //   if (user.description) {
+  //     text = text + " " + user.description;
+  //   }
 
-    parseText(text, {updateGlobalHistograms: false}, function(err, histogram){
+  if ((user.status !== undefined) 
+    || (user.retweeted_status !== undefined) 
+    || (user.description !== undefined)){
 
-      user.inputHits = 0;
+    async.waterfall([
+      function userStatusText(cb) {
 
-      console.log(chalkError("GEN AUTO KEYWORDS | USER DESC/STATUS"
-        + " | @" + user.screenName
-        + "\n" + jsonPrint(text)
-      ));
+        if ((user.status !== undefined) && user.status) {
 
-      async.eachSeries(inputArrays, function(inputArray, cb1){
+          // if (user.status.truncated) {
+          //   console.log(chalkAlert("TRUNCATED\n" + jsonPrint(user.status)));
+          // }
+          cb(null, user.status.text);
+        }
+        else {
+          cb(null, null);
+        }
+      },
+      function userRetweetText(text, cb) {
+        if ((user.retweeted_status !== undefined) && user.retweeted_status) {
 
-        const type = Object.keys(inputArray)[0];
+          console.log(chalkAlert("RT\n" + jsonPrint(user.retweeted_status.text)));
 
-        debug(chalkAlert("START ARRAY: " + type + " | " + inputArray[type].length));
+          quit();
 
-        async.eachSeries(inputArray[type], function(element, cb2){
-          if (histogram[type][element]) {
-            user.inputHits += 1;
-            console.log(chalkAlert("GAKW | U HITS"
-              + " | @" + user.screenName 
-              + " | " + user.inputHits 
-              + " | ARRAY: " + type 
-              + " | " + element 
-              + " | " + histogram[type][element]
-            ));
-            networkInput.push(1);
-            cb2();
+          if (text) {
+            cb(null, text + " " + user.retweeted_status.text);
           }
           else {
-            debug(chalkInfo("U HITS" 
-              + " | @" + user.screenName 
-              + " | " + user.inputHits 
-              + " | ARRAY: " + type 
-              + " | " + element
-            ));
-            networkInput.push(0);
-            cb2();
+            cb(null, user.retweeted_status.text);
           }
-        }, function(err){
-          debug(chalkAlert("DONE ARRAY: " + type));
-          cb1();
-        });
+        }
+        else {
+          if (text) {
+            cb(null, text);
+          }
+          else {
+            cb(null, null);
+          }
+        }
+      },
+      function userDescriptionText(text, cb) {
+        if ((user.description !== undefined) && user.description) {
+          if (text) {
+            cb(null, text + " " + user.description);
+          }
+          else {
+            cb(null, user.description);
+          }
+        }
+        else {
+          if (text) {
+            cb(null, text);
+          }
+          else {
+            cb(null, null);
+          }
+        }
+      }
+    ], function (error, text) {
 
-      }, function(err){
-        debug(chalkAlert("PARSE DESC COMPLETE"));
+      if (!text) { text = " "; }
+
+      parseText(text, {updateGlobalHistograms: false}, function(err, histogram){
+
+        user.inputHits = 0;
+
+        console.log(chalkError("GEN AUTO KEYWORDS | USER DESC/STATUS"
+          + " | @" + user.screenName
+          + "\n" + jsonPrint(text)
+        ));
+
+        async.eachSeries(inputArrays, function(inputArray, cb1){
+
+          const type = Object.keys(inputArray)[0];
+
+          debug(chalkAlert("START ARRAY: " + type + " | " + inputArray[type].length));
+
+          async.eachSeries(inputArray[type], function(element, cb2){
+            if (histogram[type][element]) {
+              user.inputHits += 1;
+              console.log(chalkAlert("GAKW | U HITS"
+                + " | @" + user.screenName 
+                + " | " + user.inputHits 
+                + " | ARRAY: " + type 
+                + " | " + element 
+                + " | " + histogram[type][element]
+              ));
+              networkInput.push(1);
+              cb2();
+            }
+            else {
+              debug(chalkInfo("U HITS" 
+                + " | @" + user.screenName 
+                + " | " + user.inputHits 
+                + " | ARRAY: " + type 
+                + " | " + element
+              ));
+              networkInput.push(0);
+              cb2();
+            }
+          }, function(err){
+            debug(chalkAlert("DONE ARRAY: " + type));
+            cb1();
+          });
+
+        }, function(err){
+          debug(chalkAlert("PARSE DESC COMPLETE"));
+        });
       });
 
     });
@@ -2358,7 +2422,7 @@ function generateAutoKeywords(user, callback){
 
   printDatum(networkInput);
 
-  let networkOutput = network.activate(networkInput); // 0.0275
+  let networkOutput = network.activate(networkInput);
 
   let maxOutputIndex = indexOfMax(networkOutput);
 
@@ -2394,7 +2458,7 @@ function generateAutoKeywords(user, callback){
   let magnitudeText;
   let scoreText;
 
-  if (user.languageAnalysis.sentiment && user.languageAnalysis.sentiment.magnitude && user.languageAnalysis.sentiment.score){
+  if (user.languageAnalysis.sentiment){
     magnitudeText = user.languageAnalysis.sentiment.magnitude.toFixed(3);
     scoreText = user.languageAnalysis.sentiment.score.toFixed(3);
   }
@@ -2405,8 +2469,8 @@ function generateAutoKeywords(user, callback){
 
   console.log(currentChalk("AUTO KW"
     + " | " + user.screenName
-    + " | MAG: " + magnitudeText
-    + " | SCORE: " + scoreText
+    + " | MAG: " + networkInput[0].toFixed(6)
+    + " | SCORE: " + networkInput[1].toFixed(6)
     + " | L: " + networkOutput[0].toFixed(3)
     + " | N: " + networkOutput[1].toFixed(3)
     + " | R: " + networkOutput[2].toFixed(3)
