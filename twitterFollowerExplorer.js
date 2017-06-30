@@ -19,6 +19,8 @@ const Dropbox = require("dropbox");
 const os = require("os");
 const util = require("util");
 const moment = require("moment");
+const arrayUnique = require("array-unique");
+var Autolinker = require( "autolinker" );
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
@@ -317,26 +319,6 @@ process.on( "SIGINT", function() {
 process.on("exit", function() {
   if (langAnalyzer !== undefined) { langAnalyzer.kill("SIGINT"); }
 });
-
-// let fsm = new StateMachine({
-//   initial: "idle",
-//   transitions: [
-//     { name: "reset", from: "*", to: "idle" },
-//     { name: "fetchTwitterFriendsInit", from: ["idle"], to: "fetchTwitterFriends" },
-//     { name: "fetchTwitterFriendsEnd", from: ["fetchTwitterFriends"], to: "idle" },
-//     { name: "fetchTwitterFriendsError", from: ["fetchTwitterFriends"], to: "idle" },
-//     { name: "cursorUserInit", from: ["idle"], to: "cursorUser" },
-//     { name: "cursorUserError", from: ["cursorUser"], to: "idle" },
-//     { name: "cursorUserEnd", from: ["cursorUser"], to: "idle" },
-//     { name: "twitterExceedLimit", from: ["idle", "fetchTwitterFriends", "waitLimitReset"], to: "waitLimitReset" },
-//     { name: "twitterLimitReset",  from: "waitLimitReset", to: "fetchTwitterFriends" },
-//     { name: "twitterError", from: ["poll", "waitLimitReset"], to: "idle" },
-// ]});
-
-// fsm.onenterstate = function(event, from, to){
-//   console.log(chalkFsm("### FSM STATE: " + fsm.current));
-// };
-
 
 const configEvents = new EventEmitter2({
   wildcard: true,
@@ -741,6 +723,10 @@ function initInputArrays(callback){
     loadFile(dropboxConfigDefaultFolder, inputFile, function(err, inputArrayObj){
       if (!err) {
         debug(jsonPrint(inputArrayObj));
+
+        arrayUnique(inputArrayObj[inputType]);
+
+        inputArrayObj[inputType].sort();
 
         inputArrays.push(inputArrayObj);
 
@@ -2068,134 +2054,188 @@ const wordExtractionOptions = {
   remove_duplicates: true
 };
 
-function parseText(text, callback){
+var parser = new Autolinker( {
+  email: false,
+  urls: true,
+  hashtag: "twitter",
+  mention: "twitter"
+} );
 
-  const mRegEx = mentionsRegex();
-  const hRegEx = hashtagRegex();
 
-  const mentionArray = mRegEx.exec(text);
-  const hashtagArray = hRegEx.exec(text);
-  const urlArray = Array.from(getUrls(text));
-  const wordArray = keywordExtractor.extract(text, wordExtractionOptions);
+function parseText(text, options, callback){
 
-  const userHistograms = {};
-  userHistograms.words = {};
-  userHistograms.urls = {};
-  userHistograms.hashtags = {};
-  userHistograms.mentions = {};
+  const parseResults = parser.parse( text );
 
-  async.parallel({
-    mentions: function(cb){
-      if (mentionArray) {
-        const histogram = userHistograms.mentions;
-        mentionArray.forEach(function(userId){
-          if (!userId.match("@")) {
-            userId = "@" + userId.toLowerCase();
-            histogram[userId] = (histogram[userId] === undefined) ? 1 : histogram[userId]+1;
-            debug(chalkAlert("->- DESC Ms"
-              + " | " + histogram[userId]
-              + " | " + userId
-            ));
-          }
-        });
-        cb(null, histogram);
-      }
-      else {
-        cb(null, histograms.mentions);
-      }
-    },
-    hashtags: function(cb){
-      if (hashtagArray) {
-        const histogram = userHistograms.hashtags;
-        hashtagArray.forEach(function(hashtag){
-          hashtag = hashtag.toLowerCase();
-          histogram[hashtag] = (histogram[hashtag] === undefined) ? 1 : histogram[hashtag]+1;
-          debug(chalkAlert("->- DESC Hs"
-            + " | " + histogram[hashtag]
-            + " | " + hashtag
-          ));
-        });
-        cb(null, histogram);
-      }
-      else {
-        cb(null, histograms.hashtags);
-      }
-    },
-    words: function(cb){
-      if (wordArray) {
+  console.log(chalk.blue("\ntext\n" + text));
+  // console.log(chalk.blue("parseResults\n" + jsonPrint(parseResults) + "\n"));
 
-        const histogram = userHistograms.words;
+  let urlArray = [];
+  let mentionArray = [];
+  let hashtagArray = [];
 
-        wordArray.forEach(function(w){
-          const word = w.toLowerCase();
-          const m = mRegEx.exec(word);
-          const h = hRegEx.exec(word);
-          const rgx = ignoreWordRegex.test(word);
-          const u = (Array.from(getUrls(text)).length > 0) ? Array.from(getUrls(text)) : null;
-          if (m || h || u || rgx 
-            || (word === "/") 
-            || word.includes("--") 
-            || word.includes("|") 
-            || word.includes("#") 
-            || word.includes("w/") 
-            || word.includes("≠") 
-            || word.includes("http") 
-            || word.includes("+")) {
-            if (rgx) { console.log(chalkAlert("-- REGEX SKIP WORD"
-              + " | M: " + m
-              + " | H: " + h
-              + " | U: " + u
-              + " | RGX: " + rgx
-              + " | " + word
-            )) };
-            debug(chalkAlert("-- SKIP WORD"
-              + " | M: " + m
-              + " | H: " + h
-              + " | U: " + u
-              + " | RGX: " + rgx
-              + " | " + word
-            ));
-          }
-          else {
-            histogram[word] = (histogram[word] === undefined) ? 1 : histogram[word]+1;
-            debug(chalkAlert("->- DESC Ws"
-              + " | " + histogram[word]
-              + " | " + word
-            ));
-          }
-        });
-
-        cb(null, histogram);
-      }
-      else {
-        cb(null, histograms.words);
-      }
-    },
-    urls: function(cb){
-      if (urlArray) {
-        const histogram = userHistograms.urls;
-        urlArray.forEach(function(url){
-          url = url.toLowerCase();
-          histogram[url] = (histogram[url] === undefined) ? 1 : histogram[url]+1;
-          debug(chalkAlert("->- DESC Us"
-            + " | " + histogram[url]
-            + " | " + url
-          ));
-        });
-        cb(null, histogram);
-      }
-      else {
-        cb(null, histograms.urls);
-      }
+  async.each(parseResults, function(matchObj, cb){
+    const type = matchObj.getType();
+    debug("type: " + type);
+    switch (type) {
+      case "url":
+        console.log(chalkInfo("URL: " + matchObj.getMatchedText().toLowerCase()));
+        urlArray.push(matchObj.getMatchedText().toLowerCase());
+        cb();
+      break;
+      case "mention":
+        mentionArray.push(matchObj.getMatchedText().toLowerCase());
+        console.log(chalkInfo(mentionArray.length + " | MEN: " + matchObj.getMatchedText().toLowerCase()));
+        cb();
+      break;
+      case "hashtag":
+        hashtagArray.push(matchObj.getMatchedText().toLowerCase());
+        console.log(chalkInfo(hashtagArray.length + " | HTG: " + matchObj.getMatchedText().toLowerCase()));
+        cb();
+      break;
+      default:
+        console.error(chalkError("UNKNOWN PARSE TYPE: " + type));
+        cb();
     }
-  }, function(err, results){
-    let text = "HISTOGRAMS";
-    // console.log("PARSE TEXT RESULTS");
-    Object.keys(results).forEach(function(key){
-      if (results[key]) {text = text + " | " + key.toUpperCase() + ": " + Object.keys(results[key]).length;}
+   }, function(err){
+    // const mentionArray = mentionsRegex().exec(text);
+    // const hashtagArray = hashtagRegex().exec(text);
+    // const urlArray = Array.from(getUrls(text));
+    const wordArray = keywordExtractor.extract(text, wordExtractionOptions);
+
+    const userHistograms = {};
+    userHistograms.words = {};
+    userHistograms.urls = {};
+    userHistograms.hashtags = {};
+    userHistograms.mentions = {};
+
+    async.parallel({
+      mentions: function(cb){
+        if (mentionArray) {
+          // mentionArray.forEach(function(userId){
+          async.each(mentionArray, function(userId, cb2){
+            if (!userId.match("@")) {
+              userId = "@" + userId.toLowerCase();
+              if (options.updateGlobalHistograms) {
+                histograms.mentions[userId] = (histograms.mentions[userId] === undefined) ? 1 : histograms.mentions[userId]+1;
+              }
+              userHistograms.mentions[userId] = (userHistograms.mentions[userId] === undefined) ? 1 : userHistograms.mentions[userId]+1;
+              debug(chalkAlert("->- DESC Ms"
+                + " | " + userHistograms.mentions[userId]
+                + " | " + userId
+              ));
+              cb2();
+            }
+          }, function(err){
+            cb(null, userHistograms.mentions);
+          });
+
+          // });
+        }
+        else {
+          cb(null, userHistograms.mentions);
+        }
+      },
+      hashtags: function(cb){
+        if (hashtagArray) {
+          hashtagArray.forEach(function(hashtag){
+            hashtag = hashtag.toLowerCase();
+            if (options.updateGlobalHistograms) {
+              histograms.hashtags[hashtag] = (histograms.hashtags[hashtag] === undefined) ? 1 : histograms.hashtags[hashtag]+1;
+            }
+            userHistograms.hashtags[hashtag] = (userHistograms.hashtags[hashtag] === undefined) ? 1 : userHistograms.hashtags[hashtag]+1;
+            debug(chalkAlert("->- DESC Hs"
+              + " | " + userHistograms.hashtags[hashtag]
+              + " | " + hashtag
+            ));
+          });
+          cb(null, userHistograms.hashtags);
+        }
+        else {
+          cb(null, userHistograms.hashtags);
+        }
+      },
+      words: function(cb){
+        if (wordArray) {
+          wordArray.forEach(function(w){
+            let word = w.toLowerCase();
+            word = word.replace(/'s/gi, "");
+            const m = mentionsRegex().exec(word);
+            const h = hashtagRegex().exec(word);
+            const rgx = ignoreWordRegex.test(word);
+            const u = (Array.from(getUrls(text)).length > 0) ? Array.from(getUrls(text)) : null;
+            if (m || h || u || rgx 
+              || (word === "/") 
+              || word.includes("--") 
+              || word.includes("|") 
+              || word.includes("#") 
+              || word.includes("w/") 
+              || word.includes("≠") 
+              || word.includes("http") 
+              || word.includes("+")) {
+              if (rgx) { console.log(chalkAlert("-- REGEX SKIP WORD"
+                + " | M: " + m
+                + " | H: " + h
+                + " | U: " + u
+                + " | RGX: " + rgx
+                + " | " + word
+              )) };
+              debug(chalkAlert("-- SKIP WORD"
+                + " | M: " + m
+                + " | H: " + h
+                + " | U: " + u
+                + " | RGX: " + rgx
+                + " | " + word
+              ));
+            }
+            else {
+              if (options.updateGlobalHistograms) {
+                histograms.words[word] = (histograms.words[word] === undefined) ? 1 : histograms.words[word]+1;
+              }
+              userHistograms.words[word] = (userHistograms.words[word] === undefined) ? 1 : userHistograms.words[word]+1;
+              debug(chalkAlert("->- DESC Ws"
+                + " | " + userHistograms.words[word]
+                + " | " + word
+              ));
+            }
+          });
+
+          cb(null, userHistograms.words);
+        }
+        else {
+          cb(null, userHistograms.words);
+        }
+      },
+      urls: function(cb){
+        if (urlArray) {
+          urlArray.forEach(function(url){
+            url = url.toLowerCase();
+            if (options.updateGlobalHistograms) {
+              histograms.urls[url] = (histograms.urls[url] === undefined) ? 1 : histograms.urls[url]+1;
+            }
+            userHistograms.urls[url] = (userHistograms.urls[url] === undefined) ? 1 : userHistograms.urls[url]+1;
+            debug(chalkAlert("->- DESC Us"
+              + " | " + userHistograms.urls[url]
+              + " | " + url
+            ));
+          });
+          cb(null, userHistograms.urls);
+        }
+        else {
+          cb(null, userHistograms.urls);
+        }
+      }
+    }, function(err, results){
+      let text = "HISTOGRAMS";
+      // console.log("PARSE TEXT RESULTS");
+      Object.keys(results).forEach(function(key){
+        if (results[key]) {
+          text = text + " | " + key.toUpperCase() + ": " + Object.keys(results[key]).length;
+        }
+      });
+      console.log(chalkLog(text));
+      callback(err, results);
     });
-    console.log(chalkLog(text));
-    callback(err, results);
+
   });
 }
 
@@ -2241,25 +2281,27 @@ function generateAutoKeywords(user, callback){
     networkInput[1] = user.languageAnalysis.sentiment.score;
   }
 
-  if (user.description || user.status){
+  if (user.status || user.retweeted_status || user.description){
 
-    let text;
+    let text = user.name + " " + user.screenName;
 
-    if (user.status && user.description) {
-      text = user.description + "\n" + user.status.text;
+    if (user.status) {
+      text = text + " " + user.status.text;
     }
-    else if (user.status) {
-      text = user.status.text;
-    }
-    else if (user.description) {
-      text = user.description;
+    
+    if (user.retweeted_status) {
+      text = text + " " + user.retweeted_status.text;
     }
 
-    parseText(text, function(err, histogram){
+    if (user.description) {
+      text = text + " " + user.description;
+    }
+
+    parseText(text, {updateGlobalHistograms: false}, function(err, histogram){
 
       user.inputHits = 0;
 
-      console.log(chalkError("USER DESC/STATUS"
+      console.log(chalkError("GEN AUTO KEYWORDS | USER DESC/STATUS"
         + " | @" + user.screenName
         + "\n" + jsonPrint(text)
       ));
@@ -2268,12 +2310,12 @@ function generateAutoKeywords(user, callback){
 
         const type = Object.keys(inputArray)[0];
 
-        console.log(chalkAlert("START ARRAY: " + type + " | " + inputArray[type].length));
+        debug(chalkAlert("START ARRAY: " + type + " | " + inputArray[type].length));
 
         async.eachSeries(inputArray[type], function(element, cb2){
           if (histogram[type][element]) {
             user.inputHits += 1;
-            console.log(chalkAlert("U HITS"
+            console.log(chalkAlert("GAKW | U HITS"
               + " | @" + user.screenName 
               + " | " + user.inputHits 
               + " | ARRAY: " + type 
@@ -2559,83 +2601,137 @@ function processUser(cnf, user, callback){
   if ((!user.languageAnalyzed && cnf.enableLanguageAnalysis) 
     || cnf.forceLanguageAnalysis) {
 
-    parseText(user.description, function(){});
+    let text = user.name + " " + user.screenName;
 
-    if (user.retweeted_status) { 
-      parseText(user.retweeted_status.text, function(){});
-      langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description + " | " + user.retweeted_status.text;
-    }
-    else if (user.status) { 
-      parseText(user.status.text, function(){});
-      langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description + " | " + user.status.text;
-    }
-    else {
-      langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description;
-    }
-
-    langAnalyzerText = langAnalyzerText.replace(/@/g, "");
-
-    // REMOVE URLS FROM DESCRIPTION. MONGO DB HATES URLs as object keys on writes
-    if (user.entities && user.entities.description && (user.entities.description.urls.length > 0)) {
-      debug(chalkAlert("USER ENTITIES DESC URLS: " + jsonPrint(user.entities.description.urls)));
-
-      user.entities.description.urls.forEach(function(urlObj){
-        console.log(chalkAlert("USER ENTITIES DESC URL"
-          + " | " + urlObj.url
-        ));
-        const regex = new RegExp(urlObj.url);
-        histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
-        langAnalyzerText = langAnalyzerText.replace(regex, "");
-      });
+    if (user.status) {
+      text = text + " " + user.status.text;
     }
     
-    if (user.entities && user.entities.url && (user.entities.url.urls.length > 0)) {
-      debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.entities.url.urls)));
-      user.entities.url.urls.forEach(function(urlObj){
-        console.log(chalkAlert("USER ENTITIES URL"
-          + " | " + urlObj.url
-        ));
-        histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
-      });
+    if (user.retweeted_status) {
+      text = text + " " + user.retweeted_status.text;
     }
 
-    if (user.status && user.status.entities) {
-      if (user.status.entities.hashtags.length > 0) {
-        user.status.entities.hashtags.forEach(function(h){
-          const ht = "#" + h.text.toLowerCase();
-          console.log(chalkAlert("USER STATUS ENTITIES HASHTAG"
-            + " | " + ht
+    if (user.description) {
+      text = text + " " + user.description;
+    }
+
+
+    parseText(text, {updateGlobalHistograms: true}, function(err, histogram){
+
+      if (err) {
+        console.error("*** PARSE TEXT ERROR\n" + err);
+      }
+
+      console.log(chalkLog("user.description + status histogram\n" + jsonPrint(histogram)));
+      debug("user.description + status\n" + jsonPrint(text));
+
+      async.eachSeries(inputArrays, function(inputArray, cb1){
+
+        const type = Object.keys(inputArray)[0];
+
+        let inputHitsSum = 0;
+
+        debug(chalkAlert("START ARRAY: " + type + " | " + inputArray[type].length));
+
+        async.eachSeries(inputArray[type], function(element, cb2){
+          if (histogram[type][element]) {
+            trainingSetDatum.inputHits += 1;
+            console.log(chalkTwitter("+++ DATUM BIT: " + type
+              + " | INPUT HITS: " + trainingSetDatum.inputHits 
+              + " | " + element 
+              + " | " + histogram[type][element]
+            ));
+            trainingSetDatum.input.push(1);
+            cb2();
+          }
+          else {
+            debug(chalkInfo("--- DATUM BIT: " + type
+              + " | " + element 
+              + " | " + histogram[type][element]
+            ));
+            trainingSetDatum.input.push(0);
+            cb2();
+          }
+        }, function(err){
+         if (err) {
+            console.error("*** PARSE TEXT ERROR\n" + err);
+          }
+          debug(chalkAlert("DONE ARRAY: " + type));
+          cb1();
+        });
+
+      }, function(err){
+       if (err) {
+          console.error("*** PARSE TEXT ERROR\n" + err);
+        }
+        debug(chalkAlert("PARSE DESC COMPLETE"));
+      });
+
+      langAnalyzerText = langAnalyzerText.replace(/@/g, "");
+
+      // REMOVE URLS FROM DESCRIPTION. MONGO DB HATES URLs as object keys on writes
+      if (user.entities && user.entities.description && (user.entities.description.urls.length > 0)) {
+        debug(chalkAlert("USER ENTITIES DESC URLS: " + jsonPrint(user.entities.description.urls)));
+
+        user.entities.description.urls.forEach(function(urlObj){
+          console.log(chalkAlert("USER ENTITIES DESC URL"
+            + " | " + urlObj.url
           ));
-          histograms.hashtags[ht] = (histograms.hashtags[ht] === undefined) ? 1 : histograms.hashtags[ht]+1;
+          const regex = new RegExp(urlObj.url);
+          histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
+          langAnalyzerText = langAnalyzerText.replace(regex, "");
         });
       }
-      if (user.status.entities.urls.length > 0) {
-        debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.status.entities.urls)));
-        user.status.entities.urls.forEach(function(urlObj){
+      
+      if (user.entities && user.entities.url && (user.entities.url.urls.length > 0)) {
+        debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.entities.url.urls)));
+        user.entities.url.urls.forEach(function(urlObj){
           console.log(chalkAlert("USER ENTITIES URL"
             + " | " + urlObj.url
           ));
           histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
         });
       }
-      if (user.status.entities.user_mentions.length > 0) {
-        debug(chalkAlert("USER ENTITIES USER MENTIONS: " + jsonPrint(user.status.entities.user_mentions)));
-        user.status.entities.user_mentions.forEach(function(userObj){
-          const screenName = "@" + userObj.screen_name.toLowerCase();
-          console.log(chalkAlert("USER ENTITIES USER MENTION"
-            + " | " + screenName
-            + " | " + userObj.name
-          ));
-          histograms.mentions[screenName] = (histograms.mentions[screenName] === undefined) ? 1 : histograms.mentions[screenName]+1;
-        });
+
+      if (user.status && user.status.entities) {
+        if (user.status.entities.hashtags.length > 0) {
+          user.status.entities.hashtags.forEach(function(h){
+            const ht = "#" + h.text.toLowerCase();
+            console.log(chalkAlert("USER STATUS ENTITIES HASHTAG"
+              + " | " + ht
+            ));
+            histograms.hashtags[ht] = (histograms.hashtags[ht] === undefined) ? 1 : histograms.hashtags[ht]+1;
+          });
+        }
+        if (user.status.entities.urls.length > 0) {
+          debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.status.entities.urls)));
+          user.status.entities.urls.forEach(function(urlObj){
+            console.log(chalkAlert("USER ENTITIES URL"
+              + " | " + urlObj.url
+            ));
+            histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
+          });
+        }
+        if (user.status.entities.user_mentions.length > 0) {
+          debug(chalkAlert("USER ENTITIES USER MENTIONS: " + jsonPrint(user.status.entities.user_mentions)));
+          user.status.entities.user_mentions.forEach(function(userObj){
+            const screenName = "@" + userObj.screen_name.toLowerCase();
+            console.log(chalkAlert("USER ENTITIES USER MENTION"
+              + " | " + screenName
+              + " | " + userObj.name
+            ));
+            histograms.mentions[screenName] = (histograms.mentions[screenName] === undefined) ? 1 : histograms.mentions[screenName]+1;
+          });
+        }
       }
-    }
 
-    debug(chalkAlert("FINAL langAnalyzerText: " + langAnalyzerText));
+      debug(chalkAlert("FINAL langAnalyzerText: " + langAnalyzerText));
 
-    langAnalyzer.send({op: "LANG_ANALIZE", obj: user, text: langAnalyzerText}, function(){
-      statsObj.analyzer.analyzed += 1;
-      callback(null, user);
+      langAnalyzer.send({op: "LANG_ANALIZE", obj: user, text: langAnalyzerText}, function(){
+        statsObj.analyzer.analyzed += 1;
+        callback(null, user);
+      });
+
     });
   }
 
@@ -2658,11 +2754,22 @@ function processUser(cnf, user, callback){
     const kws = user.keywords && (user.keywords !== undefined) ? Object.keys(user.keywords) : [];
     const kwsAuto = user.keywordsAuto && (user.keywordsAuto !== undefined) ? Object.keys(user.keywordsAuto) : [];
 
-    parseText(user.description, function(){});
+    let text = user.name + " " + user.screenName;
 
-    if (user.status) { 
-      parseText(user.status.text, function(){});
+    if (user.status) {
+      text = text + " " + user.status.text;
     }
+    
+    if (user.retweeted_status) {
+      text = text + " " + user.retweeted_status.text;
+    }
+
+    if (user.description) {
+      text = text + " " + user.description;
+    }
+
+
+    parseText(text, {updateGlobalHistograms: true}, function(){});
 
     parseUserEntities(user);
 
