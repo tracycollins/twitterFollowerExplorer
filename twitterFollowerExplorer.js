@@ -701,7 +701,7 @@ function loadFile(path, file, callback) {
 }
 
 const inputArraysFolder = dropboxConfigHostFolder + "/inputArrays";
-const inputArraysFile = "inputArraysFile_" + statsObj.runId + ".json";
+const inputArraysFile = "inputArrays_" + statsObj.runId + ".json";
 
 const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
 const classifiedUsersDefaultFile = "classifiedUsers.json";
@@ -762,8 +762,8 @@ function initInputArrays(callback){
     else {
       console.log(chalkAlert("LOADED INPUT ARRAY FILES"));
 
-      saveFile(dropboxConfigHostFolder, inputArraysFile, inputArrays, function(){
-        statsObj.inputArraysFile = inputArraysFile;
+      saveFile(inputArraysFolder, inputArraysFile, inputArrays, function(){
+        statsObj.inputArraysFile = inputArraysFolder + "/" + inputArraysFile;
         debug("descriptionArrays\n" + jsonPrint(inputArrays));
         return(callback(null));
       });
@@ -2561,7 +2561,11 @@ function processUser(cnf, user, callback){
 
     parseText(user.description, function(){});
 
-    if (user.status) { 
+    if (user.retweeted_status) { 
+      parseText(user.retweeted_status.text, function(){});
+      langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description + " | " + user.retweeted_status.text;
+    }
+    else if (user.status) { 
       parseText(user.status.text, function(){});
       langAnalyzerText = user.screenName + " | " + user.name + " | " + user.description + " | " + user.status.text;
     }
