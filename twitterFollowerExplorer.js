@@ -2689,49 +2689,7 @@ function processUser(cnf, user, callback){
       console.log(chalkLog("user.description + status histogram\n" + jsonPrint(histogram)));
       debug("user.description + status\n" + jsonPrint(text));
 
-      async.eachSeries(inputArrays, function(inputArray, cb1){
-
-        const type = Object.keys(inputArray)[0];
-
-        let inputHitsSum = 0;
-
-        debug(chalkAlert("START ARRAY: " + type + " | " + inputArray[type].length));
-
-        async.eachSeries(inputArray[type], function(element, cb2){
-          if (histogram[type][element]) {
-            trainingSetDatum.inputHits += 1;
-            console.log(chalkTwitter("+++ DATUM BIT: " + type
-              + " | INPUT HITS: " + trainingSetDatum.inputHits 
-              + " | " + element 
-              + " | " + histogram[type][element]
-            ));
-            trainingSetDatum.input.push(1);
-            cb2();
-          }
-          else {
-            debug(chalkInfo("--- DATUM BIT: " + type
-              + " | " + element 
-              + " | " + histogram[type][element]
-            ));
-            trainingSetDatum.input.push(0);
-            cb2();
-          }
-        }, function(err){
-         if (err) {
-            console.error("*** PARSE TEXT ERROR\n" + err);
-          }
-          debug(chalkAlert("DONE ARRAY: " + type));
-          cb1();
-        });
-
-      }, function(err){
-       if (err) {
-          console.error("*** PARSE TEXT ERROR\n" + err);
-        }
-        debug(chalkAlert("PARSE DESC COMPLETE"));
-      });
-
-      langAnalyzerText = langAnalyzerText.replace(/@/g, "");
+      langAnalyzerText = text.replace(/@/g, "");
 
       // REMOVE URLS FROM DESCRIPTION. MONGO DB HATES URLs as object keys on writes
       if (user.entities && user.entities.description && (user.entities.description.urls.length > 0)) {
