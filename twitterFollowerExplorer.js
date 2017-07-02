@@ -142,8 +142,8 @@ let autoClassifiedUserHashmap = {};
 let classifiedUserHashmap = {};
 const topicHashMap = new HashMap();
 
-const groupHashMap = new HashMap();
-const serverGroupHashMap = new HashMap(); // server specific keywords
+// const groupHashMap = new HashMap();
+// const serverGroupHashMap = new HashMap(); // server specific keywords
 const entityHashMap = new HashMap();
 const serverentityHashMap = new HashMap();
 
@@ -159,15 +159,15 @@ const trendingCache = new NodeCache( { stdTTL: 300, checkperiod: 10 } );
 
 const db = mongoose();
 
-const Group = require("mongoose").model("Group");
-const Entity = require("mongoose").model("Entity");
+// const Group = require("mongoose").model("Group");
+// const Entity = require("mongoose").model("Entity");
 const User = require("mongoose").model("User");
 const Word = require("mongoose").model("Word");
 
-const groupServer = require("./app/controllers/group.server.controller");
-const entityServer = require("./app/controllers/entity.server.controller");
+// const groupServer = require("./app/controllers/group.server.controller");
+// const entityServer = require("./app/controllers/entity.server.controller");
 const userServer = require("./app/controllers/user.server.controller");
-const wordServer = require("./app/controllers/word.server.controller");
+// const wordServer = require("./app/controllers/word.server.controller");
 
 let neuralNetworkFile = "neuralNetwork_" + statsObj.runId + ".json";
 
