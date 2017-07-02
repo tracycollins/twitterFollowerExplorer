@@ -1,7 +1,6 @@
 var config = require('./config'),
   mongoose = require('mongoose');
 
-// mongoose.Promise = global.Promise;
 mongoose.Promise = global.Promise;
 
 module.exports = function() {
@@ -51,40 +50,13 @@ module.exports = function() {
     console.log('MONGOOSE default connection disconnected');
   });
 
-
-  // require('../app/models/admin.server.model');  
-  require('../app/models/client.server.model');
-  require('../app/models/entity.server.model');
-  // require('../app/models/facebookPost.server.model');
-  require('../app/models/group.server.model');
   require('../app/models/hashtag.server.model');
-  // require('../app/models/igMedia.server.model');
-  // require('../app/models/igPlace.server.model');
-  // require('../app/models/igTag.server.model');
-  // require('../app/models/igUser.server.model');
   require('../app/models/media.server.model');
-  // require('../app/models/oauth2credential.server.model'); 
   require('../app/models/place.server.model');
-  require('../app/models/rssPost.server.model');
-  require('../app/models/session.server.model');
   require('../app/models/tweet.server.model');
   require('../app/models/url.server.model');
   require('../app/models/user.server.model');
-
   require('../app/models/word.server.model');
-  require('../app/models/phrase.server.model');
-
-  require('../app/models/youTubeCaption.server.model');
-  require('../app/models/youTubePlaylist.server.model');
-  require('../app/models/youTubeVideo.server.model');
-
-  require('../app/models/metaSecond.server.model');
-  require('../app/models/metaMinute.server.model');
-  require('../app/models/metaHour.server.model');
-  require('../app/models/metaDay.server.model');
-  require('../app/models/metaWeek.server.model');
-  require('../app/models/metaMonth.server.model');
-  require('../app/models/metaYear.server.model');
 
   return wordAssoDb;
 };
