@@ -404,7 +404,7 @@ let dropboxConfigDefaultFolder = "/config/utility/default";
 let dropboxConfigHostFolder = "/config/utility/" + hostname;
 
 let dropboxConfigFile = hostname + "_" + DROPBOX_TFE_CONFIG_FILE;
-let statsFolder = "/stats/" + hostname;
+let statsFolder = "/stats/" + hostname + "/followerExplorer";
 let statsFile = DROPBOX_TFE_STATS_FILE;
 
 configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
