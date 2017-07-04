@@ -15,6 +15,8 @@ const ONE_HOUR = ONE_MINUTE*60 ;
 
 let TFE_USER_DB_CRAWL = true;
 
+const keywordExtractor = require("./js/keyword-extractor");
+
 const Dropbox = require("dropbox");
 const os = require("os");
 const util = require("util");
@@ -70,7 +72,6 @@ const neataptic = require("neataptic");
 const cp = require("child_process");
 let langAnalyzer;
 
-const keywordExtractor = require("keyword-extractor");
 
 let histograms = {};
 histograms.words = {};
