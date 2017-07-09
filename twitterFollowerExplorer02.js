@@ -891,9 +891,35 @@ function initTwitter(currentTwitterUser, callback){
         access_token_secret: twitterConfig.TOKEN_SECRET
       });
 
+      const newTwitStream = newTwit.stream("user", { stringify_friend_ids: true });
+
+      newTwitStream.on("follow", function(followMessage){
+        console.log(chalkAlert("USER " + currentTwitterUser + " FOLLOW"
+          + " | " +  followMessage.target.id_str
+          + " | " +  followMessage.target.screen_name.toLowerCase()
+        ));
+
+        User.find({userId: followMessage.target.id_str}, function(err, dbUserArray){
+          if (err) { throw err; }
+          dbUserArray.forEach(function(dbUser){
+            console.log("DB HIT");
+            printTwitterUser(dbUser);
+            if (dbUser.threeceeFollowing) {
+              if (currentTwitterUser.toLowerCase() !== dbUser.threeceeFollowing.screenName.toLowerCase()){
+                console.log(chalkAlert("*** USER ALREADY FOLLOWED"
+                  + " | CURRENT USER: " + currentTwitterUser
+                  + " | THREECEE FLW: " + dbUser.threeceeFollowing.screenName
+                ));
+              }
+            }
+          });
+        });
+      });
+
       async.waterfall([
 
         function initTwit(cb) {
+
           newTwit.get("account/settings", function(err, accountSettings, response) {
             if (err){
               console.log("!!!!! TWITTER ACCOUNT ERROR | " + getTimeStamp() + "\n" + jsonPrint(err));
@@ -921,30 +947,31 @@ function initTwitter(currentTwitterUser, callback){
         },
 
         function initTwitStream(twitObj, cb){
-          let newTwitStream = twitObj.twit.stream("user", { stringify_friend_ids: true });
 
-          newTwitStream.on("follow", function(followMessage){
-            console.log(chalkAlert("USER " + currentTwitterUser + " FOLLOW"
-              + " | " +  followMessage.target.id_str
-              + " | " +  followMessage.target.screen_name.toLowerCase()
-            ));
+          // const newTwitStream = twitObj.twit.stream("user", { stringify_friend_ids: true });
 
-            User.find({userId: followMessage.target.id_str}, function(err, dbUserArray){
-              if (err) { throw err; }
-              dbUserArray.forEach(function(dbUser){
-                console.log("DB HIT");
-                printTwitterUser(dbUser);
-                if (dbUser.threeceeFollowing) {
-                  if (currentTwitterUser.toLowerCase() !== dbUser.threeceeFollowing.screenName.toLowerCase()){
-                    console.log(chalkAlert("*** USER ALREADY FOLLOWED"
-                      + " | CURRENT USER: " + currentTwitterUser
-                      + " | THREECEE FLW: " + dbUser.threeceeFollowing.screenName
-                    ));
-                  }
-                }
-              });
-            });
-          });
+          // newTwitStream.on("follow", function(followMessage){
+          //   console.log(chalkAlert("USER " + currentTwitterUser + " FOLLOW"
+          //     + " | " +  followMessage.target.id_str
+          //     + " | " +  followMessage.target.screen_name.toLowerCase()
+          //   ));
+
+          //   User.find({userId: followMessage.target.id_str}, function(err, dbUserArray){
+          //     if (err) { throw err; }
+          //     dbUserArray.forEach(function(dbUser){
+          //       console.log("DB HIT");
+          //       printTwitterUser(dbUser);
+          //       if (dbUser.threeceeFollowing) {
+          //         if (currentTwitterUser.toLowerCase() !== dbUser.threeceeFollowing.screenName.toLowerCase()){
+          //           console.log(chalkAlert("*** USER ALREADY FOLLOWED"
+          //             + " | CURRENT USER: " + currentTwitterUser
+          //             + " | THREECEE FLW: " + dbUser.threeceeFollowing.screenName
+          //           ));
+          //         }
+          //       }
+          //     });
+          //   });
+          // });
 
           twitterUserHashMap[twitObj.screenName].twitStream = {};
           twitterUserHashMap[twitObj.screenName].twitStream = newTwitStream;
@@ -1003,7 +1030,7 @@ function initTwitterUsers(callback){
           return(cb());
         }
 
-        debug("twitObj\n" + jsonPrint(twitObj));
+        // debug("twitObj\n" + jsonPrint(twitObj));
 
         // twitterUserHashMap[userId].twit = {};
         // twitterUserHashMap[userId].twit = twitObj.twit;
@@ -1660,6 +1687,8 @@ function parseText(text, options, callback){
     console.error(chalkError("*** PARSER TEXT UNDEFINED"));
   }
 
+  text = text.replace(/,/gi, " ");
+
   const parseResults = parser.parse(text);
 
   let urlArray = [];
@@ -1765,8 +1794,12 @@ function parseText(text, options, callback){
 
             let word = w.toLowerCase();
 
-            word = word.replace(/"s/gi, "");
+            word = word.replace(/'s/gi, "");
             word = word.replace(/’s/gi, "");
+            word = word.replace(/'ve/gi, "");
+            word = word.replace(/’ve/gi, "");
+            word = word.replace(/'re/gi, "");
+            word = word.replace(/’re/gi, "");
 
             const m = mentionsRegex().exec(word);
             const h = hashtagRegex().exec(word);
@@ -3207,12 +3240,6 @@ initialize(configuration, function(err, cnf){
       }
 
       console.log(chalkTwitter("CURRENT TWITTER USER: " + currentTwitterUser));
-
-      // initTwitter(currentTwitterUser, function(err, response){
-
-      //   if (err) {
-      //     quit();
-      //   }
 
       checkRateLimit();
 
