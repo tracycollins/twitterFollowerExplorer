@@ -628,66 +628,6 @@ function initStatsUpdate(callback){
     saveFile(statsFolder, statsFile, statsObj);
     showStats();
 
-    // saveFile(classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap, function(err){
-    //   if (err){
-    //     console.error(chalkError("SAVE DEFAULT CLASSIFED FILE ERROR"
-    //       + " | " + classifiedUsersDefaultFile
-    //       + " | " + err.error_summary
-    //     ));
-    //   }
-    //   else{
-    //     console.log(chalkLog("SAVED | " + classifiedUsersFolder + "/" + classifiedUsersDefaultFile));
-    //   }
-    // });
-
-    // saveFile(classifiedUsersFolder, classifiedUsersFile, classifiedUserHashmap, function(err){
-    //   if (err){
-    //     console.error(chalkError("SAVE CLASSIFED FILE ERROR"
-    //       + " | " + classifiedUsersFile
-    //       + " | " + err.error_summary
-    //     ));
-    //   }
-    //   else{
-    //     console.log(chalkLog("SAVED | " + classifiedUsersFolder + "/" + classifiedUsersFile));
-    //   }
-    // });
-
-    // saveFile(classifiedUsersFolder, autoClassifiedUsersFile, autoClassifiedUserHashmap, function(err){
-    //   if (err){
-    //     console.error(chalkError("SAVE AUTO CLASSIFED FILE ERROR"
-    //       + " | " + autoClassifiedUsersFile
-    //       + " | " + err.error_summary
-    //     ));
-    //   }
-    //   else{
-    //     console.log(chalkLog("SAVED | " + classifiedUsersFolder + "/" + autoClassifiedUsersFile));
-    //   }
-    // });
-
-    // Object.keys(histograms).forEach(function(histogramName){
-
-    //   const currentHistogram = histograms[histogramName];
-
-    //   const keys = Object.keys(currentHistogram);
-
-    //   const sortedKeys = keys.sort(function(a,b){
-    //     const valA = currentHistogram[a];
-    //     const valB = currentHistogram[b];
-    //     return valB - valA;
-    //   });
-
-    //   sortedKeys.forEach(function(k){
-    //     if (currentHistogram[k] >= 100) { console.log("H | " + currentHistogram[k] + " | " + k); }
-    //   });
-
-    //   const currentHistogramFolder = dropboxConfigHostFolder + "/histograms/" + histogramName + "Histogram";
-    //   const currentHistogramFile = histogramName + "Histogram_" + statsObj.runId + ".json";
-
-    //   saveFile(currentHistogramFolder, currentHistogramFile, currentHistogram, function(err){
-    //     console.log(chalkLog("SAVED | " + currentHistogramFolder + "/" + currentHistogramFile));
-    //   });
-    // });
-
     if (configuration.quitOnComplete && langAnalyzerIdle && !statsObj.user[currentTwitterUser].nextCursorValid) {
       console.log(chalkTwitterBold(moment().format(compactDateTimeFormat)
         + " | QUITTING ON COMPLETE"
@@ -1488,197 +1428,6 @@ let parser = new Autolinker({
   mention: "twitter"
 });
 
-
-// function parseText(text, options, callback){
-
-//   const parseResults = parser.parse( text );
-
-//   console.log(chalk.blue("\ntext\n" + text));
-
-//   let urlArray = [];
-//   let mentionArray = [];
-//   let hashtagArray = [];
-
-//   async.each(parseResults, function(matchObj, cb){ 
-
-//     const type = matchObj.getType();
-
-//     debug("type: " + type);
-
-//     switch (type) {
-//       case "url":
-//         console.log(chalkInfo("URL: " + matchObj.getMatchedText().toLowerCase()));
-//         urlArray.push(matchObj.getMatchedText().toLowerCase());
-//         cb();
-//       break;
-//       case "mention":
-//         mentionArray.push(matchObj.getMatchedText().toLowerCase());
-//         console.log(chalkInfo(mentionArray.length + " | MEN: " + matchObj.getMatchedText().toLowerCase()));
-//         cb();
-//       break;
-//       case "hashtag":
-//         hashtagArray.push(matchObj.getMatchedText().toLowerCase());
-//         console.log(chalkInfo(hashtagArray.length + " | HTG: " + matchObj.getMatchedText().toLowerCase()));
-//         cb();
-//       break;
-//       default:
-//         console.error(chalkError("UNKNOWN PARSE TYPE: " + type));
-//         cb();
-//     }
-//   }, function(){
-
-//     const wordArray = keywordExtractor.extract(text, wordExtractionOptions);
-
-//     console.log(chalkAlert("keywordExtractor | " + wordArray.length + " WORDS"));
-
-//     const userHistograms = {};
-//     userHistograms.words = {};
-//     userHistograms.urls = {};
-//     userHistograms.hashtags = {};
-//     userHistograms.mentions = {};
-
-//     async.parallel({
-
-//       mentions: function(cb){
-
-//         if (mentionArray.length > 0) {
-
-//           async.each(mentionArray, function(userId, cb2){
-//             if (!userId.match("@")) {
-//               userId = "@" + userId.toLowerCase();
-//               if (options.updateGlobalHistograms) {
-//                 histograms.mentions[userId] = (histograms.mentions[userId] === undefined) ? 1 : histograms.mentions[userId]+1;
-//               }
-//               userHistograms.mentions[userId] = (userHistograms.mentions[userId] === undefined) ? 1 : userHistograms.mentions[userId]+1;
-//               debug(chalkAlert("->- DESC Ms"
-//                 + " | " + userHistograms.mentions[userId]
-//                 + " | " + userId
-//               ));
-//               cb2();
-//             }
-//           }, function(err){
-//             cb(null, userHistograms.mentions);
-//           });
-//         }
-//         else {
-//           cb(null, userHistograms.mentions);
-//         }
-//       },
-
-//       hashtags: function(cb){
-
-//         if (hashtagArray.length > 0) {
-
-//           hashtagArray.forEach(function(hashtag){
-//             hashtag = hashtag.toLowerCase();
-//             if (options.updateGlobalHistograms) {
-//               histograms.hashtags[hashtag] = (histograms.hashtags[hashtag] === undefined) ? 1 : histograms.hashtags[hashtag]+1;
-//             }
-//             userHistograms.hashtags[hashtag] = (userHistograms.hashtags[hashtag] === undefined) ? 1 : userHistograms.hashtags[hashtag]+1;
-//             debug(chalkAlert("->- DESC Hs"
-//               + " | " + userHistograms.hashtags[hashtag]
-//               + " | " + hashtag
-//             ));
-//           });
-//           cb(null, userHistograms.hashtags);
-//         }
-//         else {
-//           cb(null, userHistograms.hashtags);
-//         }
-//       },
-
-//       words: function(cb){
-
-//         if (wordArray.length > 0) {
-
-//           wordArray.forEach(function(w){
-//             let word = w.toLowerCase();
-//             word = word.replace(/'s/gi, "");
-//             const m = mentionsRegex().exec(word);
-//             const h = hashtagRegex().exec(word);
-//             // const rgx = ignoreWordRegex.test(word);
-//             const u = (Array.from(getUrls(text)).length > 0) ? Array.from(getUrls(text)) : null;
-//             if (m || h || u 
-//               || (word === "/") 
-//               || word.includes("--") 
-//               || word.includes("|") 
-//               || word.includes("#") 
-//               || word.includes("w/") 
-//               || word.includes("≠") 
-//               || word.includes("http") 
-//               || word.includes("+")) {
-//               // if (rgx) { console.log(chalkAlert("-- REGEX SKIP WORD"
-//               //   + " | M: " + m
-//               //   + " | H: " + h
-//               //   + " | U: " + u
-//               //   + " | RGX: " + rgx
-//               //   + " | " + word
-//               // )) };
-//               debug(chalkAlert("-- SKIP WORD"
-//                 + " | M: " + m
-//                 + " | H: " + h
-//                 + " | U: " + u
-//                 // + " | RGX: " + rgx
-//                 + " | " + word
-//               ));
-//             }
-//             else {
-//               if (options.updateGlobalHistograms) {
-//                 histograms.words[word] = (histograms.words[word] === undefined) ? 1 : histograms.words[word]+1;
-//               }
-//               userHistograms.words[word] = (userHistograms.words[word] === undefined) ? 1 : userHistograms.words[word]+1;
-//               debug(chalkAlert("->- DESC Ws"
-//                 + " | " + userHistograms.words[word]
-//                 + " | " + word
-//               ));
-//             }
-//           });
-
-//           cb(null, userHistograms.words);
-//         }
-//         else {
-//           cb(null, userHistograms.words);
-//         }
-//       },
-
-//       urls: function(cb){
-
-//         if (urlArray.length > 0) {
-
-//           urlArray.forEach(function(url){
-//             url = url.toLowerCase();
-//             if (options.updateGlobalHistograms) {
-//               histograms.urls[url] = (histograms.urls[url] === undefined) ? 1 : histograms.urls[url]+1;
-//             }
-//             userHistograms.urls[url] = (userHistograms.urls[url] === undefined) ? 1 : userHistograms.urls[url]+1;
-//             debug(chalkAlert("->- DESC Us"
-//               + " | " + userHistograms.urls[url]
-//               + " | " + url
-//             ));
-//           });
-//           cb(null, userHistograms.urls);
-//         }
-//         else {
-//           cb(null, userHistograms.urls);
-//         }
-//       }
-
-//     }, function(err, results){
-
-//       let t = "HISTOGRAMS";
-//       // console.log("PARSE TEXT RESULTS");
-//       Object.keys(results).forEach(function(key){
-//         if (results[key]) {
-//           t = t + " | " + key.toUpperCase() + ": " + Object.keys(results[key]).length;
-//         }
-//       });
-//       console.log(chalkLog(t));
-//       if (callback !== undefined) { callback(err, results); }
-//     });
-
-//   });
-// }
-
 function parseText(text, options, callback){
 
   console.log(chalk.blue("\ntext\n" + text));
@@ -1699,15 +1448,15 @@ function parseText(text, options, callback){
 
     const type = matchObj.getType();
 
-    debug(chalkAlert("PARSE TEXT"
+    console.log(chalkAlert("PARSE TEXT"
       + " | " + matchObj.getMatchedText().toLowerCase()
       + " | TYPE: " + type
     ));
 
     switch (type) {
       case "url":
-        console.log(chalkInfo("URL: " + matchObj.getMatchedText().toLowerCase()));
         urlArray.push(matchObj.getMatchedText().toLowerCase());
+        console.log(chalkInfo(urlArray.length + " | URL: " + matchObj.getMatchedText().toLowerCase()));
         cb();
       break;
       case "mention":
@@ -1736,23 +1485,23 @@ function parseText(text, options, callback){
     userHistograms.mentions = {};
 
     async.parallel({
+
       mentions: function(cb){
         if (mentionArray) {
+
           async.each(mentionArray, function(userId, cb2){
-            if (!userId.match("@")) {
-              userId = "@" + userId.toLowerCase();
-              if (options.updateGlobalHistograms) {
-                histograms.mentions[userId] = (histograms.mentions[userId] === undefined) ? 1 
-                  : histograms.mentions[userId]+1;
-              }
-              userHistograms.mentions[userId] = (userHistograms.mentions[userId] === undefined) ? 1 
-                : userHistograms.mentions[userId]+1;
-              debug(chalkAlert("->- DESC Ms"
-                + " | " + userHistograms.mentions[userId]
-                + " | " + userId
-              ));
-              cb2();
+            userId = userId.toLowerCase();
+            if (options.updateGlobalHistograms) {
+              histograms.mentions[userId] = (histograms.mentions[userId] === undefined) ? 1 
+                : histograms.mentions[userId]+1;
             }
+            userHistograms.mentions[userId] = (userHistograms.mentions[userId] === undefined) ? 1 
+              : userHistograms.mentions[userId]+1;
+            console.log(chalkAlert("->- DESC Ms"
+              + " | " + userHistograms.mentions[userId]
+              + " | " + userId
+            ));
+            cb2();
           }, function(err2){
             cb(err2, userHistograms.mentions);
           });
@@ -1761,9 +1510,10 @@ function parseText(text, options, callback){
           cb(null, userHistograms.mentions);
         }
       },
+
       hashtags: function(cb){
         if (hashtagArray) {
-          hashtagArray.forEach(function(hashtag){
+          async.each(hashtagArray, function(hashtag, cb2){
             hashtag = hashtag.toLowerCase();
             if (options.updateGlobalHistograms) {
               histograms.hashtags[hashtag] = (histograms.hashtags[hashtag] === undefined) ? 1 
@@ -1771,26 +1521,27 @@ function parseText(text, options, callback){
             }
             userHistograms.hashtags[hashtag] = (userHistograms.hashtags[hashtag] === undefined) ? 1 
               : userHistograms.hashtags[hashtag]+1;
-            debug(chalkAlert("->- DESC Hs"
+            console.log(chalkAlert("->- DESC Hs"
               + " | " + userHistograms.hashtags[hashtag]
               + " | " + hashtag
             ));
+            cb2();
+          }, function(err2){
+            cb(err2, userHistograms.hashtags);
           });
-          cb(null, userHistograms.hashtags);
         }
         else {
           cb(null, userHistograms.hashtags);
         }
       },
+
       words: function(cb){
         if (wordArray) {
-
-          // wordArray.forEach(function(w){
           async.each(wordArray, function(w, cb1){
 
-              debug(chalkAlert("w"
-                + " | " + w
-              ));
+            debug(chalkAlert("w"
+              + " | " + w
+            ));
 
             let word = w.toLowerCase();
 
@@ -1830,43 +1581,45 @@ function parseText(text, options, callback){
               userHistograms.words[word] = (userHistograms.words[word] === undefined) ? 1 
                 : userHistograms.words[word]+1;
 
-              debug(chalkAlert("->- DESC Ws"
-                + " | HIST: " + histograms.words[word]
-                + " | USER HIST: " + userHistograms.words[word]
+              console.log(chalkAlert("->- DESC Ws"
+                // + " | HIST: " + histograms.words[word]
+                + " | " + userHistograms.words[word]
                 + " | " + word
               ));
 
               cb1();
             }
-
           }, function(err){
             cb(null, userHistograms.words);
           });
-
         }
         else {
           cb(null, userHistograms.words);
         }
       },
+
       urls: function(cb){
         if (urlArray) {
-          urlArray.forEach(function(url){
+          async.each(urlArray, function(url, cb2){
             url = url.toLowerCase();
             if (options.updateGlobalHistograms) {
               histograms.urls[url] = (histograms.urls[url] === undefined) ? 1 : histograms.urls[url]+1;
             }
             userHistograms.urls[url] = (userHistograms.urls[url] === undefined) ? 1 : userHistograms.urls[url]+1;
-            debug(chalkAlert("->- DESC Us"
+            console.log(chalkAlert("->- DESC Us"
               + " | " + userHistograms.urls[url]
               + " | " + url
             ));
+            cb2();
+          }, function(err2){
+            cb(err2, userHistograms.urls);
           });
-          cb(null, userHistograms.urls);
         }
         else {
           cb(null, userHistograms.urls);
         }
       }
+
     }, function(err2, results){
 
       let t = "HISTOGRAMS";
@@ -2064,277 +1817,6 @@ function updateClassifiedUsers(user, callback){
   callback(user);
 
 }
-
-
-
-// function processUser(user, callback){
-
-//   statsObj.analyzer.total += 1;
-
-//   let chalkCurrent;
-//   let classText;
-//   let langAnalyzerText;
-
-//   if (user.keywords && (Object.keys(user.keywords).length > 0)) {
-
-//     debug("KWS\n" + jsonPrint(user.keywords));
-    
-//     classifiedUserHashmap[user.userId] = user.keywords;
-//     statsObj.users.classified = Object.keys(classifiedUserHashmap).length;
-
-//     chalkCurrent = chalkLog;
-
-//     switch (Object.keys(user.keywords)[0]) {
-//       case "right":
-//         classText = "R";
-//         chalkCurrent = chalk.red;
-//         statsObj.classification.manual.right += 1;
-//       break;
-//       case "left":
-//         classText = "L";
-//         chalkCurrent = chalk.blue;
-//         statsObj.classification.manual.left += 1;
-//       break;
-//       case "neutral":
-//         classText = "N";
-//         chalkCurrent = chalk.black;
-//         statsObj.classification.manual.neutral += 1;
-//       break;
-//       case "positive":
-//         classText = "+";
-//         chalkCurrent = chalk.green;
-//         statsObj.classification.manual.positive += 1;
-//       break;
-//       case "negative":
-//         classText = "-";
-//         chalkCurrent = chalk.bold.red;
-//         statsObj.classification.manual.negative += 1;
-//       break;
-//       default:
-//         classText = Object.keys(user.keywords)[0];
-//         chalkCurrent = chalk.black;
-//         statsObj.classification.manual.other += 1;
-//     }
-
-//     console.log(chalkCurrent("MCL USR   "
-//       + " [" + Object.keys(classifiedUserHashmap).length + "]"
-//       + " [ L: " + statsObj.classification.manual.left
-//       + " | R: " + statsObj.classification.manual.right
-//       + " | +: " + statsObj.classification.manual.positive
-//       + " | -: " + statsObj.classification.manual.negative
-//       + " | N: " + statsObj.classification.manual.neutral
-//       + " | O: " + statsObj.classification.manual.other + " ]"
-//       + " | " + classText
-//       + " | " + user.userId
-//       + " | " + user.screenName
-//       + " | " + user.name
-//     ));
-//   }
-
-//   if (user.keywordsAuto && (Object.keys(user.keywordsAuto).length > 0)) {
-
-//     debug("KWSA\n" + jsonPrint(user.keywordsAuto));
-
-//     autoClassifiedUserHashmap[user.userId] = user.keywordsAuto;
-//     statsObj.users.classifiedAuto = Object.keys(autoClassifiedUserHashmap).length;
-
-//     chalkCurrent = chalkLog;
-
-//     switch (Object.keys(user.keywordsAuto)[0]) {
-//       case "right":
-//         classText = "R";
-//         chalkCurrent = chalk.red;
-//         statsObj.classification.auto.right += 1;
-//       break;
-//       case "left":
-//         classText = "L";
-//         chalkCurrent = chalk.blue;
-//         statsObj.classification.auto.left += 1;
-//       break;
-//       case "neutral":
-//         classText = "N";
-//         chalkCurrent = chalk.black;
-//         statsObj.classification.auto.neutral += 1;
-//       break;
-//       case "positive":
-//         classText = "+";
-//         chalkCurrent = chalk.green;
-//         statsObj.classification.auto.positive += 1;
-//       break;
-//       case "negative":
-//         classText = "-";
-//         chalkCurrent = chalk.bold.red;
-//         statsObj.classification.auto.negative += 1;
-//       break;
-//       default:
-//         classText = Object.keys(user.keywordsAuto)[0];
-//         chalkCurrent = chalk.black;
-//         statsObj.classification.auto.other += 1;
-//     }
-
-//     console.log(chalkCurrent("== AUTO =="
-//       + " [" + Object.keys(autoClassifiedUserHashmap).length + "]"
-//       + " [ L: " + statsObj.classification.auto.left
-//       + " | R: " + statsObj.classification.auto.right
-//       + " | +: " + statsObj.classification.auto.positive
-//       + " | -: " + statsObj.classification.auto.negative
-//       + " | N: " + statsObj.classification.auto.neutral
-//       + " | O: " + statsObj.classification.auto.other + " ]"
-//       + " | " + classText
-//       + " | " + user.userId
-//       + " | " + user.screenName
-//       + " | " + user.name
-//     ));
-//   }
-
-//   if ((!user.languageAnalyzed && configuration.enableLanguageAnalysis) 
-//     || configuration.forceLanguageAnalysis) {
-
-//     let text = user.name + " " + user.screenName;
-
-//     if (user.status) {
-//       text = text + " " + user.status.text;
-//     }
-    
-//     if (user.retweeted_status) {
-//       text = text + " " + user.retweeted_status.text;
-//     }
-
-//     if (user.description) {
-//       text = text + " " + user.description;
-//     }
-
-//     parseText(text, {updateGlobalHistograms: true}, function(err, histogram){
-
-//       if (err) {
-//         console.error("*** PARSE TEXT ERROR\n" + err);
-//       }
-
-//       console.log(chalkLog("user.description + status histogram\n" + jsonPrint(histogram)));
-//       debug("user.description + status\n" + jsonPrint(text));
-
-//       langAnalyzerText = text.replace(/@/g, "");
-
-//       // REMOVE URLS FROM DESCRIPTION. MONGO DB HATES URLs as object keys on writes
-//       if (user.entities && user.entities.description && (user.entities.description.urls.length > 0)) {
-//         debug(chalkAlert("USER ENTITIES DESC URLS: " + jsonPrint(user.entities.description.urls)));
-
-//         user.entities.description.urls.forEach(function(urlObj){
-//           console.log(chalkTwitter("USER ENTITIES DESC URL"
-//             + " | " + urlObj.url
-//           ));
-//           const regex = new RegExp(urlObj.url);
-//           histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
-//           langAnalyzerText = langAnalyzerText.replace(regex, "");
-//         });
-//       }
-      
-//       if (user.entities && user.entities.url && (user.entities.url.urls.length > 0)) {
-//         debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.entities.url.urls)));
-//         user.entities.url.urls.forEach(function(urlObj){
-//           console.log(chalkTwitter("USER ENTITIES URL"
-//             + " | " + urlObj.url
-//           ));
-//           histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
-//         });
-//       }
-
-//       if (user.status && user.status.entities) {
-//         if (user.status.entities.hashtags.length > 0) {
-//           user.status.entities.hashtags.forEach(function(h){
-//             const ht = "#" + h.text.toLowerCase();
-//             console.log(chalkTwitter("USER STATUS ENTITIES HASHTAG"
-//               + " | " + ht
-//             ));
-//             histograms.hashtags[ht] = (histograms.hashtags[ht] === undefined) ? 1 : histograms.hashtags[ht]+1;
-//           });
-//         }
-//         if (user.status.entities.urls.length > 0) {
-//           debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.status.entities.urls)));
-//           user.status.entities.urls.forEach(function(urlObj){
-//             console.log(chalkTwitter("USER ENTITIES URL"
-//               + " | " + urlObj.url
-//             ));
-//             histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
-//           });
-//         }
-//         if (user.status.entities.user_mentions.length > 0) {
-//           debug(chalkTwitter("USER ENTITIES USER MENTIONS: " + jsonPrint(user.status.entities.user_mentions)));
-//           user.status.entities.user_mentions.forEach(function(userObj){
-//             const screenName = "@" + userObj.screen_name.toLowerCase();
-//             console.log(chalkTwitter("USER ENTITIES USER MENTION"
-//               + " | " + screenName
-//               + " | " + userObj.name
-//             ));
-//             histograms.mentions[screenName] = (histograms.mentions[screenName] === undefined) ? 1 : histograms.mentions[screenName]+1;
-//           });
-//         }
-//       }
-
-//       debug(chalkTwitter("FINAL langAnalyzerText: " + langAnalyzerText));
-
-//       langAnalyzer.send({op: "LANG_ANALIZE", obj: user, text: langAnalyzerText}, function(){
-//         statsObj.analyzer.analyzed += 1;
-//         callback(null, user);
-//       });
-
-//     });
-//   }
-//   else {
-
-//     let sentiment;
-
-//     if ((user.languageAnalysis !== undefined)
-//       && (user.languageAnalysis.sentiment !== undefined)) {
-
-//       const mag = 10*user.languageAnalysis.sentiment.magnitude;
-//       const score = 10*user.languageAnalysis.sentiment.score ;
-
-//       sentiment = "M: " + mag.toFixed(2) + " S: " + score.toFixed(2);
-//     }
-//     else {
-//       sentiment = Object.keys(user.languageAnalysis);
-//     }
-
-//     const kws = (user.keywords && (user.keywords !== undefined)) ? Object.keys(user.keywords) : [];
-//     const kwsAuto = (user.keywordsAuto && (user.keywordsAuto !== undefined)) ? Object.keys(user.keywordsAuto) : [];
-
-//     let t = user.name + " " + user.screenName;
-
-//     if (user.status) {
-//       t = t + " " + user.status.text;
-//     }
-    
-//     if (user.retweeted_status) {
-//       t = t + " " + user.retweeted_status.text;
-//     }
-
-//     if (user.description) {
-//       t = t + " " + user.description;
-//     }
-
-//     parseText(t, {updateGlobalHistograms: true});
-
-//     parseUserEntities(user);
-
-//     const threeceeFollowing = ((user.threeceeFollowing !== undefined) && user.threeceeFollowing && (Object.keys(user.threeceeFollowing).length > 0)) ? user.threeceeFollowing.screenName : "-";
-
-//     statsObj.analyzer.skipped += 1;
-
-//     console.log(chalkInfo("LA HIT"
-//       + " [" + statsObj.analyzer.analyzed + " ANLs | " + statsObj.analyzer.skipped + " SKPs | " + statsObj.analyzer.total + " TOT]"
-//       + " | 3C FLW: " + threeceeFollowing
-//       + " | Ks: " + kws
-//       + " | KAs: " + kwsAuto
-//       + " | LA: " + sentiment
-//       + " | @" + user.screenName
-//       + " | " + user.name
-//       // + " | LAd: " + user.languageAnalyzed
-//     ));
-
-//     callback(null, user);
-//   }
-// }
 
 function printDatum(title, input){
 
@@ -2885,7 +2367,7 @@ function checkFriendWordKeys(friend, callback){
     }
 
     if (!word) {
-      debug(chalkInfo("FRIEND WORD NOT FOUND: " + friend.screen_name.toLowerCase()));
+      console.log(chalkInfo("FRIEND WORD NOT FOUND: " + friend.screen_name.toLowerCase()));
       return(callback(null, kws));
     }
 
@@ -2898,23 +2380,32 @@ function checkFriendWordKeys(friend, callback){
       return(callback(null,kws));
     }
 
-    if (!word.keywords || (word.keywords[word.nodeId] === undefined)) {
+    // if (!word.keywords || (word.keywords[word.nodeId] === undefined)) {
+    if (!word.keywords || (Object.keys(word.keywords).length === 0)) {
       debug("WORD-USER HIT"
         + " | " + friend.screen_name.toLowerCase()
       );
       return(callback(null,kws));
     }
 
-    async.each(Object.keys(word.keywords[word.nodeId]), function(kwId, cb){
+    debug("WORD-USER KEYWORDS"
+      + "\n" + jsonPrint(word.keywords)
+    );
+
+    // async.each(Object.keys(word.keywords[word.nodeId]), function(kwId, cb){
+    async.each(Object.keys(word.keywords), function(kwId, cb){
 
       if (kwId !== "keywordId") {
 
-        kws[kwId] = word.keywords[word.nodeId][kwId];
+        kws[kwId] = word.keywords[kwId];
 
-        console.log(chalkTwitter("-- KW"
+        debug(chalkTwitter("-- KW"
+          + " | " + friend.screen_name.toLowerCase()
           + " | " + kwId
           + " | " + kws[kwId]
         ));
+
+        classifiedUserHashmap[friend.screen_name.toLowerCase()] = kws;
       }
       cb();
 
