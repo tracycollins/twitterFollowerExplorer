@@ -8,7 +8,7 @@ var ONE_SECOND = 1000 ;
 var ONE_MINUTE = ONE_SECOND*60 ;
 
 var defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
-var compactDateTimeFormat = "YYYYMMDD HHmmss ZZ";
+var compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 var analyzeLanguageRunning = false;
 var analyzeLanguageReady = true;
@@ -44,7 +44,6 @@ var util = require("util");
 var moment = require("moment");
 var Dropbox = require("dropbox");
 var NodeCache = require("node-cache");
-var HashMap = require("hashmap").HashMap;
 var async = require("async");
 var debug = require("debug")("la");
 var debugLang = require("debug")("lang");
@@ -186,9 +185,7 @@ testDocument.annotate(function(err, annotations) {
     process.send({op: "LANG_TEST_FAIL"});
   }
   else {
-    console.log("LANG TEST PASS"
-      // + "\n" + jsonPrint(annotations)
-    );
+    debug("LANG TEST PASS");
     process.send({op: "LANG_TEST_PASS"});
   }
 });
@@ -469,22 +466,13 @@ function initStatsUpdate(cnf, callback){
     statsObj.timeStamp = moment().format(defaultDateTimeFormat);
 
     saveFile(statsFolder, statsFile, statsObj, function(){
-      showStats();
+      // showStats();
     });
 
   }, cnf.statsUpdateIntervalTime);
 
+  return(callback(null, cnf));
 
-  loadFile(statsFolder, statsFile, function(err, loadedStatsObj){
-    if (!err) {
-      debug(jsonPrint(loadedStatsObj));
-      return(callback(null, cnf));
-    }
-    else {
-      console.log(chalkError("ERROR: loadFile: " + statsFolder + "/" + statsFile));
-      return(callback(err, cnf));
-    }
-  });
 }
 
 function initialize(cnf, callback){
@@ -503,7 +491,7 @@ function initialize(cnf, callback){
 
   cnf.statsUpdateIntervalTime = process.env.LA_STATS_UPDATE_INTERVAL || 60000;
 
-  console.log("CONFIG\n" + jsonPrint(cnf));
+  debug("CONFIG\n" + jsonPrint(cnf));
 
   debug(chalkWarn("dropboxConfigFolder: " + dropboxConfigFolder));
   debug(chalkWarn("dropboxConfigFile  : " + dropboxConfigFile));
@@ -768,7 +756,7 @@ setTimeout(function(){
       // }
     }
 
-    console.log(cnf.processName + " STARTED " + getTimeStamp() + "\n");
+    console.log(chalkAlert(cnf.processName + " STARTED " + getTimeStamp() + "\n"));
 
     initStatsUpdate(cnf, function(){
     });

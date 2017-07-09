@@ -24,6 +24,7 @@ const os = require("os");
 const util = require("util");
 const moment = require("moment");
 const arrayUnique = require("array-unique");
+const arrayNormalize = require("array-normalize");
 let Autolinker = require("autolinker");
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
@@ -150,6 +151,14 @@ function indexOfMax(arr) {
     console.log(chalkAlert("indexOfMax: 0 LENG ARRAY: -1"));
     return -1;
   }
+  if ((arr[0] === arr[1]) && (arr[1] === arr[2])){
+    console.log(chalkAlert("indexOfMax: ALL EQUAL: " + arr[0]));
+    return -1;
+  }
+
+  console.log("B4 ARR: " + arr);
+  arrayNormalize(arr);
+  console.log("AF ARR: " + arr);
 
   let max = 0;
   let maxIndex = -1;
@@ -162,7 +171,10 @@ function indexOfMax(arr) {
     }
   }
   if (i === arr.length) { 
-    console.log(chalk.blue("indexOfMax: " + maxIndex + " | " + arr[maxIndex] + " | " + arr));
+    console.log(chalk.blue("indexOfMax: " + maxIndex 
+      + " | " + arr[maxIndex] 
+      + " | " + arr[0].toFixed(2) + " " + arr[1].toFixed(2) + " " + arr[2].toFixed(2)
+    ));
     return maxIndex; 
   }
 }
@@ -1572,9 +1584,12 @@ function parseText(text, options, callback){
   let mentionArray = [];
   let hashtagArray = [];
 
-  async.each(parseResults, function(matchObj, cb){
+  async.each(parseResults, function(matchObj, cb){ 
+
     const type = matchObj.getType();
+
     debug("type: " + type);
+
     switch (type) {
       case "url":
         console.log(chalkInfo("URL: " + matchObj.getMatchedText().toLowerCase()));
@@ -1595,8 +1610,11 @@ function parseText(text, options, callback){
         console.error(chalkError("UNKNOWN PARSE TYPE: " + type));
         cb();
     }
-   }, function(){
+  }, function(){
+
     const wordArray = keywordExtractor.extract(text, wordExtractionOptions);
+
+    console.log(chalkAlert("keywordExtractor | " + wordArray.length + " WORDS"));
 
     const userHistograms = {};
     userHistograms.words = {};
@@ -1605,9 +1623,11 @@ function parseText(text, options, callback){
     userHistograms.mentions = {};
 
     async.parallel({
+
       mentions: function(cb){
-        if (mentionArray) {
-          // mentionArray.forEach(function(userId){
+
+        if (mentionArray.length > 0) {
+
           async.each(mentionArray, function(userId, cb2){
             if (!userId.match("@")) {
               userId = "@" + userId.toLowerCase();
@@ -1624,15 +1644,16 @@ function parseText(text, options, callback){
           }, function(err){
             cb(null, userHistograms.mentions);
           });
-
-          // });
         }
         else {
           cb(null, userHistograms.mentions);
         }
       },
+
       hashtags: function(cb){
-        if (hashtagArray) {
+
+        if (hashtagArray.length > 0) {
+
           hashtagArray.forEach(function(hashtag){
             hashtag = hashtag.toLowerCase();
             if (options.updateGlobalHistograms) {
@@ -1650,8 +1671,11 @@ function parseText(text, options, callback){
           cb(null, userHistograms.hashtags);
         }
       },
+
       words: function(cb){
-        if (wordArray) {
+
+        if (wordArray.length > 0) {
+
           wordArray.forEach(function(w){
             let word = w.toLowerCase();
             word = word.replace(/'s/gi, "");
@@ -1701,8 +1725,11 @@ function parseText(text, options, callback){
           cb(null, userHistograms.words);
         }
       },
+
       urls: function(cb){
-        if (urlArray) {
+
+        if (urlArray.length > 0) {
+
           urlArray.forEach(function(url){
             url = url.toLowerCase();
             if (options.updateGlobalHistograms) {
@@ -1721,6 +1748,7 @@ function parseText(text, options, callback){
         }
       }
     }, function(err, results){
+      
       let t = "HISTOGRAMS";
       // console.log("PARSE TEXT RESULTS");
       Object.keys(results).forEach(function(key){
@@ -2063,12 +2091,14 @@ function processUser(cnf, user, callback){
   }
 }
 
-function printDatum(input){
+function printDatum(title, input){
 
   let row = "";
   let col = 0;
   let rowNum = 0;
   const COLS = 50;
+
+  console.log("\n------------- " + title + " -------------");
 
   input.forEach(function(bit, i){
     if (i === 0) {
@@ -2241,7 +2271,7 @@ function generateAutoKeywords(user, callback){
                 user.keywordsAuto = {};
             }
 
-            printDatum(networkInput);
+            printDatum(user.screenName, networkInput);
 
             console.log(chalkRed("AUTO KW"
               + " | " + user.screenName
@@ -2303,7 +2333,7 @@ function generateAutoKeywords(user, callback){
           user.keywordsAuto = keywordsAuto;
         }
 
-        printDatum(networkInput);
+        printDatum(user.screenName, networkInput);
 
         console.log(chalkRed("AUTO KW"
           + " | " + user.screenName
@@ -2484,7 +2514,9 @@ function fetchTwitterFriends(cnf, callback){
             ));
 
             processUser(configuration, updatedUserObj, function(err, user){
+
               if (neuralNetworkInitialized) {
+
                 generateAutoKeywords(user, function(err, uObj){
                   userServer.findOneUser(uObj, {noInc: true}, function(err, updatedUserObj){
                     if (err) { 
