@@ -1817,7 +1817,9 @@ function generateAutoKeywords(user, callback){
         }
       },
       function userStatusText(text, cb) {
-        console.log("user.status\n" + jsonPrint(user.status));
+
+        // console.log("user.status\n" + jsonPrint(user.status));
+        
         if ((user.status !== undefined) && user.status) {
           if (text) {
             cb(null, text + "\n" + user.status.text);
