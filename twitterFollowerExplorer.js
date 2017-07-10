@@ -1532,7 +1532,14 @@ function parseText(text, options, callback){
 
             const m = mentionsRegex().exec(word);
             const h = hashtagRegex().exec(word);
-            const u = (Array.from(getUrls(word)).length > 0) ? Array.from(getUrls(word)) : null;
+
+            let u;
+            try {
+              u = (Array.from(getUrls(word)).length > 0) ? Array.from(getUrls(word)) : null;
+            }
+            catch (e) {
+              console.log(chalkError("GET URL FAIL: " + e));
+            }
 
             if (m || h || u 
               || (word === "/") 
@@ -1819,7 +1826,7 @@ function generateAutoKeywords(user, callback){
       function userStatusText(text, cb) {
 
         // console.log("user.status\n" + jsonPrint(user.status));
-        
+
         if ((user.status !== undefined) && user.status) {
           if (text) {
             cb(null, text + "\n" + user.status.text);
