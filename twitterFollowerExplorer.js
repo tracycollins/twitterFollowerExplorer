@@ -570,7 +570,7 @@ function initInputArrays(callback){
 
   console.log(chalkTwitter("INIT INPUT ARRAYS"));
 
-  async.each(inputTypes, function(inputType, cb){
+  async.eachSeries(inputTypes, function(inputType, cb){
 
     const inputFile = "defaultInput" + jsUcfirst(inputType) + ".json";
 
@@ -847,7 +847,9 @@ function initTwitter(currentTwitterUser, callback){
 
             printTwitterUser(dbUser);
 
-            if (dbUser.threeceeFollowing && ( dbUser.threeceeFollowing.screenName !== undefined)) {
+            if (dbUser.threeceeFollowing 
+              && (dbUser.threeceeFollowing.screenName !== undefined)
+              && dbUser.threeceeFollowing.screenName) {
               if (currentTwitterUser.toLowerCase() !== dbUser.threeceeFollowing.screenName.toLowerCase()){
                 console.log(chalkAlert("*** USER ALREADY FOLLOWED"
                   + " | CURRENT USER: " + currentTwitterUser
