@@ -891,31 +891,6 @@ function initTwitter(currentTwitterUser, callback){
 
         function initTwitStream(twitObj, cb){
 
-          // const newTwitStream = twitObj.twit.stream("user", { stringify_friend_ids: true });
-
-          // newTwitStream.on("follow", function(followMessage){
-          //   console.log(chalkAlert("USER " + currentTwitterUser + " FOLLOW"
-          //     + " | " +  followMessage.target.id_str
-          //     + " | " +  followMessage.target.screen_name.toLowerCase()
-          //   ));
-
-          //   User.find({userId: followMessage.target.id_str}, function(err, dbUserArray){
-          //     if (err) { throw err; }
-          //     dbUserArray.forEach(function(dbUser){
-          //       console.log("DB HIT");
-          //       printTwitterUser(dbUser);
-          //       if (dbUser.threeceeFollowing) {
-          //         if (currentTwitterUser.toLowerCase() !== dbUser.threeceeFollowing.screenName.toLowerCase()){
-          //           console.log(chalkAlert("*** USER ALREADY FOLLOWED"
-          //             + " | CURRENT USER: " + currentTwitterUser
-          //             + " | THREECEE FLW: " + dbUser.threeceeFollowing.screenName
-          //           ));
-          //         }
-          //       }
-          //     });
-          //   });
-          // });
-
           twitterUserHashMap[twitObj.screenName].twitStream = {};
           twitterUserHashMap[twitObj.screenName].twitStream = newTwitStream;
 
@@ -1639,73 +1614,14 @@ function parseText(text, options, callback){
   });
 }
 
-// function parseUserEntities(user){
-//   // ??? KLUDGE: make into function
-//   // REMOVE URLS FROM DESCRIPTION. MONGO DB HATES URLs as object keys on writes
-//   if (user.entities && user.entities.description && (user.entities.description.urls.length > 0)) {
-//     debug(chalkAlert("USER ENTITIES DESC URLS: " + jsonPrint(user.entities.description.urls)));
-
-//     user.entities.description.urls.forEach(function(urlObj){
-//       console.log(chalkTwitter("USER ENTITIES DESC URL"
-//         + " | " + urlObj.url
-//       ));
-//       // const regex = new RegExp(urlObj.url);
-//       histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
-//     });
-//   }
-  
-//   if (user.entities && user.entities.url && (user.entities.url.urls.length > 0)) {
-//     debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.entities.url.urls)));
-//     user.entities.url.urls.forEach(function(urlObj){
-//       console.log(chalkTwitter("USER ENTITIES URL"
-//         + " | " + urlObj.url
-//       ));
-//       histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
-//     });
-//   }
-
-//   if (user.status && user.status.entities) {
-//     if (user.status.entities.hashtags.length > 0) {
-//       user.status.entities.hashtags.forEach(function(h){
-//         const ht = "#" + h.text.toLowerCase();
-//         console.log(chalkTwitter("USER STATUS ENTITIES HASHTAG"
-//           + " | " + ht
-//         ));
-//         histograms.hashtags[ht] = (histograms.hashtags[ht] === undefined) ? 1 : histograms.hashtags[ht]+1;
-//       });
-//     }
-//     if (user.status.entities.urls.length > 0) {
-//       debug(chalkAlert("USER ENTITIES URL URLS: " + jsonPrint(user.status.entities.urls)));
-//       user.status.entities.urls.forEach(function(urlObj){
-//         console.log(chalkTwitter("USER ENTITIES URL"
-//           + " | " + urlObj.url
-//         ));
-//         histograms.urls[urlObj.url] = (histograms.urls[urlObj.url] === undefined) ? 1 : histograms.urls[urlObj.url]+1;
-//       });
-//     }
-//     if (user.status.entities.user_mentions.length > 0) {
-//       debug(chalkAlert("USER ENTITIES USER MENTIONS: " + jsonPrint(user.status.entities.user_mentions)));
-//       user.status.entities.user_mentions.forEach(function(userObj){
-//         const screenName = "@" + userObj.screen_name.toLowerCase();
-//         console.log(chalkTwitter("USER ENTITIES USER MENTION"
-//           + " | " + screenName
-//           + " | " + userObj.name
-//         ));
-//         histograms.mentions[screenName] = (histograms.mentions[screenName] === undefined) ? 1 : histograms.mentions[screenName]+1;
-//       });
-//     }
-//   }
-// }
-
 function updateClassifiedUsers(user, callback){
 
   statsObj.analyzer.total += 1;
 
   let chalkCurrent;
   let classText;
-  // let langAnalyzerText;
 
-  if (user.keywords && (Object.keys(user.keywords).length > 0)) {
+  if ((user.keywords !== undefined) && (Object.keys(user.keywords).length > 0)) {
 
     debug("KWS\n" + jsonPrint(user.keywords));
     
@@ -2300,6 +2216,11 @@ function fetchFriends(params) {
                     if (err) {
                       console.log(chalkError("ERROR DB FIND ONE USER | " + err));
                       return(cb(err));
+                    }
+
+                    if (!user) {
+                      console.log(chalkError("DB USER NOT FOUND | " + friend.id_str));
+                      return(cb());
                     }
 
                     updateClassifiedUsers(user, function(udatedUser){
