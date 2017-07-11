@@ -1551,7 +1551,14 @@ function parseText(text, options, callback){
 
             const m = mentionsRegex().exec(word);
             const h = hashtagRegex().exec(word);
-            const u = (Array.from(getUrls(word)).length > 0) ? Array.from(getUrls(word)) : null;
+            let u;
+            try {
+              const urlObj = getUrls(word);
+              u = (Array.from(urlObj).length > 0) ? Array.from(urlObj) : null;
+            }
+            catch (e) {
+              console.error(chalkError("GET URLS ERROR\n" + jsonPrint(e)));
+            }
 
             if (m || h || u 
               || (word === "/") 
