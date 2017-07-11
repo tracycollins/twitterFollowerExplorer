@@ -4,7 +4,8 @@ const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
-const inputTypes = ["hashtags", "mentions", "urls", "words"];
+
+const inputTypes = ["hashtags", "mentions", "urls", "words", "emoji"];
 
 let checkRateLimitInterval;
 let checkRateLimitIntervalTime = ONE_MINUTE;
@@ -71,6 +72,8 @@ const util = require("util");
 const moment = require("moment");
 const arrayUnique = require("array-unique");
 const arrayNormalize = require("array-normalize");
+const emojiRegex = require("emoji-regex");
+const eRegex = emojiRegex();
 
 let Autolinker = require("autolinker");
 
@@ -132,6 +135,7 @@ histograms.words = {};
 histograms.urls = {};
 histograms.hashtags = {};
 histograms.mentions = {};
+histograms.emoji = {};
 
 const mentionsRegex = require("mentions-regex");
 const hashtagRegex = require("hashtag-regex");
@@ -1410,11 +1414,18 @@ let parser = new Autolinker({
 
 function parseText(text, options, callback){
 
-  console.log(chalk.blue("\ntext\n" + text));
+  console.log(chalk.blue("\nPARSE TEST\n" + text + "\n"));
 
   if (text === "undefined") {
     console.error(chalkError("*** PARSER TEXT UNDEFINED"));
   }
+
+  const userHistograms = {};
+  userHistograms.words = {};
+  userHistograms.urls = {};
+  userHistograms.hashtags = {};
+  userHistograms.mentions = {};
+  userHistograms.emoji = {};
 
   text = text.replace(/,/gi, " ");
 
@@ -1423,6 +1434,8 @@ function parseText(text, options, callback){
   let urlArray = [];
   let mentionArray = [];
   let hashtagArray = [];
+  let emojiArray = [];
+
 
   async.each(parseResults, function(matchObj, cb){
 
@@ -1456,13 +1469,17 @@ function parseText(text, options, callback){
 
    }, function(err){
 
+    let matchEmoji;
+    while (matchEmoji = eRegex.exec(text)) {
+      const emj = matchEmoji[0];
+      emojiArray.push(emj);
+      text = text.replace(emj, " ");
+      console.log(chalkInfo(emojiArray.length + " | EMJ: " + emj));
+      debug(chalk.bold.black("\nTEXT LESS EMOJI: " + text + "\n\n"));
+    }
+ 
+    let textWordBreaks = text.replace(/\//gim, " ");
     const wordArray = keywordExtractor.extract(text, wordExtractionOptions);
-
-    const userHistograms = {};
-    userHistograms.words = {};
-    userHistograms.urls = {};
-    userHistograms.hashtags = {};
-    userHistograms.mentions = {};
 
     async.parallel({
 
@@ -1534,14 +1551,7 @@ function parseText(text, options, callback){
 
             const m = mentionsRegex().exec(word);
             const h = hashtagRegex().exec(word);
-
-            let u;
-            try {
-              u = (Array.from(getUrls(word)).length > 0) ? Array.from(getUrls(word)) : null;
-            }
-            catch (e) {
-              console.log(chalkError("GET URL FAIL: " + e));
-            }
+            const u = (Array.from(getUrls(word)).length > 0) ? Array.from(getUrls(word)) : null;
 
             if (m || h || u 
               || (word === "/") 
@@ -1605,23 +1615,45 @@ function parseText(text, options, callback){
         else {
           cb(null, userHistograms.urls);
         }
+      },
+
+      emoji: function(cb){
+        if (emojiArray) {
+          async.each(emojiArray, function(emoji, cb2){
+            if (options.updateGlobalHistograms) {
+              histograms.emoji[emoji] = (histograms.emoji[emoji] === undefined) ? 1 : histograms.emoji[emoji]+1;
+            }
+            userHistograms.emoji[emoji] = (userHistograms.emoji[emoji] === undefined) ? 1 : userHistograms.emoji[emoji]+1;
+            console.log(chalkAlert("->- DESC Es"
+              + " | " + userHistograms.emoji[emoji]
+              + " | " + emoji
+            ));
+            cb2();
+          }, function(err2){
+            cb(err2, userHistograms.emoji);
+          });
+        }
+        else {
+          cb(null, userHistograms.emoji);
+        }
       }
 
     }, function(err2, results){
 
-      let t = "HISTOGRAMS";
+      let t = "\nHISTOGRAMS";
 
       Object.keys(results).forEach(function(key){
         if (results[key]) {
           t = t + " | " + key.toUpperCase() + ": " + Object.keys(results[key]).length;
         }
       });
-      console.log(chalkLog(t));
+      console.log(chalkInfo(t + "\n"));
       callback((err || err2), results);
     });
 
   });
 }
+
 
 function updateClassifiedUsers(user, callback){
 
@@ -1889,7 +1921,7 @@ function generateAutoKeywords(user, callback){
 
       if (!text) { text = " "; }
 
-      parseText(text, {updateGlobalHistograms: false}, function(err, histogram){
+      parseText(text, {updateGlobalHistograms: true}, function(err, histogram){
 
         user.inputHits = 0;
 
