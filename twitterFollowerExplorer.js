@@ -1414,7 +1414,7 @@ let parser = new Autolinker({
 
 function parseText(text, options, callback){
 
-  console.log(chalk.blue("\nPARSE TEST\n" + text + "\n"));
+  console.log(chalk.blue("\nPARSE TEXT\n" + text + "\n"));
 
   if (text === "undefined") {
     console.error(chalkError("*** PARSER TEXT UNDEFINED"));
@@ -1666,122 +1666,139 @@ function updateClassifiedUsers(user, callback){
 
   statsObj.analyzer.total += 1;
 
-  let chalkCurrent;
-  let classText;
+  async.parallel({
 
-  if ((user.keywords !== undefined) && (Object.keys(user.keywords).length > 0)) {
+    keywords: function(cb){
+      if ((user.keywords !== undefined) && (Object.keys(user.keywords).length > 0)) {
 
-    debug("KWS\n" + jsonPrint(user.keywords));
-    
-    classifiedUserHashmap[user.userId] = user.keywords;
-    statsObj.users.classified = Object.keys(classifiedUserHashmap).length;
+        debug("KWS\n" + jsonPrint(user.keywords));
+        
+        classifiedUserHashmap[user.userId] = user.keywords;
+        statsObj.users.classified = Object.keys(classifiedUserHashmap).length;
 
-    chalkCurrent = chalkLog;
+        let chalkCurrent = chalkLog;
+        let classText;
 
-    switch (Object.keys(user.keywords)[0]) {
-      case "right":
-        classText = "R";
-        chalkCurrent = chalk.red;
-        statsObj.classification.manual.right += 1;
-      break;
-      case "left":
-        classText = "L";
-        chalkCurrent = chalk.blue;
-        statsObj.classification.manual.left += 1;
-      break;
-      case "neutral":
-        classText = "N";
-        chalkCurrent = chalk.black;
-        statsObj.classification.manual.neutral += 1;
-      break;
-      case "positive":
-        classText = "+";
-        chalkCurrent = chalk.green;
-        statsObj.classification.manual.positive += 1;
-      break;
-      case "negative":
-        classText = "-";
-        chalkCurrent = chalk.bold.red;
-        statsObj.classification.manual.negative += 1;
-      break;
-      default:
-        classText = Object.keys(user.keywords)[0];
-        chalkCurrent = chalk.black;
-        statsObj.classification.manual.other += 1;
+        switch (Object.keys(user.keywords)[0]) {
+          case "right":
+            classText = "R";
+            chalkCurrent = chalk.red;
+            statsObj.classification.manual.right += 1;
+          break;
+          case "left":
+            classText = "L";
+            chalkCurrent = chalk.blue;
+            statsObj.classification.manual.left += 1;
+          break;
+          case "neutral":
+            classText = "N";
+            chalkCurrent = chalk.black;
+            statsObj.classification.manual.neutral += 1;
+          break;
+          case "positive":
+            classText = "+";
+            chalkCurrent = chalk.green;
+            statsObj.classification.manual.positive += 1;
+          break;
+          case "negative":
+            classText = "-";
+            chalkCurrent = chalk.bold.red;
+            statsObj.classification.manual.negative += 1;
+          break;
+          default:
+            classText = Object.keys(user.keywords)[0];
+            chalkCurrent = chalk.black;
+            statsObj.classification.manual.other += 1;
+        }
+
+        console.log(chalkCurrent("MCL USR   "
+          + " [" + Object.keys(classifiedUserHashmap).length + "]"
+          + " [ L: " + statsObj.classification.manual.left
+          + " | R: " + statsObj.classification.manual.right
+          + " | +: " + statsObj.classification.manual.positive
+          + " | -: " + statsObj.classification.manual.negative
+          + " | N: " + statsObj.classification.manual.neutral
+          + " | O: " + statsObj.classification.manual.other + " ]"
+          + " | " + classText
+          + " | " + user.userId
+          + " | " + user.screenName
+          + " | " + user.name
+        ));
+
+        cb();
+      }
+      else {
+        cb();
+      }
+    },
+
+    keywordsAuto: function(cb){
+      if (user.keywordsAuto && (Object.keys(user.keywordsAuto).length > 0)) {
+
+        debug("KWSA\n" + jsonPrint(user.keywordsAuto));
+
+        autoClassifiedUserHashmap[user.userId] = user.keywordsAuto;
+        statsObj.users.classifiedAuto = Object.keys(autoClassifiedUserHashmap).length;
+
+        let chalkCurrent = chalkLog;
+        let classText;
+
+        switch (Object.keys(user.keywordsAuto)[0]) {
+          case "right":
+            classText = "R";
+            chalkCurrent = chalk.red;
+            statsObj.classification.auto.right += 1;
+          break;
+          case "left":
+            classText = "L";
+            chalkCurrent = chalk.blue;
+            statsObj.classification.auto.left += 1;
+          break;
+          case "neutral":
+            classText = "N";
+            chalkCurrent = chalk.black;
+            statsObj.classification.auto.neutral += 1;
+          break;
+          case "positive":
+            classText = "+";
+            chalkCurrent = chalk.green;
+            statsObj.classification.auto.positive += 1;
+          break;
+          case "negative":
+            classText = "-";
+            chalkCurrent = chalk.bold.red;
+            statsObj.classification.auto.negative += 1;
+          break;
+          default:
+            classText = Object.keys(user.keywordsAuto)[0];
+            chalkCurrent = chalk.black;
+            statsObj.classification.auto.other += 1;
+        }
+
+        console.log(chalkCurrent("== AUTO =="
+          + " [" + Object.keys(autoClassifiedUserHashmap).length + "]"
+          + " [ L: " + statsObj.classification.auto.left
+          + " | R: " + statsObj.classification.auto.right
+          + " | +: " + statsObj.classification.auto.positive
+          + " | -: " + statsObj.classification.auto.negative
+          + " | N: " + statsObj.classification.auto.neutral
+          + " | O: " + statsObj.classification.auto.other + " ]"
+          + " | " + classText
+          + " | " + user.userId
+          + " | " + user.screenName
+          + " | " + user.name
+        ));
+
+        cb();
+      }
+      else {
+        cb();
+      }
     }
 
-    console.log(chalkCurrent("MCL USR   "
-      + " [" + Object.keys(classifiedUserHashmap).length + "]"
-      + " [ L: " + statsObj.classification.manual.left
-      + " | R: " + statsObj.classification.manual.right
-      + " | +: " + statsObj.classification.manual.positive
-      + " | -: " + statsObj.classification.manual.negative
-      + " | N: " + statsObj.classification.manual.neutral
-      + " | O: " + statsObj.classification.manual.other + " ]"
-      + " | " + classText
-      + " | " + user.userId
-      + " | " + user.screenName
-      + " | " + user.name
-    ));
-  }
-
-  if (user.keywordsAuto && (Object.keys(user.keywordsAuto).length > 0)) {
-
-    debug("KWSA\n" + jsonPrint(user.keywordsAuto));
-
-    autoClassifiedUserHashmap[user.userId] = user.keywordsAuto;
-    statsObj.users.classifiedAuto = Object.keys(autoClassifiedUserHashmap).length;
-
-    chalkCurrent = chalkLog;
-
-    switch (Object.keys(user.keywordsAuto)[0]) {
-      case "right":
-        classText = "R";
-        chalkCurrent = chalk.red;
-        statsObj.classification.auto.right += 1;
-      break;
-      case "left":
-        classText = "L";
-        chalkCurrent = chalk.blue;
-        statsObj.classification.auto.left += 1;
-      break;
-      case "neutral":
-        classText = "N";
-        chalkCurrent = chalk.black;
-        statsObj.classification.auto.neutral += 1;
-      break;
-      case "positive":
-        classText = "+";
-        chalkCurrent = chalk.green;
-        statsObj.classification.auto.positive += 1;
-      break;
-      case "negative":
-        classText = "-";
-        chalkCurrent = chalk.bold.red;
-        statsObj.classification.auto.negative += 1;
-      break;
-      default:
-        classText = Object.keys(user.keywordsAuto)[0];
-        chalkCurrent = chalk.black;
-        statsObj.classification.auto.other += 1;
-    }
-
-    console.log(chalkCurrent("== AUTO =="
-      + " [" + Object.keys(autoClassifiedUserHashmap).length + "]"
-      + " [ L: " + statsObj.classification.auto.left
-      + " | R: " + statsObj.classification.auto.right
-      + " | +: " + statsObj.classification.auto.positive
-      + " | -: " + statsObj.classification.auto.negative
-      + " | N: " + statsObj.classification.auto.neutral
-      + " | O: " + statsObj.classification.auto.other + " ]"
-      + " | " + classText
-      + " | " + user.userId
-      + " | " + user.screenName
-      + " | " + user.name
-    ));
-  }
-
-  callback(user);
+  }, function(){
+    callback(user);
+  });
 
 }
 
