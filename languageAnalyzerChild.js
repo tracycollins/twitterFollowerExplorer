@@ -119,17 +119,17 @@ function quit(message) {
 
 var testDocument = languageClient.document("This is a test of this universe!");
 
-testDocument.annotate(function(err, annotations) {
-  if (err) {
-    console.error(chalkError("LANG TEST ERROR: " + err));
-    // console.error(chalkError("LANG TEST ERROR\n" + jsonPrint(err)));
-    process.send({op: "LANG_TEST_FAIL"});
-  }
-  else {
-    debug("LANG TEST PASS");
-    process.send({op: "LANG_TEST_PASS"});
-  }
-});
+// testDocument.annotate(function(err, annotations) {
+//   if (err) {
+//     console.error(chalkError("LANG TEST ERROR: " + err));
+//     // console.error(chalkError("LANG TEST ERROR\n" + jsonPrint(err)));
+//     process.send({op: "LANG_TEST_FAIL"});
+//   }
+//   else {
+//     debug("LANG TEST PASS");
+//     process.send({op: "LANG_TEST_PASS"});
+//   }
+// });
 
 
 process.on('SIGHUP', function() {
@@ -161,7 +161,22 @@ process.on('message', function(m) {
         + " | INTERVAL: " + m.interval
       ));
       initAnalyzeLanguageInterval(m.interval);
-      process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
+
+      testDocument.annotate(function(err, annotations) {
+        if (err) {
+          console.error(chalkError("LANG TEST ERROR: " + err));
+          // console.error(chalkError("LANG TEST ERROR\n" + jsonPrint(err)));
+          process.send({op: "LANG_TEST_FAIL"});
+        }
+        else {
+          debug("LANG TEST PASS");
+          process.send({op: "LANG_TEST_PASS"});
+        }
+
+        process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
+
+      });
+
     break;
 
     case "STATS":
