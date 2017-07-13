@@ -553,12 +553,19 @@ function initAnalyzeLanguageInterval(interval){
           statsObj.analyzer.total++;
           statsObj.analyzer.analyzed++;
           statsObj.analyzer.errors++;
-          console.log(chalkError("[RXLQ: " + rxLangObjQueue.length + "]"
-            + " | LANGUAGE TEXT ERROR"
-            + " | " + err
-            // + "\n" + jsonPrint(langObj)
-            // + "\n" + jsonPrint(err)
-          ));
+          if (err.code === 3) {
+            console.log(chalkAlert("[RXLQ: " + rxLangObjQueue.length + "]"
+              + " | UNSUPPORTED LANG"
+              + " | " + err
+            ));
+          }
+          else {
+            console.error(chalkError("[RXLQ: " + rxLangObjQueue.length + "]"
+              + " | LANGUAGE TEXT ERROR"
+              + " | " + err
+              + "\n" + jsonPrint(err)
+            ));
+          }
 
           let messageObj = {};
           messageObj.op = "LANG_RESULTS";
@@ -585,10 +592,10 @@ function initAnalyzeLanguageInterval(interval){
 
           debug(chalkLog("LANGUAGE RESULTS\n" + jsonPrint(results)));
 
-          console.log(chalkInfoBold("\nLANG RESULTS\n[RXLQ: " + rxLangObjQueue.length + "]"
+          console.log(chalkInfo("\nLANG RESULTS\n[RXLQ: " + rxLangObjQueue.length + "]"
             // + " | MAG: " + 10*results.sentiment.magnitude.toFixed(1)
-            + " | MAG: " + 10*results.sentiment.magnitude.toFixed(2)
-            + " | SCORE: " + 10*results.sentiment.score.toFixed(1)
+            + " | M: " + 10*results.sentiment.magnitude.toFixed(2)
+            + " | S: " + 10*results.sentiment.score.toFixed(1)
             + " | C: " + results.sentiment.comp.toFixed(2)
             + "\nTEXT: " + results.text + "\n"
             // + "\n" + jsonPrint(langObj.obj)
