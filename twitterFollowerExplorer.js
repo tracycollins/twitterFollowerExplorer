@@ -2655,7 +2655,7 @@ function initLangAnalyzer(callback){
       languageAnalysisReadyFlag = true;
       langAnalyzerIdle = false;
       // if (cursorUser) { cursorUser.pause(); }
-      debug(chalkTwitter("LANG_TEST_PASS"));
+      console.log(chalkTwitter("LANG_TEST_PASS"));
     }
     else if (m.op === "QUEUE_FULL") {
       // languageAnalysisQueueEmpty = false;
