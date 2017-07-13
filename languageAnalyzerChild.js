@@ -117,6 +117,21 @@ function quit(message) {
   process.exit();
 }
 
+var testDocument = languageClient.document("This is a test of this universe!");
+
+testDocument.annotate(function(err, annotations) {
+  if (err) {
+    console.error(chalkError("LANG TEST ERROR: " + err));
+    // console.error(chalkError("LANG TEST ERROR\n" + jsonPrint(err)));
+    process.send({op: "LANG_TEST_FAIL"});
+  }
+  else {
+    debug("LANG TEST PASS");
+    process.send({op: "LANG_TEST_PASS"});
+  }
+});
+
+
 process.on('SIGHUP', function() {
   quit('SIGHUP');
 });
@@ -172,21 +187,6 @@ process.on('message', function(m) {
         + " | " + m.op
         + "\n" + jsonPrint(m)
       ));
-  }
-});
-
-
-var testDocument = languageClient.document("This is a test of this universe!");
-
-testDocument.annotate(function(err, annotations) {
-  if (err) {
-    console.error(chalkError("LANG TEST ERROR: " + err));
-    // console.error(chalkError("LANG TEST ERROR\n" + jsonPrint(err)));
-    process.send({op: "LANG_TEST_FAIL"});
-  }
-  else {
-    debug("LANG TEST PASS");
-    process.send({op: "LANG_TEST_PASS"});
   }
 });
 
