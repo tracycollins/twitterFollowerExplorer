@@ -2014,7 +2014,6 @@ function generateAutoKeywords(user, callback){
 
         }, function(){
 
-
           debug(chalkTwitter("PARSE DESC COMPLETE"));
 
           langAnalyzer.send({op: "LANG_ANALIZE", obj: user, text: text}, function(){
@@ -2357,7 +2356,7 @@ function fetchFriends(params) {
 
                 if (neuralNetworkInitialized) {
 
-                  console.log(chalkError("NET INITIALIZED"));
+                  debug(chalkError("NET INITIALIZED"));
 
                   User.findOne({userId: friend.id_str}, function(err, user){
 
