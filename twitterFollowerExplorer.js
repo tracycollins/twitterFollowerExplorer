@@ -1283,11 +1283,18 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                 const kwsAuto = (updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined)) 
                   ? Object.keys(updatedUserObj.keywordsAuto) : [];
 
+                let threeceeFollowing = false;
+                if (updatedUserObj.threeceeFollowing){
+                  threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
+                }
+
+
                 console.log(chalkLog("DB UPDATE USER"
                   + " | UID: " + updatedUserObj.userId
                   // + " | NID: " + updatedUserObj.nodeId
                   + " | SN: " + updatedUserObj.screenName
                   + " | N: " + updatedUserObj.name
+                  + " | 3CFLW: " + threeceeFollowing
                   + " | KWs: " + kws
                   + " | KWAuto: " + kwsAuto
                   + " | LAd: " + updatedUserObj.languageAnalyzed
@@ -1347,17 +1354,24 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                 const kwsAuto = (updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined))
                   ? Object.keys(updatedUserObj.keywordsAuto) : [];
 
+                let threeceeFollowing = false;
+                if (updatedUserObj.threeceeFollowing){
+                  threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
+                }
+
                 console.log(chalkLog("DB UPDATE USER"
                   + " | UID: " + updatedUserObj.userId
                   // + " | NID: " + updatedUserObj.nodeId
                   + " | SN: " + updatedUserObj.screenName
                   + " | N: " + updatedUserObj.name
+                  + " | 3CFLW: " + threeceeFollowing
                   + " | KWs: " + kws
                   + " | KWAuto: " + kwsAuto
                   + " | LAd: " + updatedUserObj.languageAnalyzed
                   + "\nLA Es: " + laEnts
                 ));
               }
+
               langAnalyzerMessageRxQueueReady = true;
             }); 
 
