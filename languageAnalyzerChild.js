@@ -643,10 +643,13 @@ function initAnalyzeLanguageInterval(interval){
         }
         else {
           debug(chalkLog("WORD CACHE MISS | " + rxWordObj.wordCacheIndex));
+
           var wordObj = {};
           wordObj = rxWordObj;
           wordObj.sentiment = {};
-          analyzeLanguage(wordObj.wordCacheIndex, function(err, results){
+
+          analyzeLanguage({text: wordObj.wordCacheIndex}, function(err, results){
+
             analyzeLanguageReady = true;
             if (err){
               statsObj.analyzer.total++;
