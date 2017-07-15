@@ -18,6 +18,7 @@ module.exports = function() {
     }
   });
 
+  require('../app/models/neuralNetwork.server.model');
   require('../app/models/hashtag.server.model');
   require('../app/models/media.server.model');
   require('../app/models/place.server.model');

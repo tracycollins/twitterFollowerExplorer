@@ -173,8 +173,10 @@ const db = mongoose();
 
 const User = require("mongoose").model("User");
 const Word = require("mongoose").model("Word");
+const NeuralNetwork = require("mongoose").model("NeuralNetwork");
 
 const userServer = require("./app/controllers/user.server.controller");
+const neuralNetworkServer = require("./app/controllers/neuralNetwork.server.controller");
 
 let defaultNeuralNetworkFile = "neuralNetwork.json";
 
@@ -1168,9 +1170,9 @@ function initialize(cnf, callback){
             + cnf.twitterConfigFile
           ));
 
-          initInputArrays(function(err){
+          // initInputArrays(function(err){
             return(callback(err, cnf));
-          });
+          // });
 
         });
       });
@@ -1197,9 +1199,9 @@ function initialize(cnf, callback){
       if (cnf.enableStdin){ initStdIn(); }
 
       initStatsUpdate(function(){
-        initInputArrays(function(err){
+        // initInputArrays(function(err){
           return(callback(err, cnf));
-        });
+        // });
       });
      }
   });
@@ -2682,35 +2684,77 @@ function loadNeuralNetworkFile(callback){
     + " | " + configuration.neuralNetworkFile
   ));
 
-  loadFile(configuration.neuralNetworkFolder, configuration.neuralNetworkFile, function(err, loadedNetworkObj){
+  let maxSuccessRate = 0;
+  let nnCurrent;
+
+  NeuralNetwork.find({}, function(err, nnArray){
     if (err) {
-      console.error(chalkError("ERROR: loadFile: " 
-        + configuration.neuralNetworkFolder + "/" + configuration.neuralNetworkFile
-      ));
+      console.log(chalkError("NEUAL NETWORK FIND ERR\n" + err));
       callback(err);
     }
-    else {
-      console.log(chalkTwitter("LOADED NETWORK FILE: " 
-        + configuration.neuralNetworkFolder + "/" + configuration.neuralNetworkFile
-      ));
+    else{
+      console.log(nnArray.length + " NETWORKS FOUND");
 
-      Object.keys(loadedNetworkObj).forEach(function(key){
-        console.log(chalkTwitter("NETWORK OBJ KEY: " + key));
+      async.eachSeries(nnArray, function(nn, cb){
+        console.log("NN"
+          + " | " + nn.networkId
+          + " | " + nn.successRate
+        );
+        if (nn.successRate > maxSuccessRate) {
+           console.log(chalkAlert("NEW MAX NN"
+            + " | " + nn.networkId
+            + " | " + nn.successRate
+          ));
+          maxSuccessRate = nn.successRate;
+          nnCurrent = nn;
+        }
+        cb();
+
+      }, function(err){
+
+        console.log("LOADING NN: " + nnCurrent.networkId);
+
+        console.log("NN" 
+          + " | " + nnCurrent.networkId
+          + " | " + nnCurrent.successRate
+        );
+
+        network = neataptic.Network.fromJSON(nnCurrent.network);
+        
+        callback(null);
       });
-
-      if (loadedNetworkObj.normalization) {
-        configuration.normalization = loadedNetworkObj.normalization;
-        console.log(chalkTwitter("LOADED NORMALIZATION\n" + jsonPrint(configuration.normalization)));
-      }
-      else {
-        console.log(chalkError("??? NORMALIZATION NOT FOUND ???"
-          + " | " + configuration.neuralNetworkFile
-        ));
-      }
-      network = neataptic.Network.fromJSON(loadedNetworkObj.network);
-      callback(null);
     }
   });
+
+  // loadFile(configuration.neuralNetworkFolder, configuration.neuralNetworkFile, function(err, loadedNetworkObj){
+  //   if (err) {
+  //     console.error(chalkError("ERROR: loadFile: " 
+  //       + configuration.neuralNetworkFolder + "/" + configuration.neuralNetworkFile
+  //     ));
+  //     callback(err);
+  //   }
+  //   else {
+  //     console.log(chalkTwitter("LOADED NETWORK FILE: " 
+  //       + configuration.neuralNetworkFolder + "/" + configuration.neuralNetworkFile
+  //     ));
+
+  //     Object.keys(loadedNetworkObj).forEach(function(key){
+  //       console.log(chalkTwitter("NETWORK OBJ KEY: " + key));
+  //     });
+
+  //     if (loadedNetworkObj.normalization) {
+  //       configuration.normalization = loadedNetworkObj.normalization;
+  //       console.log(chalkTwitter("LOADED NORMALIZATION\n" + jsonPrint(configuration.normalization)));
+  //     }
+  //     else {
+  //       console.log(chalkError("??? NORMALIZATION NOT FOUND ???"
+  //         + " | " + configuration.neuralNetworkFile
+  //       ));
+  //     }
+  //     network = neataptic.Network.fromJSON(loadedNetworkObj.network);
+  //     callback(null);
+  //   }
+  // });
 }
 
 function initLangAnalyzer(callback){
