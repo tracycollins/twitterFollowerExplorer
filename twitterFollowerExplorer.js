@@ -2692,6 +2692,10 @@ function loadNeuralNetworkFile(callback){
       console.log(chalkError("NEUAL NETWORK FIND ERR\n" + err));
       callback(err);
     }
+    else if (nnArray.length === 0){
+      console.log("NO NETWORKS FOUND");
+      callback(err);
+    }
     else{
       console.log(nnArray.length + " NETWORKS FOUND");
 
@@ -2720,7 +2724,7 @@ function loadNeuralNetworkFile(callback){
         );
 
         network = neataptic.Network.fromJSON(nnCurrent.network);
-        
+
         callback(null);
       });
     }
