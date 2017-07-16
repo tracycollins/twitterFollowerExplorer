@@ -1910,7 +1910,9 @@ function generateAutoKeywords(user, callback){
 
         // console.log("user.status\n" + jsonPrint(user.status));
 
-        if ((user.status !== undefined) && user.status) {
+        if ((user.status !== undefined) 
+          && user.status
+          && user.status.text) {
           if (text) {
             cb(null, text + "\n" + user.status.text);
           }
@@ -1928,7 +1930,9 @@ function generateAutoKeywords(user, callback){
         }
       },
       function userRetweetText(text, cb) {
-        if ((user.retweeted_status !== undefined) && user.retweeted_status) {
+        if ((user.retweeted_status !== undefined) 
+          && user.retweeted_status
+          && user.retweeted_status.text) {
 
           console.log(chalkTwitter("RT\n" + jsonPrint(user.retweeted_status.text)));
 
@@ -2680,7 +2684,7 @@ function initFetchTwitterFriendsInterval(interval){
 
 function loadNeuralNetworkFile(callback){
 
-  console.log(chalkTwitter("LOADING NEURAL NETWORK FILE" 
+  console.log(chalkTwitter("LOADING NEURAL NETWORK FROM DB" 
     + " | " + configuration.neuralNetworkFile
   ));
 
@@ -2702,12 +2706,12 @@ function loadNeuralNetworkFile(callback){
       async.eachSeries(nnArray, function(nn, cb){
         console.log("NN"
           + " | " + nn.networkId
-          + " | " + nn.successRate
+          + " | " + nn.successRate.toFixed(2)
         );
         if (nn.successRate > maxSuccessRate) {
            console.log(chalkAlert("NEW MAX NN"
             + " | " + nn.networkId
-            + " | " + nn.successRate
+            + " | " + nn.successRate.toFixed(2)
           ));
           maxSuccessRate = nn.successRate;
           nnCurrent = nn;
@@ -2716,12 +2720,12 @@ function loadNeuralNetworkFile(callback){
 
       }, function(err){
 
-        console.log("LOADING NN: " + nnCurrent.networkId);
+        console.log(chalkAlert("LOADING NN: " + nnCurrent.networkId));
 
-        console.log("NN" 
+        console.log(("NN" 
           + " | " + nnCurrent.networkId
-          + " | " + nnCurrent.successRate
-        );
+          + " | " + nnCurrent.successRate.toFixed(2)
+        ));
 
         network = neataptic.Network.fromJSON(nnCurrent.network);
 
@@ -2881,7 +2885,7 @@ initialize(configuration, function(err, cnf){
 
     initTwitterUsers(function(){
 
-      if (!currentTwitterUser) { 
+      if (currentTwitterUser === undefined) { 
         currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
       }
 
