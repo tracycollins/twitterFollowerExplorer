@@ -559,61 +559,12 @@ function loadFile(path, file, callback) {
       }
       callback(error, null);
     });
-    // .catch(function(err) {
-    //   console.log(chalkError("*** ERROR DROPBOX LOAD FILE\n" + err));
-    //   callback(err, null);
-    // });
 }
 
 const jsUcfirst = function(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 };
 
-// function initInputArrays(callback){
-
-//   console.log(chalkTwitter("INIT INPUT ARRAYS"));
-
-//   async.eachSeries(inputTypes, function(inputType, cb){
-
-//     const inputFile = "defaultInput" + jsUcfirst(inputType) + ".json";
-
-//     console.log("INIT " + inputType.toUpperCase() + " INPUT ARRAY: " + inputFile);
-
-//     loadFile(dropboxConfigDefaultFolder, inputFile, function(err, inputArrayObj){
-//       if (!err) {
-//         debug(jsonPrint(inputArrayObj));
-
-//         arrayUnique(inputArrayObj[inputType]);
-
-//         inputArrayObj[inputType].sort();
-
-//         inputArrays.push(inputArrayObj);
-
-//         console.log(chalkTwitter("LOADED " + inputType.toUpperCase() + " ARRAY"
-//           + " | " + inputArrayObj[inputType].length + " " + inputType.toUpperCase()
-//         ));
-//         cb();
-//       }
-//       else {
-//         console.log(chalkError("ERROR: loadFile: " + dropboxConfigFolder + "/" + inputFile));
-//         cb(err);
-//       }
-//     });
-//   }, function(err){
-//     if (err){
-//       console.log(chalkError("ERR\n" + jsonPrint(err)));
-//       callback(err);
-//     }
-//     else {
-//       console.log(chalkTwitter("LOADED INPUT ARRAY FILES"));
-//       saveFile(inputArraysFolder, inputArraysFile, inputArrays, function(){
-//         statsObj.inputArraysFile = inputArraysFolder + "/" + inputArraysFile;
-//         debug("descriptionArrays\n" + jsonPrint(inputArrays));
-//         callback(null);
-//       });
-//     }
-//   });
-// }
 
 function initStatsUpdate(callback){
 
@@ -1999,7 +1950,7 @@ function generateAutoKeywords(user, callback){
               cb2();
             }
             else {
-              debug(chalkInfo("U HITS" 
+              debug(chalkInfo("U MISS" 
                 + " | @" + user.screenName 
                 + " | " + user.inputHits 
                 + " | ARRAY: " + type 
@@ -2022,7 +1973,6 @@ function generateAutoKeywords(user, callback){
             // callback(null, user);
           });
 
-          // activateNetwork(network, networkInput, function(err, networkOutput){
           activateNetwork(network, networkInput)
           .then(function(networkOutput){
             indexOfMax(networkOutput, function(maxOutputIndex){
@@ -2066,49 +2016,6 @@ function generateAutoKeywords(user, callback){
           .catch(function(err){
             console.error(chalkError("ACTIVATE NETWORK ERROR: " + err));
           });
-
-          //   if (err) {
-          //     console.error(chalkError("ACTIVATE NETWORK ERROR: " + err));
-          //   }
-
-          //   indexOfMax(networkOutput, function(maxOutputIndex){
-
-          //     console.log(chalkAlert("MAX INDEX: " + maxOutputIndex));
-
-          //     user.keywordsAuto = {};
-
-          //     switch (maxOutputIndex) {
-          //       case 0:
-          //         user.keywordsAuto.left = 100;
-          //       break;
-          //       case 1:
-          //         user.keywordsAuto.neutral = 100;
-          //       break;
-          //       case 2:
-          //         user.keywordsAuto.right = 100;
-          //       break;
-          //       default:
-          //         user.keywordsAuto = {};
-          //     }
-
-          //     printDatum(user.screenName, networkInput);
-
-          //     console.log(chalkRed("AUTO KW"
-          //       + " | " + user.screenName
-          //       + " | MAG: " + networkInput[0].toFixed(6)
-          //       + " | SCORE: " + networkInput[1].toFixed(6)
-          //       + " | L: " + networkOutput[0].toFixed(3)
-          //       + " | N: " + networkOutput[1].toFixed(3)
-          //       + " | R: " + networkOutput[2].toFixed(3)
-          //       + " | KWs: " + Object.keys(user.keywords)
-          //       + " | AKWs: " + Object.keys(user.keywordsAuto)
-          //       // + "\n" + jsonPrint(user.keywordsAuto)
-          //     ));
-
-          //     callback(err, user);
-
-          //   });
-          // });
 
         });
       });
