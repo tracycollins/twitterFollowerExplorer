@@ -1635,7 +1635,9 @@ function updateClassifiedUsers(user, callback){
   async.parallel({
 
     keywords: function(cb){
-      if ((user.keywords !== undefined) && (Object.keys(user.keywords).length > 0)) {
+      if ((user.keywords !== undefined) 
+        && user.keywords
+        && (Object.keys(user.keywords).length > 0)) {
 
         debug("KWS\n" + jsonPrint(user.keywords));
         
@@ -1699,7 +1701,9 @@ function updateClassifiedUsers(user, callback){
     },
 
     keywordsAuto: function(cb){
-      if (user.keywordsAuto && (Object.keys(user.keywordsAuto).length > 0)) {
+      if ((user.keywordsAuto !== undefined)
+        && user.keywordsAuto
+        && (Object.keys(user.keywordsAuto).length > 0)) {
 
         debug("KWSA\n" + jsonPrint(user.keywordsAuto));
 
