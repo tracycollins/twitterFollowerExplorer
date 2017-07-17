@@ -23,8 +23,8 @@ var NeuralNetworkSchema = new Schema({
 		type: Object
 	},
 	inputs: { 
-		type: Array,
-		default: []
+		type: Object,
+		default: {}
 	},
 	outputs: { 
 		type: Array,
