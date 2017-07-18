@@ -2542,7 +2542,8 @@ function loadNeuralNetworkFile(callback){
         console.log(chalkNetwork("\n\nLOADING NEURAL NETWORK\nID: " + nnCurrent.networkId)); 
         console.log(chalkNetwork("=================================================")); 
         console.log(chalkNetwork(
-          "SUCCESS:      " + nnCurrent.successRate.toFixed(2) + "%"
+            "CREATED:      " + getTimeStamp(nnCurrent.createdAt)
+          + "\nSUCCESS:      " + nnCurrent.successRate.toFixed(2) + "%"
           + "\nINPUT TYPES:  " + Object.keys(nnCurrent.inputs)
           + "\nEVOLVE\n" + jsonPrint(nnCurrent.evolve)
         ));
