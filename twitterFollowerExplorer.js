@@ -1,5 +1,8 @@
 /*jslint node: true */
 "use strict";
+
+let currentBestNetwork;
+
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
@@ -2445,45 +2448,49 @@ function initFetchTwitterFriendsInterval(interval){
 
   fetchTwitterFriendsIntervalometer = timerIntervalometer(function(){
 
-    let params = {};
-    params.count = statsObj.user[currentTwitterUser].count;
+    loadBestNeuralNetworkFile(function(err, nnObj){
 
-    if (statsObj.user[currentTwitterUser].nextCursorValid) {
-      params.cursor = parseInt(statsObj.user[currentTwitterUser].nextCursor);
-      statsObj.user[currentTwitterUser].cursor = parseInt(statsObj.user[currentTwitterUser].nextCursor);
-    }
-    else {
-      statsObj.user[currentTwitterUser].cursor = null;
-    }
+      let params = {};
+      params.count = statsObj.user[currentTwitterUser].count;
 
-    debug("params\n" + jsonPrint(params));
+      if (statsObj.user[currentTwitterUser].nextCursorValid) {
+        params.cursor = parseInt(statsObj.user[currentTwitterUser].nextCursor);
+        statsObj.user[currentTwitterUser].cursor = parseInt(statsObj.user[currentTwitterUser].nextCursor);
+      }
+      else {
+        statsObj.user[currentTwitterUser].cursor = null;
+      }
 
-    if (languageAnalysisReadyFlag) {
+      debug("params\n" + jsonPrint(params));
 
-      fetchFriends(params)
-      .then(function(data){
-        if (nextUser || statsObj.user[currentTwitterUser].endFetch) {
-          nextUser = false;
-          processFriends()
-          .then(function(newCurrentUser){
-            if (newCurrentUser) {
-              statsObj.user[currentTwitterUser].endFetch = false;
-              debug(chalkInfo("+++ NEW CURRENT USER: " + newCurrentUser));
-            }
-            else {
-              debug(chalkInfo("--- NO NEW CURRENT USER"));
-            }
-          })
-          .catch(function(err){
-            console.log(chalkError("PROCESS FRIENDS ERROR: " + err));
-          });
-        }
-      })
-      .catch(function(err){
-        console.log(chalkError("FETCH FRIENDS ERROR: " + err));
-      });
-    }
+      if (languageAnalysisReadyFlag) {
 
+        fetchFriends(params)
+        .then(function(data){
+          if (nextUser || statsObj.user[currentTwitterUser].endFetch) {
+            nextUser = false;
+            processFriends()
+            .then(function(newCurrentUser){
+              if (newCurrentUser) {
+                statsObj.user[currentTwitterUser].endFetch = false;
+                debug(chalkInfo("+++ NEW CURRENT USER: " + newCurrentUser));
+              }
+              else {
+                debug(chalkInfo("--- NO NEW CURRENT USER"));
+              }
+            })
+            .catch(function(err){
+              console.log(chalkError("PROCESS FRIENDS ERROR: " + err));
+            });
+          }
+        })
+        .catch(function(err){
+          console.log(chalkError("FETCH FRIENDS ERROR: " + err));
+        });
+      }
+
+    });
+    
   }, interval);
 
   waitLanguageAnalysisReadyInterval = setInterval(function(){
@@ -2494,9 +2501,21 @@ function initFetchTwitterFriendsInterval(interval){
   }, 100);
 }
 
-function loadNeuralNetworkFile(callback){
+function printNetworkObj(title, nnObj){
+  console.log(chalkNetwork("\n==================="
+    + "\n" + title
+    + "\nID:      " + nnObj.networkId
+    + "\nCREATED: " + getTimeStamp(nnObj.createdAt)
+    + "\nSUCCESS: " + nnObj.successRate.toFixed(2) + "%"
+    + "\nINPUTS:  " + Object.keys(nnObj.inputs)
+    + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
+    + "\n===================\n"
+  ));
+}
 
-  console.log(chalkTwitter("LOADING NEURAL NETWORK FROM DB"));
+function loadBestNeuralNetworkFile(callback){
+
+  console.log(chalkNetwork("LOADING NEURAL NETWORK FROM DB"));
 
   let maxSuccessRate = 0;
   let nnCurrent = {};
@@ -2537,37 +2556,77 @@ function loadNeuralNetworkFile(callback){
 
       }, function(err){
 
-        // console.log(chalkAlert("LOADING NN | " + nnCurrent.networkId));
+        if (err) {
+          console.log(chalkError("*** loadBestNeuralNetworkFile ERROR\n" + err));
+          return(callback(err, null));
+        }
 
-        console.log(chalkNetwork("\n\nLOADING NEURAL NETWORK\nID: " + nnCurrent.networkId)); 
-        console.log(chalkNetwork("=================================================")); 
-        console.log(chalkNetwork(
-            "CREATED:      " + getTimeStamp(nnCurrent.createdAt)
-          + "\nSUCCESS:      " + nnCurrent.successRate.toFixed(2) + "%"
-          + "\nINPUT TYPES:  " + Object.keys(nnCurrent.inputs)
-          + "\nEVOLVE\n" + jsonPrint(nnCurrent.evolve)
-        ));
-        console.log(chalkNetwork("=================================================\n\n")); 
+        printNetworkObj("LOADING NEURAL NETWORK", nnCurrent);
 
-        Object.keys(nnCurrent.inputs).forEach(function(type){
-          console.log(chalkNetwork("NN INPUTS TYPE" 
-            + " | " + type
-            + " | INPUTS: " + nnCurrent.inputs[type].length
-          ));
-          inputArrays[type] = nnCurrent.inputs[type];
-        });
+        if (currentBestNetwork) {
 
-        network = neataptic.Network.fromJSON(nnCurrent.network);
+          if (currentBestNetwork.networkId !== nnCurrent.networkId) {
 
-        statsObj.network.networkId = nnCurrent.networkId;
-        statsObj.network.networkType = nnCurrent.networkType;
-        statsObj.network.successRate = nnCurrent.successRate;
-        statsObj.network.input = nnCurrent.network.input;
-        statsObj.network.output = nnCurrent.network.output;
-        statsObj.network.evolve = {};
-        statsObj.network.evolve = nnCurrent.evolve;
+            printNetworkObj("NEW BEST NETWORK", nnCurrent);
 
-        callback(null);
+            currentBestNetwork = nnCurrent;
+
+            Object.keys(nnCurrent.inputs).forEach(function(type){
+              console.log(chalkNetwork("NN INPUTS TYPE" 
+                + " | " + type
+                + " | INPUTS: " + nnCurrent.inputs[type].length
+              ));
+              inputArrays[type] = nnCurrent.inputs[type];
+            });
+
+            network = neataptic.Network.fromJSON(nnCurrent.network);
+
+            statsObj.currentBestNetworkId = nnCurrent.networkId;
+            statsObj.network.networkId = nnCurrent.networkId;
+            statsObj.network.networkType = nnCurrent.networkType;
+            statsObj.network.successRate = nnCurrent.successRate;
+            statsObj.network.input = nnCurrent.network.input;
+            statsObj.network.output = nnCurrent.network.output;
+            statsObj.network.evolve = {};
+            statsObj.network.evolve = nnCurrent.evolve;
+
+            callback(null, nnCurrent);
+
+          }
+          else {
+            console.log("--- " + nnCurrent.networkId + " | " + nnCurrent.successRate.toFixed(2));
+
+            callback(null, null);
+          }
+        }
+        else {
+
+          currentBestNetwork = nnCurrent;
+
+          printNetworkObj("LOADED BEST NETWORK", nnCurrent);
+
+          Object.keys(nnCurrent.inputs).forEach(function(type){
+            console.log(chalkNetwork("NN INPUTS TYPE" 
+              + " | " + type
+              + " | INPUTS: " + nnCurrent.inputs[type].length
+            ));
+            inputArrays[type] = nnCurrent.inputs[type];
+          });
+
+          network = neataptic.Network.fromJSON(nnCurrent.network);
+
+          statsObj.currentBestNetworkId = nnCurrent.networkId;
+          statsObj.network.networkId = nnCurrent.networkId;
+          statsObj.network.networkType = nnCurrent.networkType;
+          statsObj.network.successRate = nnCurrent.successRate;
+          statsObj.network.input = nnCurrent.network.input;
+          statsObj.network.output = nnCurrent.network.output;
+          statsObj.network.evolve = {};
+          statsObj.network.evolve = nnCurrent.evolve;
+
+          callback(null, nnCurrent);
+
+        }
       });
     }
   });
@@ -2639,7 +2698,6 @@ function initLangAnalyzer(callback){
   langAnalyzer.send({ op: "INIT", interval: 50 }, function(){
     if (callback !== undefined) { callback(); }
   });
-
 }
 
 initialize(configuration, function(err, cnf){
@@ -2669,7 +2727,7 @@ initialize(configuration, function(err, cnf){
     cnf.neuralNetworkFile = defaultNeuralNetworkFile;
   }
 
-  loadNeuralNetworkFile(function(err){
+  loadBestNeuralNetworkFile(function(err, nnObj){
     if (err) { 
       neuralNetworkInitialized = false;
       console.error("LOAD NETWORK ERROR\n" + jsonPrint(err));
