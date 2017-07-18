@@ -150,6 +150,7 @@ const async = require("async");
 const sortOn = require("sort-on");
 
 const chalk = require("chalk");
+const chalkNetwork = chalk.blue;
 const chalkTwitter = chalk.blue;
 const chalkTwitterBold = chalk.bold.blue;
 const chalkRed = chalk.red;
@@ -305,6 +306,8 @@ const configEvents = new EventEmitter2({
 configEvents.on("newListener", function(data){
   console.log("*** NEW CONFIG EVENT LISTENER: " + data);
 });
+
+statsObj.network = {};
 
 statsObj.classification = {};
 statsObj.classification.auto = {};
@@ -2496,7 +2499,7 @@ function loadNeuralNetworkFile(callback){
   console.log(chalkTwitter("LOADING NEURAL NETWORK FROM DB"));
 
   let maxSuccessRate = 0;
-  let nnCurrent;
+  let nnCurrent = {};
 
   NeuralNetwork.find({}, function(err, nnArray){
     if (err) {
@@ -2511,33 +2514,42 @@ function loadNeuralNetworkFile(callback){
       console.log(nnArray.length + " NETWORKS FOUND");
 
       async.eachSeries(nnArray, function(nn, cb){
-        console.log("NN"
-          + " | " + nn.networkId
-          + " | " + nn.successRate.toFixed(2)
-        );
+
+        console.log(chalkInfo("NN"
+          + " | ID: " + nn.networkId
+          + " | SUCCESS: " + nn.successRate.toFixed(2) + "%"
+        ));
+
         if (nn.successRate > maxSuccessRate) {
-           console.log(chalkAlert("NEW MAX NN"
-            + " | " + nn.networkId
-            + " | " + nn.successRate.toFixed(2)
+
+           console.log(chalkNetwork("NEW MAX NN"
+            + " | ID: " + nn.networkId
+            + " | SUCCESS: " + nn.successRate.toFixed(2) + "%"
           ));
+
           maxSuccessRate = nn.successRate;
           nnCurrent = nn;
           nnCurrent.inputs = nn.inputs;
+
         }
+
         cb();
 
       }, function(err){
 
-        console.log(chalkAlert("LOADING NN | " + nnCurrent.networkId));
+        // console.log(chalkAlert("LOADING NN | " + nnCurrent.networkId));
 
-        console.log(("NN" 
-          + " | " + nnCurrent.networkId
-          + " | " + nnCurrent.successRate.toFixed(2)
-          + " | INPUT TYPES: " + Object.keys(nnCurrent.inputs)
+        console.log(chalkNetwork("\n\nLOADING NEURAL NETWORK\nID: " + nnCurrent.networkId)); 
+        console.log(chalkNetwork("=================================================")); 
+        console.log(chalkNetwork(
+          "SUCCESS:      " + nnCurrent.successRate.toFixed(2) + "%"
+          + "\nINPUT TYPES:  " + Object.keys(nnCurrent.inputs)
+          + "\nEVOLVE\n" + jsonPrint(nnCurrent.evolve)
         ));
+        console.log(chalkNetwork("=================================================\n\n")); 
 
         Object.keys(nnCurrent.inputs).forEach(function(type){
-          console.log(("NN INPUTS TYPE" 
+          console.log(chalkNetwork("NN INPUTS TYPE" 
             + " | " + type
             + " | INPUTS: " + nnCurrent.inputs[type].length
           ));
@@ -2545,6 +2557,14 @@ function loadNeuralNetworkFile(callback){
         });
 
         network = neataptic.Network.fromJSON(nnCurrent.network);
+
+        statsObj.network.networkId = nnCurrent.networkId;
+        statsObj.network.networkType = nnCurrent.networkType;
+        statsObj.network.successRate = nnCurrent.successRate;
+        statsObj.network.input = nnCurrent.network.input;
+        statsObj.network.output = nnCurrent.network.output;
+        statsObj.network.evolve = {};
+        statsObj.network.evolve = nnCurrent.evolve;
 
         callback(null);
       });
