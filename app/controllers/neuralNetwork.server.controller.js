@@ -86,7 +86,7 @@ exports.findOneNetwork = function (network, params, callback) {
 					+ " | " + nw.networkId 
 					+ "\nSUCCESS: " + nw.successRate
 					+ "\nTYPE: " + nw.networkType
-					+ "\nIN: " + nw.inputs.length
+					+ "\nIN: " + Object.keys(nw.inputs)
 					+ "\nOUT: " + nw.outputs.length
 					+ "\nEVOLVE: " + jsonPrint(nw.evolve) 
 					+ "\nTRAIN: " + jsonPrint(nw.train)
