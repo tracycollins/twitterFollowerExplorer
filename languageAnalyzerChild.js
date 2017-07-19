@@ -559,6 +559,13 @@ function initAnalyzeLanguageInterval(interval){
               + " | " + err
             ));
           }
+          else if (err.code === 8) {
+            console.error(chalkAlert("[RXLQ: " + rxLangObjQueue.length + "]"
+              + " | LANGUAGE QUOTA"
+              + " | " + err
+              // + "\n" + jsonPrint(err)
+            ));
+          }
           else {
             console.error(chalkError("[RXLQ: " + rxLangObjQueue.length + "]"
               + " | LANGUAGE TEXT ERROR"
@@ -698,7 +705,7 @@ function analyzeLanguage(langObj, callback){
 
   document.annotate(function(err, annotations) {
     if (err) {
-      console.log(chalkRed("LANGUAGE ERROR: " + err));
+      debug(chalkRed("LANGUAGE ERROR: " + err));
       if (callback !== undefined) { callback(err, results); }
     }
     else {
