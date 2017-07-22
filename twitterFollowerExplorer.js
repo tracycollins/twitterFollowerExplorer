@@ -583,6 +583,7 @@ function initStatsUpdate(callback){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
+    saveFile(classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap);
     saveFile(statsFolder, statsFile, statsObj);
     showStats();
 
