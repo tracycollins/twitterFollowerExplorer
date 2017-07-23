@@ -8,6 +8,8 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
 
+const MIN_KEEP_NN_SUCCESS_RATE = 50;
+
 const inputTypes = ["hashtags", "mentions", "urls", "words", "emoji"].sort();
 let inputArrays = {};
 
@@ -2535,7 +2537,7 @@ function loadBestNeuralNetworkFile(callback){
 
       async.eachSeries(nnArray, function(nn, cb){
 
-        console.log(chalkInfo("NN"
+        debug(chalkInfo("NN"
           + " | ID: " + nn.networkId
           + " | SUCCESS: " + nn.successRate.toFixed(2) + "%"
         ));
@@ -2551,9 +2553,27 @@ function loadBestNeuralNetworkFile(callback){
           nnCurrent = nn;
           nnCurrent.inputs = nn.inputs;
 
-        }
+          cb();
 
-        cb();
+        }
+        else if (nn.successRate < MIN_KEEP_NN_SUCCESS_RATE){
+          NeuralNetwork.remove({networkId: nn.networkId}, function(err){
+            if (err){
+              console.log(chalkAlert("NN REMOVE ERROR | ID: " + nn.networkId + "\n" + err));
+            }
+            else {
+              console.log(chalkAlert("NN DELETED"
+                + " | MIN: " + MIN_KEEP_NN_SUCCESS_RATE + "%"
+                + " | ID: " + nn.networkId
+                + " | SUCCESS: " + nn.successRate.toFixed(2) + "%"
+              ));
+            }
+            cb();
+          });
+        }
+        else {
+          cb();
+        }
 
       }, function(err){
 
