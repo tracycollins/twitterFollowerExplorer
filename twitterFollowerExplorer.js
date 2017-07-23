@@ -1816,7 +1816,6 @@ function printDatum(title, input){
   });
 }
 
-// function activateNetwork(network, nInput, callback){
 function activateNetwork(network, nInput){
 
   return new Promise(function(resolve) {
@@ -1942,7 +1941,7 @@ function generateAutoKeywords(user, callback){
         console.log(chalkAlert("----------------"
           + "\nGEN AUTO KEYWORDS | USER DESC/STATUS"
           + " | @" + user.screenName
-          + "\n" + jsonPrint(text) + "\n"
+          + "\n" + text + "\n"
         ));
 
         async.eachSeries(inputTypes, function(type, cb1){
@@ -2027,7 +2026,8 @@ function generateAutoKeywords(user, callback){
             });
           })
           .catch(function(err){
-            console.error(chalkError("ACTIVATE NETWORK ERROR: " + err));
+            console.log(chalkError("ACTIVATE NETWORK ERROR: " + err));
+            callback(err, user);
           });
 
         });
@@ -2049,11 +2049,8 @@ function generateAutoKeywords(user, callback){
     }, function(){
       debug(chalkTwitter("--- NO USER STATUS NOR DESC"));
 
-      activateNetwork(network, networkInput, function(err, networkOutput){
-        if (err) {
-          console.error(chalkError("ACTIVATE NETWORK ERROR: " + err));
-        }
-
+      activateNetwork(network, networkInput)
+      .then(function(networkOutput){
         indexOfMax(networkOutput, function(maxOutputIndex){
 
           console.log(chalkAlert("MAX INDEX: " + maxOutputIndex));
@@ -2089,8 +2086,56 @@ function generateAutoKeywords(user, callback){
           ));
 
           callback(err, user);
+
         });
+      })
+      .catch(function(err){
+        console.log(chalkError("ACTIVATE NETWORK ERROR: " + err));
+        callback(err, user);
       });
+
+      // activateNetwork(network, networkInput, function(err, networkOutput){
+      //   if (err) {
+      //     console.error(chalkError("ACTIVATE NETWORK ERROR: " + err));
+      //   }
+
+      //   indexOfMax(networkOutput, function(maxOutputIndex){
+
+      //     console.log(chalkAlert("MAX INDEX: " + maxOutputIndex));
+
+      //     user.keywordsAuto = {};
+
+      //     switch (maxOutputIndex) {
+      //       case 0:
+      //         user.keywordsAuto.left = 100;
+      //       break;
+      //       case 1:
+      //         user.keywordsAuto.neutral = 100;
+      //       break;
+      //       case 2:
+      //         user.keywordsAuto.right = 100;
+      //       break;
+      //       default:
+      //         user.keywordsAuto = {};
+      //     }
+
+      //     printDatum(user.screenName, networkInput);
+
+      //     console.log(chalkRed("AUTO KW"
+      //       + " | " + user.screenName
+      //       + " | MAG: " + networkInput[0].toFixed(6)
+      //       + " | SCORE: " + networkInput[1].toFixed(6)
+      //       + " | L: " + networkOutput[0].toFixed(3)
+      //       + " | N: " + networkOutput[1].toFixed(3)
+      //       + " | R: " + networkOutput[2].toFixed(3)
+      //       + " | KWs: " + Object.keys(user.keywords)
+      //       + " | AKWs: " + Object.keys(user.keywordsAuto)
+      //       // + "\n" + jsonPrint(user.keywordsAuto)
+      //     ));
+
+      //     callback(err, user);
+      //   });
+      // });
 
     });
   }
