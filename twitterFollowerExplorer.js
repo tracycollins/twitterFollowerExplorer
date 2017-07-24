@@ -629,7 +629,10 @@ function checkRateLimit(callback){
     ));
   }
 
-  twitterUserHashMap[currentTwitterUser].twit.get("application/rate_limit_status", function(err, data, response) {
+  twitterUserHashMap[currentTwitterUser].twit.get(
+    "application/rate_limit_status", 
+    function(err, data, response) {
+    
     if (err){
       console.error("!!!!! TWITTER ACCOUNT ERROR | " + getTimeStamp() + "\n" + JSON.stringify(err, null, 3));
       statsObj.twitterErrors+= 1;
@@ -910,15 +913,8 @@ function initTwitterUsers(callback){
       initTwitter(userId, function(err, twitObj){
         if (err) {
           console.log(chalkError("INIT TWITTER ERROR\n" + jsonPrint(err)));
-          return(cb());
+          return(cb(err));
         }
-
-        // debug("twitObj\n" + jsonPrint(twitObj));
-
-        // twitterUserHashMap[userId].twit = {};
-        // twitterUserHashMap[userId].twit = twitObj.twit;
-        // twitterUserHashMap[userId].twitStream = {};
-        // twitterUserHashMap[userId].twitStream = twitObj.twitStream;
 
         console.log(chalkTwitter("ADDED TWITTER USER"
           + " | NAME: " + userId
@@ -932,7 +928,7 @@ function initTwitterUsers(callback){
 
     }, function(err){
       console.log(chalkTwitter("\nADD TWITTER USERS COMPLETE\n"));
-      if (callback !== undefined) { callback(); }
+      if (callback !== undefined) { callback(err); }
     });
 
   }
@@ -2222,7 +2218,10 @@ function fetchFriends(params) {
     else if (!statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
       && languageAnalysisReadyFlag) {
 
-      twitterUserHashMap[currentTwitterUser].twit.get("friends/list", params, function(err, data, response){
+      twitterUserHashMap[currentTwitterUser].twit.get(
+        "friends/list", 
+        params, 
+        function(err, data, response){
 
         if (err) {
           // console.error(chalkInfo("ERROR " + err));
@@ -2237,10 +2236,10 @@ function fetchFriends(params) {
             checkRateLimit();
             fsm.rateLimitStart();
           }
-          else {
-            clearInterval(waitLanguageAnalysisReadyInterval);
-            fetchTwitterFriendsIntervalometer.stop();
-          }
+          // else {
+          //   clearInterval(waitLanguageAnalysisReadyInterval);
+          //   fetchTwitterFriendsIntervalometer.stop();
+          // }
 
           reject(new Error(err));
         }
@@ -2802,7 +2801,7 @@ initialize(configuration, function(err, cnf){
       neuralNetworkInitialized = true;
     }
 
-    initTwitterUsers(function(){
+    initTwitterUsers(function(err){
 
       if (currentTwitterUser === undefined) { 
         currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
