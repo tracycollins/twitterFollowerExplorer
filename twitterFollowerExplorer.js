@@ -71,6 +71,7 @@ fsm.onleaveSTATE = function (event, oldState, newState) {
 };
 
 const keywordExtractor = require("./js/keyword-extractor");
+const twitterTextParser = require("@threecee/twitter-text-parser");
 
 const Dropbox = require("dropbox");
 const os = require("os");
@@ -1383,254 +1384,254 @@ let parser = new Autolinker({
   mention: "twitter"
 });
 
-function parseText(text, options, callback){
+// function parseText(text, options, callback){
 
-  console.log(chalk.blue("\nPARSE TEXT\n" + text + "\n"));
+//   console.log(chalk.blue("\nPARSE TEXT\n" + text + "\n"));
 
-  if (text === "undefined") {
-    console.error(chalkError("*** PARSER TEXT UNDEFINED"));
-  }
+//   if (text === "undefined") {
+//     console.error(chalkError("*** PARSER TEXT UNDEFINED"));
+//   }
 
-  const userHistograms = {};
-  userHistograms.words = {};
-  userHistograms.urls = {};
-  userHistograms.hashtags = {};
-  userHistograms.mentions = {};
-  userHistograms.emoji = {};
+//   const userHistograms = {};
+//   userHistograms.words = {};
+//   userHistograms.urls = {};
+//   userHistograms.hashtags = {};
+//   userHistograms.mentions = {};
+//   userHistograms.emoji = {};
 
-  text = text.replace(/,/gi, " ");
+//   text = text.replace(/,/gi, " ");
 
-  const parseResults = parser.parse(text);
+//   const parseResults = parser.parse(text);
 
-  let urlArray = [];
-  let mentionArray = [];
-  let hashtagArray = [];
-  let emojiArray = [];
+//   let urlArray = [];
+//   let mentionArray = [];
+//   let hashtagArray = [];
+//   let emojiArray = [];
 
 
-  async.each(parseResults, function(matchObj, cb){
+//   async.each(parseResults, function(matchObj, cb){
 
-    const type = matchObj.getType();
+//     const type = matchObj.getType();
 
-    console.log(chalkAlert("PARSE TEXT"
-      + " | " + matchObj.getMatchedText().toLowerCase()
-      + " | TYPE: " + type
-    ));
+//     console.log(chalkAlert("PARSE TEXT"
+//       + " | " + matchObj.getMatchedText().toLowerCase()
+//       + " | TYPE: " + type
+//     ));
 
-    switch (type) {
-      case "url":
-        urlArray.push(matchObj.getMatchedText().toLowerCase());
-        console.log(chalkInfo(urlArray.length + " | URL: " + matchObj.getMatchedText().toLowerCase()));
-        cb();
-      break;
-      case "mention":
-        mentionArray.push(matchObj.getMatchedText().toLowerCase());
-        console.log(chalkInfo(mentionArray.length + " | MEN: " + matchObj.getMatchedText().toLowerCase()));
-        cb();
-      break;
-      case "hashtag":
-        hashtagArray.push(matchObj.getMatchedText().toLowerCase());
-        console.log(chalkInfo(hashtagArray.length + " | HTG: " + matchObj.getMatchedText().toLowerCase()));
-        cb();
-      break;
-      default:
-        console.error(chalkError("UNKNOWN PARSE TYPE: " + type));
-        cb();
-    }
+//     switch (type) {
+//       case "url":
+//         urlArray.push(matchObj.getMatchedText().toLowerCase());
+//         console.log(chalkInfo(urlArray.length + " | URL: " + matchObj.getMatchedText().toLowerCase()));
+//         cb();
+//       break;
+//       case "mention":
+//         mentionArray.push(matchObj.getMatchedText().toLowerCase());
+//         console.log(chalkInfo(mentionArray.length + " | MEN: " + matchObj.getMatchedText().toLowerCase()));
+//         cb();
+//       break;
+//       case "hashtag":
+//         hashtagArray.push(matchObj.getMatchedText().toLowerCase());
+//         console.log(chalkInfo(hashtagArray.length + " | HTG: " + matchObj.getMatchedText().toLowerCase()));
+//         cb();
+//       break;
+//       default:
+//         console.error(chalkError("UNKNOWN PARSE TYPE: " + type));
+//         cb();
+//     }
 
-   }, function(err){
+//    }, function(err){
 
-    let matchEmoji;
-    while (matchEmoji = eRegex.exec(text)) {
-      const emj = matchEmoji[0];
-      emojiArray.push(emj);
-      text = text.replace(emj, " ");
-      console.log(chalkInfo(emojiArray.length + " | EMJ: " + emj));
-      debug(chalk.bold.black("\nTEXT LESS EMOJI: " + text + "\n\n"));
-    }
+//     let matchEmoji;
+//     while (matchEmoji = eRegex.exec(text)) {
+//       const emj = matchEmoji[0];
+//       emojiArray.push(emj);
+//       text = text.replace(emj, " ");
+//       console.log(chalkInfo(emojiArray.length + " | EMJ: " + emj));
+//       debug(chalk.bold.black("\nTEXT LESS EMOJI: " + text + "\n\n"));
+//     }
  
-    let textWordBreaks = text.replace(/\//gim, " ");
-    const wordArray = keywordExtractor.extract(text, wordExtractionOptions);
+//     let textWordBreaks = text.replace(/\//gim, " ");
+//     const wordArray = keywordExtractor.extract(text, wordExtractionOptions);
 
-    async.parallel({
+//     async.parallel({
 
-      mentions: function(cb){
-        if (mentionArray) {
+//       mentions: function(cb){
+//         if (mentionArray) {
 
-          async.each(mentionArray, function(userId, cb2){
-            userId = userId.toLowerCase();
-            if (options.updateGlobalHistograms) {
-              histograms.mentions[userId] = (histograms.mentions[userId] === undefined) ? 1 
-                : histograms.mentions[userId]+1;
-            }
-            userHistograms.mentions[userId] = (userHistograms.mentions[userId] === undefined) ? 1 
-              : userHistograms.mentions[userId]+1;
-            console.log(chalkAlert("->- DESC Ms"
-              + " | " + userHistograms.mentions[userId]
-              + " | " + userId
-            ));
-            cb2();
-          }, function(err2){
-            cb(err2, userHistograms.mentions);
-          });
-        }
-        else {
-          cb(null, userHistograms.mentions);
-        }
-      },
+//           async.each(mentionArray, function(userId, cb2){
+//             userId = userId.toLowerCase();
+//             if (options.updateGlobalHistograms) {
+//               histograms.mentions[userId] = (histograms.mentions[userId] === undefined) ? 1 
+//                 : histograms.mentions[userId]+1;
+//             }
+//             userHistograms.mentions[userId] = (userHistograms.mentions[userId] === undefined) ? 1 
+//               : userHistograms.mentions[userId]+1;
+//             console.log(chalkAlert("->- DESC Ms"
+//               + " | " + userHistograms.mentions[userId]
+//               + " | " + userId
+//             ));
+//             cb2();
+//           }, function(err2){
+//             cb(err2, userHistograms.mentions);
+//           });
+//         }
+//         else {
+//           cb(null, userHistograms.mentions);
+//         }
+//       },
 
-      hashtags: function(cb){
-        if (hashtagArray) {
-          async.each(hashtagArray, function(hashtag, cb2){
-            hashtag = hashtag.toLowerCase();
-            if (options.updateGlobalHistograms) {
-              histograms.hashtags[hashtag] = (histograms.hashtags[hashtag] === undefined) ? 1 
-              : histograms.hashtags[hashtag]+1;
-            }
-            userHistograms.hashtags[hashtag] = (userHistograms.hashtags[hashtag] === undefined) ? 1 
-              : userHistograms.hashtags[hashtag]+1;
-            console.log(chalkAlert("->- DESC Hs"
-              + " | " + userHistograms.hashtags[hashtag]
-              + " | " + hashtag
-            ));
-            cb2();
-          }, function(err2){
-            cb(err2, userHistograms.hashtags);
-          });
-        }
-        else {
-          cb(null, userHistograms.hashtags);
-        }
-      },
+//       hashtags: function(cb){
+//         if (hashtagArray) {
+//           async.each(hashtagArray, function(hashtag, cb2){
+//             hashtag = hashtag.toLowerCase();
+//             if (options.updateGlobalHistograms) {
+//               histograms.hashtags[hashtag] = (histograms.hashtags[hashtag] === undefined) ? 1 
+//               : histograms.hashtags[hashtag]+1;
+//             }
+//             userHistograms.hashtags[hashtag] = (userHistograms.hashtags[hashtag] === undefined) ? 1 
+//               : userHistograms.hashtags[hashtag]+1;
+//             console.log(chalkAlert("->- DESC Hs"
+//               + " | " + userHistograms.hashtags[hashtag]
+//               + " | " + hashtag
+//             ));
+//             cb2();
+//           }, function(err2){
+//             cb(err2, userHistograms.hashtags);
+//           });
+//         }
+//         else {
+//           cb(null, userHistograms.hashtags);
+//         }
+//       },
 
-      words: function(cb){
-        if (wordArray) {
-          async.each(wordArray, function(w, cb1){
+//       words: function(cb){
+//         if (wordArray) {
+//           async.each(wordArray, function(w, cb1){
 
-            debug(chalkAlert("w"
-              + " | " + w
-            ));
+//             debug(chalkAlert("w"
+//               + " | " + w
+//             ));
 
-            let word = w.toLowerCase();
+//             let word = w.toLowerCase();
 
-            word = word.replace(/'s/gi, "");
-            word = word.replace(/’s/gi, "");
-            word = word.replace(/'ve/gi, "");
-            word = word.replace(/’ve/gi, "");
-            word = word.replace(/'re/gi, "");
-            word = word.replace(/’re/gi, "");
+//             word = word.replace(/'s/gi, "");
+//             word = word.replace(/’s/gi, "");
+//             word = word.replace(/'ve/gi, "");
+//             word = word.replace(/’ve/gi, "");
+//             word = word.replace(/'re/gi, "");
+//             word = word.replace(/’re/gi, "");
 
-            const m = mentionsRegex().exec(word);
-            const h = hashtagRegex().exec(word);
-            let u;
-            try {
-              const urlObj = getUrls(word);
-              u = (Array.from(urlObj).length > 0) ? Array.from(urlObj) : null;
-            }
-            catch (e) {
-              console.error(chalkError("GET URLS ERROR\n" + jsonPrint(e)));
-            }
+//             const m = mentionsRegex().exec(word);
+//             const h = hashtagRegex().exec(word);
+//             let u;
+//             try {
+//               const urlObj = getUrls(word);
+//               u = (Array.from(urlObj).length > 0) ? Array.from(urlObj) : null;
+//             }
+//             catch (e) {
+//               console.error(chalkError("GET URLS ERROR\n" + jsonPrint(e)));
+//             }
 
-            if (m || h || u 
-              || (word === "/") 
-              || word.includes("--") 
-              || word.includes("|") 
-              || word.includes("#") 
-              || word.includes("w/") 
-              || word.includes("≠") 
-              || word.includes("http") 
-              || word.includes("+")) {
-              debug(chalkAlert("-- SKIP WORD"
-                + " | M: " + m
-                + " | H: " + h
-                + " | U: " + u
-                + " | " + word
-              ));
-              cb1();
-            }
-            else {
-              if (options.updateGlobalHistograms) {
-                histograms.words[word] = (histograms.words[word] === undefined) ? 1 
-                  : histograms.words[word]+1;
-              }
-              userHistograms.words[word] = (userHistograms.words[word] === undefined) ? 1 
-                : userHistograms.words[word]+1;
+//             if (m || h || u 
+//               || (word === "/") 
+//               || word.includes("--") 
+//               || word.includes("|") 
+//               || word.includes("#") 
+//               || word.includes("w/") 
+//               || word.includes("≠") 
+//               || word.includes("http") 
+//               || word.includes("+")) {
+//               debug(chalkAlert("-- SKIP WORD"
+//                 + " | M: " + m
+//                 + " | H: " + h
+//                 + " | U: " + u
+//                 + " | " + word
+//               ));
+//               cb1();
+//             }
+//             else {
+//               if (options.updateGlobalHistograms) {
+//                 histograms.words[word] = (histograms.words[word] === undefined) ? 1 
+//                   : histograms.words[word]+1;
+//               }
+//               userHistograms.words[word] = (userHistograms.words[word] === undefined) ? 1 
+//                 : userHistograms.words[word]+1;
 
-              console.log(chalkAlert("->- DESC Ws"
-                // + " | HIST: " + histograms.words[word]
-                + " | " + userHistograms.words[word]
-                + " | " + word
-              ));
+//               console.log(chalkAlert("->- DESC Ws"
+//                 // + " | HIST: " + histograms.words[word]
+//                 + " | " + userHistograms.words[word]
+//                 + " | " + word
+//               ));
 
-              cb1();
-            }
-          }, function(err){
-            cb(null, userHistograms.words);
-          });
-        }
-        else {
-          cb(null, userHistograms.words);
-        }
-      },
+//               cb1();
+//             }
+//           }, function(err){
+//             cb(null, userHistograms.words);
+//           });
+//         }
+//         else {
+//           cb(null, userHistograms.words);
+//         }
+//       },
 
-      urls: function(cb){
-        if (urlArray) {
-          async.each(urlArray, function(url, cb2){
-            url = url.toLowerCase();
-            if (options.updateGlobalHistograms) {
-              histograms.urls[url] = (histograms.urls[url] === undefined) ? 1 : histograms.urls[url]+1;
-            }
-            userHistograms.urls[url] = (userHistograms.urls[url] === undefined) ? 1 : userHistograms.urls[url]+1;
-            console.log(chalkAlert("->- DESC Us"
-              + " | " + userHistograms.urls[url]
-              + " | " + url
-            ));
-            cb2();
-          }, function(err2){
-            cb(err2, userHistograms.urls);
-          });
-        }
-        else {
-          cb(null, userHistograms.urls);
-        }
-      },
+//       urls: function(cb){
+//         if (urlArray) {
+//           async.each(urlArray, function(url, cb2){
+//             url = url.toLowerCase();
+//             if (options.updateGlobalHistograms) {
+//               histograms.urls[url] = (histograms.urls[url] === undefined) ? 1 : histograms.urls[url]+1;
+//             }
+//             userHistograms.urls[url] = (userHistograms.urls[url] === undefined) ? 1 : userHistograms.urls[url]+1;
+//             console.log(chalkAlert("->- DESC Us"
+//               + " | " + userHistograms.urls[url]
+//               + " | " + url
+//             ));
+//             cb2();
+//           }, function(err2){
+//             cb(err2, userHistograms.urls);
+//           });
+//         }
+//         else {
+//           cb(null, userHistograms.urls);
+//         }
+//       },
 
-      emoji: function(cb){
-        if (emojiArray) {
-          async.each(emojiArray, function(emoji, cb2){
-            if (options.updateGlobalHistograms) {
-              histograms.emoji[emoji] = (histograms.emoji[emoji] === undefined) ? 1 : histograms.emoji[emoji]+1;
-            }
-            userHistograms.emoji[emoji] = (userHistograms.emoji[emoji] === undefined) ? 1 : userHistograms.emoji[emoji]+1;
-            console.log(chalkAlert("->- DESC Es"
-              + " | " + userHistograms.emoji[emoji]
-              + " | " + emoji
-            ));
-            cb2();
-          }, function(err2){
-            cb(err2, userHistograms.emoji);
-          });
-        }
-        else {
-          cb(null, userHistograms.emoji);
-        }
-      }
+//       emoji: function(cb){
+//         if (emojiArray) {
+//           async.each(emojiArray, function(emoji, cb2){
+//             if (options.updateGlobalHistograms) {
+//               histograms.emoji[emoji] = (histograms.emoji[emoji] === undefined) ? 1 : histograms.emoji[emoji]+1;
+//             }
+//             userHistograms.emoji[emoji] = (userHistograms.emoji[emoji] === undefined) ? 1 : userHistograms.emoji[emoji]+1;
+//             console.log(chalkAlert("->- DESC Es"
+//               + " | " + userHistograms.emoji[emoji]
+//               + " | " + emoji
+//             ));
+//             cb2();
+//           }, function(err2){
+//             cb(err2, userHistograms.emoji);
+//           });
+//         }
+//         else {
+//           cb(null, userHistograms.emoji);
+//         }
+//       }
 
-    }, function(err2, results){
+//     }, function(err2, results){
 
-      let t = "\nHISTOGRAMS";
+//       let t = "\nHISTOGRAMS";
 
-      Object.keys(results).forEach(function(key){
-        if (results[key]) {
-          t = t + " | " + key.toUpperCase() + ": " + Object.keys(results[key]).length;
-        }
-      });
-      console.log(chalkInfo(t + "\n"));
-      callback((err || err2), results);
-    });
+//       Object.keys(results).forEach(function(key){
+//         if (results[key]) {
+//           t = t + " | " + key.toUpperCase() + ": " + Object.keys(results[key]).length;
+//         }
+//       });
+//       console.log(chalkInfo(t + "\n"));
+//       callback((err || err2), results);
+//     });
 
-  });
-}
+//   });
+// }
 
 
 function updateClassifiedUsers(user, callback){
@@ -1685,6 +1686,7 @@ function updateClassifiedUsers(user, callback){
         }
 
         console.log(chalkCurrent("MCL USR   "
+          + " | " + classText
           + " [" + Object.keys(classifiedUserHashmap).length + "]"
           + " [ L: " + statsObj.classification.manual.left
           + " | R: " + statsObj.classification.manual.right
@@ -1692,7 +1694,6 @@ function updateClassifiedUsers(user, callback){
           + " | -: " + statsObj.classification.manual.negative
           + " | N: " + statsObj.classification.manual.neutral
           + " | O: " + statsObj.classification.manual.other + " ]"
-          + " | " + classText
           + " | " + user.userId
           + " | " + user.screenName
           + " | " + user.name
@@ -1750,7 +1751,8 @@ function updateClassifiedUsers(user, callback){
             statsObj.classification.auto.other += 1;
         }
 
-        console.log(chalkCurrent("== AUTO =="
+        console.log(chalkCurrent("ACL USR   "
+          + " | " + classText
           + " [" + Object.keys(autoClassifiedUserHashmap).length + "]"
           + " [ L: " + statsObj.classification.auto.left
           + " | R: " + statsObj.classification.auto.right
@@ -1758,7 +1760,6 @@ function updateClassifiedUsers(user, callback){
           + " | -: " + statsObj.classification.auto.negative
           + " | N: " + statsObj.classification.auto.neutral
           + " | O: " + statsObj.classification.auto.other + " ]"
-          + " | " + classText
           + " | " + user.userId
           + " | " + user.screenName
           + " | " + user.name
@@ -1930,103 +1931,115 @@ function generateAutoKeywords(user, callback){
 
       if (!text) { text = " "; }
 
-      parseText(text, {updateGlobalHistograms: true}, function(err, histogram){
+      twitterTextParser.parseText(text, {updateGlobalHistograms: true}, function(err, hist){
 
-        user.inputHits = 0;
+        userServer.updateHistograms({userId: user.userId, histograms: hist}, function(err, updateduser){
 
-        console.log(chalkAlert("----------------"
-          + "\nGEN AUTO KEYWORDS | USER DESC/STATUS"
-          + " | @" + user.screenName
-          + "\n" + text + "\n"
-        ));
+          updateduser.inputHits = 0;
 
-        async.eachSeries(inputTypes, function(type, cb1){
+          const histograms = updateduser.histograms;
 
-          debug(chalkAlert("START ARRAY: " + type + " | " + inputArrays[type].length));
+          console.log(chalkAlert("----------------"
+            + "\nGEN AUTO KEYWORDS | USER DESC/STATUS"
+            + " | @" + updateduser.screenName
+            + "\n" + text + "\n"
+            + "\nHISTOGRAMS: " + jsonPrint(histograms)
+          ));
 
-          async.eachSeries(inputArrays[type], function(element, cb2){
-            if (histogram[type][element]) {
-              user.inputHits += 1;
-              console.log(chalkTwitter("GAKW"
-                + " | " + user.inputHits + " HITS"
-                + " | @" + user.screenName 
-                + " | ARRAY: " + type 
-                + " | " + element 
-                + " | " + histogram[type][element]
-              ));
-              networkInput.push(1);
-              cb2();
-            }
-            else {
-              debug(chalkInfo("U MISS" 
-                + " | @" + user.screenName 
-                + " | " + user.inputHits 
-                + " | ARRAY: " + type 
-                + " | " + element
-              ));
-              networkInput.push(0);
-              cb2();
-            }
-          }, function(){
-            debug(chalkTwitter("DONE ARRAY: " + type));
-            cb1();
-          });
+          async.eachSeries(inputTypes, function(type, cb1){
 
-        }, function(){
+            debug(chalkAlert("START ARRAY: " + type + " | " + inputArrays[type].length));
 
-          debug(chalkTwitter("PARSE DESC COMPLETE"));
+            async.eachSeries(inputArrays[type], function(element, cb2){
 
-          langAnalyzer.send({op: "LANG_ANALIZE", obj: user, text: text}, function(){
-            statsObj.analyzer.analyzed += 1;
-            // callback(null, user);
-          });
-
-          activateNetwork(network, networkInput)
-          .then(function(networkOutput){
-            indexOfMax(networkOutput, function(maxOutputIndex){
-
-              console.log(chalkAlert("MAX INDEX: " + maxOutputIndex));
-
-              user.keywordsAuto = {};
-
-              switch (maxOutputIndex) {
-                case 0:
-                  user.keywordsAuto.left = 100;
-                break;
-                case 1:
-                  user.keywordsAuto.neutral = 100;
-                break;
-                case 2:
-                  user.keywordsAuto.right = 100;
-                break;
-                default:
-                  user.keywordsAuto = {};
+              if (histograms[type] && histograms[type][element]) {
+                updateduser.inputHits += 1;
+                console.log(chalkTwitter("GAKW"
+                  + " | " + updateduser.inputHits + " HITS"
+                  + " | @" + updateduser.screenName 
+                  + " | ARRAY: " + type 
+                  + " | " + element 
+                  + " | " + histograms[type][element]
+                ));
+                networkInput.push(1);
+                cb2();
+              }
+              else {
+                debug(chalkInfo("U MISS" 
+                  + " | @" + updateduser.screenName 
+                  + " | " + updateduser.inputHits 
+                  + " | ARRAY: " + type 
+                  + " | " + element
+                ));
+                networkInput.push(0);
+                cb2();
               }
 
-              printDatum(user.screenName, networkInput);
+            }, function(){
 
-              console.log(chalkRed("AUTO KW"
-                + " | " + user.screenName
-                + " | MAG: " + networkInput[0].toFixed(6)
-                + " | SCORE: " + networkInput[1].toFixed(6)
-                + " | L: " + networkOutput[0].toFixed(3)
-                + " | N: " + networkOutput[1].toFixed(3)
-                + " | R: " + networkOutput[2].toFixed(3)
-                + " | KWs: " + Object.keys(user.keywords)
-                + " | AKWs: " + Object.keys(user.keywordsAuto)
-                // + "\n" + jsonPrint(user.keywordsAuto)
-              ));
-
-              callback(err, user);
+              debug(chalkTwitter("DONE ARRAY: " + type));
+              cb1();
 
             });
-          })
-          .catch(function(err){
-            console.log(chalkError("ACTIVATE NETWORK ERROR: " + err));
-            callback(err, user);
+
+          }, function(){
+
+            debug(chalkTwitter("PARSE DESC COMPLETE"));
+
+            langAnalyzer.send({op: "LANG_ANALIZE", obj: updateduser, text: text}, function(){
+              statsObj.analyzer.analyzed += 1;
+              // callback(null, updateduser);
+            });
+
+            activateNetwork(network, networkInput)
+            .then(function(networkOutput){
+              indexOfMax(networkOutput, function(maxOutputIndex){
+
+                console.log(chalkAlert("MAX INDEX: " + maxOutputIndex));
+
+                updateduser.keywordsAuto = {};
+
+                switch (maxOutputIndex) {
+                  case 0:
+                    updateduser.keywordsAuto.left = 100;
+                  break;
+                  case 1:
+                    updateduser.keywordsAuto.neutral = 100;
+                  break;
+                  case 2:
+                    updateduser.keywordsAuto.right = 100;
+                  break;
+                  default:
+                    updateduser.keywordsAuto = {};
+                }
+
+                printDatum(updateduser.screenName, networkInput);
+
+                console.log(chalkRed("AUTO KW"
+                  + " | " + updateduser.screenName
+                  + " | MAG: " + networkInput[0].toFixed(6)
+                  + " | SCORE: " + networkInput[1].toFixed(6)
+                  + " | L: " + networkOutput[0].toFixed(3)
+                  + " | N: " + networkOutput[1].toFixed(3)
+                  + " | R: " + networkOutput[2].toFixed(3)
+                  + " | KWs: " + Object.keys(updateduser.keywords)
+                  + " | AKWs: " + Object.keys(updateduser.keywordsAuto)
+                  // + "\n" + jsonPrint(updateduser.keywordsAuto)
+                ));
+
+                callback(err, updateduser);
+
+              });
+            })
+            .catch(function(err){
+              console.log(chalkError("ACTIVATE NETWORK ERROR: " + err));
+              callback(err, updateduser);
+            });
+
           });
 
         });
+
       });
 
     });

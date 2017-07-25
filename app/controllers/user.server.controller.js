@@ -1,29 +1,40 @@
-var S = require('string');
-var chalk = require('chalk');
-var util = require('util');
+/*jslint node: true */
+"use strict";
 
-var chalkAlert = chalk.red;
-var chalkInfo = chalk.yellow;
-var chalkTest = chalk.bold.yellow;
-var chalkError = chalk.bold.red;
-var chalkWarn = chalk.bold.yellow;
-var chalkLog = chalk.gray;
-var chalkDb = chalk.gray;
+const chalk = require("chalk");
+const async = require("async");
 
-var moment = require('moment');
-var User = require('mongoose').model('User');
-var debug = require('debug')('user');
+const chalkAlert = chalk.red;
+const chalkInfo = chalk.yellow;
+const chalkTest = chalk.bold.yellow;
+const chalkError = chalk.bold.red;
+const chalkWarn = chalk.bold.yellow;
+const chalkLog = chalk.gray;
 
-var defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
-var compactDateTimeFormat = "YYYYMMDD HHmmss";
+const moment = require("moment");
+const User = require("mongoose").model("User");
+const debug = require("debug")("user");
+const defaults = require("object.defaults/immutable");
+
+const compactDateTimeFormat = "YYYYMMDD HHmmss";
+
+const jsonPrint = function (obj){
+  if (obj) {
+    return JSON.stringify(obj, null, 2);
+  }
+  else {
+    return "UNDEFINED";
+  }
+};
+
 
 exports.findOneUser = function (user, params, callback) {
 
-	var inc = 1;
+	let inc = 1;
 	if (params.noInc) { inc = 0; }
 
-	var query = { userId: user.userId  };
-	var update = { 
+	const query = { userId: user.userId  };
+	const update = { 
 		"$inc": { mentions: inc }, 
 		"$set": { 
 			nodeType: "user",
@@ -61,7 +72,7 @@ exports.findOneUser = function (user, params, callback) {
 		}
 	};
 
-	var options = { 
+	const options = { 
 		upsert: true, 
 		setDefaultsOnInsert: true,
 		new: true
@@ -99,10 +110,56 @@ exports.findOneUser = function (user, params, callback) {
 					+ " | LAd: " + us.languageAnalyzed 
 					+ " | LS: " + moment(new Date(us.lastSeen)).format(compactDateTimeFormat) 
 				);
-				var mentionsString = us.mentions.toString() ;
+				const mentionsString = us.mentions.toString() ;
 				us.mentions = mentionsString ;
 				callback(err, us);
 			}
 		}
 	);
-}
+};
+
+exports.updateHistograms = function (params, callback) {
+
+	console.log(chalkAlert("updateHistograms\n" + jsonPrint(params)));
+
+	const query = { userId: params.userId };
+
+	User.findOne(query, function(err, user){
+
+		if (err){
+			console.error(chalkError("USER FIND ONE ERROR: " + err));
+			return(callback(err, null));
+		}
+
+		if (user) {
+
+			console.log("updateHistograms | FOUND USER: @" + user.screenName + " | HISTOGRAMS: " + jsonPrint(user.histograms));
+
+      let comboHistogram = {};
+
+      async.each(Object.keys(params.histograms), function(type, cb){
+
+        comboHistogram[type] = defaults(user.histograms[type], params.histograms[type]);
+        cb();
+
+      }, function(){
+
+      	user.histograms = comboHistogram;
+        
+      	exports.findOneUser(user, {noInc: true}, function(err, updatedUser){
+
+					console.log("updateHistograms | UPDATED USER: @" + user.screenName + " | HISTOGRAMS: " + jsonPrint(user.histograms));
+
+      		callback(err, updatedUser);
+      	});
+
+
+      });
+		}
+		else {
+  		callback(null, null);
+		}
+
+	});
+
+};
