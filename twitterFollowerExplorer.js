@@ -71,7 +71,7 @@ fsm.onleaveSTATE = function (event, oldState, newState) {
 };
 
 const keywordExtractor = require("./js/keyword-extractor");
-const twitterTextParser = require("@threecee/twitter-text-parser");
+const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 
 const Dropbox = require("dropbox");
 const os = require("os");
