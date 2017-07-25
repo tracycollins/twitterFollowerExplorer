@@ -43,6 +43,7 @@ exports.findOneUser = function (user, params, callback) {
 			tags: user.tags,
 			entities: user.entities,
 			keywordsAuto: user.keywordsAuto,
+			histograms: user.histograms,
 			isTwitterUser: user.isTwitterUser,
 			screenName: user.screenName,
 			name: user.name,
