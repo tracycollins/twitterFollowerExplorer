@@ -121,7 +121,7 @@ exports.findOneUser = function (user, params, callback) {
 
 exports.updateHistograms = function (params, callback) {
 
-	console.log(chalkAlert("updateHistograms\n" + jsonPrint(params)));
+	debug(chalkAlert("updateHistograms\n" + jsonPrint(params)));
 
 	const query = { userId: params.userId };
 
@@ -134,7 +134,7 @@ exports.updateHistograms = function (params, callback) {
 
 		if (user) {
 
-			console.log("updateHistograms | FOUND USER: @" + user.screenName + " | HISTOGRAMS: " + jsonPrint(user.histograms));
+			debug("updateHistograms | FOUND USER: @" + user.screenName + " | HISTOGRAMS: " + jsonPrint(user.histograms));
 
       let comboHistogram = {};
 
@@ -149,7 +149,7 @@ exports.updateHistograms = function (params, callback) {
         
       	exports.findOneUser(user, {noInc: true}, function(err, updatedUser){
 
-					console.log("updateHistograms | UPDATED USER: @" + user.screenName + " | HISTOGRAMS: " + jsonPrint(user.histograms));
+					debug("updateHistograms | UPDATED USER: @" + user.screenName + " | HISTOGRAMS: " + jsonPrint(user.histograms));
 
       		callback(err, updatedUser);
       	});

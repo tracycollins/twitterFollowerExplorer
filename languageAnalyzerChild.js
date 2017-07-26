@@ -578,7 +578,6 @@ function initAnalyzeLanguageInterval(interval){
           messageObj.op = "LANG_RESULTS";
           messageObj.obj = {};
           messageObj.obj = langObj.obj;
-          messageObj.error = {};
           messageObj.error = err;
           messageObj.results = {};
           messageObj.results = results;
