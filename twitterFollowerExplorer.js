@@ -3,7 +3,7 @@
 
 let currentBestNetwork;
 
-const LANGUAGE_ANALYZE_INTERVAL = 100;
+const LANGUAGE_ANALYZE_INTERVAL = 200;
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
