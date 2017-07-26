@@ -3,6 +3,8 @@
 
 let currentBestNetwork;
 
+const LANGUAGE_ANALYZE_INTERVAL = 100;
+
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
@@ -2520,7 +2522,7 @@ function initLangAnalyzer(callback){
     quit(code);
   });
 
-  langAnalyzer.send({ op: "INIT", interval: 50 }, function(){
+  langAnalyzer.send({ op: "INIT", interval: LANGUAGE_ANALYZE_INTERVAL }, function(){
     if (callback !== undefined) { callback(); }
   });
 }
