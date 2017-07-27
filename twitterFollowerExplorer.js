@@ -573,6 +573,19 @@ function loadFile(path, file, callback) {
 // };
 
 
+function saveFileRetry (timeout, path, file, jsonObj, callback){
+  setTimeout(function(){
+    console.log(chalkError("SAVE RETRY | TIMEOUT: " + timeout + " | " + path + "/" + file));
+    saveFile(path, file, jsonObj, function(err){
+      if (err) {
+        console.log(chalkError("SAVE RETRY ON ERROR: " + path + "/" + file));
+        saveFileRetry(timeout, path, file, jsonObj);
+      }
+    });
+  }, timeout);
+  if (callback !== undefined) { callback(); }
+}
+
 function initStatsUpdate(callback){
 
   console.log(chalkTwitter("INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
@@ -584,7 +597,13 @@ function initStatsUpdate(callback){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
-    saveFile(classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap);
+    saveFile(classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap, function(err){
+      if (err) {
+        console.log(chalkError("SAVE RETRY ON ERROR: " + classifiedUsersFolder + "/" + classifiedUsersDefaultFile));
+        saveFileRetry(5000, classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap);
+      }
+    });
+
     saveFile(statsFolder, statsFile, statsObj);
     showStats();
 
