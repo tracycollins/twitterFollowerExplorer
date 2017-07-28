@@ -565,6 +565,7 @@ function initAnalyzeLanguageInterval(interval){
               + " | " + err
               // + "\n" + jsonPrint(err)
             ));
+            rxLangObjQueue.push(langObj);
           }
           else {
             console.error(chalkError("[RXLQ: " + rxLangObjQueue.length + "]"

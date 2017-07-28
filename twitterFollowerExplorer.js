@@ -3,7 +3,7 @@
 
 let currentBestNetwork;
 
-const LANGUAGE_ANALYZE_INTERVAL = 200;
+const LANGUAGE_ANALYZE_INTERVAL = 1000;
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -1244,7 +1244,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
             m.obj.languageAnalysis = {err: m.error};
 
-            if (m.error.code === 8){ // LANGUAGE QUOTA
+            if (m.error.code === 8){ // LANGUAGE QUOTA; will be automatically retried
               m.obj.languageAnalyzed = false;
               break;
             }
