@@ -2199,8 +2199,13 @@ function fetchFriends(params) {
               });
             }
 
-          }, function(){
-            resolve(subFriendsSortedArray);
+          }, function(err){
+            if (err) {
+              reject(new Error(err));
+            }
+            else {
+              resolve(subFriendsSortedArray);
+            }
           });
         }
       });
