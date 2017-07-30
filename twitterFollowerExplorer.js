@@ -2111,6 +2111,10 @@ function fetchFriends(params) {
                       cb();
                     }
                     else {
+
+                      user.threeceeFollowing = {};
+                      user.threeceeFollowing.screenName = currentTwitterUser;
+
                       updateClassifiedUsers(user, function(udatedUser){
 
                         generateAutoKeywords(udatedUser, function(err, uObj){
