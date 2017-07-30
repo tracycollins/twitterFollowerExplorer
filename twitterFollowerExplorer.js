@@ -1723,10 +1723,14 @@ function generateAutoKeywords(user, callback){
 
         userServer.updateHistograms({userId: user.userId, histograms: hist}, function(err, updateduser){
 
+          if (err) {
+            console.log(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
+            return(callback(err, null));
+          }
+
           updateduser.inputHits = 0;
 
           const userHistograms = updateduser.histograms;
-          // const histogramsText = printHistograms(userHistograms);
 
           console.log(chalkAlert("----------------"
             + "\nGEN AUTO KEYWORDS | USER DESC/STATUS"
@@ -1771,7 +1775,6 @@ function generateAutoKeywords(user, callback){
               cb1();
 
             });
-
           }, function(){
 
             debug(chalkTwitter("PARSE DESC COMPLETE"));
@@ -1841,7 +1844,6 @@ function generateAutoKeywords(user, callback){
               console.log(chalkError("ACTIVATE NETWORK ERROR: " + err));
               callback(err, updateduser);
             });
-
           });
 
         });
@@ -1908,49 +1910,6 @@ function generateAutoKeywords(user, callback){
         console.log(chalkError("ACTIVATE NETWORK ERROR: " + err));
         callback(err, user);
       });
-
-      // activateNetwork(network, networkInput, function(err, networkOutput){
-      //   if (err) {
-      //     console.error(chalkError("ACTIVATE NETWORK ERROR: " + err));
-      //   }
-
-      //   indexOfMax(networkOutput, function(maxOutputIndex){
-
-      //     console.log(chalkAlert("MAX INDEX: " + maxOutputIndex));
-
-      //     user.keywordsAuto = {};
-
-      //     switch (maxOutputIndex) {
-      //       case 0:
-      //         user.keywordsAuto.left = 100;
-      //       break;
-      //       case 1:
-      //         user.keywordsAuto.neutral = 100;
-      //       break;
-      //       case 2:
-      //         user.keywordsAuto.right = 100;
-      //       break;
-      //       default:
-      //         user.keywordsAuto = {};
-      //     }
-
-      //     printDatum(user.screenName, networkInput);
-
-      //     console.log(chalkRed("AUTO KW"
-      //       + " | " + user.screenName
-      //       + " | MAG: " + networkInput[0].toFixed(6)
-      //       + " | SCORE: " + networkInput[1].toFixed(6)
-      //       + " | L: " + networkOutput[0].toFixed(3)
-      //       + " | N: " + networkOutput[1].toFixed(3)
-      //       + " | R: " + networkOutput[2].toFixed(3)
-      //       + " | KWs: " + Object.keys(user.keywords)
-      //       + " | AKWs: " + Object.keys(user.keywordsAuto)
-      //       // + "\n" + jsonPrint(user.keywordsAuto)
-      //     ));
-
-      //     callback(err, user);
-      //   });
-      // });
 
     });
   }
