@@ -2514,52 +2514,7 @@ function initFetchTwitterFriendsInterval(interval){
 
 
   fetchTwitterFriendsIntervalometer = timerIntervalometer(function(){
-
     updateNetworkFetchFriends();
-
-    // loadBestNeuralNetworkFile(function(err, nnObj){
-
-    //   let params = {};
-    //   params.count = statsObj.user[currentTwitterUser].count;
-
-    //   if (statsObj.user[currentTwitterUser].nextCursorValid) {
-    //     params.cursor = parseInt(statsObj.user[currentTwitterUser].nextCursor);
-    //     statsObj.user[currentTwitterUser].cursor = parseInt(statsObj.user[currentTwitterUser].nextCursor);
-    //   }
-    //   else {
-    //     statsObj.user[currentTwitterUser].cursor = null;
-    //   }
-
-    //   debug("params\n" + jsonPrint(params));
-
-    //   if (languageAnalysisReadyFlag) {
-
-    //     fetchFriends(params)
-    //     .then(function(data){
-    //       if (nextUser || statsObj.user[currentTwitterUser].endFetch) {
-    //         nextUser = false;
-    //         processFriends()
-    //         .then(function(newCurrentUser){
-    //           if (newCurrentUser) {
-    //             statsObj.user[currentTwitterUser].endFetch = false;
-    //             debug(chalkInfo("+++ NEW CURRENT USER: " + newCurrentUser));
-    //           }
-    //           else {
-    //             debug(chalkInfo("--- NO NEW CURRENT USER"));
-    //           }
-    //         })
-    //         .catch(function(err){
-    //           console.log(chalkError("PROCESS FRIENDS ERROR: " + err));
-    //         });
-    //       }
-    //     })
-    //     .catch(function(err){
-    //       console.log(chalkError("FETCH FRIENDS ERROR: " + err));
-    //     });
-    //   }
-
-    // });
-    
   }, interval);
 
   waitLanguageAnalysisReadyInterval = setInterval(function(){
@@ -2600,10 +2555,12 @@ function initLangAnalyzer(callback){
       console.log(chalkTwitter(getTimeStamp() + " | LANG_TEST_PASS | LANG ANAL READY: " + languageAnalysisReadyFlag));
     }
     else if (m.op === "QUEUE_FULL") {
+      languageAnalysisReadyFlag = false;
       langAnalyzerIdle = false;
       console.log(chalkError("!!! LANG Q FULL"));
     }
     else if (m.op === "QUEUE_EMPTY") {
+      languageAnalysisReadyFlag = true;
       debug(chalkInfo("LANG Q EMPTY"));
     }
     else if (m.op === "IDLE") {
@@ -2612,11 +2569,12 @@ function initLangAnalyzer(callback){
       debug(chalkInfo("... LANG ANAL IDLE ..."));
     }
     else if (m.op === "QUEUE_READY") {
-      languageAnalysisReadyFlag = false;
+      languageAnalysisReadyFlag = true;
       debug(chalkInfo("LANG Q READY"));
     }
     else {
       debug(chalkInfo("LANG Q PUSH"));
+      languageAnalysisReadyFlag = false;
       langAnalyzerIdle = false;
       langAnalyzerMessageRxQueue.push(m);
     }
