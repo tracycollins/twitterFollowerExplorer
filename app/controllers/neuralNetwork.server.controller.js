@@ -38,31 +38,6 @@ exports.findOneNetwork = function (network, params, callback) {
 	const trainCols = columnify(network.train, {  showHeaders: false, minWidth: 8, maxWidth: 16});
 	const testCols = columnify(network.test, {  showHeaders: false, minWidth: 8, maxWidth: 16});
 
-	// console.log("> NW UPDATE"
-	// 	+ " | " + network.networkId + " | " + network.networkCreateMode.toUpperCase()
-	// 	+ "\nSUCCESS: " + network.successRate
-	// 	+ "\nCREATED: " + moment(new Date(network.createdAt)).format(compactDateTimeFormat) 
-	// 	+ "\nTYPE: " + network.networkType
-	// 	+ "\nIN: " + network.network.input
-	// 	+ "\nOUT: " + network.network.output
-	// 	+ "\nEVOLVE\n" + evolveCols
-	// 	+ "\nTRAIN\n" + trainCols
-	// 	+ "\nTEST\n" + testCols
-	// 	// + "\nNETWORK: " + jsonPrint(network.network) 
-	// );
-
-	// console.log("> NW UPDATED"
-	// 	+ " | " + nw.networkId 
-	// 	+ " | CREATED: " + moment(new Date(nw.createdAt)).format(compactDateTimeFormat) 
-	// 	+ " | CREATE:  " + nw.networkCreateMode.toUpperCase()
-	// 	+ " | SUCCESS: " + nw.successRate
-	// 	+ " | IN:      " + nw.numInputs
-	// 	+ " | OUT:     " + nw.numOutputs
-	// 	// + "\nEVOLVE:  " + jsonPrint(nw.evolve) 
-	// 	// + "\nTRAIN:   " + jsonPrint(nw.train)
-	// 	// + "\nTEST:    " + jsonPrint(nw.test)
-	// );
-
 	const query = { networkId: network.networkId  };
 	const update = { 
 		"$set": { 
@@ -107,13 +82,13 @@ exports.findOneNetwork = function (network, params, callback) {
 				callback(err, network);
 			}
 			else {
-				console.log("> NW UPDATED"
+				console.log("NN > DB"
 					+ " | " + nw.networkId 
 					+ " | CREATED: " + moment(new Date(nw.createdAt)).format(compactDateTimeFormat) 
-					+ " | CREATE:  " + nw.networkCreateMode.toUpperCase()
-					+ " | SUCCESS: " + nw.successRate
-					+ " | IN:      " + nw.numInputs
-					+ " | OUT:     " + nw.numOutputs
+					+ " | CREATE: " + nw.networkCreateMode.toUpperCase()
+					+ " | SUCCESS: " + nw.successRate.toFixed(1)
+					+ " | IN: " + nw.numInputs
+					+ " | OUT: " + nw.numOutputs
 					// + "\nEVOLVE:  " + jsonPrint(nw.evolve) 
 					// + "\nTRAIN:   " + jsonPrint(nw.train)
 					// + "\nTEST:    " + jsonPrint(nw.test)
