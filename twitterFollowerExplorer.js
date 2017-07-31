@@ -76,6 +76,10 @@ fsm.onleaveSTATE = function (event, oldState, newState) {
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 
+const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
+const slackChannel = "#tfe";
+const Slack = require("slack-node");
+
 const Dropbox = require("dropbox");
 const os = require("os");
 const util = require("util");
@@ -350,6 +354,25 @@ statsObj.totalTwitterFriends = 0;
 
 statsObj.twitterErrors = 0;
 
+
+let slack = new Slack(slackOAuthAccessToken);
+function slackPostMessage(channel, text, callback){
+
+  debug(chalkInfo("SLACK POST: " + text));
+
+  slack.api("chat.postMessage", {
+    text: text,
+    channel: channel
+  }, function(err, response){
+    if (err){
+      console.error(chalkError("*** SLACK POST MESSAGE ERROR\n" + err));
+    }
+    else {
+      debug(response);
+    }
+    if (callback !== undefined) { callback(err, response); }
+  });
+}
 
 // ==================================================================
 // DROPBOX
@@ -2075,6 +2098,10 @@ function fetchFriends(params) {
                       + " | " + friend.screen_name.toLowerCase()
                       + " | " + friend.id_str
                     ));
+
+                    const slackText = "UNFOLLOW altthreecee00\n@" + friend.screen_name.toLowerCase() + "\n" + friend.id_str;
+                    slackPostMessage(slackChannel, slackText, function(){
+                    });
                   }
                   cb();
                 }
@@ -2638,10 +2665,21 @@ function initLangAnalyzer(callback){
       // + "\n" + jsonPrint(m)
     ));
     if (m.op === "LANG_TEST_FAIL") {
-      languageAnalysisReadyFlag = false;
-      langAnalyzerIdle = false;
       console.log(chalkAlert(getTimeStamp() + " | LANG_TEST_FAIL"));
-      quit("LANG_TEST_FAIL");
+      if (m.err.code ===  8) {
+        console.error(chalkAlert("LANG_TEST_FAIL"
+          + " | LANGUAGE QUOTA"
+          + " | " + err
+        ));
+        languageAnalysisReadyFlag = true;
+        langAnalyzerIdle = false;
+      }
+      else {
+        console.error(chalkAlert("LANG_TEST_FAIL"
+          + " | " + err
+        ));
+        quit("LANG_TEST_FAIL");
+      }
     }
     else if (m.op === "LANG_TEST_PASS") {
       languageAnalysisReadyFlag = true;

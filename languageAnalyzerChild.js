@@ -166,11 +166,11 @@ process.on('message', function(m) {
         if (err) {
           console.error(chalkError("LANG TEST ERROR: " + err));
           // console.error(chalkError("LANG TEST ERROR\n" + jsonPrint(err)));
-          process.send({op: "LANG_TEST_FAIL"});
+          process.send({op: "LANG_TEST_FAIL", err: err});
         }
         else {
           debug("LANG TEST PASS");
-          process.send({op: "LANG_TEST_PASS"});
+          process.send({op: "LANG_TEST_PASS", results: annotations});
         }
 
         process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
