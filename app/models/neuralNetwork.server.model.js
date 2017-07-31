@@ -12,6 +12,9 @@ var NeuralNetworkSchema = new Schema({
 		type: Object,
 		default: {}
 	},
+	networkCreateMode: { 
+		type: String
+	},
 	successRate: { 
 		type: Number,
 		default: 0
@@ -19,16 +22,28 @@ var NeuralNetworkSchema = new Schema({
 	networkType: { 
 		type: String
 	},
+	numInputs: { 
+		type: Number,
+		default: 0
+	},
+	numOutputs: { 
+		type: Number,
+		default: 0
+	},
 	network: { // JSON
 		type: Object
 	},
 	inputs: { 
-		type: Object,
+		type: Object, // sub objects for each type of input
 		default: {}
 	},
 	outputs: { 
 		type: Array,
 		default: []
+	},
+	elapsed: { 
+		type: Number,
+		default: 0
 	},
 	createdAt: { 
 		type: Number,
