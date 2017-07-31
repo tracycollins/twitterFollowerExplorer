@@ -142,14 +142,7 @@ histograms.hashtags = {};
 histograms.mentions = {};
 histograms.emoji = {};
 
-// const mentionsRegex = require("mentions-regex");
-// const hashtagRegex = require("hashtag-regex");
-// const getUrls = require("get-urls");
-
 const Twit = require("twit");
-
-// let cursorUser;
-
 const async = require("async");
 const sortOn = require("sort-on");
 
@@ -373,6 +366,9 @@ let statsFile = DROPBOX_TFE_STATS_FILE;
 
 configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
+
+const bestNetworkFolder = "/config/utility/best/neuralNetworks";
+let bestNetworkFile;
 
 console.log("DROPBOX_TFE_CONFIG_FILE: " + DROPBOX_TFE_CONFIG_FILE);
 console.log("DROPBOX_TFE_STATS_FILE : " + DROPBOX_TFE_STATS_FILE);
@@ -2353,6 +2349,10 @@ function loadBestNeuralNetworkFile(callback){
 
             currentBestNetwork = nnCurrent;
 
+          bestNetworkFile = nnCurrent.networkId + ".json";
+          saveFile(bestNetworkFolder, bestNetworkFile, nnCurrent, function(err, response){
+          });
+
             Object.keys(nnCurrent.inputs).forEach(function(type){
               console.log(chalkNetwork("NN INPUTS TYPE" 
                 + " | " + type
@@ -2384,6 +2384,10 @@ function loadBestNeuralNetworkFile(callback){
         else {
 
           currentBestNetwork = nnCurrent;
+
+          bestNetworkFile = nnCurrent.networkId + ".json";
+          saveFile(bestNetworkFolder, bestNetworkFile, nnCurrent, function(err, response){
+          });
 
           printNetworkObj("LOADED BEST NETWORK", nnCurrent);
 
