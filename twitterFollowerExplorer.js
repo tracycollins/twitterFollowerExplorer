@@ -168,6 +168,10 @@ let autoClassifiedUserHashmap = {};
 let classifiedUserHashmap = {};
 let twitterUserHashMap = {};
 
+const HashMap = require("hashmap").HashMap;
+
+let bestNetworkHashMap = new HashMap();
+
 const db = mongoose();
 
 const User = require("mongoose").model("User");
@@ -175,7 +179,7 @@ const Word = require("mongoose").model("Word");
 const NeuralNetwork = require("mongoose").model("NeuralNetwork");
 
 const userServer = require("./app/controllers/user.server.controller");
-// const neuralNetworkServer = require("./app/controllers/neuralNetwork.server.controller");
+const neuralNetworkServer = require("./app/controllers/neuralNetwork.server.controller");
 
 let defaultNeuralNetworkFile = "neuralNetwork.json";
 
@@ -2272,6 +2276,111 @@ function printNetworkObj(title, nnObj){
   ));
 }
 
+function loadBestNetworkDropboxFolder(folder, callback){
+
+  let options = {path: folder};
+  let nnArray = [];
+
+  dropboxClient.filesListFolder(options)
+  .then(function(response){
+    console.log(chalkLog("DROPBOX LIST FOLDER"
+      + " | " + options.path
+      + " | " + jsonPrint(response)
+    ));
+
+    async.each(response.entries, function(entry, cb){
+
+      debug(chalkInfo("DROPBOX BEST NETWORK FOUND"
+        + " | " + entry.name
+        + " | " + getTimeStamp(entry.client_modified)
+        // + " | " + entry.content_hash
+      ));
+
+      if (bestNetworkHashMap.has(entry.name)){
+
+        if (bestNetworkHashMap.get(entry.name).content_hash !== entry.content_hash) {
+
+          console.log(chalkInfo("DROPBOX BEST NETWORK CONTENT CHANGE"
+            + " | " + entry.name
+            + " | " + getTimeStamp(entry.client_modified)
+            + " | CUR HASH: " + entry.content_hash
+            + " | OLD HASH: " + bestNetworkHashMap.get(entry.name).content_hash
+          ));
+
+          bestNetworkHashMap.set(entry.name, entry);
+
+          loadFile(folder, entry.name, function(err, networkObj){
+
+            if (err) {
+              console.log(chalkError("DROPBOX BEST NETWORK LOAD FILE ERROR: " + err));
+              return(cb());
+            }
+            
+            console.log(chalkInfo("DROPBOX BEST NETWORK"
+              + " | " + networkObj.successRate.toFixed(1) + "%"
+              + " | " + getTimeStamp(networkObj.createdAt)
+              + " | " + networkObj.networkId
+              + " | " + networkObj.networkCreateMode
+              + " | IN: " + networkObj.numInputs
+              + " | OUT: " + networkObj.numOutputs
+            ));
+
+            neuralNetworkServer.findOneNetwork(networkObj, {}, function(err, updatedNetworkObj){
+              nnArray.push(updatedNetworkObj);
+              cb();
+            });
+
+          });
+        }
+        else{
+          console.log(chalkInfo("DROPBOX BEST NETWORK CONTENT SAME  "
+            + " | " + entry.name
+            // + " | CUR HASH: " + entry.content_hash
+            // + " | OLD HASH: " + bestNetworkHashMap.get(entry.name).content_hash
+            + " | " + getTimeStamp(entry.client_modified)
+          ));
+          cb();
+        }
+      }
+      else {
+
+        bestNetworkHashMap.set(entry.name, entry);
+
+        loadFile(folder, entry.name, function(err, networkObj){
+
+          if (err) {
+            console.log(chalkError("DROPBOX BEST NETWORK LOAD FILE ERROR: " + err));
+            return(cb());
+          }
+
+          console.log(chalkInfo("DROPBOX BEST NETWORK"
+            + " | " + networkObj.successRate.toFixed(1) + "%"
+            + " | " + getTimeStamp(networkObj.createdAt)
+            + " | " + networkObj.networkId
+            + " | " + networkObj.networkCreateMode
+            + " | IN: " + networkObj.numInputs
+            + " | OUT: " + networkObj.numOutputs
+          ));
+
+          neuralNetworkServer.findOneNetwork(networkObj, {}, function(err, updatedNetworkObj){
+            nnArray.push(updatedNetworkObj);
+            cb();
+          });
+
+        });
+      }
+    }, function(){
+      if (callback !== undefined) { callback(null, nnArray); }
+    });
+
+  })
+  .catch(function(err){
+    console.log(chalkError("*** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
+    if (callback !== undefined) { callback(err, null); }
+  });
+
+
+}
 
 function loadBestNeuralNetworkFile(callback){
 
@@ -2280,78 +2389,130 @@ function loadBestNeuralNetworkFile(callback){
   let maxSuccessRate = 0;
   let nnCurrent = {};
 
-  NeuralNetwork.find({}, function(err, nnArray){
+  let bestNetworkArray = [];
+
+  loadBestNetworkDropboxFolder(bestNetworkFolder, function(err, dropboxNetworksArray){
     if (err) {
-      console.log(chalkError("NEUAL NETWORK FIND ERR\n" + err));
-      callback(err);
+      console.log(chalkError("LOAD DROPBOX BEST NETWORKS ERROR: " + err));
     }
-    else if (nnArray.length === 0){
-      console.log("NO NETWORKS FOUND");
-      callback(err);
-    }
-    else{
-      console.log(nnArray.length + " NETWORKS FOUND");
+    
+    // if (dropboxNetworksArray.length > 0) {
+    console.log(chalkInfo("FOUND " + dropboxNetworksArray.length + " NEW DROPBOX BEST NETWORKS"));
+    // }
 
-      async.eachSeries(nnArray, function(nn, cb){
+    NeuralNetwork.find({}, function(err, nArray){
 
-        debug(chalkInfo("NN"
-          + " | ID: " + nn.networkId
-          + " | SUCCESS: " + nn.successRate.toFixed(2) + "%"
-        ));
+      const nnArray = dropboxNetworksArray.concat(nArray);
 
-        if (nn.successRate > maxSuccessRate) {
+      if (err) {
+        console.log(chalkError("NEUAL NETWORK FIND ERR\n" + err));
+        callback(err);
+      }
+      else if (nnArray.length === 0){
+        console.log("NO NETWORKS FOUND");
+        callback(err);
+      }
+      else{
+        console.log(nnArray.length + " NETWORKS FOUND");
 
-           console.log(chalkNetwork("NEW MAX NN"
+        async.eachSeries(nnArray, function(nn, cb){
+
+          debug(chalkInfo("NN"
             + " | ID: " + nn.networkId
             + " | SUCCESS: " + nn.successRate.toFixed(2) + "%"
           ));
 
-          maxSuccessRate = nn.successRate;
-          nnCurrent = nn;
-          nnCurrent.inputs = nn.inputs;
+          if (nn.successRate > maxSuccessRate) {
 
-          cb();
+             console.log(chalkNetwork("NEW MAX NN"
+              + " | ID: " + nn.networkId
+              + " | SUCCESS: " + nn.successRate.toFixed(2) + "%"
+            ));
 
-        }
-        else if (nn.successRate < MIN_KEEP_NN_SUCCESS_RATE){
-          NeuralNetwork.remove({networkId: nn.networkId}, function(err){
-            if (err){
-              console.log(chalkAlert("NN REMOVE ERROR | ID: " + nn.networkId + "\n" + err));
+            maxSuccessRate = nn.successRate;
+            nnCurrent = nn;
+            nnCurrent.inputs = nn.inputs;
+
+            cb();
+
+          }
+          else if (nn.successRate < MIN_KEEP_NN_SUCCESS_RATE){
+            NeuralNetwork.remove({networkId: nn.networkId}, function(err){
+              if (err){
+                console.log(chalkAlert("NN REMOVE ERROR | ID: " + nn.networkId + "\n" + err));
+              }
+              else {
+                console.log(chalkAlert("NN DELETED"
+                  + " | MIN: " + MIN_KEEP_NN_SUCCESS_RATE + "%"
+                  + " | ID: " + nn.networkId
+                  + " | SUCCESS: " + nn.successRate.toFixed(2) + "%"
+                ));
+              }
+              cb();
+            });
+          }
+          else {
+            cb();
+          }
+
+        }, function(err){
+
+          if (err) {
+            console.log(chalkError("*** loadBestNeuralNetworkFile ERROR\n" + err));
+            return(callback(err, null));
+          }
+
+          printNetworkObj("LOADING NEURAL NETWORK", nnCurrent);
+
+          if (currentBestNetwork) {
+
+            if (currentBestNetwork.networkId !== nnCurrent.networkId) {
+
+              printNetworkObj("NEW BEST NETWORK", nnCurrent);
+
+              currentBestNetwork = nnCurrent;
+
+            bestNetworkFile = nnCurrent.networkId + ".json";
+            saveFile(bestNetworkFolder, bestNetworkFile, nnCurrent, function(err, response){
+            });
+
+              Object.keys(nnCurrent.inputs).forEach(function(type){
+                console.log(chalkNetwork("NN INPUTS TYPE" 
+                  + " | " + type
+                  + " | INPUTS: " + nnCurrent.inputs[type].length
+                ));
+                inputArrays[type] = nnCurrent.inputs[type];
+              });
+
+              network = neataptic.Network.fromJSON(nnCurrent.network);
+
+              statsObj.currentBestNetworkId = nnCurrent.networkId;
+              statsObj.network.networkId = nnCurrent.networkId;
+              statsObj.network.networkType = nnCurrent.networkType;
+              statsObj.network.successRate = nnCurrent.successRate;
+              statsObj.network.input = nnCurrent.network.input;
+              statsObj.network.output = nnCurrent.network.output;
+              statsObj.network.evolve = {};
+              statsObj.network.evolve = nnCurrent.evolve;
+
+              callback(null, nnCurrent);
+
             }
             else {
-              console.log(chalkAlert("NN DELETED"
-                + " | MIN: " + MIN_KEEP_NN_SUCCESS_RATE + "%"
-                + " | ID: " + nn.networkId
-                + " | SUCCESS: " + nn.successRate.toFixed(2) + "%"
-              ));
+              console.log("--- " + nnCurrent.networkId + " | " + nnCurrent.successRate.toFixed(2));
+
+              callback(null, null);
             }
-            cb();
-          });
-        }
-        else {
-          cb();
-        }
-
-      }, function(err){
-
-        if (err) {
-          console.log(chalkError("*** loadBestNeuralNetworkFile ERROR\n" + err));
-          return(callback(err, null));
-        }
-
-        printNetworkObj("LOADING NEURAL NETWORK", nnCurrent);
-
-        if (currentBestNetwork) {
-
-          if (currentBestNetwork.networkId !== nnCurrent.networkId) {
-
-            printNetworkObj("NEW BEST NETWORK", nnCurrent);
+          }
+          else {
 
             currentBestNetwork = nnCurrent;
 
-          bestNetworkFile = nnCurrent.networkId + ".json";
-          saveFile(bestNetworkFolder, bestNetworkFile, nnCurrent, function(err, response){
-          });
+            bestNetworkFile = nnCurrent.networkId + ".json";
+            saveFile(bestNetworkFolder, bestNetworkFile, nnCurrent, function(err, response){
+            });
+
+            printNetworkObj("LOADED BEST NETWORK", nnCurrent);
 
             Object.keys(nnCurrent.inputs).forEach(function(type){
               console.log(chalkNetwork("NN INPUTS TYPE" 
@@ -2375,47 +2536,12 @@ function loadBestNeuralNetworkFile(callback){
             callback(null, nnCurrent);
 
           }
-          else {
-            console.log("--- " + nnCurrent.networkId + " | " + nnCurrent.successRate.toFixed(2));
+        });
+      }
+    });
 
-            callback(null, null);
-          }
-        }
-        else {
-
-          currentBestNetwork = nnCurrent;
-
-          bestNetworkFile = nnCurrent.networkId + ".json";
-          saveFile(bestNetworkFolder, bestNetworkFile, nnCurrent, function(err, response){
-          });
-
-          printNetworkObj("LOADED BEST NETWORK", nnCurrent);
-
-          Object.keys(nnCurrent.inputs).forEach(function(type){
-            console.log(chalkNetwork("NN INPUTS TYPE" 
-              + " | " + type
-              + " | INPUTS: " + nnCurrent.inputs[type].length
-            ));
-            inputArrays[type] = nnCurrent.inputs[type];
-          });
-
-          network = neataptic.Network.fromJSON(nnCurrent.network);
-
-          statsObj.currentBestNetworkId = nnCurrent.networkId;
-          statsObj.network.networkId = nnCurrent.networkId;
-          statsObj.network.networkType = nnCurrent.networkType;
-          statsObj.network.successRate = nnCurrent.successRate;
-          statsObj.network.input = nnCurrent.network.input;
-          statsObj.network.output = nnCurrent.network.output;
-          statsObj.network.evolve = {};
-          statsObj.network.evolve = nnCurrent.evolve;
-
-          callback(null, nnCurrent);
-
-        }
-      });
-    }
   });
+
 }
 
 function updateNetworkFetchFriends(){
