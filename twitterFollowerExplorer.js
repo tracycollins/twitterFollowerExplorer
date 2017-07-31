@@ -2292,7 +2292,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
       debug(chalkInfo("DROPBOX BEST NETWORK FOUND"
         + " | " + entry.name
-        + " | " + getTimeStamp(entry.client_modified)
+        + " | " + getTimeStamp(entry.client_modified/1000)
         // + " | " + entry.content_hash
       ));
 
@@ -2302,9 +2302,9 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
           console.log(chalkInfo("DROPBOX BEST NETWORK CONTENT CHANGE"
             + " | " + entry.name
-            + " | " + getTimeStamp(entry.client_modified)
-            + " | CUR HASH: " + entry.content_hash
-            + " | OLD HASH: " + bestNetworkHashMap.get(entry.name).content_hash
+            + " | " + getTimeStamp(entry.client_modified/1000)
+            + "\nCUR HASH: " + entry.content_hash
+            + "\nOLD HASH: " + bestNetworkHashMap.get(entry.name).content_hash
           ));
 
           bestNetworkHashMap.set(entry.name, entry);
@@ -2315,7 +2315,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
               console.log(chalkError("DROPBOX BEST NETWORK LOAD FILE ERROR: " + err));
               return(cb());
             }
-            
+
             console.log(chalkInfo("DROPBOX BEST NETWORK"
               + " | " + networkObj.successRate.toFixed(1) + "%"
               + " | " + getTimeStamp(networkObj.createdAt)
@@ -2337,7 +2337,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             + " | " + entry.name
             // + " | CUR HASH: " + entry.content_hash
             // + " | OLD HASH: " + bestNetworkHashMap.get(entry.name).content_hash
-            + " | " + getTimeStamp(entry.client_modified)
+            + " | " + getTimeStamp(entry.client_modified/1000)
           ));
           cb();
         }
