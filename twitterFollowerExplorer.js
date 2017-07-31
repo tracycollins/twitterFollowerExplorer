@@ -2283,7 +2283,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
   dropboxClient.filesListFolder(options)
   .then(function(response){
-    console.log(chalkLog("DROPBOX LIST FOLDER"
+
+    debug(chalkLog("DROPBOX LIST FOLDER"
       + " | " + options.path
       + " | " + jsonPrint(response)
     ));
