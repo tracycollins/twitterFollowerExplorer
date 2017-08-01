@@ -28,6 +28,102 @@ const jsonPrint = function (obj){
 };
 
 
+
+
+exports.findOneUserPromise = function (params) {
+
+	return new Promise(function(resolve, reject) {
+
+		let user = params.user;
+		let inc = 1;
+		if (params.noInc) { inc = 0; }
+
+		const query = { userId: user.userId  };
+		const update = { 
+			"$inc": { mentions: inc }, 
+			"$set": { 
+				nodeType: "user",
+				nodeId: user.nodeId,
+				threeceeFollowing: user.threeceeFollowing,
+				tags: user.tags,
+				entities: user.entities,
+				keywordsAuto: user.keywordsAuto,
+				histograms: user.histograms,
+				isTwitterUser: user.isTwitterUser,
+				screenName: user.screenName,
+				name: user.name,
+				description: user.description,
+				url: user.url,
+				profileUrl: user.profileUrl,
+				profileImageUrl: user.profileImageUrl,
+				verified: user.verified,
+				following: user.following,
+				status: user.status,
+				statusesCount: user.statusesCount,
+				followersCount: user.followersCount,
+				friendsCount: user.friendsCount,
+				rate: user.rate,
+				isTopTerm: user.isTopTerm,
+				connectTime: user.connectTime,
+				disconnectTime: user.disconnectTime,
+				sessionId: user.sessionId,
+				sessions: user.sessions,
+				lastSession: user.lastSession,
+				lastSeen: moment().valueOf()
+			},
+			"$max": {
+				keywords: user.keywords,
+				languageAnalyzed: user.languageAnalyzed,
+				languageAnalysis: user.languageAnalysis
+			}
+		};
+		const options = { 
+			upsert: true, 
+			setDefaultsOnInsert: true,
+			new: true
+		};
+
+		User.findOneAndUpdate(
+			query,
+			update,
+			options,
+			function(err, us) {
+				if (err) {
+					console.log(moment().format(compactDateTimeFormat) + "\n\n***** USER FINDONE ERROR: USER ID: " + user.userId + "\n" + err);
+					if (err.code === 11000) {
+						User.remove({userId: user.userId}, function(err){
+							if (err) {
+								console.log("REMOVED DUPLICATE USER ERROR " + err + "\n" + user.userId);
+							}
+							else {
+								console.log("REMOVED DUPLICATE USER " + user.userId);
+							}
+						});
+					}
+					reject(err);
+				}
+				else {
+					debug("> US UPDATED"
+						+ " | " + us.userId 
+						+ " | @" + us.screenName
+						+ " | " + us.name
+						+ " | Vd: " + us.verified 
+						+ " | FLg: " + us.following 
+						+ " | Ts: " + us.statusesCount 
+						+ " | FLRs: " + us.followersCount 
+						+ " | Ms: " + us.mentions 
+						+ " | LAd: " + us.languageAnalyzed 
+						+ " | LS: " + moment(new Date(us.lastSeen)).format(compactDateTimeFormat) 
+					);
+					const mentionsString = us.mentions.toString() ;
+					us.mentions = mentionsString ;
+					resolve(us);
+				}
+			}
+		);
+	});
+};
+
 exports.findOneUser = function (user, params, callback) {
 
 	let inc = 1;
@@ -72,7 +168,6 @@ exports.findOneUser = function (user, params, callback) {
 			languageAnalysis: user.languageAnalysis
 		}
 	};
-
 	const options = { 
 		upsert: true, 
 		setDefaultsOnInsert: true,
