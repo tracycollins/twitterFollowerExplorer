@@ -4,7 +4,7 @@
     "name": "tfe",
     "script": "twitterFollowerExplorer.js",
     "cwd": "/home/tc/twitterFollowerExplorer",
-    "autorestart": false,
+    "autorestart": true,
     "env": {
       "NODE_ENV": "production",
       "GCLOUD_PROJECT": "graphic-tangent-627",

@@ -5,7 +5,7 @@
     "script": "twitterFollowerExplorer.js",
     "cwd": "/Volumes/RAID1/projects/twitterFollowerExplorer",
     "node_args": "--max-old-space-size=4096",
-    "autorestart": false,
+    "autorestart": true,
     "env": {
       "NODE_ENV": "production",
       "GCLOUD_PROJECT": "graphic-tangent-627",
