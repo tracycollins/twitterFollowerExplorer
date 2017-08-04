@@ -1,8 +1,9 @@
 var config = require('./config'),
   mongoose = require('mongoose');
 
-module.exports = function() {
+mongoose.Promise = global.Promise;
 
+module.exports = function() {
 
   var options = { 
     useMongoClient: true,
@@ -10,13 +11,22 @@ module.exports = function() {
     promiseLibrary: global.Promise
   };
 
-  var wordAssoDb = mongoose.connect(config.wordAssoDb, options, function(error) {
-    if (error) {
-      console.log('CONNECT FAILED: ERROR: MONGOOSE default connection open to ' + config.wordAssoDb + ' ERROR: ' + error);
-    } else {
+  // var wordAssoDb = mongoose.connect(config.wordAssoDb, options, function(error) {
+  //   if (error) {
+  //     console.log('CONNECT FAILED: ERROR: MONGOOSE default connection open to ' + config.wordAssoDb + ' ERROR: ' + error);
+  //   } else {
+  //     console.log('CONNECT: MONGOOSE default connection open to ' + config.wordAssoDb);
+  //   }
+  // });
+
+  var wordAssoDb = mongoose.connect(config.wordAssoDb, options)
+    .then(function(){
       console.log('CONNECT: MONGOOSE default connection open to ' + config.wordAssoDb);
-    }
-  });
+    })
+    .catch(function(err){
+      console.log('CONNECT FAILED: ERROR: MONGOOSE default connection open to ' + config.wordAssoDb);
+    });
+
 
   require('../app/models/neuralNetwork.server.model');
   require('../app/models/hashtag.server.model');
