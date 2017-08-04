@@ -520,7 +520,15 @@ function saveFile (path, file, jsonObj, callback){
       if (callback !== undefined) { callback(null); }
     })
     .catch(function(error){
-      if (error.status === 429){
+      if (error.status === 413){
+        console.error(chalkError(moment().format(compactDateTimeFormat) 
+          + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+          + " | ERROR: 413"
+          // + " ERROR\n" + jsonPrint(error.error)
+        ));
+        if (callback !== undefined) { callback(error.error_summary); }
+      }
+      else if (error.status === 429){
         console.error(chalkError(moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: TOO MANY WRITES"
