@@ -75,10 +75,12 @@ exports.findOneUser = function  (user, params, callback) {
 			verified: user.verified,
 			following: user.following,
 			status: user.status,
-			"$max": {statusesCount: user.statusesCount},
-			"$max": {followersCount: user.followersCount},
-			"$max": {friendsCount: user.friendsCount},
 			lastSeen: moment().valueOf() 
+		},
+		"$max": {
+			statusesCount: user.statusesCount,
+			followersCount: user.followersCount,
+			friendsCount: user.friendsCount
 		}
 	};
 	
