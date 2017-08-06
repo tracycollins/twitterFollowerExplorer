@@ -1576,6 +1576,9 @@ function updateClassifiedUsers(user){
         + " | " + user.userId
         + " | " + user.screenName
         + " | " + user.name
+        + " | Ts: " + user.statusesCount
+        + " | FLWRs: " + user.followersCount
+        + " | FRNDs: " + user.friendsCount
         + "\n [ L: " + statsObj.classification.manual.left
         + " | R: " + statsObj.classification.manual.right
         + " | +: " + statsObj.classification.manual.positive
