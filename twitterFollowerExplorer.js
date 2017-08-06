@@ -2086,6 +2086,14 @@ function fetchFriends(params) {
 
           async.each(data.users, function(friend, cb){
 
+            console.log(chalkLog("FRIEND"
+              + " | " + friend.id_str
+              + " | @" + friend.screen_name
+              + " | Ts: " + friend.statuses_count
+              + " | FLWRs: " + friend.followers_count
+              + " | FRNDs: " + friend.friends_count
+            ));
+
             if ((currentTwitterUser === "altthreecee00")
               && (twitterUserHashMap.ninjathreecee.friends[friend.id_str] !== undefined)) {
 
