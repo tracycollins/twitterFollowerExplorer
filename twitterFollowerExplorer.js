@@ -2176,8 +2176,8 @@ function fetchFriends(params) {
                           userServer.findOneUserPromise(usParams)
                           .then(function(updatedUserObj){
 
-                            const keywords = user.keywords ? Object.keys(updatedUserObj.keywords) : "";
-                            const keywordsAuto = user.keywordsAuto ? Object.keys(updatedUserObj.keywordsAuto) : "";
+                            const keywords = updatedUserObj.keywords ? Object.keys(updatedUserObj.keywords) : "";
+                            const keywordsAuto = updatedUserObj.keywordsAuto ? Object.keys(updatedUserObj.keywordsAuto) : "";
 
                             console.log(chalkInfo("US UPD<"
                               + " | " + updatedUserObj.userId
