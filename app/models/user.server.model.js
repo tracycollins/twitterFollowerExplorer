@@ -35,10 +35,10 @@ var UserSchema = new Schema({
 	mentions: { type: Number, default: 0 },
 
 	status: { type: Object, default: {} },
-	statusesCount: { type: Number, default: 0 },
-	followersCount: { type: Number, default: 0 },
+	statusesCount: { type: Number },
+	followersCount: { type: Number },
+	friendsCount: { type: Number },
 	following: { type: Boolean,	default: false },
-	friendsCount: { type: Number, default: 0 },
 	threeceeFollowing: { type: Object, trim: true },
 
 	rate: { type: Number, default: 0 },
