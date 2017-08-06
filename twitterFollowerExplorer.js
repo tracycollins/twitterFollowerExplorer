@@ -1822,8 +1822,7 @@ function generateAutoKeywords(user){
                 // callback(null, updateduser);
               });
 
-              activateNetwork(network, networkInput)
-              .then(function(networkOutput){
+              activateNetwork(network, networkInput).then(function(networkOutput){
 
                 indexOfMax(networkOutput, function(maxOutputIndex){
 
@@ -2475,7 +2474,7 @@ function loadBestNeuralNetworkFile(){
 
       if (err) {
         console.log(chalkError("LOAD DROPBOX BEST NETWORKS ERROR: " + err));
-        reject(err);
+        reject(new Error(err));
       }
       else {
 
@@ -2488,17 +2487,19 @@ function loadBestNeuralNetworkFile(){
 
         NeuralNetwork.find({}, function(err, nArray){
 
-          const nnArray = dropboxNetworksArray.concat(nArray);
 
           if (err) {
             console.log(chalkError("NEUAL NETWORK FIND ERR\n" + err));
             reject(err);
           }
-          else if (nnArray.length === 0){
+          else if (nArray.length === 0){
             console.log("NO NETWORKS FOUND");
             resolve(null);
           }
           else{
+
+            const nnArray = dropboxNetworksArray.concat(nArray);
+
             console.log(nnArray.length + " NETWORKS FOUND");
 
             async.eachSeries(nnArray, function(nn, cb){
@@ -2544,7 +2545,7 @@ function loadBestNeuralNetworkFile(){
             }, function(err){
               if (err) {
                 console.log(chalkError("*** loadBestNeuralNetworkFile ERROR\n" + err));
-                reject(err);
+                reject(new Error(err));
               }
               else if (currentBestNetwork) {
 
@@ -2653,8 +2654,7 @@ function updateNetworkFetchFriends(){
 
     if (languageAnalysisReadyFlag) {
 
-      fetchFriends(params)
-      .then(function(data){
+      fetchFriends(params).then(function(data){
         if (nextUser || statsObj.user[currentTwitterUser].endFetch) {
           nextUser = false;
           processFriends()
@@ -2678,7 +2678,8 @@ function updateNetworkFetchFriends(){
     }
   })
   .catch(function(err){
-    console.log(chalkError("LOAD BEST NETWORK FILE ERROR: " + err));
+    console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
+    console.log(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
   });
 
 }
@@ -2822,8 +2823,7 @@ initialize(configuration, function(err, cnf){
   }
 
   // loadBestNeuralNetworkFile(function(err, nnObj){
-  loadBestNeuralNetworkFile()
-  .then(function(nnObj){
+  loadBestNeuralNetworkFile().then(function(nnObj){
     // if (err) { 
     //   neuralNetworkInitialized = false;
     //   console.error("LOAD NETWORK ERROR\n" + jsonPrint(err));
@@ -2859,6 +2859,7 @@ initialize(configuration, function(err, cnf){
   })
   .catch(function(err){
     neuralNetworkInitialized = false;
-    console.error("LOAD NETWORK ERROR\n" + jsonPrint(err));
+    console.log(chalkError("*** LOAD NETWORK ERROR\n" + jsonPrint(err)));
+    console.error("*** LOAD NETWORK ERROR\n" + jsonPrint(err));
   });
 });
