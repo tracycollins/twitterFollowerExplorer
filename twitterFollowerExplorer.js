@@ -1450,15 +1450,10 @@ function updateClassifiedUsers(user){
 
     statsObj.analyzer.total += 1;
 
-    // let chalkManualCurrent = chalkLog;
     let chalkAutoCurrent = chalkLog;
 
     let classManualText = "-";
     let classAutoText = "-";
-
-    // let keywordsManualFlag = false;
-    // let keywordsAutoFlag = false;
-    // let keywordMatch = "     ";
 
     async.parallel({
 
@@ -1466,8 +1461,6 @@ function updateClassifiedUsers(user){
         if ((user.keywords !== undefined) 
           && user.keywords
           && (Object.keys(user.keywords).length > 0)) {
-
-          // keywordsManualFlag = true;
 
           debug("KWS\n" + jsonPrint(user.keywords));
           
@@ -1477,32 +1470,26 @@ function updateClassifiedUsers(user){
           switch (Object.keys(user.keywords)[0]) {
             case "right":
               classManualText = "R";
-              // chalkManualCurrent = chalk.red;
               statsObj.classification.manual.right += 1;
             break;
             case "left":
               classManualText = "L";
-              // chalkManualCurrent = chalk.blue;
               statsObj.classification.manual.left += 1;
             break;
             case "neutral":
               classManualText = "N";
-              // chalkManualCurrent = chalk.black;
               statsObj.classification.manual.neutral += 1;
             break;
             case "positive":
               classManualText = "+";
-              // chalkManualCurrent = chalk.green;
               statsObj.classification.manual.positive += 1;
             break;
             case "negative":
               classManualText = "-";
-              // chalkManualCurrent = chalk.bold.red;
               statsObj.classification.manual.negative += 1;
             break;
             default:
               classManualText = Object.keys(user.keywords)[0];
-              // chalkManualCurrent = chalk.black;
               statsObj.classification.manual.other += 1;
           }
           cb();
@@ -1519,8 +1506,6 @@ function updateClassifiedUsers(user){
           && (Object.keys(user.keywordsAuto).length > 0)) {
 
           debug("KWSA\n" + jsonPrint(user.keywordsAuto));
-
-          // keywordsAutoFlag = true;
 
           autoClassifiedUserHashmap[user.userId] = user.keywordsAuto;
           statsObj.users.classifiedAuto = Object.keys(autoClassifiedUserHashmap).length;
@@ -1563,10 +1548,6 @@ function updateClassifiedUsers(user){
         }
       }
     }, function(){
-
-      // if (classManualText === classAutoText) {
-      //   // keywordMatch = "MATCH";
-      // }
 
       console.log(chalkAutoCurrent("> USR KWs"
         + " | MKW: " + classManualText
@@ -2169,8 +2150,8 @@ function fetchFriends(params) {
                       user.threeceeFollowing.screenName = currentTwitterUser;
 
                       updateClassifiedUsers(user)
-                      .then(function(udatedUser){
-                        generateAutoKeywords(udatedUser)
+                      .then(function(updatedUser){
+                        generateAutoKeywords(updatedUser)
                         .then(function(uObj){
 
                           let usParams = { user: uObj, noInc: true };
@@ -2204,7 +2185,7 @@ function fetchFriends(params) {
                           });
                         })
                         .catch(function(err){
-                          console.log(chalkError("ERROR generateAutoKeywords | UID: " + udatedUser.userId
+                          console.log(chalkError("ERROR generateAutoKeywords | UID: " + updatedUser.userId
                             + "\n" + err
                           ));
                           cb(err);

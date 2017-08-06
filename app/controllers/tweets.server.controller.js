@@ -169,7 +169,7 @@ exports.findOneUser = function  (user, params, callback) {
 			}
 		}
 	);
-}
+};
 
 function findOnePlace (place, params, callback) {
 
@@ -602,7 +602,6 @@ function findOneTweet (tweet, params, callback) {
 		}
 	);
 }
-
 
 exports.createStreamTweet = function(params, callback) {	
 

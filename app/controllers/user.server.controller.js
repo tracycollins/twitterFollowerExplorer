@@ -5,11 +5,7 @@ const chalk = require("chalk");
 const async = require("async");
 
 const chalkAlert = chalk.red;
-const chalkInfo = chalk.yellow;
-const chalkTest = chalk.bold.yellow;
 const chalkError = chalk.bold.red;
-const chalkWarn = chalk.bold.yellow;
-const chalkLog = chalk.gray;
 
 const moment = require("moment");
 const User = require("mongoose").model("User");
@@ -26,9 +22,6 @@ const jsonPrint = function (obj){
     return "UNDEFINED";
   }
 };
-
-
-
 
 exports.findOneUserPromise = function (params) {
 
@@ -260,5 +253,4 @@ exports.updateHistograms = function (params, callback) {
 		}
 
 	});
-
 };

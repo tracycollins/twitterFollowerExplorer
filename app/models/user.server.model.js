@@ -1,7 +1,6 @@
-var mongoose = require('mongoose'),
-	moment = require('moment'),
-	crypto = require('crypto'),
-	Schema = mongoose.Schema;
+var mongoose = require("mongoose");
+var moment = require("moment");
+var Schema = mongoose.Schema;
 
 var UserSchema = new Schema({
 	userId: { type: String,	unique: true },
@@ -53,4 +52,4 @@ var UserSchema = new Schema({
 	languageAnalysis: { type: Object, default: {} }
 });
 
-mongoose.model('User', UserSchema);
+mongoose.model("User", UserSchema);
