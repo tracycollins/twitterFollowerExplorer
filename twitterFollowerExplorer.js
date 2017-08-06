@@ -1880,7 +1880,7 @@ function generateAutoKeywords(user){
 
                 });
               })
-              .catch(function(err){
+              .catch( function activateNetworkErrorHandler(err){
                 console.trace(chalkError("ACTIVATE NETWORK ERROR: " + err));
                 // callback(err, updateduser);
                 reject(new Error(err));
@@ -2198,7 +2198,7 @@ function fetchFriends(params) {
                             cb();
                           })
                           .catch(function(err){
-                            console.log(chalkError("ERROR DB UPDATE USER - generateAutoKeywords"
+                            console.trace(chalkError("ERROR DB UPDATE USER - generateAutoKeywords"
                               + "\n" + err
                               + "\n" + jsonPrint(uObj)
                             ));
@@ -2206,14 +2206,14 @@ function fetchFriends(params) {
                           });
                         })
                         .catch(function(err){
-                          console.log(chalkError("ERROR generateAutoKeywords | UID: " + updatedUser.userId
+                          console.trace(chalkError("ERROR generateAutoKeywords | UID: " + updatedUser.userId
                             + "\n" + err
                           ));
                           cb(err);
                         });
                       })
                       .catch(function(err){
-                        console.log(chalkError("ERROR updateClassifiedUsers | UID: " + user.userId
+                        console.trace(chalkError("ERROR updateClassifiedUsers | UID: " + user.userId
                           + "\n" + err
                         ));
                         cb(err);
@@ -2226,14 +2226,14 @@ function fetchFriends(params) {
                 }
               })
               .catch(function(err){
-                console.log(chalkError("ERROR checkFriendWordKeys | " + err));
+                console.trace(chalkError("ERROR checkFriendWordKeys | " + err));
                 cb(err);
               });
             }
 
           }, function(err){
             if (err) {
-              console.trace("ERROR")
+              console.trace("ERROR");
               reject(new Error(err));
             }
             else {
