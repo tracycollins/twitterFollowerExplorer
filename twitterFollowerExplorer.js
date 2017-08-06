@@ -1299,10 +1299,13 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
 
                 console.log(chalkLog("DB UPDATE USER"
-                  + " | UID: " + updatedUserObj.userId
+                  + " | " + updatedUserObj.userId
                   // + " | NID: " + updatedUserObj.nodeId
-                  + " | SN: " + updatedUserObj.screenName
-                  + " | N: " + updatedUserObj.name
+                  + " | @" + updatedUserObj.screenName
+                  + " | " + updatedUserObj.name
+                  + " | Ts: " + updatedUserObj.statusesCount
+                  + " | FLWRs: " + updatedUserObj.followersCount
+                  + " | FRNDs: " + updatedUserObj.friendsCount
                   + " | 3CFLW: " + threeceeFollowing
                   + " | KWs: " + kws
                   + " | KWAuto: " + kwsAuto
@@ -1368,17 +1371,33 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                     threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                   }
 
+                  // console.log(chalkLog("DB UPDATE USER"
+                  //   + " | UID: " + updatedUserObj.userId
+                  //   // + " | NID: " + updatedUserObj.nodeId
+                  //   + " | SN: " + updatedUserObj.screenName
+                  //   + " | N: " + updatedUserObj.name
+                  //   + " | 3CFLW: " + threeceeFollowing
+                  //   + " | KWs: " + kws
+                  //   + " | KWAuto: " + kwsAuto
+                  //   + " | LAd: " + updatedUserObj.languageAnalyzed
+                  //   + "\nLA Es: " + laEnts
+                  // ));
+
                   console.log(chalkLog("DB UPDATE USER"
-                    + " | UID: " + updatedUserObj.userId
+                    + " | " + updatedUserObj.userId
                     // + " | NID: " + updatedUserObj.nodeId
-                    + " | SN: " + updatedUserObj.screenName
-                    + " | N: " + updatedUserObj.name
-                    + " | 3CFLW: " + threeceeFollowing
+                    + " | @" + updatedUserObj.screenName
+                    + " | " + updatedUserObj.name
+                    + " | Ts: " + updatedUserObj.statusesCount
+                    + " | FLWRs: " + updatedUserObj.followersCount
+                    + " | FRNDs: " + updatedUserObj.friendsCount
+                    + " | 3CF: " + threeceeFollowing
                     + " | KWs: " + kws
                     + " | KWAuto: " + kwsAuto
                     + " | LAd: " + updatedUserObj.languageAnalyzed
                     + "\nLA Es: " + laEnts
                   ));
+
                 }
 
                 langAnalyzerMessageRxQueueReady = true;

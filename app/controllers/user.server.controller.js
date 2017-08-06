@@ -47,6 +47,7 @@ exports.findOneUserPromise = function (params) {
 				threeceeFollowing: user.threeceeFollowing,
 				tags: user.tags,
 				entities: user.entities,
+				keywords: user.keywords,
 				keywordsAuto: user.keywordsAuto,
 				histograms: user.histograms,
 				isTwitterUser: user.isTwitterUser,
@@ -72,7 +73,7 @@ exports.findOneUserPromise = function (params) {
 				lastSeen: moment().valueOf()
 			},
 			"$max": {
-				keywords: user.keywords,
+				// keywords: user.keywords,
 				languageAnalyzed: user.languageAnalyzed,
 				languageAnalysis: user.languageAnalysis
 			}

@@ -73,15 +73,20 @@ exports.findOneUser = function  (user, params, callback) {
 			profileUrl: user.profileUrl,
 			profileImageUrl: user.profileImageUrl,
 			verified: user.verified,
+			keywordsAuto: user.keywordsAuto,
+			keywords: user.keywords,
 			following: user.following,
-			status: user.status,
-			lastSeen: moment().valueOf() 
-		},
-		"$max": {
 			statusesCount: user.statusesCount,
 			followersCount: user.followersCount,
-			friendsCount: user.friendsCount
+			friendsCount: user.friendsCount,
+			status: user.status,
+			lastSeen: moment().valueOf() 
 		}
+		// "$max": {
+		// 	statusesCount: user.statusesCount,
+		// 	followersCount: user.followersCount,
+		// 	friendsCount: user.friendsCount
+		// }
 	};
 	
 	const options = { 
