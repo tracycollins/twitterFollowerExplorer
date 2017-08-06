@@ -1782,8 +1782,11 @@ function generateAutoKeywords(user){
             const userHistograms = updateduser.histograms;
 
             console.log(chalkAlert("----------------"
-              + "\nGEN AUTO KEYWORDS | USER DESC/STATUS"
+              + "\nGEN AKWs"
               + " | @" + updateduser.screenName
+              + " | Ts: " + updateduser.statusesCount
+              + " | FLWRs" + updateduser.followersCount
+              + " | FRNDs" + updateduser.friendsCount
               + "\n" + text + "\n"
               // + "\nHISTOGRAMS: " + histogramsText
               // + "\nHISTOGRAMS: " + jsonPrint(userHistograms)
@@ -2182,6 +2185,9 @@ function fetchFriends(params) {
                               + " | " + updatedUserObj.userId
                               + " | TW: " + (updatedUserObj.isTwitterUser || "-")
                               + " | @" + updatedUserObj.screenName
+                              + " | Ts: " + updatedUserObj.statusesCount
+                              + " | FLWRs: " + updatedUserObj.followersCount
+                              + " | FRNDs: " + updatedUserObj.friendsCount
                               // + " | LA " + Object.keys(updatedUserObj.languageAnalysis)
                               + " | KWs " + keywords
                               + " | AKWs " + keywordsAuto
