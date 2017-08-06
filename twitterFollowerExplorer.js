@@ -1881,7 +1881,7 @@ function generateAutoKeywords(user){
                 });
               })
               .catch(function(err){
-                console.log(chalkError("ACTIVATE NETWORK ERROR: " + err));
+                console.trace(chalkError("ACTIVATE NETWORK ERROR: " + err));
                 // callback(err, updateduser);
                 reject(new Error(err));
               });
@@ -1949,7 +1949,7 @@ function generateAutoKeywords(user){
           });
         })
         .catch(function(err){
-          console.log(chalkError("ACTIVATE NETWORK ERROR: " + err));
+          console.trace(chalkError("ACTIVATE NETWORK ERROR: " + err));
           // callback(err, user);
           reject(new Error(err));
         });
