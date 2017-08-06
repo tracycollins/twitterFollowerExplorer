@@ -2370,7 +2370,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             + "\nOLD HASH: " + bestNetworkHashMap.get(entry.name).content_hash
           ));
 
-          bestNetworkHashMap.set(entry.name, entry);
+          // bestNetworkHashMap.set(entry.name, entry);
 
           loadFile(folder, entry.name, function(err, networkObj){
 
@@ -2389,8 +2389,14 @@ function loadBestNetworkDropboxFolder(folder, callback){
             ));
 
             neuralNetworkServer.findOneNetwork(networkObj, {}, function(err, updatedNetworkObj){
-              nnArray.push(updatedNetworkObj);
-              cb();
+              if (err) {
+                cb();
+              }
+              else {
+                bestNetworkHashMap.set(entry.name, entry);
+                nnArray.push(updatedNetworkObj);
+                cb();
+              }
             });
 
           });
@@ -2407,7 +2413,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
       }
       else {
 
-        bestNetworkHashMap.set(entry.name, entry);
+        // bestNetworkHashMap.set(entry.name, entry);
 
         loadFile(folder, entry.name, function(err, networkObj){
 
@@ -2426,8 +2432,14 @@ function loadBestNetworkDropboxFolder(folder, callback){
           ));
 
           neuralNetworkServer.findOneNetwork(networkObj, {}, function(err, updatedNetworkObj){
-            nnArray.push(updatedNetworkObj);
-            cb();
+            if (err) {
+              cb();
+            }
+            else {
+              bestNetworkHashMap.set(entry.name, entry);
+              nnArray.push(updatedNetworkObj);
+              cb();
+            }
           });
 
         });
