@@ -2233,6 +2233,7 @@ function fetchFriends(params) {
 
           }, function(err){
             if (err) {
+              console.trace("ERROR")
               reject(new Error(err));
             }
             else {
