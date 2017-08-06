@@ -2127,7 +2127,7 @@ function fetchFriends(params) {
             }
             else {
 
-              twitterUserHashMap[currentTwitterUser].friends[friend.id_str] = friend;
+              twitterUserHashMap[currentTwitterUser].friends[friend.id_str] = true;
 
               checkFriendWordKeys(friend)
               .then(function(kws){
@@ -2154,6 +2154,10 @@ function fetchFriends(params) {
                     }
                     else {
 
+                      user.statusesCount = friend.statuses_count;
+                      user.followersCount = friend.followers_count;
+                      user.friendsCount = friend.friends_count;
+                      
                       user.threeceeFollowing = {};
                       user.threeceeFollowing.screenName = currentTwitterUser;
 
