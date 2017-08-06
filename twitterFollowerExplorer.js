@@ -2160,8 +2160,8 @@ function fetchFriends(params) {
                       user.followersCount = friend.followers_count;
                       user.friendsCount = friend.friends_count;
 
-                      if (user.keywords === undefined) { user.keywords = {}; }
-                      if (user.keywordsAuto === undefined) { user.keywordsAuto = {}; }
+                      if ((user.keywords === undefined) || !user.keywords) { user.keywords = {}; }
+                      if ((user.keywordsAuto === undefined) || !user.keywordsAuto) { user.keywordsAuto = {}; }
 
                       user.threeceeFollowing = {};
                       user.threeceeFollowing.screenName = currentTwitterUser;
