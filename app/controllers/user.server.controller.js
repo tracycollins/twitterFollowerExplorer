@@ -139,6 +139,7 @@ exports.findOneUser = function (user, params, callback) {
 			threeceeFollowing: user.threeceeFollowing,
 			tags: user.tags,
 			entities: user.entities,
+			keywords: user.keywords,
 			keywordsAuto: user.keywordsAuto,
 			histograms: user.histograms,
 			isTwitterUser: user.isTwitterUser,
@@ -164,7 +165,7 @@ exports.findOneUser = function (user, params, callback) {
 			lastSeen: moment().valueOf()
 		},
 		"$max": {
-			keywords: user.keywords,
+			// keywords: user.keywords,
 			languageAnalyzed: user.languageAnalyzed,
 			languageAnalysis: user.languageAnalysis
 		}
@@ -195,14 +196,15 @@ exports.findOneUser = function (user, params, callback) {
 				callback(err, user);
 			}
 			else {
-				debug("> US UPDATED"
+				console.log("USRVR> US UPDATED"
 					+ " | " + us.userId 
 					+ " | @" + us.screenName
 					+ " | " + us.name
 					+ " | Vd: " + us.verified 
 					+ " | FLg: " + us.following 
 					+ " | Ts: " + us.statusesCount 
-					+ " | FLRs: " + us.followersCount 
+					+ " | FLWRs: " + us.followersCount 
+					+ " | FRNDs: " + us.followersCount 
 					+ " | Ms: " + us.mentions 
 					+ " | LAd: " + us.languageAnalyzed 
 					+ " | LS: " + moment(new Date(us.lastSeen)).format(compactDateTimeFormat) 

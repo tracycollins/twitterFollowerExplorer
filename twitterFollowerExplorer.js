@@ -1105,7 +1105,7 @@ function initialize(cnf, callback){
       }
 
       if (loadedConfigObj.TFE_USER_DB_CRAWL !== undefined){
-        console.log("LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_USER_DB_CRAWL);
+        console.log("LOADED TFE_USER_DB_CRAWL: " + loadedConfigObj.TFE_USER_DB_CRAWL);
         cnf.userDbCrawl = loadedConfigObj.TFE_USER_DB_CRAWL;
       }
 
