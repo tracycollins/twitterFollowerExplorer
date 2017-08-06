@@ -2086,7 +2086,7 @@ function fetchFriends(params) {
 
           async.each(data.users, function(friend, cb){
 
-            console.log(chalkLog("FRIEND"
+            console.log(chalkLog("<FRIEND"
               + " | " + friend.id_str
               + " | @" + friend.screen_name
               + " | Ts: " + friend.statuses_count
@@ -2157,7 +2157,7 @@ function fetchFriends(params) {
                       user.statusesCount = friend.statuses_count;
                       user.followersCount = friend.followers_count;
                       user.friendsCount = friend.friends_count;
-                      
+
                       user.threeceeFollowing = {};
                       user.threeceeFollowing.screenName = currentTwitterUser;
 
