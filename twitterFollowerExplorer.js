@@ -1829,6 +1829,8 @@ function generateAutoKeywords(user){
 
                   updateduser.keywordsAuto = {};
 
+                  if (updateduser.keywords === undefined) { updateduser.keywords = {}; }
+
                   switch (maxOutputIndex) {
                     case 0:
                       // classText = "L";
