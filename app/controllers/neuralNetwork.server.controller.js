@@ -68,7 +68,11 @@ exports.findOneNetwork = function (network, params, callback) {
 		options,
 		function(err, nw) {
 			if (err) {
-				console.log(moment().format(compactDateTimeFormat) + "\n\n***** NETWORK FINDONE ERROR: NETWORK ID: " + network.networkId + "\n" + err);
+				console.log(chalkError(
+					moment().format(compactDateTimeFormat)
+					+ "\n\n***** NETWORK FINDONE ERROR: NETWORK ID: " + network.networkId
+					+ "\n" + err
+				));
 				if (err.code === 11000) {
 					network.remove({networkId: network.networkId}, function(err){
 						if (err) {

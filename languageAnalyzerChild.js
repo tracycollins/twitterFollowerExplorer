@@ -17,7 +17,6 @@ var statsUpdateInterval;
 
 var languageClient = require('@google-cloud/language')();
 
-
 var EventEmitter2 = require("eventemitter2").EventEmitter2;
 var configEvents = new EventEmitter2({
   wildcard: true,
@@ -788,7 +787,7 @@ setTimeout(function(){
       // }
     }
 
-    console.log(chalkAlert(cnf.processName + " STARTED " + getTimeStamp() + "\n"));
+    console.log(chalkInfo(cnf.processName + " STARTED " + getTimeStamp() + "\n"));
 
     initStatsUpdate(cnf, function(){
     });
