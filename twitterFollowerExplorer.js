@@ -1750,12 +1750,17 @@ function generateAutoKeywords(user){
 
         twitterTextParser.parseText(text, {updateGlobalHistograms: true}, function(err, hist){
 
+          if (err) {
+            console.log(chalkError("*** TWITTER TEXT PARSER ERROR: " + err));
+            reject(new Error(err));
+          }
+
           userServer.updateHistograms({userId: user.userId, histograms: hist}, function(err, updateduser){
 
             if (err) {
               console.log(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
               // return(callback(err, null));
-              reject(err);
+              reject(new Error(err));
             }
 
             updateduser.inputHits = 0;
@@ -1879,7 +1884,7 @@ function generateAutoKeywords(user){
               .catch(function(err){
                 console.log(chalkError("ACTIVATE NETWORK ERROR: " + err));
                 // callback(err, updateduser);
-                reject(err);
+                reject(new Error(err));
               });
             });
 
@@ -1947,7 +1952,7 @@ function generateAutoKeywords(user){
         .catch(function(err){
           console.log(chalkError("ACTIVATE NETWORK ERROR: " + err));
           // callback(err, user);
-          reject(err);
+          reject(new Error(err));
         });
 
       });
