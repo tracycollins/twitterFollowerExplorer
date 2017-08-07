@@ -1813,7 +1813,7 @@ function generateAutoKeywords(user){
             reject(new Error(err));
           }
 
-          userServer.updateHistograms({userId: user.userId, histograms: hist}, function(err, updateduser){
+          userServer.updateHistograms({user: user, histograms: hist}, function(err, updateduser){
 
             if (err) {
               console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));

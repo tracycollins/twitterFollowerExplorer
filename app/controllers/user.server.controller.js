@@ -197,7 +197,7 @@ exports.findOneUser = function (user, params, callback) {
 					+ " | FLg: " + us.following 
 					+ " | Ts: " + us.statusesCount 
 					+ " | FLWRs: " + us.followersCount 
-					+ " | FRNDs: " + us.followersCount 
+					+ " | FRNDs: " + us.friendsCount 
 					+ " | Ms: " + us.mentions 
 					+ " | LAd: " + us.languageAnalyzed 
 					+ " | LS: " + moment(new Date(us.lastSeen)).format(compactDateTimeFormat) 
@@ -214,7 +214,7 @@ exports.updateHistograms = function (params, callback) {
 
 	debug(chalkAlert("updateHistograms\n" + jsonPrint(params)));
 
-	const query = { userId: params.userId };
+	const query = { userId: params.user.userId };
 
 	User.findOne(query, function(err, user){
 
@@ -236,11 +236,14 @@ exports.updateHistograms = function (params, callback) {
 
       }, function(){
 
-      	user.histograms = comboHistogram;
+      	params.user.histograms = comboHistogram;
         
-      	exports.findOneUser(user, {noInc: true}, function(err, updatedUser){
+      	exports.findOneUser(params.user, {noInc: true}, function(err, updatedUser){
 
-					debug("updateHistograms | UPDATED USER: @" + user.screenName + " | HISTOGRAMS: " + jsonPrint(user.histograms));
+					debug("updateHistograms"
+						+ " | UPDATED USER: @" + updatedUser.screenName
+						+ " | HISTOGRAMS\n" + jsonPrint(updatedUser.histograms)
+					);
 
       		callback(err, updatedUser);
       	});
@@ -249,7 +252,15 @@ exports.updateHistograms = function (params, callback) {
       });
 		}
 		else {
-  		callback(null, null);
+
+      params.user.histograms = params.histograms;
+      
+    	exports.findOneUser(params.user, {noInc: true}, function(err, updatedUser){
+
+				debug("updateHistograms | UPDATED USER: @" + user.screenName + " | HISTOGRAMS: " + jsonPrint(user.histograms));
+
+    		callback(err, updatedUser);
+    	});
 		}
 
 	});
