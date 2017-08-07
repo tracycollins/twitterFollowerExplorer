@@ -713,9 +713,9 @@ exports.createStreamTweet = function(params, callback) {
 						mentions : 0
 					});
 
-					delete userMentionObj.statusesCount;
-					delete userMentionObj.followersCount;
-					delete userMentionObj.friendsCount;
+					userMentionObj.statusesCount = undefined;
+					userMentionObj.followersCount = undefined;
+					userMentionObj.friendsCount = undefined;
 
 					if (newTweet.user.id_str === umObj.id_str) {
 						debug(chalkAlert("userMentions SKIPPING: USER MENTION == USER: " + newTweet.user.id_str));
