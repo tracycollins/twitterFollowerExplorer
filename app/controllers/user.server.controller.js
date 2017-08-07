@@ -189,17 +189,15 @@ exports.findOneUser = function (user, params, callback) {
 				callback(err, user);
 			}
 			else {
-				console.log("USRVR> US UPDATED"
+				console.log("USR>DB"
 					+ " | " + us.userId 
 					+ " | @" + us.screenName
 					+ " | " + us.name
-					+ " | Vd: " + us.verified 
-					+ " | FLg: " + us.following 
 					+ " | Ts: " + us.statusesCount 
-					+ " | FLWRs: " + us.followersCount 
-					+ " | FRNDs: " + us.friendsCount 
+					+ " | FLs: " + us.followersCount 
+					+ " | FRs: " + us.friendsCount 
 					+ " | Ms: " + us.mentions 
-					+ " | LAd: " + us.languageAnalyzed 
+					+ " | LA: " + us.languageAnalyzed 
 					+ " | LS: " + moment(new Date(us.lastSeen)).format(compactDateTimeFormat) 
 				);
 				const mentionsString = us.mentions.toString() ;
