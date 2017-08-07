@@ -82,11 +82,6 @@ exports.findOneUser = function  (user, params, callback) {
 			status: user.status,
 			lastSeen: moment().valueOf() 
 		}
-		// "$max": {
-		// 	statusesCount: user.statusesCount,
-		// 	followersCount: user.followersCount,
-		// 	friendsCount: user.friendsCount
-		// }
 	};
 	
 	const options = { 
@@ -717,6 +712,10 @@ exports.createStreamTweet = function(params, callback) {
 						lastSeen : moment().valueOf(),
 						mentions : 0
 					});
+
+					delete userMentionObj.statusesCount;
+					delete userMentionObj.followersCount;
+					delete userMentionObj.friendsCount;
 
 					if (newTweet.user.id_str === umObj.id_str) {
 						debug(chalkAlert("userMentions SKIPPING: USER MENTION == USER: " + newTweet.user.id_str));
