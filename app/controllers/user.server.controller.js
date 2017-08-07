@@ -257,7 +257,10 @@ exports.updateHistograms = function (params, callback) {
       
     	exports.findOneUser(params.user, {noInc: true}, function(err, updatedUser){
 
-				debug("updateHistograms | UPDATED USER: @" + user.screenName + " | HISTOGRAMS: " + jsonPrint(user.histograms));
+				debug("updateHistograms"
+					+ " | UPDATED USER: @" + updatedUser.screenName
+					+ " | HISTOGRAMS\n" + jsonPrint(updatedUser.histograms)
+				);
 
     		callback(err, updatedUser);
     	});
