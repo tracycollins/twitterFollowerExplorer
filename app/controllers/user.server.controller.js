@@ -32,7 +32,8 @@ exports.findOneUserPromise = function (params) {
 		if (params.noInc) { inc = 0; }
 
 		const query = { userId: user.userId  };
-		const update = { 
+
+		let update = { 
 			"$inc": { mentions: inc }, 
 			"$set": { 
 				nodeType: "user",
@@ -53,9 +54,6 @@ exports.findOneUserPromise = function (params) {
 				verified: user.verified,
 				following: user.following,
 				status: user.status,
-				statusesCount: user.statusesCount,
-				followersCount: user.followersCount,
-				friendsCount: user.friendsCount,
 				rate: user.rate,
 				isTopTerm: user.isTopTerm,
 				connectTime: user.connectTime,
@@ -66,11 +64,21 @@ exports.findOneUserPromise = function (params) {
 				lastSeen: moment().valueOf()
 			},
 			"$max": {
-				// keywords: user.keywords,
 				languageAnalyzed: user.languageAnalyzed,
 				languageAnalysis: user.languageAnalysis
 			}
 		};
+
+		if (user.statusesCount !== undefined){
+			update["$set"].statusesCount = user.statusesCount;
+		}
+		if (user.followersCount !== undefined){
+			update["$set"].followersCount = user.followersCount;
+		}
+		if (user.friendsCount !== undefined){
+			update["$set"].friendsCount = user.friendsCount;
+		}
+
 		const options = { 
 			upsert: true, 
 			setDefaultsOnInsert: true,
@@ -124,7 +132,8 @@ exports.findOneUser = function (user, params, callback) {
 	if (params.noInc) { inc = 0; }
 
 	const query = { userId: user.userId  };
-	const update = { 
+
+	let update = { 
 		"$inc": { mentions: inc }, 
 		"$set": { 
 			nodeType: "user",
@@ -145,9 +154,6 @@ exports.findOneUser = function (user, params, callback) {
 			verified: user.verified,
 			following: user.following,
 			status: user.status,
-			statusesCount: user.statusesCount,
-			followersCount: user.followersCount,
-			friendsCount: user.friendsCount,
 			rate: user.rate,
 			isTopTerm: user.isTopTerm,
 			connectTime: user.connectTime,
@@ -158,11 +164,21 @@ exports.findOneUser = function (user, params, callback) {
 			lastSeen: moment().valueOf()
 		},
 		"$max": {
-			// keywords: user.keywords,
 			languageAnalyzed: user.languageAnalyzed,
 			languageAnalysis: user.languageAnalysis
 		}
 	};
+
+	if (user.statusesCount !== undefined){
+		update["$set"].statusesCount = user.statusesCount;
+	}
+	if (user.followersCount !== undefined){
+		update["$set"].followersCount = user.followersCount;
+	}
+	if (user.friendsCount !== undefined){
+		update["$set"].friendsCount = user.friendsCount;
+	}
+
 	const options = { 
 		upsert: true, 
 		setDefaultsOnInsert: true,
