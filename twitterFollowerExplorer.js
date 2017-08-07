@@ -2219,11 +2219,43 @@ function fetchFriends(params) {
                       console.log(chalkError("ERROR DB FIND ONE USER | " + err));
                       cb(err);
                     }
-                    else if (!user) {
-                      console.log(chalkInfo("DB USER NOT FOUND | " + friend.id_str));
-                      cb();
-                    }
+                    // else if (!user) {
+                    //   console.log(chalkInfo("DB USER NOT FOUND | " + friend.id_str));
+                    //   cb();
+                    // }
                     else {
+
+                      if (!user) {
+
+                        console.log(chalkInfo("DB USER NOT FOUND | CREATING"
+                          + " | @" + friend.screen_name
+                          + " | " + friend.id_str
+                        ));
+
+                        const userProfileImageUrl = friend.profile_image_url.replace(/_normal/i, "");
+
+                        user = new User({ 
+                          isTwitterUser: true,
+                          nodeType: "user",
+                          nodeId : friend.id_str, 
+                          userId : friend.id_str, 
+                          name : friend.name,
+                          screenName : friend.screen_name,
+                          url: friend.url,
+                          profileUrl: "http://twitter.com/" + friend.screen_name,
+                          profileImageUrl: userProfileImageUrl,
+                          verified: friend.verified,
+                          following: friend.following,
+                          description: friend.description,
+                          createdAt : moment().valueOf(), 
+                          lastSeen : moment().valueOf(),
+                          statusesCount : friend.statuses_count,
+                          friendsCount : friend.friends_count,
+                          followersCount : friend.followers_count,
+                          mentions : 0
+                        });
+
+                      }
 
                       user.statusesCount = friend.statuses_count;
                       user.followersCount = friend.followers_count;
