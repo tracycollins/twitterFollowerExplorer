@@ -5,6 +5,7 @@ const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
 
 const userServer = require("@threeceelabs/user-server-controller");
+// const userServer = require("../userServerController");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 
 const User = require("mongoose").model("User");
@@ -697,10 +698,19 @@ function initStatsUpdate(callback){
       clearInterval(statsUpdateInterval);
 
       saveFile({folder:classifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap}, function(err){
-        setTimeout(function(){
-          quit("QUIT ON COMPLETE");
-        }, 2000);
-      });
+        if (err) {
+          console.log(chalkError("SAVE RETRY ON ERROR: " + classifiedUsersFolder + "/" + classifiedUsersDefaultFile));
+          saveFileRetry(5000, classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap);
+          setTimeout(function(){
+            quit("QUIT ON COMPLETE");
+          }, 10000);
+        }
+        else {
+          setTimeout(function(){
+            quit("QUIT ON COMPLETE");
+          }, 2000);
+        }
+       });
 
     }
 
@@ -828,7 +838,8 @@ function twitterUserUpdate(userScreenName, callback){
       return(callback(err));
     }
 
-    debug(chalkTwitter("TWITTER USER\n" + jsonPrint(userShowData)));
+    debug(chalkTwitter("TWITTER USER DATA\n" + jsonPrint(userShowData)));
+    debug(chalkTwitter("TWITTER USER RESPONSE\n" + jsonPrint(response)));
 
     statsObj.user[userScreenName] = {};
 
@@ -878,7 +889,7 @@ function initTwitter(currentTwitterUser, callback){
     if (err) {
       console.log(chalkError("*** LOADED TWITTER CONFIG ERROR: FILE:  " + configuration.twitterConfigFolder + "/" + twitterConfigFile));
       console.log(chalkError("*** LOADED TWITTER CONFIG ERROR: ERROR: " + err));
-      callback(err, null);
+      callback(err);
     }
     else {
       console.log(chalkTwitter("LOADED TWITTER CONFIG"
@@ -937,6 +948,8 @@ function initTwitter(currentTwitterUser, callback){
               return(cb(err, null));
             }
 
+            debug(chalkTwitter("TWITTER ACCOUNT SETTINGS RESPONSE\n" + jsonPrint(response)));
+
             const userScreenName = accountSettings.screen_name.toLowerCase();
             twitterUserHashMap[userScreenName].twit = {};
             twitterUserHashMap[userScreenName].twit = newTwit;
@@ -964,7 +977,8 @@ function initTwitter(currentTwitterUser, callback){
         }
 
       ], function (err, results) {
-        callback(err, results);
+        debug("results\n" + results);
+        callback(err);
       });
 
     }
@@ -1013,6 +1027,8 @@ function initTwitterUsers(callback){
           console.log(chalkError("INIT TWITTER ERROR\n" + jsonPrint(err)));
           return(cb(err));
         }
+
+        debug("INIT TWITTER twitObj\n" + jsonPrint(twitObj));
 
         console.log(chalkTwitter("ADDED TWITTER USER"
           + " | NAME: " + userId
@@ -1469,9 +1485,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
   if (callback !== undefined) { callback(); }
 }
 
-function updateClassifiedUsers(user){
+function classifyUser(user){
 
-  return new Promise(function(resolve, reject) {
+  return new Promise(function(resolve) {
 
     statsObj.analyzer.total += 1;
 
@@ -1644,13 +1660,15 @@ function printDatum(title, input){
 function activateNetwork(network, nInput){
 
   return new Promise(function(resolve, reject) {
-
-    let networkOutput = network.activate(nInput);
-
-    debug(chalkAlert("activateNetwork networkOutput: " + networkOutput));
-
-    resolve(networkOutput);
-
+    try {
+      let networkOutput = network.activate(nInput);
+      debug(chalkAlert("activateNetwork networkOutput: " + networkOutput));
+      resolve(networkOutput);
+    }
+    catch (err) {
+      console.error(chalkError("activateNetwork ERROR: " + err));
+      reject(err);
+    }
   });
 }
 
@@ -1759,7 +1777,12 @@ function generateAutoKeywords(user){
             }
           }
         }
-      ], function (error, text) {
+      ], function (err, text) {
+
+        if (err) {
+          console.error(chalkError("*** ERROR generateAutoKeywords: " + err));
+          reject(err);
+        }
 
         if (!text) { text = " "; }
 
@@ -1774,6 +1797,7 @@ function generateAutoKeywords(user){
 
             if (err) {
               console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
+              console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\nUSER\n" + jsonPrint(user)));
               // return(callback(err, null));
               reject(new Error(err));
             }
@@ -1838,18 +1862,25 @@ function generateAutoKeywords(user){
 
               debug(chalkTwitter("PARSE DESC COMPLETE"));
 
+              updateduser.inputHitRatio = 100*updateduser.inputHits/networkInput.length;
+
+              console.log(chalkTwitterBold("### GAKW ALL INPUT ARRAYS COMPLETE"
+                + " | @" + updateduser.screenName 
+                + " | " + updateduser.inputHits + " HITS / " + networkInput.length + " INPUTS"
+                + " | " + updateduser.inputHitRatio.toFixed(2) + "% INPUT HIT"
+              ));
+
               langAnalyzer.send({op: "LANG_ANALIZE", obj: updateduser, text: text}, function(){
                 statsObj.analyzer.analyzed += 1;
                 // callback(null, updateduser);
               });
-
 
               activateNetwork(network, networkInput)
               .then(function processNetworkOutput(networkOutput){
 
                 indexOfMax(networkOutput, function maxNetworkOutput(maxOutputIndex){
 
-                  console.log(chalkAlert("MAX INDEX: " + maxOutputIndex));
+                  console.log(chalkInfo("MAX INDEX: " + maxOutputIndex));
 
                   let chalkCurrent = chalkLog;
                   // let classText;
@@ -1880,7 +1911,11 @@ function generateAutoKeywords(user){
                       updateduser.keywordsAuto = {};
                   }
 
-                  printDatum(updateduser.screenName, networkInput);
+                  const title = updateduser.screenName + " | INPUT HIT: " + updateduser.inputHitRatio.toFixed(2) + "%";
+                  printDatum(
+                    title, 
+                    networkInput
+                  );
 
                   console.log(chalkCurrent("\nAUTO KW"
                     + " | " + updateduser.userId
@@ -1991,7 +2026,7 @@ function checkFriendWordKeys(friend){
 
   return new Promise(function(resolve, reject) {
 
-    Word.findOne({nodeId: friend.screen_name.toLowerCase()}, function(err, word){
+    Word.findOne({nodeId: friend.screenName.toLowerCase()}, function(err, word){
 
       let kws = {};
 
@@ -2000,18 +2035,18 @@ function checkFriendWordKeys(friend){
         reject(err);
       }
       else if (!word) {
-        console.log(chalkInfo("FRIEND WORD NOT FOUND: " + friend.screen_name.toLowerCase()));
+        console.log(chalkInfo("FRIEND WORD NOT FOUND: " + friend.screenName.toLowerCase()));
         resolve(kws);
       }
       else if (word.keywords === undefined) {
         debug("WORD-USER HIT"
-          + " | " + friend.screen_name.toLowerCase()
+          + " | " + friend.screenName.toLowerCase()
         );
         resolve(kws);
       }
       else if (!word.keywords || (Object.keys(word.keywords).length === 0)) {
         debug("WORD-USER HIT"
-          + " | " + friend.screen_name.toLowerCase()
+          + " | " + friend.screenName.toLowerCase()
         );
         resolve(kws);
       }
@@ -2027,17 +2062,17 @@ function checkFriendWordKeys(friend){
             kws[kwId] = word.keywords[kwId];
 
             debug(chalkTwitter("-- KW"
-              + " | " + friend.screen_name.toLowerCase()
+              + " | " + friend.screenName.toLowerCase()
               + " | " + kwId
               + " | " + kws[kwId]
             ));
 
-            classifiedUserHashmap[friend.screen_name.toLowerCase()] = kws;
+            classifiedUserHashmap[friend.screenName.toLowerCase()] = kws;
           }
           cb();
         }, function(){
           debug("WORD-USER HIT"
-            + " | " + friend.screen_name.toLowerCase()
+            + " | " + friend.screenName.toLowerCase()
             + " | " + Object.keys(kws)
           );
           resolve(kws);
@@ -2068,9 +2103,11 @@ function fetchFriends(params) {
         params, 
         function(err, data, response){
 
-        if (err) {
-          // console.error(chalkInfo("ERROR " + err));
-          console.log(chalkError(getTimeStamp()
+          debug("response\n" + jsonPrint(response));
+
+          if (err) {
+            // console.error(chalkInfo("ERROR " + err));
+            console.log(chalkError(getTimeStamp()
             + " | *** ERROR GET TWITTER FRIENDS: " + err
           ));
 
@@ -2122,182 +2159,225 @@ function fetchFriends(params) {
               + " | FRNDs: " + friend.friends_count
             ));
 
-            if ((currentTwitterUser === "altthreecee00")
-              && (twitterUserHashMap.ninjathreecee.friends[friend.id_str] !== undefined)) {
+            async.waterfall(
+            [
 
-              console.log(chalkAlert("SKIP | ninjathreecee FOLLOWING"
-                + " | " + friend.screen_name.toLowerCase()
-                + " | " + friend.id_str
-              ));
+              function convertUser(cb1) {
+                userServer.convertRawUser(friend, function(err, user){
+                  cb1(null, user);
+                });
+              },
 
-              twitterUserHashMap[currentTwitterUser].twit.post(
+              function unfollowFriend(user, cb1) {
 
-                "friendships/destroy", 
-
-                {user_id: friend.id_str}, 
-
-                function destroyFriend(err, data, response){
-                  if (err) {
-                    console.error(chalkError("UNFOLLOW ERROR" + err));
-                  }
-                  else {
-                    console.log(chalkAlert("UNFOLLOW altthreecee00"
-                      + " | " + friend.screen_name.toLowerCase()
-                      + " | " + friend.id_str
-                    ));
-
-                    const slackText = "UNFOLLOW altthreecee00\n@" + friend.screen_name.toLowerCase() + "\n" + friend.id_str;
-                    slackPostMessage(slackChannel, slackText);
-                  }
-                  cb();
+                if (err) {
+                  console.log(chalkError(getTimeStamp()
+                  + " | *** ERROR unfollowFriend: " + err
+                  ));
                 }
-              );
-            }
-            else {
 
-              twitterUserHashMap[currentTwitterUser].friends[friend.id_str] = true;
+                if ((currentTwitterUser === "altthreecee00")
+                  && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined)) {
 
-              checkFriendWordKeys(friend)
-              .then(function processFriendWordKeys(kws){
-                if (Object.keys(kws).length > 0) {
-                  console.log("WORD-USER HIT"
-                    + " | " + friend.screen_name.toLowerCase()
-                    + " | " + Object.keys(kws)
+                  console.log(chalkAlert("SKIP | ninjathreecee FOLLOWING"
+                    + " | " + user.userId
+                    + " | " + user.screenName.toLowerCase()
+                  ));
+
+                  twitterUserHashMap[currentTwitterUser].twit.post(
+                    "friendships/destroy", 
+                    {user_id: user.userId}, 
+                    function destroyFriend(err, data, response){
+                      if (err) {
+                        console.error(chalkError("UNFOLLOW ERROR" + err));
+                        cb1(user);
+                      }
+                      else {
+                        debug("data\n" + jsonPrint(data));
+                        debug("response\n" + jsonPrint(response));
+
+                        console.log(chalkAlert("UNFOLLOW altthreecee00"
+                          + " | " + user.userId
+                          + " | " + user.screenName.toLowerCase()
+                        ));
+                        const slackText = "UNFOLLOW altthreecee00"
+                          + "\n@" + user.screenName.toLowerCase()
+                          + "\n" + user.userId;
+                        slackPostMessage(slackChannel, slackText);
+                        cb1(err, user);
+                      }
+                    }
                   );
                 }
-
-                if (neuralNetworkInitialized) {
-
-                  debug(chalkError("NET INITIALIZED"));
-
-                  User.findOne({userId: friend.id_str}, function(err, user){
-
-                    if (err) {
-                      console.log(chalkError("ERROR DB FIND ONE USER | " + err));
-                      cb(err);
-                    }
-                    else {
-
-                      if (!user) {
-
-                        console.log(chalkInfo("DB USER NOT FOUND | CREATING"
-                          + " | @" + friend.screen_name
-                          + " | " + friend.id_str
-                        ));
-
-                        const userProfileImageUrl = friend.profile_image_url.replace(/_normal/i, "");
-
-                        user = new User({ 
-                          isTwitterUser: true,
-                          nodeType: "user",
-                          nodeId : friend.id_str, 
-                          userId : friend.id_str, 
-                          name : friend.name,
-                          screenName : friend.screen_name,
-                          url: friend.url,
-                          profileUrl: "http://twitter.com/" + friend.screen_name,
-                          profileImageUrl: userProfileImageUrl,
-                          verified: friend.verified,
-                          following: friend.following,
-                          description: friend.description,
-                          createdAt : moment().valueOf(), 
-                          lastSeen : moment().valueOf(),
-                          statusesCount : friend.statuses_count,
-                          friendsCount : friend.friends_count,
-                          followersCount : friend.followers_count,
-                          mentions : 0
-                        });
-
-                      }
-
-                      user.statusesCount = friend.statuses_count;
-                      user.followersCount = friend.followers_count;
-                      user.friendsCount = friend.friends_count;
-
-                      if ((user.keywords === undefined) || !user.keywords) { user.keywords = {}; }
-                      if ((user.keywordsAuto === undefined) || !user.keywordsAuto) { user.keywordsAuto = {}; }
-
-                      user.threeceeFollowing = {};
-                      user.threeceeFollowing.screenName = currentTwitterUser;
-
-                      updateClassifiedUsers(user)
-                      .then(function genClassifiedUserKeyword(updatedUser){
-                        generateAutoKeywords(updatedUser)
-                        .then(function updateDbUser(uObj){
-
-                          let usParams = { user: uObj, noInc: true };
-
-                          userServer.findOneUserPromise(usParams)
-                          .then(function updateUserComplete(updatedUserObj){
-
-                            let keywords = "";
-                            let keywordsAuto = "";
-                            if ((updatedUserObj.keywords !== undefined) && updatedUserObj.keywords) {
-                              keywords = Object.keys(updatedUserObj.keywords);
-                            }
-
-                            if ((updatedUserObj.keywordsAuto !== undefined) && updatedUserObj.keywordsAuto) {
-                              keywordsAuto = Object.keys(updatedUserObj.keywordsAuto);
-                            }
-
-                            console.log(chalkInfo("US UPD<"
-                              + " | " + updatedUserObj.userId
-                              + " | TW: " + (updatedUserObj.isTwitterUser || "-")
-                              + " | @" + updatedUserObj.screenName
-                              + " | Ts: " + updatedUserObj.statusesCount
-                              + " | FLWRs: " + updatedUserObj.followersCount
-                              + " | FRNDs: " + updatedUserObj.friendsCount
-                              // + " | LA " + Object.keys(updatedUserObj.languageAnalysis)
-                              + " | KWs " + keywords
-                              + " | AKWs " + keywordsAuto
-                            ));
-
-                            cb();
-                          })
-                          .catch(function updateUserError(err){
-                            console.trace(chalkError("ERROR DB UPDATE USER - generateAutoKeywords"
-                              + "\n" + err
-                              + "\n" + jsonPrint(uObj)
-                            ));
-                            cb(err);
-                          });
-                        })
-                        .catch(function generateAutoKeywordsError(err){
-                          console.trace(chalkError("ERROR generateAutoKeywords | UID: " + updatedUser.userId
-                            + "\n" + err
-                          ));
-                          cb(err);
-                        });
-                      })
-                      .catch(function updateClassifiedUsersError(err){
-                        console.trace(chalkError("ERROR updateClassifiedUsers | UID: " + user.userId
-                          + "\n" + err
-                        ));
-                        cb(err);
-                      });
-                    }
-                  });
-                }
                 else {
-                  cb();
+                  cb1(null, user);
                 }
-              })
-              .catch(function checkFriendWordKeysError(err){
-                console.trace(chalkError("ERROR checkFriendWordKeys | " + err));
-                cb(err);
-              });
-            }
+              },
 
-          }, function subFriendsProcess(err){
+              function checkKeyWords(user, cb1) {
+
+                if (err) {
+                  // console.error(chalkInfo("ERROR " + err));
+                  console.log(chalkError(getTimeStamp()
+                  + " | *** ERROR checkKeyWords: " + err
+                  ));
+
+                  return(cb1(err, user));
+                }
+
+                checkFriendWordKeys(user)
+                .then(function processFriendWordKeys(kws){
+                  if (Object.keys(kws).length > 0) {
+                    console.log("WORD-USER HIT"
+                      + " | " + user.screenName.toLowerCase()
+                      + " | " + Object.keys(kws)
+                    );
+                  }
+                  cb1(null, user);
+                })
+                .catch(function(err){
+                  console.error(chalkError("CHECK USER KEYWORDS ERROR"
+                    + " | " + err
+                  ));
+                  cb1(err, user);
+                });
+              },
+
+              function findUserInDb(user, cb1) {
+
+                if (err) {
+                  // console.error(chalkInfo("ERROR " + err));
+                  console.log(chalkError(getTimeStamp()
+                  + " | *** ERROR findUserInDb: " + err
+                  ));
+
+                  return(cb1(err, user));
+                }
+
+                User.find({ userId: user.userId }).limit(1).lean().exec(function(err, uArray) {
+
+                  if (err) {
+                    console.log(chalkError("ERROR DB FIND ONE USER | " + err));
+                    cb1(err, user);
+                  }
+                  else if (uArray.length === 0) {
+                    console.log(chalkInfo("USER DB MISS"
+                      + " | @" + user.screenName.toLowerCase()
+                      + " | " + user.userId
+                    ));
+                    cb1(err, user);
+                  }
+                  else {
+
+                    let userDb = uArray[0];
+                    user.createdAt = userDb.createdAt;
+
+                    console.log(chalkInfo("USER DB HIT "
+                      + " | @" + user.screenName.toLowerCase()
+                      + " | " + user.userId
+                      + " | " + getTimeStamp(user.createdAt)
+                    ));
+                    cb1(err, user);
+                  }
+                });
+              },
+
+              function updateClassifyUser(user, cb1) {
+
+                if ((user.keywords === undefined) || !user.keywords) { user.keywords = {}; }
+                if ((user.keywordsAuto === undefined) || !user.keywordsAuto) { user.keywordsAuto = {}; }
+
+                if ((user.threeceeFollowing === undefined) || !user.threeceeFollowing) { 
+                  user.threeceeFollowing = {}; 
+                }
+                user.threeceeFollowing.screenName = currentTwitterUser;
+
+                classifyUser(user)
+                .then(function genClassifiedUserKeyword(u){
+                  cb1(err, u);
+                })
+                .catch(function classifyUserError(err){
+                  console.trace(chalkError("ERROR classifyUser | UID: " + user.userId
+                    + "\n" + err
+                  ));
+                  cb(err, user);
+                });
+              },
+
+              function genKeywords(user, cb1){
+                if (!neuralNetworkInitialized) { return(cb1(err, user)); }
+                generateAutoKeywords(user)
+                .then(function (uObj){
+                  cb1(err, uObj);
+                })
+                .catch(function gkwError(err){
+                  console.trace(chalkError("ERROR generateAutoKeywords | UID: " + user.userId
+                    + "\n" + err
+                  ));
+                  cb(err, user);
+                });
+              },
+
+              function updateUserDb(user, cb1){
+
+                let usParams = { user: user, noInc: true };
+
+                userServer.findOneUserPromise(usParams)
+                .then(function updateUserComplete(updatedUserObj){
+
+                  let keywords = "";
+                  let keywordsAuto = "";
+
+                  if ((updatedUserObj.keywords !== undefined) && updatedUserObj.keywords) {
+                    keywords = Object.keys(updatedUserObj.keywords);
+                  }
+
+                  if ((updatedUserObj.keywordsAuto !== undefined) && updatedUserObj.keywordsAuto) {
+                    keywordsAuto = Object.keys(updatedUserObj.keywordsAuto);
+                  }
+
+                  console.log(chalkInfo("US UPD<"
+                    + " | " + updatedUserObj.userId
+                    + " | TW: " + (updatedUserObj.isTwitterUser || "-")
+                    + " | @" + updatedUserObj.screenName
+                    + " | Ts: " + updatedUserObj.statusesCount
+                    + " | FLWRs: " + updatedUserObj.followersCount
+                    + " | FRNDs: " + updatedUserObj.friendsCount
+                    // + " | LA " + Object.keys(updatedUserObj.languageAnalysis)
+                    + " | KWs " + keywords
+                    + " | AKWs " + keywordsAuto
+                  ));
+
+                  cb1(err, updatedUserObj);
+                })
+                .catch(function updateUserError(err){
+                  console.trace(chalkError("ERROR DB UPDATE USER - updateUserDb"
+                    + "\n" + err
+                    + "\n" + jsonPrint(user)
+                  ));
+                  cb(err, user);
+                });
+              }
+
+            ], function (err, results) {
+
+              cb(err, results);
+
+            });
+
+          }, function subFriendsProcess(err, results){
             if (err) {
               console.trace("ERROR");
               reject(new Error(err));
             }
             else {
+              debug("processFriend results\n" + jsonPrint(results));
               resolve(subFriendsSortedArray);
             }
           });
+
         }
+
       });
     }
     else {
@@ -2594,6 +2674,8 @@ function updateNetworkFetchFriends(){
   loadBestNeuralNetworkFile()
   .then(function(nnObj){
 
+    debug("nnObj: " + nnObj.networkId);
+
     let params = {};
     params.count = statsObj.user[currentTwitterUser].count;
 
@@ -2609,7 +2691,10 @@ function updateNetworkFetchFriends(){
 
     if (languageAnalysisReadyFlag) {
 
-      fetchFriends(params).then(function(data){
+      fetchFriends(params).then(function(subFriendsSortedArray){
+
+        console.log(chalkInfo("FETCH FRIENDS: " + subFriendsSortedArray.length));
+
         if (nextUser || statsObj.user[currentTwitterUser].endFetch) {
           nextUser = false;
           processFriends()
@@ -2774,9 +2859,17 @@ initialize(configuration, function(err, cnf){
 
   loadBestNeuralNetworkFile()
   .then(function(nnObj){
+
+    debug("nnObj: " + nnObj.networkId);
+
     neuralNetworkInitialized = true;
 
     initTwitterUsers(function(err){
+
+      if (err) {
+        console.error(chalkError("*** ERROR INIT TWITTER USERS: " + err));
+        return quit(err);
+      }
 
       if (currentTwitterUser === undefined) { 
         currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
