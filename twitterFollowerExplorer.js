@@ -1,12 +1,14 @@
 /*jslint node: true */
 "use strict";
 
-const mongoose = require("@threeceelabs/mongoose-twitter");
+const wordAssoDb = require("@threeceelabs/mongoose-twitter");
+const db = wordAssoDb();
+
 const userServer = require("@threeceelabs/user-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 
-// const User = require("mongoose").model("User");
-// const Word = require("mongoose").model("Word");
+const User = require("mongoose").model("User");
+const Word = require("mongoose").model("Word");
 
 let currentBestNetwork;
 
@@ -2174,10 +2176,6 @@ function fetchFriends(params) {
                       console.log(chalkError("ERROR DB FIND ONE USER | " + err));
                       cb(err);
                     }
-                    // else if (!user) {
-                    //   console.log(chalkInfo("DB USER NOT FOUND | " + friend.id_str));
-                    //   cb();
-                    // }
                     else {
 
                       if (!user) {
