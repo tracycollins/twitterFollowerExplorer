@@ -4,11 +4,9 @@
 const mongoose = require("@threeceelabs/mongoose-twitter");
 const userServer = require("@threeceelabs/user-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
-// const db = mongoose();
 
 const User = require("mongoose").model("User");
 const Word = require("mongoose").model("Word");
-
 
 let currentBestNetwork;
 
@@ -1312,9 +1310,6 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
           }
 
           if (m.error) {
-            // console.error(chalkError("*** LANG ERROR"
-            //   + "\n" + jsonPrint(m.error)
-            // ));
 
             m.obj.languageAnalysis = {err: m.error};
 
@@ -1347,26 +1342,23 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                 }
 
-
-                console.log(chalkLog("DB UPDATE USER"
+                console.log(chalkLog("USER>DB"
                   + " | " + updatedUserObj.userId
                   // + " | NID: " + updatedUserObj.nodeId
                   + " | @" + updatedUserObj.screenName
                   + " | " + updatedUserObj.name
                   + " | Ts: " + updatedUserObj.statusesCount
-                  + " | FLWRs: " + updatedUserObj.followersCount
-                  + " | FRNDs: " + updatedUserObj.friendsCount
-                  + " | 3CFLW: " + threeceeFollowing
+                  + " | FLs: " + updatedUserObj.followersCount
+                  + " | FRs: " + updatedUserObj.friendsCount
+                  + " | 3CF: " + threeceeFollowing
                   + " | KWs: " + kws
-                  + " | KWAuto: " + kwsAuto
-                  + " | LAd: " + updatedUserObj.languageAnalyzed
+                  + " | KWA: " + kwsAuto
+                  + " | LA: " + updatedUserObj.languageAnalyzed
                   + "\nLA Es: " + laEnts
                 ));
               }
               langAnalyzerMessageRxQueueReady = true;
             }); 
-
-            // break;
           }
           else{
 
@@ -1421,30 +1413,17 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                     threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                   }
 
-                  // console.log(chalkLog("DB UPDATE USER"
-                  //   + " | UID: " + updatedUserObj.userId
-                  //   // + " | NID: " + updatedUserObj.nodeId
-                  //   + " | SN: " + updatedUserObj.screenName
-                  //   + " | N: " + updatedUserObj.name
-                  //   + " | 3CFLW: " + threeceeFollowing
-                  //   + " | KWs: " + kws
-                  //   + " | KWAuto: " + kwsAuto
-                  //   + " | LAd: " + updatedUserObj.languageAnalyzed
-                  //   + "\nLA Es: " + laEnts
-                  // ));
-
-                  console.log(chalkLog("DB UPDATE USER"
+                  console.log(chalkLog("USER>DB"
                     + " | " + updatedUserObj.userId
-                    // + " | NID: " + updatedUserObj.nodeId
                     + " | @" + updatedUserObj.screenName
                     + " | " + updatedUserObj.name
                     + " | Ts: " + updatedUserObj.statusesCount
-                    + " | FLWRs: " + updatedUserObj.followersCount
-                    + " | FRNDs: " + updatedUserObj.friendsCount
+                    + " | FLs: " + updatedUserObj.followersCount
+                    + " | FRs: " + updatedUserObj.friendsCount
                     + " | 3CF: " + threeceeFollowing
                     + " | KWs: " + kws
-                    + " | KWAuto: " + kwsAuto
-                    + " | LAd: " + updatedUserObj.languageAnalyzed
+                    + " | KWA: " + kwsAuto
+                    + " | LA: " + updatedUserObj.languageAnalyzed
                     + "\nLA Es: " + laEnts
                   ));
 
@@ -1464,11 +1443,8 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             + " [Q: " + langAnalyzerMessageRxQueue.length + "]"
             + " | OP: " + m.op
           ));
-          // languageAnalysisQueueEmpty = false;
-          // languageAnalysisQueueFull = true;
           languageAnalysisReadyFlag = false;
           langAnalyzerMessageRxQueueReady = true;
-          // if (cursorUser) { cursorUser.pause(); }
         break;
 
         case "QUEUE_READY":
@@ -1476,11 +1452,8 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             + " [Q: " + langAnalyzerMessageRxQueue.length + "]"
             + " | OP: " + m.op
           ));
-          // languageAnalysisQueueEmpty = true;
-          // languageAnalysisQueueFull = false;
           languageAnalysisReadyFlag = true;
           langAnalyzerMessageRxQueueReady = true;
-          // if (cursorUser) { cursorUser.resume(); }
         break;
 
         default:
