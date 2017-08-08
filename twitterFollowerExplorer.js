@@ -5,8 +5,8 @@ const mongoose = require("@threeceelabs/mongoose-twitter");
 const userServer = require("@threeceelabs/user-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 
-const User = require("mongoose").model("User");
-const Word = require("mongoose").model("Word");
+// const User = require("mongoose").model("User");
+// const Word = require("mongoose").model("Word");
 
 let currentBestNetwork;
 
