@@ -7,7 +7,6 @@ const db = mongoose();
 const User = require("mongoose").model("User");
 const Word = require("mongoose").model("Word");
 
-const tweetServer = require("@threeceelabs/tweet-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const userServer = require("@threeceelabs/user-server-controller");
 
