@@ -1331,7 +1331,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
             m.obj.languageAnalysis = {err: m.error};
 
-            if (m.error.code === 8){ // LANGUAGE QUOTA; will be automatically retried
+            if ((m.error.code === 3) || (m.error.code === 8)){ // LANGUAGE QUOTA; will be automatically retried
               m.obj.languageAnalyzed = false;
               break;
             }
@@ -1672,6 +1672,16 @@ function activateNetwork(network, nInput){
   });
 }
 
+function enableAnalysis(user){
+  if (!configuration.enableLanguageAnalysis) { return false; }
+  if (!user.languageAnalyzed) { return true; }
+  if (user.languageAnalysis.err !== undefined) { 
+    if (user.languageAnalysis.err.code == 3) { return true; }
+    if (user.languageAnalysis.err.code == 8) { return true; }
+  }
+  return false; 
+}
+
 function generateAutoKeywords(user){
 
   return new Promise(function(resolve, reject) {
@@ -1809,9 +1819,10 @@ function generateAutoKeywords(user){
             console.log(chalkInfo("----------------"
               + "\nGEN AKWs"
               + " | @" + updateduser.screenName
+              + " | " + updateduser.userId
               + " | Ts: " + updateduser.statusesCount
-              + " | FLWRs" + updateduser.followersCount
-              + " | FRNDs" + updateduser.friendsCount
+              + " | FLWRs: " + updateduser.followersCount
+              + " | FRNDs: " + updateduser.friendsCount
               + "\n" + text + "\n"
               // + "\nHISTOGRAMS: " + histogramsText
               // + "\nHISTOGRAMS: " + jsonPrint(userHistograms)
@@ -1870,10 +1881,13 @@ function generateAutoKeywords(user){
                 + " | " + updateduser.inputHitRatio.toFixed(2) + "% INPUT HIT"
               ));
 
-              langAnalyzer.send({op: "LANG_ANALIZE", obj: updateduser, text: text}, function(){
-                statsObj.analyzer.analyzed += 1;
-                // callback(null, updateduser);
-              });
+              if (enableAnalysis(updateduser)) {
+                langAnalyzer.send({op: "LANG_ANALIZE", obj: updateduser, text: text}, function(){
+                  statsObj.analyzer.analyzed += 1;
+                  // callback(null, updateduser);
+                });
+              }
+
 
               activateNetwork(network, networkInput)
               .then(function processNetworkOutput(networkOutput){
