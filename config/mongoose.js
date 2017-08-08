@@ -1,7 +1,7 @@
 var config = require('./config'),
   mongoose = require('mongoose');
 
-mongoose.Promise = global.Promise;
+// mongoose.Promise = global.Promise;
 
 module.exports = function() {
 
@@ -10,14 +10,6 @@ module.exports = function() {
     poolSize: 20,
     promiseLibrary: global.Promise
   };
-
-  // var wordAssoDb = mongoose.connect(config.wordAssoDb, options, function(error) {
-  //   if (error) {
-  //     console.log('CONNECT FAILED: ERROR: MONGOOSE default connection open to ' + config.wordAssoDb + ' ERROR: ' + error);
-  //   } else {
-  //     console.log('CONNECT: MONGOOSE default connection open to ' + config.wordAssoDb);
-  //   }
-  // });
 
   var wordAssoDb = mongoose.connect(config.wordAssoDb, options)
     .then(function(){
