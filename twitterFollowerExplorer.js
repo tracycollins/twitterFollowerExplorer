@@ -2,13 +2,13 @@
 "use strict";
 
 const mongoose = require("@threeceelabs/mongoose-twitter");
-const db = mongoose();
+const userServer = require("@threeceelabs/user-server-controller");
+const twitterTextParser = require("@threeceelabs/twitter-text-parser");
+// const db = mongoose();
 
 const User = require("mongoose").model("User");
 const Word = require("mongoose").model("Word");
 
-const twitterTextParser = require("@threeceelabs/twitter-text-parser");
-const userServer = require("@threeceelabs/user-server-controller");
 
 let currentBestNetwork;
 
@@ -800,7 +800,6 @@ function checkRateLimit(callback){
     }
   });
 }
-
 
 function printTwitterUser(user){
   let threeceeFollowingText = "";
@@ -1679,18 +1678,6 @@ function activateNetwork(network, nInput){
 
   });
 }
-
-// const printHistograms = function(histograms){
-//   let text = "";
-//   async.eachSeries(inputTypes, function(type, cb){
-//     debug(chalkAlert("Object.keys(histograms[type]): " + Object.keys(histograms[type])));
-//     text = text + " | " + type.toUpperCase() + ": " + Object.keys(histograms[type]).length;
-//     console.log(chalkAlert("TEXT: " + text));
-//     cb();
-//   }, function(){
-//     return text;
-//   });
-// };
 
 function generateAutoKeywords(user){
 
@@ -2678,7 +2665,6 @@ function updateNetworkFetchFriends(){
     console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
     console.log(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
   });
-
 }
 
 function initFetchTwitterFriendsInterval(interval){
