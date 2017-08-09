@@ -1487,6 +1487,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
 function classifyUser(user){
 
+  console.log(chalkAlert("classifyUser KWs\n" + jsonPrint(user.keywords)));
+  console.log(chalkAlert("classifyUser AKWs\n" + jsonPrint(user.keywordsAuto)));
+
   return new Promise(function(resolve) {
 
     statsObj.analyzer.total += 1;
