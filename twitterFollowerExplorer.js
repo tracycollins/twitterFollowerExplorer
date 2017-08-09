@@ -2076,23 +2076,34 @@ function checkFriendWordKeys(friend){
 
           if (kwId !== "keywordId") {
 
-            kws[kwId] = word.keywords[kwId];
+            const kwIdLc = kwId.toLowerCase();
+
+            kws[kwIdLc] = word.keywords[kwIdLc];
 
             debug(chalkTwitter("-- KW"
               + " | " + friend.screenName.toLowerCase()
-              + " | " + kwId
-              + " | " + kws[kwId]
+              + " | " + kwIdLc
+              + " | " + kws[kwIdLc]
             ));
 
-            classifiedUserHashmap[friend.screenName.toLowerCase()] = kws;
+            // classifiedUserHashmap[friend.screenName.toLowerCase()] = kws;
+            classifiedUserHashmap[friend.id_str] = kws;
+
+            cb();
           }
-          cb();
+          else {
+            cb();
+          }
+
         }, function(){
+
           debug("WORD-USER HIT"
             + " | " + friend.screenName.toLowerCase()
             + " | " + Object.keys(kws)
           );
+
           resolve(kws);
+          
         });
       }
 
@@ -2187,12 +2198,6 @@ function fetchFriends(params) {
 
               function unfollowFriend(user, cb1) {
 
-                if (err) {
-                  console.log(chalkError(getTimeStamp()
-                  + " | *** ERROR unfollowFriend: " + err
-                  ));
-                }
-
                 if ((currentTwitterUser === "altthreecee00")
                   && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined)) {
 
@@ -2232,15 +2237,6 @@ function fetchFriends(params) {
               },
 
               function checkKeyWords(user, cb1) {
-
-                if (err) {
-                  // console.error(chalkInfo("ERROR " + err));
-                  console.log(chalkError(getTimeStamp()
-                  + " | *** ERROR checkKeyWords: " + err
-                  ));
-
-                  return(cb1(err, user));
-                }
 
                 checkFriendWordKeys(user)
                 .then(function processFriendWordKeys(kws){
