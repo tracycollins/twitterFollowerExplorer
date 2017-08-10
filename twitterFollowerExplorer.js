@@ -321,6 +321,7 @@ statsObj.classification.manual.positive = 0;
 statsObj.classification.manual.negative = 0;
 statsObj.classification.manual.neutral = 0;
 statsObj.classification.manual.other = 0;
+statsObj.classification.manual.none = 0;
 
 statsObj.classification.auto.left = 0;
 statsObj.classification.auto.right = 0;
@@ -328,6 +329,7 @@ statsObj.classification.auto.positive = 0;
 statsObj.classification.auto.negative = 0;
 statsObj.classification.auto.neutral = 0;
 statsObj.classification.auto.other = 0;
+statsObj.classification.auto.none = 0;
 
 statsObj.users = {};
 statsObj.users.classifiedAuto = 0;
@@ -1113,7 +1115,10 @@ function initStdIn(){
 function initialize(cnf, callback){
 
   initClassifiedUserHashmap(classifiedUsersFolder, classifiedUsersDefaultFile, function(err, classifiedUsersObj){
-    if (!err) {
+    if (err) {
+      console.error(chalkError("*** ERROR: CLASSIFED USER HASHMAP NOT INITIALIED: ", err));
+    }
+    else {
       classifiedUserHashmap = classifiedUsersObj;
     }
   });
@@ -1485,10 +1490,40 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
   if (callback !== undefined) { callback(); }
 }
 
+function getUserKeyword(keywords) {
+
+  return new Promise(function(resolve) {
+
+    let keyword = false;
+
+    const keys = Object.keys(keywords);
+
+    if (keys.length === 0 ) { resolve(false); }
+
+    async.each(keys, function(kw, cb){
+      switch (kw) {
+        case "left":
+        case "right":
+        case "neutral":
+        case "positive":
+        case "negative":
+          keyword = kw;
+          cb();
+        break;
+        default:
+          cb();
+      }
+    }, function(){
+      resolve(keyword);
+    });
+
+  });
+}
+
 function classifyUser(user){
 
-  console.log(chalkAlert("classifyUser KWs\n" + jsonPrint(user.keywords)));
-  console.log(chalkAlert("classifyUser AKWs\n" + jsonPrint(user.keywordsAuto)));
+  debug(chalkAlert("classifyUser KWs\n" + jsonPrint(user.get("keywords"))));
+  debug(chalkAlert("classifyUser AKWs\n" + jsonPrint(user.get("keywordsAuto"))));
 
   return new Promise(function(resolve) {
 
@@ -1496,47 +1531,59 @@ function classifyUser(user){
 
     let chalkAutoCurrent = chalkLog;
 
-    let classManualText = "-";
-    let classAutoText = "-";
+    let classManualText = " ";
+    let classAutoText = " ";
 
     async.parallel({
 
       keywords: function(cb){
-        if ((user.keywords !== undefined) 
-          && user.keywords
-          && (Object.keys(user.keywords).length > 0)) {
+        if (user.keywords) {
 
-          debug("KWS\n" + jsonPrint(user.keywords));
+          console.log("KWS\n" + jsonPrint(user.get("keywords")));
           
-          classifiedUserHashmap[user.userId] = user.keywords;
+          classifiedUserHashmap[user.userId] = user.get("keywords");
+
           statsObj.users.classified = Object.keys(classifiedUserHashmap).length;
 
-          switch (Object.keys(user.keywords)[0]) {
-            case "right":
-              classManualText = "R";
-              statsObj.classification.manual.right += 1;
-            break;
-            case "left":
-              classManualText = "L";
-              statsObj.classification.manual.left += 1;
-            break;
-            case "neutral":
-              classManualText = "N";
-              statsObj.classification.manual.neutral += 1;
-            break;
-            case "positive":
-              classManualText = "+";
-              statsObj.classification.manual.positive += 1;
-            break;
-            case "negative":
-              classManualText = "-";
-              statsObj.classification.manual.negative += 1;
-            break;
-            default:
-              classManualText = Object.keys(user.keywords)[0];
-              statsObj.classification.manual.other += 1;
-          }
-          cb();
+          const mkwObj = user.get("keywords");
+          getUserKeyword(mkwObj)
+          .then(function(mkw){
+            switch (mkw) {
+              case "right":
+                classManualText = "R";
+                statsObj.classification.manual.right += 1;
+              break;
+              case "left":
+                classManualText = "L";
+                statsObj.classification.manual.left += 1;
+              break;
+              case "neutral":
+                classManualText = "N";
+                statsObj.classification.manual.neutral += 1;
+              break;
+              case "positive":
+                classManualText = "+";
+                statsObj.classification.manual.positive += 1;
+              break;
+              case "negative":
+                classManualText = "-";
+                statsObj.classification.manual.negative += 1;
+              break;
+              case false:
+                classManualText = " ";
+                statsObj.classification.manual.none += 1;
+              break;
+              default:
+                classManualText = mkw;
+                chalkAutoCurrent = chalk.black;
+                statsObj.classification.manual.other += 1;
+            }
+            cb();
+          })
+          .catch(function(err){
+            cb(err);
+          });
+
         }
         else {
           cb();
@@ -1545,47 +1592,57 @@ function classifyUser(user){
 
       keywordsAuto: function(cb){
 
-        if ((user.keywordsAuto !== undefined)
-          && user.keywordsAuto
-          && (Object.keys(user.keywordsAuto).length > 0)) {
+        if (user.keywordsAuto) {
 
-          debug("KWSA\n" + jsonPrint(user.keywordsAuto));
+          debug("KWSA\n" + jsonPrint(user.get("keywordsAuto")));
 
-          autoClassifiedUserHashmap[user.userId] = user.keywordsAuto;
+          autoClassifiedUserHashmap[user.userId] = user.get("keywordsAuto");
           statsObj.users.classifiedAuto = Object.keys(autoClassifiedUserHashmap).length;
 
-          switch (Object.keys(user.keywordsAuto)[0]) {
-            case "right":
-              classAutoText = "R";
-              chalkAutoCurrent = chalk.yellow;
-              statsObj.classification.auto.right += 1;
-            break;
-            case "left":
-              classAutoText = "L";
-              chalkAutoCurrent = chalk.blue;
-              statsObj.classification.auto.left += 1;
-            break;
-            case "neutral":
-              classAutoText = "N";
-              chalkAutoCurrent = chalk.black;
-              statsObj.classification.auto.neutral += 1;
-            break;
-            case "positive":
-              classAutoText = "+";
-              chalkAutoCurrent = chalk.green;
-              statsObj.classification.auto.positive += 1;
-            break;
-            case "negative":
-              classAutoText = "-";
-              chalkAutoCurrent = chalk.bold.yellow;
-              statsObj.classification.auto.negative += 1;
-            break;
-            default:
-              classAutoText = Object.keys(user.keywordsAuto)[0];
-              chalkAutoCurrent = chalk.black;
-              statsObj.classification.auto.other += 1;
-          }
-          cb();
+          const akwObj = user.get("keywordsAuto");
+          getUserKeyword(akwObj)
+          .then(function(akw){
+            switch (akw) {
+              case "right":
+                classAutoText = "R";
+                chalkAutoCurrent = chalk.yellow;
+                statsObj.classification.auto.right += 1;
+              break;
+              case "left":
+                classAutoText = "L";
+                chalkAutoCurrent = chalk.blue;
+                statsObj.classification.auto.left += 1;
+              break;
+              case "neutral":
+                classAutoText = "N";
+                chalkAutoCurrent = chalk.black;
+                statsObj.classification.auto.neutral += 1;
+              break;
+              case "positive":
+                classAutoText = "+";
+                chalkAutoCurrent = chalk.green;
+                statsObj.classification.auto.positive += 1;
+              break;
+              case "negative":
+                classAutoText = "-";
+                chalkAutoCurrent = chalk.bold.yellow;
+                statsObj.classification.auto.negative += 1;
+              break;
+              case false:
+                classAutoText = " ";
+                chalkAutoCurrent = chalk.black;
+                statsObj.classification.auto.none += 1;
+              break;
+              default:
+                classAutoText = akw;
+                chalkAutoCurrent = chalk.black;
+                statsObj.classification.auto.other += 1;
+            }
+            cb();
+          })
+          .catch(function(err){
+            cb(err);
+          });
         }
         else {
           cb();
@@ -1604,18 +1661,20 @@ function classifyUser(user){
         + " | Ts: " + user.statusesCount
         + " | FLWRs: " + user.followersCount
         + " | FRNDs: " + user.friendsCount
-        + "\n [ L: " + statsObj.classification.manual.left
+        + "\n MKW: [ L: " + statsObj.classification.manual.left
         + " | R: " + statsObj.classification.manual.right
         + " | +: " + statsObj.classification.manual.positive
         + " | -: " + statsObj.classification.manual.negative
         + " | N: " + statsObj.classification.manual.neutral
-        + " | O: " + statsObj.classification.manual.other + " ]"
-        + "\n [ L: " + statsObj.classification.auto.left
+        + " | O: " + statsObj.classification.manual.other
+        + " | X: " + statsObj.classification.manual.none + " ]"
+        + "\n AKW: [ L: " + statsObj.classification.auto.left
         + " | R: " + statsObj.classification.auto.right
         + " | +: " + statsObj.classification.auto.positive
         + " | -: " + statsObj.classification.auto.negative
         + " | N: " + statsObj.classification.auto.neutral
-        + " | O: " + statsObj.classification.auto.other + " ]"
+        + " | O: " + statsObj.classification.auto.other
+        + " | X: " + statsObj.classification.auto.none + " ]"
       ));
 
       // callback(user);
@@ -1679,8 +1738,8 @@ function enableAnalysis(user){
   if (!configuration.enableLanguageAnalysis) { return false; }
   if (!user.languageAnalyzed) { return true; }
   if (user.languageAnalysis.err !== undefined) { 
-    if (user.languageAnalysis.err.code == 3) { return true; }
-    if (user.languageAnalysis.err.code == 8) { return true; }
+    if (user.languageAnalysis.err.code === 3) { return true; }
+    if (user.languageAnalysis.err.code === 8) { return true; }
   }
   return false; 
 }
@@ -1806,26 +1865,25 @@ function generateAutoKeywords(user){
             reject(new Error(err));
           }
 
-          userServer.updateHistograms({user: user, histograms: hist}, function(err, updateduser){
+          userServer.updateHistograms({user: user, histograms: hist}, function(err, updatedUser){
 
             if (err) {
               console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
               console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\nUSER\n" + jsonPrint(user)));
-              // return(callback(err, null));
               reject(new Error(err));
             }
 
-            updateduser.inputHits = 0;
+            updatedUser.inputHits = 0;
 
-            const userHistograms = updateduser.histograms;
+            const userHistograms = updatedUser.histograms;
 
             console.log(chalkInfo("----------------"
               + "\nGEN AKWs"
-              + " | @" + updateduser.screenName
-              + " | " + updateduser.userId
-              + " | Ts: " + updateduser.statusesCount
-              + " | FLWRs: " + updateduser.followersCount
-              + " | FRNDs: " + updateduser.friendsCount
+              + " | @" + updatedUser.screenName
+              + " | " + updatedUser.userId
+              + " | Ts: " + updatedUser.statusesCount
+              + " | FLWRs: " + updatedUser.followersCount
+              + " | FRNDs: " + updatedUser.friendsCount
               + "\n" + text + "\n"
               // + "\nHISTOGRAMS: " + histogramsText
               // + "\nHISTOGRAMS: " + jsonPrint(userHistograms)
@@ -1838,10 +1896,10 @@ function generateAutoKeywords(user){
               async.eachSeries(inputArrays[type], function(element, cb2){
 
                 if (userHistograms[type] && userHistograms[type][element]) {
-                  updateduser.inputHits += 1;
+                  updatedUser.inputHits += 1;
                   debug(chalkTwitter("GAKW"
-                    + " | " + updateduser.inputHits + " HITS"
-                    + " | @" + updateduser.screenName 
+                    + " | " + updatedUser.inputHits + " HITS"
+                    + " | @" + updatedUser.screenName 
                     + " | ARRAY: " + type 
                     + " | " + element 
                     + " | " + userHistograms[type][element]
@@ -1851,8 +1909,8 @@ function generateAutoKeywords(user){
                 }
                 else {
                   debug(chalkInfo("U MISS" 
-                    + " | @" + updateduser.screenName 
-                    + " | " + updateduser.inputHits 
+                    + " | @" + updatedUser.screenName 
+                    + " | " + updatedUser.inputHits 
                     + " | ARRAY: " + type 
                     + " | " + element
                   ));
@@ -1864,8 +1922,8 @@ function generateAutoKeywords(user){
 
                 console.log(chalkTwitter("GAKW INPUT ARRAY COMPLETE"
                   + " | " + type 
-                  + " | " + updateduser.inputHits + " HITS"
-                  + " | @" + updateduser.screenName 
+                  + " | " + updatedUser.inputHits + " HITS"
+                  + " | @" + updatedUser.screenName 
                 ));
 
                 debug(chalkTwitter("DONE ARRAY: " + type));
@@ -1876,21 +1934,20 @@ function generateAutoKeywords(user){
 
               debug(chalkTwitter("PARSE DESC COMPLETE"));
 
-              updateduser.inputHitRatio = 100*updateduser.inputHits/networkInput.length;
+              updatedUser.inputHitRatio = 100*updatedUser.inputHits/networkInput.length;
 
               console.log(chalkTwitterBold("### GAKW ALL INPUT ARRAYS COMPLETE"
-                + " | @" + updateduser.screenName 
-                + " | " + updateduser.inputHits + " HITS / " + networkInput.length + " INPUTS"
-                + " | " + updateduser.inputHitRatio.toFixed(2) + "% INPUT HIT"
+                + " | @" + updatedUser.screenName 
+                + " | " + updatedUser.inputHits + " HITS / " + networkInput.length + " INPUTS"
+                + " | " + updatedUser.inputHitRatio.toFixed(2) + "% INPUT HIT"
               ));
 
-              if (enableAnalysis(updateduser)) {
-                langAnalyzer.send({op: "LANG_ANALIZE", obj: updateduser, text: text}, function(){
+              if (enableAnalysis(updatedUser)) {
+                langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function(){
                   statsObj.analyzer.analyzed += 1;
-                  // callback(null, updateduser);
+                  // callback(null, updatedUser);
                 });
               }
-
 
               activateNetwork(network, networkInput)
               .then(function processNetworkOutput(networkOutput){
@@ -1900,67 +1957,58 @@ function generateAutoKeywords(user){
                   console.log(chalkInfo("MAX INDEX: " + maxOutputIndex));
 
                   let chalkCurrent = chalkLog;
-                  // let classText;
-
-                  updateduser.keywordsAuto = {};
-
-                  if (updateduser.keywords === undefined) { updateduser.keywords = {}; }
 
                   switch (maxOutputIndex) {
                     case 0:
                       // classText = "L";
                       chalkCurrent = chalk.blue;
-                      updateduser.keywordsAuto.left = 100;
+                      updatedUser.set("keywordsAuto", {left: 100});
                     break;
                     case 1:
                       // classText = "N";
                       chalkCurrent = chalk.black;
-                      updateduser.keywordsAuto.neutral = 100;
+                      updatedUser.set("keywordsAuto", {neutral: 100});
                     break;
                     case 2:
                       // classText = "R";
                       chalkCurrent = chalk.yellow;
-                      updateduser.keywordsAuto.right = 100;
+                      updatedUser.set("keywordsAuto", {right: 100});
                     break;
-                    default:
-                      // classText = "0";
-                      chalkCurrent = chalk.gray;
-                      updateduser.keywordsAuto = {};
                   }
 
-                  const title = updateduser.screenName + " | INPUT HIT: " + updateduser.inputHitRatio.toFixed(2) + "%";
+                  const title = updatedUser.screenName + " | INPUT HIT: " + updatedUser.inputHitRatio.toFixed(2) + "%";
                   printDatum(
                     title, 
                     networkInput
                   );
 
                   console.log(chalkCurrent("\nAUTO KW"
-                    + " | " + updateduser.userId
-                    + " | @" + updateduser.screenName
-                    + " | Ts: " + updateduser.statusesCount
-                    + " | FLWRs: " + updateduser.followersCount
+                    + " | " + updatedUser.userId
+                    + " | @" + updatedUser.screenName
+                    + " | Ts: " + updatedUser.statusesCount
+                    + " | FLWRs: " + updatedUser.followersCount
                     + " | M: " + networkInput[0].toFixed(2)
                     + " | S: " + networkInput[1].toFixed(2)
                     + " | L: " + networkOutput[0].toFixed(0)
                     + " | N: " + networkOutput[1].toFixed(0)
                     + " | R: " + networkOutput[2].toFixed(0)
-                    // + " | KWs: " + Object.keys(updateduser.keywords)
-                    // + " | AKWs: " + Object.keys(updateduser.keywordsAuto)
+                    // + " | KWs: " + Object.keys(updatedUser.keywords)
+                    // + " | AKWs: " + Object.keys(updatedUser.keywordsAuto)
                     + "\n"
-                    // + "\n" + jsonPrint(updateduser.keywordsAuto)
+                    // + "\n" + jsonPrint(updatedUser.keywordsAuto)
                   ));
 
-                  // callback(err, updateduser);
-                  resolve(updateduser);
+                  // callback(err, updatedUser);
+                  resolve(updatedUser);
 
                 });
               })
               .catch( function activateNetworkErrorHandler(err){
                 console.trace(chalkError("ACTIVATE NETWORK ERROR"
-                  + " | @" + updateduser.screenName
+                  + " | @" + updatedUser.screenName
                   + "\n" + err
                 ));
-                printDatum(updateduser.screenName, networkInput);
+                printDatum(updatedUser.screenName, networkInput);
                 // reject(new Error(err));
                 throw(new Error(err));
               });
@@ -1992,20 +2040,16 @@ function generateAutoKeywords(user){
 
             console.log(chalkAlert("MAX INDEX: " + maxOutputIndex));
 
-            user.keywordsAuto = {};
-
             switch (maxOutputIndex) {
               case 0:
-                user.keywordsAuto.left = 100;
+                user.set("keywordsAuto", {"left": 100});
               break;
               case 1:
-                user.keywordsAuto.neutral = 100;
+                user.set("keywordsAuto", {"neutral": 100});
               break;
               case 2:
-                user.keywordsAuto.right = 100;
+                user.set("keywordsAuto", {"right": 100});
               break;
-              default:
-                user.keywordsAuto = {};
             }
 
             printDatum(user.screenName, networkInput);
@@ -2017,9 +2061,9 @@ function generateAutoKeywords(user){
               + " | L: " + networkOutput[0].toFixed(3)
               + " | N: " + networkOutput[1].toFixed(3)
               + " | R: " + networkOutput[2].toFixed(3)
-              + " | KWs: " + Object.keys(user.keywords)
-              + " | AKWs: " + Object.keys(user.keywordsAuto)
-              // + "\n" + jsonPrint(user.keywordsAuto)
+              + " | KWs: " + Object.keys(user.get("keywords"))
+              + " | AKWs: " + Object.keys(user.get("keywordsAuto"))
+              // + "\n" + jsonPrint(user.get("keywordsAuto"))
             ));
 
             // callback(null, user);
@@ -2039,11 +2083,11 @@ function generateAutoKeywords(user){
   });
 }
 
-function checkFriendWordKeys(friend){
+function checkUserWordKeys(user){
 
   return new Promise(function(resolve, reject) {
 
-    Word.findOne({nodeId: friend.screenName.toLowerCase()}, function(err, word){
+    Word.findOne({nodeId: user.screenName.toLowerCase()}, function(err, word){
 
       let kws = {};
 
@@ -2052,18 +2096,18 @@ function checkFriendWordKeys(friend){
         reject(err);
       }
       else if (!word) {
-        console.log(chalkInfo("FRIEND WORD NOT FOUND: " + friend.screenName.toLowerCase()));
+        console.log(chalkInfo("USER WORD NOT FOUND: " + user.screenName.toLowerCase()));
         resolve(kws);
       }
       else if (word.keywords === undefined) {
-        debug("WORD-USER HIT"
-          + " | " + friend.screenName.toLowerCase()
+        debug("WORD-USER KWS UNDEFINED"
+          + " | " + user.screenName.toLowerCase()
         );
         resolve(kws);
       }
       else if (!word.keywords || (Object.keys(word.keywords).length === 0)) {
-        debug("WORD-USER HIT"
-          + " | " + friend.screenName.toLowerCase()
+        debug("WORD-USER NO KW KEYS"
+          + " | " + user.screenName.toLowerCase()
         );
         resolve(kws);
       }
@@ -2081,13 +2125,13 @@ function checkFriendWordKeys(friend){
             kws[kwIdLc] = word.keywords[kwIdLc];
 
             debug(chalkTwitter("-- KW"
-              + " | " + friend.screenName.toLowerCase()
+              + " | " + user.screenName.toLowerCase()
               + " | " + kwIdLc
               + " | " + kws[kwIdLc]
             ));
 
-            // classifiedUserHashmap[friend.screenName.toLowerCase()] = kws;
-            classifiedUserHashmap[friend.id_str] = kws;
+            // classifiedUserHashmap[user.screenName.toLowerCase()] = kws;
+            classifiedUserHashmap[user.userId] = kws;
 
             cb();
           }
@@ -2098,12 +2142,12 @@ function checkFriendWordKeys(friend){
         }, function(){
 
           debug("WORD-USER HIT"
-            + " | " + friend.screenName.toLowerCase()
+            + " | " + user.screenName.toLowerCase()
             + " | " + Object.keys(kws)
           );
 
           resolve(kws);
-          
+
         });
       }
 
@@ -2113,6 +2157,220 @@ function checkFriendWordKeys(friend){
 }
 
 let count = 200;
+
+function processUser(userIn) {
+
+  debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
+
+  return new Promise(function(resolve, reject) {
+
+    async.waterfall(
+    [
+
+      function convertUser(cb) {
+        userServer.convertRawUser(userIn, function(err, user){
+          cb(null, user);
+        });
+      },
+
+      function unfollowFriend(user, cb) {
+
+        if ((currentTwitterUser === "altthreecee00")
+          && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined)) {
+
+          console.log(chalkAlert("SKIP | ninjathreecee FOLLOWING"
+            + " | " + user.userId
+            + " | " + user.screenName.toLowerCase()
+          ));
+
+          twitterUserHashMap[currentTwitterUser].twit.post(
+            "friendships/destroy", 
+            {user_id: user.userId}, 
+            function destroyFriend(err, data, response){
+              if (err) {
+                console.error(chalkError("UNFOLLOW ERROR" + err));
+                cb(user);
+              }
+              else {
+                debug("data\n" + jsonPrint(data));
+                debug("response\n" + jsonPrint(response));
+
+                console.log(chalkAlert("UNFOLLOW altthreecee00"
+                  + " | " + user.userId
+                  + " | " + user.screenName.toLowerCase()
+                ));
+                const slackText = "UNFOLLOW altthreecee00"
+                  + "\n@" + user.screenName.toLowerCase()
+                  + "\n" + user.userId;
+                slackPostMessage(slackChannel, slackText);
+                cb(err, user);
+              }
+            }
+          );
+        }
+        else {
+          cb(null, user);
+        }
+      },
+
+      function checkKeyWords(user, cb) {
+
+        checkUserWordKeys(user)
+        .then(function processFriendWordKeys(kws){
+          if (Object.keys(kws).length > 0) {
+            console.log("WORD-USER HIT"
+              + " | " + user.screenName.toLowerCase()
+              + " | " + Object.keys(kws)
+            );
+            user.set("keywords", kws);
+          }
+          cb(null, user);
+        })
+        .catch(function(err){
+          console.error(chalkError("CHECK USER KEYWORDS ERROR"
+            + " | " + err
+          ));
+          cb(err, user);
+        });
+      },
+
+      function findUserInDb(user, cb) {
+
+        User.find({ userId: user.userId }).limit(1).exec(function(err, uArray) {
+
+          if (err) {
+            console.log(chalkError("ERROR DB FIND ONE USER | " + err));
+            cb(err, user);
+          }
+          else if (uArray.length === 0) {
+            console.log(chalkInfo("USER DB MISS"
+              + " | @" + user.screenName.toLowerCase()
+              + " | " + user.userId
+            ));
+            cb(err, user);
+          }
+          else {
+
+            let userDb = uArray[0];
+            user.createdAt = userDb.createdAt;
+
+            if (userDb.keywords) { 
+              user.set("keywords", userDb.get("keywords"));
+            }
+            if (userDb.keywordsAuto) { 
+              user.set("keywordsAuto", userDb.get("keywordsAuto"));
+            }
+
+            console.log(chalkInfo("USER DB HIT "
+              + " | @" + user.screenName.toLowerCase()
+              + " | " + user.userId
+              + " | " + getTimeStamp(user.createdAt)
+              + " | KWs: " + Object.keys(user.get("keywords"))
+              + " | KWAs: " + Object.keys(user.get("keywordsAuto"))
+            ));
+            cb(err, user);
+          }
+        });
+      },
+
+      function updateClassifyUser(user, cb) {
+
+        if (user.keywords) {
+          console.log(chalkInfo("USER KWs\n" + jsonPrint(user.get("keywords"))));
+        }
+
+        if (user.keywordsAuto) {
+          debug(chalkInfo("USER AKWs\n" + jsonPrint(user.get("keywordsAuto"))));
+        }
+
+        // if (!user.keywords) { user.keywords = {}; }
+        // if (!user.keywordsAuto) { user.keywordsAuto = {}; }
+
+        if ((user.threeceeFollowing === undefined) || !user.threeceeFollowing) { 
+          user.threeceeFollowing = {}; 
+        }
+        user.threeceeFollowing.screenName = currentTwitterUser;
+
+        classifyUser(user)
+        .then(function genClassifiedUserKeyword(u){
+          cb(null, u);
+        })
+        .catch(function classifyUserError(err){
+          console.trace(chalkError("ERROR classifyUser | UID: " + user.userId
+            + "\n" + err
+          ));
+          cb(err, user);
+        });
+      },
+
+      function genKeywords(user, cb){
+        if (!neuralNetworkInitialized) { return(cb(null, user)); }
+        generateAutoKeywords(user)
+        .then(function (uObj){
+          cb(null, uObj);
+        })
+        .catch(function gkwError(err){
+          console.trace(chalkError("ERROR generateAutoKeywords | UID: " + user.userId
+            + "\n" + err
+          ));
+          cb(err, user);
+        });
+      },
+
+      function updateUserDb(user, cb){
+
+        let usParams = { user: user, noInc: true };
+
+        userServer.findOneUserPromise(usParams)
+        .then(function updateUserComplete(updatedUserObj){
+
+          let keywords = "";
+          let keywordsAuto = "";
+
+          if ((updatedUserObj.keywords !== undefined) && updatedUserObj.keywords) {
+            keywords = Object.keys(updatedUserObj.keywords);
+          }
+
+          if ((updatedUserObj.keywordsAuto !== undefined) && updatedUserObj.keywordsAuto) {
+            keywordsAuto = Object.keys(updatedUserObj.keywordsAuto);
+          }
+
+          console.log(chalkInfo("US UPD<"
+            + " | " + updatedUserObj.userId
+            + " | TW: " + (updatedUserObj.isTwitterUser || "-")
+            + " | @" + updatedUserObj.screenName
+            + " | Ts: " + updatedUserObj.statusesCount
+            + " | FLWRs: " + updatedUserObj.followersCount
+            + " | FRNDs: " + updatedUserObj.friendsCount
+            // + " | LA " + Object.keys(updatedUserObj.languageAnalysis)
+            + " | KWs " + keywords
+            + " | AKWs " + keywordsAuto
+          ));
+
+          cb(null, updatedUserObj);
+        })
+        .catch(function updateUserError(err){
+          console.trace(chalkError("ERROR DB UPDATE USER - updateUserDb"
+            + "\n" + err
+            + "\n" + jsonPrint(user)
+          ));
+          cb(err, user);
+        });
+      }
+
+    ], function (err, user) {
+
+      if (err) {
+        reject(new Error(err));
+      }
+      else {
+        resolve(user);
+      }
+
+    });
+
+  });
+}
 
 function fetchFriends(params) {
 
@@ -2177,7 +2435,7 @@ function fetchFriends(params) {
 
           const subFriendsSortedArray = sortOn(data.users, "-followers_count");
 
-          async.each(data.users, function processFriend (friend, cb){
+          async.eachSeries(data.users, function processFriend (friend, cb){
 
             console.log(chalkLog("<FRIEND"
               + " | " + friend.id_str
@@ -2187,204 +2445,22 @@ function fetchFriends(params) {
               + " | FRNDs: " + friend.friends_count
             ));
 
-            async.waterfall(
-            [
-
-              function convertUser(cb1) {
-                userServer.convertRawUser(friend, function(err, user){
-                  cb1(null, user);
-                });
-              },
-
-              function unfollowFriend(user, cb1) {
-
-                if ((currentTwitterUser === "altthreecee00")
-                  && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined)) {
-
-                  console.log(chalkAlert("SKIP | ninjathreecee FOLLOWING"
-                    + " | " + user.userId
-                    + " | " + user.screenName.toLowerCase()
-                  ));
-
-                  twitterUserHashMap[currentTwitterUser].twit.post(
-                    "friendships/destroy", 
-                    {user_id: user.userId}, 
-                    function destroyFriend(err, data, response){
-                      if (err) {
-                        console.error(chalkError("UNFOLLOW ERROR" + err));
-                        cb1(user);
-                      }
-                      else {
-                        debug("data\n" + jsonPrint(data));
-                        debug("response\n" + jsonPrint(response));
-
-                        console.log(chalkAlert("UNFOLLOW altthreecee00"
-                          + " | " + user.userId
-                          + " | " + user.screenName.toLowerCase()
-                        ));
-                        const slackText = "UNFOLLOW altthreecee00"
-                          + "\n@" + user.screenName.toLowerCase()
-                          + "\n" + user.userId;
-                        slackPostMessage(slackChannel, slackText);
-                        cb1(err, user);
-                      }
-                    }
-                  );
-                }
-                else {
-                  cb1(null, user);
-                }
-              },
-
-              function checkKeyWords(user, cb1) {
-
-                checkFriendWordKeys(user)
-                .then(function processFriendWordKeys(kws){
-                  if (Object.keys(kws).length > 0) {
-                    console.log("WORD-USER HIT"
-                      + " | " + user.screenName.toLowerCase()
-                      + " | " + Object.keys(kws)
-                    );
-                  }
-                  cb1(null, user);
-                })
-                .catch(function(err){
-                  console.error(chalkError("CHECK USER KEYWORDS ERROR"
-                    + " | " + err
-                  ));
-                  cb1(err, user);
-                });
-              },
-
-              function findUserInDb(user, cb1) {
-
-                if (err) {
-                  // console.error(chalkInfo("ERROR " + err));
-                  console.log(chalkError(getTimeStamp()
-                  + " | *** ERROR findUserInDb: " + err
-                  ));
-
-                  return(cb1(err, user));
-                }
-
-                User.find({ userId: user.userId }).limit(1).lean().exec(function(err, uArray) {
-
-                  if (err) {
-                    console.log(chalkError("ERROR DB FIND ONE USER | " + err));
-                    cb1(err, user);
-                  }
-                  else if (uArray.length === 0) {
-                    console.log(chalkInfo("USER DB MISS"
-                      + " | @" + user.screenName.toLowerCase()
-                      + " | " + user.userId
-                    ));
-                    cb1(err, user);
-                  }
-                  else {
-
-                    let userDb = uArray[0];
-                    user.createdAt = userDb.createdAt;
-
-                    console.log(chalkInfo("USER DB HIT "
-                      + " | @" + user.screenName.toLowerCase()
-                      + " | " + user.userId
-                      + " | " + getTimeStamp(user.createdAt)
-                    ));
-                    cb1(err, user);
-                  }
-                });
-              },
-
-              function updateClassifyUser(user, cb1) {
-
-                if ((user.keywords === undefined) || !user.keywords) { user.keywords = {}; }
-                if ((user.keywordsAuto === undefined) || !user.keywordsAuto) { user.keywordsAuto = {}; }
-
-                if ((user.threeceeFollowing === undefined) || !user.threeceeFollowing) { 
-                  user.threeceeFollowing = {}; 
-                }
-                user.threeceeFollowing.screenName = currentTwitterUser;
-
-                classifyUser(user)
-                .then(function genClassifiedUserKeyword(u){
-                  cb1(err, u);
-                })
-                .catch(function classifyUserError(err){
-                  console.trace(chalkError("ERROR classifyUser | UID: " + user.userId
-                    + "\n" + err
-                  ));
-                  cb(err, user);
-                });
-              },
-
-              function genKeywords(user, cb1){
-                if (!neuralNetworkInitialized) { return(cb1(err, user)); }
-                generateAutoKeywords(user)
-                .then(function (uObj){
-                  cb1(err, uObj);
-                })
-                .catch(function gkwError(err){
-                  console.trace(chalkError("ERROR generateAutoKeywords | UID: " + user.userId
-                    + "\n" + err
-                  ));
-                  cb(err, user);
-                });
-              },
-
-              function updateUserDb(user, cb1){
-
-                let usParams = { user: user, noInc: true };
-
-                userServer.findOneUserPromise(usParams)
-                .then(function updateUserComplete(updatedUserObj){
-
-                  let keywords = "";
-                  let keywordsAuto = "";
-
-                  if ((updatedUserObj.keywords !== undefined) && updatedUserObj.keywords) {
-                    keywords = Object.keys(updatedUserObj.keywords);
-                  }
-
-                  if ((updatedUserObj.keywordsAuto !== undefined) && updatedUserObj.keywordsAuto) {
-                    keywordsAuto = Object.keys(updatedUserObj.keywordsAuto);
-                  }
-
-                  console.log(chalkInfo("US UPD<"
-                    + " | " + updatedUserObj.userId
-                    + " | TW: " + (updatedUserObj.isTwitterUser || "-")
-                    + " | @" + updatedUserObj.screenName
-                    + " | Ts: " + updatedUserObj.statusesCount
-                    + " | FLWRs: " + updatedUserObj.followersCount
-                    + " | FRNDs: " + updatedUserObj.friendsCount
-                    // + " | LA " + Object.keys(updatedUserObj.languageAnalysis)
-                    + " | KWs " + keywords
-                    + " | AKWs " + keywordsAuto
-                  ));
-
-                  cb1(err, updatedUserObj);
-                })
-                .catch(function updateUserError(err){
-                  console.trace(chalkError("ERROR DB UPDATE USER - updateUserDb"
-                    + "\n" + err
-                    + "\n" + jsonPrint(user)
-                  ));
-                  cb(err, user);
-                });
-              }
-
-            ], function (err, results) {
-
-              cb(err, results);
-
+            processUser(friend)
+            .then(function(user){
+              debug("PROCESSED USER\n" + jsonPrint(user));
+              cb();
+            })
+            .catch(function(err){
+              console.trace("processUser ERROR");
+              reject(new Error(err));
             });
 
-          }, function subFriendsProcess(err, results){
+          }, function subFriendsProcess(err){
             if (err) {
-              console.trace("ERROR");
+              console.trace("subFriendsProcess ERROR");
               reject(new Error(err));
             }
             else {
-              debug("processFriend results\n" + jsonPrint(results));
               resolve(subFriendsSortedArray);
             }
           });
