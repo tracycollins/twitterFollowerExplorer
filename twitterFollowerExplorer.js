@@ -2181,7 +2181,12 @@ function processUser(userIn) {
 
       function convertUser(cb) {
         userServer.convertRawUser(userIn, function(err, user){
-          cb(null, user);
+          if (err) {
+            cb(err, null);
+          }
+          else {
+            cb(null, user);
+          }
         });
       },
 
@@ -2201,7 +2206,7 @@ function processUser(userIn) {
             function destroyFriend(err, data, response){
               if (err) {
                 console.error(chalkError("UNFOLLOW ERROR" + err));
-                cb(user);
+                cb(err, user);
               }
               else {
                 debug("data\n" + jsonPrint(data));
@@ -2215,7 +2220,7 @@ function processUser(userIn) {
                   + "\n@" + user.screenName.toLowerCase()
                   + "\n" + user.userId;
                 slackPostMessage(slackChannel, slackText);
-                cb(err, user);
+                cb(null, user);
               }
             }
           );
@@ -2231,7 +2236,8 @@ function processUser(userIn) {
         .then(function processFriendWordKeys(kws){
           if (Object.keys(kws).length > 0) {
             console.log("WORD-USER HIT"
-              + " | " + user.screenName.toLowerCase()
+              + " | " + user.userId
+              + " | @" + user.screenName.toLowerCase()
               + " | " + jsonPrint(kws)
             );
             user.set("keywords", kws);
@@ -2259,13 +2265,16 @@ function processUser(userIn) {
               + " | @" + user.screenName.toLowerCase()
               + " | " + user.userId
             ));
-            cb(err, user);
+            cb(null, user);
           }
           else {
 
             let userDb = uArray[0];
             user.createdAt = userDb.createdAt;
 
+            if (userDb.histograms && (Object.keys(userDb.histograms).length > 0)) { 
+              user.set("histograms", userDb.get("histograms"));
+            }
             if (userDb.keywords && (Object.keys(userDb.keywords).length > 0)) { 
               user.set("keywords", userDb.get("keywords"));
             }
@@ -2280,7 +2289,7 @@ function processUser(userIn) {
               + " | KWs: " + Object.keys(user.get("keywords"))
               + " | KWAs: " + Object.keys(user.get("keywordsAuto"))
             ));
-            cb(err, user);
+            cb(null, user);
           }
         });
       },
@@ -2577,7 +2586,7 @@ function printNetworkObj(title, nnObj){
     + "\n" + title
     + "\nID:      " + nnObj.networkId
     + "\nCREATED: " + getTimeStamp(nnObj.createdAt)
-    + "\nSUCCESS: " + nnObj.successRate.toFixed(2) + "%"
+    + "\nSUCCESS: " + nnObj.successRate.toFixed(1) + "%"
     + "\nINPUTS:  " + Object.keys(nnObj.inputs)
     + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
     + "\n===================\n"
