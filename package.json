@@ -6,7 +6,7 @@
   "dependencies": {
     "@google-cloud/language": "^0.10.6",
     "@threeceelabs/mongoose-twitter": "^1.0.19",
-    "@threeceelabs/tweet-server-controller": "^1.0.32",
+    "@threeceelabs/tweet-server-controller": "^1.0.33",
     "@threeceelabs/twitter-text-parser": "^1.0.16",
     "@threeceelabs/user-server-controller": "^1.0.33",
     "@threeceelabs/word-server-controller": "^1.0.8",
