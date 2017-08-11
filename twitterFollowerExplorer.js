@@ -1328,10 +1328,6 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             // + "\nENTITIES\n" + jsonPrint(m.results.entities)
           ));
 
-          if (m.obj.keywords) {
-            console.log(chalkAlert("KWs\n" + jsonPrint(m.obj.keywords)));
-          }
-
           if (m.error) {
 
             m.obj.languageAnalysis = {err: m.error};
