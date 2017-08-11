@@ -1535,7 +1535,7 @@ function classifyUser(user){
       keywords: function(cb){
         if (user.keywords) {
 
-          console.log("KWS\n" + jsonPrint(user.get("keywords")));
+          debug("KWS\n" + jsonPrint(user.get("keywords")));
           
           classifiedUserHashmap[user.userId] = user.get("keywords");
 
@@ -1889,7 +1889,7 @@ function generateAutoKeywords(user){
 
               debug(chalkInfo("START ARRAY: " + type + " | " + inputArrays[type].length));
 
-              async.eachSeries(inputArrays[type], function(element, cb2){
+              async.eachOfSeries(inputArrays[type], function(element, index, cb2){
 
                 if (userHistograms[type] && userHistograms[type][element]) {
                   updatedUser.inputHits += 1;
@@ -1900,7 +1900,8 @@ function generateAutoKeywords(user){
                     + " | " + element 
                     + " | " + userHistograms[type][element]
                   ));
-                  networkInput.push(1);
+                  // networkInput.push(1);
+                  networkInput[index+2] = 1;
                   cb2();
                 }
                 else {
@@ -1910,7 +1911,8 @@ function generateAutoKeywords(user){
                     + " | ARRAY: " + type 
                     + " | " + element
                   ));
-                  networkInput.push(0);
+                  // networkInput.push(0);
+                  networkInput[index+2] = 0;
                   cb2();
                 }
 
@@ -1958,17 +1960,17 @@ function generateAutoKeywords(user){
                     case 0:
                       // classText = "L";
                       chalkCurrent = chalk.blue;
-                      updatedUser.set("keywordsAuto", {left: 100});
+                      updatedUser.keywordsAuto.left = 100;
                     break;
                     case 1:
                       // classText = "N";
                       chalkCurrent = chalk.black;
-                      updatedUser.set("keywordsAuto", {neutral: 100});
+                      updatedUser.keywordsAuto.neutral = 100;
                     break;
                     case 2:
                       // classText = "R";
                       chalkCurrent = chalk.yellow;
-                      updatedUser.set("keywordsAuto", {right: 100});
+                      updatedUser.keywordsAuto.right = 100;
                     break;
                   }
 
@@ -2050,13 +2052,13 @@ function generateAutoKeywords(user){
 
             switch (maxOutputIndex) {
               case 0:
-                user.set("keywordsAuto", {"left": 100});
+                user.keywordsAuto.left = 100;
               break;
               case 1:
-                user.set("keywordsAuto", {"neutral": 100});
+                user.keywordsAuto.neutral = 100;
               break;
               case 2:
-                user.set("keywordsAuto", {"right": 100});
+                user.keywordsAuto.right = 100;
               break;
             }
 
@@ -2234,9 +2236,9 @@ function processUser(userIn) {
             console.log("WORD-USER HIT"
               + " | " + user.userId
               + " | @" + user.screenName.toLowerCase()
-              + " | " + jsonPrint(kws)
+              + " | " + Object.keys(kws)
             );
-            user.set("keywords", kws);
+            user.keywords = kws;
           }
           cb(null, user);
         })
@@ -2269,13 +2271,13 @@ function processUser(userIn) {
             user.createdAt = userDb.createdAt;
 
             if (userDb.histograms && (Object.keys(userDb.histograms).length > 0)) { 
-              user.set("histograms", userDb.get("histograms"));
+              user.histograms = userDb.histograms;
             }
             if (userDb.keywords && (Object.keys(userDb.keywords).length > 0)) { 
-              user.set("keywords", userDb.get("keywords"));
+              user.keywords = userDb.keywords;
             }
             if (userDb.keywordsAuto && (Object.keys(userDb.keywordsAuto).length > 0)) { 
-              user.set("keywordsAuto", userDb.get("keywordsAuto"));
+              user.keywordsAuto = userDb.keywordsAuto;
             }
 
             console.log(chalkInfo("USER DB HIT "
@@ -2293,7 +2295,7 @@ function processUser(userIn) {
       function updateClassifyUser(user, cb) {
 
         if (user.keywords) {
-          console.log(chalkInfo("USER KWs\n" + jsonPrint(user.get("keywords"))));
+          debug(chalkInfo("USER KWs\n" + jsonPrint(user.get("keywords"))));
         }
 
         if (user.keywordsAuto) {
