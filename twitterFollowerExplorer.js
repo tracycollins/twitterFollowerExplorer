@@ -1540,7 +1540,8 @@ function classifyUser(user){
 
           debug("KWS\n" + jsonPrint(user.get("keywords")));
           
-          classifiedUserHashmap[user.userId] = user.get("keywords");
+          classifiedUserHashmap[user.userId] = {};
+          classifiedUserHashmap[user.userId] = user.keywords;
 
           statsObj.users.classified = Object.keys(classifiedUserHashmap).length;
 
@@ -1595,7 +1596,9 @@ function classifyUser(user){
 
           debug("KWSA\n" + jsonPrint(user.get("keywordsAuto")));
 
-          autoClassifiedUserHashmap[user.userId] = user.get("keywordsAuto");
+          autoClassifiedUserHashmap[user.userId] = {};
+          autoClassifiedUserHashmap[user.userId] = user.keywordsAuto;
+
           statsObj.users.classifiedAuto = Object.keys(autoClassifiedUserHashmap).length;
 
           const akwObj = user.get("keywordsAuto");
@@ -2157,6 +2160,7 @@ function checkUserWordKeys(user){
             ));
 
             // classifiedUserHashmap[user.screenName.toLowerCase()] = kws;
+            classifiedUserHashmap[user.userId] = {};
             classifiedUserHashmap[user.userId] = kws;
 
             cb();
@@ -2249,17 +2253,25 @@ function processUser(userIn) {
         checkUserWordKeys(user)
         .then(function processFriendWordKeys(kws){
           if (Object.keys(kws).length > 0) {
+            let kwsa = "";
+            if (user.keywordsAuto && (Object.keys(user.keywordsAuto).length > 0)) {
+              kwsa = Object.keys(user.keywordsAuto);
+            }
             console.log("WORD-USER HIT"
               + " | " + user.userId
               + " | @" + user.screenName.toLowerCase()
-              + " | " + Object.keys(kws)
+              + " | KWs: " + Object.keys(kws)
+              + " | KWAs: " + Object.keys(kwsa)
             );
+            user.keywords = {};
             user.keywords = kws;
           }
           cb(null, user);
         })
         .catch(function(err){
           console.error(chalkError("CHECK USER KEYWORDS ERROR"
+            + " | @" + user.screenName
+            + " | " + user.userId
             + " | " + err
           ));
           cb(err, user);
@@ -2294,6 +2306,26 @@ function processUser(userIn) {
             }
             if (userDb.keywordsAuto && (Object.keys(userDb.keywordsAuto).length > 0)) { 
               user.keywordsAuto = userDb.keywordsAuto;
+            }
+
+            if ((user.rate === 0) && (userDb.rate > 0)) {
+              user.rate = userDb.rate;
+            }
+
+            if ((user.mentions === 0) && (userDb.mentions > 0)) {
+              user.mentions = userDb.mentions;
+            }
+
+            if ((user.followersCount === 0) && (userDb.followersCount > 0)) {
+              user.followersCount = userDb.followersCount;
+            }
+
+            if ((user.statusesCount === 0) && (userDb.statusesCount > 0)) {
+              user.statusesCount = userDb.statusesCount;
+            }
+
+            if ((user.friendsCount === 0) && (userDb.friendsCount > 0)) {
+              user.friendsCount = userDb.friendsCount;
             }
 
             console.log(chalkInfo("USER DB HIT "
