@@ -1965,6 +1965,8 @@ function generateAutoKeywords(user){
 
                   console.log(chalkInfo("MAX INDEX: " + maxOutputIndex));
 
+                  updatedUser.keywordsAuto = {};
+                  
                   let chalkCurrent = chalkLog;
 
                   switch (maxOutputIndex) {
