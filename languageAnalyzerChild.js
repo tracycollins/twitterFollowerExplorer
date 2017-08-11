@@ -15,18 +15,8 @@ let statsUpdateInterval;
 
 const languageClient = require("@google-cloud/language")();
 
-// const EventEmitter2 = require("eventemitter2").EventEmitter2;
-// const configEvents = new EventEmitter2({
-//   wildcard: true,
-//   newListener: true,
-//   maxListeners: 20,
-//   verboseMemoryLeak: true
-// });
-
 let rxLangObjQueue = [];
 let rxWordQueue = [];
-
-// const ANALYZE_INTERVAL = 100;
 
 let configuration = {};
 configuration.verbose = false;
@@ -242,6 +232,7 @@ function initAnalyzeLanguageInterval(interval){
   let messageObj = {};
   messageObj.obj = {};
   messageObj.results = {};
+  messageObj.stats = {};
 
   analyzeLanguageInterval = setInterval(function(){ // TX KEEPALIVE
 
@@ -297,6 +288,7 @@ function initAnalyzeLanguageInterval(interval){
           messageObj.obj = langObj.obj;
           messageObj.error = err;
           messageObj.results = results;
+          messageObj.stats = statsObj;
 
           process.send(messageObj, function(){
             debug(chalkInfo("SENT LANG_RESULTS"));
@@ -324,6 +316,7 @@ function initAnalyzeLanguageInterval(interval){
           messageObj.op = "LANG_RESULTS";
           messageObj.obj = langObj.obj;
           messageObj.results = results;
+          messageObj.stats = statsObj;
 
           process.send(messageObj, function(){
             debug(chalkInfo("SENT LANG_RESULTS"));

@@ -1318,7 +1318,10 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
         case "LANG_RESULTS":
 
           console.log(chalkLog("M<"
-            + " [Q: " + langAnalyzerMessageRxQueue.length + "]"
+            + " [Q: " + langAnalyzerMessageRxQueue.length
+            + " | STATS: " + m.stats.analyzer.analyzed + " ANLZD"
+            + " " + m.stats.analyzer.skipped + " SKP"
+            + " " + m.stats.analyzer.total + " TOT ]"
             + " | OP: " + m.op
             + " | UID: " + m.obj.userId
             + " | SN: " + m.obj.screenName
