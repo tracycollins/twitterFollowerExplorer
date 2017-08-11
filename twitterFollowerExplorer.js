@@ -2232,7 +2232,7 @@ function processUser(userIn) {
           if (Object.keys(kws).length > 0) {
             console.log("WORD-USER HIT"
               + " | " + user.screenName.toLowerCase()
-              + " | " + Object.keys(kws)
+              + " | " + jsonPrint(kws)
             );
             user.set("keywords", kws);
           }
@@ -2266,10 +2266,10 @@ function processUser(userIn) {
             let userDb = uArray[0];
             user.createdAt = userDb.createdAt;
 
-            if (userDb.keywords) { 
+            if (userDb.keywords && (Object.keys(userDb.keywords).length > 0)) { 
               user.set("keywords", userDb.get("keywords"));
             }
-            if (userDb.keywordsAuto) { 
+            if (userDb.keywordsAuto && (Object.keys(userDb.keywordsAuto).length > 0)) { 
               user.set("keywordsAuto", userDb.get("keywordsAuto"));
             }
 
