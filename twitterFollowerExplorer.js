@@ -5,7 +5,7 @@ const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
 
 const userServer = require("@threeceelabs/user-server-controller");
-// const userServer = require("../userServerController");
+const wordServer = require("@threeceelabs/word-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 
 const User = require("mongoose").model("User");
@@ -1966,7 +1966,7 @@ function generateAutoKeywords(user){
                   console.log(chalkInfo("MAX INDEX: " + maxOutputIndex));
 
                   updatedUser.keywordsAuto = {};
-                  
+
                   let chalkCurrent = chalkLog;
 
                   switch (maxOutputIndex) {
