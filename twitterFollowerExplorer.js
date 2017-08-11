@@ -1755,6 +1755,7 @@ function generateAutoKeywords(user){
     if (user.screenName !== undefined){
 
       async.waterfall([
+
         function userScreenName(cb) {
           if (user.screenName !== undefined) {
             cb(null, "@" + user.screenName.toLowerCase());
@@ -1763,6 +1764,7 @@ function generateAutoKeywords(user){
             cb(null, null);
           }
         },
+
         function userName(text, cb) {
           if (user.name !== undefined) {
             if (text) {
@@ -1781,6 +1783,7 @@ function generateAutoKeywords(user){
             }
           }
         },
+
         function userStatusText(text, cb) {
 
           // console.log("user.status\n" + jsonPrint(user.status));
@@ -1804,6 +1807,7 @@ function generateAutoKeywords(user){
             }
           }
         },
+
         function userRetweetText(text, cb) {
           if ((user.retweeted_status !== undefined) 
             && user.retweeted_status
@@ -1827,6 +1831,7 @@ function generateAutoKeywords(user){
             }
           }
         },
+
         function userDescriptionText(text, cb) {
           if ((user.description !== undefined) && user.description) {
             if (text) {
@@ -1845,6 +1850,7 @@ function generateAutoKeywords(user){
             }
           }
         }
+
       ], function (err, text) {
 
         if (err) {
@@ -1902,7 +1908,10 @@ function generateAutoKeywords(user){
                   ));
                   // networkInput.push(1);
                   networkInput[index+2] = 1;
-                  cb2();
+
+                  async.setImmediate(function() {
+                    cb2();
+                  });
                 }
                 else {
                   debug(chalkInfo("U MISS" 
@@ -1913,7 +1922,9 @@ function generateAutoKeywords(user){
                   ));
                   // networkInput.push(0);
                   networkInput[index+2] = 0;
-                  cb2();
+                  async.setImmediate(function() {
+                    cb2();
+                  });
                 }
 
               }, function createNetworkInputArrayComplete(){
