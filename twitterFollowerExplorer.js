@@ -997,19 +997,19 @@ function initTwitterUsers(callback){
   else{
 
     let twitterDefaultUser = configuration.twitterDefaultUser;
-    twitterUsersArray = Object.keys(configuration.twitterUsers);
+    // twitterUsersArray = Object.keys(configuration.twitterUsers);
+    // "altthreecee00": "altthreecee00", "ninjathreecee": "ninjathreecee"
+    twitterUsersArray = ["ninjathreecee", "altthreecee00"];
 
     console.log(chalkTwitter("USERS"
       + " | FOUND: " + twitterUsersArray.length
     ));
 
-    // twitterUsersArray.forEach(function(userId){
     async.each(twitterUsersArray, function(userId, cb){
 
       userId = userId.toLowerCase();
 
       let twitterUserObj = {};
-      // twitterUserObj.friends = {};
 
       console.log("userId: " + userId);
       console.log("screenName: " + configuration.twitterUsers[userId]);
@@ -1761,7 +1761,7 @@ function generateAutoKeywords(user){
       async.waterfall([
         function userScreenName(cb) {
           if (user.screenName !== undefined) {
-            cb(null, "@" + user.screenName);
+            cb(null, "@" + user.screenName.toLowerCase());
           }
           else {
             cb(null, null);
@@ -1982,6 +1982,16 @@ function generateAutoKeywords(user){
                     networkInput
                   );
 
+                  let keywordsText = "";
+                  let keywordsAutoText = "";
+
+                  if (updatedUser.keywords) {
+                    keywordsText = Object.keys(updatedUser.keywords);
+                  }
+                  if (updatedUser.keywordsAuto) {
+                    keywordsAutoText = Object.keys(updatedUser.keywordsAuto);
+                  }
+
                   console.log(chalkCurrent("\nAUTO KW"
                     + " | " + updatedUser.userId
                     + " | @" + updatedUser.screenName
@@ -1992,9 +2002,11 @@ function generateAutoKeywords(user){
                     + " | L: " + networkOutput[0].toFixed(0)
                     + " | N: " + networkOutput[1].toFixed(0)
                     + " | R: " + networkOutput[2].toFixed(0)
+                    + " | KWs: " + keywordsText
+                    + " | AKWs: " + keywordsAutoText
                     // + " | KWs: " + Object.keys(updatedUser.keywords)
                     // + " | AKWs: " + Object.keys(updatedUser.keywordsAuto)
-                    + "\n"
+                    // + "\n"
                     // + "\n" + jsonPrint(updatedUser.keywordsAuto)
                   ));
 
