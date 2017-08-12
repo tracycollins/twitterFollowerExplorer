@@ -2112,9 +2112,9 @@ function generateAutoKeywords(user){
   });
 }
 
-function checkUserWordKeys(user){
+function checkUserWordKeys(user, callback){
 
-  return new Promise(function(resolve, reject) {
+  // return new Promise(function(resolve, reject) {
 
     Word.findOne({nodeId: user.screenName.toLowerCase()}, function(err, word){
 
@@ -2122,23 +2122,23 @@ function checkUserWordKeys(user){
 
       if (err) {
         console.error(chalkError("FIND ONE WORD ERROR: " + err));
-        reject(err);
+        callback(err, user);
       }
       else if (!word) {
         console.log(chalkInfo("USER WORD NOT FOUND: " + user.screenName.toLowerCase()));
-        resolve(kws);
+        callback(null, kws);
       }
       else if (word.keywords === undefined) {
         debug("WORD-USER KWS UNDEFINED"
           + " | " + user.screenName.toLowerCase()
         );
-        resolve(kws);
+        callback(null, kws);
       }
       else if (!word.keywords || (Object.keys(word.keywords).length === 0)) {
         debug("WORD-USER NO KW KEYS"
           + " | " + user.screenName.toLowerCase()
         );
-        resolve(kws);
+        callback(null, kws);
       }
       else {
         debug("WORD-USER KEYWORDS"
@@ -2176,14 +2176,13 @@ function checkUserWordKeys(user){
             + " | " + Object.keys(kws)
           );
 
-          resolve(kws);
+          callback(null, kws);
 
         });
       }
-
     });
 
-  });
+  // });
 }
 
 let count = 200;
