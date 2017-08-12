@@ -1885,7 +1885,7 @@ function generateAutoKeywords(user){
 
             const userHistograms = updatedUser.histograms;
 
-            console.log(chalkInfo("----------------"
+            console.log(chalkInfo(currentTwitterUser + "____________________________"
               + "\nGEN AKWs"
               + " | @" + updatedUser.screenName
               + " | " + updatedUser.userId
@@ -1935,7 +1935,7 @@ function generateAutoKeywords(user){
 
               }, function createNetworkInputArrayComplete(){
 
-                console.log(chalkTwitter("GAKW INPUT ARRAY COMPLETE"
+                debug(chalkTwitter("GAKW INPUT ARRAY COMPLETE"
                   + " | " + type 
                   + " | " + updatedUser.inputHits + " HITS"
                   + " | @" + updatedUser.screenName 
@@ -2502,7 +2502,8 @@ function fetchFriends(params) {
 
           const subFriendsSortedArray = sortOn(data.users, "-followers_count");
 
-          async.eachSeries(data.users, function processFriend (friend, cb){
+          // async.eachSeries(data.users, function processFriend (friend, cb){
+          async.each(subFriendsSortedArray, function (friend, cb){
 
             console.log(chalkLog("<FRIEND"
               + " | " + friend.id_str
@@ -2512,14 +2513,19 @@ function fetchFriends(params) {
               + " | FRNDs: " + friend.friends_count
             ));
 
-            processUser(friend)
-            .then(function(user){
+            processUser(friend, function(err, user){
+              if (err) {
+                console.trace("processUser ERROR");
+                return (cb(err));
+              }
+            // .then(function(user){
               debug("PROCESSED USER\n" + jsonPrint(user));
               cb();
-            })
-            .catch(function(err){
-              console.trace("processUser ERROR");
-              reject(new Error(err));
+            // })
+            // .catch(function(err){
+              // console.trace("processUser ERROR");
+              // cb(err);
+              // reject(new Error(err));
             });
 
           }, function subFriendsProcess(err){
