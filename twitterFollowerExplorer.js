@@ -2503,7 +2503,7 @@ function fetchFriends(params) {
           const subFriendsSortedArray = sortOn(data.users, "-followers_count");
 
           // async.eachSeries(data.users, function processFriend (friend, cb){
-          async.eachSeries(subFriendsSortedArray, function (friend, cb){
+          async.each(subFriendsSortedArray, function (friend, cb){
 
             console.log(chalkLog("<FRIEND"
               + " | " + friend.id_str
