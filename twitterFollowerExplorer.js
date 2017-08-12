@@ -2275,8 +2275,11 @@ function processUser(userIn) {
             );
             user.keywords = {};
             user.keywords = kws;
+            cb(null, user);
           }
-          cb(null, user);
+          else {
+            cb(null, user);
+          }
         });
         // .catch(function(err){
         //   console.error(chalkError("CHECK USER KEYWORDS ERROR"
