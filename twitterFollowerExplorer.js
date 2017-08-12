@@ -2250,8 +2250,18 @@ function processUser(userIn) {
 
       function checkKeyWords(user, cb) {
 
-        checkUserWordKeys(user)
-        .then(function processFriendWordKeys(kws){
+        // checkUserWordKeys(user)
+        checkUserWordKeys(user, function(err, kws){
+        // .then(function processFriendWordKeys(kws){
+
+          if (err) {
+            console.error(chalkError("CHECK USER KEYWORDS ERROR"
+              + " | @" + user.screenName
+              + " | " + user.userId
+              + " | " + err
+            ));
+            return(cb(err,user));
+          }
           if (Object.keys(kws).length > 0) {
             let kwsa = "";
             if (user.keywordsAuto && (Object.keys(user.keywordsAuto).length > 0)) {
@@ -2267,15 +2277,15 @@ function processUser(userIn) {
             user.keywords = kws;
           }
           cb(null, user);
-        })
-        .catch(function(err){
-          console.error(chalkError("CHECK USER KEYWORDS ERROR"
-            + " | @" + user.screenName
-            + " | " + user.userId
-            + " | " + err
-          ));
-          cb(err, user);
         });
+        // .catch(function(err){
+        //   console.error(chalkError("CHECK USER KEYWORDS ERROR"
+        //     + " | @" + user.screenName
+        //     + " | " + user.userId
+        //     + " | " + err
+        //   ));
+        //   cb(err, user);
+        // });
       },
 
       function findUserInDb(user, cb) {
