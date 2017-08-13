@@ -997,9 +997,9 @@ function initTwitterUsers(callback){
   else{
 
     let twitterDefaultUser = configuration.twitterDefaultUser;
-    // twitterUsersArray = Object.keys(configuration.twitterUsers);
+    twitterUsersArray = Object.keys(configuration.twitterUsers);
     // "altthreecee00": "altthreecee00", "ninjathreecee": "ninjathreecee"
-    twitterUsersArray = ["ninjathreecee", "altthreecee00"];
+    // twitterUsersArray = ["ninjathreecee", "altthreecee00"];
 
     console.log(chalkTwitter("USERS"
       + " | FOUND: " + twitterUsersArray.length
