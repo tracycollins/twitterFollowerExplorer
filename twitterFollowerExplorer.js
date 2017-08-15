@@ -2080,12 +2080,16 @@ function generateAutoKeywords(user, callback){
               });
             }
             else {
+
+              // const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
+              // const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
+
               console.log(chalkInfo("SKIP LANG ANAL"
                 + " | " + updatedUser.userId
                 + " | @" + updatedUser.screenName
                 + " | LAd: " + updatedUser.languageAnalyzed
-                + " | LA: S: " + updatedUser.languageAnalysis.sentiment.score 
-                + " M: " + updatedUser.languageAnalysis.sentiment.magnitude
+                + " | LA: S: " + score.toFixed(2)
+                + " M: " + mag.toFixed(2)
               ));
             }
 
