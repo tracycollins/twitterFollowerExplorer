@@ -204,10 +204,14 @@ function analyzeLanguage(langObj, callback){
 
           results.entities[entity.name.toLowerCase()] = entity;
 
-          cb2();
+          async.setImmediate(function() {
+            cb2();
+          });
 
         }, function(){
-          cb();
+          async.setImmediate(function() {
+            cb();
+          });
         });
 
       }, function(){
@@ -306,7 +310,7 @@ function initAnalyzeLanguageInterval(interval){
 
           debug(chalkLog("LANGUAGE RESULTS\n" + jsonPrint(results)));
 
-          console.log(chalkInfo("LANG RESULTS [RXLQ: " + rxLangObjQueue.length + "]"
+          console.log(chalkInfo("==> LANG RESULTS [RXLQ: " + rxLangObjQueue.length + "]"
             + " | M " + 10*results.sentiment.magnitude.toFixed(2)
             + " | S " + 10*results.sentiment.score.toFixed(1)
             + " | C " + results.sentiment.comp.toFixed(2)
