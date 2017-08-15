@@ -1332,7 +1332,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
         case "LANG_RESULTS":
 
-          languageAnalysisReadyFlag = true;
+          // languageAnalysisReadyFlag = true;
 
           if (m.results.entities !== undefined) {
             langEntityKeys = Object.keys(m.results.entities);
