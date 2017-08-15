@@ -1810,7 +1810,7 @@ function enableAnalysis(user){
     ));
     return true;
   }
-  if (user.languageAnalysis.err !== undefined) { 
+  if (user.languageAnalysis.error !== undefined) { 
     if ((user.languageAnalysis.error.code === 3) 
       || (user.languageAnalysis.error.code === 8)) { 
       debug(chalkAlert("enableAnalysis: user.languageAnalysis.error: " 
