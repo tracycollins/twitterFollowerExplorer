@@ -2146,7 +2146,7 @@ function generateAutoKeywords(user, callback){
                   keywordsAutoText = Object.keys(updatedUser.keywordsAuto);
                 }
 
-                console.log(chalkCurrent("\nAUTO KW"
+                console.log(chalkCurrent("AUTO KW"
                   + " | " + updatedUser.userId
                   + " | @" + updatedUser.screenName
                   + " | Ts: " + updatedUser.statusesCount
