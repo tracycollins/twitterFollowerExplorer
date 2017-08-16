@@ -2183,7 +2183,6 @@ function generateAutoKeywords(user, callback){
     async.eachSeries(inputTypes, function(type, cb1){
 
       async.eachSeries(inputArrays[type], function(element, cb2){
-      // inputArrays[type].forEach(function(){
         debug("ARRAY: " + type + " | + " + 0);
         networkInput.push(0);
         async.setImmediate(function() {
