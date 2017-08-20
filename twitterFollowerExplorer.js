@@ -95,6 +95,7 @@ const os = require("os");
 const util = require("util");
 const moment = require("moment");
 const arrayNormalize = require("array-normalize");
+const defaults = require("object.defaults/immutable");
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
@@ -1064,41 +1065,45 @@ function initClassifiedUserHashmap(folder, file, callback){
 
   console.log(chalkTwitter("INIT CLASSIFED USERS HASHMAP FROM DB"));
 
-  const params = { auto: false };
-
-  userServer.findClassifiedUsersCursor(params, function(err, results){
+  loadFile(folder, file, function(err, dropboxClassifiedUsersObj){
     if (err) {
-      console.error(chalkError("ERROR: initClassifiedUserHashmap: "));
-      callback(err, null);
+      console.error(chalkError("ERROR: loadFile: " + folder + "/" + file));
+      console.log(chalkError("ERROR: loadFile: " + folder + "/" + file));
+      callback(err, file);
     }
     else {
-        // obj: classifiedUsersObj, 
-        // count: classifiedUsersCount, 
-        // matchRate: matchRate, 
-        // manual: classifiedUsersManualCount, 
-        // auto: classifiedUsersAutoCount
-      console.log(chalkTwitter("LOADED CLASSIFED USERS FROM DB"
-        + " | " + results.count + " CLASSIFED"
-        + " | " + results.manual + " MAN"
-        + " | " + results.auto + " AUTO"
-        + " | " + results.matchRate.toFixed(1) + "% MATCH"
-      ));
-      callback(null, results.obj);
+      console.log(chalkTwitter("LOADED CLASSIFED USERS FILE: " + folder + "/" + file));
+      console.log(chalkTwitter("DROPBOX DEFAULT | " + Object.keys(dropboxClassifiedUsersObj).length + " CLASSIFED USERS"));
+
+      const params = { auto: false };
+
+      userServer.findClassifiedUsersCursor(params, function(err, results){
+        if (err) {
+          console.error(chalkError("ERROR: initClassifiedUserHashmap: "));
+          callback(err, null);
+        }
+        else {
+            // obj: classifiedUsersObj, 
+            // count: classifiedUsersCount, 
+            // matchRate: matchRate, 
+            // manual: classifiedUsersManualCount, 
+            // auto: classifiedUsersAutoCount
+          console.log(chalkTwitter("LOADED CLASSIFED USERS FROM DB"
+            + " | " + results.count + " CLASSIFED"
+            + " | " + results.manual + " MAN"
+            + " | " + results.auto + " AUTO"
+            + " | " + results.matchRate.toFixed(1) + "% MATCH"
+          ));
+
+          const classifiedUsersObj = defaults(dropboxClassifiedUsersObj, results.obj);
+
+          callback(null, classifiedUsersObj);
+        }
+      });
+
+      // callback(null, classifiedUsersObj);
     }
   });
-
-  // loadFile(folder, file, function(err, classifiedUsersObj){
-    // if (err) {
-    //   console.error(chalkError("ERROR: loadFile: " + folder + "/" + file));
-    //   console.log(chalkError("ERROR: loadFile: " + folder + "/" + file));
-    //   callback(err, file);
-    // }
-    // else {
-    //   console.log(chalkTwitter("LOADED CLASSIFED USERS FILE: " + folder + "/" + file));
-    //   console.log(chalkTwitter("LOADED " + Object.keys(classifiedUsersObj).length + " CLASSIFED USERS"));
-    //   callback(null, classifiedUsersObj);
-    // }
-  // });
 
 }
 
@@ -1154,6 +1159,7 @@ function initialize(cnf, callback){
     }
     else {
       classifiedUserHashmap = classifiedUsersObj;
+      console.log(chalkTwitterBold("LOADED " + Object.keys(classifiedUserHashmap).length + " TOTAL CLASSIFED USERS"));
     }
   });
 
