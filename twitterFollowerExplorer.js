@@ -8,6 +8,7 @@ const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
 
 const userServer = require("@threeceelabs/user-server-controller");
+// const userServer = require("../userServerController");
 // const wordServer = require("@threeceelabs/word-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 
@@ -387,6 +388,7 @@ const DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterF
 const DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || "twitterFollowerExplorerStats.json";
 
 let dropboxConfigHostFolder = "/config/utility/" + hostname;
+let dropboxConfigDefaultFolder = "/config/utility/default";
 
 let dropboxConfigFile = hostname + "_" + DROPBOX_TFE_CONFIG_FILE;
 let statsFolder = "/stats/" + hostname + "/followerExplorer";
@@ -408,6 +410,7 @@ console.log("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
+const defaultClassifiedUsersFolder = dropboxConfigDefaultFolder;
 const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
 const classifiedUsersDefaultFile = "classifiedUsers.json";
 
@@ -1059,20 +1062,44 @@ function initTwitterUsers(callback){
 
 function initClassifiedUserHashmap(folder, file, callback){
 
-  console.log(chalkTwitter("INIT CLASSIFED USERS HASHMAP: " + folder + "/" + file));
+  console.log(chalkTwitter("INIT CLASSIFED USERS HASHMAP FROM DB"));
 
-  loadFile(folder, file, function(err, classifiedUsersObj){
+  const params = { auto: false };
+
+  userServer.findClassifiedUsersCursor(params, function(err, results){
     if (err) {
-      console.error(chalkError("ERROR: loadFile: " + folder + "/" + file));
-      console.log(chalkError("ERROR: loadFile: " + folder + "/" + file));
-      callback(err, file);
+      console.error(chalkError("ERROR: initClassifiedUserHashmap: "));
+      callback(err, null);
     }
     else {
-      console.log(chalkTwitter("LOADED CLASSIFED USERS FILE: " + folder + "/" + file));
-      console.log(chalkTwitter("LOADED " + Object.keys(classifiedUsersObj).length + " CLASSIFED USERS"));
-      callback(null, classifiedUsersObj);
+        // obj: classifiedUsersObj, 
+        // count: classifiedUsersCount, 
+        // matchRate: matchRate, 
+        // manual: classifiedUsersManualCount, 
+        // auto: classifiedUsersAutoCount
+      console.log(chalkTwitter("LOADED CLASSIFED USERS FROM DB"
+        + " | " + results.count + " CLASSIFED"
+        + " | " + results.manual + " MAN"
+        + " | " + results.auto + " AUTO"
+        + " | " + results.matchRate.toFixed(1) + "% MATCH"
+      ));
+      callback(null, results.obj);
     }
   });
+
+  // loadFile(folder, file, function(err, classifiedUsersObj){
+    // if (err) {
+    //   console.error(chalkError("ERROR: loadFile: " + folder + "/" + file));
+    //   console.log(chalkError("ERROR: loadFile: " + folder + "/" + file));
+    //   callback(err, file);
+    // }
+    // else {
+    //   console.log(chalkTwitter("LOADED CLASSIFED USERS FILE: " + folder + "/" + file));
+    //   console.log(chalkTwitter("LOADED " + Object.keys(classifiedUsersObj).length + " CLASSIFED USERS"));
+    //   callback(null, classifiedUsersObj);
+    // }
+  // });
+
 }
 
 function initStdIn(){
@@ -1121,7 +1148,7 @@ function initStdIn(){
 
 function initialize(cnf, callback){
 
-  initClassifiedUserHashmap(classifiedUsersFolder, classifiedUsersDefaultFile, function(err, classifiedUsersObj){
+  initClassifiedUserHashmap(defaultClassifiedUsersFolder, classifiedUsersDefaultFile, function(err, classifiedUsersObj){
     if (err) {
       console.error(chalkError("*** ERROR: CLASSIFED USER HASHMAP NOT INITIALIED: ", err));
     }
@@ -2076,13 +2103,9 @@ function generateAutoKeywords(user, callback){
             if (enableAnalysis(updatedUser)) {
               langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function(){
                 statsObj.analyzer.analyzed += 1;
-                // callback(null, updatedUser);
               });
             }
             else {
-
-              // const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
-              // const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
 
               console.log(chalkInfo("SKIP LANG ANAL"
                 + " | " + updatedUser.userId
@@ -2100,8 +2123,6 @@ function generateAutoKeywords(user, callback){
                   + "\n" + err
                 ));
                 printDatum(updatedUser.screenName, networkInput);
-                // reject(new Error(err));
-                // throw(new Error(err));
                 return(callback(err, null));
               }
               indexOfMax(networkOutput, function maxNetworkOutput(maxOutputIndex){
@@ -2165,8 +2186,6 @@ function generateAutoKeywords(user, callback){
                 ));
 
                 callback(null, updatedUser);
-                // resolve(updatedUser);
-
               });
             });
           });
@@ -2231,14 +2250,11 @@ function generateAutoKeywords(user, callback){
           ));
 
           callback(null, user);
-          // resolve(user);
-
         });
       })
       .catch(function(err){
         console.trace(chalkError("ACTIVATE NETWORK ERROR: " + err));
         callback(err, user);
-        // reject(new Error(err));
       });
 
     });
@@ -2246,80 +2262,75 @@ function generateAutoKeywords(user, callback){
 }
 
 function checkUserWordKeys(user, callback){
+  Word.findOne({nodeId: user.screenName.toLowerCase()}, function(err, word){
 
-  // return new Promise(function(resolve, reject) {
+    let kws = {};
 
-    Word.findOne({nodeId: user.screenName.toLowerCase()}, function(err, word){
+    if (err) {
+      console.error(chalkError("FIND ONE WORD ERROR: " + err));
+      callback(err, user);
+    }
+    else if (!word) {
+      debug(chalkInfo("USER WORD NOT FOUND: " + user.screenName.toLowerCase()));
+      callback(null, kws);
+    }
+    else if (word.keywords === undefined) {
+      debug("WORD-USER KWS UNDEFINED"
+        + " | " + user.screenName.toLowerCase()
+      );
+      callback(null, kws);
+    }
+    else if (!word.keywords || (Object.keys(word.keywords).length === 0)) {
+      debug("WORD-USER NO KW KEYS"
+        + " | " + user.screenName.toLowerCase()
+      );
+      callback(null, kws);
+    }
+    else {
+      debug("WORD-USER KEYWORDS"
+        + "\n" + jsonPrint(word.keywords)
+      );
 
-      let kws = {};
+      async.each(Object.keys(word.keywords), function(kwId, cb){
 
-      if (err) {
-        console.error(chalkError("FIND ONE WORD ERROR: " + err));
-        callback(err, user);
-      }
-      else if (!word) {
-        debug(chalkInfo("USER WORD NOT FOUND: " + user.screenName.toLowerCase()));
-        callback(null, kws);
-      }
-      else if (word.keywords === undefined) {
-        debug("WORD-USER KWS UNDEFINED"
-          + " | " + user.screenName.toLowerCase()
-        );
-        callback(null, kws);
-      }
-      else if (!word.keywords || (Object.keys(word.keywords).length === 0)) {
-        debug("WORD-USER NO KW KEYS"
-          + " | " + user.screenName.toLowerCase()
-        );
-        callback(null, kws);
-      }
-      else {
-        debug("WORD-USER KEYWORDS"
-          + "\n" + jsonPrint(word.keywords)
-        );
+        if (kwId !== "keywordId") {
 
-        async.each(Object.keys(word.keywords), function(kwId, cb){
+          const kwIdLc = kwId.toLowerCase();
 
-          if (kwId !== "keywordId") {
+          kws[kwIdLc] = word.keywords[kwIdLc];
 
-            const kwIdLc = kwId.toLowerCase();
-
-            kws[kwIdLc] = word.keywords[kwIdLc];
-
-            debug(chalkTwitter("-- KW"
-              + " | " + user.screenName.toLowerCase()
-              + " | " + kwIdLc
-              + " | " + kws[kwIdLc]
-            ));
-
-            // classifiedUserHashmap[user.screenName.toLowerCase()] = kws;
-            classifiedUserHashmap[user.userId] = {};
-            classifiedUserHashmap[user.userId] = kws;
-
-            async.setImmediate(function() {
-              cb();
-            });
-          }
-          else {
-            async.setImmediate(function() {
-              cb();
-            });
-          }
-
-        }, function(){
-
-          debug("WORD-USER HIT"
+          debug(chalkTwitter("-- KW"
             + " | " + user.screenName.toLowerCase()
-            + " | " + Object.keys(kws)
-          );
+            + " | " + kwIdLc
+            + " | " + kws[kwIdLc]
+          ));
 
-          callback(null, kws);
+          // classifiedUserHashmap[user.screenName.toLowerCase()] = kws;
+          classifiedUserHashmap[user.userId] = {};
+          classifiedUserHashmap[user.userId] = kws;
 
-        });
-      }
-    });
+          async.setImmediate(function() {
+            cb();
+          });
+        }
+        else {
+          async.setImmediate(function() {
+            cb();
+          });
+        }
 
-  // });
+      }, function(){
+
+        debug("WORD-USER HIT"
+          + " | " + user.screenName.toLowerCase()
+          + " | " + Object.keys(kws)
+        );
+
+        callback(null, kws);
+
+      });
+    }
+  });
 }
 
 
@@ -2958,7 +2969,6 @@ function updateNetworkFetchFriends(){
 
     if (err) {
       console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
-      // console.log(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
       return;
     }
 
@@ -3014,10 +3024,6 @@ function updateNetworkFetchFriends(){
       console.log(chalkLog("languageAnalysisReadyFlag: " + languageAnalysisReadyFlag));
     }
   });
-  // .catch(function(err){
-    // console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
-    // console.log(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
-  // });
 }
 
 function initFetchTwitterFriendsInterval(interval){
