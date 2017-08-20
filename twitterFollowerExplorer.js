@@ -1373,7 +1373,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             langEntityKeys = Object.keys(m.results.entities);
           }
 
-          debug(chalkLog("M<"
+          console.log(chalkLog("M<"
             + " [Q: " + langAnalyzerMessageRxQueue.length
             + " | STATS: " + m.stats.analyzer.analyzed + " ANLZD"
             + " " + m.stats.analyzer.skipped + " SKP"
@@ -1387,58 +1387,82 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             // + "\nENTITIES\n" + jsonPrint(m.results.entities)
           ));
 
+          m.obj.languageAnalyzed = true;
+
           if (m.error) {
+
+            // console.error(chalkError("*** LANG ERROR" + jsonPrint(m.error)));
 
             m.obj.languageAnalysis = {err: m.error};
 
-            if ((m.error.code === 3) || (m.error.code === 8)){ // LANGUAGE QUOTA; will be automatically retried
+            // if ((m.error.code === 3) || (m.error.code === 8)){ // LANGUAGE QUOTA; will be automatically retried
+            if (m.error.code === 8){ // LANGUAGE QUOTA; will be automatically retried
+              console.log(chalkAlert("*** LANG ERROR ... RETRY"
+                + " | " + m.obj.userId
+                + " | " + m.obj.userId
+                + " | CODE: " + m.error.code
+              ));
               m.obj.languageAnalyzed = false;
-              langAnalyzerMessageRxQueueReady = true;
-            }
-            else {
-              m.obj.languageAnalyzed = true;
-              userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
-                if (err) { 
-                  console.log(chalkError("ERROR DB UPDATE USER"
-                    + "\n" + err
-                    + "\n" + jsonPrint(m.obj)
-                  ));
-                }
-                else {
-                  let laEnts = 0;
-                  if (updatedUserObj.languageAnalysis.entities !== undefined) {
-                    laEnts = Object.keys(updatedUserObj.languageAnalysis.entities);
-                  }
-                  const kws = (updatedUserObj.keywords && (updatedUserObj.keywords !== undefined)) 
-                    ? Object.keys(updatedUserObj.keywords) : [];
-                  const kwsAuto = (updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined)) 
-                    ? Object.keys(updatedUserObj.keywordsAuto) : [];
-
-                  let threeceeFollowing = false;
-                  if (updatedUserObj.threeceeFollowing){
-                    threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
-                  }
-
-                  console.log(chalkLog("USER>DB"
-                    + " | " + updatedUserObj.userId
-                    // + " | NID: " + updatedUserObj.nodeId
-                    + " | @" + updatedUserObj.screenName
-                    + " | " + updatedUserObj.name
-                    + " | Ts: " + updatedUserObj.statusesCount
-                    + " | FLs: " + updatedUserObj.followersCount
-                    + " | FRs: " + updatedUserObj.friendsCount
-                    + " | 3CF: " + threeceeFollowing
-                    + " | KWs: " + kws
-                    + " | KWA: " + kwsAuto
-                    + " | LA: " + updatedUserObj.languageAnalyzed
-                    + "\nLA Es: " + laEnts
-                  ));
-                }
+              setTimeout(function(){
                 langAnalyzerMessageRxQueueReady = true;
-              }); 
+              }, 1000);
+
             }
+          // else {
+
+            console.log(chalkError("*** LANG ERROR"
+              + " | " + m.obj.userId
+              + " | @" + m.obj.screenName
+              + " | CODE: " + m.error.code
+            ));
+
+            // m.obj.languageAnalyzed = true;
+
+            userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
+              if (err) { 
+                console.log(chalkError("ERROR DB UPDATE USER"
+                  + "\n" + err
+                  + "\n" + jsonPrint(m.obj)
+                ));
+              }
+              else {
+                let laEnts = 0;
+                if (updatedUserObj.languageAnalysis.entities !== undefined) {
+                  laEnts = Object.keys(updatedUserObj.languageAnalysis.entities);
+                }
+                const kws = (updatedUserObj.keywords && (updatedUserObj.keywords !== undefined)) 
+                  ? Object.keys(updatedUserObj.keywords) : [];
+                const kwsAuto = (updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined)) 
+                  ? Object.keys(updatedUserObj.keywordsAuto) : [];
+
+                let threeceeFollowing = false;
+                if (updatedUserObj.threeceeFollowing){
+                  threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
+                }
+
+                console.log(chalkLog("USER>DB"
+                  + " | " + updatedUserObj.userId
+                  // + " | NID: " + updatedUserObj.nodeId
+                  + " | @" + updatedUserObj.screenName
+                  + " | " + updatedUserObj.name
+                  + " | Ts: " + updatedUserObj.statusesCount
+                  + " | FLs: " + updatedUserObj.followersCount
+                  + " | FRs: " + updatedUserObj.friendsCount
+                  + " | 3CF: " + threeceeFollowing
+                  + " | KWs: " + kws
+                  + " | KWA: " + kwsAuto
+                  + " | LA: " + updatedUserObj.languageAnalyzed
+                  + "\nLA Es: " + laEnts
+                ));
+              }
+              langAnalyzerMessageRxQueueReady = true;
+            }); 
+          // }
           }
           else if (langEntityKeys.length > 0) {
+
+            console.log(chalkLog("LANG ENTS: " + langEntityKeys.length));
+
             async.each(langEntityKeys, function(entityKey, cb) {
               if (!entityKey.includes(".")) { 
                 async.setImmediate(function() {
@@ -1512,6 +1536,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             });
           }
           else {
+
+            console.log(chalkLog("LANG ENTS: " + langEntityKeys.length));
+
             m.obj.languageAnalysis = m.results;
             m.obj.languageAnalyzed = true;
 
@@ -1553,7 +1580,6 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   + "\nLA Es: " + laEnts
                 ));
               }
-
               langAnalyzerMessageRxQueueReady = true;
             }); 
           }

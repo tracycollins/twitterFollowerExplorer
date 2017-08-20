@@ -233,14 +233,19 @@ function initAnalyzeLanguageInterval(interval){
 
   analyzeLanguageReady = true;
 
-  let messageObj = {};
-  messageObj.obj = {};
-  messageObj.results = {};
-  messageObj.stats = {};
+  let messageObj;
+  // messageObj.obj = {};
+  // messageObj.results = {};
+  // messageObj.stats = {};
 
   analyzeLanguageInterval = setInterval(function(){ // TX KEEPALIVE
 
     if ((rxLangObjQueue.length > 0) && analyzeLanguageReady) {
+
+      messageObj = {};
+      messageObj.obj = {};
+      messageObj.results = {};
+      messageObj.stats = {};
 
       analyzeLanguageReady = false;
 
@@ -266,15 +271,20 @@ function initAnalyzeLanguageInterval(interval){
           statsObj.analyzer.total += 1;
           statsObj.analyzer.analyzed += 1;
           statsObj.analyzer.errors += 1;
+
           if (err.code === 3) {
             console.log(chalkAlert("[RXLQ: " + rxLangObjQueue.length + "]"
               + " | UNSUPPORTED LANG"
+              + " | " + langObj.obj.userId
+              + " | @" + langObj.obj.screenName
               + " | " + err
             ));
           }
           else if (err.code === 8) {
             console.error(chalkAlert("[RXLQ: " + rxLangObjQueue.length + "]"
               + " | LANGUAGE QUOTA"
+              + " | " + langObj.obj.userId
+              + " | @" + langObj.obj.screenName
               + " | " + err
               // + "\n" + jsonPrint(err)
             ));
@@ -283,6 +293,8 @@ function initAnalyzeLanguageInterval(interval){
           else {
             console.error(chalkError("[RXLQ: " + rxLangObjQueue.length + "]"
               + " | LANGUAGE TEXT ERROR"
+              + " | " + langObj.obj.userId
+              + " | @" + langObj.obj.screenName
               + " | " + err
               + "\n" + jsonPrint(err)
             ));
