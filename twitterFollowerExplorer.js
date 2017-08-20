@@ -2115,7 +2115,7 @@ function generateAutoKeywords(user, callback){
             }
             else {
 
-              console.log(chalklog("SKIP LANG ANAL"
+              console.log(chalkLog("SKIP LANG ANAL"
                 + " | " + updatedUser.userId
                 + " | @" + updatedUser.screenName
                 + " | LAd: " + updatedUser.languageAnalyzed
