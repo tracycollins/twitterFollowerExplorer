@@ -7,8 +7,8 @@ const DEFAULT_FETCH_COUNT = 200;
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
 
-const userServer = require("@threeceelabs/user-server-controller");
-// const userServer = require("../userServerController");
+// const userServer = require("@threeceelabs/user-server-controller");
+const userServer = require("../userServerController");
 // const wordServer = require("@threeceelabs/word-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 
@@ -37,6 +37,7 @@ let stdin;
 let langAnalyzerIdle = false;
 let abortCursor = false;
 let nextUser = false;
+let classifiedUserHashmapReadyFlag = false;
 
 let neuralNetworkInitialized = false;
 let currentTwitterUser ;
@@ -1160,6 +1161,7 @@ function initialize(cnf, callback){
     else {
       classifiedUserHashmap = classifiedUsersObj;
       console.log(chalkTwitterBold("LOADED " + Object.keys(classifiedUserHashmap).length + " TOTAL CLASSIFED USERS"));
+      classifiedUserHashmapReadyFlag = true;
     }
   });
 
@@ -3049,13 +3051,13 @@ function initFetchTwitterFriendsInterval(interval){
 
 
   fetchTwitterFriendsIntervalometer = timerIntervalometer(function(){
-    if (languageAnalysisReadyFlag){
+    if (languageAnalysisReadyFlag && classifiedUserHashmapReadyFlag){
       updateNetworkFetchFriends();
     }
   }, interval);
 
   waitLanguageAnalysisReadyInterval = setInterval(function(){
-    if (languageAnalysisReadyFlag){
+    if (languageAnalysisReadyFlag && classifiedUserHashmapReadyFlag){
       clearInterval(waitLanguageAnalysisReadyInterval);
       // updateNetworkFetchFriends();
       fetchTwitterFriendsIntervalometer.start();
