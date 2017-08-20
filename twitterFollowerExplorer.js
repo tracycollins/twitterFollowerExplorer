@@ -7,8 +7,8 @@ const DEFAULT_FETCH_COUNT = 200;
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
 
-// const userServer = require("@threeceelabs/user-server-controller");
-const userServer = require("../userServerController");
+const userServer = require("@threeceelabs/user-server-controller");
+// const userServer = require("../userServerController");
 // const wordServer = require("@threeceelabs/word-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 
@@ -2115,7 +2115,7 @@ function generateAutoKeywords(user, callback){
             }
             else {
 
-              console.log(chalkInfo("SKIP LANG ANAL"
+              console.log(chalklog("SKIP LANG ANAL"
                 + " | " + updatedUser.userId
                 + " | @" + updatedUser.screenName
                 + " | LAd: " + updatedUser.languageAnalyzed
