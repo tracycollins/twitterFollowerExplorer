@@ -697,6 +697,14 @@ function initStatsUpdate(callback){
         console.log(chalkError("SAVE RETRY ON ERROR: " + classifiedUsersFolder + "/" + classifiedUsersDefaultFile));
         saveFileRetry(5000, classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap);
       }
+      else if (classifiedUserHashmapReadyFlag && (hostname === "google")) { // SAVE DEFAULT CLASSIFIED USERS IF GOOGLE HOST
+        saveFile({folder:defaultClassifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap}, function(err){
+          if (err) {
+            console.log(chalkError("SAVE RETRY ON ERROR: " + classifiedUsersFolder + "/" + classifiedUsersDefaultFile));
+            saveFileRetry(5000, defaultClassifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap);
+          }
+        });
+      }
     });
 
     saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
