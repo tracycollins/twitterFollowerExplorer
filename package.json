@@ -8,7 +8,7 @@
     "@threeceelabs/mongoose-twitter": "^1.0.21",
     "@threeceelabs/tweet-server-controller": "^1.0.39",
     "@threeceelabs/twitter-text-parser": "^1.0.16",
-    "@threeceelabs/user-server-controller": "^1.0.53",
+    "@threeceelabs/user-server-controller": "^1.0.54",
     "@threeceelabs/word-server-controller": "^1.0.8",
     "array-normalize": "^1.1.3",
     "array-unique": "^0.3.2",
