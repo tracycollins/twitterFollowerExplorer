@@ -1371,7 +1371,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
   randomNetworkTreeMessageRxQueueInterval = setInterval(function () {
 
-    if (randomNetworkTreeMessageRxQueueReady && (langAnalyzerMessageRxQueue.length > 0)) {
+    if (randomNetworkTreeMessageRxQueueReady && (randomNetworkTreeMessageRxQueue.length > 0)) {
 
       randomNetworkTreeMessageRxQueueReady = false;
 
