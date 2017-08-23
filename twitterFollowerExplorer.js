@@ -3,6 +3,8 @@
 
 const TEST_MODE_FETCH_COUNT = 47;
 const DEFAULT_FETCH_COUNT = 200;
+let previousBestNetworkId = false;
+
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
@@ -3051,7 +3053,15 @@ function loadBestNeuralNetworkFile(callback){
         });
       }
 
-      const bestNetwork = results.best;
+      let bestNetwork;
+
+      if (previousBestNetworkId && (bestNetwork.networkId !== previousBestNetworkId) && bestNetworkHashMap.has(previousBestNetworkId)) {
+        bestNetwork = bestNetworkHashMap.get(previousBestNetworkId).network;
+        console.log(chalkAlert("\n\n>>>> NEW BEST NETWORK | " + bestNetwork.networkId + "\n\n"));
+      }
+      else {
+        bestNetwork = results.best;
+      }
 
       printNetworkObj("LOADED NETWORK", bestNetwork);
 
@@ -3177,6 +3187,7 @@ function initFetchTwitterFriendsInterval(interval){
   }, 100);
 }
 
+
 function initRandomNetworkTree(callback){
 
   console.log(chalkAlert("INIT RANDOM NETWORK TREE CHILD PROCESS"));
@@ -3222,6 +3233,13 @@ function initRandomNetworkTree(callback){
       break;
       case "NETWORK_OUTPUT":
         debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
+        if (m.bestNetwork.bestNetworkId !== previousBestNetworkId) {
+          console.log(chalkAlert(">>>> NEW BEST NETWORK"
+            + " | " + m.bestNetwork.networkId
+            + " | " + m.bestNetwork.successRate + "%"
+          ));
+          previousBestNetworkId = m.bestNetwork.bestNetworkId;
+        }
       break;
       default:
         console.error(chalkError("*** UNKNOWN RNT OP | " + m.op));

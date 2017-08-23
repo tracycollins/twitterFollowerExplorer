@@ -216,14 +216,21 @@ function activateNetwork(nnInput, callback){
 
 const sum = (r, a) => r.map((b, i) => a[i] + b);
 
+statsObj.bestNetwork = {};
+statsObj.bestNetwork.networkId = false;
+statsObj.bestNetwork.successRate = 0;
+
 function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
   let text = "";
   let arraryOfArrays = [];
+  let matchFlag = false;
 
   async.eachSeries(Object.keys(networkOutputObj), function(nnId, cb){
 
     arraryOfArrays.push(networkOutputObj[nnId]);
+
+    matchFlag = false;
 
     if (expectedOutput) {
 
@@ -233,12 +240,18 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
         && (networkOutputObj[nnId][1] === expectedOutput[1])
         && (networkOutputObj[nnId][2] === expectedOutput[2])){
         statsObj[nnId].match += 1;
+        matchFlag = true;
       }
       else {
         statsObj[nnId].mismatch += 1;
       }
 
       statsObj[nnId].matchRate = 100 * statsObj[nnId].match / statsObj[nnId].total;
+
+      if (statsObj[nnId].matchRate > statsObj.bestNetwork.successRate) {
+        statsObj.bestNetwork.networkId = nnId;
+        statsObj.bestNetwork.successRate = statsObj[nnId].matchRate;
+      }
 
     }
 
@@ -247,6 +260,7 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
       + " | +" + statsObj[nnId].match 
       + " | -" + statsObj[nnId].mismatch 
       + " | T: " + statsObj[nnId].total 
+      + " | MATCH: " + matchFlag 
       + " | " + nnId 
       + "\n" + text;
 
@@ -446,6 +460,8 @@ function initActivateNetworkInterval(interval){
             }
 
             messageObj.op = "NETWORK_OUTPUT";
+            messageObj.bestNetwork = {};
+            messageObj.bestNetwork = deepcopy(statsObj.bestNetwork);
             messageObj.keywordsAuto = keywordsAuto;
             messageObj.output = networkOutputObj;
 
