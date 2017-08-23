@@ -3233,7 +3233,7 @@ function initRandomNetworkTree(callback){
       break;
       case "NETWORK_OUTPUT":
         debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
-        if (m.bestNetwork.bestNetworkId !== previousBestNetworkId) {
+        if (m.bestNetwork.networkId !== previousBestNetworkId) {
           console.log(chalkAlert(">>>> NEW BEST NETWORK"
             + " | " + m.bestNetwork.networkId
             + " | " + m.bestNetwork.successRate + "%"
