@@ -1,13 +1,12 @@
-/*jslint node: true */
+ /*jslint node: true */
 "use strict";
 
-const TFE_NUM_RANDOM_NETWORKS = 17;
+const TFE_NUM_RANDOM_NETWORKS = 23;
 
 const TEST_MODE_FETCH_COUNT = 47;
 const DEFAULT_FETCH_COUNT = 200;
 
-let bestNetworkId = false;
-
+let bestRuntimeNetworkId;
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
@@ -171,6 +170,10 @@ let randomNetworkTreeReadyFlag = false;
 let randomNetworkTreeMessageRxQueue = [];
 let randomNetworksObj = {};
 
+let userDbUpdateQueueInterval;
+let userDbUpdateQueueReady = true;
+let userDbUpdateQueue = [];
+
 let network;
 const neataptic = require("neataptic");
 const cp = require("child_process");
@@ -217,11 +220,11 @@ configuration.neuralNetworkFile = defaultNeuralNetworkFile;
 function indexOfMax (arr, callback) {
   if (arr.length === 0) {
     console.log(chalkAlert("indexOfMax: 0 LENG ARRAY: -1"));
-    return -1;
+    return callback(-1);
   }
   if ((arr[0] === arr[1]) && (arr[1] === arr[2])){
     debug(chalkAlert("indexOfMax: ALL EQUAL: " + arr[0]));
-    return -1;
+    return callback(-1);
   }
 
   debug("B4 ARR: " + arr[0].toFixed(2) + " - " + arr[1].toFixed(2) + " - " + arr[2].toFixed(2));
@@ -302,6 +305,7 @@ let fetchTwitterFriendsIntervalometer;
 
 process.on("exit", function() {
   if (langAnalyzer !== undefined) { langAnalyzer.kill("SIGINT"); }
+  if (randomNetworkTree !== undefined) { randomNetworkTree.kill("SIGINT"); }
 });
 
 process.on("message", function(msg) {
@@ -311,6 +315,7 @@ process.on("message", function(msg) {
     debug("\n\n!!!!! RECEIVED PM2 SHUTDOWN !!!!!\n\n***** Closing all connections *****\n\n");
 
     clearInterval(langAnalyzerMessageRxQueueInterval);
+    clearInterval(randomNetworkTreeMessageRxQueueInterval);
     clearInterval(checkRateLimitInterval);
     clearInterval(statsUpdateInterval);
 
@@ -1399,7 +1404,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             + " | OP: " + m.op
             + " | OUTPUT: " + m.networkOutput
           ));
-
+          randomNetworkTreeReadyFlag = true;
+          randomNetworkTreeMessageRxQueueReady = true;
         break;
 
         case "QUEUE_FULL":
@@ -2243,7 +2249,7 @@ function generateAutoKeywords(user, callback){
               ));
             }
 
-            const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto"]);
+            const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "inputHits", "inputHitRatio"]);
 
             activateNetwork({user: u, networkInput: networkInput});
 
@@ -2683,7 +2689,8 @@ function fetchFriends(params, callback) {
     if (nextUser) {
       callback(null, []);
     }
-    else if (!statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
+    else if (!statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag
+      && randomNetworkTreeReadyFlag
       && languageAnalysisReadyFlag) {
 
       twitterUserHashMap[currentTwitterUser].twit.get("friends/list", params, function(err, data, response){
@@ -2903,9 +2910,11 @@ function loadBestNetworkDropboxFolder(folder, callback){
         // + "\n" + jsonPrint(entry)
       ));
 
-      if (bestNetworkHashMap.has(entry.name)){
+      const networkId = entry.name.replace(".json", "");
 
-        if (bestNetworkHashMap.get(entry.name).entry.content_hash !== entry.content_hash) {
+      if (bestNetworkHashMap.has(networkId)){
+
+        if (bestNetworkHashMap.get(networkId).entry.content_hash !== entry.content_hash) {
 
           console.log(chalkInfo("DROPBOX NETWORK CONTENT CHANGE"
             + " | " + getTimeStamp(entry.client_modified)
@@ -2930,9 +2939,15 @@ function loadBestNetworkDropboxFolder(folder, callback){
               + " | OUT: " + networkObj.numOutputs
             ));
 
-            bestNetworkHashMap.set(entry.name, { entry: entry, network: networkObj});
+            const hmEntry = {
+              entry: entry,
+              network: networkObj
+            };
+
+            bestNetworkHashMap.set(networkObj.networkId, hmEntry);
 
             if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
+              currentBestNetwork = {};
               currentBestNetwork = deepcopy(networkObj);
               newBestNetwork = true;
             }
@@ -2969,7 +2984,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             + " | OUT: " + networkObj.numOutputs
           ));
 
-          bestNetworkHashMap.set(entry.name, { entry: entry, network: networkObj});
+          bestNetworkHashMap.set(networkObj.networkId, { entry: entry, network: networkObj});
 
           if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
             currentBestNetwork = networkObj;
@@ -2986,7 +3001,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             }
 
           }
-          else if ((Math.random() < 0.333) && (Object.keys(randomNetworksObj).length < configuration.numRandomNetworks)) {
+          else if ((Math.random() < 0.5) && (Object.keys(randomNetworksObj).length < configuration.numRandomNetworks)) {
             randomNetworksObj[networkObj.networkId] = {};
             randomNetworksObj[networkObj.networkId] = networkObj;
             console.log(chalkAlert("+++ RANDOM NETWORK"
@@ -3052,42 +3067,44 @@ function loadBestNeuralNetworkFile(callback){
 
       if (randomNetworkTree !== undefined) {
         randomNetworkTree.send({ op: "LOAD_NETWORKS", networksObj: randomNetworksObj }, function(err){
-          console.log(chalkAlert("SEND RANDOM NETWORKS | " + Object.keys(randomNetworksObj)));
+          console.log(chalkAlert("SEND RANDOM NETWORKS | " + Object.keys(randomNetworksObj).length));
         });
       }
 
-      let bestNetwork;
+      let bestNetworkObj;
 
-      if (bestNetworkId  && bestNetworkHashMap.has(bestNetworkId)) {
-        bestNetwork = bestNetworkHashMap.get(bestNetworkId).network;
-        console.log(chalkAlert(">>>> NEW BEST NETWORK | " + bestNetwork.networkId + "\n\n"));
+      if (bestRuntimeNetworkId  && bestNetworkHashMap.has(bestRuntimeNetworkId)) {
+        const nnObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
+        bestNetworkObj = deepcopy(nnObj.network);
+        console.log(chalkAlert("\n\n>>>> NEW BEST RUNTIME NETWORK | " + bestNetworkObj.networkId + "\n\n"));
       }
       else {
-        bestNetwork = results.best;
+        bestNetworkObj = results.best;
       }
 
-      printNetworkObj("LOADED NETWORK", bestNetwork);
+      printNetworkObj("LOADED NETWORK", bestNetworkObj);
 
-      Object.keys(bestNetwork.inputs).forEach(function(type){
+      Object.keys(bestNetworkObj.inputs).forEach(function(type){
         console.log(chalkNetwork("NN INPUTS TYPE" 
           + " | " + type
-          + " | INPUTS: " + bestNetwork.inputs[type].length
+          + " | INPUTS: " + bestNetworkObj.inputs[type].length
         ));
-        inputArrays[type] = bestNetwork.inputs[type];
+        inputArrays[type] = bestNetworkObj.inputs[type];
       });
 
-      network = neataptic.Network.fromJSON(bestNetwork.network);
+      network = neataptic.Network.fromJSON(bestNetworkObj.network);
 
-      statsObj.currentBestNetworkId = bestNetwork.networkId;
-      statsObj.network.networkId = bestNetwork.networkId;
-      statsObj.network.networkType = bestNetwork.networkType;
-      statsObj.network.successRate = bestNetwork.successRate;
-      statsObj.network.input = bestNetwork.network.input;
-      statsObj.network.output = bestNetwork.network.output;
+      statsObj.bestRuntimeNetworkId = bestRuntimeNetworkId;
+      statsObj.currentBestNetworkId = bestNetworkObj.networkId;
+      statsObj.network.networkId = bestNetworkObj.networkId;
+      statsObj.network.networkType = bestNetworkObj.networkType;
+      statsObj.network.successRate = bestNetworkObj.successRate;
+      statsObj.network.input = bestNetworkObj.network.input;
+      statsObj.network.output = bestNetworkObj.network.output;
       statsObj.network.evolve = {};
-      statsObj.network.evolve = bestNetwork.evolve;
+      statsObj.network.evolve = bestNetworkObj.evolve;
 
-      callback(null, bestNetwork);
+      callback(null, bestNetworkObj);
 
     }
   });
@@ -3190,6 +3207,60 @@ function initFetchTwitterFriendsInterval(interval){
   }, 100);
 }
 
+function initUserDbUpdateQueueInterval(interval){
+
+  console.log(chalkAlert("INIT USER DB UPDATE QUEUE INTERVAL: " + interval));
+
+  clearInterval(userDbUpdateQueueInterval);
+
+  userDbUpdateQueueInterval = setInterval(function(){
+
+    if (userDbUpdateQueueReady && (userDbUpdateQueue.length > 0)) {
+
+      userDbUpdateQueueReady = false;
+
+      let user = userDbUpdateQueue.shift();
+
+      userServer.findOneUser(user, {noInc: true}, function updateUserComplete(err, updatedUserObj){
+
+        userDbUpdateQueueReady = true;
+
+        if (err){
+          console.trace(chalkError("ERROR DB UPDATE USER - updateUserDb"
+            + "\n" + err
+            + "\n" + jsonPrint(user)
+          ));
+          return;
+        }
+
+        let keywords = "";
+        let keywordsAuto = "";
+
+        if ((updatedUserObj.keywords !== undefined) && updatedUserObj.keywords) {
+          keywords = Object.keys(updatedUserObj.keywords);
+        }
+
+        if ((updatedUserObj.keywordsAuto !== undefined) && updatedUserObj.keywordsAuto) {
+          keywordsAuto = Object.keys(updatedUserObj.keywordsAuto);
+        }
+
+        console.log(chalkInfo("US UPD<"
+          + " | " + updatedUserObj.userId
+          + " | TW: " + (updatedUserObj.isTwitterUser || "-")
+          + " | @" + updatedUserObj.screenName
+          + " | Ts: " + updatedUserObj.statusesCount
+          + " | FLWRs: " + updatedUserObj.followersCount
+          + " | FRNDs: " + updatedUserObj.friendsCount
+          + " | LAd: " + updatedUserObj.languageAnalyzed
+          + " | KWs: " + keywords
+          + " | AKWs: " + keywordsAuto
+        ));
+
+      });
+    }
+  }, interval);
+}
+
 
 function initRandomNetworkTree(callback){
 
@@ -3200,10 +3271,15 @@ function initRandomNetworkTree(callback){
 
   randomNetworkTree.on("message", function(m){
 
+    randomNetworkTreeReadyFlag = false;
+
+
     debug(chalkAlert("<== RNT RX"
       + " [" + randomNetworkTreeMessageRxQueue.length + "]"
       + " | " + m.op
     ));
+
+    let user = {};
 
     switch (m.op) {
       case "IDLE":
@@ -3213,6 +3289,10 @@ function initRandomNetworkTree(callback){
       case "NETWORK_READY":
         randomNetworkTreeReadyFlag = true;
         debug(chalkInfo("... RNT NETWORK_READY ..."));
+      break;
+      case "NETWORK_BUSY":
+        randomNetworkTreeReadyFlag = false;
+        debug(chalkInfo("... RNT NETWORK_BUSY ..."));
       break;
       case "QUEUE_READY":
         randomNetworkTreeReadyFlag = true;
@@ -3236,35 +3316,39 @@ function initRandomNetworkTree(callback){
       break;
       case "NETWORK_OUTPUT":
 
+        randomNetworkTreeReadyFlag = true;
+
         debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
 
-        console.log(chalkAlert("RNT NETWORK_OUTPUT | " + m.bestNetwork.networkId));
+        debug(chalkAlert("RNT NETWORK_OUTPUT | " + m.bestNetwork.networkId));
 
-        bestNetworkId = m.bestNetwork.networkId;
+        bestRuntimeNetworkId = m.bestNetwork.networkId;
 
-        if (bestNetworkHashMap.has(bestNetworkId)) {
+        if (bestNetworkHashMap.has(bestRuntimeNetworkId)) {
 
-          currentBestNetwork = bestNetworkHashMap.get(bestNetworkId).network;
+          currentBestNetwork = bestNetworkHashMap.get(bestRuntimeNetworkId).network;
 
           console.log(chalkAlert("NETWORK_OUTPUT"
             + " | " + moment().format(compactDateTimeFormat)
             + " | " + m.bestNetwork.networkId
-            + " | " + m.bestNetwork.successRate.toFixed(1) + "%"
-            + " | " + currentBestNetwork.successRate.toFixed(1) + "%"
+            + " | RT RATE: " + m.bestNetwork.successRate.toFixed(1) + "%"
+            + " | TR RATE: " + currentBestNetwork.successRate.toFixed(1) + "%"
+            + " | @" + m.user.screenName
+            + " | KWs: " + Object.keys( m.user.keywords)
+            + " | KWAs: " + Object.keys( m.user.keywordsAuto)
+            + " | NKWAs: " + Object.keys( m.keywordsAuto)
           ));
 
-        }
+          user = {};
+          user = deepcopy(m.user);
+          user.keywordsAuto = m.keywordsAuto;
 
-        // if (m.bestNetwork.networkId !== previousBestNetworkId) {
-        //   console.log(chalkAlert("NETWORK_OUTPUT   NETWORK"
-        //     + " | " + moment().format(compactDateTimeFormat)
-        //     + " | " + m.bestNetwork.networkId
-        //     + " | " + m.bestNetwork.successRate + "%"
-        //   ));
-        //   previousBestNetworkId = m.bestNetwork.networkId;
-        // }
+          userDbUpdateQueue.push(user);
+
+        }
       break;
       default:
+        randomNetworkTreeReadyFlag = true;
         console.error(chalkError("*** UNKNOWN RNT OP | " + m.op));
     }
 
@@ -3397,6 +3481,7 @@ initialize(configuration, function(err, cnf){
 
   console.log(chalkTwitter(cnf.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
+  initUserDbUpdateQueueInterval(100);
   initRandomNetworkTreeMessageRxQueueInterval(100);
   initRandomNetworkTree();
 
