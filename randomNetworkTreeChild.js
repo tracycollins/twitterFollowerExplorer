@@ -31,6 +31,7 @@ const debug = require("debug")("rnt");
 const debugCache = require("debug")("cache");
 const arrayNormalize = require("array-normalize");
 const deepcopy = require("deep-copy");
+const table = require('text-table');
 
 const neataptic = require("neataptic");
 
@@ -185,46 +186,39 @@ function activateNetwork(nnInput, callback){
 
   async.eachSeries(Object.keys(networks), function(nnId, cb){
 
-    // try {
+    networkOutput[nnId] = [];
 
-      networkOutput[nnId] = [];
+    let output = networks[nnId].activate(nnInput);
 
-      let output = networks[nnId].activate(nnInput);
+    if (output.length !== 3) {
+      console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
+      quit(" ZERO LENGTH NETWORK OUTPUT");
+      output = [0,0,0];
+    }
 
-      if (output.length !== 3) {
-        console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
-        quit(" ZERO LENGTH NETWORK OUTPUT");
-        output = [0,0,0];
+    indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
+
+      debug(chalkInfo("MAX INDEX: " + maxOutputIndex));
+
+      switch (maxOutputIndex) {
+        case 0:
+          networkOutput[nnId] = [1,0,0];
+        break;
+        case 1:
+          networkOutput[nnId] = [0,1,0];
+        break;
+        case 2:
+          networkOutput[nnId] = [0,0,1];
+        break;
+        default:
+          networkOutput[nnId] = [0,0,0];
       }
 
-      indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
-
-        debug(chalkInfo("MAX INDEX: " + maxOutputIndex));
-
-        switch (maxOutputIndex) {
-          case 0:
-            networkOutput[nnId] = [1,0,0];
-          break;
-          case 1:
-            networkOutput[nnId] = [0,1,0];
-          break;
-          case 2:
-            networkOutput[nnId] = [0,0,1];
-          break;
-          default:
-            networkOutput[nnId] = [0,0,0];
-        }
-
-        async.setImmediate(function() {
-          cb();
-        });
-
+      async.setImmediate(function() {
+        cb();
       });
-    // }
-    // catch (e) {
-    //   console.error(chalkError("*** NETWORK ACTIVATE ERROR | " + nnId + " | " + e));
-    //   cb(e);
-    // }
+
+    });
   }, function(err){
     callback(err, networkOutput);
   });
@@ -238,11 +232,12 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
   let text = "";
   let arraryOfArrays = [];
   // let matchFlag = false;
-  let bestNetworkOutput = [];
+  let bestNetworkOutput = [0,0,0];
+  let statsTextArray = [];
 
-  async.eachOfSeries(Object.keys(networkOutputObj), function(nnOutput, nnId, cb){
+  async.eachSeries(Object.keys(networkOutputObj), function(nnId, cb){
 
-    // arraryOfArrays.push(networkOutputObj[nnId]);
+    const nnOutput = networkOutputObj[nnId];
 
     let matchFlag = false;
 
@@ -254,6 +249,7 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
         statsObj[nnId].matchRate = 0;
         statsObj[nnId].match = 0;
         statsObj[nnId].mismatch = 0;
+        statsObj[nnId].matchFlag = false;
       }
 
       statsObj[nnId].total += 1;
@@ -262,45 +258,46 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
         && (nnOutput[1] === expectedOutput[1])
         && (nnOutput[2] === expectedOutput[2])){
         statsObj[nnId].match += 1;
+        statsObj[nnId].matchFlag = true;
         matchFlag = true;
+        statsObj[nnId].matchRate = 100 * statsObj[nnId].match / statsObj[nnId].total;
       }
       else {
         statsObj[nnId].mismatch += 1;
+        statsObj[nnId].matchFlag = false;
+        matchFlag = false;
+        statsObj[nnId].matchRate = 100 * statsObj[nnId].match / statsObj[nnId].total;
       }
+    }
 
-      statsObj[nnId].matchRate = 100 * statsObj[nnId].match / statsObj[nnId].total;
-
-      if (statsObj[nnId].matchRate > statsObj.bestNetwork.successRate) {
-        statsObj.bestNetwork.networkId = nnId;
-        statsObj.bestNetwork.successRate = statsObj[nnId].matchRate;
-        bestNetworkOutput = nnOutput;
-      }
-
-      // if (statsObj.bestNetwork.networkId === nnId) {
-      //   bestNetworkOutput = nnOutput;
-      // }
+    if (statsObj[nnId].matchRate > statsObj.bestNetwork.successRate) {
+      statsObj.bestNetwork.networkId = nnId;
+      statsObj.bestNetwork.successRate = statsObj[nnId].matchRate;
     }
 
     if (statsObj.bestNetwork.networkId === nnId) {
       bestNetworkOutput = nnOutput;
     }
 
-    text = nnOutput 
-      + " | " + statsObj[nnId].matchRate.toFixed(1) + "%"
-      + " | +" + statsObj[nnId].match 
-      + " | -" + statsObj[nnId].mismatch 
-      + " | T: " + statsObj[nnId].total 
-      + " | MATCH: " + matchFlag 
-      + " | " + nnId 
-      + "\n" + text;
+    statsTextArray.push([
+      nnId,
+      statsObj[nnId].matchFlag,
+      nnOutput,
+      statsObj[nnId].matchRate.toFixed(1),
+      statsObj[nnId].total,
+      statsObj[nnId].match,
+      statsObj[nnId].mismatch
+    ]);
 
-    // async.setImmediate(function() {
+    async.setImmediate(function() {
       cb();
-    // });
+    });
 
   }, function(){
 
-    console.log("NET OUT\n" + text);
+    console.log("NET OUT_______________________________________________________\n" 
+      + table(statsTextArray, { align: [ "l", "l", "l", '.', "r", "r", "r"] }
+    ));
 
     indexOfMax(bestNetworkOutput, function(maxOutputIndex){
 
@@ -524,7 +521,7 @@ function loadNetworks(networksObj, callback){
 
     const network = neataptic.Network.fromJSON(networksObj[nnId].network);
     networks[nnId] = {};
-    networks[nnId] = deepcopy(network);
+    networks[nnId] = network;
 
     if (statsObj[nnId] === undefined) {
       statsObj[nnId] = {};
@@ -532,6 +529,7 @@ function loadNetworks(networksObj, callback){
       statsObj[nnId].matchRate = 0;
       statsObj[nnId].match = 0;
       statsObj[nnId].mismatch = 0;
+      statsObj[nnId].matchFlag = false;
     }
     cb();
   }, function(err){
@@ -573,7 +571,7 @@ process.on("message", function(m) {
 
     case "LOAD_NETWORKS":
       console.log(chalkAlert("LOAD_NETWORKS"
-        + " | " + Object.keys(m.networksObj)
+        + " | " + Object.keys(m.networksObj).length
       ));
       loadNetworks(m.networksObj, function(){
         process.send({op: "NETWORK_READY"}, function(err){

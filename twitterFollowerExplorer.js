@@ -279,7 +279,7 @@ const cla = require("command-line-args");
 const numRandomNetworks = { name: "numRandomNetworks", alias: "n", type: Number};
 const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
 const quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
-const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean, defaultValue: false};
+const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean};
 const testMode = { name: "testMode", alias: "T", type: Boolean, defaultValue: false};
 const loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
 
@@ -3010,9 +3010,10 @@ function loadBestNetworkDropboxFolder(folder, callback){
               + " | " + networkObj.successRate.toFixed(1) + "%"
             ));
           }
-          setTimeout(function(){
+          
+          // setTimeout(function(){
             cb();
-          }, 100);
+          // }, 100);
 
 
         });
