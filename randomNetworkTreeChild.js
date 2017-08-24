@@ -289,9 +289,9 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
       statsObj[nnId].mismatch
     ]);
 
-    async.setImmediate(function() {
+    // async.setImmediate(function() {
       cb();
-    });
+    // });
 
   }, function(){
 
