@@ -214,7 +214,7 @@ function activateNetwork(nnInput, callback){
           default:
             networkOutput[nnId] = [0,0,0];
         }
-        
+
         async.setImmediate(function() {
           cb();
         });
@@ -237,14 +237,14 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
   let text = "";
   let arraryOfArrays = [];
-  let matchFlag = false;
+  // let matchFlag = false;
   let bestNetworkOutput = [];
 
   async.eachSeries(Object.keys(networkOutputObj), function(nnId, cb){
 
     // arraryOfArrays.push(networkOutputObj[nnId]);
 
-    matchFlag = false;
+    let matchFlag = false;
 
     if (expectedOutput) {
 
@@ -292,7 +292,7 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
   }, function(){
 
-    // const sumArray = arraryOfArrays.reduce(sum);
+    console.log("NET OUT\n" + text);
 
     indexOfMax(bestNetworkOutput, function(maxOutputIndex){
 
