@@ -31,7 +31,7 @@ const debug = require("debug")("rnt");
 const debugCache = require("debug")("cache");
 const arrayNormalize = require("array-normalize");
 const deepcopy = require("deep-copy");
-const table = require('text-table');
+const table = require("text-table");
 
 const neataptic = require("neataptic");
 
@@ -226,16 +226,25 @@ function activateNetwork(nnInput, callback){
 
 const sum = (r, a) => r.map((b, i) => a[i] + b);
 
+statsObj.multiNeuralNet = {};
+statsObj.multiNeuralNet.total = 0;
+statsObj.multiNeuralNet.matchRate = 0.0;
+statsObj.multiNeuralNet.match = 0;
+statsObj.multiNeuralNet.mismatch = 0;
+statsObj.multiNeuralNet.matchFlag = false;
+
 
 function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
   let text = "";
-  let arraryOfArrays = [];
+  let arrayOfArrays = [];
   // let matchFlag = false;
   let bestNetworkOutput = [0,0,0];
   let statsTextArray = [];
 
   async.eachSeries(Object.keys(networkOutputObj), function(nnId, cb){
+
+    arrayOfArrays.push(networkOutputObj[nnId]);
 
     const nnOutput = networkOutputObj[nnId];
 
@@ -268,7 +277,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       statsObj[nnId].matchRate = 100.0 * statsObj[nnId].match / statsObj[nnId].total;
     }
     else {
-      statsObj[nnId].matchFlag = "---"
+      statsObj[nnId].matchFlag = "---";
     }
 
     if (statsObj[nnId].matchRate > statsObj.bestNetwork.successRate) {
@@ -297,13 +306,67 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
   }, function(){
 
+    const sumArray = arrayOfArrays.reduce(sum);
+    let sumArrayNorm = deepcopy(sumArray);
+    arrayNormalize(sumArrayNorm);
+
+    if (expectedOutput) {
+
+      statsObj.multiNeuralNet.total += 1;
+
+      if ((sumArrayNorm[0] === expectedOutput[0])
+        && (sumArrayNorm[1] === expectedOutput[1])
+        && (sumArrayNorm[2] === expectedOutput[2])){
+
+        statsObj.multiNeuralNet.match += 1;
+        statsObj.multiNeuralNet.matchFlag = true;
+
+      }
+      else {
+        statsObj.multiNeuralNet.mismatch += 1;
+        statsObj.multiNeuralNet.matchFlag = false;
+      }
+
+      statsObj.multiNeuralNet.matchRate = 100.0 * statsObj.multiNeuralNet.match / statsObj.multiNeuralNet.total;
+    }
+    else {
+      statsObj.multiNeuralNet.matchFlag = "---";
+    }
+
+    statsTextArray.push([
+      "MULTI NN",
+      statsObj.multiNeuralNet.matchFlag,
+      sumArray,
+      statsObj.multiNeuralNet.matchRate.toFixed(1),
+      statsObj.multiNeuralNet.total,
+      statsObj.multiNeuralNet.match,
+      statsObj.multiNeuralNet.mismatch
+    ]);
+
     console.log(
         "\n--------------------------------------------------------------"
       + "\n" + title 
       + "\n--------------------------------------------------------------\n"
-      + table(statsTextArray, { align: [ "l", "l", "l", '.', "r", "r", "r"] })
+      + table(statsTextArray, { align: [ "l", "l", "l", ".", "r", "r", "r"] })
       + "\n--------------------------------------------------------------\n"
     );
+
+    indexOfMax(sumArray, function(maxOutputIndex){
+
+      switch (maxOutputIndex) {
+        case 0:
+          console.log(chalkLog("XNKW | L | " + sumArray + " | " + maxOutputIndex));
+        break;
+        case 1:
+          console.log(chalkLog("XNKW | N | " + sumArray + " | " + maxOutputIndex));
+        break;
+        case 2:
+          console.log(chalkLog("XNKW | R | " + sumArray + " | " + maxOutputIndex));
+        break;
+        default:
+          console.log(chalkLog("XNKW | 0 | " + sumArray + " | " + maxOutputIndex));
+      }
+    });
 
     indexOfMax(bestNetworkOutput, function(maxOutputIndex){
 
@@ -325,6 +388,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
           callback({});
       }
     });
+
 
   });
 
