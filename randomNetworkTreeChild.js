@@ -296,19 +296,19 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
       switch (maxOutputIndex) {
         case 0:
-          console.log(chalk.blue("NAKW | L | " + bestNetworkOutput + " | " + maxOutputIndex));
+          debug(chalk.blue("NAKW | L | " + bestNetworkOutput + " | " + maxOutputIndex));
           callback({left: 100});
         break;
         case 1:
-          console.log(chalk.black("NAKW | N | " + bestNetworkOutput + " | " + maxOutputIndex));
+          debug(chalk.black("NAKW | N | " + bestNetworkOutput + " | " + maxOutputIndex));
           callback({neutral: 100});
         break;
         case 2:
-          console.log(chalk.red("NAKW | R | " + bestNetworkOutput + " | " + maxOutputIndex));
+          debug(chalk.red("NAKW | R | " + bestNetworkOutput + " | " + maxOutputIndex));
           callback({right: 100});
         break;
         default:
-          console.log(chalk.gray("NAKW | 0 | " + bestNetworkOutput + " | " + maxOutputIndex));
+          debug(chalk.gray("NAKW | 0 | " + bestNetworkOutput + " | " + maxOutputIndex));
           callback({});
       }
     });
@@ -465,7 +465,7 @@ function initActivateNetworkInterval(interval){
                 }
               }
               else {
-                console.log(chalkLog("NETWORK OUT"
+                debug(chalkLog("NETWORK OUT"
                   + " | MATCH RATE: " + statsObj.categorize.matchRate.toFixed(1) + "%"
                   + " | TOTAL: " + statsObj.categorize.total
                   + " | MATCH: " + statsObj.categorize.match
