@@ -1547,7 +1547,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   + " | KWs: " + kws
                   + " | KWA: " + kwsAuto
                   + " | LA: " + updatedUserObj.languageAnalyzed
-                  + "\nLA Es: " + laEnts
+                  // + "\nLA Es: " + laEnts
                 ));
               }
               langAnalyzerMessageRxQueueReady = true;
@@ -1622,7 +1622,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                     + " | LA: " + updatedUserObj.languageAnalyzed
                     + " S: " + updatedUserObj.languageAnalysis.sentiment.score.toFixed(2)
                     + " M: " + updatedUserObj.languageAnalysis.sentiment.magnitude.toFixed(2)
-                    + "\nLA Es: " + laEnts
+                    // + "\nLA Es: " + laEnts
                   ));
                 }
 
@@ -1672,7 +1672,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   + " | LA: " + updatedUserObj.languageAnalyzed
                   + " S: " + updatedUserObj.languageAnalysis.sentiment.score.toFixed(2)
                   + " M: " + updatedUserObj.languageAnalysis.sentiment.magnitude.toFixed(2)
-                  + "\nLA Es: " + laEnts
+                  // + "\nLA Es: " + laEnts
                 ));
               }
               langAnalyzerMessageRxQueueReady = true;
@@ -2581,7 +2581,7 @@ function processUser(userIn, callback) {
             user.friendsCount = userDb.friendsCount;
           }
 
-          console.log(chalkInfo("USER DB HIT "
+          debug(chalkInfo("USER DB HIT "
             + " | @" + user.screenName.toLowerCase()
             + " | " + user.userId
             + " | " + getTimeStamp(user.createdAt)

@@ -214,8 +214,10 @@ function activateNetwork(nnInput, callback){
           default:
             networkOutput[nnId] = [0,0,0];
         }
-
-        cb();
+        
+        async.setImmediate(function() {
+          cb();
+        });
 
       });
     // }
