@@ -248,6 +248,14 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
     if (expectedOutput) {
 
+      if (statsObj[nnId] === undefined) {
+        statsObj[nnId] = {};
+        statsObj[nnId].total = 0;
+        statsObj[nnId].matchRate = 0;
+        statsObj[nnId].match = 0;
+        statsObj[nnId].mismatch = 0;
+      }
+
       statsObj[nnId].total += 1;
 
       if ((nnOutput[0] === expectedOutput[0])
@@ -516,7 +524,7 @@ function loadNetworks(networksObj, callback){
 
     const network = neataptic.Network.fromJSON(networksObj[nnId].network);
     networks[nnId] = {};
-    networks[nnId] = network;
+    networks[nnId] = deepcopy(network);
 
     if (statsObj[nnId] === undefined) {
       statsObj[nnId] = {};
