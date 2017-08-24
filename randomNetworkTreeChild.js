@@ -267,6 +267,9 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
       statsObj[nnId].matchRate = 100.0 * statsObj[nnId].match / statsObj[nnId].total;
     }
+    else {
+      statsObj[nnId].matchFlag = "---"
+    }
 
     if (statsObj[nnId].matchRate > statsObj.bestNetwork.successRate) {
       statsObj.bestNetwork.networkId = nnId;
