@@ -241,16 +241,25 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
     let matchFlag = false;
 
+    if (statsObj[nnId] === undefined) {
+      statsObj[nnId] = {};
+      statsObj[nnId].total = 0;
+      statsObj[nnId].matchRate = 0;
+      statsObj[nnId].match = 0;
+      statsObj[nnId].mismatch = 0;
+      statsObj[nnId].matchFlag = false;
+    }
+
     if (expectedOutput) {
 
-      if (statsObj[nnId] === undefined) {
-        statsObj[nnId] = {};
-        statsObj[nnId].total = 0;
-        statsObj[nnId].matchRate = 0;
-        statsObj[nnId].match = 0;
-        statsObj[nnId].mismatch = 0;
-        statsObj[nnId].matchFlag = false;
-      }
+      // if (statsObj[nnId] === undefined) {
+      //   statsObj[nnId] = {};
+      //   statsObj[nnId].total = 0;
+      //   statsObj[nnId].matchRate = 0;
+      //   statsObj[nnId].match = 0;
+      //   statsObj[nnId].mismatch = 0;
+      //   statsObj[nnId].matchFlag = false;
+      // }
 
       statsObj[nnId].total += 1;
 
