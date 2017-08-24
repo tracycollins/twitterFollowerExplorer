@@ -86,7 +86,7 @@ console.log("=================================");
 let statsObj = {};
 
 statsObj.bestNetwork = {};
-statsObj.bestNetwork.networkId = "mms1_61694_5";
+statsObj.bestNetwork.networkId = "";
 statsObj.bestNetwork.successRate = 0;
 
 statsObj.categorize = {};
@@ -239,12 +239,10 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
     const nnOutput = networkOutputObj[nnId];
 
-    let matchFlag = false;
-
     if (statsObj[nnId] === undefined) {
       statsObj[nnId] = {};
       statsObj[nnId].total = 0;
-      statsObj[nnId].matchRate = 0;
+      statsObj[nnId].matchRate = 0.0;
       statsObj[nnId].match = 0;
       statsObj[nnId].mismatch = 0;
       statsObj[nnId].matchFlag = false;
@@ -252,31 +250,22 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
     if (expectedOutput) {
 
-      // if (statsObj[nnId] === undefined) {
-      //   statsObj[nnId] = {};
-      //   statsObj[nnId].total = 0;
-      //   statsObj[nnId].matchRate = 0;
-      //   statsObj[nnId].match = 0;
-      //   statsObj[nnId].mismatch = 0;
-      //   statsObj[nnId].matchFlag = false;
-      // }
-
       statsObj[nnId].total += 1;
 
       if ((nnOutput[0] === expectedOutput[0])
         && (nnOutput[1] === expectedOutput[1])
         && (nnOutput[2] === expectedOutput[2])){
+
         statsObj[nnId].match += 1;
         statsObj[nnId].matchFlag = true;
-        matchFlag = true;
-        statsObj[nnId].matchRate = 100 * statsObj[nnId].match / statsObj[nnId].total;
+
       }
       else {
         statsObj[nnId].mismatch += 1;
         statsObj[nnId].matchFlag = false;
-        matchFlag = false;
-        statsObj[nnId].matchRate = 100 * statsObj[nnId].match / statsObj[nnId].total;
       }
+
+      statsObj[nnId].matchRate = 100.0 * statsObj[nnId].match / statsObj[nnId].total;
     }
 
     if (statsObj[nnId].matchRate > statsObj.bestNetwork.successRate) {
@@ -286,6 +275,7 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
     if (statsObj.bestNetwork.networkId === nnId) {
       bestNetworkOutput = nnOutput;
+      statsObj.bestNetwork.successRate = statsObj[nnId].matchRate;
     }
 
     statsTextArray.push([
@@ -304,9 +294,10 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
   }, function(){
 
-    console.log("NET OUT_______________________________________________________\n" 
-      + table(statsTextArray, { align: [ "l", "l", "l", '.', "r", "r", "r"] }
-    ));
+    console.log("\nNET OUT_______________________________________________________\n" 
+      + table(statsTextArray, { align: [ "l", "l", "l", '.', "r", "r", "r"] })
+      + "\n______________________________________________________________\n"
+    );
 
     indexOfMax(bestNetworkOutput, function(maxOutputIndex){
 
@@ -535,7 +526,7 @@ function loadNetworks(networksObj, callback){
     if (statsObj[nnId] === undefined) {
       statsObj[nnId] = {};
       statsObj[nnId].total = 0;
-      statsObj[nnId].matchRate = 0;
+      statsObj[nnId].matchRate = 0.0;
       statsObj[nnId].match = 0;
       statsObj[nnId].mismatch = 0;
       statsObj[nnId].matchFlag = false;
