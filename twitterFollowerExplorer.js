@@ -3,7 +3,8 @@
 
 const TEST_MODE_FETCH_COUNT = 47;
 const DEFAULT_FETCH_COUNT = 200;
-let previousBestNetworkId = false;
+
+let bestNetworkId = false;
 
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
@@ -103,6 +104,7 @@ const arrayNormalize = require("array-normalize");
 const defaults = require("object.defaults/immutable");
 const pick = require("object.pick");
 const omit = require("object.omit");
+const deepcopy = require("deep-copy");
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
@@ -284,11 +286,13 @@ console.log(chalkInfo("COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
 
 console.log("COMMAND LINE OPTIONS\n" + jsonPrint(commandLineConfig));
 
+process.title = "twitterFollowerExplorer";
 console.log("\n\n=================================");
 console.log("HOST:          " + hostname);
+console.log("PROCESS TITLE: " + process.title);
 console.log("PROCESS ID:    " + process.pid);
 console.log("RUN ID:        " + statsObj.runId);
-console.log("PROCESS ARGS" + util.inspect(process.argv, {showHidden: false, depth: 1}));
+console.log("PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, depth: 1}));
 console.log("=================================");
 
 
@@ -308,7 +312,6 @@ process.on("message", function(msg) {
     clearInterval(checkRateLimitInterval);
     clearInterval(statsUpdateInterval);
 
-    // clearInterval(waitRandomNetworkTreeReadyInterval);
     clearInterval(waitLanguageAnalysisReadyInterval);
 
     fetchTwitterFriendsIntervalometer.stop();
@@ -627,7 +630,7 @@ function saveFile (params, callback){
       });
     })
     .catch(function(err){
-      console.log(chalkError("*** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
+      console.log(chalkError("saveFile *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
       if (callback !== undefined) { callback(err, null); }
     });
   }
@@ -2922,7 +2925,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             bestNetworkHashMap.set(entry.name, { entry: entry, network: networkObj});
 
             if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
-              currentBestNetwork = networkObj;
+              currentBestNetwork = deepcopy(networkObj);
               newBestNetwork = true;
             }
             cb();
@@ -3026,7 +3029,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
   })
   .catch(function(err){
-    console.log(chalkError("*** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
+    console.log(chalkError("loadBestNetworkDropboxFolder *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
     if (callback !== undefined) { callback(err, null); }
   });
 }
@@ -3055,9 +3058,9 @@ function loadBestNeuralNetworkFile(callback){
 
       let bestNetwork;
 
-      if (previousBestNetworkId && (bestNetwork.networkId !== previousBestNetworkId) && bestNetworkHashMap.has(previousBestNetworkId)) {
-        bestNetwork = bestNetworkHashMap.get(previousBestNetworkId).network;
-        console.log(chalkAlert("\n\n>>>> NEW BEST NETWORK | " + bestNetwork.networkId + "\n\n"));
+      if (bestNetworkId  && bestNetworkHashMap.has(bestNetworkId)) {
+        bestNetwork = bestNetworkHashMap.get(bestNetworkId).network;
+        console.log(chalkAlert(">>>> NEW BEST NETWORK | " + bestNetwork.networkId + "\n\n"));
       }
       else {
         bestNetwork = results.best;
@@ -3232,14 +3235,34 @@ function initRandomNetworkTree(callback){
         quit("RNT_TEST_FAIL");
       break;
       case "NETWORK_OUTPUT":
+
         debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
-        if (m.bestNetwork.networkId !== previousBestNetworkId) {
-          console.log(chalkAlert(">>>> NEW BEST NETWORK"
+
+        console.log(chalkAlert("RNT NETWORK_OUTPUT | " + m.bestNetwork.networkId));
+
+        bestNetworkId = m.bestNetwork.networkId;
+
+        if (bestNetworkHashMap.has(bestNetworkId)) {
+
+          currentBestNetwork = bestNetworkHashMap.get(bestNetworkId).network;
+
+          console.log(chalkAlert("NETWORK_OUTPUT"
+            + " | " + moment().format(compactDateTimeFormat)
             + " | " + m.bestNetwork.networkId
-            + " | " + m.bestNetwork.successRate + "%"
+            + " | " + m.bestNetwork.successRate.toFixed(1) + "%"
+            + " | " + currentBestNetwork.successRate.toFixed(1) + "%"
           ));
-          previousBestNetworkId = m.bestNetwork.bestNetworkId;
+          
         }
+
+        // if (m.bestNetwork.networkId !== previousBestNetworkId) {
+        //   console.log(chalkAlert("NETWORK_OUTPUT   NETWORK"
+        //     + " | " + moment().format(compactDateTimeFormat)
+        //     + " | " + m.bestNetwork.networkId
+        //     + " | " + m.bestNetwork.successRate + "%"
+        //   ));
+        //   previousBestNetworkId = m.bestNetwork.networkId;
+        // }
       break;
       default:
         console.error(chalkError("*** UNKNOWN RNT OP | " + m.op));

@@ -73,8 +73,10 @@ function msToTime(duration) {
   return days + ":" + hours + ":" + minutes + ":" + seconds;
 }
 
+process.title = "randomNetworkTree";
 console.log("\n\n=================================");
 console.log("HOST:          " + hostname);
+console.log("PROCESS TITLE: " + process.title);
 console.log("PROCESS ID:    " + process.pid);
 console.log("PROCESS ARGS:  " + util.inspect(process.argv, {showHidden: false, depth: 1}));
 console.log("=================================");
@@ -494,6 +496,7 @@ function loadNetworks(networksObj, callback){
   networks = {};
 
   async.each(Object.keys(networksObj), function(nnId, cb){
+    
     const network = neataptic.Network.fromJSON(networksObj[nnId].network);
     networks[nnId] = {};
     networks[nnId] = network;
