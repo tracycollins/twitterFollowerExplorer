@@ -183,7 +183,7 @@ function activateNetwork(nnInput, callback){
 
   let networkOutput = {};
 
-  async.each(Object.keys(networks), function(nnId, cb){
+  async.eachSeries(Object.keys(networks), function(nnId, cb){
 
     // try {
 
