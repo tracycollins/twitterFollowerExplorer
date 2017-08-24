@@ -227,7 +227,7 @@ function activateNetwork(nnInput, callback){
 const sum = (r, a) => r.map((b, i) => a[i] + b);
 
 
-function printNetworksOutput(networkOutputObj, expectedOutput, callback){
+function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
   let text = "";
   let arraryOfArrays = [];
@@ -294,9 +294,12 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
   }, function(){
 
-    console.log("\nNET OUT_______________________________________________________\n" 
+    console.log(
+        "\n--------------------------------------------------------------"
+      + "\n" + title 
+      + "\n--------------------------------------------------------------\n"
       + table(statsTextArray, { align: [ "l", "l", "l", '.', "r", "r", "r"] })
-      + "\n______________________________________________________________\n"
+      + "\n--------------------------------------------------------------\n"
     );
 
     indexOfMax(bestNetworkOutput, function(maxOutputIndex){
@@ -387,6 +390,7 @@ function initActivateNetworkInterval(interval){
           let kw = false;
           let nkwa = false;
           let expectedOutput = false;
+          let title = "@" + obj.user.screenName;
 
           if (Object.keys(obj.user.keywords).length > 0) {
             kw = Object.keys(obj.user.keywords)[0];
@@ -394,19 +398,24 @@ function initActivateNetworkInterval(interval){
             switch (kw) {
               case "left":
                 expectedOutput = [1,0,0];
+                title = title + " | MKW: LEFT";
               break;
               case "neutral":
-                expectedOutput = [1,0,0];
+                expectedOutput = [0,1,0];
+                title = title + " | MKW: NEUTRAL";
               break;
               case "right":
-                expectedOutput = [1,0,0];
+                expectedOutput = [0,0,1];
+                title = title + " | MKW: RIGHT";
               break;
               default:
                 expectedOutput = false;
+                title = title + " | MKW: ---";
              }
           }
- 
-          printNetworksOutput(networkOutputObj, expectedOutput, function(keywordsAuto){
+
+
+          printNetworksOutput(title, networkOutputObj, expectedOutput, function(keywordsAuto){
 
             if (Object.keys(keywordsAuto).length > 0){
 

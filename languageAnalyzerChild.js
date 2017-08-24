@@ -635,7 +635,7 @@ function initialize(cnf, callback){
   cnf.quitOnError = process.env.LA_QUIT_ON_ERROR || false ;
   cnf.targetServer = process.env.LA_UTIL_TARGET_SERVER || "http://localhost:9997/util" ;
 
-  cnf.statsUpdateIntervalTime = process.env.LA_STATS_UPDATE_INTERVAL || 60000;
+  cnf.statsUpdateIntervalTime = process.env.LA_STATS_UPDATE_INTERVAL || 120000;
 
   debug("CONFIG\n" + jsonPrint(cnf));
 
