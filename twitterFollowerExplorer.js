@@ -1,6 +1,8 @@
 /*jslint node: true */
 "use strict";
 
+const TFE_NUM_RANDOM_NETWORKS = 17;
+
 const TEST_MODE_FETCH_COUNT = 47;
 const DEFAULT_FETCH_COUNT = 200;
 
@@ -22,7 +24,6 @@ let currentBestNetwork;
 
 const LANGUAGE_ANALYZE_INTERVAL = 1000;
 const RANDOM_NETWORK_TREE_INTERVAL = 100;
-const NUM_RANDOM_NETWORKS = 11;
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -272,6 +273,7 @@ serverUserObj.tags.mode = "muxed";
 serverUserObj.tags.channel = "twitter";
 
 const cla = require("command-line-args");
+const numRandomNetworks = { name: "numRandomNetworks", alias: "n", type: Number};
 const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
 const quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
 const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean, defaultValue: false};
@@ -1198,6 +1200,7 @@ function initialize(cnf, callback){
 
   cnf.processName = process.env.TFE_PROCESS_NAME || "twitterFollowerExplorer";
 
+  cnf.numRandomNetworks = process.env.TFE_NUM_RANDOM_NETWORKS || TFE_NUM_RANDOM_NETWORKS ;
   cnf.testMode = (process.env.TFE_TEST_MODE === "true") ? true : cnf.testMode;
   cnf.quitOnError = process.env.TFE_QUIT_ON_ERROR || false ;
   cnf.enableStdin = process.env.TFE_ENABLE_STDIN || true ;
@@ -1229,6 +1232,11 @@ function initialize(cnf, callback){
       if (loadedConfigObj.TFE_TEST_MODE !== undefined){
         console.log("LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
         cnf.testMode = loadedConfigObj.TFE_TEST_MODE;
+      }
+
+      if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined){
+        console.log("LOADED TFE_NUM_RANDOM_NETWORKS: " + loadedConfigObj.TFE_NUM_RANDOM_NETWORKS);
+        cnf.numRandomNetworks = loadedConfigObj.TFE_NUM_RANDOM_NETWORKS;
       }
 
       if (loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS !== undefined){
@@ -2963,19 +2971,11 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
           bestNetworkHashMap.set(entry.name, { entry: entry, network: networkObj});
 
-          // if (Object.keys(randomNetworksObj).length < NUM_RANDOM_NETWORKS) {
-          //   randomNetworksObj[networkObj.networkId] = networkObj;
-          //   console.log(chalkAlert("+++ RANDOM NETWORK"
-          //     + " | " + networkObj.networkId 
-          //     + " | " + networkObj.successRate.toFixed(1) + "%"
-          //   ));
-          // }
-
           if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
             currentBestNetwork = networkObj;
             newBestNetwork = true;
 
-            if (Object.keys(randomNetworksObj).length < NUM_RANDOM_NETWORKS) {
+            if (Object.keys(randomNetworksObj).length < configuration.numRandomNetworks) {
               randomNetworksObj[networkObj.networkId] = {};
               randomNetworksObj[networkObj.networkId] = networkObj;
               console.log(chalkAlert("+++ RANDOM NETWORK"
@@ -2986,7 +2986,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             }
 
           }
-          else if ((Math.random() < 0.333) && (Object.keys(randomNetworksObj).length < NUM_RANDOM_NETWORKS)) {
+          else if ((Math.random() < 0.333) && (Object.keys(randomNetworksObj).length < configuration.numRandomNetworks)) {
             randomNetworksObj[networkObj.networkId] = {};
             randomNetworksObj[networkObj.networkId] = networkObj;
             console.log(chalkAlert("+++ RANDOM NETWORK"
@@ -3252,7 +3252,7 @@ function initRandomNetworkTree(callback){
             + " | " + m.bestNetwork.successRate.toFixed(1) + "%"
             + " | " + currentBestNetwork.successRate.toFixed(1) + "%"
           ));
-          
+
         }
 
         // if (m.bestNetwork.networkId !== previousBestNetworkId) {
