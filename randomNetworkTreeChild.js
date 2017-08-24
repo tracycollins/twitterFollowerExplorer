@@ -240,7 +240,7 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
   // let matchFlag = false;
   let bestNetworkOutput = [];
 
-  async.eachSeries(Object.keys(networkOutputObj), function(nnId, cb){
+  async.eachOfSeries(Object.keys(networkOutputObj), function(nnOutput, nnId, cb){
 
     // arraryOfArrays.push(networkOutputObj[nnId]);
 
@@ -250,9 +250,9 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
 
       statsObj[nnId].total += 1;
 
-      if ((networkOutputObj[nnId][0] === expectedOutput[0])
-        && (networkOutputObj[nnId][1] === expectedOutput[1])
-        && (networkOutputObj[nnId][2] === expectedOutput[2])){
+      if ((nnOutput[0] === expectedOutput[0])
+        && (nnOutput[1] === expectedOutput[1])
+        && (nnOutput[2] === expectedOutput[2])){
         statsObj[nnId].match += 1;
         matchFlag = true;
       }
@@ -265,19 +265,19 @@ function printNetworksOutput(networkOutputObj, expectedOutput, callback){
       if (statsObj[nnId].matchRate > statsObj.bestNetwork.successRate) {
         statsObj.bestNetwork.networkId = nnId;
         statsObj.bestNetwork.successRate = statsObj[nnId].matchRate;
-        bestNetworkOutput = networkOutputObj[nnId];
+        bestNetworkOutput = nnOutput;
       }
 
       // if (statsObj.bestNetwork.networkId === nnId) {
-      //   bestNetworkOutput = networkOutputObj[nnId];
+      //   bestNetworkOutput = nnOutput;
       // }
     }
 
     if (statsObj.bestNetwork.networkId === nnId) {
-      bestNetworkOutput = networkOutputObj[nnId];
+      bestNetworkOutput = nnOutput;
     }
 
-    text = networkOutputObj[nnId] 
+    text = nnOutput 
       + " | " + statsObj[nnId].matchRate.toFixed(1) + "%"
       + " | +" + statsObj[nnId].match 
       + " | -" + statsObj[nnId].mismatch 
