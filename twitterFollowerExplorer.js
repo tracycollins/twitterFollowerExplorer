@@ -7,6 +7,9 @@ const TEST_MODE_FETCH_COUNT = 47;
 const DEFAULT_FETCH_COUNT = 200;
 
 let bestRuntimeNetworkId;
+let loadedNetworksFlag = false;
+let networksSentFlag = false;
+
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
@@ -1471,9 +1474,12 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
           console.log(chalkLog("M<"
             + " [Q: " + langAnalyzerMessageRxQueue.length
-            + " | STATS: " + m.stats.analyzer.analyzed + " ANLZD"
-            + " " + m.stats.analyzer.skipped + " SKP"
-            + " " + m.stats.analyzer.total + " TOT ]"
+            // + " | STATS: " + m.stats.analyzer.analyzed + " ANLZD"
+            // + " " + m.stats.analyzer.skipped + " SKP"
+            // + " " + m.stats.analyzer.total + " TOT ]"
+            + " | STATS: " + statsObj.analyzer.analyzed + " ANLZD"
+            + " " + statsObj.analyzer.skipped + " SKP"
+            + " " + statsObj.analyzer.total + " TOT ]"
             + " | OP: " + m.op
             + " | UID: " + m.obj.userId
             + " | SN: " + m.obj.screenName
@@ -1487,11 +1493,8 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
           if (m.error) {
 
-            // console.error(chalkError("*** LANG ERROR" + jsonPrint(m.error)));
-
             m.obj.languageAnalysis = {err: m.error};
 
-            // if ((m.error.code === 3) || (m.error.code === 8)){ // LANGUAGE QUOTA; will be automatically retried
             if (m.error.code === 8){ // LANGUAGE QUOTA; will be automatically retried
               console.log(chalkAlert("*** LANG ERROR ... RETRY"
                 + " | " + m.obj.userId
@@ -1502,17 +1505,13 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
               setTimeout(function(){
                 langAnalyzerMessageRxQueueReady = true;
               }, 1000);
-
             }
-          // else {
 
             console.log(chalkError("*** LANG ERROR"
               + " | " + m.obj.userId
               + " | @" + m.obj.screenName
               + " | CODE: " + m.error.code
             ));
-
-            // m.obj.languageAnalyzed = true;
 
             userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
               if (err) { 
@@ -1553,7 +1552,6 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
               }
               langAnalyzerMessageRxQueueReady = true;
             }); 
-          // }
           }
           else if (langEntityKeys.length > 0) {
 
@@ -1743,7 +1741,7 @@ function getUserKeyword(keywords, callback) {
 
 }
 
-function classifyUser(user){
+function classifyUser(user, callback){
 
   debug(chalkAlert("classifyUser KWs\n" + jsonPrint(user.get("keywords"))));
   debug(chalkAlert("classifyUser AKWs\n" + jsonPrint(user.get("keywordsAuto"))));
@@ -1875,11 +1873,12 @@ function classifyUser(user){
         + " [ TOT M: " + Object.keys(classifiedUserHashmap).length + "]"
         + " [ TOT A: " + Object.keys(autoClassifiedUserHashmap).length + "]"
         + " | " + user.userId
-        + " | " + user.screenName
+        + " | @" + user.screenName
         + " | " + user.name
         + " | Ts: " + user.statusesCount
         + " | FLWRs: " + user.followersCount
         + " | FRNDs: " + user.friendsCount
+        + " | 3CF: " + user.threeceeFollowing.screenName
         + "\n MKW: [ L: " + statsObj.classification.manual.left
         + " | R: " + statsObj.classification.manual.right
         + " | +: " + statsObj.classification.manual.positive
@@ -1896,8 +1895,8 @@ function classifyUser(user){
         + " | X: " + statsObj.classification.auto.none + " ]"
       ));
 
-      // callback(user);
-      resolve(user);
+      callback(null, user);
+      // resolve(user);
     });
 
   });
@@ -2542,16 +2541,28 @@ function processUser(userIn, callback) {
 
       user.threeceeFollowing.screenName = currentTwitterUser;
 
-      classifyUser(user)
-      .then(function genClassifiedUserKeyword(u){
-        cb(null, u);
-      })
-      .catch(function classifyUserError(err){
-        console.trace(chalkError("ERROR classifyUser | UID: " + user.userId
-          + "\n" + err
-        ));
-        cb(err, user);
+      classifyUser(user, function genClassifiedUserKeyword(err, u){
+        if (err) {
+          console.trace(chalkError("ERROR classifyUser | UID: " + user.userId
+            + "\n" + err
+          ));
+          cb(err, user);
+        }
+        else {
+          cb(null, u);
+        }
+
       });
+
+      // .then(function genClassifiedUserKeyword(u){
+      //   cb(null, u);
+      // })
+      // .catch(function classifyUserError(err){
+      //   console.trace(chalkError("ERROR classifyUser | UID: " + user.userId
+      //     + "\n" + err
+      //   ));
+      //   cb(err, user);
+      // });
     },
 
     function genKeywords(user, cb){
@@ -3050,9 +3061,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
   });
 }
 
-
-let loadedNetworksFlag = false;
-let networksSentFlag = false;
 
 function loadBestNeuralNetworkFile(callback){
 
