@@ -1750,7 +1750,7 @@ function classifyUser(user){
 
   return new Promise(function(resolve) {
 
-    statsObj.analyzer.total += 1;
+    // statsObj.analyzer.total += 1;
 
     let chalkAutoCurrent = chalkLog;
 
@@ -2234,6 +2234,8 @@ function generateAutoKeywords(user, callback){
               + " | " + updatedUser.inputHitRatio.toFixed(2) + "% INPUT HIT"
             ));
 
+            statsObj.analyzer.total += 1;
+
             if (enableAnalysis(updatedUser)) {
               langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function(){
                 statsObj.analyzer.analyzed += 1;
@@ -2241,7 +2243,11 @@ function generateAutoKeywords(user, callback){
             }
             else {
 
+              statsObj.analyzer.skipped += 1;
+
               console.log(chalkLog("SKIP LANG ANAL"
+                + " [ ANLd: " + statsObj.analyzer.analyzed
+                + " [ SKPd: " + statsObj.analyzer.skipped
                 + " | " + updatedUser.userId
                 + " | @" + updatedUser.screenName
                 + " | LAd: " + updatedUser.languageAnalyzed
@@ -2256,80 +2262,6 @@ function generateAutoKeywords(user, callback){
 
             callback(null, updatedUser);
 
-            // activateNetwork(network, networkInput, function(err, networkOutput){
-
-            //   if (err){
-            //     console.trace(chalkError("ACTIVATE NETWORK ERROR"
-            //       + " | @" + updatedUser.screenName
-            //       + "\n" + err
-            //     ));
-            //     printDatum(updatedUser.screenName, networkInput);
-            //     return(callback(err, null));
-            //   }
-
-            //   indexOfMax(networkOutput, function maxNetworkOutput(maxOutputIndex){
-
-            //     debug(chalkInfo("MAX INDEX: " + maxOutputIndex));
-
-            //     updatedUser.keywordsAuto = {};
-
-            //     let chalkCurrent = chalkLog;
-
-            //     switch (maxOutputIndex) {
-            //       case 0:
-            //         // classText = "L";
-            //         chalkCurrent = chalk.blue;
-            //         updatedUser.keywordsAuto.left = 100;
-            //       break;
-            //       case 1:
-            //         // classText = "N";
-            //         chalkCurrent = chalk.black;
-            //         updatedUser.keywordsAuto.neutral = 100;
-            //       break;
-            //       case 2:
-            //         // classText = "R";
-            //         chalkCurrent = chalk.yellow;
-            //         updatedUser.keywordsAuto.right = 100;
-            //       break;
-            //     }
-
-            //     const title = updatedUser.screenName + " | INPUT HIT: " + updatedUser.inputHitRatio.toFixed(2) + "%";
-            //     printDatum(
-            //       title, 
-            //       networkInput
-            //     );
-
-            //     let keywordsText = "";
-            //     let keywordsAutoText = "";
-
-            //     if (updatedUser.keywords) {
-            //       keywordsText = Object.keys(updatedUser.keywords);
-            //     }
-            //     if (updatedUser.keywordsAuto) {
-            //       keywordsAutoText = Object.keys(updatedUser.keywordsAuto);
-            //     }
-
-            //     console.log(chalkCurrent("AUTO KW"
-            //       + " | " + updatedUser.userId
-            //       + " | @" + updatedUser.screenName
-            //       + " | Ts: " + updatedUser.statusesCount
-            //       + " | FLWRs: " + updatedUser.followersCount
-            //       + " | M: " + networkInput[0].toFixed(2)
-            //       + " | S: " + networkInput[1].toFixed(2)
-            //       + " | L: " + networkOutput[0].toFixed(0)
-            //       + " | N: " + networkOutput[1].toFixed(0)
-            //       + " | R: " + networkOutput[2].toFixed(0)
-            //       + " | KWs: " + keywordsText
-            //       + " | AKWs: " + keywordsAutoText
-            //       // + " | KWs: " + Object.keys(updatedUser.keywords)
-            //       // + " | AKWs: " + Object.keys(updatedUser.keywordsAuto)
-            //       // + "\n"
-            //       // + "\n" + jsonPrint(updatedUser.keywordsAuto)
-            //     ));
-
-            //     callback(null, updatedUser);
-            //   });
-            // });
           });
 
         });
@@ -2411,7 +2343,6 @@ function checkUserWordKeys(user, callback){
             + " | " + kws[kwIdLc]
           ));
 
-          // classifiedUserHashmap[user.screenName.toLowerCase()] = kws;
           classifiedUserHashmap[user.userId] = {};
           classifiedUserHashmap[user.userId] = kws;
 
