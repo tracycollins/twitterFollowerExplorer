@@ -102,6 +102,14 @@ console.log("=================================");
 
 let statsObj = {};
 
+statsObj.loadedNetworks = {};
+statsObj.loadedNetworks.multiNeuralNet = {};
+statsObj.loadedNetworks.multiNeuralNet.total = 0;
+statsObj.loadedNetworks.multiNeuralNet.matchRate = 0.0;
+statsObj.loadedNetworks.multiNeuralNet.match = 0;
+statsObj.loadedNetworks.multiNeuralNet.mismatch = 0;
+statsObj.loadedNetworks.multiNeuralNet.matchFlag = false;
+
 statsObj.bestNetwork = {};
 statsObj.bestNetwork.networkId = "";
 statsObj.bestNetwork.successRate = 0;
@@ -243,13 +251,6 @@ function activateNetwork(nnInput, callback){
 
 const sum = (r, a) => r.map((b, i) => a[i] + b);
 
-statsObj.multiNeuralNet = {};
-statsObj.multiNeuralNet.total = 0;
-statsObj.multiNeuralNet.matchRate = 0.0;
-statsObj.multiNeuralNet.match = 0;
-statsObj.multiNeuralNet.mismatch = 0;
-statsObj.multiNeuralNet.matchFlag = false;
-
 
 function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
@@ -265,56 +266,56 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
     const nnOutput = networkOutputObj[nnId];
 
-    if (statsObj[nnId] === undefined) {
-      statsObj[nnId] = {};
-      statsObj[nnId].total = 0;
-      statsObj[nnId].matchRate = 0.0;
-      statsObj[nnId].match = 0;
-      statsObj[nnId].mismatch = 0;
-      statsObj[nnId].matchFlag = false;
+    if (statsObj.loadedNetworks[nnId] === undefined) {
+      statsObj.loadedNetworks[nnId] = {};
+      statsObj.loadedNetworks[nnId].total = 0;
+      statsObj.loadedNetworks[nnId].matchRate = 0.0;
+      statsObj.loadedNetworks[nnId].match = 0;
+      statsObj.loadedNetworks[nnId].mismatch = 0;
+      statsObj.loadedNetworks[nnId].matchFlag = false;
     }
 
     if (expectedOutput) {
 
-      statsObj[nnId].total += 1;
+      statsObj.loadedNetworks[nnId].total += 1;
 
       if ((nnOutput[0] === expectedOutput[0])
         && (nnOutput[1] === expectedOutput[1])
         && (nnOutput[2] === expectedOutput[2])){
 
-        statsObj[nnId].match += 1;
-        statsObj[nnId].matchFlag = true;
+        statsObj.loadedNetworks[nnId].match += 1;
+        statsObj.loadedNetworks[nnId].matchFlag = true;
 
       }
       else {
-        statsObj[nnId].mismatch += 1;
-        statsObj[nnId].matchFlag = false;
+        statsObj.loadedNetworks[nnId].mismatch += 1;
+        statsObj.loadedNetworks[nnId].matchFlag = false;
       }
 
-      statsObj[nnId].matchRate = 100.0 * statsObj[nnId].match / statsObj[nnId].total;
+      statsObj.loadedNetworks[nnId].matchRate = 100.0 * statsObj.loadedNetworks[nnId].match / statsObj.loadedNetworks[nnId].total;
     }
     else {
-      statsObj[nnId].matchFlag = "---";
+      statsObj.loadedNetworks[nnId].matchFlag = "---";
     }
 
-    if (statsObj[nnId].matchRate > statsObj.bestNetwork.successRate) {
+    if (statsObj.loadedNetworks[nnId].matchRate > statsObj.bestNetwork.successRate) {
       statsObj.bestNetwork.networkId = nnId;
-      statsObj.bestNetwork.successRate = statsObj[nnId].matchRate;
+      statsObj.bestNetwork.successRate = statsObj.loadedNetworks[nnId].matchRate;
     }
 
     if (statsObj.bestNetwork.networkId === nnId) {
       bestNetworkOutput = nnOutput;
-      statsObj.bestNetwork.successRate = statsObj[nnId].matchRate;
+      statsObj.bestNetwork.successRate = statsObj.loadedNetworks[nnId].matchRate;
     }
 
     statsTextArray.push([
       nnId,
-      statsObj[nnId].matchFlag,
+      statsObj.loadedNetworks[nnId].matchFlag,
       nnOutput,
-      statsObj[nnId].matchRate.toFixed(1),
-      statsObj[nnId].total,
-      statsObj[nnId].match,
-      statsObj[nnId].mismatch
+      statsObj.loadedNetworks[nnId].matchRate.toFixed(1),
+      statsObj.loadedNetworks[nnId].total,
+      statsObj.loadedNetworks[nnId].match,
+      statsObj.loadedNetworks[nnId].mismatch
     ]);
 
     // async.setImmediate(function() {
@@ -348,36 +349,36 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
     if (expectedOutput) {
 
-      statsObj.multiNeuralNet.total += 1;
+      statsObj.loadedNetworks.multiNeuralNet.total += 1;
 
 
       if ((sumArrayNorm[0] === expectedOutput[0])
         && (sumArrayNorm[1] === expectedOutput[1])
         && (sumArrayNorm[2] === expectedOutput[2])){
 
-        statsObj.multiNeuralNet.match += 1;
-        statsObj.multiNeuralNet.matchFlag = true;
+        statsObj.loadedNetworks.multiNeuralNet.match += 1;
+        statsObj.loadedNetworks.multiNeuralNet.matchFlag = true;
 
       }
       else {
-        statsObj.multiNeuralNet.mismatch += 1;
-        statsObj.multiNeuralNet.matchFlag = false;
+        statsObj.loadedNetworks.multiNeuralNet.mismatch += 1;
+        statsObj.loadedNetworks.multiNeuralNet.matchFlag = false;
       }
 
-      statsObj.multiNeuralNet.matchRate = 100.0 * statsObj.multiNeuralNet.match / statsObj.multiNeuralNet.total;
+      statsObj.loadedNetworks.multiNeuralNet.matchRate = 100.0 * statsObj.loadedNetworks.multiNeuralNet.match / statsObj.loadedNetworks.multiNeuralNet.total;
     }
     else {
-      statsObj.multiNeuralNet.matchFlag = "---";
+      statsObj.loadedNetworks.multiNeuralNet.matchFlag = "---";
     }
 
     statsTextArray.push([
       "MULTI NN",
-      statsObj.multiNeuralNet.matchFlag,
+      statsObj.loadedNetworks.multiNeuralNet.matchFlag,
       sumArrayNorm,
-      statsObj.multiNeuralNet.matchRate.toFixed(1),
-      statsObj.multiNeuralNet.total,
-      statsObj.multiNeuralNet.match,
-      statsObj.multiNeuralNet.mismatch
+      statsObj.loadedNetworks.multiNeuralNet.matchRate.toFixed(1),
+      statsObj.loadedNetworks.multiNeuralNet.total,
+      statsObj.loadedNetworks.multiNeuralNet.match,
+      statsObj.loadedNetworks.multiNeuralNet.mismatch
     ]);
 
     console.log(
@@ -653,13 +654,13 @@ function loadNetworks(networksObj, callback){
     networks[nnId] = {};
     networks[nnId] = network;
 
-    if (statsObj[nnId] === undefined) {
-      statsObj[nnId] = {};
-      statsObj[nnId].total = 0;
-      statsObj[nnId].matchRate = 0.0;
-      statsObj[nnId].match = 0;
-      statsObj[nnId].mismatch = 0;
-      statsObj[nnId].matchFlag = false;
+    if (statsObj.loadedNetworks[nnId] === undefined) {
+      statsObj.loadedNetworks[nnId] = {};
+      statsObj.loadedNetworks[nnId].total = 0;
+      statsObj.loadedNetworks[nnId].matchRate = 0.0;
+      statsObj.loadedNetworks[nnId].match = 0;
+      statsObj.loadedNetworks[nnId].mismatch = 0;
+      statsObj.loadedNetworks[nnId].matchFlag = false;
     }
 
     cb();

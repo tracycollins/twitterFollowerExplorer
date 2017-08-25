@@ -147,6 +147,8 @@ statsObj.runId = TFE_RUN_ID;
 
 statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
 
+statsObj.bestNetworks = {};
+
 let configuration = {};
 configuration.testMode = false;
 configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEFAULT_FETCH_COUNT;
@@ -2849,7 +2851,7 @@ function initRandomNetworks(params, callback){
   async.each(Object.keys(randomNetworksObj), function(nnId, cb){
 
     previousRandomNetworksHashMap[nnId] = {};
-    previousRandomNetworksHashMap[nnId] = statsObj[nnId] || true;
+    previousRandomNetworksHashMap[nnId] = statsObj.bestNetworks[nnId] || true;
     delete randomNetworksObj[nnId];
 
     cb();
