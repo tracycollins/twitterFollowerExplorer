@@ -60,6 +60,23 @@ const jsonPrint = function (obj){
   }
 };
 
+function getTimeStamp(inputTime) {
+  let currentTimeStamp ;
+
+  if (inputTime  === undefined) {
+    currentTimeStamp = moment().format(defaultDateTimeFormat);
+    return currentTimeStamp;
+  }
+  else if (moment.isMoment(inputTime)) {
+    currentTimeStamp = moment(inputTime).format(defaultDateTimeFormat);
+    return currentTimeStamp;
+  }
+  else {
+    currentTimeStamp = moment(parseInt(inputTime)).format(defaultDateTimeFormat);
+    return currentTimeStamp;
+  }
+}
+
 function msToTime(duration) {
   let seconds = parseInt((duration / 1000) % 60);
   let minutes = parseInt((duration / (1000 * 60)) % 60);
@@ -589,13 +606,30 @@ function initActivateNetworkInterval(interval){
   }, interval);
 }
 
+
+function printNetworkObj(title, nnObj){
+  console.log(chalkLog("\n==================="
+    + "\n" + title
+    + "\nID:      " + nnObj.networkId
+    + "\nCREATED: " + getTimeStamp(nnObj.createdAt)
+    + "\nSUCCESS: " + nnObj.successRate.toFixed(1) + "%"
+    + "\nINPUTS:  " + Object.keys(nnObj.inputs)
+    + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
+    + "\n===================\n"
+  ));
+}
+
 function loadNetworks(networksObj, callback){
 
   networks = {};
 
   async.each(Object.keys(networksObj), function(nnId, cb){
 
-    const network = neataptic.Network.fromJSON(networksObj[nnId].network);
+    // printNetworkObj("RNT | LOAD NETWORK", networksObj[nnId].network);
+    console.log(chalkLog("RNT | LOAD NETWORK | " + nnId));
+
+    const network = neataptic.Network.fromJSON(networksObj[nnId].network.network);
+
     networks[nnId] = {};
     networks[nnId] = network;
 
@@ -607,9 +641,13 @@ function loadNetworks(networksObj, callback){
       statsObj[nnId].mismatch = 0;
       statsObj[nnId].matchFlag = false;
     }
+
     cb();
+
   }, function(err){
+
     if (callback) { callback(err); }
+    
   });
 
 }
@@ -660,7 +698,7 @@ process.on("message", function(m) {
 
       rxActivateNetworkQueue.push(m.obj);
 
-      console.log(chalkInfo("ACTIVATE"
+      debug(chalkInfo("ACTIVATE"
         + " [" + rxActivateNetworkQueue.length + "]"
         + " | " + m.obj.user.userId
         + " | @" + m.obj.user.screenName
@@ -709,22 +747,6 @@ debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
-function getTimeStamp(inputTime) {
-  let currentTimeStamp ;
-
-  if (inputTime  === undefined) {
-    currentTimeStamp = moment().format(defaultDateTimeFormat);
-    return currentTimeStamp;
-  }
-  else if (moment.isMoment(inputTime)) {
-    currentTimeStamp = moment(inputTime).format(defaultDateTimeFormat);
-    return currentTimeStamp;
-  }
-  else {
-    currentTimeStamp = moment(parseInt(inputTime)).format(defaultDateTimeFormat);
-    return currentTimeStamp;
-  }
-}
 
 
 function saveFile (path, file, jsonObj, callback){
