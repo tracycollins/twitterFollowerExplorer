@@ -1,7 +1,7 @@
  /*jslint node: true */
 "use strict";
 
-const TFE_NUM_RANDOM_NETWORKS = 23;
+const TFE_NUM_RANDOM_NETWORKS = 50;
 
 const TEST_MODE_FETCH_COUNT = 47;
 const DEFAULT_FETCH_COUNT = 200;
