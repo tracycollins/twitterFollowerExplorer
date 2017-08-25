@@ -327,9 +327,29 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
     let sumArrayNorm = deepcopy(sumArray);
     arrayNormalize(sumArrayNorm);
 
+    indexOfMax(sumArrayNorm, function maxNetworkOutput(maxIndex){
+
+      debug(chalkInfo("MAX INDEX: " + maxIndex));
+
+      switch (maxIndex) {
+        case 0:
+          sumArrayNorm = [1,0,0];
+        break;
+        case 1:
+          sumArrayNorm = [0,1,0];
+        break;
+        case 2:
+          sumArrayNorm = [0,0,1];
+        break;
+        default:
+          sumArrayNorm = [0,0,0];
+      }
+    });
+
     if (expectedOutput) {
 
       statsObj.multiNeuralNet.total += 1;
+
 
       if ((sumArrayNorm[0] === expectedOutput[0])
         && (sumArrayNorm[1] === expectedOutput[1])
@@ -353,7 +373,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
     statsTextArray.push([
       "MULTI NN",
       statsObj.multiNeuralNet.matchFlag,
-      sumArray,
+      sumArrayNorm,
       statsObj.multiNeuralNet.matchRate.toFixed(1),
       statsObj.multiNeuralNet.total,
       statsObj.multiNeuralNet.match,
@@ -647,7 +667,7 @@ function loadNetworks(networksObj, callback){
   }, function(err){
 
     if (callback) { callback(err); }
-    
+
   });
 
 }
