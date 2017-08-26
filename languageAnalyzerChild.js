@@ -326,7 +326,7 @@ function initAnalyzeLanguageInterval(interval){
             + " | M " + 10*results.sentiment.magnitude.toFixed(2)
             + " | S " + 10*results.sentiment.score.toFixed(1)
             + " | C " + results.sentiment.comp.toFixed(2)
-            + " | TEXT: " + results.text
+            // + " | TEXT: " + results.text
           ));
 
           messageObj.op = "LANG_RESULTS";

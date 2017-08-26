@@ -52,7 +52,7 @@ let currentTwitterUser ;
 let currentTwitterUserIndex = 0;
 let twitterUsersArray = [];
 
-let TFE_USER_DB_CRAWL = true;
+let TFE_USER_DB_CRAWL = false;
 
 const Stately = require("stately.js");
 
