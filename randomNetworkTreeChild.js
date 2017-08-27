@@ -301,11 +301,20 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
     if (statsObj.loadedNetworks[nnId].matchRate > statsObj.bestNetwork.successRate) {
       statsObj.bestNetwork.networkId = nnId;
       statsObj.bestNetwork.successRate = statsObj.loadedNetworks[nnId].matchRate;
+      console.log(chalkAlert("RNT"
+        + " | " + nnId
+        + " | NEW BEST MAX " + statsObj.bestNetwork.successRate.toFixed(1) + "%"
+      ));
     }
 
     if (statsObj.bestNetwork.networkId === nnId) {
       bestNetworkOutput = nnOutput;
       statsObj.bestNetwork.successRate = statsObj.loadedNetworks[nnId].matchRate;
+      console.log(chalkAlert("RNT"
+        + " | " + nnId
+        + " | SET BEST OUT [" + bestNetworkOutput + "]"
+        + " | RATE: " + statsObj.bestNetwork.successRate.toFixed(1) + "%"
+      ));
     }
 
     statsTextArray.push([
@@ -519,7 +528,6 @@ function initActivateNetworkInterval(interval){
              }
           }
 
-
           printNetworksOutput(title, networkOutputObj, expectedOutput, function(keywordsAuto){
 
             if (Object.keys(keywordsAuto).length > 0){
@@ -647,7 +655,7 @@ function loadNetworks(networksObj, callback){
   async.each(Object.keys(networksObj), function(nnId, cb){
 
     // printNetworkObj("RNT | LOAD NETWORK", networksObj[nnId].network);
-    console.log(chalkLog("RNT | LOAD NETWORK | " + nnId));
+    debug(chalkLog("RNT | LOAD NETWORK | " + nnId));
 
     const network = neataptic.Network.fromJSON(networksObj[nnId].network.network);
 
