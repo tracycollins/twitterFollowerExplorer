@@ -40,7 +40,7 @@ let inputArrays = {};
 let checkRateLimitInterval;
 let checkRateLimitIntervalTime = ONE_MINUTE;
 
-const DEFAULT_TWITTER_FETCH_FRIENDS_INTERVAL = 1.5 * ONE_MINUTE;
+const DEFAULT_TWITTER_FETCH_FRIENDS_INTERVAL = 2 * ONE_MINUTE;
 let fetchTwitterFriendsIntervalTime = DEFAULT_TWITTER_FETCH_FRIENDS_INTERVAL;
 
 let stdin;
@@ -2568,7 +2568,6 @@ function processUser(userIn, callback) {
         cb(err, uObj);
       });
     }
-
   ], function (err, user) {
 
     if (err) {
