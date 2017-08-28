@@ -239,9 +239,9 @@ function activateNetwork(nnInput, callback){
           networkOutput[nnId] = [0,0,0];
       }
 
-      async.setImmediate(function() {
+      // async.setImmediate(function() {
         cb();
-      });
+      // });
 
     });
   }, function(err){
