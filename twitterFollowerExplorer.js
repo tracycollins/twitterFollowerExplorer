@@ -1056,7 +1056,8 @@ function initTwitterUsers(callback){
     let twitterDefaultUser = configuration.twitterDefaultUser;
     // twitterUsersArray = Object.keys(configuration.twitterUsers);
     // "altthreecee00": "altthreecee00", "ninjathreecee": "ninjathreecee"
-    twitterUsersArray = ["ninjathreecee", "altthreecee00"];
+    // twitterUsersArray = ["ninjathreecee", "altthreecee00"];
+    twitterUsersArray = ["altthreecee00", "ninjathreecee"];
 
     console.log(chalkTwitter("USERS"
       + " | FOUND: " + twitterUsersArray.length
@@ -2689,7 +2690,6 @@ function fetchFriends(params, callback) {
   else {
     callback(null, []);
   }
-
 }
 
 function processFriends(callback){

@@ -223,7 +223,11 @@ function activateNetwork(nnInput, callback){
 
     indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
 
-      debug(chalkInfo("MAX INDEX: " + maxOutputIndex));
+      debug(chalkInfo("MAX INDEX"
+        + " | OUT: " + output
+        + " | MAX INDEX: " + maxOutputIndex
+        + " | " + nnId
+      ));
 
       switch (maxOutputIndex) {
         case 0:
