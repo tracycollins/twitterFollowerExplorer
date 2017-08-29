@@ -186,22 +186,28 @@ function indexOfMax (arrIn, callback) {
   let maxIndex = 0;
 
   async.eachOfSeries(arr, function(val, index, cb){
+
     if (val > max) {
       maxIndex = index;
       max = val;
     }
-    cb();
+
+    async.setImmediate(function() { cb(); });
+
   }, function(){
+
     debug(chalk.blue("indexOfMax: " + maxIndex 
       + " | " + arr[maxIndex].toFixed(2)
       + " | " + arr[0].toFixed(2) + " - " + arr[1].toFixed(2) + " - " + arr[2].toFixed(2)
     ));
+
     if (callback) {
       callback(maxIndex) ; 
     }
     else {
       return maxIndex;
     }
+
   });
 }
 
@@ -232,19 +238,23 @@ function activateNetwork(nnInput, callback){
       switch (maxOutputIndex) {
         case 0:
           networkOutput[nnId] = [1,0,0];
+          cb();
         break;
         case 1:
           networkOutput[nnId] = [0,1,0];
+          cb();
         break;
         case 2:
           networkOutput[nnId] = [0,0,1];
+          cb();
         break;
         default:
           networkOutput[nnId] = [0,0,0];
+          cb();
       }
 
       // async.setImmediate(function() {
-        cb();
+        // cb();
       // });
 
     });
@@ -445,6 +455,41 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
 }
 
+function printDatum(title, input){
+
+  let row = "";
+  let col = 0;
+  let rowNum = 0;
+  const COLS = 50;
+
+  console.log("\n------------- " + title + " -------------");
+
+  input.forEach(function(bit, i){
+    if (i === 0) {
+      row = row + bit.toFixed(10) + " | " ;
+    }
+    else if (i === 1) {
+      row = row + bit.toFixed(10);
+    }
+    else if (i === 2) {
+      console.log("ROW " + rowNum + " | " + row);
+      row = bit ? "X" : ".";
+      col = 1;
+      rowNum += 1;
+    }
+    else if (col < COLS){
+      row = row + (bit ? "X" : ".");
+      col += 1;
+    }
+    else {
+      console.log("ROW " + rowNum + " | " + row);
+      row = bit ? "X" : ".";
+      col = 1;
+      rowNum += 1;
+    }
+  });
+}
+
 function initActivateNetworkInterval(interval){
 
   clearInterval(activateNetworkInterval);
@@ -531,6 +576,8 @@ function initActivateNetworkInterval(interval){
                 title = title + " | MKW: ---";
              }
           }
+
+          printDatum(title, obj.networkInput);
 
           printNetworksOutput(title, networkOutputObj, expectedOutput, function(keywordsAuto){
 

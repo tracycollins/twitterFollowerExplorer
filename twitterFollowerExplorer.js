@@ -1,6 +1,6 @@
  /*jslint node: true */
 "use strict";
-
+const DEFAULT_MIN_SUCCESS_RATE = 50;
 const TFE_NUM_RANDOM_NETWORKS = 50;
 
 const TEST_MODE_FETCH_COUNT = 47;
@@ -25,7 +25,7 @@ const Word = require("mongoose").model("Word");
 let currentBestNetwork;
 
 const LANGUAGE_ANALYZE_INTERVAL = 1000;
-const RANDOM_NETWORK_TREE_INTERVAL = 100;
+const RANDOM_NETWORK_TREE_INTERVAL = 250;
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -248,7 +248,7 @@ function indexOfMax (arr, callback) {
       maxIndex = index;
       max = val;
     }
-    cb();
+    async.setImmediate(function() { cb(); });
   }, function(){
     debug(chalk.blue("indexOfMax: " + maxIndex 
       + " | " + arr[maxIndex].toFixed(2)
@@ -2858,8 +2858,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
       // + " | " + jsonPrint(response)
     ));
 
-    // response.entries.length = 47;
-
     async.each(response.entries, function(entry, cb){
 
       debug(chalkInfo("DROPBOX NETWORK FOUND"
@@ -2934,48 +2932,39 @@ function loadBestNetworkDropboxFolder(folder, callback){
             return(cb());
           }
 
-          console.log(chalkInfo("DROPBOX NETWORK"
-            // + " | " + networkObj.successRate.toFixed(1) + "%"
-            + " | " + getTimeStamp(networkObj.createdAt)
-            + " | " + networkObj.networkId
-            + " | " + networkObj.networkCreateMode
-            + " | IN: " + networkObj.numInputs
-            + " | OUT: " + networkObj.numOutputs
-          ));
+          if (networkObj.successRate > DEFAULT_MIN_SUCCESS_RATE) {
 
-          bestNetworkHashMap.set(networkObj.networkId, { entry: entry, network: networkObj});
+            console.log(chalkAlert("+++ DROPBOX NETWORK"
+              + " | " + networkObj.successRate.toFixed(1) + "%"
+              + " | " + getTimeStamp(networkObj.createdAt)
+              + " | " + networkObj.networkId
+              + " | " + networkObj.networkCreateMode
+              + " | IN: " + networkObj.numInputs
+              + " | OUT: " + networkObj.numOutputs
+            ));
 
-          availableNeuralNetHashMap[networkObj.networkId] = true;
+            bestNetworkHashMap.set(networkObj.networkId, { entry: entry, network: networkObj});
 
-          if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
-            currentBestNetwork = networkObj;
-            newBestNetwork = true;
+            availableNeuralNetHashMap[networkObj.networkId] = true;
 
-            // if (Object.keys(randomNetworksObj).length < configuration.numRandomNetworks) {
-            //   randomNetworksObj[networkObj.networkId] = {};
-            //   randomNetworksObj[networkObj.networkId] = networkObj;
-            //   console.log(chalkAlert("+++ RANDOM NETWORK"
-            //     + " [" + Object.keys(randomNetworksObj).length + "]"
-            //     + " | " + networkObj.networkId 
-            //     + " | " + networkObj.successRate.toFixed(1) + "%"
-            //   ));
-            // }
+            if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
+              currentBestNetwork = networkObj;
+              newBestNetwork = true;
+            }
 
-          }
-          // else if ((Math.random() < 0.5) && (Object.keys(randomNetworksObj).length < configuration.numRandomNetworks)) {
-          //   randomNetworksObj[networkObj.networkId] = {};
-          //   randomNetworksObj[networkObj.networkId] = networkObj;
-          //   console.log(chalkAlert("+++ RANDOM NETWORK"
-          //     + " [" + Object.keys(randomNetworksObj).length + "]"
-          //     + " | " + networkObj.networkId 
-          //     + " | " + networkObj.successRate.toFixed(1) + "%"
-          //   ));
-          // }
-          
-          // setTimeout(function(){
             cb();
-          // }, 100);
-
+          }
+          else {
+            console.log(chalkInfo("--- DROPBOX NETWORK"
+              + " | " + networkObj.successRate.toFixed(1) + "%"
+              + " | " + getTimeStamp(networkObj.createdAt)
+              + " | " + networkObj.networkId
+              + " | " + networkObj.networkCreateMode
+              + " | IN: " + networkObj.numInputs
+              + " | OUT: " + networkObj.numOutputs
+            ));
+            cb();
+          }
 
         });
       }
@@ -2984,22 +2973,10 @@ function loadBestNetworkDropboxFolder(folder, callback){
       let messageText;
 
       if (newBestNetwork) {
-
         statsObj.bestNetworkId = currentBestNetwork.networkId;
-
         printNetworkObj("NEW SEED NETWORK", currentBestNetwork);
-
-        // messageText = "\nNN NEW SEED\n" 
-        //   + currentBestNetwork.networkId + "\n"
-        //   + currentBestNetwork.successRate.toFixed(2) + "%\n"
-        //   + currentBestNetwork.networkCreateMode + "\n"
-        //   + getTimeStamp(currentBestNetwork.createdAt) + "\n"
-        //   + jsonPrint(currentBestNetwork.evolve) + "\n";
-
-        // debug(chalkAlert("slack messageText: " + messageText));
-
-        // slackPostMessage(slackChannel, messageText);
       }
+
       if (callback !== undefined) { callback( null, {best: currentBestNetwork} ); }
     });
 
