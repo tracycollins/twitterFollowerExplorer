@@ -570,7 +570,7 @@ function saveFile (params, callback){
           + " | ERROR: 413"
           // + " ERROR\n" + jsonPrint(error.error)
         ));
-        if (callback !== undefined) { callback(error.error_summary); }
+        if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 429){
         console.error(chalkError(moment().format(compactDateTimeFormat) 
@@ -578,7 +578,7 @@ function saveFile (params, callback){
           + " | ERROR: TOO MANY WRITES"
           // + " ERROR\n" + jsonPrint(error.error)
         ));
-        if (callback !== undefined) { callback(error.error_summary); }
+        if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 500){
         console.error(chalkError(moment().format(compactDateTimeFormat) 
@@ -586,7 +586,7 @@ function saveFile (params, callback){
           + " | ERROR: DROPBOX SERVER ERROR"
           // + " ERROR\n" + jsonPrint(error.error)
         ));
-        if (callback !== undefined) { callback(error.error_summary); }
+        if (callback !== undefined) { callback(error); }
       }
       else {
         // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
@@ -646,7 +646,7 @@ function saveFile (params, callback){
       });
     })
     .catch(function(err){
-      console.log(chalkError("saveFile *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
+      console.log(chalkError("saveFile *** DROPBOX FILES LIST FOLDER ERROR ", err));
       if (callback !== undefined) { callback(err, null); }
     });
   }
