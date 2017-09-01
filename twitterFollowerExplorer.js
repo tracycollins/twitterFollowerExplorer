@@ -2197,8 +2197,8 @@ function generateAutoKeywords(user, callback){
                   + " | " + element 
                   + " | " + userHistograms[type][element]
                 ));
-                // networkInput.push(1);
-                networkInput[index+2] = 1;
+                networkInput.push(1);
+                // networkInput[index+2] = 1;
 
                 async.setImmediate(function() {
                   cb2();
@@ -2211,8 +2211,8 @@ function generateAutoKeywords(user, callback){
                   + " | ARRAY: " + type 
                   + " | " + element
                 ));
-                // networkInput.push(0);
-                networkInput[index+2] = 0;
+                networkInput.push(0);
+                // networkInput[index+2] = 0;
                 async.setImmediate(function() {
                   cb2();
                 });
@@ -2822,8 +2822,9 @@ function initRandomNetworks(params, callback){
 
         delete availableNeuralNetHashMap[nnId];
 
+        const nn = bestNetworkHashMap.get(nnId);
         randomNetworksObj[nnId] = {};
-        randomNetworksObj[nnId] = bestNetworkHashMap.get(nnId);
+        randomNetworksObj[nnId] = nn;
 
         console.log(chalkAlert("+++ RANDOM NETWORK"
           + " [" + Object.keys(randomNetworksObj).length + "]"
@@ -3033,7 +3034,7 @@ function loadBestNeuralNetworkFile(callback){
           inputArrays[type] = bestNetworkObj.inputs[type];
         });
 
-        network = neataptic.Network.fromJSON(bestNetworkObj.network);
+        // network = neataptic.Network.fromJSON(bestNetworkObj.network);
 
         statsObj.bestRuntimeNetworkId = bestRuntimeNetworkId;
         statsObj.currentBestNetworkId = bestNetworkObj.networkId;

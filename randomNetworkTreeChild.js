@@ -218,54 +218,52 @@ function activateNetwork(nnInput, callback){
 
   async.eachSeries(networksHashMap.keys(), function(nnId, cb){
 
-    const network = networksHashMap.get(nnId);
+    const networkObj = networksHashMap.get(nnId);
 
     networkOutput[nnId] = [];
 
-    let output = network.activate(nnInput);
+    const out = networkObj.network.activate(nnInput);
 
-    setTimeout(function(){
+    let output = deepcopy(out);
 
-      if (output.length !== 3) {
-        console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
-        quit(" ZERO LENGTH NETWORK OUTPUT");
-        output = [0,0,0];
+    if (output.length !== 3) {
+      console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
+      quit(" ZERO LENGTH NETWORK OUTPUT");
+      output = [0,0,0];
+    }
+
+    indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
+
+      // console.log(chalkInfo("MAX INDEX"
+      //   + " | OUT: " + output
+      //   + " | MAX INDEX: " + maxOutputIndex
+      //   + " | " + nnId
+      // ));
+
+      switch (maxOutputIndex) {
+        case 0:
+          networkOutput[nnId] = [1,0,0];
+          // cb();
+        break;
+        case 1:
+          networkOutput[nnId] = [0,1,0];
+          // cb();
+        break;
+        case 2:
+          networkOutput[nnId] = [0,0,1];
+          // cb();
+        break;
+        default:
+          networkOutput[nnId] = [0,0,0];
+          // cb();
       }
 
-      indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
-
-        debug(chalkInfo("MAX INDEX"
-          + " | OUT: " + output
-          + " | MAX INDEX: " + maxOutputIndex
-          + " | " + nnId
-        ));
-
-        switch (maxOutputIndex) {
-          case 0:
-            networkOutput[nnId] = [1,0,0];
-            // cb();
-          break;
-          case 1:
-            networkOutput[nnId] = [0,1,0];
-            // cb();
-          break;
-          case 2:
-            networkOutput[nnId] = [0,0,1];
-            // cb();
-          break;
-          default:
-            networkOutput[nnId] = [0,0,0];
-            // cb();
-        }
-
-        async.setImmediate(function() {
-          cb();
-        });
-
+      async.setImmediate(function() {
+        cb();
       });
 
+    });
 
-    }, 20);
 
   }, function(err){
     callback(err, networkOutput);
@@ -342,6 +340,8 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
     statsTextArray.push([
       nnId,
+      "---",
+      // networksHashMap.get(nnId).network.successRate.toFixed(1),
       statsObj.loadedNetworks[nnId].matchFlag,
       nnOutput,
       statsObj.loadedNetworks[nnId].matchRate.toFixed(1),
@@ -405,6 +405,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
     statsTextArray.push([
       "MULTI NN",
+      "---",
       statsObj.loadedNetworks.multiNeuralNet.matchFlag,
       sumArrayNorm,
       statsObj.loadedNetworks.multiNeuralNet.matchRate.toFixed(1),
@@ -417,7 +418,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
         "\n--------------------------------------------------------------"
       + "\n" + title 
       + "\n--------------------------------------------------------------\n"
-      + table(statsTextArray, { align: [ "l", "l", "l", ".", "r", "r", "r"] })
+      + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r"] })
       + "\n--------------------------------------------------------------\n"
     );
 
@@ -713,11 +714,13 @@ function loadNetworks(networksObj, callback){
   async.each(Object.keys(networksObj), function(nnId, cb){
 
     // printNetworkObj("RNT | LOAD NETWORK", networksObj[nnId].network);
-    console.log(chalkLog("RNT | LOAD NETWORK | " + nnId));
+    console.log(chalkLog("RNT | LOAD NETWORK | " + nnId
+     // + "\nNET keys: " + Object.keys(networksObj[nnId].network)
+    ));
 
     const network = neataptic.Network.fromJSON(networksObj[nnId].network.network);
 
-    networksHashMap.set(nnId, network);
+    networksHashMap.set(nnId, {network: network, successRate: networksObj[nnId].network.successRate} );
     // networks[nnId] = deepcopy(network);
 
     if (statsObj.loadedNetworks[nnId] === undefined) {
