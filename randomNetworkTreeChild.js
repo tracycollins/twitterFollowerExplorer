@@ -7,7 +7,8 @@ const MAX_Q_SIZE = 500;
 const defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
-let networks = {};
+const HashMap = require("hashmap").HashMap;
+const networksHashMap = new HashMap();
 let rxActivateNetworkQueue = [];
 let maxQueueFlag = false;
 
@@ -215,49 +216,57 @@ function activateNetwork(nnInput, callback){
 
   let networkOutput = {};
 
-  async.eachSeries(Object.keys(networks), function(nnId, cb){
+  async.eachSeries(networksHashMap.keys(), function(nnId, cb){
+
+    const network = networksHashMap.get(nnId);
 
     networkOutput[nnId] = [];
 
-    let output = networks[nnId].activate(nnInput);
+    let output = network.activate(nnInput);
 
-    if (output.length !== 3) {
-      console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
-      quit(" ZERO LENGTH NETWORK OUTPUT");
-      output = [0,0,0];
-    }
+    setTimeout(function(){
 
-    indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
-
-      debug(chalkInfo("MAX INDEX"
-        + " | OUT: " + output
-        + " | MAX INDEX: " + maxOutputIndex
-        + " | " + nnId
-      ));
-
-      switch (maxOutputIndex) {
-        case 0:
-          networkOutput[nnId] = [1,0,0];
-          cb();
-        break;
-        case 1:
-          networkOutput[nnId] = [0,1,0];
-          cb();
-        break;
-        case 2:
-          networkOutput[nnId] = [0,0,1];
-          cb();
-        break;
-        default:
-          networkOutput[nnId] = [0,0,0];
-          cb();
+      if (output.length !== 3) {
+        console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
+        quit(" ZERO LENGTH NETWORK OUTPUT");
+        output = [0,0,0];
       }
 
-      // async.setImmediate(function() {
-        // cb();
-      // });
+      indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
 
-    });
+        debug(chalkInfo("MAX INDEX"
+          + " | OUT: " + output
+          + " | MAX INDEX: " + maxOutputIndex
+          + " | " + nnId
+        ));
+
+        switch (maxOutputIndex) {
+          case 0:
+            networkOutput[nnId] = [1,0,0];
+            // cb();
+          break;
+          case 1:
+            networkOutput[nnId] = [0,1,0];
+            // cb();
+          break;
+          case 2:
+            networkOutput[nnId] = [0,0,1];
+            // cb();
+          break;
+          default:
+            networkOutput[nnId] = [0,0,0];
+            // cb();
+        }
+
+        async.setImmediate(function() {
+          cb();
+        });
+
+      });
+
+
+    }, 20);
+
   }, function(err){
     callback(err, networkOutput);
   });
@@ -701,17 +710,15 @@ function printNetworkObj(title, nnObj){
 
 function loadNetworks(networksObj, callback){
 
-  networks = {};
-
   async.each(Object.keys(networksObj), function(nnId, cb){
 
     // printNetworkObj("RNT | LOAD NETWORK", networksObj[nnId].network);
-    debug(chalkLog("RNT | LOAD NETWORK | " + nnId));
+    console.log(chalkLog("RNT | LOAD NETWORK | " + nnId));
 
     const network = neataptic.Network.fromJSON(networksObj[nnId].network.network);
 
-    networks[nnId] = {};
-    networks[nnId] = network;
+    networksHashMap.set(nnId, network);
+    // networks[nnId] = deepcopy(network);
 
     if (statsObj.loadedNetworks[nnId] === undefined) {
       statsObj.loadedNetworks[nnId] = {};
