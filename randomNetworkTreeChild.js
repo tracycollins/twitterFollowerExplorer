@@ -44,7 +44,7 @@ hostname = hostname.replace(/word0-instance-1/g, "google");
 
 const chalk = require("chalk");
 const chalkAlert = chalk.red;
-const chalkRed = chalk.red;
+// const chalkRed = chalk.red;
 const chalkError = chalk.bold.red;
 const chalkWarn = chalk.red;
 const chalkLog = chalk.gray;
@@ -275,7 +275,6 @@ const sum = (r, a) => r.map((b, i) => a[i] + b);
 
 function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
-  let text = "";
   let arrayOfArrays = [];
   // let matchFlag = false;
   let bestNetworkOutput = [0,0,0];
@@ -357,10 +356,12 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
   }, function(){
 
     const sumArray = arrayOfArrays.reduce(sum);
-    let sumArrayNorm = deepcopy(sumArray);
-    arrayNormalize(sumArrayNorm);
+    let saNorm = deepcopy(sumArray);
+    arrayNormalize(saNorm);
 
-    indexOfMax(sumArrayNorm, function maxNetworkOutput(maxIndex){
+    let sumArrayNorm;
+
+    indexOfMax(saNorm, function maxNetworkOutput(maxIndex){
 
       debug(chalkInfo("MAX INDEX: " + maxIndex));
 
@@ -377,50 +378,52 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
         default:
           sumArrayNorm = [0,0,0];
       }
-    });
 
-    if (expectedOutput) {
+      if (expectedOutput) {
 
-      statsObj.loadedNetworks.multiNeuralNet.total += 1;
+        statsObj.loadedNetworks.multiNeuralNet.total += 1;
 
 
-      if ((sumArrayNorm[0] === expectedOutput[0])
-        && (sumArrayNorm[1] === expectedOutput[1])
-        && (sumArrayNorm[2] === expectedOutput[2])){
+        if ((sumArrayNorm[0] === expectedOutput[0])
+          && (sumArrayNorm[1] === expectedOutput[1])
+          && (sumArrayNorm[2] === expectedOutput[2])){
 
-        statsObj.loadedNetworks.multiNeuralNet.match += 1;
-        statsObj.loadedNetworks.multiNeuralNet.matchFlag = true;
+          statsObj.loadedNetworks.multiNeuralNet.match += 1;
+          statsObj.loadedNetworks.multiNeuralNet.matchFlag = true;
 
+        }
+        else {
+          statsObj.loadedNetworks.multiNeuralNet.mismatch += 1;
+          statsObj.loadedNetworks.multiNeuralNet.matchFlag = false;
+        }
+
+        statsObj.loadedNetworks.multiNeuralNet.matchRate = 100.0 * statsObj.loadedNetworks.multiNeuralNet.match / statsObj.loadedNetworks.multiNeuralNet.total;
       }
       else {
-        statsObj.loadedNetworks.multiNeuralNet.mismatch += 1;
-        statsObj.loadedNetworks.multiNeuralNet.matchFlag = false;
+        statsObj.loadedNetworks.multiNeuralNet.matchFlag = "---";
       }
 
-      statsObj.loadedNetworks.multiNeuralNet.matchRate = 100.0 * statsObj.loadedNetworks.multiNeuralNet.match / statsObj.loadedNetworks.multiNeuralNet.total;
-    }
-    else {
-      statsObj.loadedNetworks.multiNeuralNet.matchFlag = "---";
-    }
+      statsTextArray.push([
+        "MULTI NN",
+        "---",
+        statsObj.loadedNetworks.multiNeuralNet.matchFlag,
+        sumArrayNorm,
+        statsObj.loadedNetworks.multiNeuralNet.matchRate.toFixed(1),
+        statsObj.loadedNetworks.multiNeuralNet.total,
+        statsObj.loadedNetworks.multiNeuralNet.match,
+        statsObj.loadedNetworks.multiNeuralNet.mismatch
+      ]);
 
-    statsTextArray.push([
-      "MULTI NN",
-      "---",
-      statsObj.loadedNetworks.multiNeuralNet.matchFlag,
-      sumArrayNorm,
-      statsObj.loadedNetworks.multiNeuralNet.matchRate.toFixed(1),
-      statsObj.loadedNetworks.multiNeuralNet.total,
-      statsObj.loadedNetworks.multiNeuralNet.match,
-      statsObj.loadedNetworks.multiNeuralNet.mismatch
-    ]);
+      console.log(
+          "\n--------------------------------------------------------------"
+        + "\n" + title 
+        + "\n--------------------------------------------------------------\n"
+        + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r"] })
+        + "\n--------------------------------------------------------------\n"
+      );
 
-    console.log(
-        "\n--------------------------------------------------------------"
-      + "\n" + title 
-      + "\n--------------------------------------------------------------\n"
-      + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r"] })
-      + "\n--------------------------------------------------------------\n"
-    );
+    });
+
 
     indexOfMax(sumArray, function(maxOutputIndex){
 
@@ -697,17 +700,17 @@ function initActivateNetworkInterval(interval){
 }
 
 
-function printNetworkObj(title, nnObj){
-  console.log(chalkLog("\n==================="
-    + "\n" + title
-    + "\nID:      " + nnObj.networkId
-    + "\nCREATED: " + getTimeStamp(nnObj.createdAt)
-    + "\nSUCCESS: " + nnObj.successRate.toFixed(1) + "%"
-    + "\nINPUTS:  " + Object.keys(nnObj.inputs)
-    + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
-    + "\n===================\n"
-  ));
-}
+// function printNetworkObj(title, nnObj){
+//   console.log(chalkLog("\n==================="
+//     + "\n" + title
+//     + "\nID:      " + nnObj.networkId
+//     + "\nCREATED: " + getTimeStamp(nnObj.createdAt)
+//     + "\nSUCCESS: " + nnObj.successRate.toFixed(1) + "%"
+//     + "\nINPUTS:  " + Object.keys(nnObj.inputs)
+//     + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
+//     + "\n===================\n"
+//   ));
+// }
 
 function loadNetworks(networksObj, callback){
 
