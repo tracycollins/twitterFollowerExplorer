@@ -2829,9 +2829,8 @@ function initRandomNetworks(params, callback){
         console.log(chalkAlert("+++ RANDOM NETWORK"
           + " [" + Object.keys(randomNetworksObj).length + "]"
           + " | AVAIL NNs: " + Object.keys(availableNeuralNetHashMap).length
+          + " | " + randomNetworksObj[nnId].network.successRate.toFixed(1) + "%"
           + " | " + nnId
-          + " | " + randomNetworksObj[nnId].network.networkId 
-          // + " | " + randomNetworksObj[nnId].successRate.toFixed(1) + "%"
         ));
 
         cb();
@@ -3281,6 +3280,7 @@ function initRandomNetworkTree(callback){
           console.log(chalkAlert("NETWORK_OUTPUT"
             + " | " + moment().format(compactDateTimeFormat)
             + " | " + m.bestNetwork.networkId
+            + " | RATE: " + currentBestNetwork.successRate.toFixed(1) + "%"
             + " | RT RATE: " + m.bestNetwork.successRate.toFixed(1) + "%"
             // + " | TR RATE: " + currentBestNetwork.successRate.toFixed(1) + "%"
             + " | @" + m.user.screenName
@@ -3292,6 +3292,7 @@ function initRandomNetworkTree(callback){
 
           user = {};
           user = deepcopy(m.user);
+          user.keywordsAuto = {};
           user.keywordsAuto = m.keywordsAuto;
 
           userDbUpdateQueue.push(user);

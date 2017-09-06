@@ -220,7 +220,9 @@ function activateNetwork(nnInput, callback){
 
     const networkObj = networksHashMap.get(nnId);
 
-    networkOutput[nnId] = [];
+    networkOutput[nnId] = {};
+    networkOutput[nnId].output = [];
+    networkOutput[nnId].successRate = networkObj.successRate;
 
     const out = networkObj.network.activate(nnInput);
 
@@ -242,19 +244,19 @@ function activateNetwork(nnInput, callback){
 
       switch (maxOutputIndex) {
         case 0:
-          networkOutput[nnId] = [1,0,0];
+          networkOutput[nnId].output = [1,0,0];
           // cb();
         break;
         case 1:
-          networkOutput[nnId] = [0,1,0];
+          networkOutput[nnId].output = [0,1,0];
           // cb();
         break;
         case 2:
-          networkOutput[nnId] = [0,0,1];
+          networkOutput[nnId].output = [0,0,1];
           // cb();
         break;
         default:
-          networkOutput[nnId] = [0,0,0];
+          networkOutput[nnId].output = [0,0,0];
           // cb();
       }
 
@@ -282,13 +284,14 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
   async.eachSeries(Object.keys(networkOutputObj), function(nnId, cb){
 
-    arrayOfArrays.push(networkOutputObj[nnId]);
+    arrayOfArrays.push(networkOutputObj[nnId].output);
 
-    const nnOutput = networkOutputObj[nnId];
+    const nnOutput = networkOutputObj[nnId].output;
 
     if (statsObj.loadedNetworks[nnId] === undefined) {
       statsObj.loadedNetworks[nnId] = {};
       statsObj.loadedNetworks[nnId].total = 0;
+      statsObj.loadedNetworks[nnId].successRate = networkOutputObj[nnId].successRate;
       statsObj.loadedNetworks[nnId].matchRate = 0.0;
       statsObj.loadedNetworks[nnId].match = 0;
       statsObj.loadedNetworks[nnId].mismatch = 0;
@@ -323,6 +326,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       statsObj.bestNetwork.successRate = statsObj.loadedNetworks[nnId].matchRate;
       console.log(chalkAlert("RNT"
         + " | " + nnId
+        + " | " + networkOutputObj[nnId].successRate.toFixed(1) + "%"
         + " | NEW BEST MAX " + statsObj.bestNetwork.successRate.toFixed(1) + "%"
       ));
     }
@@ -333,6 +337,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       console.log(chalkAlert("RNT"
         + " | " + nnId
         + " | SET BEST OUT [" + bestNetworkOutput + "]"
+        + " | " + networkOutputObj[nnId].successRate.toFixed(1) + "%"
         + " | RATE: " + statsObj.bestNetwork.successRate.toFixed(1) + "%"
       ));
     }
@@ -340,7 +345,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
     statsTextArray.push([
       nnId,
       "---",
-      // networksHashMap.get(nnId).network.successRate.toFixed(1),
+      networkOutputObj[nnId].successRate.toFixed(1),
       statsObj.loadedNetworks[nnId].matchFlag,
       nnOutput,
       statsObj.loadedNetworks[nnId].matchRate.toFixed(1),
@@ -405,6 +410,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
       statsTextArray.push([
         "MULTI NN",
+        "---",
         "---",
         statsObj.loadedNetworks.multiNeuralNet.matchFlag,
         sumArrayNorm,
