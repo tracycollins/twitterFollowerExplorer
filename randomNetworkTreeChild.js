@@ -408,8 +408,28 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
         statsObj.loadedNetworks.multiNeuralNet.matchFlag = "---";
       }
 
+      if (statsObj.loadedNetworks.multiNeuralNet.matchRate > statsObj.bestNetwork.successRate) {
+        statsObj.bestNetwork.networkId = "MULTI";
+        statsObj.bestNetwork.successRate = statsObj.loadedNetworks.multiNeuralNet.matchRate;
+        console.log(chalkAlert("RNT"
+          + " | MULTI"
+          + " | NEW BEST MAX " + statsObj.bestNetwork.successRate.toFixed(1) + "%"
+        ));
+      }
+
+      if (statsObj.bestNetwork.networkId === "MULTI") {
+        bestNetworkOutput = sumArrayNorm;
+        statsObj.bestNetwork.successRate = statsObj.loadedNetworks.multiNeuralNet.matchRate;
+        console.log(chalkAlert("RNT"
+          + " | MULTI"
+          + " | SET BEST OUT [" + bestNetworkOutput + "]"
+          + " | " + networkOutputObj.multiNeuralNet.successRate.toFixed(1) + "%"
+          + " | RATE: " + statsObj.bestNetwork.successRate.toFixed(1) + "%"
+        ));
+      }
+
       statsTextArray.push([
-        "MULTI NN",
+        "MULTI",
         "---",
         "---",
         statsObj.loadedNetworks.multiNeuralNet.matchFlag,
