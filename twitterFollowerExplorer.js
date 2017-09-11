@@ -10,7 +10,6 @@ let bestRuntimeNetworkId;
 let loadedNetworksFlag = false;
 let networksSentFlag = false;
 
-
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
 
