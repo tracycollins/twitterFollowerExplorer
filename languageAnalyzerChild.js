@@ -470,7 +470,7 @@ process.on("message", function(m) {
       languageClient.analyzeSentiment({document: testDocument}).then(function(responses) {
           const response = responses[0];
           console.log(chalkInfo("=========================\nLANGUAGE TEST\n" + jsonPrint(response)));
-          process.send({op: "LANG_TEST_PASS", results: annotations});
+          process.send({op: "LANG_TEST_PASS", results: response});
           process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
       })
       .catch(function(err) {
