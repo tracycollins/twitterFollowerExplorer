@@ -240,8 +240,9 @@ function analyzeLanguage(langObj, callback){
     // });
   })
   .catch(function(err) {
+    console.log(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
     console.error(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
-    if (callback !== undefined) { callback(err, null); }
+    if (callback !== undefined) { callback(err, results); }
   });
 }
 
@@ -458,7 +459,7 @@ process.on("message", function(m) {
       console.log(chalkInfo("LANG ANAL INIT"
         + " | INTERVAL: " + m.interval
       ));
-      
+
       initAnalyzeLanguageInterval(m.interval);
 
       const testText = "This is a test of this universe!";
