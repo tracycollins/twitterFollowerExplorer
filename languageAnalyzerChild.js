@@ -13,7 +13,8 @@ let analyzeLanguageReady = true;
 let analyzeLanguageInterval;
 let statsUpdateInterval;
 
-const languageClient = require("@google-cloud/language")();
+const Language = require("@google-cloud/language");
+const languageClient = Language();
 
 let rxLangObjQueue = [];
 let rxWordQueue = [];
@@ -142,82 +143,105 @@ function quit(message) {
   process.exit();
 }
 
-const testDocument = languageClient.document("This is a test of this universe!");
+const testText = "This is a test of this universe!";
+// const type = languageClient.types.Document.Type.PLAIN_TEXT;
+const testDocument = {
+  "content": testText,
+  type: "PLAIN_TEXT"
+};
+
+// const testDocument = languageClient.document("This is a test of this universe!");
+languageClient.analyzeSentiment({document: testDocument}).then(function(responses) {
+    const response = responses[0];
+    console.log(chalkInfo("=========================\nLANGUAGE TEST\n" + jsonPrint(response)));
+    // quit();
+})
+.catch(function(err) {
+    console.error(chalkError("*** LANGUAGE TEST ERROR: " + err));
+    quit();
+});
 
 function analyzeLanguage(langObj, callback){
 
   debug(chalkAlert("analyzeLanguage\n" + jsonPrint(langObj)));
 
-  const document = languageClient.document(langObj.text);
+  // const document = languageClient.document(langObj.text);
+
+  const document = {
+    "content": langObj.text,
+    type: "PLAIN_TEXT"
+  };
 
   let results = {};
   results.text = langObj.text;
   results.sentiment = {};
   results.entities = {};
 
-  document.annotate(function(err, annotations) {
-    if (err) {
-      debug(chalkRed("LANGUAGE ERROR: " + err));
-      if (callback !== undefined) { callback(err, results); }
-    }
-    else {
+  languageClient.analyzeSentiment({document: document}).then(function(responses) {
 
-      results.sentiment.score = annotations.sentiment.score;
-      results.sentiment.magnitude = annotations.sentiment.magnitude;
-      results.sentiment.comp = 100*annotations.sentiment.score*annotations.sentiment.magnitude;
+    const sentiment = responses[0].documentSentiment;
 
-      debug(chalkRed(
-        "M: " + 10*annotations.sentiment.magnitude.toFixed(1)
-        + " | S: " + 10*annotations.sentiment.score.toFixed(1)
-        + " | C: " + results.sentiment.comp.toFixed(2)
-        + " | KWs: " + jsonPrint(results.keywords)
-        + " | " + langObj.text
-      ));
-      
-      async.each(annotations.entities, function(entity, cb){
+    results.sentiment.score = sentiment.score;
+    results.sentiment.magnitude = sentiment.magnitude;
+    results.sentiment.comp = 100*sentiment.score*sentiment.magnitude;
 
-        async.each(entity.mentions, function(mention, cb2){
+    debug(chalkRed(
+      "M: " + 10*sentiment.magnitude.toFixed(1)
+      + " | S: " + 10*sentiment.score.toFixed(1)
+      + " | C: " + results.sentiment.comp.toFixed(2)
+      + " | KWs: " + jsonPrint(results.keywords)
+      + " | " + langObj.text
+    ));
 
-          debugLang(chalkRed("ENTITY"
-            + " | TYPE: " + entity.type + " - " + mention.type
-            + " | SAL: " + entity.salience.toFixed(1)
-            + " | " + entity.name
-          ));
+    if (callback !== undefined) { callback(null, results); }
 
-          if (mention.type === "PROPER") {
-            if (entity.metadata.wikipedia_url !== undefined) {
-              debugLang(chalkInfo("ENTITY"
-                + " | " + entity.type + " - " + mention.type
-                + " | SAL: " + entity.salience.toFixed(1)
-                + " | WIKI: " + entity.metadata.wikipedia_url
-                + " | " + entity.name
-              ));
-            }
-            else {
-              debugLang(chalkLog("ENTITY"
-                + " | " + entity.type + " - " + mention.type
-                + " | SAL: " + entity.salience.toFixed(1)
-                + " | " + entity.name
-              ));
-            }
-          }
+    // async.each(annotations.entities, function(entity, cb){
 
-          results.entities[entity.name.toLowerCase()] = entity;
+    //   async.each(entity.mentions, function(mention, cb2){
 
-          async.setImmediate(function() {
-            cb2();
-          });
+    //     debugLang(chalkRed("ENTITY"
+    //       + " | TYPE: " + entity.type + " - " + mention.type
+    //       + " | SAL: " + entity.salience.toFixed(1)
+    //       + " | " + entity.name
+    //     ));
 
-        }, function(){
-          async.setImmediate(function() {
-            cb();
-          });
-        });
+    //     if (mention.type === "PROPER") {
+    //       if (entity.metadata.wikipedia_url !== undefined) {
+    //         debugLang(chalkInfo("ENTITY"
+    //           + " | " + entity.type + " - " + mention.type
+    //           + " | SAL: " + entity.salience.toFixed(1)
+    //           + " | WIKI: " + entity.metadata.wikipedia_url
+    //           + " | " + entity.name
+    //         ));
+    //       }
+    //       else {
+    //         debugLang(chalkLog("ENTITY"
+    //           + " | " + entity.type + " - " + mention.type
+    //           + " | SAL: " + entity.salience.toFixed(1)
+    //           + " | " + entity.name
+    //         ));
+    //       }
+    //     }
 
-      }, function(){
-        if (callback !== undefined) { callback(null, results); }
-      });
-    }
+    //     results.entities[entity.name.toLowerCase()] = entity;
+
+    //     async.setImmediate(function() {
+    //       cb2();
+    //     });
+
+    //   }, function(){
+    //     async.setImmediate(function() {
+    //       cb();
+    //     });
+    //   });
+
+    // }, function(){
+    //   if (callback !== undefined) { callback(null, results); }
+    // });
+  })
+  .catch(function(err) {
+    console.error(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
+    if (callback !== undefined) { callback(err, null); }
   });
 }
 
@@ -436,19 +460,19 @@ process.on("message", function(m) {
       ));
       initAnalyzeLanguageInterval(m.interval);
 
-      testDocument.annotate(function(err, annotations) {
-        if (err) {
-          console.error(chalkError("LANG TEST ERROR: " + err));
-          process.send({op: "LANG_TEST_FAIL", err: err});
-        }
-        else {
-          debug("LANG TEST PASS");
-          process.send({op: "LANG_TEST_PASS", results: annotations});
-        }
+      // testDocument.annotate(function(err, annotations) {
+      //   if (err) {
+      //     console.error(chalkError("LANG TEST ERROR: " + err));
+      //     process.send({op: "LANG_TEST_FAIL", err: err});
+      //   }
+      //   else {
+      //     debug("LANG TEST PASS");
+      //     process.send({op: "LANG_TEST_PASS", results: annotations});
+      //   }
 
         process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
 
-      });
+      // });
 
     break;
 
