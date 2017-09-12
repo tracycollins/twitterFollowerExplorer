@@ -143,23 +143,23 @@ function quit(message) {
   process.exit();
 }
 
-const testText = "This is a test of this universe!";
-// const type = languageClient.types.Document.Type.PLAIN_TEXT;
-const testDocument = {
-  "content": testText,
-  type: "PLAIN_TEXT"
-};
+// const testText = "This is a test of this universe!";
+// // const type = languageClient.types.Document.Type.PLAIN_TEXT;
+// const testDocument = {
+//   "content": testText,
+//   type: "PLAIN_TEXT"
+// };
 
-// const testDocument = languageClient.document("This is a test of this universe!");
-languageClient.analyzeSentiment({document: testDocument}).then(function(responses) {
-    const response = responses[0];
-    console.log(chalkInfo("=========================\nLANGUAGE TEST\n" + jsonPrint(response)));
-    // quit();
-})
-.catch(function(err) {
-    console.error(chalkError("*** LANGUAGE TEST ERROR: " + err));
-    quit();
-});
+// // const testDocument = languageClient.document("This is a test of this universe!");
+// languageClient.analyzeSentiment({document: testDocument}).then(function(responses) {
+//     const response = responses[0];
+//     console.log(chalkInfo("=========================\nLANGUAGE TEST\n" + jsonPrint(response)));
+//     // quit();
+// })
+// .catch(function(err) {
+//     console.error(chalkError("*** LANGUAGE TEST ERROR: " + err));
+//     quit();
+// });
 
 function analyzeLanguage(langObj, callback){
 
@@ -458,21 +458,26 @@ process.on("message", function(m) {
       console.log(chalkInfo("LANG ANAL INIT"
         + " | INTERVAL: " + m.interval
       ));
+      
       initAnalyzeLanguageInterval(m.interval);
 
-      // testDocument.annotate(function(err, annotations) {
-      //   if (err) {
-      //     console.error(chalkError("LANG TEST ERROR: " + err));
-      //     process.send({op: "LANG_TEST_FAIL", err: err});
-      //   }
-      //   else {
-      //     debug("LANG TEST PASS");
-      //     process.send({op: "LANG_TEST_PASS", results: annotations});
-      //   }
+      const testText = "This is a test of this universe!";
+      const testDocument = {
+        "content": testText,
+        type: "PLAIN_TEXT"
+      };
 
-        process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
-
-      // });
+      languageClient.analyzeSentiment({document: testDocument}).then(function(responses) {
+          const response = responses[0];
+          console.log(chalkInfo("=========================\nLANGUAGE TEST\n" + jsonPrint(response)));
+          process.send({op: "LANG_TEST_PASS", results: annotations});
+          process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
+      })
+      .catch(function(err) {
+          console.error(chalkError("*** LANGUAGE TEST ERROR: " + err));
+          process.send({op: "LANG_TEST_FAIL", err: err});
+          process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
+      });
 
     break;
 
