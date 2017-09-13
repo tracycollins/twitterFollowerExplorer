@@ -236,12 +236,6 @@ function activateNetwork(nnInput, callback){
 
     indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
 
-      // console.log(chalkInfo("MAX INDEX"
-      //   + " | OUT: " + output
-      //   + " | MAX INDEX: " + maxOutputIndex
-      //   + " | " + nnId
-      // ));
-
       switch (maxOutputIndex) {
         case 0:
           networkOutput[nnId].output = [1,0,0];
@@ -423,7 +417,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
         console.log(chalkAlert("RNT"
           + " | MULTI"
           + " | SET BEST OUT [" + bestNetworkOutput + "]"
-          + " | " + networkOutputObj.multiNeuralNet.successRate.toFixed(1) + "%"
+          // + " | " + networkOutputObj.multiNeuralNet.successRate.toFixed(1) + "%"
           + " | RATE: " + statsObj.bestNetwork.successRate.toFixed(1) + "%"
         ));
       }
@@ -488,8 +482,6 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
           callback({});
       }
     });
-
-
   });
 
 }
