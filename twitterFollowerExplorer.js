@@ -1495,7 +1495,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             + " | SN: " + m.obj.screenName
             + " | N: " + m.obj.name
             // + " | KWs: " + Object.keys(m.obj.keywords)
-            + " | ENTs: " + langEntityKeys.length
+            // + " | ENTs: " + langEntityKeys.length
             // + "\nENTITIES\n" + jsonPrint(m.results.entities)
           ));
 
@@ -1641,7 +1641,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
           }
           else {
 
-            console.log(chalkLog("LANG ENTS: " + langEntityKeys.length));
+            debug(chalkLog("LANG ENTS: " + langEntityKeys.length));
 
             m.obj.languageAnalysis = m.results;
             m.obj.languageAnalyzed = true;
