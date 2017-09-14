@@ -628,17 +628,17 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.match += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
                     console.log(chalk.green("+++ AUTO KEYWORD MATCH"
-                      + " | MATCH RATE: " + statsObj.categorize.matchRate.toFixed(1) + "%"
-                      + " | TOTAL: " + statsObj.categorize.total
+                      + " | RATE: " + statsObj.categorize.matchRate.toFixed(1) + "%"
+                      + " | TOT: " + statsObj.categorize.total
                       + " | MATCH: " + statsObj.categorize.match
-                      + " | MISMATCH: " + statsObj.categorize.mismatch
+                      // + " | MISMATCH: " + statsObj.categorize.mismatch
                       + " | L: " + statsObj.categorize.left
                       + " | N: " + statsObj.categorize.neutral
                       + " | R: " + statsObj.categorize.right
                       + " | @" + obj.user.screenName
                       + " | KWs: " + kw
                       + " | KWAs: " + Object.keys(obj.user.keywordsAuto)
-                      + " | NEW KWAs: " + nkwa
+                      + " | NKWAs: " + nkwa
                     ));
                   }
                   else {
@@ -646,48 +646,48 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
                     console.log(chalk.red("--- AUTO KEYWORD MISS "
                       + " | MATCH RATE: " + statsObj.categorize.matchRate.toFixed(1) + "%"
-                      + " | TOTAL: " + statsObj.categorize.total
+                      + " | TOT: " + statsObj.categorize.total
                       + " | MATCH: " + statsObj.categorize.match
-                      + " | MISMATCH: " + statsObj.categorize.mismatch
+                      // + " | MISMATCH: " + statsObj.categorize.mismatch
                       + " | L: " + statsObj.categorize.left
                       + " | N: " + statsObj.categorize.neutral
                       + " | R: " + statsObj.categorize.right
                       + " | @" + obj.user.screenName
                       + " | KWs: " + kw
                       + " | KWAs: " + Object.keys(obj.user.keywordsAuto)
-                      + " | NEW KWAs: " + nkwa
+                      + " | NKWAs: " + nkwa
                     ));
                   }
                 }
                 else {
                   debug(chalkLog("NETWORK OUT"
                     + " | MATCH RATE: " + statsObj.categorize.matchRate.toFixed(1) + "%"
-                    + " | TOTAL: " + statsObj.categorize.total
+                    + " | TOT: " + statsObj.categorize.total
                     + " | MATCH: " + statsObj.categorize.match
-                    + " | MISMATCH: " + statsObj.categorize.mismatch
+                    // + " | MISMATCH: " + statsObj.categorize.mismatch
                     + " | L: " + statsObj.categorize.left
                     + " | N: " + statsObj.categorize.neutral
                     + " | R: " + statsObj.categorize.right
                     + " | @" + obj.user.screenName
                     + " | KWs: " + kw
                     + " | KWAs: " + Object.keys(obj.user.keywordsAuto)
-                    + " | NEW KWAs: " + nkwa
+                    + " | NKWAs: " + nkwa
                   ));
                 }
               }
               else {
                 debug(chalkLog("NETWORK OUT"
                   + " | MATCH RATE: " + statsObj.categorize.matchRate.toFixed(1) + "%"
-                  + " | TOTAL: " + statsObj.categorize.total
+                  + " | TOT: " + statsObj.categorize.total
                   + " | MATCH: " + statsObj.categorize.match
-                  + " | MISMATCH: " + statsObj.categorize.mismatch
+                  // + " | MISMATCH: " + statsObj.categorize.mismatch
                   + " | L: " + statsObj.categorize.left
                   + " | N: " + statsObj.categorize.neutral
                   + " | R: " + statsObj.categorize.right
                   + " | @" + obj.user.screenName
                   + " | KWs: ---" 
                   + " | KWAs: " + Object.keys(obj.user.keywordsAuto)
-                  + " | NEW KWAs: " + nkwa
+                  + " | NKWAs: " + nkwa
                 ));
               }
             }
