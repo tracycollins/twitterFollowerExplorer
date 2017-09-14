@@ -1413,7 +1413,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
         case "NETWORK_RESULTS":
 
-          console.log(chalkLog("M<"
+          debug(chalkLog("M<"
             + " [Q: " + randomNetworkTreeMessageRxQueue.length
             + " | OP: " + m.op
             + " | OUTPUT: " + m.networkOutput
@@ -1423,7 +1423,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         break;
 
         case "QUEUE_FULL":
-          console.log(chalkError("M<"
+          debug(chalkError("M<"
             + " [Q: " + randomNetworkTreeMessageRxQueue.length + "]"
             + " | OP: " + m.op
           ));
@@ -1432,7 +1432,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         break;
 
         case "QUEUE_READY":
-          console.log(chalkError("M<"
+          debug(chalkError("M<"
             + " [Q: " + randomNetworkTreeMessageRxQueue.length + "]"
             + " | OP: " + m.op
           ));
@@ -1482,7 +1482,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             langEntityKeys = Object.keys(m.results.entities);
           }
 
-          console.log(chalkLog("M<"
+          debug(chalkLog("M<"
             + " [Q: " + langAnalyzerMessageRxQueue.length
             // + " | STATS: " + m.stats.analyzer.analyzed + " ANLZD"
             // + " " + m.stats.analyzer.skipped + " SKP"
