@@ -559,7 +559,7 @@ function saveFile (params, callback){
   const dbFileUpload = function () {
     dropboxClient.filesUpload(options)
     .then(function(){
-      debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
+      console.log(chalkLog("SAVED DROPBOX JSON | " + options.path));
       if (callback !== undefined) { callback(null); }
     })
     .catch(function(error){
