@@ -2379,7 +2379,7 @@ function checkUserWordKeys(user, callback){
 
 function processUser(userIn, callback) {
 
-  debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
+  console.log(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
 
   async.waterfall(
   [
@@ -2483,6 +2483,7 @@ function processUser(userIn, callback) {
         else {
 
           let userDb = uArray[0];
+          
           user.createdAt = userDb.createdAt;
           user.languageAnalyzed = userDb.languageAnalyzed;
 
