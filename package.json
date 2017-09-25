@@ -1,6 +1,6 @@
 {
   "name": "twitterfollowerexplorer",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "twitter user follower explorer",
   "main": "twitterFollowerExplorer.js",
   "dependencies": {
