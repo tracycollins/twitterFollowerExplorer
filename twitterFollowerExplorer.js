@@ -2277,13 +2277,6 @@ function generateAutoKeywords(user, callback){
               // printHistogram("@" + user.screenName + " | " + classText, results.label.images);
               cb(null, text, results);
             }
-            // else {
-            //   // console.log(chalkAlert("PARSE BANNER IMAGE"
-            //   //   + " | RESULTS\n" + jsonPrint(results)
-            //   // ));
-            //   printHistogram("@" + user.screenName, results.images);
-            //   cb(null, text, results);
-            // }
           });
         }
         else {
@@ -2293,7 +2286,7 @@ function generateAutoKeywords(user, callback){
         }
       }
 
-    ], function (err, text, imageResults) {
+    ], function (err, text, bannerResults) {
 
       if (err) {
         console.error(chalkError("*** ERROR generateAutoKeywords: " + err));
