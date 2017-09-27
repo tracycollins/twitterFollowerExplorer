@@ -440,7 +440,9 @@ let statsFile = DROPBOX_TFE_STATS_FILE;
 configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
-const bestNetworkFolder = "/config/utility/best/neuralNetworks";
+// const bestNetworkFolder = "/config/utility/best/neuralNetworks";
+const bestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
+const localNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/local";
 
 console.log("DROPBOX_TFE_CONFIG_FILE: " + DROPBOX_TFE_CONFIG_FILE);
 console.log("DROPBOX_TFE_STATS_FILE : " + DROPBOX_TFE_STATS_FILE);
@@ -2265,12 +2267,23 @@ function generateAutoKeywords(user, callback){
               cb(null, text, null);
             }
             else {
-              // console.log(chalkAlert("PARSE BANNER IMAGE"
-              //   + " | RESULTS\n" + jsonPrint(results)
-              // ));
-              printHistogram("@" + user.screenName, results.images);
+              debug(chalkAlert("PARSE BANNER IMAGE"
+                + " | RESULTS\n" + jsonPrint(results)
+              ));
+              if (results.text !== undefined) {
+                console.log(chalkInfo("@" + user.screenName + " | " + classText + " | " + results.text));
+                text = text + "\n" + results.text;
+              }
+              // printHistogram("@" + user.screenName + " | " + classText, results.label.images);
               cb(null, text, results);
             }
+            // else {
+            //   // console.log(chalkAlert("PARSE BANNER IMAGE"
+            //   //   + " | RESULTS\n" + jsonPrint(results)
+            //   // ));
+            //   printHistogram("@" + user.screenName, results.images);
+            //   cb(null, text, results);
+            // }
           });
         }
         else {
@@ -2296,10 +2309,14 @@ function generateAutoKeywords(user, callback){
           callback(new Error(err), null);
         }
 
-        if (imageResults) {
-          hist.images = imageResults.images;
-          updateGlobalImageHistogram({user: user, histogram:imageResults.images});
+        if (bannerResults && bannerResults.label && bannerResults.label.images) {
+          hist.images = bannerResults.label.images;
+          updateGlobalImageHistogram({user: user, histogram: bannerResults.label.images});
         }
+        // if (imageResults) {
+        //   hist.images = imageResults.images;
+        //   updateGlobalImageHistogram({user: user, histogram:imageResults.images});
+        // }
 
         userServer.updateHistograms({user: user, histograms: hist}, function(err, updatedUser){
 
