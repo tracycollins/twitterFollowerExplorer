@@ -2271,10 +2271,9 @@ function generateAutoKeywords(user, callback){
                 + " | RESULTS\n" + jsonPrint(results)
               ));
               if (results.text !== undefined) {
-                console.log(chalkInfo("@" + user.screenName + " | " + classText + " | " + results.text));
+                debug(chalkInfo("@" + user.screenName + " | " + results.text));
                 text = text + "\n" + results.text;
               }
-              // printHistogram("@" + user.screenName + " | " + classText, results.label.images);
               cb(null, text, results);
             }
           });
