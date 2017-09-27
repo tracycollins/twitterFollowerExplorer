@@ -10,6 +10,8 @@ let bestRuntimeNetworkId;
 let loadedNetworksFlag = false;
 let networksSentFlag = false;
 
+const table = require("text-table");
+
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
 
@@ -17,6 +19,7 @@ const userServer = require("@threeceelabs/user-server-controller");
 // const userServer = require("../userServerController");
 // const wordServer = require("@threeceelabs/word-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
+const twitterImageParser = require("@threeceelabs/twitter-image-parser");
 
 const User = require("mongoose").model("User");
 const Word = require("mongoose").model("Word");
@@ -31,7 +34,12 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
 
-const inputTypes = ["emoji", "hashtags", "mentions", "urls", "words"];
+let globalImageHistogram = {};
+let leftImageHistogram = {};
+let rightImageHistogram = {};
+let neutralImageHistogram = {};
+
+const inputTypes = ["emoji", "hashtags", "mentions", "urls", "words", "images"];
 inputTypes.sort();
 
 let inputArrays = {};
@@ -508,6 +516,10 @@ function showStats(options){
 function quit(){
   console.log( "\n... QUITTING ..." );
   showStats(true);
+  printHistogram("GLOBAL IMAGE", globalImageHistogram);
+  printHistogram("LEFT IMAGE", leftImageHistogram);
+  printHistogram("NEUTRAL IMAGE", neutralImageHistogram);
+  printHistogram("RIGHT IMAGE", rightImageHistogram);
   process.exit();
 }
 
@@ -740,6 +752,10 @@ function initStatsUpdate(callback){
       }
     });
 
+    saveFile({folder: statsFolder, file: "globalImageHistogram.json", obj: globalImageHistogram});
+    saveFile({folder: statsFolder, file: "leftImageHistogram.json", obj: leftImageHistogram});
+    saveFile({folder: statsFolder, file: "rightImageHistogram.json", obj: rightImageHistogram});
+    saveFile({folder: statsFolder, file: "neutralImageHistogram.json", obj: neutralImageHistogram});
     saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
     showStats();
 
@@ -1179,6 +1195,12 @@ function initStdIn(){
       case "q":
       case "Q":
         quit();
+      break;
+      case "g":
+        printHistogram("GLOBAL IMAGE", globalImageHistogram);
+        printHistogram("LEFT IMAGE", leftImageHistogram);
+        printHistogram("NEUTRAL IMAGE", neutralImageHistogram);
+        printHistogram("RIGHT IMAGE", rightImageHistogram);
       break;
       case "s":
         showStats();
@@ -1750,6 +1772,60 @@ function getUserKeyword(keywords, callback) {
   });
 }
 
+function updateGlobalImageHistogram(params){
+
+  let user = params.user;
+  let imagesObj = params.histogram;
+
+  Object.keys(imagesObj).forEach(function(imageLabel){
+
+    if (globalImageHistogram[imageLabel] === undefined){
+      globalImageHistogram[imageLabel] = imagesObj[imageLabel];
+    }
+    else {
+      globalImageHistogram[imageLabel] += imagesObj[imageLabel];
+    }
+
+    // console.log("updateGlobalImageHistogram | KWs: " + Object.keys(user.keywords));
+
+    if (user.keywords && Object.keys(user.keywords).length > 0) {
+      switch (Object.keys(user.keywords)[0]) {
+        case "left":
+          if (leftImageHistogram[imageLabel] === undefined){
+            leftImageHistogram[imageLabel] = imagesObj[imageLabel];
+          }
+          else {
+            leftImageHistogram[imageLabel] += imagesObj[imageLabel];
+          }
+        break;
+        case "neutral":
+          if (neutralImageHistogram[imageLabel] === undefined){
+            neutralImageHistogram[imageLabel] = imagesObj[imageLabel];
+          }
+          else {
+            neutralImageHistogram[imageLabel] += imagesObj[imageLabel];
+          }
+        break;
+        case "right":
+          if (rightImageHistogram[imageLabel] === undefined){
+            rightImageHistogram[imageLabel] = imagesObj[imageLabel];
+          }
+          else {
+            rightImageHistogram[imageLabel] += imagesObj[imageLabel];
+          }
+        break;
+      }
+    }
+
+    debug(chalkAlert("GIH"
+      + " | " + imageLabel
+      + " | CURR: " + imagesObj[imageLabel]
+      + " | GLOBAL: " + globalImageHistogram[imageLabel]
+    ));
+
+  });
+}
+
 function classifyUser(user, callback){
 
   debug(chalkAlert("classifyUser KWs\n" + jsonPrint(user.get("keywords"))));
@@ -1911,6 +1987,49 @@ function classifyUser(user, callback){
   });
 }
 
+const sortedObjectValues = function(params) {
+
+  return new Promise(function(resolve, reject) {
+
+    const keys = Object.keys(params.obj);
+
+    const sortedKeys = keys.sort(function(a,b){
+      const objA = params.obj[a];
+      const objB = params.obj[b];
+      return objB[params.sortKey] - objA[params.sortKey];
+    });
+
+    if (keys.length !== undefined) {
+      resolve({sortKey: params.sortKey, sortedKeys: sortedKeys.slice(0,params.max)});
+    }
+    else {
+      reject(new Error("ERROR"));
+    }
+
+  });
+};
+
+function printHistogram(title, hist){
+  let tableArray = [];
+
+  const sortedLabels = Object.keys(hist).sort(function(a,b){
+    return hist[b] - hist[a];
+  });
+
+  async.eachSeries(sortedLabels, function(label, cb){
+    tableArray.push([hist[label], label]);
+    cb();
+  }, function(){
+    console.log(
+        "\n--------------------------------------------------------------"
+      + "\n" + title + " | " + sortedLabels.length + " ENTRIES"  
+      + "\n--------------------------------------------------------------\n"
+      + table(tableArray, { align: [ "r", "l"] })
+      + "\n--------------------------------------------------------------\n"
+    );
+  });
+}
+
 function printDatum(title, input){
 
   let row = "";
@@ -1946,7 +2065,7 @@ function printDatum(title, input){
   });
 }
 
-function activateNetwork(obj, callback){
+function activateNetwork(obj){
 
   if (randomNetworkTreeReadyFlag) {
     randomNetworkTree.send({op: "ACTIVATE", obj: obj});
@@ -2133,9 +2252,35 @@ function generateAutoKeywords(user, callback){
             });
           }
         }
+      },
+
+      function userBannerImage(text, cb) {
+        if (user.bannerImageUrl) {
+          twitterImageParser.parseImage(user.bannerImageUrl, { screenName: user.screenName}, function(err, results){
+            if (err) {
+              console.log(chalkError("PARSE BANNER IMAGE ERROR"
+                + "\nREQ\n" + jsonPrint(results)
+                + "\nERR\n" + jsonPrint(err)
+              ));
+              cb(null, text, null);
+            }
+            else {
+              // console.log(chalkAlert("PARSE BANNER IMAGE"
+              //   + " | RESULTS\n" + jsonPrint(results)
+              // ));
+              printHistogram("@" + user.screenName, results.images);
+              cb(null, text, results);
+            }
+          });
+        }
+        else {
+          async.setImmediate(function() {
+            cb(null, text, null);
+          });
+        }
       }
 
-    ], function (err, text) {
+    ], function (err, text, imageResults) {
 
       if (err) {
         console.error(chalkError("*** ERROR generateAutoKeywords: " + err));
@@ -2149,6 +2294,11 @@ function generateAutoKeywords(user, callback){
         if (err) {
           console.log(chalkError("*** TWITTER TEXT PARSER ERROR: " + err));
           callback(new Error(err), null);
+        }
+
+        if (imageResults) {
+          hist.images = imageResults.images;
+          updateGlobalImageHistogram({user: user, histogram:imageResults.images});
         }
 
         userServer.updateHistograms({user: user, histograms: hist}, function(err, updatedUser){
@@ -2379,7 +2529,7 @@ function checkUserWordKeys(user, callback){
 
 function processUser(userIn, callback) {
 
-  console.log(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
+  debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
 
   async.waterfall(
   [
@@ -3032,6 +3182,8 @@ function loadBestNeuralNetworkFile(callback){
           ));
           inputArrays[type] = bestNetworkObj.inputs[type];
         });
+
+        if (bestNetworkObj.inputs.images === undefined) { bestNetworkObj.inputs.images = ["businesss"]; }
 
         // network = neataptic.Network.fromJSON(bestNetworkObj.network);
 
