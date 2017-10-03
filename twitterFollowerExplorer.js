@@ -440,8 +440,8 @@ let statsFile = DROPBOX_TFE_STATS_FILE;
 configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
-// const bestNetworkFolder = "/config/utility/best/neuralNetworks";
-const bestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
+const bestNetworkFolder = "/config/utility/best/neuralNetworks";
+// const bestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
 const localNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/local";
 
 console.log("DROPBOX_TFE_CONFIG_FILE: " + DROPBOX_TFE_CONFIG_FILE);
