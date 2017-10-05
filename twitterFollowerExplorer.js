@@ -1,5 +1,9 @@
  /*jslint node: true */
 "use strict";
+
+const OFFLINE_MODE = false;
+
+
 const DEFAULT_MIN_SUCCESS_RATE = 50;
 const TFE_NUM_RANDOM_NETWORKS = 50;
 
@@ -11,6 +15,8 @@ let loadedNetworksFlag = false;
 let networksSentFlag = false;
 
 const table = require("text-table");
+const arrayUnique = require("array-unique");
+const fs = require("fs");
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const db = wordAssoDb();
@@ -142,6 +148,10 @@ function msToTime(duration) {
   return days + ":" + hours + ":" + minutes + ":" + seconds;
 }
 
+const jsUcfirst = function(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
+
 
 let statsObj = {};
 statsObj.hostname = hostname;
@@ -158,6 +168,7 @@ statsObj.runId = TFE_RUN_ID;
 statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
 
 statsObj.bestNetworks = {};
+statsObj.totalInputs = 0;
 
 let configuration = {};
 configuration.testMode = false;
@@ -556,6 +567,13 @@ function getTimeStamp(inputTime) {
 
 function saveFile (params, callback){
 
+  if (OFFLINE_MODE) {
+    if (callback !== undefined) { 
+      return(callback(null, null));
+    }
+    return;
+  }
+
   const fullPath = params.folder + "/" + params.file;
 
   debug(chalkInfo("LOAD FOLDER " + params.folder));
@@ -668,15 +686,94 @@ function saveFile (params, callback){
   }
 }
 
-function loadFile(path, file, callback) {
+// function loadFile(path, file, callback) {
 
-  const fullPath = path + "/" + file;
+//   const fullPath = path + "/" + file;
+
+//   debug(chalkInfo("LOAD FOLDER " + path));
+//   debug(chalkInfo("LOAD FILE " + file));
+//   debug(chalkInfo("FULL PATH " + fullPath));
+
+//   dropboxClient.filesDownload({path: fullPath})
+//     .then(function(data) {
+//       debug(chalkLog(getTimeStamp()
+//         + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
+//       ));
+
+//       let payload = data.fileBinary;
+//       debug(payload);
+
+//       if (file.match(/\.json$/gi)) {
+//         try {
+//           let fileObj = JSON.parse(payload);
+//           callback(null, fileObj);
+//         }
+//         catch (err) {
+//           console.error(chalkError("JSON PARSE ERROR: " + err));
+//           callback(err, null);
+//         }
+//       }
+//       else {
+//         callback(null, payload);
+//       }
+//     })
+//     .catch(function(error) {
+//       console.log(chalkError("DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
+//       console.log(chalkError("!!! DROPBOX READ " + fullPath + " ERROR"));
+//       console.log(chalkError(jsonPrint(error)));
+
+//       if (error.status === 404) {
+//         console.error(chalkError("!!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
+//           + " ... SKIPPING ...")
+//         );
+//         return(callback(null, null));
+//       }
+//       if (error.status === 0) {
+//         console.error(chalkError("!!! DROPBOX NO RESPONSE"
+//           + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
+//         return(callback(null, null));
+//       }
+//       callback(error, null);
+//     });
+// }
+
+function loadFile(path, file, callback) {
 
   debug(chalkInfo("LOAD FOLDER " + path));
   debug(chalkInfo("LOAD FILE " + file));
-  debug(chalkInfo("FULL PATH " + fullPath));
+  debug(chalkInfo("FULL PATH " + path + "/" + file));
 
-  dropboxClient.filesDownload({path: fullPath})
+  let fullPath = path + "/" + file;
+
+  if (OFFLINE_MODE) {
+    if (hostname === "mbp2") {
+      fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + path + "/" + file;
+      debug(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
+    }
+    fs.readFile(fullPath, "utf8", function(err, data) {
+      debug(chalkLog(getTimeStamp()
+        + " | LOADING FILE FROM DROPBOX FILE"
+        + " | " + fullPath
+        // + "\n" + jsonPrint(data)
+      ));
+
+      if (file.match(/\.json$/gi)) {
+        try {
+          let fileObj = JSON.parse(data);
+          callback(null, fileObj);
+        }
+        catch(e){
+          console.trace(chalkError("NNT | JSON PARSE ERROR: " + e));
+          // callback(e, null);
+        }
+      }
+      else {
+        callback(null, null);
+      }
+    });
+   }
+  else {
+    dropboxClient.filesDownload({path: fullPath})
     .then(function(data) {
       debug(chalkLog(getTimeStamp()
         + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
@@ -686,31 +783,43 @@ function loadFile(path, file, callback) {
       debug(payload);
 
       if (file.match(/\.json$/gi)) {
-        let fileObj = JSON.parse(payload);
-        callback(null, fileObj);
+        try {
+          let fileObj = JSON.parse(payload);
+          callback(null, fileObj);
+        }
+        catch(e){
+          console.trace(chalkError("NNT | JSON PARSE ERROR: " + e));
+          // callback(e, null);
+        }
       }
       else {
-        callback(null, payload);
+        callback(null, null);
       }
     })
     .catch(function(error) {
-      console.log(chalkError("DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
-      console.log(chalkError("!!! DROPBOX READ " + fullPath + " ERROR"));
-      console.log(chalkError(jsonPrint(error)));
+      console.log(chalkError("NNT | DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
+      console.log(chalkError("NNT | !!! DROPBOX READ " + fullPath + " ERROR"));
+      console.log(chalkError("NNT | " + jsonPrint(error.error)));
 
       if (error.status === 404) {
-        console.error(chalkError("!!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
+        console.error(chalkError("NNT | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
           + " ... SKIPPING ...")
         );
         return(callback(null, null));
       }
+      if (error.status === 409) {
+        console.error(chalkError("NNT | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"));
+        return(callback(error, null));
+      }
       if (error.status === 0) {
-        console.error(chalkError("!!! DROPBOX NO RESPONSE"
+        console.error(chalkError("NNT | !!! DROPBOX NO RESPONSE"
           + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
         return(callback(null, null));
       }
       callback(error, null);
     });
+  }
+
 }
 
 function saveFileRetry (timeout, path, file, jsonObj, callback){
@@ -1369,9 +1478,7 @@ function initialize(cnf, callback){
             + cnf.twitterConfigFile
           ));
 
-          // initInputArrays(function(err){
-            return(callback(err, cnf));
-          // });
+          return(callback(err, cnf));
 
         });
       });
@@ -1398,9 +1505,7 @@ function initialize(cnf, callback){
       if (cnf.enableStdin){ initStdIn(); }
 
       initStatsUpdate(function(){
-        // initInputArrays(function(err){
-          return(callback(err, cnf));
-        // });
+        return(callback(err, cnf));
       });
      }
   });
@@ -3091,7 +3196,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
             return(cb());
           }
 
-          if (networkObj.successRate > DEFAULT_MIN_SUCCESS_RATE) {
+          if ((networkObj.network.input === statsObj.totalInputs) 
+            && (networkObj.successRate > DEFAULT_MIN_SUCCESS_RATE)) {
 
             console.log(chalkAlert("+++ DROPBOX NETWORK"
               + " | " + networkObj.successRate.toFixed(1) + "%"
@@ -3367,6 +3473,63 @@ function initUserDbUpdateQueueInterval(interval){
   }, interval);
 }
 
+function initInputArrays(cnf, callback){
+
+  console.log(chalkInfo("NNT | INIT INPUT ARRAYS"));
+  debug(chalkInfo("NNT | INIT INPUT ARRAYS cnf\nNNT | " + jsonPrint(cnf)));
+
+  let folder = dropboxConfigDefaultFolder;
+  let inputFilePrefix = "defaultInput";
+
+  statsObj.totalInputs = 0;  // LANG ANALYSIS INPUT
+
+  async.eachSeries(inputTypes, function(inputType, cb){
+
+    const inputFile = inputFilePrefix + jsUcfirst(inputType) + ".json";
+
+    console.log("NNT | INIT " + inputType.toUpperCase() + " INPUT ARRAY: " + inputFile);
+
+    loadFile(folder, inputFile, function(err, inputArrayObj){
+      if (!err) {
+        debug(jsonPrint(inputArrayObj));
+
+        arrayUnique(inputArrayObj[inputType]);
+
+        inputArrayObj[inputType].sort();
+
+        inputArrays[inputType] = {};
+        inputArrays[inputType] = inputArrayObj[inputType];
+
+        statsObj.totalInputs += inputArrayObj[inputType].length;
+
+        console.log(chalkInfo("NNT"
+          + " | TOTAL INPUTS: " + statsObj.totalInputs
+          + " | LOADED " + inputType.toUpperCase() + " ARRAY"
+          + " | " + inputArrayObj[inputType].length + " " + inputType.toUpperCase()
+        ));
+        cb();
+      }
+      else {
+        console.log(chalkError("NNT | ERROR: loadFile: " + dropboxConfigFolder + "/" + inputFile));
+        cb(err);
+      }
+    });
+
+  }, function(err){
+    if (err){
+      console.log(chalkError("NNT | ERR\nNNT | " + jsonPrint(err)));
+      callback(err);
+    }
+    else {
+      statsObj.totalInputs += 2; // LANG ANALYSIS INPUTS
+      console.log(chalkInfo("NNT | LOADED INPUT ARRAY FILES | TOTAL INPUTS: " + statsObj.totalInputs));
+      callback();
+    }
+  });
+    
+}
+
+
 function initRandomNetworkTree(callback){
 
   console.log(chalkAlert("INIT RANDOM NETWORK TREE CHILD PROCESS"));
@@ -3594,59 +3757,67 @@ initialize(configuration, function(err, cnf){
 
   console.log(chalkTwitter(cnf.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
-  initUserDbUpdateQueueInterval(100);
-  initRandomNetworkTreeMessageRxQueueInterval(100);
-  initRandomNetworkTree();
-
-  initLangAnalyzerMessageRxQueueInterval(100);
-  initLangAnalyzer();
-
-  loadBestNeuralNetworkFile(function(err, nnObj){
+  initInputArrays(cnf, function(err){
 
     if (err) {
-      neuralNetworkInitialized = false;
-      console.log(chalkError("*** LOAD BEST NETWORK ERROR\n" + jsonPrint(err)));
-      console.error("*** LOAD BEST NETWORK ERROR\n" + jsonPrint(err));
+      console.error(chalkError("*** INIT INPUT ARRAYS ERROR\n" + jsonPrint(err)));
     }
 
-    debug("nnObj: " + nnObj.networkId);
+    initUserDbUpdateQueueInterval(100);
+    initRandomNetworkTreeMessageRxQueueInterval(100);
+    initRandomNetworkTree();
 
-    neuralNetworkInitialized = true;
+    initLangAnalyzerMessageRxQueueInterval(100);
+    initLangAnalyzer();
 
-    initTwitterUsers(function(e){
+    loadBestNeuralNetworkFile(function(err, nnObj){
 
-      if (e) {
-        console.error(chalkError("*** ERROR INIT TWITTER USERS: " + e));
-        return quit(e);
+      if (err) {
+        neuralNetworkInitialized = false;
+        console.log(chalkError("*** LOAD BEST NETWORK ERROR\n" + jsonPrint(err)));
+        console.error("*** LOAD BEST NETWORK ERROR\n" + jsonPrint(err));
       }
 
-      if (currentTwitterUser === undefined) { 
-        currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
-      }
+      debug("nnObj: " + nnObj.networkId);
 
-      console.log(chalkTwitter("CURRENT TWITTER USER: " + currentTwitterUser));
+      neuralNetworkInitialized = true;
 
-      // initRandomNetworkTreeMessageRxQueueInterval(100);
-      // initRandomNetworkTree();
+      initTwitterUsers(function(e){
 
-      checkRateLimit();
-      initCheckRateLimitInterval(checkRateLimitIntervalTime);
-      // initLangAnalyzerMessageRxQueueInterval(100);
-      // initLangAnalyzer();
-      
-      if (cnf.userDbCrawl) { 
-        console.log(chalkTwitter("\n\n*** CRAWLING USER DB ***\n\n"));
-      }
-      else {
-        console.log(chalkTwitter("\n\n*** GET TWITTER FRIENDS ***"
-          + " [ USER INDEX: " + currentTwitterUserIndex + "]"
-          + " | @" + statsObj.user[currentTwitterUser].screenName
-          + "\n\n"
-        ));
-        debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[currentTwitterUser]) + "\n\n"));
-        initFetchTwitterFriendsInterval(fetchTwitterFriendsIntervalTime);
-        fsm.fetchStart();
-      }
+        if (e) {
+          console.error(chalkError("*** ERROR INIT TWITTER USERS: " + e));
+          return quit(e);
+        }
+
+        if (currentTwitterUser === undefined) { 
+          currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
+        }
+
+        console.log(chalkTwitter("CURRENT TWITTER USER: " + currentTwitterUser));
+
+        // initRandomNetworkTreeMessageRxQueueInterval(100);
+        // initRandomNetworkTree();
+
+        checkRateLimit();
+        initCheckRateLimitInterval(checkRateLimitIntervalTime);
+        // initLangAnalyzerMessageRxQueueInterval(100);
+        // initLangAnalyzer();
+        
+        if (cnf.userDbCrawl) { 
+          console.log(chalkTwitter("\n\n*** CRAWLING USER DB ***\n\n"));
+        }
+        else {
+          console.log(chalkTwitter("\n\n*** GET TWITTER FRIENDS ***"
+            + " [ USER INDEX: " + currentTwitterUserIndex + "]"
+            + " | @" + statsObj.user[currentTwitterUser].screenName
+            + "\n\n"
+          ));
+          debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[currentTwitterUser]) + "\n\n"));
+          initFetchTwitterFriendsInterval(fetchTwitterFriendsIntervalTime);
+          fsm.fetchStart();
+        }
+      });
     });
+
   });
 });

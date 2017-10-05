@@ -220,6 +220,17 @@ function activateNetwork(nnInput, callback){
 
     const networkObj = networksHashMap.get(nnId);
 
+    if (networkObj.network.input !== nnInput.length) {
+      console.log(chalkAlert("NN INPUT MISMATCH"
+        + " | NN INPUTS: " + networkObj.network.input
+        + " | ACTIVATE INPUTS: " + nnInput.length
+      ));
+
+      networksHashMap.delete(nnId);
+
+      return callback("NN INPUT MISMATCH", networkObj);
+    }
+
     networkOutput[nnId] = {};
     networkOutput[nnId].output = [];
     networkOutput[nnId].successRate = networkObj.successRate;
@@ -735,7 +746,9 @@ function loadNetworks(networksObj, callback){
   async.each(Object.keys(networksObj), function(nnId, cb){
 
     // printNetworkObj("RNT | LOAD NETWORK", networksObj[nnId].network);
-    console.log(chalkLog("RNT | LOAD NETWORK | " + nnId
+    console.log(chalkLog("RNT | LOAD NETWORK"
+      + " | " + nnId
+      + " | " + networksObj[nnId].successRate + "%"
      // + "\nNET keys: " + Object.keys(networksObj[nnId].network)
     ));
 
@@ -901,6 +914,7 @@ function initStatsUpdate(cnf){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
     statsObj.timeStamp = moment().format(defaultDateTimeFormat);
 
+    if (OFFLINE_MODE)
     saveFile(statsFolder, statsFile, statsObj);
 
   }, cnf.statsUpdateIntervalTime);
