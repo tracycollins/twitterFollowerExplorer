@@ -914,7 +914,6 @@ function initStatsUpdate(cnf){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
     statsObj.timeStamp = moment().format(defaultDateTimeFormat);
 
-    if (OFFLINE_MODE)
     saveFile(statsFolder, statsFile, statsObj);
 
   }, cnf.statsUpdateIntervalTime);
