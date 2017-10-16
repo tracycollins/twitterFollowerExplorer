@@ -14,7 +14,8 @@ let analyzeLanguageInterval;
 let statsUpdateInterval;
 
 const Language = require("@google-cloud/language");
-const languageClient = Language();
+// const languageClient = Language();
+const languageClient = new Language.LanguageServiceClient();
 
 let rxLangObjQueue = [];
 let rxWordQueue = [];
