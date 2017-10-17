@@ -747,8 +747,8 @@ function loadNetworks(networksObj, callback){
 
     // printNetworkObj("RNT | LOAD NETWORK", networksObj[nnId].network);
     console.log(chalkLog("RNT | LOAD NETWORK"
+      + " | " + networksObj[nnId].network.successRate.toFixed(2) + "%"
       + " | " + nnId
-      + " | " + networksObj[nnId].successRate + "%"
      // + "\nNET keys: " + Object.keys(networksObj[nnId].network)
     ));
 
