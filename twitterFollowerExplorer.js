@@ -686,57 +686,6 @@ function saveFile (params, callback){
   }
 }
 
-// function loadFile(path, file, callback) {
-
-//   const fullPath = path + "/" + file;
-
-//   debug(chalkInfo("LOAD FOLDER " + path));
-//   debug(chalkInfo("LOAD FILE " + file));
-//   debug(chalkInfo("FULL PATH " + fullPath));
-
-//   dropboxClient.filesDownload({path: fullPath})
-//     .then(function(data) {
-//       debug(chalkLog(getTimeStamp()
-//         + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
-//       ));
-
-//       let payload = data.fileBinary;
-//       debug(payload);
-
-//       if (file.match(/\.json$/gi)) {
-//         try {
-//           let fileObj = JSON.parse(payload);
-//           callback(null, fileObj);
-//         }
-//         catch (err) {
-//           console.error(chalkError("JSON PARSE ERROR: " + err));
-//           callback(err, null);
-//         }
-//       }
-//       else {
-//         callback(null, payload);
-//       }
-//     })
-//     .catch(function(error) {
-//       console.log(chalkError("DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
-//       console.log(chalkError("!!! DROPBOX READ " + fullPath + " ERROR"));
-//       console.log(chalkError(jsonPrint(error)));
-
-//       if (error.status === 404) {
-//         console.error(chalkError("!!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
-//           + " ... SKIPPING ...")
-//         );
-//         return(callback(null, null));
-//       }
-//       if (error.status === 0) {
-//         console.error(chalkError("!!! DROPBOX NO RESPONSE"
-//           + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
-//         return(callback(null, null));
-//       }
-//       callback(error, null);
-//     });
-// }
-
 function loadFile(path, file, callback) {
 
   debug(chalkInfo("LOAD FOLDER " + path));
@@ -877,7 +826,6 @@ function initStatsUpdate(callback){
 
       fetchTwitterFriendsIntervalometer.stop();
 
-      // clearInterval(waitRandomNetworkTreeReadyInterval);
       clearInterval(waitLanguageAnalysisReadyInterval);
       clearInterval(statsUpdateInterval);
 
@@ -914,9 +862,7 @@ function checkRateLimit(callback){
       + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
       + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
       + " | EXP @: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
-      // + " | RST @: " + statsObj.user[currentTwitterUser].twitterRateLimitResetAt.format(compactDateTimeFormat)
       + " | NOW: " + moment().format(compactDateTimeFormat)
-      // + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
     ));
   }
 
@@ -948,8 +894,6 @@ function checkRateLimit(callback){
         + " | REMAINING " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
         + " | RESET " + getTimeStamp(statsObj.user[currentTwitterUser].twitterRateLimitResetAt)
         + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
-        // application/rate_limit_status
-        // + "\n" + jsonPrint(data)
       ));
 
       if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
@@ -963,9 +907,7 @@ function checkRateLimit(callback){
           + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
           + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
           + " | EXP @: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
-          // + " | RST @: " + statsObj.user[currentTwitterUser].twitterRateLimitResetAt.format(compactDateTimeFormat)
           + " | NOW: " + moment().format(compactDateTimeFormat)
-          // + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
         ));
       }
       else if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag){
@@ -983,7 +925,6 @@ function checkRateLimit(callback){
         debug(chalkInfo("... NO TWITTER RATE LIMIT"
           + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
           + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
-          // + " | EXP @: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
           + " | RST @: " + statsObj.user[currentTwitterUser].twitterRateLimitResetAt.format(compactDateTimeFormat)
           + " | NOW: " + moment().format(compactDateTimeFormat)
           + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
