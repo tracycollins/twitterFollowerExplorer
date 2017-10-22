@@ -623,7 +623,8 @@ function saveFile (params, callback){
         // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
         console.error(chalkError(moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          + " | ERROR\n" + jsonPrint(error)
+          // + " | ERROR\n" + jsonPrint(error)
+          + " | ERROR: " + error
           // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
