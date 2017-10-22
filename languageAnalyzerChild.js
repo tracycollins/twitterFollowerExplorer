@@ -299,7 +299,7 @@ function initAnalyzeLanguageInterval(interval){
           statsObj.analyzer.errors += 1;
 
           if (err.code === 3) {
-            console.log(chalkAlert("[RXLQ: " + rxLangObjQueue.length + "]"
+            console.log(chalkAlert("LAC [RXLQ: " + rxLangObjQueue.length + "]"
               + " | UNSUPPORTED LANG"
               + " | " + langObj.obj.userId
               + " | @" + langObj.obj.screenName
@@ -307,7 +307,7 @@ function initAnalyzeLanguageInterval(interval){
             ));
           }
           else if (err.code === 8) {
-            console.error(chalkAlert("[RXLQ: " + rxLangObjQueue.length + "]"
+            console.error(chalkAlert("LAC [RXLQ: " + rxLangObjQueue.length + "]"
               + " | LANGUAGE QUOTA"
               + " | " + langObj.obj.userId
               + " | @" + langObj.obj.screenName
@@ -317,7 +317,7 @@ function initAnalyzeLanguageInterval(interval){
             rxLangObjQueue.push(langObj);
           }
           else {
-            console.error(chalkError("[RXLQ: " + rxLangObjQueue.length + "]"
+            console.error(chalkError("LAC [RXLQ: " + rxLangObjQueue.length + "]"
               + " | LANGUAGE TEXT ERROR"
               + " | " + langObj.obj.userId
               + " | @" + langObj.obj.screenName
@@ -333,7 +333,7 @@ function initAnalyzeLanguageInterval(interval){
           messageObj.stats = statsObj;
 
           process.send(messageObj, function(){
-            debug(chalkInfo("SENT LANG_RESULTS"));
+            debug(chalkInfo("LAC SENT LANG_RESULTS"));
             analyzeLanguageReady = true;
             if (rxLangObjQueue.length === 0){
               process.send({op: "IDLE", queue: rxLangObjQueue.length});
@@ -383,20 +383,20 @@ function initAnalyzeLanguageInterval(interval){
 
       wordCache.get(rxWordObj.wordCacheIndex, function(err, wordHit){
         if (err) {
-          console.log(chalkInfo("WORD CACHE ERROR"
+          console.log(chalkInfo("LAC WORD CACHE ERROR"
             + " | " + rxWordObj.wordCacheIndex
             + "\n" + jsonPrint(err)
           ));
           analyzeLanguageReady = true;
         }
         else if (wordHit) {
-          debugLang(chalkLog("WORD CACHE HIT ... SKIP | " + wordHit.wordCacheIndex));
+          debugLang(chalkLog("LAC WORD CACHE HIT ... SKIP | " + wordHit.wordCacheIndex));
           analyzeLanguageReady = true;
           statsObj.analyzer.total += 1;
           statsObj.analyzer.skipped += 1;
         }
         else {
-          debug(chalkLog("WORD CACHE MISS | " + rxWordObj.wordCacheIndex));
+          debug(chalkLog("LAC WORD CACHE MISS | " + rxWordObj.wordCacheIndex));
 
           let wordObj = {};
           wordObj = rxWordObj;
@@ -423,7 +423,7 @@ function initAnalyzeLanguageInterval(interval){
               wordObj.sentiment = results.sentiment;
               wordCache.set(wordObj.wordCacheIndex, wordObj);
               debugLang(chalkInfo(
-                "MAG: " + 10*results.sentiment.magnitude.toFixed(1)
+                "LAC | MAG: " + 10*results.sentiment.magnitude.toFixed(1)
                 + " | SCORE: " + 10*results.sentiment.score.toFixed(1)
                 + " | C: " + results.sentiment.comp.toFixed(2)
                 + " | " + results.text
@@ -579,9 +579,9 @@ debug("dropboxConfigFile : " + dropboxConfigFile);
 debug("statsFolder : " + statsFolder);
 debug("statsFile : " + statsFile);
 
-console.log("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN);
-console.log("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
-console.log("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
+// console.log("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN);
+// console.log("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
+// console.log("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
@@ -624,12 +624,40 @@ function saveFile (path, file, jsonObj, callback){
       if (callback !== undefined) { callback(null, response); }
     })
     .catch(function(error){
-      const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
-      console.error(chalkError(moment().format(defaultDateTimeFormat) 
-        + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-        + " | ERROR: " + errorText
-      ));
-      if (callback !== undefined) { callback(error, fullPath); }
+      if (error.status === 413){
+        console.error(chalkError(moment().format(compactDateTimeFormat) 
+          + " | LAC | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+          + " | ERROR: 413"
+          // + " ERROR\n" + jsonPrint(error.error)
+        ));
+        if (callback !== undefined) { callback(error); }
+      }
+      else if (error.status === 429){
+        console.error(chalkError(moment().format(compactDateTimeFormat) 
+          + " | LAC | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+          + " | ERROR: TOO MANY WRITES"
+          // + " ERROR\n" + jsonPrint(error.error)
+        ));
+        if (callback !== undefined) { callback(error); }
+      }
+      else if (error.status === 500){
+        console.error(chalkError(moment().format(compactDateTimeFormat) 
+          + " | LAC | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+          + " | ERROR: DROPBOX SERVER ERROR"
+          // + " ERROR\n" + jsonPrint(error.error)
+        ));
+        if (callback !== undefined) { callback(error); }
+      }
+      else {
+        // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
+        console.error(chalkError(moment().format(compactDateTimeFormat) 
+          + " | LAC | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+          // + " | ERROR\n" + jsonPrint(error)
+          + " | ERROR: " + error
+          // + " ERROR\n" + jsonPrint(error.error)
+        ));
+        if (callback !== undefined) { callback(error); }
+      }
     });
 }
 
@@ -637,7 +665,7 @@ function initStatsUpdate(cnf){
 
   clearInterval(statsUpdateInterval);
 
-  console.log(chalkInfo("initStatsUpdate | INTERVAL: " + cnf.statsUpdateIntervalTime));
+  console.log(chalkInfo("LAC initStatsUpdate | INTERVAL: " + cnf.statsUpdateIntervalTime));
 
   statsUpdateInterval = setInterval(function () {
 
@@ -657,7 +685,7 @@ function initStatsUpdate(cnf){
 function initialize(cnf, callback){
 
   if (debug.enabled || debugCache.enabled || debugQ.enabled){
-    console.log("\n%%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
+    console.log("\nLAC %%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
   }
 
   cnf.processName = process.env.LA_PROCESS_NAME || "languageAnalyzer";
@@ -670,7 +698,7 @@ function initialize(cnf, callback){
 
   cnf.statsUpdateIntervalTime = process.env.LA_STATS_UPDATE_INTERVAL || 120000;
 
-  debug("CONFIG\n" + jsonPrint(cnf));
+  debug("LAC CONFIG\n" + jsonPrint(cnf));
 
   debug(chalkWarn("dropboxConfigFolder: " + dropboxConfigFolder));
   debug(chalkWarn("dropboxConfigFile  : " + dropboxConfigFile));
@@ -684,7 +712,7 @@ setTimeout(function(){
 
   initialize(configuration, function(err, cnf){
     if (err && (err.status !== 404)) {
-      console.error(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
+      console.error(chalkError("LAC ***** INIT ERROR *****\n" + jsonPrint(err)));
       quit();
     }
     console.log(chalkInfo(cnf.processName + " STARTED " + getTimeStamp() + "\n"));
