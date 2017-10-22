@@ -359,9 +359,9 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       statsObj.loadedNetworks[nnId].mismatch
     ]);
 
-    // async.setImmediate(function() {
+    async.setImmediate(function() {
       cb();
-    // });
+    });
 
   }, function(){
 
@@ -776,13 +776,13 @@ function loadNetworks(networksObj, callback){
 
 }
 
-
-
 process.on("SIGHUP", function() {
+  console.log(chalkAlert("RNT | " + configuration.processName + " | *** SIGHUP ***"));
   quit("SIGHUP");
 });
 
 process.on("SIGINT", function() {
+  console.log(chalkAlert("RNT | " + configuration.processName + " | *** SIGINT ***"));
   quit("SIGINT");
 });
 
@@ -894,7 +894,7 @@ function saveFile (path, file, jsonObj, callback){
       if (callback !== undefined) { callback(null, response); }
     })
     .catch(function(error){
-      const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
+      const errorText = (error.error.error_summary !== undefined) ? error.error.error_summary : jsonPrint(error);
       console.error(chalkError(moment().format(defaultDateTimeFormat) 
         + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
         + " | ERROR: " + errorText
