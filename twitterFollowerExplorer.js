@@ -1908,6 +1908,7 @@ function classifyUser(user, callback){
           statsObj.users.classified = Object.keys(classifiedUserHashmap).length;
 
           const mkwObj = user.get("keywords");
+
           getUserKeyword(mkwObj, function(err, mkw){
             switch (mkw) {
               case "right":
@@ -2781,6 +2782,7 @@ function processUser(userIn, callback) {
         cb(err, uObj);
       });
     }
+
   ], function (err, user) {
 
     if (err) {
@@ -3127,8 +3129,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
         else {
           debug(chalkLog("DROPBOX NETWORK CONTENT SAME  "
             + " | " + entry.name
-            // + " | CUR HASH: " + entry.content_hash
-            // + " | OLD HASH: " + bestNetworkHashMap.get(entry.name).content_hash
             + " | " + getTimeStamp(entry.client_modified)
           ));
 
@@ -3163,6 +3163,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
               currentBestNetwork = networkObj;
               newBestNetwork = true;
+              saveFile({folder: folder, file: "bestNetwork.json", obj: networkObj});
             }
 
             cb();
@@ -3474,7 +3475,6 @@ function initInputArrays(cnf, callback){
       callback();
     }
   });
-    
 }
 
 
