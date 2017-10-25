@@ -3,7 +3,6 @@
 
 const OFFLINE_MODE = false;
 
-
 const DEFAULT_MIN_SUCCESS_RATE = 87;
 const TFE_NUM_RANDOM_NETWORKS = 100;
 
@@ -172,6 +171,7 @@ statsObj.totalInputs = 0;
 
 let configuration = {};
 configuration.testMode = false;
+configuration.minSuccessRate = DEFAULT_MIN_SUCCESS_RATE;
 configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEFAULT_FETCH_COUNT;
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
@@ -1290,6 +1290,7 @@ function initialize(cnf, callback){
 
   cnf.processName = process.env.TFE_PROCESS_NAME || "twitterFollowerExplorer";
 
+  cnf.minSuccessRate = process.env.TFE_MIN_SUCCESS_RATE || DEFAULT_MIN_SUCCESS_RATE ;
   cnf.numRandomNetworks = process.env.TFE_NUM_RANDOM_NETWORKS || TFE_NUM_RANDOM_NETWORKS ;
   cnf.testMode = (process.env.TFE_TEST_MODE === "true") ? true : cnf.testMode;
   cnf.quitOnError = process.env.TFE_QUIT_ON_ERROR || false ;
@@ -1326,6 +1327,11 @@ function initialize(cnf, callback){
       if (loadedConfigObj.TFE_TEST_MODE !== undefined){
         console.log("LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
         cnf.testMode = loadedConfigObj.TFE_TEST_MODE;
+      }
+
+      if (loadedConfigObj.TFE_MIN_SUCCESS_RATE !== undefined){
+        console.log("LOADED TFE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_MIN_SUCCESS_RATE);
+        cnf.numRandomNetworks = loadedConfigObj.TFE_MIN_SUCCESS_RATE;
       }
 
       if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined){
@@ -3139,7 +3145,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
           }
 
           if ((networkObj.network.input === statsObj.totalInputs) 
-            && (networkObj.successRate > DEFAULT_MIN_SUCCESS_RATE)) {
+            && (networkObj.successRate >= configuration.minSuccessRate)) {
 
             console.log(chalkAlert("+++ DROPBOX NETWORK"
               + " | " + networkObj.successRate.toFixed(1) + "%"
