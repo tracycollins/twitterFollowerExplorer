@@ -634,7 +634,7 @@ function saveFile (params, callback){
   };
 
   if (options.mode === "add") {
-    
+
     dropboxClient.filesListFolder({path: params.folder})
     .then(function(response){
 
@@ -3175,7 +3175,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             availableNeuralNetHashMap[networkObj.networkId] = true;
 
-            if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
+            if ((hostname === "google") && (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate))) {
               currentBestNetwork = networkObj;
               newBestNetwork = true;
               saveFile({folder: folder, file: "bestNetwork.json", obj: networkObj});
@@ -3567,7 +3567,7 @@ function initRandomNetworkTree(callback){
 
           bestNetworkHashMap.set(bestRuntimeNetworkId, entry);
 
-          if (prevBestNetworkId !== bestRuntimeNetworkId) {
+          if ((hostname === "google") && (prevBestNetworkId !== bestRuntimeNetworkId)) {
             prevBestNetworkId = bestRuntimeNetworkId;
             console.log(chalkAlert("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
             saveFile({folder: bestNetworkFolder, file: bestNetworkFile, obj: currentBestNetwork});
