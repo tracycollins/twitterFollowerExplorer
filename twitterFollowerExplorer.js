@@ -3175,10 +3175,12 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             availableNeuralNetHashMap[networkObj.networkId] = true;
 
-            if ((hostname === "google") && (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate))) {
+            if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
               currentBestNetwork = networkObj;
               newBestNetwork = true;
-              saveFile({folder: folder, file: "bestNetwork.json", obj: networkObj});
+              if (hostname === "google") {
+                saveFile({folder: folder, file: "bestNetwork.json", obj: networkObj});
+              }
             }
 
             cb();
