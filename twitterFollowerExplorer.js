@@ -634,6 +634,7 @@ function saveFile (params, callback){
   };
 
   if (options.mode === "add") {
+    
     dropboxClient.filesListFolder({path: params.folder})
     .then(function(response){
 
