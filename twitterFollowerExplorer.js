@@ -452,6 +452,7 @@ configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
 const bestNetworkFolder = "/config/utility/best/neuralNetworks";
+const bestNetworkFile = "bestNetwork.json";
 // const bestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
 const localNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/local";
 
@@ -643,7 +644,7 @@ function saveFile (params, callback){
 
       let fileExits = false;
 
-      async.each(response.entries, function(entry, cb){
+      async.eachSeries(response.entries, function(entry, cb){
 
         console.log(chalkInfo("DROPBOX FILE"
           + " | " + params.folder
@@ -714,7 +715,7 @@ function loadFile(path, file, callback) {
         }
         catch(e){
           console.trace(chalkError("NNT | JSON PARSE ERROR: " + e));
-          // callback(e, null);
+          callback("JSON PARSE ERROR", null);
         }
       }
       else {
@@ -739,7 +740,7 @@ function loadFile(path, file, callback) {
         }
         catch(e){
           console.trace(chalkError("NNT | JSON PARSE ERROR: " + e));
-          // callback(e, null);
+          callback("JSON PARSE ERROR", null);
         }
       }
       else {
@@ -3072,7 +3073,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
       // + " | " + jsonPrint(response)
     ));
 
-    async.each(response.entries, function(entry, cb){
+    async.eachSeries(response.entries, function(entry, cb){
 
       debug(chalkInfo("DROPBOX NETWORK FOUND"
         + " | " + getTimeStamp(entry.client_modified)
@@ -3085,7 +3086,17 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
       if (bestNetworkHashMap.has(networkId)){
 
-        if (bestNetworkHashMap.get(networkId).entry.content_hash !== entry.content_hash) {
+        const bno = bestNetworkHashMap.get(networkId);
+
+        if (!bno || (bno === undefined)) {
+          console.error(chalkError("bestNetworkHashMap ENTRY UNDEFINED??? | " + networkId));
+          quit("bestNetworkHashMap ENTRY UNDEFINED");
+          return(cb());
+        }
+
+        // console.log("bno entry\n" + jsonPrint(bno.entry));
+
+        if (bno.entry.content_hash !== entry.content_hash) {
 
           console.log(chalkInfo("DROPBOX NETWORK CONTENT CHANGE"
             + " | " + getTimeStamp(entry.client_modified)
@@ -3478,6 +3489,7 @@ function initInputArrays(cnf, callback){
 }
 
 
+let prevBestNetworkId = "";
 function initRandomNetworkTree(callback){
 
   console.log(chalkAlert("INIT RANDOM NETWORK TREE CHILD PROCESS"));
@@ -3545,15 +3557,24 @@ function initRandomNetworkTree(callback){
 
           entry = bestNetworkHashMap.get(bestRuntimeNetworkId);
           currentBestNetwork = entry.network;
-          currentBestNetwork.runtimeSuccessRate = m.bestNetwork.successRate;
+          currentBestNetwork.matchRate = m.bestNetwork.matchRate;
+          currentBestNetwork.successRate = m.bestNetwork.successRate;
           entry.network = currentBestNetwork;
+
           bestNetworkHashMap.set(bestRuntimeNetworkId, entry);
+
+          if (prevBestNetworkId !== bestRuntimeNetworkId) {
+            prevBestNetworkId = bestRuntimeNetworkId;
+            console.log(chalkAlert("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
+            saveFile({folder: bestNetworkFolder, file: bestNetworkFile, obj: currentBestNetwork});
+          }
+
 
           console.log(chalkAlert("NETWORK_OUTPUT"
             + " | " + moment().format(compactDateTimeFormat)
             + " | " + m.bestNetwork.networkId
             + " | RATE: " + currentBestNetwork.successRate.toFixed(1) + "%"
-            + " | RT RATE: " + m.bestNetwork.successRate.toFixed(1) + "%"
+            + " | RT RATE: " + m.bestNetwork.matchRate.toFixed(1) + "%"
             // + " | TR RATE: " + currentBestNetwork.successRate.toFixed(1) + "%"
             + " | @" + m.user.screenName
             + " | KWs: " + Object.keys( m.user.keywords)
@@ -3570,6 +3591,12 @@ function initRandomNetworkTree(callback){
           userDbUpdateQueue.push(user);
 
         }
+      break;
+      case "BEST_MATCH_RATE":
+        console.log(chalkAlert(getTimeStamp() + " | RNT_BEST_MATCH_RATE"
+          + " | " + m.networkId
+          + " | " + m.matchRate.toFixed(2)
+        ));
       break;
       default:
         randomNetworkTreeReadyFlag = true;
