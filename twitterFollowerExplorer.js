@@ -3075,7 +3075,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
     async.eachSeries(response.entries, function(entry, cb){
 
-      debug(chalkInfo("DROPBOX NETWORK FOUND"
+      console.log(chalkInfo("DROPBOX NETWORK FOUND"
         + " | " + getTimeStamp(entry.client_modified)
         + " | " + entry.name
         // + " | " + entry.content_hash
@@ -3146,6 +3146,9 @@ function loadBestNetworkDropboxFolder(folder, callback){
           cb();
         }
       }
+      else if (networkId === "bestNetwork") {
+        cb();
+      }
       else {
 
         loadFile(folder, entry.name, function(err, networkObj){
@@ -3207,7 +3210,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
   })
   .catch(function(err){
-    console.log(chalkError("loadBestNetworkDropboxFolder *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
+    console.log(chalkError("loadBestNetworkDropboxFolder *** DROPBOX FILES LIST FOLDER ERROR\n" + err + "\n" + jsonPrint(err)));
     if (callback !== undefined) { callback(err, null); }
   });
 }
