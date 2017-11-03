@@ -6,10 +6,10 @@
   "dependencies": {
     "@google-cloud/language": "^1.0.0",
     "@threeceelabs/mongoose-twitter": "^1.0.49",
-    "@threeceelabs/tweet-server-controller": "^1.0.68",
+    "@threeceelabs/tweet-server-controller": "^1.0.69",
     "@threeceelabs/twitter-image-parser": "^1.0.24",
     "@threeceelabs/twitter-text-parser": "^1.0.20",
-    "@threeceelabs/user-server-controller": "^1.0.101",
+    "@threeceelabs/user-server-controller": "^1.0.102",
     "@threeceelabs/word-server-controller": "^1.0.8",
     "array-normalize": "^1.1.3",
     "array-unique": "^0.3.2",
