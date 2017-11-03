@@ -2317,8 +2317,8 @@ function generateAutoKeywords(user, callback){
           twitterImageParser.parseImage(user.bannerImageUrl, { screenName: user.screenName}, function(err, results){
             if (err) {
               console.log(chalkError("PARSE BANNER IMAGE ERROR"
-                + "\nREQ\n" + jsonPrint(results)
-                + "\nERR\n" + jsonPrint(err)
+                // + "\nREQ\n" + jsonPrint(results)
+                // + "\nERR\n" + jsonPrint(err)
               ));
               cb(null, text, null);
             }
