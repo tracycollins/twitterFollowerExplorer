@@ -9,7 +9,7 @@
     "@threeceelabs/tweet-server-controller": "^1.0.68",
     "@threeceelabs/twitter-image-parser": "^1.0.24",
     "@threeceelabs/twitter-text-parser": "^1.0.20",
-    "@threeceelabs/user-server-controller": "^1.0.100",
+    "@threeceelabs/user-server-controller": "^1.0.101",
     "@threeceelabs/word-server-controller": "^1.0.8",
     "array-normalize": "^1.1.3",
     "array-unique": "^0.3.2",
