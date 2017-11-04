@@ -1036,34 +1036,45 @@ function initTwitter(currentTwitterUser, callback){
       const newTwitStream = newTwit.stream("user", { stringify_friend_ids: true });
 
       newTwitStream.on("follow", function(followMessage){
+
         console.log(chalkAlert("USER " + currentTwitterUser + " FOLLOW"
           + " | " +  followMessage.target.id_str
           + " | " +  followMessage.target.screen_name.toLowerCase()
         ));
 
-        User.findOne({userId: followMessage.target.id_str}, function(err, dbUser){
+        followMessage.target.threeceeFollowing = {};
+        followMessage.target.threeceeFollowing.screenName = currentTwitterUser;
 
+        processUser(followMessage.target, function(err, user){
           if (err) {
-            console.error(chalkError("INIT TWITTER USER FIND ERROR\n" + jsonPrint(err)));
+            console.trace("processUser ERROR");
           }
-          else if (dbUser){
-            console.log("** DB USER HIT **");
-
-            printTwitterUser(dbUser);
-
-            if (dbUser.threeceeFollowing 
-              && (dbUser.threeceeFollowing.screenName !== undefined)
-              && dbUser.threeceeFollowing.screenName) {
-              if (currentTwitterUser.toLowerCase() !== dbUser.threeceeFollowing.screenName.toLowerCase()){
-                console.log(chalkAlert("*** USER ALREADY FOLLOWED"
-                  + " | CURRENT USER: " + currentTwitterUser
-                  + " | THREECEE FLW: " + dbUser.threeceeFollowing.screenName
-                ));
-              }
-            }
-          }
-
+          console.log("NEW FOLLOW | PROCESSED USER | " + currentTwitterUser + "\n" + jsonPrint(user));
         });
+
+        // User.findOne({userId: followMessage.target.id_str}, function(err, dbUser){
+
+        //   if (err) {
+        //     console.error(chalkError("INIT TWITTER USER FIND ERROR\n" + jsonPrint(err)));
+        //   }
+        //   else if (dbUser){
+        //     console.log("** DB USER HIT **");
+
+        //     printTwitterUser(dbUser);
+
+        //     if (dbUser.threeceeFollowing 
+        //       && (dbUser.threeceeFollowing.screenName !== undefined)
+        //       && dbUser.threeceeFollowing.screenName) {
+        //       if (currentTwitterUser.toLowerCase() !== dbUser.threeceeFollowing.screenName.toLowerCase()){
+        //         console.log(chalkAlert("*** USER ALREADY FOLLOWED"
+        //           + " | CURRENT USER: " + currentTwitterUser
+        //           + " | THREECEE FLW: " + dbUser.threeceeFollowing.screenName
+        //         ));
+        //       }
+        //     }
+        //   }
+
+        // });
       });
 
       async.waterfall([
