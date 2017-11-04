@@ -2880,6 +2880,9 @@ function fetchFriends(params, callback) {
             + " | FRNDs: " + friend.friends_count
           ));
 
+          friend.threeceeFollowing = {};
+          friend.threeceeFollowing.screenName = currentTwitterUser;
+
           processUser(friend, function(err, user){
             if (err) {
               console.trace("processUser ERROR");
