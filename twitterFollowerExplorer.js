@@ -940,10 +940,13 @@ function checkRateLimit(callback){
 }
 
 function printTwitterUser(user){
+
   let threeceeFollowingText = "";
+
   if (user.threeceeFollowing) {
     threeceeFollowingText = user.threeceeFollowing.screenName;
   }
+
   console.log(chalkTwitter("TWITTER USER\n==================="
     + "\nID:         " + user.userId 
     + "\nNAME:       " + user.name 
@@ -1631,6 +1634,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   ? Object.keys(updatedUserObj.keywordsAuto) : [];
 
                 let threeceeFollowing = false;
+
                 if (updatedUserObj.threeceeFollowing){
                   threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                 }
@@ -1704,6 +1708,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                     ? Object.keys(updatedUserObj.keywordsAuto) : [];
 
                   let threeceeFollowing = false;
+
                   if (updatedUserObj.threeceeFollowing){
                     threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                   }
@@ -1754,6 +1759,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   ? Object.keys(updatedUserObj.keywordsAuto) : [];
 
                 let threeceeFollowing = false;
+                
                 if (updatedUserObj.threeceeFollowing){
                   threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                 }
@@ -2769,11 +2775,11 @@ function processUser(userIn, callback) {
         debug(chalkInfo("USER AKWs\n" + jsonPrint(user.get("keywordsAuto"))));
       }
 
-      if ((user.threeceeFollowing === undefined) || !user.threeceeFollowing) { 
-        user.threeceeFollowing = {}; 
-      }
+      // if ((user.threeceeFollowing === undefined) || !user.threeceeFollowing) { 
+        // user.threeceeFollowing = {}; 
+      // }
 
-      user.threeceeFollowing.screenName = currentTwitterUser;
+      // user.threeceeFollowing.screenName = currentTwitterUser;
 
       classifyUser(user, function genClassifiedUserKeyword(err, u){
         if (err) {
@@ -2882,17 +2888,19 @@ function fetchFriends(params, callback) {
 
         async.eachSeries(subFriendsSortedArray, function (friend, cb){
 
+          friend.threeceeFollowing = {};
+          friend.threeceeFollowing.screenName = currentTwitterUser;
+
           console.log(chalkLog("<FRND"
             + " [ @" + currentTwitterUser + " ]"
             + " | " + friend.id_str
             + " | @" + friend.screen_name
+            + " | 3CF: " + friend.threeceeFollowing.screenName
             + " | Ts: " + friend.statuses_count
             + " | FLWRs: " + friend.followers_count
             + " | FRNDs: " + friend.friends_count
           ));
 
-          friend.threeceeFollowing = {};
-          friend.threeceeFollowing.screenName = currentTwitterUser;
 
           processUser(friend, function(err, user){
             if (err) {
