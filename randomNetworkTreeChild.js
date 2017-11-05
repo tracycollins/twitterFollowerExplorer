@@ -119,7 +119,12 @@ statsObj.bestNetwork.networkId = "";
 statsObj.bestNetwork.successRate = 0;
 statsObj.bestNetwork.matchRate = 0;
 
+statsObj.categorizeHistory = [];
+
 statsObj.categorize = {};
+statsObj.categorize.bestNetwork = {};
+statsObj.categorize.startTime = moment().valueOf();
+statsObj.categorize.endTime = moment().valueOf();
 statsObj.categorize.total = 0;
 statsObj.categorize.match = 0;
 statsObj.categorize.mismatch = 0;
@@ -632,7 +637,7 @@ function initActivateNetworkInterval(interval){
              }
           }
 
-          printDatum(title, obj.networkInput);
+          // printDatum(title, obj.networkInput);
 
           printNetworksOutput(title, networkOutputObj, expectedOutput, function(keywordsAuto){
 
@@ -790,6 +795,55 @@ function loadNetworks(networksObj, callback){
     if (callback) { callback(err); }
 
   });
+}
+
+function printCategorizeHistory(){
+  statsObj.categorizeHistory.forEach(function(catStats){
+    console.log(chalkAlert("RNT"
+      + " | S: " + moment(catStats.startTime).format(compactDateTimeFormat)
+      + " E: " + moment(catStats.endTime).format(compactDateTimeFormat)
+      + " R: " + msToTime(catStats.endTime - catStats.startTime)
+      + " | BEST: " + catStats.bestNetwork.networkId
+      + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SUCCESS"
+      + " - " + catStats.bestNetwork.matchRate.toFixed(2) + "% MATCH"
+      + " | RATE: " + catStats.matchRate.toFixed(1) + "%"
+      + " | TOT: " + catStats.total
+      + " | MATCH: " + catStats.match
+      + " | L: " + catStats.left
+      + " | N: " + catStats.neutral
+      + " | R: " + catStats.right
+    ));
+  });
+}
+
+function resetStats(){
+
+  statsObj.categorize.endTime = moment().valueOf();
+  statsObj.categorize.bestNetwork = statsObj.bestNetwork;
+  statsObj.categorizeHistory.push(statsObj.categorize);
+
+  printCategorizeHistory();
+
+  console.log(chalkAlert("RNT | *** RESET_STATS ***"
+    // + " | CAT LENGTH: " + statsObj.categorizeHistory.length
+    // + " | S: " + moment(statsObj.categorize.startTime).format(compactDateTimeFormat)
+    // + " E: " + moment(catStats.endTime).format(compactDateTimeFormat)
+    // + " R: " + msToTime(statsObj.categorize.endTime - statsObj.categorize.startTime)
+  ));
+
+
+  statsObj.categorize = {};
+  statsObj.categorize.startTime = moment().valueOf();
+  statsObj.categorize.total = 0;
+  statsObj.categorize.match = 0;
+  statsObj.categorize.mismatch = 0;
+  statsObj.categorize.matchRate = 0;
+  statsObj.categorize.left = 0;
+  statsObj.categorize.neutral = 0;
+  statsObj.categorize.right = 0;
+  statsObj.categorize.positive = 0;
+  statsObj.categorize.negative = 0;
+
 
 }
 
@@ -822,6 +876,10 @@ process.on("message", function(m) {
 
     case "STATS":
       showStats(m.options);
+    break;
+
+    case "RESET_STATS":
+      resetStats();
     break;
 
     case "LOAD_NETWORKS":
@@ -964,8 +1022,6 @@ function initStatsUpdate(cnf){
   }, cnf.statsUpdateIntervalTime);
 }
 
-
-
 function initialize(cnf, callback){
 
   if (debug.enabled || debugCache.enabled){
@@ -988,8 +1044,6 @@ function initialize(cnf, callback){
 
   callback(null, cnf);
 }
-
-
 
 setTimeout(function(){
 

@@ -2775,12 +2775,6 @@ function processUser(userIn, callback) {
         debug(chalkInfo("USER AKWs\n" + jsonPrint(user.get("keywordsAuto"))));
       }
 
-      // if ((user.threeceeFollowing === undefined) || !user.threeceeFollowing) { 
-        // user.threeceeFollowing = {}; 
-      // }
-
-      // user.threeceeFollowing.screenName = currentTwitterUser;
-
       classifyUser(user, function genClassifiedUserKeyword(err, u){
         if (err) {
           console.trace(chalkError("ERROR classifyUser | UID: " + user.userId
@@ -2881,6 +2875,7 @@ function fetchFriends(params, callback) {
           + " | TOTAL FETCHED: " + statsObj.user[currentTwitterUser].totalFriendsFetched
           + " [ " + statsObj.user[currentTwitterUser].percentFetched.toFixed(1) + "% ]"
           + " | GRAND TOTAL FETCHED: " + statsObj.users.grandTotalFriendsFetched
+          + " | END FETCH: " + statsObj.user[currentTwitterUser].endFetch
           + " | MORE: " + statsObj.user[currentTwitterUser].nextCursorValid
         ));
 
@@ -2950,6 +2945,9 @@ function processFriends(callback){
       + "\n\n"
     ));
 
+    randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
+    });
+
     abortCursor = false;
 
     if (currentTwitterUserIndex < twitterUsersArray.length-1) {
@@ -3000,7 +2998,7 @@ function processFriends(callback){
       statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
       statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
 
-      console.log(chalkError("===== NEW FETCH USER @" 
+      console.log(chalkTwitterBold("*** RESTART FETCH USERS *** | ===== NEW FETCH USER @" 
         + currentTwitterUser + " ====="
         + " | " + getTimeStamp()
       ));
@@ -3335,8 +3333,6 @@ function updateNetworkFetchFriends(){
     debug("params\n" + jsonPrint(params));
 
     if (languageAnalysisReadyFlag) {
-
-      // fetchFriends(params).then(function(subFriendsSortedArray){
 
       fetchFriends(params, function(err, subFriendsSortedArray){
         if (err) {
