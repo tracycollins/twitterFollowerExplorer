@@ -816,7 +816,7 @@ function printCategorizeHistory(){
   });
 }
 
-function resetStats(){
+function resetStats(callback){
 
   statsObj.categorize.endTime = moment().valueOf();
   statsObj.categorize.bestNetwork = statsObj.bestNetwork;
@@ -844,6 +844,35 @@ function resetStats(){
   statsObj.categorize.positive = 0;
   statsObj.categorize.negative = 0;
 
+  async.each(networksHashMap.keys(), function(nnId, cb){
+
+    console.log(chalkLog("RNT | RESET NETWORK STATS"
+      + " | " + nnId
+    ));
+
+    const networkObj = networksHashMap.get(nnId);
+
+    networkObj.matchRate = 0 ;
+
+    networksHashMap.set(nnId, networkObj);
+
+    // if (statsObj.loadedNetworks[nnId] === undefined) {
+    statsObj.loadedNetworks[nnId] = {};
+    statsObj.loadedNetworks[nnId].total = 0;
+    statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
+    statsObj.loadedNetworks[nnId].matchRate = 0;
+    statsObj.loadedNetworks[nnId].match = 0;
+    statsObj.loadedNetworks[nnId].mismatch = 0;
+    statsObj.loadedNetworks[nnId].matchFlag = false;
+    // }
+
+    cb();
+
+  }, function(err){
+
+    if (callback) { callback(err); }
+
+  });
 
 }
 
