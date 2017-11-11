@@ -844,6 +844,12 @@ function resetStats(callback){
   statsObj.categorize.positive = 0;
   statsObj.categorize.negative = 0;
 
+  statsObj.loadedNetworks.multiNeuralNet.matchRate = 0;
+  statsObj.loadedNetworks.multiNeuralNet.total = 0;
+  statsObj.loadedNetworks.multiNeuralNet.match = 0;
+  statsObj.loadedNetworks.multiNeuralNet.mismatch = 0;
+  statsObj.loadedNetworks.multiNeuralNet.matchFlag = false;
+  
   async.each(networksHashMap.keys(), function(nnId, cb){
 
     console.log(chalkLog("RNT | RESET NETWORK STATS"
