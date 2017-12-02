@@ -44,6 +44,8 @@ let leftImageHistogram = {};
 let rightImageHistogram = {};
 let neutralImageHistogram = {};
 
+const keywordCategories = ["left", "right", "neutral", "positive", "negative", "uncategorized"];
+
 const inputTypes = ["emoji", "hashtags", "mentions", "urls", "words", "images"];
 inputTypes.sort();
 
@@ -168,6 +170,14 @@ statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueO
 
 statsObj.bestNetworks = {};
 statsObj.totalInputs = 0;
+
+statsObj.histograms = {};
+
+inputTypes.forEach(function(type){
+
+  statsObj.histograms[type] = {};
+
+});
 
 let configuration = {};
 configuration.testMode = false;
@@ -471,12 +481,13 @@ const defaultClassifiedUsersFolder = dropboxConfigDefaultFolder;
 const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
 const classifiedUsersDefaultFile = "classifiedUsers.json";
 
-function showStats(options){
-  if (langAnalyzer !== undefined) {
-    langAnalyzer.send({op: "STATS", options: options});
-  }
-  if (options) {
-    console.log("STATS\n" + jsonPrint(statsObj));
+function updateGlobalHistograms(callback){
+  // twitterTextParser.getGlobalHistograms(function(histograms){
+  //   statsObj.histograms = histograms;
+  //   if (callback !== undefined) { callback(histograms); }
+  // });
+
+  twitterTextParser.getGlobalHistograms(function(histograms){
 
     async.each(Object.keys(histograms), function(histogramName, cb) {
 
@@ -485,25 +496,124 @@ function showStats(options){
       const keys = Object.keys(currentHistogram);
 
       const sortedKeys = keys.sort(function(a,b){
-        const valA = currentHistogram[a];
-        const valB = currentHistogram[b];
-        return valB - valA;
+        if (currentHistogram[a] !== null && typeof currentHistogram[a] === "object") {
+          const valA = currentHistogram[a].total;
+          const valB = currentHistogram[b].total;
+          return valB - valA;
+
+        }
+        else {
+          const valA = currentHistogram[a];
+          const valB = currentHistogram[b];
+          return valB - valA;
+        }
       });
 
       console.log(chalkInfo("\nHIST " + histogramName.toUpperCase()
         + " | " + keys.length + " ----------"
       ));
+
       sortedKeys.forEach(function(k, i){
         if ((keys.length < 20) || (currentHistogram[k] >= 10) || (i<20)) { 
-          console.log(currentHistogram[k] + " | " + k);
+
+          if (currentHistogram[k] !== null && typeof currentHistogram[k] === "object") {
+
+            statsObj.histograms[histogramName][k] = {};
+            statsObj.histograms[histogramName][k] = currentHistogram[k];
+
+            console.log(currentHistogram[k].total
+              + " | L: " + currentHistogram[k].left
+              + " | N: " + currentHistogram[k].neutral
+              + " | R: " + currentHistogram[k].right
+              + " | +: " + currentHistogram[k].positive
+              + " | -: " + currentHistogram[k].negative
+              + " | U: " + currentHistogram[k].uncategorized
+              + " || " + k
+            );
+          }
+          else {
+
+            statsObj.histograms[histogramName][k] = currentHistogram[k];
+
+            console.log(currentHistogram[k] + " | " + k);
+          }
         }
       });
 
       cb();
 
+    }, function(){
+      if (callback !== undefined) { callback(histograms); }
     });
+  });
+
+}
+
+function showStats(options){
+  if (langAnalyzer !== undefined) {
+    langAnalyzer.send({op: "STATS", options: options});
+  }
+  if (options) {
+    console.log("STATS\n" + jsonPrint(statsObj));
+
+    twitterTextParser.getGlobalHistograms(function(histograms){
+
+      async.each(Object.keys(histograms), function(histogramName, cb) {
+
+        const currentHistogram = histograms[histogramName];
+
+        const keys = Object.keys(currentHistogram);
+
+        const sortedKeys = keys.sort(function(a,b){
+          if (currentHistogram[a] !== null && typeof currentHistogram[a] === "object") {
+            const valA = currentHistogram[a].total;
+            const valB = currentHistogram[b].total;
+            return valB - valA;
+
+          }
+          else {
+            const valA = currentHistogram[a];
+            const valB = currentHistogram[b];
+            return valB - valA;
+          }
+        });
+
+        console.log(chalkInfo("\nHIST " + histogramName.toUpperCase()
+          + " | " + keys.length + " ----------"
+        ));
+        sortedKeys.forEach(function(k, i){
+          if ((keys.length < 20) || (currentHistogram[k] >= 10) || (i<20)) { 
+
+            if (currentHistogram[k] !== null && typeof currentHistogram[k] === "object") {
+
+              console.log(currentHistogram[k].total
+                + " | L: " + currentHistogram[k].left
+                + " | N: " + currentHistogram[k].neutral
+                + " | R: " + currentHistogram[k].right
+                + " | +: " + currentHistogram[k].positive
+                + " | -: " + currentHistogram[k].negative
+                + " | U: " + currentHistogram[k].uncategorized
+                + " || " + k
+              );
+            }
+            else {
+              console.log(currentHistogram[k] + " | " + k);
+            }
+          }
+        });
+
+        cb();
+
+      }, function(){
+
+      });
+    });
+
   }
   else {
+
+    updateGlobalHistograms();
+
     if (statsObj.user !== undefined) {
       console.log(chalkLog("- FE S"
         + " | " + currentTwitterUser
@@ -791,7 +901,10 @@ function initStatsUpdate(callback){
 
   console.log(chalkTwitter("INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
 
-  saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
+  twitterTextParser.getGlobalHistograms(function(){
+    saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
+  });
+
 
   clearInterval(statsUpdateInterval);
 
@@ -819,7 +932,11 @@ function initStatsUpdate(callback){
     saveFile({folder: statsFolder, file: "leftImageHistogram.json", obj: leftImageHistogram});
     saveFile({folder: statsFolder, file: "rightImageHistogram.json", obj: rightImageHistogram});
     saveFile({folder: statsFolder, file: "neutralImageHistogram.json", obj: neutralImageHistogram});
-    saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
+
+    twitterTextParser.getGlobalHistograms(function(){
+      saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
+    });
+
     showStats();
 
     if (configuration.quitOnComplete && statsObj.fetchUsersComplete) {
@@ -2367,7 +2484,18 @@ function generateAutoKeywords(user, callback){
 
       if (!text) { text = " "; }
 
-      twitterTextParser.parseText(text, {updateGlobalHistograms: true}, function(err, hist){
+      let parseTextOptions = {};
+      parseTextOptions.updateGlobalHistograms = true;
+
+      if (user.keywords && (user.keywords !== undefined)) {
+        parseTextOptions.keywords = {};
+        parseTextOptions.keywords = user.keywords;
+      }
+      else {
+        parseTextOptions.keywords = false;
+      }
+
+      twitterTextParser.parseText(text, parseTextOptions, function(err, hist){
 
         if (err) {
           console.log(chalkError("*** TWITTER TEXT PARSER ERROR: " + err));
