@@ -608,7 +608,6 @@ function showStats(options){
 
       });
     });
-
   }
   else {
 
