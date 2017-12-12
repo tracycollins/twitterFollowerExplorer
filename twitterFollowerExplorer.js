@@ -1463,7 +1463,7 @@ function initialize(cnf, callback){
 
       if (loadedConfigObj.TFE_MIN_SUCCESS_RATE !== undefined){
         console.log("LOADED TFE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_MIN_SUCCESS_RATE);
-        cnf.numRandomNetworks = loadedConfigObj.TFE_MIN_SUCCESS_RATE;
+        cnf.minSuccessRate = loadedConfigObj.TFE_MIN_SUCCESS_RATE;
       }
 
       if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined){
