@@ -1164,7 +1164,7 @@ function initTwitter(currentTwitterUser, callback){
         followMessage.target.threeceeFollowing = {};
         followMessage.target.threeceeFollowing.screenName = currentTwitterUser;
 
-        processUser(followMessage.target, function(err, user){
+        processUser(followMessage.target, null, function(err, user){
           if (err) {
             console.trace("processUser ERROR");
           }
@@ -2736,14 +2736,14 @@ function checkUserWordKeys(user, callback){
   });
 }
 
-function processUser(userIn, callback) {
+function processUser(userIn, lastTweeId, callback) {
 
   debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
 
   async.waterfall(
   [
     function convertUser(cb) {
-      userServer.convertRawUser(userIn, function(err, user){
+      userServer.convertRawUser(userIn, lastTweeId, function(err, user){
         if (err) {
           cb(err, null);
         }
