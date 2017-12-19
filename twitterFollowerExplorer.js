@@ -3024,7 +3024,7 @@ function fetchFriends(params, callback) {
           ));
 
 
-          processUser(friend, function(err, user){
+          processUser(friend, null, function(err, user){
             if (err) {
               console.trace("processUser ERROR");
               return (cb(err));
