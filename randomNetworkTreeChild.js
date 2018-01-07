@@ -463,16 +463,15 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
         statsObj.loadedNetworks.multiNeuralNet.mismatch
       ]);
 
-      console.log(
+      // console.log(
+      debug(
           "\n--------------------------------------------------------------"
         + "\n" + title 
         + "\n--------------------------------------------------------------\n"
         + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r"] })
         + "\n--------------------------------------------------------------\n"
       );
-
     });
-
 
     indexOfMax(sumArray, function(maxOutputIndex){
 
