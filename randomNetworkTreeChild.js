@@ -341,7 +341,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       statsObj.bestNetwork.networkId = nnId;
       statsObj.bestNetwork.matchRate = statsObj.loadedNetworks[nnId].matchRate;
       statsObj.bestNetwork.successRate = statsObj.loadedNetworks[nnId].successRate;
-      console.log(chalkAlert("RNT"
+      debug(chalkAlert("RNT"
         + " | " + nnId
         + " | " + networkOutputObj[nnId].successRate.toFixed(2) + "%"
         + " | NEW BEST MAX " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
@@ -434,7 +434,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       if (statsObj.loadedNetworks.multiNeuralNet.matchRate > statsObj.bestNetwork.matchRate) {
         statsObj.bestNetwork.networkId = "MULTI";
         statsObj.bestNetwork.matchRate = statsObj.loadedNetworks.multiNeuralNet.matchRate;
-        console.log(chalkAlert("RNT"
+        debug(chalkAlert("RNT"
           + " | MULTI"
           + " | NEW BEST MAX " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
         ));
