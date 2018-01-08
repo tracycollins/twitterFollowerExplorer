@@ -353,7 +353,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       bestNetworkOutput = nnOutput;
       statsObj.bestNetwork.matchRate = statsObj.loadedNetworks[nnId].matchRate;
       statsObj.bestNetwork.successRate = statsObj.loadedNetworks[nnId].successRate;
-      console.log(chalkAlert("RNT"
+      debug(chalkAlert("RNT"
         + " | " + nnId
         + " | SET BEST OUT [" + bestNetworkOutput + "]"
         + " | " + networkOutputObj[nnId].successRate.toFixed(2) + "%"
