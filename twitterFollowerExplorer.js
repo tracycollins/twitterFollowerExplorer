@@ -3569,7 +3569,7 @@ function initUserDbUpdateQueueInterval(interval){
 
         console.log(chalkInfo("US UPD<"
           + " | " + updatedUserObj.userId
-          + " | TW: " + (updatedUserObj.isTwitterUser || "-")
+          + " | TW: " + updatedUserObj.isTwitterUser
           + " | @" + updatedUserObj.screenName
           + " | Ts: " + updatedUserObj.statusesCount
           + " | FLWRs: " + updatedUserObj.followersCount
