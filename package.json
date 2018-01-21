@@ -1,11 +1,11 @@
 {
   "name": "twitterfollowerexplorer",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "twitter user follower explorer",
   "main": "twitterFollowerExplorer.js",
   "dependencies": {
     "@google-cloud/language": "^1.1.0",
-    "@threeceelabs/mongoose-twitter": "^1.0.65",
+    "@threeceelabs/mongoose-twitter": "^1.0.66",
     "@threeceelabs/tweet-server-controller": "^1.0.77",
     "@threeceelabs/twitter-image-parser": "^1.0.32",
     "@threeceelabs/twitter-text-parser": "^1.0.31",
