@@ -13,12 +13,65 @@ let bestRuntimeNetworkId;
 let loadedNetworksFlag = false;
 let networksSentFlag = false;
 
+const moment = require("moment");
+
 const table = require("text-table");
 const arrayUnique = require("array-unique");
 const fs = require("fs");
 
+const mongoose = require("mongoose");
+
+// const UserSchema = new mongoose.Schema({
+//   oauthID: { type: Number },
+//   userId: { type: String, unique: true },
+//   nodeId: { type: String  },
+//   nodeType: { type: String, default: "user"},
+//   name: { type: String },
+//   isTwitterUser: { type: Boolean },
+//   screenName: { type: String },
+//   screenNameLower: { type: String },
+//   url: { type: String },
+//   profileUrl: { type: String },
+//   profileImageUrl: { type: String },
+//   bannerImageUrl: { type: String },
+//   verified: { type: Boolean, default: false },
+//   description: { type: String },
+
+//   createdAt: { type: Number, default: moment().valueOf() },
+//   lastSeen: { type: Number, default: moment().valueOf() },
+//   lastTweetId: { type: String },
+
+//   mentions: { type: Number, default: 0 },
+
+//   status: { type: mongoose.Schema.Types.Mixed, default: {} },
+  
+//   statusesCount: { type: Number, default: 0 },
+//   followersCount: { type: Number, default: 0 },
+//   friendsCount: { type: Number, default: 0 },
+
+//   following: { type: Boolean, default: false },
+//   threeceeFollowing: { type: mongoose.Schema.Types.Mixed, default: false },
+
+//   rate: { type: Number, default: 0 },
+//   isTopTerm: { type: Boolean, default: false },
+
+//   keywords: { type: mongoose.Schema.Types.Mixed, default: false },
+//   keywordsAuto: { type: mongoose.Schema.Types.Mixed, default: false },
+
+//   bannerImageAnalyzed: { type: mongoose.Schema.Types.Mixed, default: false },
+//   histograms: { type: mongoose.Schema.Types.Mixed, default: false },
+
+//   languageAnalyzed: { type: Boolean, default: false },
+//   languageAnalysis: { type: mongoose.Schema.Types.Mixed, default: {} }
+// });
+
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
-const db = wordAssoDb();
+// const db = wordAssoDb();
+// const UserSchema = require("../mongooseTwitter/models/user.server.model");
+
+// const User = mongoose.model("User", UserSchema);
+// const db = wordAssoDb();
+
 
 const userServer = require("@threeceelabs/user-server-controller");
 // const userServer = require("../userServerController");
@@ -26,8 +79,7 @@ const userServer = require("@threeceelabs/user-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
 
-const User = require("mongoose").model("User");
-const Word = require("mongoose").model("Word");
+const Word = mongoose.model("Word");
 
 let currentBestNetwork;
 
@@ -118,7 +170,6 @@ const Slack = require("slack-node");
 const Dropbox = require("dropbox");
 const os = require("os");
 const util = require("util");
-const moment = require("moment");
 const arrayNormalize = require("array-normalize");
 const defaults = require("object.defaults/immutable");
 const pick = require("object.pick");
@@ -1407,7 +1458,7 @@ function initialize(cnf, callback){
 
   initClassifiedUserHashmap(defaultClassifiedUsersFolder, classifiedUsersDefaultFile, function(err, classifiedUsersObj){
     if (err) {
-      console.error(chalkError("*** ERROR: CLASSIFED USER HASHMAP NOT INITIALIED: ", err));
+      console.error(chalkError("*** ERROR: CLASSIFED USER HASHMAP NOT INITIALIZED: ", err));
     }
     else {
       classifiedUserHashmap = classifiedUsersObj;
@@ -3515,9 +3566,27 @@ function initFetchTwitterFriendsInterval(interval){
   debug("statsObj.user[currentTwitterUser]\n" + jsonPrint(statsObj.user[currentTwitterUser]));
 
 
+  if (languageAnalysisReadyFlag && classifiedUserHashmapReadyFlag){
+    updateNetworkFetchFriends();
+  }
+  else {
+    console.log(chalkAlert("fetchTwitterFriendsIntervalometer NOT READY"
+      + " | languageAnalysisReadyFlag: " + languageAnalysisReadyFlag
+      + " | classifiedUserHashmapReadyFlag: " + classifiedUserHashmapReadyFlag
+    ));
+    showStats();
+  }
+
   fetchTwitterFriendsIntervalometer = timerIntervalometer(function(){
     if (languageAnalysisReadyFlag && classifiedUserHashmapReadyFlag){
       updateNetworkFetchFriends();
+    }
+    else {
+      console.log(chalkAlert("fetchTwitterFriendsIntervalometer NOT READY"
+        + " | languageAnalysisReadyFlag: " + languageAnalysisReadyFlag
+        + " | classifiedUserHashmapReadyFlag: " + classifiedUserHashmapReadyFlag
+      ));
+      showStats();
     }
   }, interval);
 
