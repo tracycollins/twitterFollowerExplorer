@@ -21,63 +21,15 @@ const fs = require("fs");
 
 const mongoose = require("mongoose");
 
-// const UserSchema = new mongoose.Schema({
-//   oauthID: { type: Number },
-//   userId: { type: String, unique: true },
-//   nodeId: { type: String  },
-//   nodeType: { type: String, default: "user"},
-//   name: { type: String },
-//   isTwitterUser: { type: Boolean },
-//   screenName: { type: String },
-//   screenNameLower: { type: String },
-//   url: { type: String },
-//   profileUrl: { type: String },
-//   profileImageUrl: { type: String },
-//   bannerImageUrl: { type: String },
-//   verified: { type: Boolean, default: false },
-//   description: { type: String },
-
-//   createdAt: { type: Number, default: moment().valueOf() },
-//   lastSeen: { type: Number, default: moment().valueOf() },
-//   lastTweetId: { type: String },
-
-//   mentions: { type: Number, default: 0 },
-
-//   status: { type: mongoose.Schema.Types.Mixed, default: {} },
-  
-//   statusesCount: { type: Number, default: 0 },
-//   followersCount: { type: Number, default: 0 },
-//   friendsCount: { type: Number, default: 0 },
-
-//   following: { type: Boolean, default: false },
-//   threeceeFollowing: { type: mongoose.Schema.Types.Mixed, default: false },
-
-//   rate: { type: Number, default: 0 },
-//   isTopTerm: { type: Boolean, default: false },
-
-//   keywords: { type: mongoose.Schema.Types.Mixed, default: false },
-//   keywordsAuto: { type: mongoose.Schema.Types.Mixed, default: false },
-
-//   bannerImageAnalyzed: { type: mongoose.Schema.Types.Mixed, default: false },
-//   histograms: { type: mongoose.Schema.Types.Mixed, default: false },
-
-//   languageAnalyzed: { type: Boolean, default: false },
-//   languageAnalysis: { type: mongoose.Schema.Types.Mixed, default: {} }
-// });
-
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
-// const db = wordAssoDb();
-// const UserSchema = require("../mongooseTwitter/models/user.server.model");
-
-// const User = mongoose.model("User", UserSchema);
-// const db = wordAssoDb();
-
 
 const userServer = require("@threeceelabs/user-server-controller");
-// const userServer = require("../userServerController");
-// const wordServer = require("@threeceelabs/word-server-controller");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
+
+// const userModel = require("../../../../mongooseTwitter/models/user.server.model");
+
+const User = mongoose.model("User", wordAssoDb.UserSchema);
 
 const Word = mongoose.model("Word");
 
@@ -1221,30 +1173,6 @@ function initTwitter(currentTwitterUser, callback){
           }
           console.log("NEW FOLLOW | PROCESSED USER | " + currentTwitterUser + "\n" + jsonPrint(user));
         });
-
-        // User.findOne({userId: followMessage.target.id_str}, function(err, dbUser){
-
-        //   if (err) {
-        //     console.error(chalkError("INIT TWITTER USER FIND ERROR\n" + jsonPrint(err)));
-        //   }
-        //   else if (dbUser){
-        //     console.log("** DB USER HIT **");
-
-        //     printTwitterUser(dbUser);
-
-        //     if (dbUser.threeceeFollowing 
-        //       && (dbUser.threeceeFollowing.screenName !== undefined)
-        //       && dbUser.threeceeFollowing.screenName) {
-        //       if (currentTwitterUser.toLowerCase() !== dbUser.threeceeFollowing.screenName.toLowerCase()){
-        //         console.log(chalkAlert("*** USER ALREADY FOLLOWED"
-        //           + " | CURRENT USER: " + currentTwitterUser
-        //           + " | THREECEE FLW: " + dbUser.threeceeFollowing.screenName
-        //         ));
-        //       }
-        //     }
-        //   }
-
-        // });
       });
 
       async.waterfall([
