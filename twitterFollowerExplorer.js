@@ -19,19 +19,59 @@ const table = require("text-table");
 const arrayUnique = require("array-unique");
 const fs = require("fs");
 
+// const mongoose = require("mongoose");
+
+// const wordAssoDb = require("@threeceelabs/mongoose-twitter");
+
 const mongoose = require("mongoose");
+mongoose.Promise = global.Promise;
+
+const hashtagModel = require("@threeceelabs/mongoose-twitter/models/hashtag.server.model");
+const mediaModel = require("@threeceelabs/mongoose-twitter/models/media.server.model");
+const placeModel = require("@threeceelabs/mongoose-twitter/models/place.server.model");
+const tweetModel = require("@threeceelabs/mongoose-twitter/models/tweet.server.model");
+const urlModel = require("@threeceelabs/mongoose-twitter/models/url.server.model");
+const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.model");
+const wordModel = require("@threeceelabs/mongoose-twitter/models/word.server.model");
+
+let Hashtag;
+let Media;
+let Place;
+let Tweet;
+let Url;
+let User;
+let Word;
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
+const dbConnection = wordAssoDb();
 
+dbConnection.on("error", console.error.bind(console, "connection error:"));
+dbConnection.once("open", function() {
+  console.log("CONNECT: TWEET SERVER MONGOOSE default connection open");
+  Hashtag = mongoose.model("Hashtag", hashtagModel.HashtagSchema);
+  Media = mongoose.model("Media", mediaModel.MediaSchema);
+  Place = mongoose.model("Place", placeModel.PlaceSchema);
+  Tweet = mongoose.model("Tweet", tweetModel.TweetSchema);
+  Url = mongoose.model("Url", urlModel.UrlSchema);
+  User = mongoose.model("User", userModel.UserSchema);
+  Word = mongoose.model("Word", wordModel.WordSchema);
+});
+
+const hashtagServer = require("@threeceelabs/hashtag-server-controller");
+const mediaServer = require("@threeceelabs/media-server-controller");
+const placeServer = require("@threeceelabs/place-server-controller");
+const urlServer = require("@threeceelabs/url-server-controller");
 const userServer = require("@threeceelabs/user-server-controller");
+const wordServer = require("@threeceelabs/word-server-controller");
+
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
 
 // const userModel = require("../../../../mongooseTwitter/models/user.server.model");
 
-const User = mongoose.model("User", wordAssoDb.UserSchema);
+// const User = mongoose.model("User", wordAssoDb.UserSchema);
 
-const Word = mongoose.model("Word");
+// const Word = mongoose.model("Word");
 
 let currentBestNetwork;
 
