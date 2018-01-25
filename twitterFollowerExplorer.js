@@ -688,13 +688,14 @@ function showStats(options){
 
 function quit(){
   console.log( "\n... QUITTING ..." );
-  saveFile({folder: statsFolder, file: "histograms", obj: statsObj.histograms});
-  showStats(true);
-  printHistogram("GLOBAL IMAGE", globalImageHistogram);
-  printHistogram("LEFT IMAGE", leftImageHistogram);
-  printHistogram("NEUTRAL IMAGE", neutralImageHistogram);
-  printHistogram("RIGHT IMAGE", rightImageHistogram);
-  process.exit();
+  saveFile({folder: statsFolder, file: "histograms", obj: statsObj.histograms}, function(){
+    showStats(true);
+    printHistogram("GLOBAL IMAGE", globalImageHistogram);
+    printHistogram("LEFT IMAGE", leftImageHistogram);
+    printHistogram("NEUTRAL IMAGE", neutralImageHistogram);
+    printHistogram("RIGHT IMAGE", rightImageHistogram);
+    process.exit();
+  });
 }
 
 process.on( "SIGINT", function() {
