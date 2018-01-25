@@ -159,7 +159,8 @@ const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db579
 const slackChannel = "#tfe";
 const Slack = require("slack-node");
 
-const Dropbox = require("dropbox");
+require("isomorphic-fetch");
+const Dropbox = require('dropbox').Dropbox;
 const os = require("os");
 const util = require("util");
 const arrayNormalize = require("array-normalize");
