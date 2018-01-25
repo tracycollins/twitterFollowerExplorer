@@ -213,6 +213,8 @@ const TFE_RUN_ID = hostname
   + "_" + process.pid 
   + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat);
 
+const histogramsFile = "histograms_" + TFE_RUN_ID + ".json"; 
+
 statsObj.fetchUsersComplete = false;
 statsObj.runId = TFE_RUN_ID;
 
@@ -532,10 +534,6 @@ const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
 const classifiedUsersDefaultFile = "classifiedUsers.json";
 
 function updateGlobalHistograms(callback){
-  // twitterTextParser.getGlobalHistograms(function(histograms){
-  //   statsObj.histograms = histograms;
-  //   if (callback !== undefined) { callback(histograms); }
-  // });
 
   twitterTextParser.getGlobalHistograms(function(histograms){
 
@@ -688,7 +686,7 @@ function showStats(options){
 
 function quit(){
   console.log( "\n... QUITTING ..." );
-  saveFile({folder: statsFolder, file: "histograms", obj: statsObj.histograms}, function(){
+  saveFile({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms}, function(){
     showStats(true);
     printHistogram("GLOBAL IMAGE", globalImageHistogram);
     printHistogram("LEFT IMAGE", leftImageHistogram);
@@ -3138,10 +3136,11 @@ function processFriends(callback){
       });
     }
     else if (configuration.quitOnComplete) {
-      saveFile({folder: statsFolder, file: "histograms", obj: statsObj.histograms});
-      clearInterval(waitLanguageAnalysisReadyInterval);
-      fetchTwitterFriendsIntervalometer.stop();
-      callback(null, currentTwitterUser);
+      saveFile({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms}, function(){
+        clearInterval(waitLanguageAnalysisReadyInterval);
+        fetchTwitterFriendsIntervalometer.stop();
+        callback(null, currentTwitterUser);
+      });
    }
     else {
 
@@ -3162,7 +3161,7 @@ function processFriends(callback){
         + " | " + getTimeStamp()
       ));
 
-      saveFile({folder: statsFolder, file: "histograms", obj: statsObj.histograms}, function(){
+      saveFile({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms}, function(){
         statsObj.histograms = {};
         inputTypes.forEach(function(type){
           statsObj.histograms[type] = {};
