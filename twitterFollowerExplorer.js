@@ -6,6 +6,12 @@ const OFFLINE_MODE = false;
 const DEFAULT_MIN_SUCCESS_RATE = 91;
 const TFE_NUM_RANDOM_NETWORKS = 100;
 
+
+// will use histograms to determine neural net inputs
+// for emoji, hashtags, mentions, words
+const MIN_HISTOGRAM_KEYS = 50;
+const MAX_HISTOGRAM_KEYS = 100;
+
 const TEST_MODE_FETCH_COUNT = 47;
 const DEFAULT_FETCH_COUNT = 200;
 
@@ -558,7 +564,7 @@ function updateGlobalHistograms(callback){
       ));
 
       sortedKeys.forEach(function(k, i){
-        if ((keys.length < 20) || (currentHistogram[k] >= 10) || (i<20)) { 
+        if ((keys.length < MAX_HISTOGRAM_KEYS) || (currentHistogram[k] >= MIN_HISTOGRAM_KEYS) || (i < MAX_HISTOGRAM_KEYS)) { 
 
           if (currentHistogram[k] !== null && typeof currentHistogram[k] === "object") {
 
@@ -682,6 +688,7 @@ function showStats(options){
 
 function quit(){
   console.log( "\n... QUITTING ..." );
+  saveFile({folder: statsFolder, file: "histograms", obj: statsObj.histograms});
   showStats(true);
   printHistogram("GLOBAL IMAGE", globalImageHistogram);
   printHistogram("LEFT IMAGE", leftImageHistogram);
@@ -2686,6 +2693,7 @@ function generateAutoKeywords(user, callback){
 }
 
 function checkUserWordKeys(user, callback){
+
   Word.findOne({nodeId: user.screenName.toLowerCase()}, function(err, word){
 
     let kws = {};
@@ -2699,14 +2707,14 @@ function checkUserWordKeys(user, callback){
       callback(null, kws);
     }
     else if (word.keywords === undefined) {
-      debug("WORD-USER KWS UNDEFINED"
-        + " | " + user.screenName.toLowerCase()
+      console.log("WORD-USER KWS UNDEFINED"
+        + " | @" + user.screenName.toLowerCase()
       );
       callback(null, kws);
     }
     else if (!word.keywords || (Object.keys(word.keywords).length === 0)) {
-      debug("WORD-USER NO KW KEYS"
-        + " | " + user.screenName.toLowerCase()
+      console.log("WORD-USER NO KW KEYS"
+        + " | @" + user.screenName.toLowerCase()
       );
       callback(null, kws);
     }
@@ -2724,7 +2732,7 @@ function checkUserWordKeys(user, callback){
           kws[kwIdLc] = word.keywords[kwIdLc];
 
           debug(chalkTwitter("-- KW"
-            + " | " + user.screenName.toLowerCase()
+            + " | @" + user.screenName.toLowerCase()
             + " | " + kwIdLc
             + " | " + kws[kwIdLc]
           ));
@@ -2745,8 +2753,9 @@ function checkUserWordKeys(user, callback){
       }, function(){
 
         debug("WORD-USER HIT"
-          + " | " + user.screenName.toLowerCase()
-          + " | " + Object.keys(kws)
+          + " | " + user.userId
+          + " | @" + user.screenName.toLowerCase()
+          + " | KWs: " + Object.keys(kws)
         );
 
         callback(null, kws);
@@ -3128,11 +3137,13 @@ function processFriends(callback){
       });
     }
     else if (configuration.quitOnComplete) {
+      saveFile({folder: statsFolder, file: "histograms", obj: statsObj.histograms});
       clearInterval(waitLanguageAnalysisReadyInterval);
       fetchTwitterFriendsIntervalometer.stop();
       callback(null, currentTwitterUser);
    }
     else {
+
       currentTwitterUserIndex = 0;
       currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
 
@@ -3150,8 +3161,13 @@ function processFriends(callback){
         + " | " + getTimeStamp()
       ));
 
-      callback(null, currentTwitterUser);
-
+      saveFile({folder: statsFolder, file: "histograms", obj: statsObj.histograms}, function(){
+        statsObj.histograms = {};
+        inputTypes.forEach(function(type){
+          statsObj.histograms[type] = {};
+        });
+        callback(null, currentTwitterUser);
+      });
     }
   }
 }
@@ -3676,7 +3692,6 @@ function initInputArrays(cnf, callback){
     }
   });
 }
-
 
 let prevBestNetworkId = "";
 function initRandomNetworkTree(callback){
