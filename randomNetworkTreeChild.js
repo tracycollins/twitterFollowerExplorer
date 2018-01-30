@@ -222,6 +222,125 @@ function indexOfMax (arrIn, callback) {
   });
 }
 
+function activateNetwork2(userHistograms, networkObj, callback){
+
+  let networkOutput = {};
+
+  generateNetworkInput(userHistograms, networkObj.network, function(err, networkInput){
+
+    let output = networkObj.network.activate(networkInput);
+
+    if (output.length !== 3) {
+      console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
+      // quit(" ZERO LENGTH NETWORK OUTPUT");
+      callback("ZERO LENGTH NET OUT", [0,0,0]);
+    }
+
+    indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
+      switch (maxOutputIndex) {
+        case 0:
+          callback(null, [1,0,0]);
+        break;
+        case 1:
+          callback(null, [0,1,0]);
+        break;
+        case 2:
+          callback(null, [0,0,1]);
+        break;
+        default:
+          callback(null, [0,0,0]);
+      }
+    });
+
+  });
+}
+
+function generateNetworkInput(histograms, networkInputNames, callback){
+
+  const inputTypes = Object.keys(histograms);
+  let networkInput = [];
+
+  async.eachSeries(inputTypes, function(inputType, cb0){
+
+    let histogramArray = histograms[inputType];
+
+    async.eachSeries(networkInputNames, function(inputName, cb1){
+
+      if (histogramArray.contains(inputName)) {
+        networkInput.push(1);
+        console.log(inputType + " | * " + inputName);
+        cb1();
+      }
+      else {
+        networkInput.push(0);
+        console.log(inputType + " | . " + inputName);
+        cb1();
+      }
+
+    }, function(err){
+
+      console.log("... END " + inputType);
+      cb0();
+
+    });
+
+  }, function(err){
+    callback(err, networkInput);
+  });
+};
+
+function activateNetwork2(userHistograms, callback){
+
+  let networkOutput = {};
+
+  async.eachSeries(networksHashMap.keys(), function(nnId, cb){
+
+    const networkObj = networksHashMap.get(nnId);
+
+    networkOutput[nnId] = {};
+    networkOutput[nnId].output = [];
+    networkOutput[nnId].successRate = networkObj.successRate;
+
+    generateNetworkInput(userHistograms, networkObj.inputNames, function(err, networkInput){
+
+      const out = networkObj.network.activate(networkInput);
+
+      let output = deepcopy(out);
+
+      if (output.length !== 3) {
+        console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
+        quit(" ZERO LENGTH NETWORK OUTPUT");
+        output = [0,0,0];
+      }
+
+      indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
+
+        switch (maxOutputIndex) {
+          case 0:
+            networkOutput[nnId].output = [1,0,0];
+          break;
+          case 1:
+            networkOutput[nnId].output = [0,1,0];
+          break;
+          case 2:
+            networkOutput[nnId].output = [0,0,1];
+          break;
+          default:
+            networkOutput[nnId].output = [0,0,0];
+        }
+
+        async.setImmediate(function() {
+          cb();
+        });
+
+      });
+
+  }, function(err){
+    callback(err, networkOutput);
+  });
+}
+
+
 function activateNetwork(nnInput, callback){
 
   let networkOutput = {};
@@ -760,23 +879,43 @@ function initActivateNetworkInterval(interval){
 //   ));
 // }
 
+function getInputNames(nodes){
+
+  let inputNames = [];
+
+  async.eachSeries(nodes, function(node, cb){
+    if (node.type === "input") {
+      inputNames.push(node.name);
+    }
+  }, function(err){
+    return inputNames;
+  });
+}
+
 function loadNetworks(networksObj, callback){
 
   async.each(Object.keys(networksObj), function(nnId, cb){
 
-    // printNetworkObj("RNT | LOAD NETWORK", networksObj[nnId].network);
     console.log(chalkLog("RNT | LOAD NETWORK"
       + " | " + networksObj[nnId].network.successRate.toFixed(2) + "%"
       + " | " + nnId
-     // + "\nNET keys: " + Object.keys(networksObj[nnId].network)
     ));
 
     const network = neataptic.Network.fromJSON(networksObj[nnId].network.network);
 
+    const inputNames = getInputNames(network.nodes);
+
     const matchRate = networksObj[nnId].network.matchRate !== undefined ? networksObj[nnId].network.matchRate : 0 ;
 
-    networksHashMap.set(nnId, {network: network, successRate: networksObj[nnId].network.successRate, matchRate: matchRate } );
-    // networks[nnId] = deepcopy(network);
+    networksHashMap.set(
+      nnId, 
+      {
+        network: network, 
+        inputNames: inputNames, 
+        successRate: networksObj[nnId].network.successRate, 
+        matchRate: matchRate
+      }
+    );
 
     if (statsObj.loadedNetworks[nnId] === undefined) {
       statsObj.loadedNetworks[nnId] = {};

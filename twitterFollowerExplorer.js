@@ -6,7 +6,6 @@ const OFFLINE_MODE = false;
 const DEFAULT_MIN_SUCCESS_RATE = 91;
 const TFE_NUM_RANDOM_NETWORKS = 100;
 
-
 // will use histograms to determine neural net inputs
 // for emoji, hashtags, mentions, words
 const MIN_HISTOGRAM_KEYS = 50;
@@ -24,10 +23,6 @@ const moment = require("moment");
 const table = require("text-table");
 const arrayUnique = require("array-unique");
 const fs = require("fs");
-
-// const mongoose = require("mongoose");
-
-// const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
@@ -72,12 +67,6 @@ const wordServer = require("@threeceelabs/word-server-controller");
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
-
-// const userModel = require("../../../../mongooseTwitter/models/user.server.model");
-
-// const User = mongoose.model("User", wordAssoDb.UserSchema);
-
-// const Word = mongoose.model("Word");
 
 let currentBestNetwork;
 
@@ -457,7 +446,6 @@ statsObj.classification.auto.none = 0;
 statsObj.users = {};
 statsObj.users.classifiedAuto = 0;
 statsObj.users.classified = 0;
-// statsObj.users.percentFetched = 0;
 statsObj.users.grandTotalFriendsFetched = 0;
 
 statsObj.user = {};
@@ -2531,10 +2519,6 @@ function generateAutoKeywords(user, callback){
           hist.images = bannerResults.label.images;
           updateGlobalImageHistogram({user: user, histogram: bannerResults.label.images});
         }
-        // if (imageResults) {
-        //   hist.images = imageResults.images;
-        //   updateGlobalImageHistogram({user: user, histogram:imageResults.images});
-        // }
 
         userServer.updateHistograms({user: user, histograms: hist}, function(err, updatedUser){
 
@@ -2648,7 +2632,7 @@ function generateAutoKeywords(user, callback){
               ));
             }
 
-            const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "inputHits", "inputHitRatio"]);
+            const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "inputHits", "inputHitRatio", "histograms"]);
 
             activateNetwork({user: u, networkInput: networkInput});
 
