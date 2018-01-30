@@ -253,7 +253,8 @@ let userDbUpdateQueueReady = true;
 let userDbUpdateQueue = [];
 
 let network;
-const neataptic = require("neataptic");
+// const neataptic = require("neataptic");
+const neataptic = require("./js/neataptic");
 const cp = require("child_process");
 
 let histograms = {};
@@ -965,10 +966,10 @@ function initStatsUpdate(callback){
       }
     });
 
-    saveFile({folder: statsFolder, file: "globalImageHistogram.json", obj: globalImageHistogram});
-    saveFile({folder: statsFolder, file: "leftImageHistogram.json", obj: leftImageHistogram});
-    saveFile({folder: statsFolder, file: "rightImageHistogram.json", obj: rightImageHistogram});
-    saveFile({folder: statsFolder, file: "neutralImageHistogram.json", obj: neutralImageHistogram});
+    // saveFile({folder: statsFolder, file: "globalImageHistogram.json", obj: globalImageHistogram});
+    // saveFile({folder: statsFolder, file: "leftImageHistogram.json", obj: leftImageHistogram});
+    // saveFile({folder: statsFolder, file: "rightImageHistogram.json", obj: rightImageHistogram});
+    // saveFile({folder: statsFolder, file: "neutralImageHistogram.json", obj: neutralImageHistogram});
 
     twitterTextParser.getGlobalHistograms(function(){
       saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
@@ -2550,65 +2551,66 @@ function generateAutoKeywords(user, callback){
             // + "\nHISTOGRAMS: " + jsonPrint(userHistograms)
           ));
 
-          async.eachSeries(inputTypes, function(type, cb1){
+          // async.eachSeries(inputTypes, function(type, cb1){
 
-            debug(chalkInfo("START ARRAY: " + type + " | " + inputArrays[type].length));
+          //   debug(chalkInfo("START ARRAY: " + type + " | " + inputArrays[type].length));
 
-            async.eachOfSeries(inputArrays[type], function(element, index, cb2){
+          //   async.eachOfSeries(inputArrays[type], function(element, index, cb2){
 
-              if (userHistograms[type] && userHistograms[type][element]) {
-                updatedUser.inputHits += 1;
-                debug(chalkTwitter("GAKW"
-                  + " | " + updatedUser.inputHits + " HITS"
-                  + " | @" + updatedUser.screenName 
-                  + " | ARRAY: " + type 
-                  + " | " + element 
-                  + " | " + userHistograms[type][element]
-                ));
-                networkInput.push(1);
-                // networkInput[index+2] = 1;
+          //     if (userHistograms[type] && userHistograms[type][element]) {
+          //       updatedUser.inputHits += 1;
+          //       debug(chalkTwitter("GAKW"
+          //         + " | " + updatedUser.inputHits + " HITS"
+          //         + " | @" + updatedUser.screenName 
+          //         + " | ARRAY: " + type 
+          //         + " | " + element 
+          //         + " | " + userHistograms[type][element]
+          //       ));
+          //       networkInput.push(1);
+          //       // networkInput[index+2] = 1;
 
-                async.setImmediate(function() {
-                  cb2();
-                });
-              }
-              else {
-                debug(chalkInfo("U MISS" 
-                  + " | @" + updatedUser.screenName 
-                  + " | " + updatedUser.inputHits 
-                  + " | ARRAY: " + type 
-                  + " | " + element
-                ));
-                networkInput.push(0);
-                // networkInput[index+2] = 0;
-                async.setImmediate(function() {
-                  cb2();
-                });
-              }
+          //       async.setImmediate(function() {
+          //         cb2();
+          //       });
+          //     }
+          //     else {
+          //       debug(chalkInfo("U MISS" 
+          //         + " | @" + updatedUser.screenName 
+          //         + " | " + updatedUser.inputHits 
+          //         + " | ARRAY: " + type 
+          //         + " | " + element
+          //       ));
+          //       networkInput.push(0);
+          //       // networkInput[index+2] = 0;
+          //       async.setImmediate(function() {
+          //         cb2();
+          //       });
+          //     }
 
-            }, function createNetworkInputArrayComplete(){
+          //   }, function createNetworkInputArrayComplete(){
 
-              debug(chalkTwitter("GAKW INPUT ARRAY COMPLETE"
-                + " | " + type 
-                + " | " + updatedUser.inputHits + " HITS"
-                + " | @" + updatedUser.screenName 
-              ));
+          //     debug(chalkTwitter("GAKW INPUT ARRAY COMPLETE"
+          //       + " | " + type 
+          //       + " | " + updatedUser.inputHits + " HITS"
+          //       + " | @" + updatedUser.screenName 
+          //     ));
 
-              debug(chalkTwitter("DONE ARRAY: " + type));
-              cb1();
+          //     debug(chalkTwitter("DONE ARRAY: " + type));
+          //     cb1();
 
-            });
-          }, function createNetworkInputComplete(){
+          //   });
 
-            debug(chalkTwitter("PARSE DESC COMPLETE"));
+          // }, function createNetworkInputComplete(){
 
-            updatedUser.inputHitRatio = 100*updatedUser.inputHits/networkInput.length;
+            // debug(chalkTwitter("PARSE DESC COMPLETE"));
 
-            console.log(chalkTwitterBold("### GAKW ALL INPUT ARRAYS COMPLETE"
-              + " | @" + updatedUser.screenName 
-              + " | " + updatedUser.inputHits + " HITS / " + networkInput.length + " INPUTS"
-              + " | " + updatedUser.inputHitRatio.toFixed(2) + "% INPUT HIT"
-            ));
+            // updatedUser.inputHitRatio = 100*updatedUser.inputHits/networkInput.length;
+
+            // console.log(chalkTwitterBold("### GAKW ALL INPUT ARRAYS COMPLETE"
+            //   + " | @" + updatedUser.screenName 
+            //   + " | " + updatedUser.inputHits + " HITS / " + networkInput.length + " INPUTS"
+            //   + " | " + updatedUser.inputHitRatio.toFixed(2) + "% INPUT HIT"
+            // ));
 
             statsObj.analyzer.total += 1;
 
@@ -2632,13 +2634,15 @@ function generateAutoKeywords(user, callback){
               ));
             }
 
-            const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "inputHits", "inputHitRatio", "histograms"]);
+            // const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "inputHits", "inputHitRatio", "histograms"]);
+            const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "histograms", "languageAnalysis"]);
 
-            activateNetwork({user: u, networkInput: networkInput});
+            // activateNetwork({user: u, networkInput: networkInput});
+            activateNetwork({user: u});
 
             callback(null, updatedUser);
 
-          });
+          // });
 
         });
 
@@ -3060,6 +3064,14 @@ function fetchFriends(params, callback) {
     });
   }
   else {
+
+    console.log("fetchFriends"
+      + " | CURRENT: @" + currentTwitterUser 
+      + " | NEXT USER: " + nextUser
+      + " | RATE LIMIT: " + statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag
+      + " | randomNetworkTreeReadyFlag: " + randomNetworkTreeReadyFlag
+      + " | languageAnalysisReadyFlag: " + languageAnalysisReadyFlag
+    )
     callback(null, []);
   }
 }

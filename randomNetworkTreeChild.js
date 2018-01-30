@@ -30,7 +30,7 @@ const os = require("os");
 const util = require("util");
 const moment = require("moment");
 require("isomorphic-fetch");
-const Dropbox = require('dropbox').Dropbox;
+const Dropbox = require("dropbox").Dropbox;
 const async = require("async");
 const debug = require("debug")("rnt");
 const debugCache = require("debug")("cache");
@@ -38,7 +38,8 @@ const arrayNormalize = require("array-normalize");
 const deepcopy = require("deep-copy");
 const table = require("text-table");
 
-const neataptic = require("neataptic");
+// const neataptic = require("neataptic");
+const neataptic = require("./js/neataptic");
 
 let hostname = os.hostname();
 hostname = hostname.replace(/\.home/g, "");
@@ -160,7 +161,6 @@ function showStats(options){
   }
 }
 
-
 function quit(message) {
   let msg = "";
   if (message) { msg = message; }
@@ -222,39 +222,6 @@ function indexOfMax (arrIn, callback) {
   });
 }
 
-function activateNetwork2(userHistograms, networkObj, callback){
-
-  let networkOutput = {};
-
-  generateNetworkInput(userHistograms, networkObj.network, function(err, networkInput){
-
-    let output = networkObj.network.activate(networkInput);
-
-    if (output.length !== 3) {
-      console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
-      // quit(" ZERO LENGTH NETWORK OUTPUT");
-      callback("ZERO LENGTH NET OUT", [0,0,0]);
-    }
-
-    indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
-      switch (maxOutputIndex) {
-        case 0:
-          callback(null, [1,0,0]);
-        break;
-        case 1:
-          callback(null, [0,1,0]);
-        break;
-        case 2:
-          callback(null, [0,0,1]);
-        break;
-        default:
-          callback(null, [0,0,0]);
-      }
-    });
-
-  });
-}
-
 function generateNetworkInput(histograms, networkInputNames, callback){
 
   const inputTypes = Object.keys(histograms);
@@ -262,24 +229,25 @@ function generateNetworkInput(histograms, networkInputNames, callback){
 
   async.eachSeries(inputTypes, function(inputType, cb0){
 
-    let histogramArray = histograms[inputType];
+    // console.log("inputType: " + inputType);
+
+    let histogramObj = histograms[inputType];
 
     async.eachSeries(networkInputNames, function(inputName, cb1){
 
-      if (histogramArray.contains(inputName)) {
+      if (histogramObj[inputName] !== undefined) {
         networkInput.push(1);
-        console.log(inputType + " | * " + inputName);
-        cb1();
+        // console.log(inputType + " | * " + inputName);
+        async.setImmediate(function() { cb1(); });
       }
       else {
         networkInput.push(0);
-        console.log(inputType + " | . " + inputName);
-        cb1();
+        // debug(inputType + " | . " + inputName);
+        async.setImmediate(function() { cb1(); });
       }
 
     }, function(err){
 
-      console.log("... END " + inputType);
       cb0();
 
     });
@@ -287,11 +255,16 @@ function generateNetworkInput(histograms, networkInputNames, callback){
   }, function(err){
     callback(err, networkInput);
   });
-};
+}
 
-function activateNetwork2(userHistograms, callback){
+function activateNetwork2(languageAnalysis, histograms, callback){
 
   let networkOutput = {};
+  let userHistograms = {};
+  userHistograms = deepcopy(histograms);
+
+  const score = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.score : 0;
+  const mag = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.magnitude : 0;
 
   async.eachSeries(networksHashMap.keys(), function(nnId, cb){
 
@@ -302,6 +275,11 @@ function activateNetwork2(userHistograms, callback){
     networkOutput[nnId].successRate = networkObj.successRate;
 
     generateNetworkInput(userHistograms, networkObj.inputNames, function(err, networkInput){
+
+      networkInput[0] = mag;
+      networkInput[1] = score;
+
+      // printDatum(nnId, networkInput);
 
       const out = networkObj.network.activate(networkInput);
 
@@ -334,12 +312,12 @@ function activateNetwork2(userHistograms, callback){
         });
 
       });
+    });
 
   }, function(err){
     callback(err, networkOutput);
   });
 }
-
 
 function activateNetwork(nnInput, callback){
 
@@ -631,7 +609,6 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       }
     });
   });
-
 }
 
 function printDatum(title, input){
@@ -639,7 +616,7 @@ function printDatum(title, input){
   let row = "";
   let col = 0;
   let rowNum = 0;
-  const COLS = 50;
+  const COLS = 100;
 
   console.log("\n------------- " + title + " -------------");
 
@@ -717,7 +694,12 @@ function initActivateNetworkInterval(interval){
         maxQueueFlag = true;
       }
 
-      activateNetwork(obj.networkInput, function(err, networkOutputObj){
+
+      // const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
+      // const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
+
+
+      activateNetwork2(obj.user.languageAnalysis, obj.user.histograms, function(err, networkOutputObj){
 
         if (err){
           console.error(chalkError("ACTIVATE NETWORK ERROR"
@@ -755,8 +737,6 @@ function initActivateNetworkInterval(interval){
                 title = title + " | MKW: ---";
              }
           }
-
-          // printDatum(title, obj.networkInput);
 
           printNetworksOutput(title, networkOutputObj, expectedOutput, function(keywordsAuto){
 
@@ -866,29 +846,24 @@ function initActivateNetworkInterval(interval){
   }, interval);
 }
 
-
-// function printNetworkObj(title, nnObj){
-//   console.log(chalkLog("\n==================="
-//     + "\n" + title
-//     + "\nID:      " + nnObj.networkId
-//     + "\nCREATED: " + getTimeStamp(nnObj.createdAt)
-//     + "\nSUCCESS: " + nnObj.successRate.toFixed(1) + "%"
-//     + "\nINPUTS:  " + Object.keys(nnObj.inputs)
-//     + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
-//     + "\n===================\n"
-//   ));
-// }
-
-function getInputNames(nodes){
+function getInputNames(nodes, callback){
 
   let inputNames = [];
 
   async.eachSeries(nodes, function(node, cb){
     if (node.type === "input") {
+      // console.log("input node\n" + jsonPrint(node));
+      if (node.name === undefined) {
+        return cb("NODE NAME UNDEFINED");
+      }
       inputNames.push(node.name);
+      async.setImmediate(function() { cb(); });
+    }
+    else {
+      async.setImmediate(function() { cb(); });
     }
   }, function(err){
-    return inputNames;
+    callback(err, inputNames);
   });
 }
 
@@ -903,31 +878,37 @@ function loadNetworks(networksObj, callback){
 
     const network = neataptic.Network.fromJSON(networksObj[nnId].network.network);
 
-    const inputNames = getInputNames(network.nodes);
+    getInputNames(network.nodes, function(err, inputNames){
 
-    const matchRate = networksObj[nnId].network.matchRate !== undefined ? networksObj[nnId].network.matchRate : 0 ;
-
-    networksHashMap.set(
-      nnId, 
-      {
-        network: network, 
-        inputNames: inputNames, 
-        successRate: networksObj[nnId].network.successRate, 
-        matchRate: matchRate
+      if (err) {
+        return cb(err);
       }
-    );
 
-    if (statsObj.loadedNetworks[nnId] === undefined) {
-      statsObj.loadedNetworks[nnId] = {};
-      statsObj.loadedNetworks[nnId].total = 0;
-      statsObj.loadedNetworks[nnId].successRate = networksObj[nnId].network.successRate;
-      statsObj.loadedNetworks[nnId].matchRate = matchRate;
-      statsObj.loadedNetworks[nnId].match = 0;
-      statsObj.loadedNetworks[nnId].mismatch = 0;
-      statsObj.loadedNetworks[nnId].matchFlag = false;
-    }
+      const matchRate = networksObj[nnId].network.matchRate !== undefined ? networksObj[nnId].network.matchRate : 0 ;
 
-    cb();
+      networksHashMap.set(
+        nnId, 
+        {
+          network: network, 
+          inputNames: inputNames, 
+          successRate: networksObj[nnId].network.successRate, 
+          matchRate: matchRate
+        }
+      );
+
+      if (statsObj.loadedNetworks[nnId] === undefined) {
+        statsObj.loadedNetworks[nnId] = {};
+        statsObj.loadedNetworks[nnId].total = 0;
+        statsObj.loadedNetworks[nnId].successRate = networksObj[nnId].network.successRate;
+        statsObj.loadedNetworks[nnId].matchRate = matchRate;
+        statsObj.loadedNetworks[nnId].match = 0;
+        statsObj.loadedNetworks[nnId].mismatch = 0;
+        statsObj.loadedNetworks[nnId].matchFlag = false;
+      }
+
+      cb();
+
+    });
 
   }, function(err){
 
@@ -1018,7 +999,6 @@ function resetStats(callback){
     if (callback) { callback(err); }
 
   });
-
 }
 
 process.on("SIGHUP", function() {
@@ -1076,7 +1056,7 @@ process.on("message", function(m) {
         + " | " + m.obj.user.userId
         + " | @" + m.obj.user.screenName
         + " | KWs" + Object.keys(m.obj.user.keywords)
-        + " | " + m.obj.networkInput.length + " INPUTS"
+        // + " | " + m.obj.networkInput.length + " INPUTS"
       ));
 
       process.send({op: "NETWORK_BUSY"}, function(err){
