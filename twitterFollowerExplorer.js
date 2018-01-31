@@ -78,10 +78,10 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
 
-let globalImageHistogram = {};
-let leftImageHistogram = {};
-let rightImageHistogram = {};
-let neutralImageHistogram = {};
+// let globalImageHistogram = {};
+// let leftImageHistogram = {};
+// let rightImageHistogram = {};
+// let neutralImageHistogram = {};
 
 const keywordCategories = ["left", "right", "neutral", "positive", "negative", "uncategorized"];
 
@@ -199,8 +199,8 @@ statsObj.startTimeMoment = moment();
 statsObj.pid = process.pid;
 
 const TFE_RUN_ID = hostname 
-  + "_" + process.pid 
-  + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat);
+  + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat)
+  + "_" + process.pid;
 
 const histogramsFile = "histograms_" + TFE_RUN_ID + ".json"; 
 
@@ -263,6 +263,7 @@ histograms.urls = {};
 histograms.hashtags = {};
 histograms.mentions = {};
 histograms.emoji = {};
+histograms.images = {};
 
 const Twit = require("twit");
 const async = require("async");
@@ -453,6 +454,11 @@ statsObj.user = {};
 statsObj.user.ninjathreecee = {};
 statsObj.user.altthreecee00 = {};
 
+statsObj.user.ninjathreecee.friendsProcessed = 0;
+statsObj.user.ninjathreecee.percentProcessed = 0;
+statsObj.user.altthreecee00.friendsProcessed = 0;
+statsObj.user.altthreecee00.percentProcessed = 0;
+
 statsObj.analyzer = {};
 statsObj.analyzer.total = 0;
 statsObj.analyzer.analyzed = 0;
@@ -524,11 +530,14 @@ const classifiedUsersDefaultFile = "classifiedUsers.json";
 
 function updateGlobalHistograms(callback){
 
-  twitterTextParser.getGlobalHistograms(function(histograms){
+  twitterTextParser.getGlobalHistograms(function(hists){
 
-    async.each(Object.keys(histograms), function(histogramName, cb) {
+    hists.images = {};
+    hists.images = deepcopy(histograms.images);
 
-      const currentHistogram = histograms[histogramName];
+    async.each(Object.keys(hists), function(histogramName, cb) {
+
+      const currentHistogram = hists[histogramName];
 
       const keys = Object.keys(currentHistogram);
 
@@ -560,8 +569,8 @@ function updateGlobalHistograms(callback){
 
             console.log(currentHistogram[k].total
               + " | L: " + currentHistogram[k].left
-              + " | N: " + currentHistogram[k].neutral
               + " | R: " + currentHistogram[k].right
+              + " | N: " + currentHistogram[k].neutral
               + " | +: " + currentHistogram[k].positive
               + " | -: " + currentHistogram[k].negative
               + " | U: " + currentHistogram[k].uncategorized
@@ -593,11 +602,14 @@ function showStats(options){
   if (options) {
     console.log("STATS\n" + jsonPrint(statsObj));
 
-    twitterTextParser.getGlobalHistograms(function(histograms){
+    twitterTextParser.getGlobalHistograms(function(hists){
+
+      hists.images = {};
+      hists.images = deepcopy(histograms.images);
 
       async.each(Object.keys(histograms), function(histogramName, cb) {
 
-        const currentHistogram = histograms[histogramName];
+        const currentHistogram = hists[histogramName];
 
         const keys = Object.keys(currentHistogram);
 
@@ -625,8 +637,8 @@ function showStats(options){
 
               console.log(currentHistogram[k].total
                 + " | L: " + currentHistogram[k].left
-                + " | N: " + currentHistogram[k].neutral
                 + " | R: " + currentHistogram[k].right
+                + " | N: " + currentHistogram[k].neutral
                 + " | +: " + currentHistogram[k].positive
                 + " | -: " + currentHistogram[k].negative
                 + " | U: " + currentHistogram[k].uncategorized
@@ -650,11 +662,16 @@ function showStats(options){
 
     updateGlobalHistograms();
 
-    if (statsObj.user !== undefined) {
+
+    if (statsObj.user[currentTwitterUser] !== undefined) {
+
+      statsObj.user[currentTwitterUser].percentProcessed = 100*statsObj.user[currentTwitterUser].friendsProcessed/statsObj.user[currentTwitterUser].friendsCount;
       console.log(chalkLog("- FE S"
         + " | " + currentTwitterUser
         + " | E: " + statsObj.elapsed
         + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
+        + " | FRNDs PRCSSD: " + statsObj.user[currentTwitterUser].friendsProcessed + "/" + statsObj.user[currentTwitterUser].friendsCount
+        + " (" + statsObj.user[currentTwitterUser].percentProcessed.toFixed(2) + "%)"
         + " | ACL Us: " + Object.keys(autoClassifiedUserHashmap).length
         + " | CL Us: " + Object.keys(classifiedUserHashmap).length
         + " | NN " + statsObj.network.networkId
@@ -677,10 +694,10 @@ function quit(){
   console.log( "\n... QUITTING ..." );
   saveFile({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms}, function(){
     showStats(true);
-    printHistogram("GLOBAL IMAGE", globalImageHistogram);
-    printHistogram("LEFT IMAGE", leftImageHistogram);
-    printHistogram("NEUTRAL IMAGE", neutralImageHistogram);
-    printHistogram("RIGHT IMAGE", rightImageHistogram);
+    // printHistogram("GLOBAL IMAGE", globalImageHistogram);
+    // printHistogram("LEFT IMAGE", leftImageHistogram);
+    // printHistogram("NEUTRAL IMAGE", neutralImageHistogram);
+    // printHistogram("RIGHT IMAGE", rightImageHistogram);
     process.exit();
   });
 }
@@ -1142,6 +1159,8 @@ function twitterUserUpdate(userScreenName, callback){
     statsObj.user[userScreenName].totalFriendsFetched = 0;
     statsObj.user[userScreenName].endFetch = false;
     statsObj.user[userScreenName].count = configuration.fetchCount;
+    statsObj.user[userScreenName].friendsProcessed = 0;
+    statsObj.user[userScreenName].percentProcessed = 0;
     statsObj.user[userScreenName].nextCursor = false;
     statsObj.user[userScreenName].nextCursorValid = false;
     statsObj.user[userScreenName].twitterRateLimit = 0;
@@ -1396,12 +1415,12 @@ function initStdIn(){
       case "Q":
         quit();
       break;
-      case "g":
-        printHistogram("GLOBAL IMAGE", globalImageHistogram);
-        printHistogram("LEFT IMAGE", leftImageHistogram);
-        printHistogram("NEUTRAL IMAGE", neutralImageHistogram);
-        printHistogram("RIGHT IMAGE", rightImageHistogram);
-      break;
+      // case "g":
+      //   printHistogram("GLOBAL IMAGE", globalImageHistogram);
+      //   printHistogram("LEFT IMAGE", leftImageHistogram);
+      //   printHistogram("NEUTRAL IMAGE", neutralImageHistogram);
+      //   printHistogram("RIGHT IMAGE", rightImageHistogram);
+      // break;
       case "s":
         showStats();
       break;
@@ -1770,7 +1789,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                 }
 
-                console.log(chalkLog("USER>DB"
+                console.log(chalkLog("UPDATE LANG ERR | USER>DB"
                   + " | " + updatedUserObj.userId
                   // + " | NID: " + updatedUserObj.nodeId
                   + " | @" + updatedUserObj.screenName
@@ -1844,7 +1863,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                     threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                   }
 
-                  console.log(chalkLog("USER>DB"
+                  console.log(chalkLog("UPDATE LANG ANLZD"
+                    + " | LA ENTS: " + langEntityKeys.length
+                    + " | USER>DB"
                     + " | " + updatedUserObj.userId
                     + " | @" + updatedUserObj.screenName
                     + " | " + updatedUserObj.name
@@ -1895,7 +1916,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                 }
 
-                console.log(chalkLog("USER>DB"
+                console.log(chalkLog("UPDATE LANG ANLZD"
+                  + " | LA ENTS: " + langEntityKeys.length
+                  + " | USER>DB"
                   + " | " + updatedUserObj.userId
                   + " | @" + updatedUserObj.screenName
                   + " | " + updatedUserObj.name
@@ -1977,56 +2000,79 @@ function getUserKeyword(keywords, callback) {
   });
 }
 
-function updateGlobalImageHistogram(params){
+function updateImageHistograms(params){
 
   let user = params.user;
   let imagesObj = params.histogram;
 
   Object.keys(imagesObj).forEach(function(imageLabel){
 
-    if (globalImageHistogram[imageLabel] === undefined){
-      globalImageHistogram[imageLabel] = imagesObj[imageLabel];
-    }
-    else {
-      globalImageHistogram[imageLabel] += imagesObj[imageLabel];
-    }
+    // if (globalImageHistogram[imageLabel] === undefined){
+    //   globalImageHistogram[imageLabel] = imagesObj[imageLabel];
+    // }
+    // else {
+    //   globalImageHistogram[imageLabel] += imagesObj[imageLabel];
+    // }
 
     // console.log("updateGlobalImageHistogram | KWs: " + Object.keys(user.keywords));
 
     if (user.keywords && Object.keys(user.keywords).length > 0) {
-      switch (Object.keys(user.keywords)[0]) {
-        case "left":
-          if (leftImageHistogram[imageLabel] === undefined){
-            leftImageHistogram[imageLabel] = imagesObj[imageLabel];
-          }
-          else {
-            leftImageHistogram[imageLabel] += imagesObj[imageLabel];
-          }
-        break;
-        case "neutral":
-          if (neutralImageHistogram[imageLabel] === undefined){
-            neutralImageHistogram[imageLabel] = imagesObj[imageLabel];
-          }
-          else {
-            neutralImageHistogram[imageLabel] += imagesObj[imageLabel];
-          }
-        break;
-        case "right":
-          if (rightImageHistogram[imageLabel] === undefined){
-            rightImageHistogram[imageLabel] = imagesObj[imageLabel];
-          }
-          else {
-            rightImageHistogram[imageLabel] += imagesObj[imageLabel];
-          }
-        break;
+      if (histograms.images[imageLabel] === undefined) {
+        histograms.images[imageLabel] = {};
+        histograms.images[imageLabel].total = 0;
+        histograms.images[imageLabel].left = 0;
+        histograms.images[imageLabel].neutral = 0;
+        histograms.images[imageLabel].right = 0;
+        histograms.images[imageLabel].positive = 0;
+        histograms.images[imageLabel].negative = 0;
+        histograms.images[imageLabel].uncategorized = 0;
       }
+
+      histograms.images[imageLabel].total += 1;
+      
+      if (user.keywords) {
+        if (user.keywords.left !== undefined) { histograms.images[imageLabel].left += 1; }
+        if (user.keywords.neutral !== undefined) { histograms.images[imageLabel].neutral += 1; }
+        if (user.keywords.right !== undefined) { histograms.images[imageLabel].right += 1; }
+        if (user.keywords.positive !== undefined) { histograms.images[imageLabel].positive += 1; }
+        if (user.keywords.negative !== undefined) { histograms.images[imageLabel].negative += 1; }
+      }
+      else {
+        histograms.images[imageLabel].uncategorized += 1;
+      }
+      // switch (Object.keys(user.keywords)[0]) {
+      //   case "left":
+      //     if (leftImageHistogram[imageLabel] === undefined){
+      //       leftImageHistogram[imageLabel] = imagesObj[imageLabel];
+      //     }
+      //     else {
+      //       leftImageHistogram[imageLabel] += imagesObj[imageLabel];
+      //     }
+      //   break;
+      //   case "neutral":
+      //     if (neutralImageHistogram[imageLabel] === undefined){
+      //       neutralImageHistogram[imageLabel] = imagesObj[imageLabel];
+      //     }
+      //     else {
+      //       neutralImageHistogram[imageLabel] += imagesObj[imageLabel];
+      //     }
+      //   break;
+      //   case "right":
+      //     if (rightImageHistogram[imageLabel] === undefined){
+      //       rightImageHistogram[imageLabel] = imagesObj[imageLabel];
+      //     }
+      //     else {
+      //       rightImageHistogram[imageLabel] += imagesObj[imageLabel];
+      //     }
+      //   break;
+      // }
     }
 
-    debug(chalkAlert("GIH"
-      + " | " + imageLabel
-      + " | CURR: " + imagesObj[imageLabel]
-      + " | GLOBAL: " + globalImageHistogram[imageLabel]
-    ));
+    // debug(chalkAlert("GIH"
+    //   + " | " + imageLabel
+    //   + " | CURR: " + imagesObj[imageLabel]
+    //   + " | GLOBAL: " + globalImageHistogram[imageLabel]
+    // ));
 
   });
 }
@@ -2289,7 +2335,7 @@ function activateNetwork(obj){
   // }
 }
 
-function enableAnalysis(user){
+function enableAnalysis(user, languageAnalysis){
   if (!configuration.enableLanguageAnalysis) { return false; }
   if (configuration.forceLanguageAnalysis) { 
     debug(chalkAlert("enableAnalysis: configuration.forceLanguageAnalysis: " 
@@ -2311,6 +2357,12 @@ function enableAnalysis(user){
       ));
       return true; 
     }
+  }
+  if (user.languageAnalyzed && (languageAnalysis.magnitude === 0) && (languageAnalysis.score === 0)) { 
+    debug(chalkAlert("enableAnalysis: user.languageAnalyzed: " 
+      + user.languageAnalyzed
+    ));
+    return true;
   }
   return false; 
 }
@@ -2518,7 +2570,7 @@ function generateAutoKeywords(user, callback){
 
         if (bannerResults && bannerResults.label && bannerResults.label.images) {
           hist.images = bannerResults.label.images;
-          updateGlobalImageHistogram({user: user, histogram: bannerResults.label.images});
+          updateImageHistograms({user: user, histogram: bannerResults.label.images});
         }
 
         userServer.updateHistograms({user: user, histograms: hist}, function(err, updatedUser){
@@ -2614,7 +2666,16 @@ function generateAutoKeywords(user, callback){
 
             statsObj.analyzer.total += 1;
 
-            if (enableAnalysis(updatedUser)) {
+            if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
+              console.log(chalkLog(">>>> LANG ANALYZE"
+                + " [ ANLd: " + statsObj.analyzer.analyzed
+                + " [ SKPd: " + statsObj.analyzer.skipped
+                + " | " + updatedUser.userId
+                + " | @" + updatedUser.screenName
+                + " | LAd: " + updatedUser.languageAnalyzed
+                + " | LA: S: " + score.toFixed(2)
+                + " M: " + mag.toFixed(2)
+              ));
               langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function(){
                 statsObj.analyzer.analyzed += 1;
               });
@@ -2623,7 +2684,7 @@ function generateAutoKeywords(user, callback){
 
               statsObj.analyzer.skipped += 1;
 
-              console.log(chalkLog("SKIP LANG ANAL"
+              console.log(chalkLog("SKIP LANG ANALYZE"
                 + " [ ANLd: " + statsObj.analyzer.analyzed
                 + " [ SKPd: " + statsObj.analyzer.skipped
                 + " | " + updatedUser.userId
@@ -3029,15 +3090,15 @@ function fetchFriends(params, callback) {
           friend.threeceeFollowing = {};
           friend.threeceeFollowing.screenName = currentTwitterUser;
 
-          console.log(chalkLog("<FRND"
-            + " [ @" + currentTwitterUser + " ]"
-            + " | " + friend.id_str
-            + " | @" + friend.screen_name
-            + " | 3CF: " + friend.threeceeFollowing.screenName
-            + " | Ts: " + friend.statuses_count
-            + " | FLWRs: " + friend.followers_count
-            + " | FRNDs: " + friend.friends_count
-          ));
+          // console.log(chalkLog("<FRND"
+          //   + " [ @" + currentTwitterUser + " ]"
+          //   + " | " + friend.id_str
+          //   + " | @" + friend.screen_name
+          //   + " | 3CF: " + friend.threeceeFollowing.screenName
+          //   + " | Ts: " + friend.statuses_count
+          //   + " | FLWRs: " + friend.followers_count
+          //   + " | FRNDs: " + friend.friends_count
+          // ));
 
 
           processUser(friend, null, function(err, user){
@@ -3045,7 +3106,22 @@ function fetchFriends(params, callback) {
               console.trace("processUser ERROR");
               return (cb(err));
             }
+            statsObj.user[currentTwitterUser].friendsProcessed += 1;
+
+            statsObj.user[currentTwitterUser].percentProcessed = 100*statsObj.user[currentTwitterUser].friendsProcessed/statsObj.user[currentTwitterUser].friendsCount;
+
             debug("PROCESSED USER\n" + jsonPrint(user));
+            console.log(chalkLog("<FRND PROCESSED"
+              + " [ @" + currentTwitterUser + " ]"
+              + " | PROCESSED: " + statsObj.user[currentTwitterUser].friendsProcessed + "/" + statsObj.user[currentTwitterUser].friendsCount
+              + " (" + statsObj.user[currentTwitterUser].percentProcessed.toFixed(2) + "%)"
+              + " | " + friend.id_str
+              + " | @" + friend.screen_name
+              + " | 3CF: " + friend.threeceeFollowing.screenName
+              + " | Ts: " + friend.statuses_count
+              + " | FLWRs: " + friend.followers_count
+              + " | FRNDs: " + friend.friends_count
+            ));
             cb();
           });
 
@@ -3065,6 +3141,16 @@ function fetchFriends(params, callback) {
   }
   else {
 
+    if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag) {
+      console.log(chalkAlert("SKIP FETCH FRIENDS *** TWITTER RATE LIMIT"
+        + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
+        + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
+        + " | EXP @: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
+        + " | RST @: " + statsObj.user[currentTwitterUser].twitterRateLimitResetAt.format(compactDateTimeFormat)
+        + " | NOW: " + moment().format(compactDateTimeFormat)
+        + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
+      ));
+    }
     console.log("fetchFriends"
       + " | CURRENT: @" + currentTwitterUser 
       + " | NEXT USER: " + nextUser
@@ -3095,6 +3181,10 @@ function processFriends(callback){
       + " | " + getTimeStamp()
       + "\n\n"
     ));
+
+    updateGlobalHistograms(function(){
+      twitterTextParser.clearGlobalHistograms();
+    });
 
     randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
     });
@@ -3128,6 +3218,8 @@ function processFriends(callback){
         statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
         statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
         statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
+        statsObj.user[currentTwitterUser].friendsProcessed = 0;
+        statsObj.user[currentTwitterUser].percentProcessed = 0;
         callback(null, currentTwitterUser);
       });
     }
@@ -3151,6 +3243,8 @@ function processFriends(callback){
       statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
       statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
       statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
+      statsObj.user[currentTwitterUser].friendsProcessed = 0;
+      statsObj.user[currentTwitterUser].percentProcessed = 0;
 
       console.log(chalkTwitterBold("*** RESTART FETCH USERS *** | ===== NEW FETCH USER @" 
         + currentTwitterUser + " ====="
