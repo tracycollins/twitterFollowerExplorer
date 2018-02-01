@@ -228,7 +228,7 @@ configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
 configuration.enableLanguageAnalysis = true;
 configuration.forceLanguageAnalysis = false;
-configuration.quitOnComplete = false;
+configuration.quitOnComplete = true;
 
 const intervalometer = require("intervalometer");
 let timerIntervalometer = intervalometer.timerIntervalometer;
@@ -1403,7 +1403,7 @@ function initialize(cnf, callback){
   cnf.numRandomNetworks = process.env.TFE_NUM_RANDOM_NETWORKS || TFE_NUM_RANDOM_NETWORKS ;
   cnf.testMode = (process.env.TFE_TEST_MODE === "true") ? true : cnf.testMode;
   cnf.quitOnError = process.env.TFE_QUIT_ON_ERROR || false ;
-  cnf.quitOnComplete = process.env.TFE_QUIT_ON_COMPLETE || false ;
+  cnf.quitOnComplete = (process.env.TFE_QUIT_ON_COMPLETE === "false") ? false : true ;
   cnf.enableStdin = process.env.TFE_ENABLE_STDIN || true ;
 
   if (process.env.TFE_USER_DB_CRAWL && (process.env.TFE_USER_DB_CRAWL === "true")){
