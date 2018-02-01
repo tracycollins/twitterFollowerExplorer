@@ -11,7 +11,7 @@ const TFE_NUM_RANDOM_NETWORKS = 100;
 const MIN_HISTOGRAM_KEYS = 50;
 const MAX_HISTOGRAM_KEYS = 100;
 
-const TEST_MODE_FETCH_COUNT = 47;
+const TEST_MODE_FETCH_COUNT = 147;
 const DEFAULT_FETCH_COUNT = 200;
 
 let bestRuntimeNetworkId;
@@ -536,7 +536,7 @@ function updateGlobalHistograms(callback){
     twitterImageParser.getGlobalHistograms(function(imageHists){
 
       hists.images = {};
-      hists.images = imageHists.images;
+      hists.images = deepcopy(imageHists.images);
 
       async.each(Object.keys(hists), function(histogramName, cb) {
 
@@ -2451,7 +2451,7 @@ function generateAutoKeywords(user, callback){
         hist.images = {};
 
         if (bannerResults && bannerResults.label && bannerResults.label.images) {
-          hist.images = bannerResults.label.images;
+          hist.images = deepcopy(bannerResults.label.images);
           updateImageHistograms({user: user, histogram: bannerResults.label.images});
         }
 
@@ -2868,7 +2868,7 @@ function fetchFriends(params, callback) {
         statsObj.user[currentTwitterUser].percentFetched = 100*(statsObj.user[currentTwitterUser].totalFriendsFetched/statsObj.user[currentTwitterUser].friendsCount); 
 
         if (configuration.testMode 
-          && (statsObj.user[currentTwitterUser].totalFriendsFetched >= 47)) {
+          && (statsObj.user[currentTwitterUser].totalFriendsFetched >= TEST_MODE_FETCH_COUNT)) {
           statsObj.user[currentTwitterUser].nextCursorValid = false;
           statsObj.user[currentTwitterUser].endFetch = true;
           nextUser = true;
