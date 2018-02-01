@@ -607,13 +607,14 @@ function showStats(options){
   if (options) {
 
     updateGlobalHistograms(function(){
-      console.log("STATS\n" + jsonPrint(statsObj));
+                  // const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "histograms", "languageAnalysis"]);
+
+      console.log("STATS\n" + jsonPrint(omit(statsObj, ["histograms"])));
     });
   }
   else {
 
     updateGlobalHistograms();
-
 
     if (statsObj.user[currentTwitterUser] !== undefined) {
 
@@ -2394,7 +2395,7 @@ function generateAutoKeywords(user, callback){
 
       function userBannerImage(text, cb) {
         if (user.bannerImageUrl) {
-          twitterImageParser.parseImage(user.bannerImageUrl, { screenName: user.screenName, updateGlobalHistograms: true}, function(err, results){
+          twitterImageParser.parseImage(user.bannerImageUrl, { screenName: user.screenName, keywords: user.keywords, updateGlobalHistograms: true}, function(err, results){
             if (err) {
               console.log(chalkError("PARSE BANNER IMAGE ERROR"
                 // + "\nREQ\n" + jsonPrint(results)
@@ -2986,10 +2987,7 @@ function processFriends(callback){
       + "\n\n"
     ));
 
-    updateGlobalHistograms(function(){
-      twitterTextParser.clearGlobalHistograms();
-      twitterImageParser.clearGlobalHistograms();
-    });
+    updateGlobalHistograms();
 
     abortCursor = false;
 
@@ -3033,41 +3031,46 @@ function processFriends(callback){
         fetchTwitterFriendsIntervalometer.stop();
         callback(null, null);
       });
-   }
+    }
     else {
 
-      randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
-      });
+      // updateGlobalHistograms(function(){
+      saveFile({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms}, function(){
 
-      currentTwitterUserIndex = 0;
-      currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
+        twitterTextParser.clearGlobalHistograms();
+        twitterImageParser.clearGlobalHistograms();
 
-      statsObj.user[currentTwitterUser].nextCursor = false;
-      statsObj.user[currentTwitterUser].nextCursorValid = false;
-      statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimit = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-      statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
-      statsObj.user[currentTwitterUser].friendsProcessed = 0;
-      statsObj.user[currentTwitterUser].percentProcessed = 0;
-
-      console.log(chalkTwitterBold("*** RESTART FETCH USERS *** | ===== NEW FETCH USER @" 
-        + currentTwitterUser + " ====="
-        + " | " + getTimeStamp()
-      ));
-
-
-      updateGlobalHistograms(function(){
-        saveFile({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms}, function(){
-          statsObj.histograms = {};
-          inputTypes.forEach(function(type){
-            statsObj.histograms[type] = {};
-          });
-          callback(null, currentTwitterUser);
+        randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
         });
+
+        currentTwitterUserIndex = 0;
+        currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
+
+        statsObj.user[currentTwitterUser].nextCursor = false;
+        statsObj.user[currentTwitterUser].nextCursorValid = false;
+        statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
+        statsObj.user[currentTwitterUser].twitterRateLimit = 0;
+        statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
+        statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
+        statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
+        statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
+        statsObj.user[currentTwitterUser].friendsProcessed = 0;
+        statsObj.user[currentTwitterUser].percentProcessed = 0;
+
+        setTimeout(function(){
+          console.log(chalkTwitterBold("*** RESTART FETCH USERS *** | ===== NEW FETCH USER @" 
+            + currentTwitterUser + " ====="
+            + " | " + getTimeStamp()
+          ));
+
+          callback(null, currentTwitterUser);
+        }, 2000);
+
       });
+      // });
+
+
+
 
     }
   }
