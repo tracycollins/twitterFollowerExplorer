@@ -931,19 +931,6 @@ function loadFile(path, file, callback) {
 
 }
 
-// function saveFileRetry (timeout, path, file, jsonObj, callback){
-//   setTimeout(function(){
-//     console.log(chalkError("SAVE RETRY | TIMEOUT: " + timeout + " | " + path + "/" + file));
-//     saveFile({folder:path, file:file, obj:jsonObj}, function(err){
-//       if (err) {
-//         console.log(chalkError("SAVE RETRY ON ERROR: " + path + "/" + file));
-//         saveFileRetry(timeout, path, file, jsonObj);
-//       }
-//     });
-//   }, timeout);
-//   if (callback !== undefined) { callback(); }
-// }
-
 function initStatsUpdate(callback){
 
   console.log(chalkTwitter("INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
