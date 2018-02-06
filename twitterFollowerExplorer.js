@@ -78,10 +78,7 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
 
-// let globalImageHistogram = {};
-// let leftImageHistogram = {};
-// let rightImageHistogram = {};
-// let neutralImageHistogram = {};
+let saveFileQueue = [];
 
 const keywordCategories = ["left", "right", "neutral", "positive", "negative", "uncategorized"];
 
@@ -202,7 +199,8 @@ const TFE_RUN_ID = hostname
   + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat)
   + "_" + process.pid;
 
-const histogramsFile = "histograms_" + TFE_RUN_ID + ".json"; 
+let histogramId = process.pid + "_" + moment().format(compactDateTimeFormat);
+let histogramsFile = "histograms_" + histogramId + ".json"; 
 
 statsObj.fetchUsersComplete = false;
 statsObj.runId = TFE_RUN_ID;
@@ -221,6 +219,7 @@ inputTypes.forEach(function(type){
 });
 
 let configuration = {};
+configuration.saveFileQueueInterval = 1000;
 configuration.testMode = false;
 configuration.minSuccessRate = DEFAULT_MIN_SUCCESS_RATE;
 configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEFAULT_FETCH_COUNT;
@@ -274,6 +273,7 @@ const chalkNetwork = chalk.blue;
 const chalkTwitter = chalk.blue;
 const chalkTwitterBold = chalk.bold.blue;
 const chalkRed = chalk.red;
+const chalkBlue = chalk.blue;
 const chalkError = chalk.bold.red;
 const chalkAlert = chalk.red;
 const chalkWarn = chalk.red;
@@ -655,10 +655,11 @@ function quit(cause){
   clearInterval(checkRateLimitInterval);
   clearInterval(userDbUpdateQueueInterval);
 
-  saveFile({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms}, function(){
-    showStats(true);
-    process.exit();
-  });
+  histogramId = process.pid + "_" + moment().format(compactDateTimeFormat);
+  histogramsFile = "histograms_" + histogramId + ".json"; 
+
+  showStats(true);
+  process.exit();
 }
 
 process.on( "SIGINT", function() {
@@ -813,6 +814,38 @@ function saveFile (params, callback){
   }
 }
 
+let saveFileQueueInterval;
+let saveFileBusy = false;
+
+function initSaveFileQueue(cnf){
+
+  console.log(chalkBlue("NNT | INIT DROPBOX SAVE FILE INTERVAL | " + cnf.saveFileQueueInterval + " MS"));
+
+  clearInterval(saveFileQueueInterval);
+
+  saveFileQueueInterval = setInterval(function () {
+
+    if (!saveFileBusy && saveFileQueue.length > 0) {
+
+      saveFileBusy = true;
+
+      const saveFileObj = saveFileQueue.shift();
+
+      saveFile(saveFileObj, function(err){
+        if (err) {
+          console.log(chalkError("NNT | *** SAVE FILE ERROR ... RETRY | " + saveFileObj.folder + "/" + saveFileObj.file));
+          saveFileQueue.push(saveFileObj);
+        }
+        else {
+          console.log(chalkBlue("NNT | SAVED FILE | " + saveFileObj.folder + "/" + saveFileObj.file));
+        }
+        saveFileBusy = false;
+      });
+    }
+
+  }, cnf.saveFileQueueInterval);
+}
+
 function loadFile(path, file, callback) {
 
   debug(chalkInfo("LOAD FOLDER " + path));
@@ -898,18 +931,18 @@ function loadFile(path, file, callback) {
 
 }
 
-function saveFileRetry (timeout, path, file, jsonObj, callback){
-  setTimeout(function(){
-    console.log(chalkError("SAVE RETRY | TIMEOUT: " + timeout + " | " + path + "/" + file));
-    saveFile({folder:path, file:file, obj:jsonObj}, function(err){
-      if (err) {
-        console.log(chalkError("SAVE RETRY ON ERROR: " + path + "/" + file));
-        saveFileRetry(timeout, path, file, jsonObj);
-      }
-    });
-  }, timeout);
-  if (callback !== undefined) { callback(); }
-}
+// function saveFileRetry (timeout, path, file, jsonObj, callback){
+//   setTimeout(function(){
+//     console.log(chalkError("SAVE RETRY | TIMEOUT: " + timeout + " | " + path + "/" + file));
+//     saveFile({folder:path, file:file, obj:jsonObj}, function(err){
+//       if (err) {
+//         console.log(chalkError("SAVE RETRY ON ERROR: " + path + "/" + file));
+//         saveFileRetry(timeout, path, file, jsonObj);
+//       }
+//     });
+//   }, timeout);
+//   if (callback !== undefined) { callback(); }
+// }
 
 function initStatsUpdate(callback){
 
@@ -927,28 +960,14 @@ function initStatsUpdate(callback){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
-    saveFile({folder:classifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap}, function(err){
-      if (err) {
-        console.log(chalkError("SAVE RETRY ON ERROR: " + classifiedUsersFolder + "/" + classifiedUsersDefaultFile));
-        saveFileRetry(5000, classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap);
-      }
-      else if (classifiedUserHashmapReadyFlag && (hostname === "google")) { // SAVE DEFAULT CLASSIFIED USERS IF GOOGLE HOST
-        saveFile({folder:defaultClassifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap}, function(err){
-          if (err) {
-            console.log(chalkError("SAVE RETRY ON ERROR: " + classifiedUsersFolder + "/" + classifiedUsersDefaultFile));
-            saveFileRetry(5000, defaultClassifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap);
-          }
-        });
-      }
-    });
+    saveFileQueue.push({folder:classifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
 
-    // saveFile({folder: statsFolder, file: "globalImageHistogram.json", obj: globalImageHistogram});
-    // saveFile({folder: statsFolder, file: "leftImageHistogram.json", obj: leftImageHistogram});
-    // saveFile({folder: statsFolder, file: "rightImageHistogram.json", obj: rightImageHistogram});
-    // saveFile({folder: statsFolder, file: "neutralImageHistogram.json", obj: neutralImageHistogram});
+    if (classifiedUserHashmapReadyFlag && (hostname === "google")) {
+      saveFileQueue.push({folder:defaultClassifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
+    }
 
     twitterTextParser.getGlobalHistograms(function(){
-      saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
+      saveFileQueue.push({folder: statsFolder, file: statsFile, obj: statsObj});
     });
 
     showStats();
@@ -963,20 +982,11 @@ function initStatsUpdate(callback){
       clearInterval(waitLanguageAnalysisReadyInterval);
       clearInterval(statsUpdateInterval);
 
-      saveFile({folder:classifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap}, function(err){
-        if (err) {
-          console.log(chalkError("SAVE RETRY ON ERROR: " + classifiedUsersFolder + "/" + classifiedUsersDefaultFile));
-          saveFileRetry(5000, classifiedUsersFolder, classifiedUsersDefaultFile, classifiedUserHashmap);
-          setTimeout(function(){
-            quit("QUIT ON COMPLETE");
-          }, 10000);
-        }
-        else {
-          setTimeout(function(){
-            quit("QUIT ON COMPLETE");
-          }, 2000);
-        }
-       });
+      saveFileQueue.push({folder:classifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
+
+      setTimeout(function(){
+        quit("QUIT ON COMPLETE");
+      }, 5000);
 
     }
 
@@ -3026,52 +3036,51 @@ function processFriends(callback){
     }
     else if (configuration.quitOnComplete) {
       console.log("QUITTING ON COMPLETE");
-      saveFile({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms}, function(){
-        clearInterval(waitLanguageAnalysisReadyInterval);
-        fetchTwitterFriendsIntervalometer.stop();
-        callback(null, null);
-      });
+
+      histogramId = process.pid + "_" + moment().format(compactDateTimeFormat);
+      histogramsFile = "histograms_" + histogramId + ".json"; 
+
+      saveFileQueue.push({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms});
+
+      clearInterval(waitLanguageAnalysisReadyInterval);
+      fetchTwitterFriendsIntervalometer.stop();
+      callback(null, null);
     }
     else {
 
-      // updateGlobalHistograms(function(){
-      saveFile({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms}, function(){
+      histogramId = process.pid + "_" + moment().format(compactDateTimeFormat);
+      histogramsFile = "histograms_" + histogramId + ".json"; 
 
-        twitterTextParser.clearGlobalHistograms();
-        twitterImageParser.clearGlobalHistograms();
+      saveFileQueue.push({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms});
 
-        randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
-        });
+      twitterTextParser.clearGlobalHistograms();
+      twitterImageParser.clearGlobalHistograms();
 
-        currentTwitterUserIndex = 0;
-        currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
-
-        statsObj.user[currentTwitterUser].nextCursor = false;
-        statsObj.user[currentTwitterUser].nextCursorValid = false;
-        statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
-        statsObj.user[currentTwitterUser].twitterRateLimit = 0;
-        statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-        statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
-        statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
-        statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
-        statsObj.user[currentTwitterUser].friendsProcessed = 0;
-        statsObj.user[currentTwitterUser].percentProcessed = 0;
-
-        setTimeout(function(){
-          console.log(chalkTwitterBold("*** RESTART FETCH USERS *** | ===== NEW FETCH USER @" 
-            + currentTwitterUser + " ====="
-            + " | " + getTimeStamp()
-          ));
-
-          callback(null, currentTwitterUser);
-        }, 2000);
-
+      randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
       });
-      // });
 
+      currentTwitterUserIndex = 0;
+      currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
 
+      statsObj.user[currentTwitterUser].nextCursor = false;
+      statsObj.user[currentTwitterUser].nextCursorValid = false;
+      statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
+      statsObj.user[currentTwitterUser].twitterRateLimit = 0;
+      statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
+      statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
+      statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
+      statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
+      statsObj.user[currentTwitterUser].friendsProcessed = 0;
+      statsObj.user[currentTwitterUser].percentProcessed = 0;
 
+      setTimeout(function(){
+        console.log(chalkTwitterBold("*** RESTART FETCH USERS *** | ===== NEW FETCH USER @" 
+          + currentTwitterUser + " ====="
+          + " | " + getTimeStamp()
+        ));
 
+        callback(null, currentTwitterUser);
+      }, 2000);
     }
   }
 }
@@ -3262,7 +3271,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
               currentBestNetwork = networkObj;
               newBestNetwork = true;
               if (hostname === "google") {
-                saveFile({folder: folder, file: "bestNetwork.json", obj: networkObj});
+                saveFileQueue.push({folder: folder, file: "bestNetwork.json", obj: networkObj});
               }
             }
 
@@ -3669,7 +3678,7 @@ function initRandomNetworkTree(callback){
           if ((hostname === "google") && (prevBestNetworkId !== bestRuntimeNetworkId)) {
             prevBestNetworkId = bestRuntimeNetworkId;
             console.log(chalkAlert("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
-            saveFile({folder: bestNetworkFolder, file: bestNetworkFile, obj: currentBestNetwork});
+            saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: currentBestNetwork});
           }
 
 
@@ -3821,6 +3830,8 @@ initialize(configuration, function(err, cnf){
     + " STARTED " + getTimeStamp() 
     // + "\n" + jsonPrint(cnf)
   ));
+
+  initSaveFileQueue(cnf);
 
   if (cnf.testMode) {
     cnf.fetchCount = TEST_MODE_FETCH_COUNT;
