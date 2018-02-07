@@ -575,16 +575,16 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
 
       switch (maxOutputIndex) {
         case 0:
-          console.log(chalkLog("XNKW | L | " + sumArray + " | " + maxOutputIndex));
+          debug(chalkLog("XNKW | L | " + sumArray + " | " + maxOutputIndex));
         break;
         case 1:
-          console.log(chalkLog("XNKW | N | " + sumArray + " | " + maxOutputIndex));
+          debug(chalkLog("XNKW | N | " + sumArray + " | " + maxOutputIndex));
         break;
         case 2:
-          console.log(chalkLog("XNKW | R | " + sumArray + " | " + maxOutputIndex));
+          debug(chalkLog("XNKW | R | " + sumArray + " | " + maxOutputIndex));
         break;
         default:
-          console.log(chalkLog("XNKW | 0 | " + sumArray + " | " + maxOutputIndex));
+          debug(chalkLog("XNKW | 0 | " + sumArray + " | " + maxOutputIndex));
       }
     });
 

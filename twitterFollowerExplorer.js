@@ -519,9 +519,9 @@ console.log("DROPBOX_TFE_STATS_FILE : " + DROPBOX_TFE_STATS_FILE);
 console.log("statsFolder : " + statsFolder);
 console.log("statsFile : " + statsFile);
 
-console.log("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN);
-console.log("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
-console.log("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
+debug("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN);
+debug("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
+debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
@@ -718,7 +718,7 @@ function saveFile (params, callback){
   const dbFileUpload = function () {
     dropboxClient.filesUpload(options)
     .then(function(){
-      console.log(chalkLog("SAVED DROPBOX JSON | " + options.path));
+      debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
       if (callback !== undefined) { callback(null); }
     })
     .catch(function(error){
@@ -2101,7 +2101,7 @@ function classifyUser(user, callback){
       }
     }, function(){
 
-      console.log(chalkAutoCurrent(">USR KWs"
+      debug(chalkAutoCurrent(">USR KWs"
         + " | MKW: " + classManualText
         + " | AKW: " + classAutoText
         + " [ TOT M: " + Object.keys(classifiedUserHashmap).length + "]"
@@ -2473,7 +2473,7 @@ function generateAutoKeywords(user, callback){
           const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
           const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
 
-          console.log(chalkInfo("GEN AKWs"
+          debug(chalkInfo("GEN AKWs"
             + " [@" + currentTwitterUser + "]"
             + " | @" + updatedUser.screenName
             + " | " + updatedUser.userId
@@ -2488,7 +2488,7 @@ function generateAutoKeywords(user, callback){
             statsObj.analyzer.total += 1;
 
             if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
-              console.log(chalkLog(">>>> LANG ANALYZE"
+              debug(chalkLog(">>>> LANG ANALYZE"
                 + " [ ANLd: " + statsObj.analyzer.analyzed
                 + " [ SKPd: " + statsObj.analyzer.skipped
                 + " | " + updatedUser.userId
@@ -2505,7 +2505,7 @@ function generateAutoKeywords(user, callback){
 
               statsObj.analyzer.skipped += 1;
 
-              console.log(chalkLog("SKIP LANG ANALYZE"
+              debug(chalkLog("SKIP LANG ANALYZE"
                 + " [ ANLd: " + statsObj.analyzer.analyzed
                 + " [ SKPd: " + statsObj.analyzer.skipped
                 + " | " + updatedUser.userId
@@ -2702,7 +2702,7 @@ function processUser(userIn, lastTweeId, callback) {
           if (user.keywordsAuto && (Object.keys(user.keywordsAuto).length > 0)) {
             kwsa = Object.keys(user.keywordsAuto);
           }
-          console.log("WORD-USER HIT"
+          debug("WORD-USER HIT"
             + " | " + user.userId
             + " | @" + user.screenName.toLowerCase()
             + " | KWs: " + Object.keys(kws)
@@ -3066,7 +3066,7 @@ function processFriends(callback){
       statsObj.user[currentTwitterUser].percentProcessed = 0;
 
       setTimeout(function(){
-        console.log(chalkTwitterBold("*** RESTART FETCH USERS *** | ===== NEW FETCH USER @" 
+        console.log(chalkTwitterBold("=========================\n=========================\n*** RESTART FETCH USERS *** | ===== NEW FETCH USER @" 
           + currentTwitterUser + " ====="
           + " | " + getTimeStamp()
         ));
@@ -3521,7 +3521,7 @@ function initUserDbUpdateQueueInterval(interval){
           keywordsAuto = Object.keys(updatedUserObj.keywordsAuto);
         }
 
-        console.log(chalkInfo("US UPD<"
+        debug(chalkInfo("US UPD<"
           + " | " + updatedUserObj.userId
           + " | TW: " + updatedUserObj.isTwitterUser
           + " | @" + updatedUserObj.screenName
@@ -3674,7 +3674,7 @@ function initRandomNetworkTree(callback){
           }
 
 
-          console.log(chalkAlert("NETWORK_OUTPUT"
+          debug(chalkAlert("NETWORK_OUTPUT"
             + " | " + moment().format(compactDateTimeFormat)
             + " | " + m.bestNetwork.networkId
             + " | RATE: " + currentBestNetwork.successRate.toFixed(1) + "%"
