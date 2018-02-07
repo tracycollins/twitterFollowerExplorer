@@ -199,7 +199,7 @@ const TFE_RUN_ID = hostname
   + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat)
   + "_" + process.pid;
 
-let histogramId = process.pid + "_" + moment().format(compactDateTimeFormat);
+let histogramId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
 let histogramsFile = "histograms_" + histogramId + ".json"; 
 
 statsObj.fetchUsersComplete = false;
@@ -361,7 +361,7 @@ const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultVal
 const quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
 const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean, defaultValue: false};
 const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean};
-const testMode = { name: "testMode", alias: "T", type: Boolean, defaultValue: false};
+const testMode = { name: "testMode", alias: "X", type: Boolean, defaultValue: false};
 const loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
 
 const optionDefinitions = [enableStdin, quitOnError, quitOnComplete, loadNeuralNetworkID, userDbCrawl, testMode];
@@ -655,8 +655,9 @@ function quit(cause){
   clearInterval(checkRateLimitInterval);
   clearInterval(userDbUpdateQueueInterval);
 
-  histogramId = process.pid + "_" + moment().format(compactDateTimeFormat);
-  histogramsFile = "histograms_" + histogramId + ".json"; 
+  // histogramId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+  // histogramsFile = "histograms_" + histogramId + ".json"; 
+  // saveFileQueue.push({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms});
 
   showStats(true);
   process.exit();
@@ -969,6 +970,10 @@ function initStatsUpdate(callback){
       clearInterval(waitLanguageAnalysisReadyInterval);
       clearInterval(statsUpdateInterval);
 
+      // histogramId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+      // histogramsFile = "histograms_" + histogramId + ".json"; 
+
+      saveFileQueue.push({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms});
       saveFileQueue.push({folder:classifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
 
       setTimeout(function(){
@@ -3024,8 +3029,8 @@ function processFriends(callback){
     else if (configuration.quitOnComplete) {
       console.log("QUITTING ON COMPLETE");
 
-      histogramId = process.pid + "_" + moment().format(compactDateTimeFormat);
-      histogramsFile = "histograms_" + histogramId + ".json"; 
+      // histogramId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+      // histogramsFile = "histograms_" + histogramId + ".json"; 
 
       saveFileQueue.push({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms});
 
@@ -3035,7 +3040,7 @@ function processFriends(callback){
     }
     else {
 
-      histogramId = process.pid + "_" + moment().format(compactDateTimeFormat);
+      histogramId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
       histogramsFile = "histograms_" + histogramId + ".json"; 
 
       saveFileQueue.push({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms});
