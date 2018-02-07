@@ -3,6 +3,9 @@
 
 const OFFLINE_MODE = false;
 
+const TEST_TWITTER_FETCH_FRIENDS_INTERVAL = 10000;
+const TEST_DROPBOX_NN_LOAD = 3;
+
 const DEFAULT_MIN_SUCCESS_RATE = 91;
 const TFE_NUM_RANDOM_NETWORKS = 100;
 
@@ -3168,6 +3171,10 @@ function loadBestNetworkDropboxFolder(folder, callback){
       // + " | " + jsonPrint(response)
     ));
 
+    if (configuration.testMode) {
+      response.entries.length = TEST_DROPBOX_NN_LOAD;
+    }
+
     async.eachSeries(response.entries, function(entry, cb){
 
       console.log(chalkInfo("DROPBOX NETWORK FOUND"
@@ -3443,9 +3450,10 @@ function updateNetworkFetchFriends(){
 
 function initFetchTwitterFriendsInterval(interval){
 
-  console.log(chalkInfo("INIT GET TWITTER FRIENDS"
-    + " | INTERVAL: " + interval + " MS"
+  console.log(chalkAlert("\n\nINIT GET TWITTER FRIENDS"
+    + " | INTERVAL: " + msToTime(interval)
     + " | RUN AT: " + moment().add(interval, "ms").format(compactDateTimeFormat)
+    + "\n\n"
   ));
 
   if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag) {
@@ -3895,6 +3903,10 @@ initialize(configuration, function(err, cnf){
             + "\n\n"
           ));
           debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[currentTwitterUser]) + "\n\n"));
+
+          if (cnf.testMode) {
+            fetchTwitterFriendsIntervalTime = TEST_TWITTER_FETCH_FRIENDS_INTERVAL;
+          }
           initFetchTwitterFriendsInterval(fetchTwitterFriendsIntervalTime);
           fsm.fetchStart();
         }

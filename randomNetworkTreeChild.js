@@ -97,7 +97,7 @@ function msToTime(duration) {
   return days + ":" + hours + ":" + minutes + ":" + seconds;
 }
 
-process.title = "randomNetworkTree";
+process.title = "node_randomNetworkTree";
 console.log("\n\n=================================");
 console.log("HOST:          " + hostname);
 console.log("PROCESS TITLE: " + process.title);
@@ -222,22 +222,59 @@ function indexOfMax (arrIn, callback) {
   });
 }
 
-function generateNetworkInput(histograms, networkInputNames, callback){
+// function generateNetworkInput(histograms, networkInputNames, callback){
 
-  const inputTypes = Object.keys(histograms);
+//   const inputTypes = Object.keys(histograms).sort();
+//   let networkInput = [];
+
+//   async.eachSeries(inputTypes, function(inputType, cb0){
+
+//     // console.log("inputType: " + inputType);
+
+//     let histogramObj = histograms[inputType];
+
+//     async.eachSeries(networkInputNames, function(inputName, cb1){
+
+//       if (histogramObj[inputName] !== undefined) {
+//         networkInput.push(1);
+//         // console.log(inputType + " | * " + inputName);
+//         async.setImmediate(function() { cb1(); });
+//       }
+//       else {
+//         networkInput.push(0);
+//         // debug(inputType + " | . " + inputName);
+//         async.setImmediate(function() { cb1(); });
+//       }
+
+//     }, function(err){
+
+//       cb0();
+
+//     });
+
+//   }, function(err){
+//     callback(err, networkInput);
+//   });
+// }
+
+function generateNetworkInput(histograms, networkInputsObj, callback){
+
+  const inputTypes = Object.keys(networkInputsObj).sort();
   let networkInput = [];
 
   async.eachSeries(inputTypes, function(inputType, cb0){
 
-    // console.log("inputType: " + inputType);
+    debug("inputType: " + inputType);
 
     let histogramObj = histograms[inputType];
 
-    async.eachSeries(networkInputNames, function(inputName, cb1){
+    const networkInputTypeNames = networkInputsObj[inputType];
+
+    async.eachSeries(networkInputTypeNames, function(inputName, cb1){
 
       if (histogramObj[inputName] !== undefined) {
         networkInput.push(1);
-        // console.log(inputType + " | * " + inputName);
+        debug(inputType + " | * " + inputName);
         async.setImmediate(function() { cb1(); });
       }
       else {
@@ -274,7 +311,11 @@ function activateNetwork2(languageAnalysis, histograms, callback){
     networkOutput[nnId].output = [];
     networkOutput[nnId].successRate = networkObj.successRate;
 
-    generateNetworkInput(userHistograms, networkObj.inputNames, function(err, networkInput){
+    if (networkObj.inputs === undefined) {
+      console.log(chalkError("UNDEFINED NETWORK INPUTS OBJ | NETWORK OBJ KEYS: " + Object.keys(networkObj)));
+    }
+
+    generateNetworkInput(userHistograms, networkObj.inputs, function(err, networkInput){
 
       networkInput[0] = mag;
       networkInput[1] = score;
@@ -656,19 +697,9 @@ function initActivateNetworkInterval(interval){
 
   activateNetworkReady = true;
 
-  // let messageObj;
-  // messageObj.obj = {};
-  // messageObj.results = {};
-  // messageObj.stats = {};
-
   activateNetworkInterval = setInterval(function(){ 
 
     if ((rxActivateNetworkQueue.length > 0) && activateNetworkReady) {
-
-      // let messageObj = {};
-      // messageObj.obj = {};
-      // messageObj.results = {};
-      // messageObj.stats = {};
 
       activateNetworkReady = false;
 
@@ -693,11 +724,6 @@ function initActivateNetworkInterval(interval){
         });
         maxQueueFlag = true;
       }
-
-
-      // const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
-      // const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
-
 
       activateNetwork2(obj.user.languageAnalysis, obj.user.histograms, function(err, networkOutputObj){
 
@@ -869,14 +895,24 @@ function getInputNames(nodes, callback){
 
 function loadNetworks(networksObj, callback){
 
-  async.each(Object.keys(networksObj), function(nnId, cb){
+  // console.log("networksObj\n" + jsonPrint(networksObj));
+  console.log("networksObj\n" + Object.keys(networksObj));
+
+  const nnIds = Object.keys(networksObj);
+
+  async.eachSeries(nnIds, function(nnId, cb){
+
+    let networkObj = deepcopy(networksObj[nnId].network);
 
     console.log(chalkLog("RNT | LOAD NETWORK"
-      + " | " + networksObj[nnId].network.successRate.toFixed(2) + "%"
+      + " | " + networkObj.successRate.toFixed(2) + "%"
       + " | " + nnId
     ));
 
-    const network = neataptic.Network.fromJSON(networksObj[nnId].network.network);
+    const network = neataptic.Network.fromJSON(networkObj.network);
+
+    networkObj.network = {};
+    networkObj.network = network;
 
     getInputNames(network.nodes, function(err, inputNames){
 
@@ -884,23 +920,15 @@ function loadNetworks(networksObj, callback){
         return cb(err);
       }
 
-      const matchRate = networksObj[nnId].network.matchRate !== undefined ? networksObj[nnId].network.matchRate : 0 ;
+      networkObj.matchRate = networkObj.matchRate || 0 ;
 
-      networksHashMap.set(
-        nnId, 
-        {
-          network: network, 
-          inputNames: inputNames, 
-          successRate: networksObj[nnId].network.successRate, 
-          matchRate: matchRate
-        }
-      );
+      networksHashMap.set(nnId, networkObj);
 
       if (statsObj.loadedNetworks[nnId] === undefined) {
         statsObj.loadedNetworks[nnId] = {};
         statsObj.loadedNetworks[nnId].total = 0;
-        statsObj.loadedNetworks[nnId].successRate = networksObj[nnId].network.successRate;
-        statsObj.loadedNetworks[nnId].matchRate = matchRate;
+        statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
+        statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
         statsObj.loadedNetworks[nnId].match = 0;
         statsObj.loadedNetworks[nnId].mismatch = 0;
         statsObj.loadedNetworks[nnId].matchFlag = false;
@@ -1039,6 +1067,7 @@ process.on("message", function(m) {
     case "LOAD_NETWORKS":
       console.log(chalkAlert("LOAD_NETWORKS"
         + " | " + Object.keys(m.networksObj).length
+        // + "\n" + jsonPrint(m.networksObj)
       ));
       loadNetworks(m.networksObj, function(){
         process.send({op: "NETWORK_READY"}, function(err){
