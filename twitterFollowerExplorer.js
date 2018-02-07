@@ -199,8 +199,8 @@ const TFE_RUN_ID = hostname
   + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat)
   + "_" + process.pid;
 
-let histogramId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-let histogramsFile = "histograms_" + histogramId + ".json"; 
+let histogramsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+let histogramsFile = "histograms_" + histogramsId + ".json"; 
 
 statsObj.fetchUsersComplete = false;
 statsObj.runId = TFE_RUN_ID;
@@ -511,8 +511,10 @@ configuration.neuralNetworkFile = "";
 
 const bestNetworkFolder = "/config/utility/best/neuralNetworks";
 const bestNetworkFile = "bestNetwork.json";
-// const bestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
 const localNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/local";
+
+const defaultHistogramsFolder = "/config/utility/default/histograms";
+const localHistogramsFolder = "/config/utility/" + hostname + "/histograms";
 
 console.log("DROPBOX_TFE_CONFIG_FILE: " + DROPBOX_TFE_CONFIG_FILE);
 console.log("DROPBOX_TFE_STATS_FILE : " + DROPBOX_TFE_STATS_FILE);
@@ -643,6 +645,23 @@ function showStats(options){
   }
 }
 
+function saveHistograms(callback){
+
+  const histogramsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+  const histogramsFile = "histograms_" + histogramsId + ".json"; 
+
+  let histObj = {};
+  histObj.histogramsId = histogramsId;
+  histObj.histograms = {};
+  histObj.histograms = statsObj.histograms;
+
+  let folder = (hostname === "google") ? defaultHistogramsFolder : localHistogramsFolder;
+
+  saveFileQueue.push({folder: folder, file: histogramsFile, obj: histObj});
+
+  if (callback !== undefined) { callback(); }
+}
+
 function quit(cause){
   console.log( "\n... QUITTING ..." );
   if (cause) {
@@ -654,10 +673,6 @@ function quit(cause){
   clearInterval(statsUpdateInterval);
   clearInterval(checkRateLimitInterval);
   clearInterval(userDbUpdateQueueInterval);
-
-  // histogramId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-  // histogramsFile = "histograms_" + histogramId + ".json"; 
-  // saveFileQueue.push({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms});
 
   showStats(true);
   process.exit();
@@ -970,10 +985,7 @@ function initStatsUpdate(callback){
       clearInterval(waitLanguageAnalysisReadyInterval);
       clearInterval(statsUpdateInterval);
 
-      // histogramId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-      // histogramsFile = "histograms_" + histogramId + ".json"; 
-
-      saveFileQueue.push({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms});
+      saveHistograms();
       saveFileQueue.push({folder:classifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
 
       setTimeout(function(){
@@ -3029,10 +3041,7 @@ function processFriends(callback){
     else if (configuration.quitOnComplete) {
       console.log("QUITTING ON COMPLETE");
 
-      // histogramId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-      // histogramsFile = "histograms_" + histogramId + ".json"; 
-
-      saveFileQueue.push({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms});
+      saveHistograms();
 
       clearInterval(waitLanguageAnalysisReadyInterval);
       fetchTwitterFriendsIntervalometer.stop();
@@ -3040,10 +3049,7 @@ function processFriends(callback){
     }
     else {
 
-      histogramId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-      histogramsFile = "histograms_" + histogramId + ".json"; 
-
-      saveFileQueue.push({folder: statsFolder, file: histogramsFile, obj: statsObj.histograms});
+      saveHistograms();
 
       twitterTextParser.clearGlobalHistograms();
       twitterImageParser.clearGlobalHistograms();
