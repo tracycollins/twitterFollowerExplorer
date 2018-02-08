@@ -242,8 +242,8 @@ function analyzeLanguage(langObj, callback){
     // });
   })
   .catch(function(err) {
-    console.log(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
-    console.error(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
+    debug(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
+    debug(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
     if (callback !== undefined) { callback(err, results); }
   });
 }

@@ -851,7 +851,7 @@ let saveFileBusy = false;
 
 function initSaveFileQueue(cnf){
 
-  console.log(chalkBlue("NNT | INIT DROPBOX SAVE FILE INTERVAL | " + cnf.saveFileQueueInterval + " MS"));
+  console.log(chalkBlue("TFE | INIT DROPBOX SAVE FILE INTERVAL | " + cnf.saveFileQueueInterval + " MS"));
 
   clearInterval(saveFileQueueInterval);
 
@@ -865,11 +865,11 @@ function initSaveFileQueue(cnf){
 
       saveFile(saveFileObj, function(err){
         if (err) {
-          console.log(chalkError("NNT | *** SAVE FILE ERROR ... RETRY | " + saveFileObj.folder + "/" + saveFileObj.file));
+          console.log(chalkError("TFE | *** SAVE FILE ERROR ... RETRY | " + saveFileObj.folder + "/" + saveFileObj.file));
           saveFileQueue.push(saveFileObj);
         }
         else {
-          console.log(chalkBlue("NNT | SAVED FILE | " + saveFileObj.folder + "/" + saveFileObj.file));
+          console.log(chalkBlue("TFE | SAVED FILE | " + saveFileObj.folder + "/" + saveFileObj.file));
         }
         saveFileBusy = false;
       });
@@ -904,7 +904,7 @@ function loadFile(path, file, callback) {
           callback(null, fileObj);
         }
         catch(e){
-          console.trace(chalkError("NNT | JSON PARSE ERROR: " + e));
+          console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
           callback("JSON PARSE ERROR", null);
         }
       }
@@ -929,7 +929,7 @@ function loadFile(path, file, callback) {
           callback(null, fileObj);
         }
         catch(e){
-          console.trace(chalkError("NNT | JSON PARSE ERROR: " + e));
+          console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
           callback("JSON PARSE ERROR", null);
         }
       }
@@ -938,22 +938,22 @@ function loadFile(path, file, callback) {
       }
     })
     .catch(function(error) {
-      console.log(chalkError("NNT | DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
-      console.log(chalkError("NNT | !!! DROPBOX READ " + fullPath + " ERROR"));
-      console.log(chalkError("NNT | " + jsonPrint(error.error)));
+      console.log(chalkError("TFE | DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
+      console.log(chalkError("TFE | !!! DROPBOX READ " + fullPath + " ERROR"));
+      console.log(chalkError("TFE | " + jsonPrint(error.error)));
 
       if (error.status === 404) {
-        console.error(chalkError("NNT | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
+        console.error(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
           + " ... SKIPPING ...")
         );
         return(callback(null, null));
       }
       if (error.status === 409) {
-        console.error(chalkError("NNT | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"));
+        console.error(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"));
         return(callback(error, null));
       }
       if (error.status === 0) {
-        console.error(chalkError("NNT | !!! DROPBOX NO RESPONSE"
+        console.error(chalkError("TFE | !!! DROPBOX NO RESPONSE"
           + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
         return(callback(null, null));
       }
@@ -3618,8 +3618,8 @@ function initUserDbUpdateQueueInterval(interval){
 
 function initInputArrays(cnf, callback){
 
-  console.log(chalkInfo("NNT | INIT INPUT ARRAYS"));
-  debug(chalkInfo("NNT | INIT INPUT ARRAYS cnf\nNNT | " + jsonPrint(cnf)));
+  console.log(chalkInfo("TFE | INIT INPUT ARRAYS"));
+  debug(chalkInfo("TFE | INIT INPUT ARRAYS cnf\nTFE | " + jsonPrint(cnf)));
 
   let folder = dropboxConfigDefaultFolder;
   let inputFilePrefix = "defaultInput";
@@ -3630,7 +3630,7 @@ function initInputArrays(cnf, callback){
 
     const inputFile = inputFilePrefix + jsUcfirst(inputType) + ".json";
 
-    console.log("NNT | INIT " + inputType.toUpperCase() + " INPUT ARRAY: " + inputFile);
+    console.log("TFE | INIT " + inputType.toUpperCase() + " INPUT ARRAY: " + inputFile);
 
     loadFile(folder, inputFile, function(err, inputArrayObj){
       if (!err) {
@@ -3645,7 +3645,7 @@ function initInputArrays(cnf, callback){
 
         statsObj.totalInputs += inputArrayObj[inputType].length;
 
-        console.log(chalkInfo("NNT"
+        console.log(chalkInfo("TFE"
           + " | TOTAL INPUTS: " + statsObj.totalInputs
           + " | LOADED " + inputType.toUpperCase() + " ARRAY"
           + " | " + inputArrayObj[inputType].length + " " + inputType.toUpperCase()
@@ -3653,19 +3653,19 @@ function initInputArrays(cnf, callback){
         cb();
       }
       else {
-        console.log(chalkError("NNT | ERROR: loadFile: " + dropboxConfigFolder + "/" + inputFile));
+        console.log(chalkError("TFE | ERROR: loadFile: " + folder + "/" + inputFile));
         cb(err);
       }
     });
 
   }, function(err){
     if (err){
-      console.log(chalkError("NNT | ERR\nNNT | " + jsonPrint(err)));
+      console.log(chalkError("TFE | ERR\nTFE | " + jsonPrint(err)));
       callback(err);
     }
     else {
       statsObj.totalInputs += 2; // LANG ANALYSIS INPUTS
-      console.log(chalkInfo("NNT | LOADED INPUT ARRAY FILES | TOTAL INPUTS: " + statsObj.totalInputs));
+      console.log(chalkInfo("TFE | LOADED INPUT ARRAY FILES | TOTAL INPUTS: " + statsObj.totalInputs));
       callback();
     }
   });
