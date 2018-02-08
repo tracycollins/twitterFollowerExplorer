@@ -523,7 +523,7 @@ configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
 const bestNetworkFolder = "/config/utility/best/neuralNetworks";
-const bestNetworkFile = "bestRuntimeNetworkId";
+const bestNetworkFile = "bestRuntimeNetwork.json";
 // let bestNetworkId = false;
 const localNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/local";
 
@@ -3338,8 +3338,16 @@ function loadBestNetworkDropboxFolder(folder, callback){
               prevBestNetworkId = bestRuntimeNetworkId;
               bestRuntimeNetworkId = networkObj.networkId;
               newBestNetwork = true;
+
               if (hostname === "google") {
-                saveFileQueue.push({folder: folder, file: bestNetworkFile, obj: {networkId: bestRuntimeNetworkId, successRate: networkObj.successRate} });
+
+                const fileObj = {
+                  networkId: bestRuntimeNetworkId, 
+                  successRate: networkObj.successRate, 
+                  matchRate:  networkObj.matchRate
+                };
+
+                saveFileQueue.push({folder: folder, file: bestNetworkFile, obj: fileObj });
               }
             }
 
@@ -3751,7 +3759,14 @@ function initRandomNetworkTree(callback){
 
             console.log(chalkAlert("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
             // saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: currentBestNetwork});
-            saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: {networkId: bestRuntimeNetworkId, successRate: m.bestNetwork.successRate, matchRate:  m.bestNetwork.matchRate} });
+
+            const fileObj = {
+              networkId: bestRuntimeNetworkId, 
+              successRate: m.bestNetwork.successRate, 
+              matchRate:  m.bestNetwork.matchRate
+            };
+
+            saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: fileObj });
           }
 
 
