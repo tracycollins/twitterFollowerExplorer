@@ -6,7 +6,7 @@ const OFFLINE_MODE = false;
 const TEST_TWITTER_FETCH_FRIENDS_INTERVAL = 10000;
 const TEST_DROPBOX_NN_LOAD = 10;
 
-const DEFAULT_MIN_SUCCESS_RATE = 91;
+const DEFAULT_MIN_SUCCESS_RATE = 80;
 const TFE_NUM_RANDOM_NETWORKS = 100;
 
 // will use histograms to determine neural net inputs
