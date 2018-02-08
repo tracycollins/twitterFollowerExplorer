@@ -3321,9 +3321,11 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
               currentBestNetwork = networkObj;
+              prevBestNetworkId = bestRuntimeNetworkId;
+              bestRuntimeNetworkId = networkObj.networkId;
               newBestNetwork = true;
               if (hostname === "google") {
-                saveFileQueue.push({folder: folder, file: "bestNetwork.json", obj: networkObj});
+                saveFileQueue.push({folder: folder, file: bestNetworkFile, obj: bestRuntimeNetworkId});
               }
             }
 
