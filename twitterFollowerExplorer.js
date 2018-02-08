@@ -3419,12 +3419,16 @@ function loadBestNeuralNetworkFile(callback){
         if (bestRuntimeNetworkId  && bestNetworkHashMap.has(bestRuntimeNetworkId)) {
           const nnObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
           bestNetworkObj = deepcopy(nnObj.network);
+
+          bestNetworkObj.matchRate = (bestNetworkObj.matchRate !== undefined) ? bestNetworkObj.matchRate : 0;
+
           console.log(chalkAlert("\n\n>>>> NEW BEST RUNTIME NETWORK"
             + " | " + bestNetworkObj.networkId 
             + " | SUCCESS: " + bestNetworkObj.successRate.toFixed(2) 
             + " | MATCH: " + bestNetworkObj.matchRate.toFixed(2) 
             + "\n\n"
           ));
+
         }
         else {
           bestNetworkObj = results.best;
