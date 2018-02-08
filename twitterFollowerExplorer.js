@@ -3290,7 +3290,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
           cb();
         }
       }
-      else if (networkId === "bestNetwork") {
+      else if (networkId === "bestRuntimeNetworkId") {
         cb();
       }
       else {

@@ -19,7 +19,7 @@
     "chalk": "^2.3.0",
     "co": "^4.6.0",
     "columnify": "^1.5.4",
-    "command-line-args": "^5.0.1",
+    "command-line-args": "^5.0.2",
     "deep-copy": "^1.4.2",
     "dropbox": "^3.0.4",
     "emoji-regex": "^6.5.1",
