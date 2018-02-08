@@ -298,6 +298,7 @@ function activateNetwork2(languageAnalysis, histograms, callback){
 
   let networkOutput = {};
   let userHistograms = {};
+
   userHistograms = deepcopy(histograms);
 
   const score = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.score : 0;
@@ -320,7 +321,7 @@ function activateNetwork2(languageAnalysis, histograms, callback){
       networkInput[0] = mag;
       networkInput[1] = score;
 
-      // printDatum(nnId, networkInput);
+      printDatum(nnId, networkInput);
 
       const out = networkObj.network.activate(networkInput);
 
@@ -603,7 +604,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       ]);
 
       // console.log(
-      debug(
+      console.log(
           "\n--------------------------------------------------------------"
         + "\n" + title 
         + "\n--------------------------------------------------------------\n"
@@ -896,7 +897,7 @@ function getInputNames(nodes, callback){
 function loadNetworks(networksObj, callback){
 
   // console.log("networksObj\n" + jsonPrint(networksObj));
-  console.log("networksObj\n" + Object.keys(networksObj));
+  debug("networksObj\n" + Object.keys(networksObj));
 
   const nnIds = Object.keys(networksObj);
 

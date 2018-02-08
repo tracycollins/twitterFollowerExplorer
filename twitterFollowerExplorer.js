@@ -4,7 +4,7 @@
 const OFFLINE_MODE = false;
 
 const TEST_TWITTER_FETCH_FRIENDS_INTERVAL = 10000;
-const TEST_DROPBOX_NN_LOAD = 3;
+const TEST_DROPBOX_NN_LOAD = 10;
 
 const DEFAULT_MIN_SUCCESS_RATE = 91;
 const TFE_NUM_RANDOM_NETWORKS = 100;
@@ -14,7 +14,7 @@ const TFE_NUM_RANDOM_NETWORKS = 100;
 const MIN_HISTOGRAM_KEYS = 50;
 const MAX_HISTOGRAM_KEYS = 100;
 
-const TEST_MODE_FETCH_COUNT = 147;
+const TEST_MODE_FETCH_COUNT = 1000;
 const DEFAULT_FETCH_COUNT = 200;
 
 let bestRuntimeNetworkId;
@@ -2269,12 +2269,12 @@ function enableAnalysis(user, languageAnalysis){
 
 function generateAutoKeywords(user, callback){
 
-  let networkInput = [ 0, 0 ];
+  // let networkInput = [ 0, 0 ];
 
-  if (user.languageAnalysis.sentiment){
-    networkInput[0] = user.languageAnalysis.sentiment.magnitude;
-    networkInput[1] = user.languageAnalysis.sentiment.score;
-  }
+  // if (user.languageAnalysis.sentiment){
+  //   networkInput[0] = user.languageAnalysis.sentiment.magnitude;
+  //   networkInput[1] = user.languageAnalysis.sentiment.score;
+  // }
 
   // PARSE USER STATUS + DESC, IF EXIST
   if (user.screenName !== undefined){
@@ -2546,29 +2546,30 @@ function generateAutoKeywords(user, callback){
   else {
     // NO USER TEXT TO PARSE
 
-    async.eachSeries(inputTypes, function(type, cb1){
+    activateNetwork({user: user});
+    
+    callback(null, user);
 
-      async.eachSeries(inputArrays[type], function(element, cb2){
-        debug("ARRAY: " + type + " | + " + 0);
-        networkInput.push(0);
-        async.setImmediate(function() {
-          cb2();
-        });
-      }, function(){
-        async.setImmediate(function() {
-          cb1();
-        });
-      });
+    // async.eachSeries(inputTypes, function(type, cb1){
 
+    //   async.eachSeries(inputArrays[type], function(element, cb2){
+    //     debug("ARRAY: " + type + " | + " + 0);
+    //     networkInput.push(0);
+    //     async.setImmediate(function() {
+    //       cb2();
+    //     });
+    //   }, function(){
+    //     async.setImmediate(function() {
+    //       cb1();
+    //     });
+    //   });
+    // }, function(){
+    //   debug(chalkTwitter("--- NO USER STATUS NOR DESC"));
 
-    }, function(){
-      debug(chalkTwitter("--- NO USER STATUS NOR DESC"));
-
-      activateNetwork({user: user, networkInput: networkInput});
+    //   activateNetwork({user: user});
       
-      callback(null, user);
-
-    });
+    //   callback(null, user);
+    // });
   }
 }
 
