@@ -1,6 +1,7 @@
  /*jslint node: true */
 "use strict";
 
+
 const OFFLINE_MODE = false;
 
 const TEST_TWITTER_FETCH_FRIENDS_INTERVAL = 10000;
@@ -17,6 +18,7 @@ const MAX_HISTOGRAM_KEYS = 100;
 const TEST_MODE_FETCH_COUNT = 1000;
 const DEFAULT_FETCH_COUNT = 200;
 
+const bestRuntimeNetworkFileName = "bestRuntimeNetwork.json";
 let bestRuntimeNetworkId = false;
 let loadedNetworksFlag = false;
 let networksSentFlag = false;
@@ -523,8 +525,6 @@ configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
 const bestNetworkFolder = "/config/utility/best/neuralNetworks";
-const bestNetworkFile = "bestRuntimeNetwork.json";
-// let bestNetworkId = false;
 const localNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/local";
 
 const defaultHistogramsFolder = "/config/utility/default/histograms";
@@ -3212,7 +3212,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
   dropboxClient.filesListFolder(options).then(function(response){
 
-
     if (response.entries.length === 0) {
       console.log(chalkLog("NO DROPBOX NETWORKS FOUND"
         + " | " + options.path
@@ -3241,6 +3240,10 @@ function loadBestNetworkDropboxFolder(folder, callback){
         // + " | " + getTimeStamp(entry.client_modified)
         + " | " + entry.name
       ));
+
+      if (entry.name === bestRuntimeNetworkFileName) {
+        cb();
+      }
 
       const networkId = entry.name.replace(".json", "");
 
@@ -3347,7 +3350,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
                   matchRate:  networkObj.matchRate
                 };
 
-                saveFileQueue.push({folder: folder, file: bestNetworkFile, obj: fileObj });
+                saveFileQueue.push({folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj });
               }
             }
 
@@ -3758,7 +3761,6 @@ function initRandomNetworkTree(callback){
             prevBestNetworkId = bestRuntimeNetworkId;
 
             console.log(chalkAlert("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
-            // saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: currentBestNetwork});
 
             const fileObj = {
               networkId: bestRuntimeNetworkId, 
@@ -3766,7 +3768,7 @@ function initRandomNetworkTree(callback){
               matchRate:  m.bestNetwork.matchRate
             };
 
-            saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: fileObj });
+            saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
           }
 
 
