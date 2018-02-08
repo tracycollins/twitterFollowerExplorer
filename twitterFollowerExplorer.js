@@ -586,15 +586,17 @@ function updateGlobalHistograms(callback){
               statsObj.histograms[histogramName][k] = {};
               statsObj.histograms[histogramName][k] = currentHistogram[k];
 
-              console.log(currentHistogram[k].total
-                + " | L: " + currentHistogram[k].left
-                + " | R: " + currentHistogram[k].right
-                + " | N: " + currentHistogram[k].neutral
-                + " | +: " + currentHistogram[k].positive
-                + " | -: " + currentHistogram[k].negative
-                + " | U: " + currentHistogram[k].uncategorized
-                + " || " + k
-              );
+              if (i < 10) {
+                console.log(currentHistogram[k].total
+                  + " | L: " + currentHistogram[k].left
+                  + " | R: " + currentHistogram[k].right
+                  + " | N: " + currentHistogram[k].neutral
+                  + " | +: " + currentHistogram[k].positive
+                  + " | -: " + currentHistogram[k].negative
+                  + " | U: " + currentHistogram[k].uncategorized
+                  + " || " + k
+                );
+              }
             }
             else {
 
@@ -1714,9 +1716,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             m.obj.languageAnalysis = {err: m.error};
 
             if (m.error.code === 8){ // LANGUAGE QUOTA; will be automatically retried
-              debug(chalkAlert("*** LANG ERROR ... RETRY"
+              console.log(chalkAlert("*** LANG QUOTA ERROR ... RETRY"
                 + " | " + m.obj.userId
-                + " | " + m.obj.userId
+                + " | " + m.obj.screenName
                 + " | CODE: " + m.error.code
               ));
               m.obj.languageAnalyzed = false;
@@ -1724,12 +1726,24 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                 langAnalyzerMessageRxQueueReady = true;
               }, 1000);
             }
-
-            console.log(chalkError("*** LANG ERROR"
-              + " | " + m.obj.userId
-              + " | @" + m.obj.screenName
-              + " | CODE: " + m.error.code
-            ));
+            else if (m.error.code === 3){ // LANGUAGE unsupported
+              console.log(chalkInfo("... LANG ERROR ... UNSUPPORTED LANG"
+                + " | " + m.obj.userId
+                + " | " + m.obj.screenName
+                + " | CODE: " + m.error.code
+              ));
+            }
+            else {
+              console.log(chalkError("*** LANG ERROR"
+                + " | " + m.obj.userId
+                + " | " + m.obj.screenName
+                + " | CODE: " + m.error.code
+              ));
+              m.obj.languageAnalyzed = false;
+              setTimeout(function(){
+                langAnalyzerMessageRxQueueReady = true;
+              }, 1000);
+            }
 
             userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
               if (err) { 
