@@ -3339,7 +3339,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
               bestRuntimeNetworkId = networkObj.networkId;
               newBestNetwork = true;
               if (hostname === "google") {
-                saveFileQueue.push({folder: folder, file: bestNetworkFile, obj: {networkId: bestRuntimeNetworkId} });
+                saveFileQueue.push({folder: folder, file: bestNetworkFile, obj: {networkId: bestRuntimeNetworkId, successRate: networkObj.successRate} });
               }
             }
 
@@ -3408,7 +3408,7 @@ function loadBestNeuralNetworkFile(callback){
         if (bestRuntimeNetworkId  && bestNetworkHashMap.has(bestRuntimeNetworkId)) {
           const nnObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
           bestNetworkObj = deepcopy(nnObj.network);
-          console.log(chalkAlert("\n\n>>>> NEW BEST RUNTIME NETWORK | " + bestNetworkObj.networkId + "\n\n"));
+          console.log(chalkAlert("\n\n>>>> NEW BEST RUNTIME NETWORK | " + bestNetworkObj.networkId + " | " + bestNetworkObj.successRate.toFixed(2) + "\n\n"));
         }
         else {
           bestNetworkObj = results.best;
@@ -3751,7 +3751,7 @@ function initRandomNetworkTree(callback){
 
             console.log(chalkAlert("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
             // saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: currentBestNetwork});
-            saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: {networkId: bestRuntimeNetworkId} });
+            saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: {networkId: bestRuntimeNetworkId, successRate: m.bestNetwork.successRate, matchRate:  m.bestNetwork.matchRate} });
           }
 
 
