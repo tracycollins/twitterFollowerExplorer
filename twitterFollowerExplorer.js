@@ -3339,7 +3339,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
               bestRuntimeNetworkId = networkObj.networkId;
               newBestNetwork = true;
               if (hostname === "google") {
-                saveFileQueue.push({folder: folder, file: bestNetworkFile, obj: bestRuntimeNetworkId});
+                saveFileQueue.push({folder: folder, file: bestNetworkFile, obj: {networkId: bestRuntimeNetworkId} });
               }
             }
 
@@ -3751,7 +3751,7 @@ function initRandomNetworkTree(callback){
 
             console.log(chalkAlert("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
             // saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: currentBestNetwork});
-            saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: bestRuntimeNetworkId});
+            saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: {networkId: bestRuntimeNetworkId} });
           }
 
 
