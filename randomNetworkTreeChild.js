@@ -108,6 +108,8 @@ console.log("=================================");
 
 let statsObj = {};
 
+statsObj.normalization = {};
+
 statsObj.loadedNetworks = {};
 statsObj.loadedNetworks.multiNeuralNet = {};
 statsObj.loadedNetworks.multiNeuralNet.total = 0;
@@ -304,6 +306,20 @@ function activateNetwork2(languageAnalysis, histograms, callback){
   const score = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.score : 0;
   const mag = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.magnitude : 0;
 
+  let magnitudeNormalized = 0;
+  let scoreNormalized = 0.5;
+
+  if (statsObj.normalization.magnitude.max !== undefined) {
+    if (!statsObj.normalization.magnitude.max) {
+      statsObj.normalization.magnitude.max = 5; // KLUDGE!!
+    }
+    magnitudeNormalized = mag/statsObj.normalization.magnitude.max;
+  }
+
+  if ((statsObj.normalization.score.min !== undefined) && (statsObj.normalization.score.max !== undefined)) {
+    scoreNormalized = (score + Math.abs(statsObj.normalization.score.min))/(Math.abs(statsObj.normalization.score.min) + Math.abs(statsObj.normalization.score.max));
+  }
+
   async.eachSeries(networksHashMap.keys(), function(nnId, cb){
 
     const networkObj = networksHashMap.get(nnId);
@@ -318,10 +334,10 @@ function activateNetwork2(languageAnalysis, histograms, callback){
 
     generateNetworkInput(userHistograms, networkObj.inputs, function(err, networkInput){
 
-      networkInput[0] = mag;
-      networkInput[1] = score;
+      networkInput[0] = magnitudeNormalized;
+      networkInput[1] = scoreNormalized;
 
-      printDatum(nnId, networkInput);
+      // printDatum(nnId, networkInput);
 
       const out = networkObj.network.activate(networkInput);
 
@@ -583,7 +599,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       if (statsObj.bestNetwork.networkId === "MULTI") {
         bestNetworkOutput = sumArrayNorm;
         statsObj.bestNetwork.matchRate = statsObj.loadedNetworks.multiNeuralNet.matchRate;
-        console.log(chalkAlert("RNT"
+        debug(chalkAlert("RNT"
           + " | MULTI"
           + " | SET BEST OUT [" + bestNetworkOutput + "]"
           // + " | " + networkOutputObj.multiNeuralNet.successRate.toFixed(1) + "%"
@@ -604,7 +620,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       ]);
 
       // console.log(
-      console.log(
+      debug(
           "\n--------------------------------------------------------------"
         + "\n" + title 
         + "\n--------------------------------------------------------------\n"
@@ -664,10 +680,10 @@ function printDatum(title, input){
 
   input.forEach(function(bit, i){
     if (i === 0) {
-      row = row + bit.toFixed(10) + " | " ;
+      row = row + bit.toFixed(3) + " | " ;
     }
     else if (i === 1) {
-      row = row + bit.toFixed(10);
+      row = row + bit.toFixed(3);
     }
     else if (i === 2) {
       console.log("ROW " + rowNum + " | " + row);
@@ -705,6 +721,8 @@ function initActivateNetworkInterval(interval){
       activateNetworkReady = false;
 
       const obj = rxActivateNetworkQueue.shift();
+
+      statsObj.normalization = obj.normalization;
 
       if (maxQueueFlag && (rxActivateNetworkQueue.length < MAX_Q_SIZE)) {
         process.send({op: "QUEUE_READY", queue: rxActivateNetworkQueue.length}, function(err){

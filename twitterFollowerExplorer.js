@@ -205,6 +205,7 @@ const TFE_RUN_ID = hostname
 let histogramsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
 let histogramsFile = "histograms_" + histogramsId + ".json"; 
 
+
 statsObj.fetchUsersComplete = false;
 statsObj.runId = TFE_RUN_ID;
 
@@ -214,6 +215,15 @@ statsObj.bestNetworks = {};
 statsObj.totalInputs = 0;
 
 statsObj.histograms = {};
+
+statsObj.normalization = {};
+statsObj.normalization.score = {};
+statsObj.normalization.magnitude = {};
+
+statsObj.normalization.score.min = 1.0;
+statsObj.normalization.score.max = -1.0;
+statsObj.normalization.magnitude.min = 0;
+statsObj.normalization.magnitude.max = -Infinity;
 
 inputTypes.forEach(function(type){
 
@@ -793,7 +803,7 @@ function saveFile (params, callback){
 
         console.log(chalkInfo("DROPBOX FILE"
           + " | " + params.folder
-          + " | " + getTimeStamp(entry.client_modified)
+          // + " | " + getTimeStamp(entry.client_modified)
           + " | " + entry.name
           // + " | " + entry.content_hash
           // + "\n" + jsonPrint(entry)
@@ -1794,6 +1804,12 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
               m.obj.languageAnalysis = m.results;
               m.obj.languageAnalyzed = true;
 
+              statsObj.normalization.score.min = Math.min(m.results.sentiment.score, statsObj.normalization.score.min);
+              statsObj.normalization.score.max = Math.max(m.results.sentiment.score, statsObj.normalization.score.max);
+
+              statsObj.normalization.magnitude.min = Math.min(m.results.sentiment.magnitude, statsObj.normalization.magnitude.min);
+              statsObj.normalization.magnitude.max = Math.max(m.results.sentiment.magnitude, statsObj.normalization.magnitude.max);
+
               userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
                 if (err) { 
                   console.log(chalkError("ERROR DB UPDATE USER"
@@ -1846,6 +1862,12 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
             m.obj.languageAnalysis = m.results;
             m.obj.languageAnalyzed = true;
+
+            statsObj.normalization.score.min = Math.min(m.results.sentiment.score, statsObj.normalization.score.min);
+            statsObj.normalization.score.max = Math.max(m.results.sentiment.score, statsObj.normalization.score.max);
+
+            statsObj.normalization.magnitude.min = Math.min(m.results.sentiment.magnitude, statsObj.normalization.magnitude.min);
+            statsObj.normalization.magnitude.max = Math.max(m.results.sentiment.magnitude, statsObj.normalization.magnitude.max);
 
             userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
               if (err) { 
@@ -2488,6 +2510,13 @@ function generateAutoKeywords(user, callback){
           const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
           const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
 
+          statsObj.normalization.score.min = Math.min(score, statsObj.normalization.score.min);
+          statsObj.normalization.score.max = Math.max(score, statsObj.normalization.score.max);
+
+          statsObj.normalization.magnitude.min = Math.min(mag, statsObj.normalization.magnitude.min);
+          statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
+
+
           debug(chalkInfo("GEN AKWs"
             + " [@" + currentTwitterUser + "]"
             + " | @" + updatedUser.screenName
@@ -2500,42 +2529,42 @@ function generateAutoKeywords(user, callback){
             + " M: " + mag.toFixed(2)
           ));
 
-            statsObj.analyzer.total += 1;
+          statsObj.analyzer.total += 1;
 
-            if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
-              debug(chalkLog(">>>> LANG ANALYZE"
-                + " [ ANLd: " + statsObj.analyzer.analyzed
-                + " [ SKPd: " + statsObj.analyzer.skipped
-                + " | " + updatedUser.userId
-                + " | @" + updatedUser.screenName
-                + " | LAd: " + updatedUser.languageAnalyzed
-                + " | LA: S: " + score.toFixed(2)
-                + " M: " + mag.toFixed(2)
-              ));
-              langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function(){
-                statsObj.analyzer.analyzed += 1;
-              });
-            }
-            else {
+          if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
+            debug(chalkLog(">>>> LANG ANALYZE"
+              + " [ ANLd: " + statsObj.analyzer.analyzed
+              + " [ SKPd: " + statsObj.analyzer.skipped
+              + " | " + updatedUser.userId
+              + " | @" + updatedUser.screenName
+              + " | LAd: " + updatedUser.languageAnalyzed
+              + " | LA: S: " + score.toFixed(2)
+              + " M: " + mag.toFixed(2)
+            ));
+            langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function(){
+              statsObj.analyzer.analyzed += 1;
+            });
+          }
+          else {
 
-              statsObj.analyzer.skipped += 1;
+            statsObj.analyzer.skipped += 1;
 
-              debug(chalkLog("SKIP LANG ANALYZE"
-                + " [ ANLd: " + statsObj.analyzer.analyzed
-                + " [ SKPd: " + statsObj.analyzer.skipped
-                + " | " + updatedUser.userId
-                + " | @" + updatedUser.screenName
-                + " | LAd: " + updatedUser.languageAnalyzed
-                + " | LA: S: " + score.toFixed(2)
-                + " M: " + mag.toFixed(2)
-              ));
-            }
+            debug(chalkLog("SKIP LANG ANALYZE"
+              + " [ ANLd: " + statsObj.analyzer.analyzed
+              + " [ SKPd: " + statsObj.analyzer.skipped
+              + " | " + updatedUser.userId
+              + " | @" + updatedUser.screenName
+              + " | LAd: " + updatedUser.languageAnalyzed
+              + " | LA: S: " + score.toFixed(2)
+              + " M: " + mag.toFixed(2)
+            ));
+          }
 
-            const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "histograms", "languageAnalysis"]);
+          const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "histograms", "languageAnalysis"]);
 
-            activateNetwork({user: u});
+          activateNetwork({user: u, normalization: statsObj.normalization});
 
-            callback(null, updatedUser);
+          callback(null, updatedUser);
 
         });
 
@@ -3090,11 +3119,13 @@ function processFriends(callback){
 function printNetworkObj(title, nnObj){
   console.log(chalkNetwork("\n==================="
     + "\n" + title
-    + "\nID:      " + nnObj.networkId
-    + "\nCREATED: " + getTimeStamp(nnObj.createdAt)
-    + "\nSUCCESS: " + nnObj.successRate.toFixed(1) + "%"
-    + "\nINPUTS:  " + Object.keys(nnObj.inputs)
-    + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
+    + "\nID:         " + nnObj.networkId
+    + "\nCREATED:    " + getTimeStamp(nnObj.createdAt)
+    + "\nSUCCESS:    " + nnObj.successRate.toFixed(1) + "%" 
+    + "\nINPUTS ID:  " + nnObj.inputsId
+    + "\nINPUTS:     " + Object.keys(nnObj.inputs)
+    + "\nNUM INPUTS: " + nnObj.numInputs
+    // + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
     + "\n===================\n"
   ));
 }
@@ -3166,6 +3197,19 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
   dropboxClient.filesListFolder(options).then(function(response){
 
+
+    if (response.entries.length === 0) {
+      console.log(chalkLog("NO DROPBOX NETWORKS FOUND"
+        + " | " + options.path
+      ));
+      if (callback !== undefined) { 
+        return callback( null, {best: currentBestNetwork} );
+      }
+      else {
+        return;
+      }
+    }
+
     console.log(chalkLog("DROPBOX NETWORKS"
       + " | " + options.path
       + " | FOUND " + response.entries.length + " FILES"
@@ -3179,7 +3223,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
     async.eachSeries(response.entries, function(entry, cb){
 
       console.log(chalkInfo("DROPBOX NETWORK FOUND"
-        + " | " + getTimeStamp(entry.client_modified)
+        // + " | " + getTimeStamp(entry.client_modified)
         + " | " + entry.name
       ));
 
@@ -3198,7 +3242,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
         if (bno.entry.content_hash !== entry.content_hash) {
 
           console.log(chalkInfo("DROPBOX NETWORK CONTENT CHANGE"
-            + " | " + getTimeStamp(entry.client_modified)
+            // + " | " + getTimeStamp(entry.client_modified)
             + " | " + entry.name
             + "\nCUR HASH: " + entry.content_hash
             + "\nOLD HASH: " + bestNetworkHashMap.get(entry.name).entry.content_hash
@@ -3239,7 +3283,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
         else {
           debug(chalkLog("DROPBOX NETWORK CONTENT SAME  "
             + " | " + entry.name
-            + " | " + getTimeStamp(entry.client_modified)
+            // + " | " + getTimeStamp(entry.client_modified)
           ));
 
           cb();
@@ -3257,8 +3301,9 @@ function loadBestNetworkDropboxFolder(folder, callback){
             return(cb());
           }
 
-          if ((networkObj.network.input === statsObj.totalInputs) 
-            && (networkObj.successRate >= configuration.minSuccessRate)) {
+          // if ((networkObj.network.input === statsObj.totalInputs) 
+          //   && (networkObj.successRate >= configuration.minSuccessRate)) {
+          if (networkObj.successRate >= configuration.minSuccessRate) {
 
             console.log(chalkAlert("+++ DROPBOX NETWORK"
               + " | " + networkObj.successRate.toFixed(1) + "%"
@@ -3373,6 +3418,7 @@ function loadBestNeuralNetworkFile(callback){
         statsObj.network.output = bestNetworkObj.network.output;
         statsObj.network.evolve = {};
         statsObj.network.evolve = bestNetworkObj.evolve;
+        statsObj.network.evolve.options.networkObj = null;
 
         callback(null, bestNetworkObj);
 
