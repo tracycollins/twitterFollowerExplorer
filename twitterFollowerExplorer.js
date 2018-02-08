@@ -17,7 +17,7 @@ const MAX_HISTOGRAM_KEYS = 100;
 const TEST_MODE_FETCH_COUNT = 1000;
 const DEFAULT_FETCH_COUNT = 200;
 
-let bestRuntimeNetworkId;
+let bestRuntimeNetworkId = false;
 let loadedNetworksFlag = false;
 let networksSentFlag = false;
 
@@ -523,7 +523,8 @@ configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
 const bestNetworkFolder = "/config/utility/best/neuralNetworks";
-const bestNetworkFile = "bestNetwork.json";
+const bestNetworkFile = "bestRuntimeNetworkId";
+// let bestNetworkId = false;
 const localNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/local";
 
 const defaultHistogramsFolder = "/config/utility/default/histograms";
@@ -3729,9 +3730,12 @@ function initRandomNetworkTree(callback){
           bestNetworkHashMap.set(bestRuntimeNetworkId, entry);
 
           if ((hostname === "google") && (prevBestNetworkId !== bestRuntimeNetworkId)) {
+
             prevBestNetworkId = bestRuntimeNetworkId;
+
             console.log(chalkAlert("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
-            saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: currentBestNetwork});
+            // saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: currentBestNetwork});
+            saveFileQueue.push({folder: bestNetworkFolder, file: bestNetworkFile, obj: bestRuntimeNetworkId});
           }
 
 

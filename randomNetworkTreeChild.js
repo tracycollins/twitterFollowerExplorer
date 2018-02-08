@@ -2,7 +2,7 @@
 "use strict";
 
 const bestNetworkFolder = "/config/utility/best/neuralNetworks";
-const bestNetworkFile = "bestNetwork.json";
+const bestNetworkFile = "bestNetworkId";
 
 const ONE_SECOND = 1000;
 const MAX_Q_SIZE = 500;
