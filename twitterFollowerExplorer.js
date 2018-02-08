@@ -3242,7 +3242,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
       ));
 
       if (entry.name === bestRuntimeNetworkFileName) {
-        cb();
+        return(cb());
       }
 
       const networkId = entry.name.replace(".json", "");
