@@ -3212,7 +3212,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
   let options = {path: folder};
   let newBestNetwork = false;
 
-  dropboxClient.filesListFolder(options).then(function(response){
+  dropboxClient.filesListFolder(options)
+  .then(function(response){
 
     if (response.entries.length === 0) {
       console.log(chalkLog("NO DROPBOX NETWORKS FOUND"
@@ -3390,7 +3391,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
       if (callback !== undefined) { callback( null, {best: currentBestNetwork} ); }
     });
-
   })
   .catch(function(err){
     console.log(chalkError("loadBestNetworkDropboxFolder *** DROPBOX FILES LIST FOLDER ERROR\n" + err + "\n" + jsonPrint(err)));
