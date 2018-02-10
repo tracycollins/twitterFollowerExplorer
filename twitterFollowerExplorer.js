@@ -3272,7 +3272,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             // + " | " + getTimeStamp(entry.client_modified)
             + " | " + entry.name
             + "\nCUR HASH: " + entry.content_hash
-            + "\nOLD HASH: " + bestNetworkHashMap.get(entry.name).entry.content_hash
+            + "\nOLD HASH: " + bno.entry.content_hash
           ));
 
           loadFile(folder, entry.name, function(err, networkObj){
