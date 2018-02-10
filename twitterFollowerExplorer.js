@@ -3393,7 +3393,11 @@ function loadBestNetworkDropboxFolder(folder, callback){
     });
   })
   .catch(function(err){
-    console.log(chalkError("loadBestNetworkDropboxFolder *** DROPBOX FILES LIST FOLDER ERROR\n" + err + "\n" + jsonPrint(err)));
+    console.log(chalkError("loadBestNetworkDropboxFolder *** DROPBOX FILES LIST FOLDER ERROR"
+      + "\nOPTIONS: " + jsonPrint(options)
+      + "\nERROR: " + err 
+      + "\nERROR: " + jsonPrint(err)
+    ));
     if (callback !== undefined) { callback(err, null); }
   });
 }
