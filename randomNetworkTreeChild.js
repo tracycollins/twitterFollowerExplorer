@@ -931,7 +931,8 @@ function loadNetworks(networksObj, callback){
     let networkObj = deepcopy(networksObj[nnId].network);
 
     console.log(chalkLog("RNT | LOAD NETWORK"
-      + " | " + networkObj.successRate.toFixed(2) + "%"
+      + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+      + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
       + " | " + nnId
     ));
 

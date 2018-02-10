@@ -3287,12 +3287,12 @@ function loadBestNetworkDropboxFolder(folder, callback){
               + " | OUT: " + networkObj.numOutputs
             ));
 
-            const hmEntry = {
+            const hmObj = {
               entry: entry,
               network: networkObj
             };
 
-            bestNetworkHashMap.set(networkObj.networkId, hmEntry);
+            bestNetworkHashMap.set(networkObj.networkId, hmObj);
 
             if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
               currentBestNetwork = {};
@@ -3344,7 +3344,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             availableNeuralNetHashMap[networkObj.networkId] = true;
 
-            if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
+            // if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
+            if (!currentBestNetwork || (networkObj.matchRate > currentBestNetwork.matchRate)) {
               currentBestNetwork = networkObj;
               prevBestNetworkId = bestRuntimeNetworkId;
               bestRuntimeNetworkId = networkObj.networkId;
@@ -3719,6 +3720,7 @@ function initRandomNetworkTree(callback){
 
     let user = {};
     let entry = {};
+    let hmObj = {};
 
     switch (m.op) {
       case "IDLE":
@@ -3765,15 +3767,16 @@ function initRandomNetworkTree(callback){
 
         if (bestNetworkHashMap.has(bestRuntimeNetworkId)) {
 
-          entry = bestNetworkHashMap.get(bestRuntimeNetworkId);
-          entry.network.matchRate = m.bestNetwork.matchRate;
-          entry.network.successRate = m.bestNetwork.successRate;
+          hmObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
 
-          currentBestNetwork = entry.network;
+          hmObj.network.matchRate = m.bestNetwork.matchRate;
+          hmObj.network.successRate = m.bestNetwork.successRate;
+
+          currentBestNetwork = hmObj.network;
           currentBestNetwork.matchRate = m.bestNetwork.matchRate;
           currentBestNetwork.successRate = m.bestNetwork.successRate;
 
-          bestNetworkHashMap.set(bestRuntimeNetworkId, entry);
+          bestNetworkHashMap.set(bestRuntimeNetworkId, hmObj);
 
           if ((hostname === "google") && (prevBestNetworkId !== bestRuntimeNetworkId)) {
 
@@ -3790,7 +3793,7 @@ function initRandomNetworkTree(callback){
             const file = bestRuntimeNetworkId + ".json";
 
             saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
-            saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: entry });
+            saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: hmObj });
           }
 
 
@@ -3826,13 +3829,13 @@ function initRandomNetworkTree(callback){
 
         if (bestNetworkHashMap.has(m.networkId)) {
 
-          entry = bestNetworkHashMap.get(m.networkId);
-          entry.network.matchRate = m.matchRate;
+          hmObj = bestNetworkHashMap.get(m.networkId);
+          hmObj.network.matchRate = m.matchRate;
 
-          currentBestNetwork = entry.network;
+          currentBestNetwork = hmObj.network;
           currentBestNetwork.matchRate = m.matchRate;
 
-          bestNetworkHashMap.set(m.networkId, entry);
+          bestNetworkHashMap.set(m.networkId, hmObj);
 
           if ((hostname === "google") && (prevBestNetworkId !== m.networkId)) {
 
@@ -3849,7 +3852,7 @@ function initRandomNetworkTree(callback){
             const file = currentBestNetwork.networkId + ".json";
 
             saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
-            saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: entry });
+            saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: hmObj });
           }
         }
         else {
