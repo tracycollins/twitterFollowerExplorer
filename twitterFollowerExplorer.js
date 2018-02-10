@@ -3793,7 +3793,7 @@ function initRandomNetworkTree(callback){
             const file = bestRuntimeNetworkId + ".json";
 
             saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
-            saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: hmObj });
+            saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
           }
 
 
@@ -3852,7 +3852,7 @@ function initRandomNetworkTree(callback){
             const file = currentBestNetwork.networkId + ".json";
 
             saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
-            saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: hmObj });
+            saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
           }
         }
         else {
