@@ -3257,7 +3257,13 @@ function loadBestNetworkDropboxFolder(folder, callback){
         if (!bno || (bno === undefined)) {
           console.error(chalkError("bestNetworkHashMap ENTRY UNDEFINED??? | " + networkId));
           quit("bestNetworkHashMap ENTRY UNDEFINED");
-          return(cb());
+          return(cb("bestNetworkHashMap ENTRY UNDEFINED"));
+        }
+
+        if (bno.entry === undefined) {
+          console.log(chalkError("bestNetworkHashMap ENTRY PROP UNDEFINED??? | " + networkId + "\n" + jsonPrint(bno)));
+          quit("bestNetworkHashMap ENTRY PROP UNDEFINED");
+          return(cb("bestNetworkHashMap ENTRY PROP UNDEFINED"));
         }
 
         if (bno.entry.content_hash !== entry.content_hash) {
