@@ -542,7 +542,7 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
       process.send({
         op: "BEST_MATCH_RATE", 
         networkId: statsObj.bestNetwork.networkId, 
-        matchRate: statsObj.bestNetwork.matchRate 
+        matchRate: statsObj.bestNetwork.matchRate,
         successRate: statsObj.bestNetwork.successRate 
       });
     }
