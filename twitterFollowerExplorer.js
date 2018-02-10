@@ -869,7 +869,7 @@ function initSaveFileQueue(cnf){
           saveFileQueue.push(saveFileObj);
         }
         else {
-          console.log(chalkBlue("TFE | SAVED FILE | " + saveFileObj.folder + "/" + saveFileObj.file));
+          console.log(chalkLog("TFE | SAVED FILE | " + saveFileObj.folder + "/" + saveFileObj.file));
         }
         saveFileBusy = false;
       });
@@ -3410,7 +3410,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
 function loadBestNeuralNetworkFile(callback){
 
-  console.log(chalkNetwork("LOADING DROPBOX NEURAL NETWORKS"));
+  console.log(chalkLog("LOADING DROPBOX NEURAL NETWORKS"));
 
   loadBestNetworkDropboxFolder(bestNetworkFolder, function(err, results){
 
@@ -3792,7 +3792,7 @@ function initRandomNetworkTree(callback){
 
             prevBestNetworkId = bestRuntimeNetworkId;
 
-            console.log(chalkAlert("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
+            console.log(chalkNetwork("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
 
             const fileObj = {
               networkId: bestRuntimeNetworkId, 

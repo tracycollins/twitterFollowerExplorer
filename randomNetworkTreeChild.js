@@ -807,7 +807,7 @@ function initActivateNetworkInterval(interval){
                   if (kw === nkwa) {
                     statsObj.categorize.match += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
-                    console.log(chalk.green("+++ AUTO KEYWORD MATCH"
+                    console.log(chalk.blue("+++ AUTO KEYWORD MATCH"
                       + " | RATE: " + statsObj.categorize.matchRate.toFixed(1) + "%"
                       + " | TOT: " + statsObj.categorize.total
                       + " | MATCH: " + statsObj.categorize.match
