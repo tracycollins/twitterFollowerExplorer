@@ -3136,7 +3136,8 @@ function printNetworkObj(title, nnObj){
     + "\n" + title
     + "\nID:         " + nnObj.networkId
     + "\nCREATED:    " + getTimeStamp(nnObj.createdAt)
-    + "\nSUCCESS:    " + nnObj.successRate.toFixed(1) + "%" 
+    + "\nSUCCESS:    " + nnObj.successRate.toFixed(2) + "%" 
+    + "\nMATCH:      " + nnObj.matchRate.toFixed(2) + "%" 
     + "\nINPUTS ID:  " + nnObj.inputsId
     + "\nINPUTS:     " + Object.keys(nnObj.inputs)
     + "\nNUM INPUTS: " + nnObj.numInputs
@@ -3189,7 +3190,8 @@ function initRandomNetworks(params, callback){
         console.log(chalkAlert("+++ RANDOM NETWORK"
           + " [" + Object.keys(randomNetworksObj).length + "]"
           + " | AVAIL NNs: " + Object.keys(availableNeuralNetHashMap).length
-          + " | " + randomNetworksObj[nnId].network.successRate.toFixed(1) + "%"
+          + " | SR: " + randomNetworksObj[nnId].network.successRate.toFixed(2) + "%"
+          + " | MR: " + randomNetworksObj[nnId].network.matchRate.toFixed(2) + "%"
           + " | " + nnId
         ));
 
@@ -3273,8 +3275,11 @@ function loadBestNetworkDropboxFolder(folder, callback){
               return(cb());
             }
 
+            if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
+
             console.log(chalkInfo("DROPBOX LOAD NETWORK"
-              + " | " + networkObj.successRate.toFixed(1) + "%"
+              + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+              + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
               + " | " + getTimeStamp(networkObj.createdAt)
               + " | " + networkObj.networkId
               + " | " + networkObj.networkCreateMode
@@ -3323,13 +3328,16 @@ function loadBestNetworkDropboxFolder(folder, callback){
           //   && (networkObj.successRate >= configuration.minSuccessRate)) {
           if (networkObj.successRate >= configuration.minSuccessRate) {
 
+            if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
+
             console.log(chalkAlert("+++ DROPBOX NETWORK"
-              + " | " + networkObj.successRate.toFixed(1) + "%"
-              + " | " + getTimeStamp(networkObj.createdAt)
-              + " | " + networkObj.networkId
+              + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+              + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
               + " | " + networkObj.networkCreateMode
               + " | IN: " + networkObj.numInputs
               + " | OUT: " + networkObj.numOutputs
+              + " | " + getTimeStamp(networkObj.createdAt)
+              + " | " + networkObj.networkId
             ));
 
             bestNetworkHashMap.set(networkObj.networkId, { entry: entry, network: networkObj});
@@ -3376,7 +3384,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
       if (newBestNetwork) {
         statsObj.bestNetworkId = currentBestNetwork.networkId;
-        printNetworkObj("NEW SEED NETWORK", currentBestNetwork);
+        printNetworkObj("BEST NETWORK", currentBestNetwork);
       }
 
       if (callback !== undefined) { callback( null, {best: currentBestNetwork} ); }
@@ -3758,10 +3766,12 @@ function initRandomNetworkTree(callback){
         if (bestNetworkHashMap.has(bestRuntimeNetworkId)) {
 
           entry = bestNetworkHashMap.get(bestRuntimeNetworkId);
+          entry.network.matchRate = m.bestNetwork.matchRate;
+          entry.network.successRate = m.bestNetwork.successRate;
+
           currentBestNetwork = entry.network;
           currentBestNetwork.matchRate = m.bestNetwork.matchRate;
           currentBestNetwork.successRate = m.bestNetwork.successRate;
-          entry.network = currentBestNetwork;
 
           bestNetworkHashMap.set(bestRuntimeNetworkId, entry);
 
@@ -3777,7 +3787,10 @@ function initRandomNetworkTree(callback){
               matchRate:  m.bestNetwork.matchRate
             };
 
+            const file = bestRuntimeNetworkId + ".json";
+
             saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+            saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: entry });
           }
 
 
@@ -3800,15 +3813,55 @@ function initRandomNetworkTree(callback){
           user.keywordsAuto = m.keywordsAuto;
 
           userDbUpdateQueue.push(user);
-
         }
+
       break;
+
       case "BEST_MATCH_RATE":
         console.log(chalkAlert(getTimeStamp() + " | RNT_BEST_MATCH_RATE"
           + " | " + m.networkId
-          + " | " + m.matchRate.toFixed(2)
+          + " | SR: " + m.successRate.toFixed(2) + "%"
+          + " | MR: " + m.matchRate.toFixed(2) + "%"
         ));
+
+        if (bestNetworkHashMap.has(m.networkId)) {
+
+          entry = bestNetworkHashMap.get(m.networkId);
+          entry.network.matchRate = m.matchRate;
+
+          currentBestNetwork = entry.network;
+          currentBestNetwork.matchRate = m.matchRate;
+
+          bestNetworkHashMap.set(m.networkId, entry);
+
+          if ((hostname === "google") && (prevBestNetworkId !== m.networkId)) {
+
+            prevBestNetworkId = m.networkId;
+
+            console.log(chalkAlert("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
+
+            const fileObj = {
+              networkId: currentBestNetwork.networkId, 
+              successRate: currentBestNetwork.successRate, 
+              matchRate:  currentBestNetwork.matchRate
+            };
+
+            const file = currentBestNetwork.networkId + ".json";
+
+            saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+            saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: entry });
+          }
+        }
+        else {
+          console.log(chalkError(getTimeStamp() + "??? | RNT_BEST_MATCH_RATE | NETWORK NOT IN BEST NETWORK HASHMAP?"
+            + " | " + m.networkId
+            + " | " + m.matchRate.toFixed(2)
+          ));
+        }
+
       break;
+
+
       default:
         randomNetworkTreeReadyFlag = true;
         console.error(chalkError("*** UNKNOWN RNT OP | " + m.op));

@@ -536,8 +536,15 @@ function printNetworksOutput(title, networkOutputObj, expectedOutput, callback){
   }, function(){
 
     if (prevBestNetworkId !== statsObj.bestNetwork.networkId) {
+
       prevBestNetworkId = statsObj.bestNetwork.networkId;
-      process.send({op: "BEST_MATCH_RATE", networkId: statsObj.bestNetwork.networkId, matchRate: statsObj.bestNetwork.matchRate });
+
+      process.send({
+        op: "BEST_MATCH_RATE", 
+        networkId: statsObj.bestNetwork.networkId, 
+        matchRate: statsObj.bestNetwork.matchRate 
+        successRate: statsObj.bestNetwork.successRate 
+      });
     }
 
     const sumArray = arrayOfArrays.reduce(sum);
