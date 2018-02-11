@@ -2306,15 +2306,8 @@ function enableAnalysis(user, languageAnalysis){
 
 function generateAutoKeywords(user, callback){
 
-  // let networkInput = [ 0, 0 ];
-
-  // if (user.languageAnalysis.sentiment){
-  //   networkInput[0] = user.languageAnalysis.sentiment.magnitude;
-  //   networkInput[1] = user.languageAnalysis.sentiment.score;
-  // }
-
-  // PARSE USER STATUS + DESC, IF EXIST
-  if (user.screenName !== undefined){
+   // PARSE USER STATUS + DESC, IF EXIST
+  // if (user.screenName !== undefined){
 
     async.waterfall([
 
@@ -2586,35 +2579,14 @@ function generateAutoKeywords(user, callback){
       });
 
     });
-  }
-  else {
-    // NO USER TEXT TO PARSE
+  // }
+  // else {
+  //   // NO USER TEXT TO PARSE
 
-    activateNetwork({user: user});
+  //   activateNetwork({user: user});
     
-    callback(null, user);
-
-    // async.eachSeries(inputTypes, function(type, cb1){
-
-    //   async.eachSeries(inputArrays[type], function(element, cb2){
-    //     debug("ARRAY: " + type + " | + " + 0);
-    //     networkInput.push(0);
-    //     async.setImmediate(function() {
-    //       cb2();
-    //     });
-    //   }, function(){
-    //     async.setImmediate(function() {
-    //       cb1();
-    //     });
-    //   });
-    // }, function(){
-    //   debug(chalkTwitter("--- NO USER STATUS NOR DESC"));
-
-    //   activateNetwork({user: user});
-      
-    //   callback(null, user);
-    // });
-  }
+  //   callback(null, user);
+  // }
 }
 
 function checkUserWordKeys(user, callback){
@@ -3008,6 +2980,9 @@ function fetchFriends(params, callback) {
   else {
 
     if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag) {
+
+      statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
+
       console.log(chalkAlert("SKIP FETCH FRIENDS *** TWITTER RATE LIMIT"
         + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
         + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
@@ -3017,6 +2992,7 @@ function fetchFriends(params, callback) {
         + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
       ));
     }
+
     console.log("fetchFriends"
       + " | CURRENT: @" + currentTwitterUser 
       + " | NEXT USER: " + nextUser
@@ -3054,6 +3030,8 @@ function processFriends(callback){
     abortCursor = false;
 
     if (currentTwitterUserIndex < twitterUsersArray.length-1) {
+
+      randomNetworkTree.send({ op: "GET_STATS"}, function(err){});
 
       currentTwitterUserIndex += 1;
 
@@ -3132,7 +3110,7 @@ function processFriends(callback){
 }
 
 function printNetworkObj(title, nnObj){
-  console.log(chalkNetwork("\n==================="
+  console.log(chalkNetwork("======================================"
     + "\n" + title
     + "\nID:         " + nnObj.networkId
     + "\nCREATED:    " + getTimeStamp(nnObj.createdAt)
@@ -3142,7 +3120,7 @@ function printNetworkObj(title, nnObj){
     + "\nINPUTS:     " + Object.keys(nnObj.inputs)
     + "\nNUM INPUTS: " + nnObj.numInputs
     // + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
-    + "\n===================\n"
+    + "\n======================================\n"
   ));
 }
 
@@ -3239,7 +3217,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
     async.eachSeries(response.entries, function(entry, cb){
 
-      console.log(chalkInfo("DROPBOX NETWORK FOUND"
+      debug(chalkInfo("DROPBOX NETWORK FOUND"
         // + " | " + getTimeStamp(entry.client_modified)
         + " | " + entry.name
       ));
@@ -3408,6 +3386,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
   });
 }
 
+let currentBestNetworkId = false;
+
 function loadBestNeuralNetworkFile(callback){
 
   console.log(chalkLog("LOADING DROPBOX NEURAL NETWORKS"));
@@ -3435,33 +3415,36 @@ function loadBestNeuralNetworkFile(callback){
 
         let bestNetworkObj;
 
-        if (bestRuntimeNetworkId  && bestNetworkHashMap.has(bestRuntimeNetworkId)) {
+        if (bestRuntimeNetworkId && bestNetworkHashMap.has(bestRuntimeNetworkId) && (currentBestNetworkId !== bestRuntimeNetworkId)) {
+
+          currentBestNetworkId = bestRuntimeNetworkId;
+
           const nnObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
           bestNetworkObj = deepcopy(nnObj.network);
 
           bestNetworkObj.matchRate = (bestNetworkObj.matchRate !== undefined) ? bestNetworkObj.matchRate : 0;
 
-          console.log(chalkAlert("\n\n>>>> NEW BEST RUNTIME NETWORK"
+          console.log(chalkAlert(">>> NEW BEST RUNTIME NETWORK"
             + " | " + bestNetworkObj.networkId 
             + " | SUCCESS: " + bestNetworkObj.successRate.toFixed(2) 
             + " | MATCH: " + bestNetworkObj.matchRate.toFixed(2) 
-            + "\n\n"
+            // + "\n\n"
           ));
+
+          printNetworkObj("LOADED NETWORK", bestNetworkObj);
+
+          Object.keys(bestNetworkObj.inputs).forEach(function(type){
+            debug(chalkNetwork("NN INPUTS TYPE" 
+              + " | " + type
+              + " | INPUTS: " + bestNetworkObj.inputs[type].length
+            ));
+            inputArrays[type] = bestNetworkObj.inputs[type];
+          });
 
         }
         else {
           bestNetworkObj = results.best;
         }
-
-        printNetworkObj("LOADED NETWORK", bestNetworkObj);
-
-        Object.keys(bestNetworkObj.inputs).forEach(function(type){
-          console.log(chalkNetwork("NN INPUTS TYPE" 
-            + " | " + type
-            + " | INPUTS: " + bestNetworkObj.inputs[type].length
-          ));
-          inputArrays[type] = bestNetworkObj.inputs[type];
-        });
 
         if (bestNetworkObj.inputs.images === undefined) { bestNetworkObj.inputs.images = ["businesss"]; }
 
@@ -3486,7 +3469,7 @@ function loadBestNeuralNetworkFile(callback){
 
 function updateNetworkFetchFriends(){
 
-  console.log(chalkAlert("updateNetworkFetchFriends | @" + currentTwitterUser));
+  debug(chalkAlert("updateNetworkFetchFriends | @" + currentTwitterUser));
 
   loadBestNeuralNetworkFile(function(err, nnObj){
 
@@ -3733,38 +3716,53 @@ function initRandomNetworkTree(callback){
     let hmObj = {};
 
     switch (m.op) {
+
       case "IDLE":
         randomNetworkTreeReadyFlag = true;
         debug(chalkInfo("... RNT IDLE ..."));
       break;
+
+      case "STATS":
+        console.log(chalkAlert(getTimeStamp() + " | RNT_STATS"
+          + " | " + jsonPrint(m.statsObj)
+        ));
+      break;
+
       case "NETWORK_READY":
         randomNetworkTreeReadyFlag = true;
         debug(chalkInfo("... RNT NETWORK_READY ..."));
       break;
+
       case "NETWORK_BUSY":
         randomNetworkTreeReadyFlag = false;
         debug(chalkInfo("... RNT NETWORK_BUSY ..."));
       break;
+
       case "QUEUE_READY":
         randomNetworkTreeReadyFlag = true;
         debug(chalkInfo("RNT Q READY"));
       break;
+
       case "QUEUE_EMPTY":
         randomNetworkTreeReadyFlag = true;
         debug(chalkInfo("RNT Q EMPTY"));
       break;
+
       case "QUEUE_FULL":
         randomNetworkTreeReadyFlag = false;
         console.log(chalkError("!!! RNT Q FULL"));
       break;
+
       case "RNT_TEST_PASS":
         randomNetworkTreeReadyFlag = true;
         console.log(chalkTwitter(getTimeStamp() + " | RNT_TEST_PASS | RNT READY: " + randomNetworkTreeReadyFlag));
       break;
+
       case "RNT_TEST_FAIL":
         console.log(chalkAlert(getTimeStamp() + " | RNT_TEST_FAIL"));
         quit("RNT_TEST_FAIL");
       break;
+
       case "NETWORK_OUTPUT":
 
         randomNetworkTreeReadyFlag = true;
@@ -3827,7 +3825,6 @@ function initRandomNetworkTree(callback){
 
           userDbUpdateQueue.push(user);
         }
-
       break;
 
       case "BEST_MATCH_RATE":
@@ -3871,9 +3868,7 @@ function initRandomNetworkTree(callback){
             + " | " + m.matchRate.toFixed(2)
           ));
         }
-
       break;
-
 
       default:
         randomNetworkTreeReadyFlag = true;
