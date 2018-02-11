@@ -116,6 +116,7 @@ statsObj.loadedNetworks = {};
 statsObj.loadedNetworks.multiNeuralNet = {};
 statsObj.loadedNetworks.multiNeuralNet.total = 0;
 statsObj.loadedNetworks.multiNeuralNet.matchRate = 0.0;
+statsObj.loadedNetworks.multiNeuralNet.successRate = 0.0;
 statsObj.loadedNetworks.multiNeuralNet.match = 0;
 statsObj.loadedNetworks.multiNeuralNet.mismatch = 0;
 statsObj.loadedNetworks.multiNeuralNet.matchFlag = false;
@@ -469,6 +470,8 @@ function printNetworksOutput(enableLog, title, networkOutputObj, expectedOutput,
 
       statsObj.bestNetwork = deepcopy(statsObj.loadedNetworks[result.sortedKeys[0]]);
 
+      statsObj.bestNetwork.matchRate = (statsObj.bestNetwork.matchRate === undefined) ? 0 : statsObj.bestNetwork.matchRate;
+
       debug(chalkLog("BEST NETWORK"
         + " | " + statsObj.bestNetwork.networkId
         + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
@@ -548,25 +551,25 @@ function printNetworksOutput(enableLog, title, networkOutputObj, expectedOutput,
           statsObj.loadedNetworks.multiNeuralNet.matchFlag = "---";
         }
 
-        if (statsObj.loadedNetworks.multiNeuralNet.matchRate > statsObj.bestNetwork.matchRate) {
-          statsObj.bestNetwork.networkId = "MULTI";
-          statsObj.bestNetwork.matchRate = statsObj.loadedNetworks.multiNeuralNet.matchRate;
-          debug(chalkAlert("RNT"
-            + " | MULTI"
-            + " | NEW BEST MAX " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-          ));
-        }
+        // if (statsObj.loadedNetworks.multiNeuralNet.matchRate > statsObj.bestNetwork.matchRate) {
+        //   statsObj.bestNetwork.networkId = "MULTI";
+        //   statsObj.bestNetwork.matchRate = statsObj.loadedNetworks.multiNeuralNet.matchRate;
+        //   debug(chalkAlert("RNT"
+        //     + " | MULTI"
+        //     + " | NEW BEST MAX " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+        //   ));
+        // }
 
-        if (statsObj.bestNetwork.networkId === "MULTI") {
-          bestNetworkOutput = sumArrayNorm;
-          statsObj.bestNetwork.matchRate = statsObj.loadedNetworks.multiNeuralNet.matchRate;
-          debug(chalkAlert("RNT"
-            + " | MULTI"
-            + " | SET BEST OUT [" + bestNetworkOutput + "]"
-            // + " | " + networkOutputObj.multiNeuralNet.successRate.toFixed(1) + "%"
-            + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-          ));
-        }
+        // if (statsObj.bestNetwork.networkId === "MULTI") {
+        //   bestNetworkOutput = sumArrayNorm;
+        //   statsObj.bestNetwork.matchRate = statsObj.loadedNetworks.multiNeuralNet.matchRate;
+        //   debug(chalkAlert("RNT"
+        //     + " | MULTI"
+        //     + " | SET BEST OUT [" + bestNetworkOutput + "]"
+        //     // + " | " + networkOutputObj.multiNeuralNet.successRate.toFixed(1) + "%"
+        //     + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+        //   ));
+        // }
 
         statsTextArray.push([
           "MULTI",
