@@ -1617,60 +1617,60 @@ function initCheckRateLimitInterval(interval){
   }, interval);
 }
 
-function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
+// function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
-  randomNetworkTreeMessageRxQueueReady = true;
+//   randomNetworkTreeMessageRxQueueReady = true;
 
-  console.log(chalkInfo("INIT RANDOM NETWORK TREE QUEUE INTERVAL: " + interval + " ms"));
+//   console.log(chalkInfo("INIT RANDOM NETWORK TREE QUEUE INTERVAL: " + interval + " ms"));
 
-  randomNetworkTreeMessageRxQueueInterval = setInterval(function () {
+//   randomNetworkTreeMessageRxQueueInterval = setInterval(function () {
 
-    if (randomNetworkTreeMessageRxQueueReady && (randomNetworkTreeMessageRxQueue.length > 0)) {
+//     if (randomNetworkTreeMessageRxQueueReady && (randomNetworkTreeMessageRxQueue.length > 0)) {
 
-      randomNetworkTreeMessageRxQueueReady = false;
+//       randomNetworkTreeMessageRxQueueReady = false;
 
-      let m = randomNetworkTreeMessageRxQueue.shift();
+//       let m = randomNetworkTreeMessageRxQueue.shift();
 
-      switch (m.op) {
+//       switch (m.op) {
 
-        case "NETWORK_RESULTS":
+//         case "NETWORK_RESULTS":
 
-          debug(chalkLog("M<"
-            + " [Q: " + randomNetworkTreeMessageRxQueue.length
-            + " | OP: " + m.op
-            + " | OUTPUT: " + m.networkOutput
-          ));
-          randomNetworkTreeReadyFlag = true;
-          randomNetworkTreeMessageRxQueueReady = true;
-        break;
+//           debug(chalkLog("M<"
+//             + " [Q: " + randomNetworkTreeMessageRxQueue.length
+//             + " | OP: " + m.op
+//             + " | OUTPUT: " + m.networkOutput
+//           ));
+//           randomNetworkTreeReadyFlag = true;
+//           randomNetworkTreeMessageRxQueueReady = true;
+//         break;
 
-        case "QUEUE_FULL":
-          debug(chalkError("M<"
-            + " [Q: " + randomNetworkTreeMessageRxQueue.length + "]"
-            + " | OP: " + m.op
-          ));
-          randomNetworkTreeReadyFlag = false;
-          randomNetworkTreeMessageRxQueueReady = true;
-        break;
+//         case "QUEUE_FULL":
+//           debug(chalkError("M<"
+//             + " [Q: " + randomNetworkTreeMessageRxQueue.length + "]"
+//             + " | OP: " + m.op
+//           ));
+//           randomNetworkTreeReadyFlag = false;
+//           randomNetworkTreeMessageRxQueueReady = true;
+//         break;
 
-        case "QUEUE_READY":
-          debug(chalkError("M<"
-            + " [Q: " + randomNetworkTreeMessageRxQueue.length + "]"
-            + " | OP: " + m.op
-          ));
-          randomNetworkTreeReadyFlag = true;
-          randomNetworkTreeMessageRxQueueReady = true;
-        break;
+//         case "QUEUE_READY":
+//           debug(chalkError("M<"
+//             + " [Q: " + randomNetworkTreeMessageRxQueue.length + "]"
+//             + " | OP: " + m.op
+//           ));
+//           randomNetworkTreeReadyFlag = true;
+//           randomNetworkTreeMessageRxQueueReady = true;
+//         break;
 
-        default:
-          console.log(chalkError("??? UNKNOWN RANDOM NETWORK TREE OP: " + m.op));
-          randomNetworkTreeMessageRxQueueReady = true;
-      }
-    }
-  }, interval);
+//         default:
+//           console.log(chalkError("??? UNKNOWN RANDOM NETWORK TREE OP: " + m.op));
+//           randomNetworkTreeMessageRxQueueReady = true;
+//       }
+//     }
+//   }, interval);
 
-  if (callback !== undefined) { callback(); }
-}
+//   if (callback !== undefined) { callback(); }
+// }
 
 function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
@@ -2872,9 +2872,11 @@ function fetchFriends(params, callback) {
     );
     callback(null, []);
   }
-  else if (!statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag
+  else if (
+    !statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag
     && randomNetworkTreeReadyFlag
-    && languageAnalysisReadyFlag) {
+    && languageAnalysisReadyFlag
+    ) {
 
     twitterUserHashMap[currentTwitterUser].twit.get("friends/list", params, function(err, data, response){
 
@@ -2949,6 +2951,7 @@ function fetchFriends(params, callback) {
             statsObj.user[currentTwitterUser].percentProcessed = 100*statsObj.user[currentTwitterUser].friendsProcessed/statsObj.user[currentTwitterUser].friendsCount;
 
             debug("PROCESSED USER\n" + jsonPrint(user));
+
             console.log(chalkLog("<FRND PROCESSED"
               + " [ @" + currentTwitterUser + " ]"
               + " | PROCESSED: " + statsObj.user[currentTwitterUser].friendsProcessed + "/" + statsObj.user[currentTwitterUser].friendsCount
@@ -2960,7 +2963,9 @@ function fetchFriends(params, callback) {
               + " | FLWRs: " + friend.followers_count
               + " | FRNDs: " + friend.friends_count
             ));
-            cb();
+
+            async.setImmediate(function() { cb(); });
+
           });
 
         }, function subFriendsProcess(err){
@@ -3707,7 +3712,7 @@ function initRandomNetworkTree(callback){
 
 
     debug(chalkAlert("<== RNT RX"
-      + " [" + randomNetworkTreeMessageRxQueue.length + "]"
+      // + " [" + randomNetworkTreeMessageRxQueue.length + "]"
       + " | " + m.op
     ));
 
@@ -3723,6 +3728,7 @@ function initRandomNetworkTree(callback){
       break;
 
       case "STATS":
+        randomNetworkTreeReadyFlag = true;
         console.log(chalkAlert(getTimeStamp() + " | RNT_STATS"
           + " | " + jsonPrint(m.statsObj)
         ));
@@ -3828,6 +3834,7 @@ function initRandomNetworkTree(callback){
       break;
 
       case "BEST_MATCH_RATE":
+        randomNetworkTreeReadyFlag = true;
         console.log(chalkAlert(getTimeStamp() + " | RNT_BEST_MATCH_RATE"
           + " | " + m.networkId
           + " | SR: " + m.successRate.toFixed(2) + "%"
@@ -4013,7 +4020,7 @@ initialize(configuration, function(err, cnf){
     }
 
     initUserDbUpdateQueueInterval(100);
-    initRandomNetworkTreeMessageRxQueueInterval(100);
+    // initRandomNetworkTreeMessageRxQueueInterval(100);
     initRandomNetworkTree();
 
     initLangAnalyzerMessageRxQueueInterval(100);
