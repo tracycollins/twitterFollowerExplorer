@@ -3117,7 +3117,7 @@ function printNetworkObj(title, nnObj){
     + "\nSUCCESS:    " + nnObj.successRate.toFixed(2) + "%" 
     + "\nMATCH:      " + nnObj.matchRate.toFixed(2) + "%" 
     + "\nINPUTS ID:  " + nnObj.inputsId
-    + "\nINPUTS:     " + Object.keys(nnObj.inputs)
+    + "\nINPUTS:     " + Object.keys(nnObj.inputsObj.inputs)
     + "\nNUM INPUTS: " + nnObj.numInputs
     // + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
     + "\n======================================\n"
@@ -3194,7 +3194,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
   .then(function(response){
 
     if (response.entries.length === 0) {
-      console.log(chalkLog("NO DROPBOX NETWORKS FOUND"
+      console.log(chalkLog("TFE | NO DROPBOX NETWORKS FOUND"
         + " | " + options.path
       ));
       if (callback !== undefined) { 
@@ -3205,14 +3205,14 @@ function loadBestNetworkDropboxFolder(folder, callback){
       }
     }
 
-    console.log(chalkLog("DROPBOX NETWORKS"
+    console.log(chalkLog("TFE | DROPBOX NETWORKS"
       + " | " + options.path
       + " | FOUND " + response.entries.length + " FILES"
       // + " | " + jsonPrint(response)
     ));
 
     if (configuration.testMode) {
-      response.entries.length = TEST_DROPBOX_NN_LOAD;
+      response.entries.length = Math.min(response.entries.length, TEST_DROPBOX_NN_LOAD);
     }
 
     async.eachSeries(response.entries, function(entry, cb){
@@ -3433,12 +3433,12 @@ function loadBestNeuralNetworkFile(callback){
 
           printNetworkObj("LOADED NETWORK", bestNetworkObj);
 
-          Object.keys(bestNetworkObj.inputs).forEach(function(type){
+          Object.keys(bestNetworkObj.inputsObj.inputs).forEach(function(type){
             debug(chalkNetwork("NN INPUTS TYPE" 
               + " | " + type
-              + " | INPUTS: " + bestNetworkObj.inputs[type].length
+              + " | INPUTS: " + bestNetworkObj.inputsObj.inputs[type].length
             ));
-            inputArrays[type] = bestNetworkObj.inputs[type];
+            inputArrays[type] = bestNetworkObj.inputsObj.inputs[type];
           });
 
         }
@@ -3446,7 +3446,7 @@ function loadBestNeuralNetworkFile(callback){
           bestNetworkObj = results.best;
         }
 
-        if (bestNetworkObj.inputs.images === undefined) { bestNetworkObj.inputs.images = ["businesss"]; }
+        if (bestNetworkObj.inputsObj.inputs.images === undefined) { bestNetworkObj.inputsObj.inputs.images = ["businesss"]; }
 
         statsObj.bestRuntimeNetworkId = bestRuntimeNetworkId;
         statsObj.currentBestNetworkId = bestNetworkObj.networkId;

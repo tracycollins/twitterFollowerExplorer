@@ -300,29 +300,30 @@ function generateNetworkInput(histograms, networkInputsObj, callback){
   });
 }
 
-function activateNetwork2(languageAnalysis, histograms, callback){
+// function activateNetwork2(languageAnalysis, histograms, callback){
+function activateNetwork2(histograms, callback){
 
   let networkOutput = {};
   let userHistograms = {};
 
   userHistograms = deepcopy(histograms);
 
-  const score = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.score : 0;
-  const mag = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.magnitude : 0;
+  // const score = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.score : 0;
+  // const mag = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.magnitude : 0;
 
-  let magnitudeNormalized = 0;
-  let scoreNormalized = 0.5;
+  // let magnitudeNormalized = 0;
+  // let scoreNormalized = 0.5;
 
-  if (statsObj.normalization.magnitude.max !== undefined) {
-    if (!statsObj.normalization.magnitude.max) {
-      statsObj.normalization.magnitude.max = 5; // KLUDGE!!
-    }
-    magnitudeNormalized = mag/statsObj.normalization.magnitude.max;
-  }
+  // if (statsObj.normalization.magnitude.max !== undefined) {
+  //   if (!statsObj.normalization.magnitude.max) {
+  //     statsObj.normalization.magnitude.max = 5; // KLUDGE!!
+  //   }
+  //   magnitudeNormalized = mag/statsObj.normalization.magnitude.max;
+  // }
 
-  if ((statsObj.normalization.score.min !== undefined) && (statsObj.normalization.score.max !== undefined)) {
-    scoreNormalized = (score + Math.abs(statsObj.normalization.score.min))/(Math.abs(statsObj.normalization.score.min) + Math.abs(statsObj.normalization.score.max));
-  }
+  // if ((statsObj.normalization.score.min !== undefined) && (statsObj.normalization.score.max !== undefined)) {
+  //   scoreNormalized = (score + Math.abs(statsObj.normalization.score.min))/(Math.abs(statsObj.normalization.score.min) + Math.abs(statsObj.normalization.score.max));
+  // }
 
   async.eachSeries(networksHashMap.keys(), function(nnId, cb){
 
@@ -332,14 +333,14 @@ function activateNetwork2(languageAnalysis, histograms, callback){
     networkOutput[nnId].output = [];
     // networkOutput[nnId].successRate = networkObj.successRate;
 
-    if (networkObj.inputs === undefined) {
+    if (networkObj.inputsObj.inputs === undefined) {
       console.log(chalkError("UNDEFINED NETWORK INPUTS OBJ | NETWORK OBJ KEYS: " + Object.keys(networkObj)));
     }
 
-    generateNetworkInput(userHistograms, networkObj.inputs, function(err, networkInput){
+    generateNetworkInput(userHistograms, networkObj.inputsObj.inputs, function(err, networkInput){
 
-      networkInput[0] = magnitudeNormalized;
-      networkInput[1] = scoreNormalized;
+      // networkInput[0] = magnitudeNormalized;
+      // networkInput[1] = scoreNormalized;
 
       // printDatum(nnId, networkInput);
 
@@ -494,6 +495,14 @@ function printNetworksOutput(enableLog, title, networkOutputObj, expectedOutput,
           + " | " + statsObj.bestNetwork.networkId
           + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
           + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+        ));
+
+        console.log(chalk.blue(
+            "\n-------------------------------------------------------------------------------"
+          + "\n" + title 
+          + "\n-------------------------------------------------------------------------------\n"
+          + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r"] })
+          + "\n-------------------------------------------------------------------------------"
         ));
 
         process.send({
@@ -724,7 +733,8 @@ function initActivateNetworkInterval(interval){
         maxQueueFlag = true;
       }
 
-      activateNetwork2(obj.user.languageAnalysis, obj.user.histograms, function(err, networkOutputObj){
+      // activateNetwork2(obj.user.languageAnalysis, obj.user.histograms, function(err, networkOutputObj){
+      activateNetwork2(obj.user.histograms, function(err, networkOutputObj){
 
         if (err){
           console.error(chalkError("ACTIVATE NETWORK ERROR"
