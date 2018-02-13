@@ -504,7 +504,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
             "\n-------------------------------------------------------------------------------"
           + "\n" + title 
           + "\n-------------------------------------------------------------------------------\n"
-          + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r"] })
+          + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r", "r"] })
           + "\n-------------------------------------------------------------------------------"
         ));
 
@@ -566,26 +566,6 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           statsObj.loadedNetworks.multiNeuralNet.matchFlag = "---";
         }
 
-        // if (statsObj.loadedNetworks.multiNeuralNet.matchRate > statsObj.bestNetwork.matchRate) {
-        //   statsObj.bestNetwork.networkId = "MULTI";
-        //   statsObj.bestNetwork.matchRate = statsObj.loadedNetworks.multiNeuralNet.matchRate;
-        //   debug(chalkAlert("RNT"
-        //     + " | MULTI"
-        //     + " | NEW BEST MAX " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-        //   ));
-        // }
-
-        // if (statsObj.bestNetwork.networkId === "MULTI") {
-        //   bestNetworkOutput = sumArrayNorm;
-        //   statsObj.bestNetwork.matchRate = statsObj.loadedNetworks.multiNeuralNet.matchRate;
-        //   debug(chalkAlert("RNT"
-        //     + " | MULTI"
-        //     + " | SET BEST OUT [" + bestNetworkOutput + "]"
-        //     // + " | " + networkOutputObj.multiNeuralNet.successRate.toFixed(1) + "%"
-        //     + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-        //   ));
-        // }
-
         statsTextArray.push([
           "MULTI",
           "---",
@@ -603,7 +583,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
               "\n-------------------------------------------------------------------------------"
             + "\n" + title 
             + "\n-------------------------------------------------------------------------------\n"
-            + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r"] })
+            + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r", "r"] })
             + "\n-------------------------------------------------------------------------------"
           ));
         }
