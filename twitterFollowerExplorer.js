@@ -3557,7 +3557,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             return(cb());
           }
 
-          if (networkObj.successRate >= configuration.minSuccessRate) {
+          if ((networkObj.successRate >= configuration.minSuccessRate) || (networkObj.matchRate >= configuration.minSuccessRate)) {
 
             if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
 
@@ -3597,8 +3597,9 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
           }
           else {
-            console.log(chalkInfo("--- DROPBOX NETWORK"
-              + " | " + networkObj.successRate.toFixed(1) + "%"
+            console.log(chalkInfo("... DROPBOX NETWORK"
+              + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+              + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
               + " | " + getTimeStamp(networkObj.createdAt)
               + " | " + networkObj.networkId
               + " | " + networkObj.networkCreateMode
