@@ -3641,53 +3641,87 @@ function loadBestNeuralNetworkFile(callback){
           });
         }
 
-        let bestNetworkObj;
+        let bnwObj;
 
-        if (bestRuntimeNetworkId && bestNetworkHashMap.has(bestRuntimeNetworkId) && (currentBestNetworkId !== bestRuntimeNetworkId)) {
+        // if (bestRuntimeNetworkId && bestNetworkHashMap.has(bestRuntimeNetworkId) && (currentBestNetworkId !== bestRuntimeNetworkId)) {
+        if (bestRuntimeNetworkId && bestNetworkHashMap.has(bestRuntimeNetworkId)) {
 
-          currentBestNetworkId = bestRuntimeNetworkId;
+          if (currentBestNetworkId !== bestRuntimeNetworkId) {
 
-          const nnObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
-          bestNetworkObj = deepcopy(nnObj.network);
+            currentBestNetworkId = bestRuntimeNetworkId;
 
-          bestNetworkObj.matchRate = (bestNetworkObj.matchRate !== undefined) ? bestNetworkObj.matchRate : 0;
+            const nnObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
+            bnwObj = deepcopy(nnObj.network);
 
-          console.log(chalkAlert(">>> NEW BEST RUNTIME NETWORK"
-            + " | " + bestNetworkObj.networkId 
-            + " | SUCCESS: " + bestNetworkObj.successRate.toFixed(2) 
-            + " | MATCH: " + bestNetworkObj.matchRate.toFixed(2) 
-            // + "\n\n"
-          ));
+            bnwObj.matchRate = (bnwObj.matchRate !== undefined) ? bnwObj.matchRate : 0;
 
-          printNetworkObj("LOADED NETWORK", bestNetworkObj);
-
-          Object.keys(bestNetworkObj.inputsObj.inputs).forEach(function(type){
-            debug(chalkNetwork("NN INPUTS TYPE" 
-              + " | " + type
-              + " | INPUTS: " + bestNetworkObj.inputsObj.inputs[type].length
+            console.log(chalkAlert(">>> NEW BEST RUNTIME NETWORK"
+              + " | " + bnwObj.networkId 
+              + " | SUCCESS: " + bnwObj.successRate.toFixed(2) 
+              + " | MATCH: " + bnwObj.matchRate.toFixed(2) 
+              // + "\n\n"
             ));
-            inputArrays[type] = bestNetworkObj.inputsObj.inputs[type];
-          });
+
+            printNetworkObj("LOADED NETWORK", bnwObj);
+
+            Object.keys(bnwObj.inputsObj.inputs).forEach(function(type){
+              debug(chalkNetwork("NN INPUTS TYPE" 
+                + " | " + type
+                + " | INPUTS: " + bnwObj.inputsObj.inputs[type].length
+              ));
+              inputArrays[type] = bnwObj.inputsObj.inputs[type];
+            });
+
+          }
+          else {
+
+            const nnObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
+            bnwObj = deepcopy(nnObj.network);
+
+            bnwObj.matchRate = (bnwObj.matchRate !== undefined) ? bnwObj.matchRate : 0;
+
+            console.log(chalkAlert("... UPDATED BEST RUNTIME NETWORK"
+              + " | " + bnwObj.networkId 
+              + " | SUCCESS: " + bnwObj.successRate.toFixed(2) 
+              + " | MATCH: " + bnwObj.matchRate.toFixed(2) 
+              // + "\n\n"
+            ));
+
+            printNetworkObj("LOADED NETWORK", bnwObj);
+
+          }
+
+          if (bnwObj.inputsObj.inputs.images === undefined) { bnwObj.inputsObj.inputs.images = ["businesss"]; }
+
+          statsObj.bestRuntimeNetworkId = bestRuntimeNetworkId;
+          statsObj.currentBestNetworkId = bnwObj.networkId;
+          statsObj.network.networkId = bnwObj.networkId;
+          statsObj.network.networkType = bnwObj.networkType;
+          statsObj.network.successRate = bnwObj.successRate;
+          statsObj.network.input = bnwObj.network.input;
+          statsObj.network.output = bnwObj.network.output;
+          statsObj.network.evolve = {};
+          statsObj.network.evolve = bnwObj.evolve;
+          statsObj.network.evolve.options.networkObj = null;
 
         }
-        else {
-          bestNetworkObj = results.best;
-        }
+        // else {
+        //   bnwObj = results.best;
+        // }
 
-        if (bestNetworkObj.inputsObj.inputs.images === undefined) { bestNetworkObj.inputsObj.inputs.images = ["businesss"]; }
 
-        statsObj.bestRuntimeNetworkId = bestRuntimeNetworkId;
-        statsObj.currentBestNetworkId = bestNetworkObj.networkId;
-        statsObj.network.networkId = bestNetworkObj.networkId;
-        statsObj.network.networkType = bestNetworkObj.networkType;
-        statsObj.network.successRate = bestNetworkObj.successRate;
-        statsObj.network.input = bestNetworkObj.network.input;
-        statsObj.network.output = bestNetworkObj.network.output;
-        statsObj.network.evolve = {};
-        statsObj.network.evolve = bestNetworkObj.evolve;
-        statsObj.network.evolve.options.networkObj = null;
+        // statsObj.bestRuntimeNetworkId = bestRuntimeNetworkId;
+        // statsObj.currentBestNetworkId = bnwObj.networkId;
+        // statsObj.network.networkId = bnwObj.networkId;
+        // statsObj.network.networkType = bnwObj.networkType;
+        // statsObj.network.successRate = bnwObj.successRate;
+        // statsObj.network.input = bnwObj.network.input;
+        // statsObj.network.output = bnwObj.network.output;
+        // statsObj.network.evolve = {};
+        // statsObj.network.evolve = bnwObj.evolve;
+        // statsObj.network.evolve.options.networkObj = null;
 
-        callback(null, bestNetworkObj);
+        callback(null, bnwObj);
 
       });
 
