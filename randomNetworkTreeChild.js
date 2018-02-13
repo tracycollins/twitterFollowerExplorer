@@ -426,7 +426,8 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       statsObj.bestNetwork = deepcopy(statsObj.loadedNetworks[nnId]);
     }
 
-    if (expectedOutput) {
+    if (expectedOutput 
+      && (expectedOutput[0] === 1 || expectedOutput[1] === 1 || expectedOutput[2] === 1)) {
 
       statsObj.loadedNetworks[nnId].total += 1;
 
