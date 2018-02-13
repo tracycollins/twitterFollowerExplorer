@@ -163,6 +163,7 @@ const Slack = require("slack-node");
 require("isomorphic-fetch");
 // const Dropbox = require('dropbox').Dropbox;
 const Dropbox = require("./js/dropbox").Dropbox;
+
 const os = require("os");
 const util = require("util");
 const arrayNormalize = require("array-normalize");
@@ -3611,7 +3612,7 @@ let currentBestNetworkId = false;
 
 function loadBestNeuralNetworkFile(callback){
 
-  console.log(chalklog("... LOADING DROPBOX NEURAL NETWORKS"
+  console.log(chalkLog("... LOADING DROPBOX NEURAL NETWORKS"
     + " | FOLDER: " + bestNetworkFolder
     + " | TIMEOUT: " + DEFAULT_DROPBOX_TIMEOUT + " MS"
   ));
