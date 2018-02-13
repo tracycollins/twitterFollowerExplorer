@@ -3484,7 +3484,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             bestNetworkHashMap.set(networkObj.networkId, hmObj);
 
-            // if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
             if (!currentBestNetwork || (networkObj.matchRate > currentBestNetwork.matchRate)) {
               // currentBestNetwork = {};
               currentBestNetwork = networkObj;
@@ -3502,7 +3501,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
                 saveFileQueue.push({folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj });
               }
             }
-            cb();
+            async.setImmediate(function() { cb(); });
 
           });
         }
@@ -3512,11 +3511,11 @@ function loadBestNetworkDropboxFolder(folder, callback){
             // + " | " + getTimeStamp(entry.client_modified)
           ));
 
-          cb();
+          async.setImmediate(function() { cb(); });
         }
       }
       else if (networkId === "bestRuntimeNetworkId") {
-        cb();
+        async.setImmediate(function() { cb(); });
       }
       else {
 
@@ -3527,8 +3526,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
             return(cb());
           }
 
-          // if ((networkObj.network.input === statsObj.totalInputs) 
-          //   && (networkObj.successRate >= configuration.minSuccessRate)) {
           if (networkObj.successRate >= configuration.minSuccessRate) {
 
             if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
@@ -3547,7 +3544,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             availableNeuralNetHashMap[networkObj.networkId] = true;
 
-            // if (!currentBestNetwork || (networkObj.successRate > currentBestNetwork.successRate)) {
             if (!currentBestNetwork || (networkObj.matchRate > currentBestNetwork.matchRate)) {
               currentBestNetwork = networkObj;
               prevBestNetworkId = bestRuntimeNetworkId;
@@ -3566,7 +3562,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
               }
             }
 
-            cb();
+            async.setImmediate(function() { cb(); });
+
           }
           else {
             console.log(chalkInfo("--- DROPBOX NETWORK"
@@ -3577,7 +3574,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
               + " | IN: " + networkObj.numInputs
               + " | OUT: " + networkObj.numOutputs
             ));
-            cb();
+            async.setImmediate(function() { cb(); });
           }
 
         });
