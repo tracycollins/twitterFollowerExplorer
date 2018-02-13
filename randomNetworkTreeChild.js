@@ -819,9 +819,9 @@ function initActivateNetworkInterval(interval){
                       + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
                       + " | TOT: " + statsObj.bestNetwork.total
                       + " | MATCH: " + statsObj.bestNetwork.match
-                      + " | L: " + statsObj.bestNetwork.left
-                      + " | N: " + statsObj.bestNetwork.neutral
-                      + " | R: " + statsObj.bestNetwork.right
+                      // + " | L: " + statsObj.bestNetwork.left
+                      // + " | N: " + statsObj.bestNetwork.neutral
+                      // + " | R: " + statsObj.bestNetwork.right
                       + " | @" + obj.user.screenName
                       + " | KWs: " + kw
                       + " | KWAs: " + Object.keys(obj.user.keywordsAuto)
@@ -836,9 +836,9 @@ function initActivateNetworkInterval(interval){
                       + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
                       + " | TOT: " + statsObj.bestNetwork.total
                       + " | MATCH: " + statsObj.bestNetwork.match
-                      + " | L: " + statsObj.bestNetwork.left
-                      + " | N: " + statsObj.bestNetwork.neutral
-                      + " | R: " + statsObj.bestNetwork.right
+                      // + " | L: " + statsObj.bestNetwork.left
+                      // + " | N: " + statsObj.bestNetwork.neutral
+                      // + " | R: " + statsObj.bestNetwork.right
                       + " | @" + obj.user.screenName
                       + " | KWs: " + kw
                       + " | KWAs: " + Object.keys(obj.user.keywordsAuto)

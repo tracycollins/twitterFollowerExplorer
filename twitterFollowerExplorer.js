@@ -4119,12 +4119,13 @@ initialize(configuration, function(err, cnf){
     loadBestNeuralNetworkFile(function(err, nnObj){
 
       if (err) {
-        neuralNetworkInitialized = false;
+        // neuralNetworkInitialized = false;
         console.log(chalkError("*** LOAD BEST NETWORK ERROR\n" + jsonPrint(err)));
         console.error("*** LOAD BEST NETWORK ERROR\n" + jsonPrint(err));
+        return;
       }
 
-      if (nnObj) { debug("nnObj: " + nnObj.networkId); }
+      // if (nnObj) { debug("nnObj: " + nnObj.networkId); }
 
       neuralNetworkInitialized = true;
 
