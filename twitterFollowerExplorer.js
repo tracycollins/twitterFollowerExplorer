@@ -1731,7 +1731,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
               const fileObj = {
                 networkId: bestRuntimeNetworkId, 
                 successRate: m.bestNetwork.successRate, 
-                matchRate:  m.bestNetwork.matchRate
+                matchRate:  m.bestNetwork.matchRate,
+                updatedAt: moment()
               };
 
               const file = bestRuntimeNetworkId + ".json";
