@@ -301,7 +301,7 @@ function initAnalyzeLanguageInterval(interval){
           statsObj.analyzer.errors += 1;
 
           if (err.code === 3) {
-            console.log(chalkAlert("LAC [RXLQ: " + rxLangObjQueue.length + "]"
+            debug(chalkAlert("LAC [RXLQ: " + rxLangObjQueue.length + "]"
               + " | UNSUPPORTED LANG"
               + " | " + langObj.obj.userId
               + " | @" + langObj.obj.screenName

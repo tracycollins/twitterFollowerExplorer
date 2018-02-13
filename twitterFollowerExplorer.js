@@ -1057,7 +1057,7 @@ function checkRateLimit(callback){
       statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
       statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
 
-      console.log(chalkInfo("TWITTER RATE LIMIT STATUS"
+      console.log(chalkLog("TWITTER RATE LIMIT STATUS"
         + " | " + getTimeStamp()
         + " | LIMIT " + statsObj.user[currentTwitterUser].twitterRateLimit
         + " | REMAINING " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
@@ -1915,7 +1915,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
               }, 1000);
             }
             else if (m.error.code === 3){ // LANGUAGE unsupported
-              console.log(chalkInfo("... LANG ERROR ... UNSUPPORTED LANG"
+              console.log(chalkLog("... LANG ERROR ... UNSUPPORTED LANG"
                 + " | " + m.obj.userId
                 + " | " + m.obj.screenName
                 + " | CODE: " + m.error.code
@@ -2408,13 +2408,13 @@ function printHistogram(title, hist){
     tableArray.push([hist[label], label]);
     cb();
   }, function(){
-    console.log(
+    console.log(chalkInfo(
         "\n--------------------------------------------------------------"
       + "\n" + title + " | " + sortedLabels.length + " ENTRIES"  
       + "\n--------------------------------------------------------------\n"
       + table(tableArray, { align: [ "r", "l"] })
       + "\n--------------------------------------------------------------\n"
-    );
+    ));
   });
 }
 
@@ -2798,7 +2798,7 @@ function checkUserWordKeys(user, callback){
       callback(null, kws);
     }
     else if (!word.keywords || (Object.keys(word.keywords).length === 0)) {
-      console.log("WORD-USER NO KW KEYS"
+      debug("WORD-USER NO KW KEYS"
         + " | @" + user.screenName.toLowerCase()
       );
       callback(null, kws);
@@ -3054,10 +3054,10 @@ function fetchFriends(params, callback) {
   debug(chalkInfo("FETCH FRIENDS\n" + jsonPrint(params)));
 
   if (nextUser) {
-    console.log("fetchFriends"
+    console.log(chalkLog("fetchFriends"
       + " | CURRENT: @" + currentTwitterUser 
       + " | NEXT USER: " + nextUser
-    );
+    ));
     callback(null, []);
   }
   else if (
@@ -3141,7 +3141,7 @@ function fetchFriends(params, callback) {
             debug("PROCESSED USER\n" + jsonPrint(user));
 
             if (statsObj.user[currentTwitterUser].friendsProcessed % 50 === 0) {
-              
+
               console.log(chalkLog("<FRND PROCESSED"
                 + " [ @" + currentTwitterUser + " ]"
                 + " | PROCESSED: " + statsObj.user[currentTwitterUser].friendsProcessed + "/" + statsObj.user[currentTwitterUser].friendsCount
@@ -3189,13 +3189,14 @@ function fetchFriends(params, callback) {
       ));
     }
 
-    console.log("fetchFriends"
+    console.log(chalkLog("fetchFriends"
       + " | CURRENT: @" + currentTwitterUser 
       + " | NEXT USER: " + nextUser
       + " | RATE LIMIT: " + statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag
       + " | randomNetworkTreeReadyFlag: " + randomNetworkTreeReadyFlag
       + " | languageAnalysisReadyFlag: " + languageAnalysisReadyFlag
-    )
+    ));
+
     callback(null, []);
   }
 }
@@ -3610,7 +3611,7 @@ let currentBestNetworkId = false;
 
 function loadBestNeuralNetworkFile(callback){
 
-  console.log(chalkNetwork("... LOADING DROPBOX NEURAL NETWORKS"
+  console.log(chalklog("... LOADING DROPBOX NEURAL NETWORKS"
     + " | FOLDER: " + bestNetworkFolder
     + " | TIMEOUT: " + DEFAULT_DROPBOX_TIMEOUT + " MS"
   ));
@@ -3727,7 +3728,7 @@ function updateNetworkFetchFriends(){
         }
         else {
 
-          console.log(chalkInfo("FETCH FRIENDS" 
+          console.log(chalkLog("FETCH FRIENDS" 
             + " | @" + currentTwitterUser
             + " | FETCHED " + subFriendsSortedArray.length
           ));
