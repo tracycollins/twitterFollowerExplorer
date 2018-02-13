@@ -3640,7 +3640,6 @@ function loadBestNeuralNetworkFile(callback){
 
         let bnwObj;
 
-        // if (bestRuntimeNetworkId && bestNetworkHashMap.has(bestRuntimeNetworkId) && (currentBestNetworkId !== bestRuntimeNetworkId)) {
         if (bestRuntimeNetworkId && bestNetworkHashMap.has(bestRuntimeNetworkId)) {
 
           if (currentBestNetworkId !== bestRuntimeNetworkId) {
@@ -3700,11 +3699,23 @@ function loadBestNeuralNetworkFile(callback){
           statsObj.network.evolve = {};
           statsObj.network.evolve = bnwObj.evolve;
           statsObj.network.evolve.options.networkObj = null;
-
         }
-        // else {
-        //   bnwObj = results.best;
-        // }
+        else if (currentBestNetworkId && bestNetworkHashMap.has(currentBestNetworkId)) {
+
+          const nnObj = bestNetworkHashMap.get(currentBestNetworkId);
+          bnwObj = deepcopy(nnObj.network);
+
+          bnwObj.matchRate = (bnwObj.matchRate !== undefined) ? bnwObj.matchRate : 0;
+
+          console.log(chalkAlert("... UPDATED BEST RUNTIME NETWORK"
+            + " | " + bnwObj.networkId 
+            + " | SUCCESS: " + bnwObj.successRate.toFixed(2) 
+            + " | MATCH: " + bnwObj.matchRate.toFixed(2) 
+            // + "\n\n"
+          ));
+
+          printNetworkObj("LOADED NETWORK", bnwObj);
+        }
 
 
         // statsObj.bestRuntimeNetworkId = bestRuntimeNetworkId;
@@ -3737,7 +3748,7 @@ function updateNetworkFetchFriends(){
       return;
     }
 
-    debug("updateNetworkFetchFriends: nnObj: " + nnObj.networkId);
+    // debug("updateNetworkFetchFriends: nnObj: " + nnObj.networkId);
 
     let params = {};
     params.count = statsObj.user[currentTwitterUser].count;
