@@ -426,8 +426,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       statsObj.bestNetwork = deepcopy(statsObj.loadedNetworks[nnId]);
     }
 
-    if (expectedOutput 
-      && (expectedOutput[0] === 1 || expectedOutput[1] === 1 || expectedOutput[2] === 1)) {
+    if (expectedOutput[0] === 1 || expectedOutput[1] === 1 || expectedOutput[2] === 1) {
 
       statsObj.loadedNetworks[nnId].total += 1;
 
@@ -790,7 +789,7 @@ function initActivateNetworkInterval(interval){
                 title = title + " | MKW: RIGHT";
               break;
               default:
-                expectedOutput = false;
+                expectedOutput = [0,0,0];
                 title = title + " | MKW: ---";
                 enableLog = false;
              }
@@ -831,8 +830,10 @@ function initActivateNetworkInterval(interval){
 
                   }
                   else {
+
                     statsObj.categorize.mismatch += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
+
                     console.log(chalk.red("--- AUTO KEYWORD MISS "
                       + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
                       + " | TOT: " + statsObj.bestNetwork.total

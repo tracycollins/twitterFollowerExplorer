@@ -1716,7 +1716,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             hmObj.network.matchRate = m.bestNetwork.matchRate;
             hmObj.network.successRate = m.bestNetwork.successRate;
 
-            currentBestNetwork = hmObj.network;
+            currentBestNetwork = deepcopy(hmObj.network);
             currentBestNetwork.matchRate = m.bestNetwork.matchRate;
             currentBestNetwork.successRate = m.bestNetwork.successRate;
 
@@ -1779,7 +1779,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             hmObj = bestNetworkHashMap.get(m.networkId);
             hmObj.network.matchRate = m.matchRate;
 
-            currentBestNetwork = hmObj.network;
+            currentBestNetwork = deepcopy(hmObj.network);
             currentBestNetwork.matchRate = m.matchRate;
 
             bestNetworkHashMap.set(m.networkId, hmObj);
@@ -2150,7 +2150,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
 function getUserKeyword(keywords, callback) {
 
-  let keyword = false;
+  let keyword = "none";
 
   const keys = Object.keys(keywords);
 
@@ -2265,8 +2265,8 @@ function classifyUser(user, callback){
                 classManualText = "-";
                 statsObj.classification.manual.negative += 1;
               break;
-              case false:
-                classManualText = " ";
+              case "none":
+                classManualText = "0";
                 statsObj.classification.manual.none += 1;
               break;
               default:
@@ -2323,14 +2323,14 @@ function classifyUser(user, callback){
                 chalkAutoCurrent = chalk.bold.yellow;
                 statsObj.classification.auto.negative += 1;
               break;
-              case false:
-                classAutoText = " ";
+              case "none":
+                classAutoText = "0";
                 chalkAutoCurrent = chalk.black;
                 statsObj.classification.auto.none += 1;
               break;
               default:
                 classAutoText = akw;
-                chalkAutoCurrent = chalk.black;
+                chalkAutoCurrent = chalk.bold.black;
                 statsObj.classification.auto.other += 1;
             }
             cb();
@@ -3486,7 +3486,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             if (!currentBestNetwork || (networkObj.matchRate > currentBestNetwork.matchRate)) {
               // currentBestNetwork = {};
-              currentBestNetwork = networkObj;
+              currentBestNetwork = deepcopy(networkObj);
               prevBestNetworkId = bestRuntimeNetworkId;
               bestRuntimeNetworkId = networkObj.networkId;
               newBestNetwork = true;
@@ -3514,9 +3514,9 @@ function loadBestNetworkDropboxFolder(folder, callback){
           async.setImmediate(function() { cb(); });
         }
       }
-      else if (networkId === "bestRuntimeNetworkId") {
-        async.setImmediate(function() { cb(); });
-      }
+      // else if (networkId === "bestRuntimeNetworkId") {
+      //   async.setImmediate(function() { cb(); });
+      // }
       else {
 
         loadFile(folder, entry.name, function(err, networkObj){
@@ -3545,7 +3545,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             availableNeuralNetHashMap[networkObj.networkId] = true;
 
             if (!currentBestNetwork || (networkObj.matchRate > currentBestNetwork.matchRate)) {
-              currentBestNetwork = networkObj;
+              currentBestNetwork = deepcopy(networkObj);
               prevBestNetworkId = bestRuntimeNetworkId;
               bestRuntimeNetworkId = networkObj.networkId;
               newBestNetwork = true;
@@ -3699,6 +3699,8 @@ function loadBestNeuralNetworkFile(callback){
           statsObj.network.evolve = {};
           statsObj.network.evolve = bnwObj.evolve;
           statsObj.network.evolve.options.networkObj = null;
+
+          callback(null, bnwObj);
         }
         else if (currentBestNetworkId && bestNetworkHashMap.has(currentBestNetworkId)) {
 
@@ -3715,6 +3717,7 @@ function loadBestNeuralNetworkFile(callback){
           ));
 
           printNetworkObj("LOADED NETWORK", bnwObj);
+          callback(null, bnwObj);
         }
 
 
@@ -3729,7 +3732,7 @@ function loadBestNeuralNetworkFile(callback){
         // statsObj.network.evolve = bnwObj.evolve;
         // statsObj.network.evolve.options.networkObj = null;
 
-        callback(null, bnwObj);
+        // callback(null, bnwObj);
 
       });
 
