@@ -3588,7 +3588,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
       if (newBestNetwork) {
         newBestNetwork = false;
-        statsObj.bestRuntimeNetworkId = currentBestNetwork.networkId;
+        // statsObj.bestRuntimeNetworkId = currentBestNetwork.networkId;
         printNetworkObj("BEST NETWORK", currentBestNetwork);
       }
 
@@ -4116,54 +4116,54 @@ initialize(configuration, function(err, cnf){
     initLangAnalyzerMessageRxQueueInterval(100);
     initLangAnalyzer();
 
-    loadBestNeuralNetworkFile(function(err, nnObj){
+    // loadBestNeuralNetworkFile(function(err, nnObj){
 
-      if (err) {
-        // neuralNetworkInitialized = false;
-        console.log(chalkError("*** LOAD BEST NETWORK ERROR\n" + jsonPrint(err)));
-        console.error("*** LOAD BEST NETWORK ERROR\n" + jsonPrint(err));
-        return;
-      }
+    //   if (err) {
+    //     // neuralNetworkInitialized = false;
+    //     console.log(chalkError("*** LOAD BEST NETWORK ERROR\n" + jsonPrint(err)));
+    //     console.error("*** LOAD BEST NETWORK ERROR\n" + jsonPrint(err));
+    //     return;
+    //   }
 
       // if (nnObj) { debug("nnObj: " + nnObj.networkId); }
 
-      neuralNetworkInitialized = true;
+    neuralNetworkInitialized = true;
 
-      initTwitterUsers(function(e){
+    initTwitterUsers(function(e){
 
-        if (e) {
-          console.error(chalkError("*** ERROR INIT TWITTER USERS: " + e));
-          return quit(e);
+      if (e) {
+        console.error(chalkError("*** ERROR INIT TWITTER USERS: " + e));
+        return quit(e);
+      }
+
+      if (currentTwitterUser === undefined) { 
+        currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
+      }
+
+      console.log(chalkTwitter("CURRENT TWITTER USER: " + currentTwitterUser));
+
+      checkRateLimit();
+      initCheckRateLimitInterval(checkRateLimitIntervalTime);
+      
+      if (cnf.userDbCrawl) { 
+        console.log(chalkTwitter("\n\n*** CRAWLING USER DB ***\n\n"));
+      }
+      else {
+        console.log(chalkTwitter("\n\n*** GET TWITTER FRIENDS ***"
+          + " [ USER INDEX: " + currentTwitterUserIndex + "]"
+          + " | @" + statsObj.user[currentTwitterUser].screenName
+          + "\n\n"
+        ));
+        debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[currentTwitterUser]) + "\n\n"));
+
+        if (cnf.testMode) {
+          fetchTwitterFriendsIntervalTime = TEST_TWITTER_FETCH_FRIENDS_INTERVAL;
         }
-
-        if (currentTwitterUser === undefined) { 
-          currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
-        }
-
-        console.log(chalkTwitter("CURRENT TWITTER USER: " + currentTwitterUser));
-
-        checkRateLimit();
-        initCheckRateLimitInterval(checkRateLimitIntervalTime);
-        
-        if (cnf.userDbCrawl) { 
-          console.log(chalkTwitter("\n\n*** CRAWLING USER DB ***\n\n"));
-        }
-        else {
-          console.log(chalkTwitter("\n\n*** GET TWITTER FRIENDS ***"
-            + " [ USER INDEX: " + currentTwitterUserIndex + "]"
-            + " | @" + statsObj.user[currentTwitterUser].screenName
-            + "\n\n"
-          ));
-          debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[currentTwitterUser]) + "\n\n"));
-
-          if (cnf.testMode) {
-            fetchTwitterFriendsIntervalTime = TEST_TWITTER_FETCH_FRIENDS_INTERVAL;
-          }
-          initFetchTwitterFriendsInterval(fetchTwitterFriendsIntervalTime);
-          fsm.fetchStart();
-        }
-      });
+        initFetchTwitterFriendsInterval(fetchTwitterFriendsIntervalTime);
+        fsm.fetchStart();
+      }
     });
+    // });
 
   });
 });
