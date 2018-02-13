@@ -82,7 +82,7 @@ const twitterImageParser = require("@threeceelabs/twitter-image-parser");
 let currentBestNetwork;
 
 const LANGUAGE_ANALYZE_INTERVAL = 1000;
-const RANDOM_NETWORK_TREE_INTERVAL = 250;
+const RANDOM_NETWORK_TREE_INTERVAL = 50;
 
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
@@ -1623,6 +1623,34 @@ function initCheckRateLimitInterval(interval){
   }, interval);
 }
 
+function updateNetworkStats(networkStatsObj, callback) {
+  const nnIds = Object.keys(networkStatsObj);
+
+  async.eachSeries(nnIds, function(nnId, cb) {
+
+    if (bestNetworkHashMap.has(nnId)) {
+      let networkObj = bestNetworkHashMap.get(nnId);
+      networkObj.network.matchRate = networkStatsObj[nnId].matchRate;
+      bestNetworkHashMap.set(nnId, networkObj);
+      console.log(chalkNetwork("... UPDATED NETWORK MATCHRATE"
+        + " | " + networkObj.network.matchRate.toFixed(2)
+        + " | " + networkObj.network.networkId
+      ));
+      cb();
+    }
+    else {
+      console.log(chalkNetwork("??? NETWORK NOT IN BEST NETWORK HASHMAP ???"
+        + " | " + nnId
+      ));
+      cb();
+    }
+
+  }, function(err){
+    if (callback !== undefined) { callback(); }
+  });
+
+}
+
 function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
   randomNetworkTreeMessageRxQueueReady = true;
@@ -1637,7 +1665,6 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
       let m = randomNetworkTreeMessageRxQueue.shift();
 
-
       let user = {};
       let entry = {};
       let hmObj = {};
@@ -1651,11 +1678,15 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         break;
 
         case "STATS":
-          randomNetworkTreeMessageRxQueueReady = true;
-          randomNetworkTreeReadyFlag = true;
           console.log(chalkAlert(getTimeStamp() + " | RNT_STATS"
-            + " | " + jsonPrint(m.statsObj)
+            + "\n" + jsonPrint(Object.keys(m.statsObj))
           ));
+
+          updateNetworkStats(m.statsObj.loadedNetworks, function(){
+            randomNetworkTreeMessageRxQueueReady = true;
+            randomNetworkTreeReadyFlag = true;
+          });
+
         break;
 
         case "NETWORK_READY":
@@ -1701,7 +1732,6 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         break;
 
         case "NETWORK_OUTPUT":
-
 
           debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
 
@@ -3279,8 +3309,8 @@ function processFriends(callback){
       twitterTextParser.clearGlobalHistograms();
       twitterImageParser.clearGlobalHistograms();
 
-      randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
-      });
+      // randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
+      // });
 
       currentTwitterUserIndex = 0;
       currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];

@@ -422,9 +422,9 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
     statsObj.loadedNetworks[nnId].output = nnOutput;
 
-    if (!statsObj.bestNetwork.networkId) { 
-      statsObj.bestNetwork = deepcopy(statsObj.loadedNetworks[nnId]);
-    }
+    // if (!statsObj.bestNetwork.networkId) { 
+    //   statsObj.bestNetwork = deepcopy(statsObj.loadedNetworks[nnId]);
+    // }
 
     if (expectedOutput[0] === 1 || expectedOutput[1] === 1 || expectedOutput[2] === 1) {
 
@@ -796,6 +796,7 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
                     console.log(chalk.blue("+++ AUTO KEYWORD MATCH"
+                      + " | " + statsObj.bestNetwork.networkId
                       + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
                       + " | TOT: " + statsObj.bestNetwork.total
                       + " | MATCH: " + statsObj.bestNetwork.match
@@ -815,6 +816,7 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
                     console.log(chalk.red("--- AUTO KEYWORD MISS "
+                      + " | " + statsObj.bestNetwork.networkId
                       + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
                       + " | TOT: " + statsObj.bestNetwork.total
                       + " | MATCH: " + statsObj.bestNetwork.match
