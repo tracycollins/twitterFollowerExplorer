@@ -212,6 +212,7 @@ statsObj.startTimeMoment = moment();
 statsObj.pid = process.pid;
 statsObj.userAuthenticated = false;
 statsObj.serverConnected = false;
+statsObj.heartbeatsReceived = 0;
 
 const TFE_RUN_ID = hostname 
   + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat)
@@ -1220,14 +1221,9 @@ function initSocket(cnf, callback){
     reset("SESSION_EXPIRED");
   });
 
-  // socket.on("disconnect", function(){
-  //   statsObj.userAuthenticated = false ;
-  //   statsObj.serverConnected = false;
-  //   console.log(chalkConnect(moment().format(compactDateTimeFormat)
-  //     + " | SOCKET DISCONNECT: " + socket.id
-  //   ));
-  //   reset("disconnect");
-  // });
+  socket.on("DROPBOX_CHANGE", function(response){
+    console.log(chalkAlert("RX DROPBOX_CHANGE | " + jsonPrint(response)));
+  });
 
   socket.on("HEARTBEAT", function(){
     statsObj.heartbeatsReceived += 1;
