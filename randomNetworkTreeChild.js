@@ -483,7 +483,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       statsObj.bestNetwork.matchRate = (statsObj.bestNetwork.matchRate === undefined) ? 0 : statsObj.bestNetwork.matchRate;
 
 
-      console.log(chalkLog("BEST NETWORK"
+      debug(chalkLog("BEST NETWORK"
         + " | " + statsObj.bestNetwork.networkId
         + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
         + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"

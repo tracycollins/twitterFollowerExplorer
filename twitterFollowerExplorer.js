@@ -1228,10 +1228,10 @@ function initSocket(cnf, callback){
     ));
     
     response.entries.forEach(function(entry){
-      console.log(chalkAlert("ENTRY"
-        + " | TYPE: " + entry[".tag"]
-        + " | PATH: " + entry.path_lower
-        + " | NAME: " + entry.name
+      console.log(chalkAlert(">R DROPBOX_CHANGE"
+        + " | " + entry[".tag"].toUpperCase()
+        + " | " + entry.path_lower
+        // + " | NAME: " + entry.name
       ));
     });
 
