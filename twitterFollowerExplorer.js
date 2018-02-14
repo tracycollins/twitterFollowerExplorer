@@ -166,8 +166,8 @@ const slackChannel = "#tfe";
 const Slack = require("slack-node");
 
 require("isomorphic-fetch");
-const Dropbox = require("dropbox").Dropbox;
-// const Dropbox = require("./js/dropbox").Dropbox;
+// const Dropbox = require("dropbox").Dropbox;
+const Dropbox = require("./js/dropbox").Dropbox;
 
 const os = require("os");
 const util = require("util");
@@ -1222,7 +1222,18 @@ function initSocket(cnf, callback){
   });
 
   socket.on("DROPBOX_CHANGE", function(response){
-    console.log(chalkAlert("RX DROPBOX_CHANGE | " + jsonPrint(response)));
+    console.log(chalkAlert(">>> RX DROPBOX_CHANGE"
+      + " | " + jsonPrint(response)
+    ));
+    
+    response.entries.forEach(function(entry){
+      console.log(chalkAlert("ENTRY"
+        + " | TYPE: " + entry[".tag"]
+        + " | PATH: " + entry.path_lower
+        + " | NAME: " + entry.name
+      ));
+    });
+
   });
 
   socket.on("HEARTBEAT", function(){
@@ -3829,7 +3840,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
   dropboxClient.filesListFolder(options)
   .then(function(response){
 
-    clearTimeout(loadDropboxFolderTimeout);
+    // clearTimeout(loadDropboxFolderTimeout);
 
     if (response.entries.length === 0) {
       console.log(chalkLog("TFE | NO DROPBOX NETWORKS FOUND"
@@ -4028,7 +4039,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
   })
   .catch(function(err){
 
-    clearTimeout(loadDropboxFolderTimeout);
+    // clearTimeout(loadDropboxFolderTimeout);
 
     console.log(chalkError("loadBestNetworkDropboxFolder *** DROPBOX FILES LIST FOLDER ERROR"
       + "\nOPTIONS: " + jsonPrint(options)
