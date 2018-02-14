@@ -409,14 +409,22 @@ const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean, defa
 const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean};
 const testMode = { name: "testMode", alias: "X", type: Boolean, defaultValue: false};
 const loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
+const targetServer = { name: "targetServer", alias: "t", type: String};
 
-const optionDefinitions = [enableStdin, quitOnError, quitOnComplete, loadNeuralNetworkID, userDbCrawl, testMode];
+const optionDefinitions = [enableStdin, targetServer, quitOnError, quitOnComplete, loadNeuralNetworkID, userDbCrawl, testMode];
 
 const commandLineConfig = cla(optionDefinitions);
 
 console.log(chalkInfo("COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
 
 console.log("COMMAND LINE OPTIONS\n" + jsonPrint(commandLineConfig));
+
+if (commandLineConfig.targetServer === "LOCAL"){
+  commandLineConfig.targetServer = "http://127.0.0.1:9997/util";
+}
+if (commandLineConfig.targetServer === "REMOTE"){
+  commandLineConfig.targetServer = "http://word.threeceelabs.com/util";
+}
 
 process.title = "twitterFollowerExplorer";
 console.log("\n\n=================================");
