@@ -471,8 +471,14 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     .then(function(sortedNetworkResults){
 
       debugger;
+
+      let bnId = sortedNetworkResults.sortedKeys[0];
+
+      if (bnId === "multiNeuralNet") { bnId = sortedNetworkResults.sortedKeys[1]; }
       
-      statsObj.bestNetwork = deepcopy(statsObj.loadedNetworks[sortedNetworkResults.sortedKeys[0]]);
+      statsObj.bestNetwork = deepcopy(statsObj.loadedNetworks[bnId]);
+
+      debug(chalkAlert("sortedNetworkResults.sortedKeys\n" + jsonPrint(sortedNetworkResults.sortedKeys)));
 
       statsObj.bestNetwork.matchRate = (statsObj.bestNetwork.matchRate === undefined) ? 0 : statsObj.bestNetwork.matchRate;
 
