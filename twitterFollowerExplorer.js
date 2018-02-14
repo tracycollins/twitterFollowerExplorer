@@ -1742,6 +1742,11 @@ function initialize(cnf, callback){
     if (!err) {
       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
 
+      if (loadedConfigObj.TFE_UTIL_TARGET_SERVER !== undefined){
+        console.log("LOADED TFE_UTIL_TARGET_SERVER: " + loadedConfigObj.TFE_UTIL_TARGET_SERVER);
+        cnf.targetServer = loadedConfigObj.TFE_UTIL_TARGET_SERVER;
+      }
+
       if (loadedConfigObj.TFE_TEST_MODE !== undefined){
         console.log("LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
         cnf.testMode = loadedConfigObj.TFE_TEST_MODE;
@@ -4573,8 +4578,6 @@ initialize(configuration, function(err, cnf){
 
     neuralNetworkInitialized = true;
 
-    initSocket(cnf, function(err, result){});
-
     initTwitterUsers(function(e){
 
       if (e) {
@@ -4590,7 +4593,8 @@ initialize(configuration, function(err, cnf){
 
       checkRateLimit();
       initCheckRateLimitInterval(checkRateLimitIntervalTime);
-      
+      initSocket(cnf, function(err, result){});
+
       if (cnf.userDbCrawl) { 
         console.log(chalkTwitter("\n\n*** CRAWLING USER DB ***\n\n"));
       }
