@@ -470,13 +470,14 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: 100})
     .then(function(sortedNetworkResults){
 
-      // console.log(chalkAlert("SORTED NN IDs: " + jsonPrint(sortedNetworkResults)));
-
+      debugger;
+      
       statsObj.bestNetwork = deepcopy(statsObj.loadedNetworks[sortedNetworkResults.sortedKeys[0]]);
 
       statsObj.bestNetwork.matchRate = (statsObj.bestNetwork.matchRate === undefined) ? 0 : statsObj.bestNetwork.matchRate;
 
-      debug(chalkLog("BEST NETWORK"
+
+      console.log(chalkLog("BEST NETWORK"
         + " | " + statsObj.bestNetwork.networkId
         + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
         + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"

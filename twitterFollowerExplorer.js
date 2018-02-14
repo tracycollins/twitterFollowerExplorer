@@ -4,7 +4,7 @@
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
-const DEFAULT_DROPBOX_TIMEOUT = 10 * ONE_SECOND;
+const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
 const OFFLINE_MODE = false;
 
 const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 20; // ms
@@ -161,8 +161,8 @@ const slackChannel = "#tfe";
 const Slack = require("slack-node");
 
 require("isomorphic-fetch");
-// const Dropbox = require('dropbox').Dropbox;
-const Dropbox = require("./js/dropbox").Dropbox;
+const Dropbox = require("dropbox").Dropbox;
+// const Dropbox = require("./js/dropbox").Dropbox;
 
 const os = require("os");
 const util = require("util");
@@ -3414,15 +3414,155 @@ function initRandomNetworks(params, callback){
   });
 }
 
+function dropboxLongpoll(last_cursor, callback) {
+  dropboxClient.filesListFolderLongpoll({cursor: last_cursor, timeout: 30})
+    .then((result) => {
+      // console.log(chalkAlert("dropboxLongpoll FOLDER: " + lastCursorTruncated + "\n" + jsonPrint(result)));
+      callback(null, result);
+    })
+    .catch((err) => {
+      console.log(err);
+      callback(err, null);
+    });
+}
+
+function dropboxFolderGetLastestCursor(folder, callback) {
+
+  if (statsObj.dropbox === undefined) {
+    statsObj.dropbox = {};
+    statsObj.dropbox.lastCursors = {};
+  }
+  if (statsObj.dropbox.lastCursors[folder] === undefined) {
+    statsObj.dropbox.lastCursors[folder] = false;
+    // statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
+  }
+  let lastCursorTruncated = "";
+
+  console.log(chalkAlert("dropboxFolderGetLastestCursor FOLDER: " + folder));
+
+  if (statsObj.dropbox.lastCursors[folder]) {
+
+    lastCursorTruncated = statsObj.dropbox.lastCursors[folder].substring(0,20);
+
+    console.log(chalkAlert("dropboxFolderGetLastestCursor CURSOR: " + lastCursorTruncated));
+
+    dropboxLongpoll(statsObj.dropbox.lastCursors[folder], function(err, results){
+      console.log(chalkAlert("dropboxLongpoll CURSOR: " + lastCursorTruncated + "| CHANGES: " + results.changes));
+      if (results.changes) {
+
+        console.log(chalkAlert(">>> FOLDER CHANGE | " + folder));
+
+        dropboxClient.filesListFolderContinue({ cursor: last_cursor.cursor})
+        .then(function(response){
+          console.log(chalkAlert("filesListFolderContinue: " + jsonPrint(response)));
+          statsObj.dropbox.lastCursors[folder] = response.cursor;
+          callback(null, response);
+        })
+        .catch(function(err){
+          console.log(chalkError("dropboxFolderGetLastestCursor filesListFolder *** DROPBOX FILES LIST FOLDER ERROR"
+            // + "\nOPTIONS: " + jsonPrint(options)
+            + "\nERROR: " + err 
+            + "\nERROR: " + jsonPrint(err)
+          ));
+          callback(err, last_cursor.cursor);
+        });
+      }
+      else {
+        console.log(chalkAlert("... FOLDER NO CHANGE | " + folder));
+        callback(null, null);
+      }
+    });
+
+  }
+  else {
+
+    let optionsGetLatestCursor = {
+      path: folder,
+      recursive: false,
+      include_media_info: false,
+      include_deleted: false,
+      include_has_explicit_shared_members: false
+    };
+
+    dropboxClient.filesListFolderGetLatestCursor(optionsGetLatestCursor)
+    .then((last_cursor) => {
+
+      statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
+
+      lastCursorTruncated = last_cursor.cursor.substring(0,20);
+      // console.log(chalkAlert("last_cursor\n" + jsonPrint(last_cursor)));
+      console.log(chalkAlert("lastCursorTruncated: " + lastCursorTruncated));
+
+      dropboxLongpoll(last_cursor.cursor, function(err, results){
+
+        // console.log(chalkAlert("dropboxLongpoll CURSOR: " + lastCursorTruncated + "\n" + jsonPrint(results)));
+        console.log(chalkAlert("dropboxLongpoll CURSOR: " + lastCursorTruncated + "| CHANGES: " + results.changes));
+
+        if (results.changes) {
+
+          console.log(chalkAlert(">>> FOLDER CHANGE | " + folder));
+
+          dropboxClient.filesListFolderContinue({ cursor: last_cursor.cursor})
+          .then(function(response){
+            console.log(chalkAlert("filesListFolderContinue: " + jsonPrint(response)));
+            statsObj.dropbox.lastCursors[folder] = response.cursor;
+            callback(null, response);
+          })
+          .catch(function(err){
+            console.log(chalkError("dropboxFolderGetLastestCursor filesListFolder *** DROPBOX FILES LIST FOLDER ERROR"
+              // + "\nOPTIONS: " + jsonPrint(options)
+              + "\nERROR: " + err 
+              + "\nERROR: " + jsonPrint(err)
+            ));
+            callback(err, last_cursor.cursor);
+          });
+        }
+        else {
+          console.log(chalkAlert("... FOLDER NO CHANGE | " + folder));
+          callback(null, null);
+        }
+        // if (statsObj.dropbox === undefined) {
+        //   statsObj.dropbox = {};
+        //   statsObj.dropbox.lastCursors = {};
+        // }
+        // if (statsObj.dropbox.lastCursors[folder] === undefined) {
+        //   statsObj.dropbox.lastCursors[folder] = {};
+        //   statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
+        // }
+        // else if (statsObj.dropbox.lastCursors[folder] !== last_cursor.cursor) {
+        //   statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
+        //   console.log(chalkAlert("FOLDER CHANGE | " + folder));
+        // }
+        // else {
+        //   console.log(chalkAlert("FOLDER SAME   | " + folder));
+        // }
+
+      });
+
+    })
+    .catch((err) => {
+      console.log(err);
+      callback(err, folder);
+    });
+  }
+
+}
+
+
+
 function loadBestNetworkDropboxFolder(folder, callback){
 
   let options = {path: folder};
   let newBestNetwork = false;
 
-  let loadDropboxFolderTimeout = setTimeout(function dropboxFolderTimeout() {
-    console.log(chalkError("*** TIMEOUT FOR DROPBOX FOLDER LIST : " + DEFAULT_DROPBOX_TIMEOUT + " MS"));
-    callback("DROPBOX_TIMEOUT", null);
-  }, DEFAULT_DROPBOX_TIMEOUT);
+  // let loadDropboxFolderTimeout = setTimeout(function dropboxFolderTimeout() {
+  //   console.log(chalkError("*** TIMEOUT FOR DROPBOX FOLDER LIST : " + DEFAULT_DROPBOX_TIMEOUT + " MS"));
+  //   callback("DROPBOX_TIMEOUT", null);
+  // }, DEFAULT_DROPBOX_TIMEOUT);
+
+  // dropboxFolderGetLastestCursor(folder, function(err){
+
+  // });
 
   dropboxClient.filesListFolder(options)
   .then(function(response){
@@ -4125,6 +4265,19 @@ initialize(configuration, function(err, cnf){
       quit();
     }
   }
+
+  let dropboxFolderGetLastestCursorInterval;
+  let dropboxFolderGetLastestCursorReady = true;
+
+
+  dropboxFolderGetLastestCursorInterval = setInterval(function(){
+    if (dropboxFolderGetLastestCursorReady) {
+      dropboxFolderGetLastestCursorReady = false;
+      dropboxFolderGetLastestCursor("/config/test", function(err){
+        dropboxFolderGetLastestCursorReady = true;
+      });
+    }
+  }, 5000);
 
   console.log(chalkTwitter(cnf.processName 
     + " STARTED " + getTimeStamp() 
