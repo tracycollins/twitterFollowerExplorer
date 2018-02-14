@@ -1223,7 +1223,7 @@ function initSocket(cnf, callback){
 
   socket.on("DROPBOX_CHANGE", function(response){
     console.log(chalkAlert(">>> RX DROPBOX_CHANGE"
-      + " | " + jsonPrint(response)
+      // + " | " + jsonPrint(response)
     ));
     
     response.entries.forEach(function(entry){
