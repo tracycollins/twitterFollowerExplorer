@@ -550,60 +550,13 @@ function dropboxLongpoll(last_cursor, callback) {
 
 function dropboxFolderGetLastestCursor(folder, callback) {
 
-  if (statsObj.dropbox === undefined) {
-    statsObj.dropbox = {};
-    statsObj.dropbox.lastCursors = {};
-  }
-  if (statsObj.dropbox.lastCursors[folder] === undefined) {
-    statsObj.dropbox.lastCursors[folder] = false;
-    // statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
-  }
   let lastCursorTruncated = "";
 
-  console.log(chalkLog("dropboxFolderGetLastestCursor FOLDER: " + folder));
-
-  if (statsObj.dropbox.lastCursors[folder]) {
-
-    lastCursorTruncated = statsObj.dropbox.lastCursors[folder].substring(0,20);
-
-    console.log(chalkLog("dropboxFolderGetLastestCursor CURSOR: " + lastCursorTruncated));
-
-    dropboxLongpoll(statsObj.dropbox.lastCursors[folder], function(err, results){
-
-      console.log(chalkLog("dropboxLongpoll CURSOR: " + lastCursorTruncated + "| CHANGES: " + results.changes));
-
-      if (results.changes) {
-
-        console.log(chalkAlert("\n>>> FOLDER CHANGE 0 | " + getTimeStamp() + " | " + folder));
-
-        dropboxClient.filesListFolderContinue({ cursor: statsObj.dropbox.lastCursors[folder]})
-        // dropboxClient.filesListFolder({ path: folder})
-        .then(function(response){
-          console.log(chalkLog("filesListFolderContinue: " + jsonPrint(response)));
-          statsObj.dropbox.lastCursors[folder] = response.cursor;
-          callback(null, response);
-        })
-        .catch(function(err){
-          console.log(chalkError("dropboxFolderGetLastestCursor filesListFolder *** DROPBOX FILES LIST FOLDER ERROR"
-            // + "\nOPTIONS: " + jsonPrint(options)
-            + "\nERROR: " + err 
-            + "\nERROR: " + jsonPrint(err)
-          ));
-          callback(err, last_cursor.cursor);
-        });
-      }
-      else {
-        console.log(chalkAlert("... FOLDER NO CHANGE | " + folder));
-        callback(null, null);
-      }
-    });
-
-  }
-  else {
+  debug(chalkLog("dropboxFolderGetLastestCursor FOLDER: " + folder));
 
     let optionsGetLatestCursor = {
       path: folder,
-      recursive: false,
+      recursive: true,
       include_media_info: false,
       include_deleted: true,
       include_has_explicit_shared_members: false
@@ -612,31 +565,36 @@ function dropboxFolderGetLastestCursor(folder, callback) {
     dropboxClient.filesListFolderGetLatestCursor(optionsGetLatestCursor)
     .then((last_cursor) => {
 
-      statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
-
       lastCursorTruncated = last_cursor.cursor.substring(0,20);
-      // console.log(chalkAlert("last_cursor\n" + jsonPrint(last_cursor)));
-      console.log(chalkLog("lastCursorTruncated: " + lastCursorTruncated));
+
+      debug(chalkLog("lastCursorTruncated: " + lastCursorTruncated));
 
       dropboxLongpoll(last_cursor.cursor, function(err, results){
 
-        // console.log(chalkAlert("dropboxLongpoll CURSOR: " + lastCursorTruncated + "\n" + jsonPrint(results)));
-        console.log(chalkInfo("dropboxLongpoll CURSOR: " + lastCursorTruncated + "| CHANGES: " + results.changes));
+        debug(chalkInfo("dropboxLongpoll CURSOR: " + lastCursorTruncated + "| CHANGES: " + results.changes));
 
         if (results.changes) {
 
-        console.log(chalkAlert("\n>>> FOLDER CHANGE 1 | " + getTimeStamp() + " | " + folder));
-
           dropboxClient.filesListFolderContinue({ cursor: last_cursor.cursor})
-          // dropboxClient.filesListFolder({ path: folder})
           .then(function(response){
-            console.log(chalkLog("filesListFolderContinue: " + jsonPrint(response)));
-            statsObj.dropbox.lastCursors[folder] = response.cursor;
+            debug(chalkLog("filesListFolderContinue: " + jsonPrint(response)));
+            if (response.entries.length > 0) {
+              console.log(chalkAlert(">>> DROPBOX CHANGE"
+                + " | " + getTimeStamp()
+                + " | FOLDER: " + folder
+              ));
+              response.entries.forEach(function(entry){
+                console.log(chalkAlert("ENTRY"
+                  + " | TYPE: " + entry[".tag"]
+                  + " | PATH: " + entry.path_lower
+                  + " | NAME: " + entry.name
+                ));
+              });
+            }
             callback(null, response);
           })
           .catch(function(err){
             console.log(chalkError("dropboxFolderGetLastestCursor filesListFolder *** DROPBOX FILES LIST FOLDER ERROR"
-              // + "\nOPTIONS: " + jsonPrint(options)
               + "\nERROR: " + err 
               + "\nERROR: " + jsonPrint(err)
             ));
@@ -647,22 +605,6 @@ function dropboxFolderGetLastestCursor(folder, callback) {
           console.log(chalkLog("... FOLDER NO CHANGE | " + folder));
           callback(null, null);
         }
-        // if (statsObj.dropbox === undefined) {
-        //   statsObj.dropbox = {};
-        //   statsObj.dropbox.lastCursors = {};
-        // }
-        // if (statsObj.dropbox.lastCursors[folder] === undefined) {
-        //   statsObj.dropbox.lastCursors[folder] = {};
-        //   statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
-        // }
-        // else if (statsObj.dropbox.lastCursors[folder] !== last_cursor.cursor) {
-        //   statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
-        //   console.log(chalkAlert("FOLDER CHANGE | " + folder));
-        // }
-        // else {
-        //   console.log(chalkAlert("FOLDER SAME   | " + folder));
-        // }
-
       });
 
     })
@@ -670,7 +612,6 @@ function dropboxFolderGetLastestCursor(folder, callback) {
       console.log(err);
       callback(err, folder);
     });
-  }
 }
 
 initialize(configuration, function(err, cnf){

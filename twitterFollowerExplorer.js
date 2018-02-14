@@ -1,11 +1,13 @@
  /*jslint node: true */
 "use strict";
 
+
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
 const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
 const OFFLINE_MODE = false;
+const ONLINE_MODE = false;
 
 const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 20; // ms
 
@@ -34,6 +36,9 @@ const moment = require("moment");
 const table = require("text-table");
 const arrayUnique = require("array-unique");
 const fs = require("fs");
+
+let socket;
+let socketKeepAliveInterval;
 
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
@@ -205,6 +210,8 @@ let statsObj = {};
 statsObj.hostname = hostname;
 statsObj.startTimeMoment = moment();
 statsObj.pid = process.pid;
+statsObj.userAuthenticated = false;
+statsObj.serverConnected = false;
 
 const TFE_RUN_ID = hostname 
   + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat)
@@ -290,6 +297,7 @@ const async = require("async");
 const sortOn = require("sort-on");
 
 const chalk = require("chalk");
+const chalkConnect = chalk.green;
 const chalkNetwork = chalk.blue;
 const chalkTwitter = chalk.blue;
 const chalkTwitterBold = chalk.bold.blue;
@@ -359,22 +367,39 @@ const jsonPrint = function (obj){
   }
 };
 
-const USER_ID = "TFE_" + TFE_RUN_ID;
-const SCREEN_NAME = "TFE_" + TFE_RUN_ID;
+// const USER_ID = "TFE_" + TFE_RUN_ID;
+// const SCREEN_NAME = "TFE_" + TFE_RUN_ID;
 
-let serverUserObj = { 
+// let serverUserObj = { 
+//   name: USER_ID, 
+//   nodeId: USER_ID, 
+//   userId: USER_ID, 
+//   screenName: SCREEN_NAME, 
+//   type: "UTIL", 
+//   mode: "MUXSTREAM",
+//   tags: {}
+// } ;
+
+// serverUserObj.tags.entity = "muxstream_" + TFE_RUN_ID;
+// serverUserObj.tags.mode = "muxed";
+// serverUserObj.tags.channel = "twitter";
+
+const USER_ID = "tfe_" + hostname;
+const SCREEN_NAME = "tfe_" + hostname;
+
+let userObj = { 
   name: USER_ID, 
   nodeId: USER_ID, 
   userId: USER_ID, 
+  url: "https://www.twitter.com", 
   screenName: SCREEN_NAME, 
-  type: "UTIL", 
-  mode: "MUXSTREAM",
-  tags: {}
+  namespace: "util", 
+  type: "util", 
+  mode: "muxstream",
+  timeStamp: moment().valueOf(),
+  tags: {},
+  stats: {}
 } ;
-
-serverUserObj.tags.entity = "muxstream_" + TFE_RUN_ID;
-serverUserObj.tags.mode = "muxed";
-serverUserObj.tags.channel = "twitter";
 
 const cla = require("command-line-args");
 const numRandomNetworks = { name: "numRandomNetworks", alias: "n", type: Number};
@@ -966,7 +991,245 @@ function loadFile(path, file, callback) {
       callback(error, null);
     });
   }
+}
 
+function sendKeepAlive(userObj, callback){
+  
+  if (statsObj.userAuthenticated && statsObj.serverConnected){
+    debug(chalkLog("TX KEEPALIVE"
+      + " | " + userObj.userId
+      + " | " + moment().format(compactDateTimeFormat)
+    ));
+    socket.emit("SESSION_KEEPALIVE", userObj);
+    callback(null, null);
+  }
+  else {
+    console.log(chalkError("!!!! CANNOT TX KEEPALIVE"
+      + " | " + userObj.userId
+      + " | CONNECTED: " + statsObj.serverConnected
+      + " | READY ACK: " + statsObj.userAuthenticated
+      + " | " + moment().format(compactDateTimeFormat)
+    ));
+    callback("ERROR", null);
+  }
+}
+
+function initKeepalive(interval){
+
+  clearInterval(socketKeepAliveInterval);
+
+  console.log(chalkConnect("START KEEPALIVE"
+    // + " | USER ID: " + userId
+    + " | READY ACK: " + statsObj.userAuthenticated
+    + " | SERVER CONNECTED: " + statsObj.serverConnected
+    + " | INTERVAL: " + interval + " ms"
+  ));
+
+  socketKeepAliveInterval = setInterval(function(){ // TX KEEPALIVE
+
+    userObj.stats.tweetsPerMinute = statsObj.tweetsPerMinute;
+    userObj.stats.tweetsPerSecond = statsObj.tweetsPerSecond;
+
+    sendKeepAlive(userObj, function(err, results){
+      if (err) {
+        console.log(chalkError("KEEPALIVE ERROR: " + err));
+      }
+      else if (results){
+        console.log(chalkConnect("KEEPALIVE"
+          + " | " + moment().format(compactDateTimeFormat)
+        ));
+      }
+    });
+  }, interval);
+}
+
+function reset(cause, callback){
+
+  console.log(chalkAlert("\nRESET | CAUSE: " + cause + "\n"));
+
+  clearInterval(socketKeepAliveInterval);
+
+  if (callback !== undefined) { callback(); } 
+}
+
+function initSocket(cnf, callback){
+
+  if (OFFLINE_MODE) {
+    console.log(chalkError("*** OFFLINE MODE *** "));
+    return(callback(null, null));
+  }
+
+  console.log(chalkLog("INIT SOCKET"
+    + " | " + cnf.targetServer
+    + " | " + jsonPrint(userObj)
+  ));
+
+  socket = require("socket.io-client")(cnf.targetServer, { reconnection: true });
+
+  socket.on("connect", function(){
+
+    console.log(chalkAlert("SOCKET CONNECT | " + socket.id + " ... AUTHENTICATE ..."));
+
+    socket.on("unauthorized", function(err){
+      console.log(chalkError("*** AUTHENTICATION ERROR: ", err.message));
+    });
+
+    socket.emit("authentication", { namespace: "util", userId: userObj.userId, password: "0123456789" });
+
+    socket.on("authenticated", function() {
+
+      console.log("AUTHENTICATED | " + socket.id);
+
+      reset("connect", function(){
+
+        statsObj.socketId = socket.id;
+
+        console.log(chalkConnect( "CONNECTED TO HOST" 
+          + " | SERVER: " + cnf.targetServer 
+          + " | ID: " + socket.id 
+          ));
+
+        // wait for server to init before tx USER_READY
+
+          userObj.timeStamp = moment().valueOf();
+
+          console.log(chalkInfo(socket.id 
+            + " | TX USER_READY"
+            + " | " + moment().format(compactDateTimeFormat)
+            + " | " + userObj.userId
+            + " | " + userObj.url
+            + " | " + userObj.screenName
+            + " | " + userObj.type
+            + " | " + userObj.mode
+            + "\nTAGS\n" + jsonPrint(userObj.tags)
+          ));
+
+          statsObj.serverConnected = true ;
+          statsObj.userAuthenticated = true ;
+
+          // if (userId === userObj.tags.entity) {
+            initKeepalive(cnf.keepaliveInterval);
+          // }
+
+          // initTwitterStreamQueueInterval(10);
+          // sendUserReady(userObj);
+          // socket.emit("USER_READY", userObj); 
+          
+        // }, 1*ONE_SECOND);
+      });
+
+    });
+
+    socket.on("disconnect", function(){
+      statsObj.userAuthenticated = false ;
+      statsObj.serverConnected = false;
+      console.log(chalkConnect(moment().format(compactDateTimeFormat)
+        + " | SOCKET DISCONNECT: " + socket.id
+      ));
+      // reset("disconnect");
+    });
+  });
+
+  socket.on("reconnect", function(){
+    console.error(chalkInfo("RECONNECT" 
+      + " | " + moment().format(compactDateTimeFormat)
+      + " | " + socket.id
+    ));
+  });
+
+  socket.on("USER_READY_ACK", function(userId) {
+
+    statsObj.userAuthenticated = true ;
+
+    debug(chalkInfo("RX USER_READY_ACK MESSAGE"
+      + " | " + socket.id
+      + " | USER ID: " + userId
+      + " | " + moment().format(compactDateTimeFormat)
+    ));
+
+    if (userId === userObj.tags.entity) {
+      initKeepalive(cnf.keepaliveInterval);
+    }
+  });
+
+  socket.on("error", function(error){
+    statsObj.userAuthenticated = false ;
+    statsObj.serverConnected = false ;
+    socket.disconnect();
+    console.error(chalkError(moment().format(compactDateTimeFormat) 
+      + " | *** SOCKET ERROR"
+      + " | " + socket.id
+      + " | " + error
+    ));
+    reset("error");
+  });
+
+  socket.on("connect_error", function(err){
+    statsObj.userAuthenticated = false ;
+    statsObj.serverConnected = false ;
+    console.error(chalkError("*** CONNECT ERROR " 
+      + " | " + moment().format(compactDateTimeFormat)
+      + " | " + err.type
+      + " | " + err.description
+      // + "\n" + jsonPrint(err)
+    ));
+    reset("connect_error");
+  });
+
+  socket.on("reconnect_error", function(err){
+    statsObj.userAuthenticated = false ;
+    statsObj.serverConnected = false ;
+    console.error(chalkError("*** RECONNECT ERROR " 
+      + " | " + moment().format(compactDateTimeFormat)
+      + " | " + err.type
+      + " | " + err.description
+      // + "\n" + jsonPrint(err)
+    ));
+    // reset("reconnect_error");
+  });
+
+  socket.on("SESSION_ABORT", function(sessionId){
+    console.log(chalkDisconnect("@@@@@ RX SESSION_ABORT | " + sessionId));
+    if (sessionId === statsObj.socketId){
+      console.error(chalkDisconnect("***** RX SESSION_ABORT HIT | " + sessionId));
+      console.log(chalkDisconnect("***** RX SESSION_ABORT HIT | " + sessionId));
+      socket.disconnect();
+      statsObj.userAuthenticated = false ;
+      statsObj.serverConnected = false;
+    }
+    reset("SESSION_ABORT");
+  });
+
+  socket.on("SESSION_EXPIRED", function(sessionId){
+    console.log(chalkDisconnect("RX SESSION_EXPIRED | " + sessionId));
+    if (sessionId === statsObj.socketId){
+      console.error(chalkDisconnect("***** RX SESSION_EXPIRED HIT | " + sessionId));
+      console.log(chalkDisconnect("***** RX SESSION_EXPIRED HIT | " + sessionId));
+      socket.disconnect();
+      statsObj.userAuthenticated = false ;
+      statsObj.serverConnected = false;
+    }
+    reset("SESSION_EXPIRED");
+  });
+
+  // socket.on("disconnect", function(){
+  //   statsObj.userAuthenticated = false ;
+  //   statsObj.serverConnected = false;
+  //   console.log(chalkConnect(moment().format(compactDateTimeFormat)
+  //     + " | SOCKET DISCONNECT: " + socket.id
+  //   ));
+  //   reset("disconnect");
+  // });
+
+  socket.on("HEARTBEAT", function(){
+    statsObj.heartbeatsReceived += 1;
+  });
+
+  socket.on("KEEPALIVE_ACK", function(userId) {
+    debug(chalkLog("RX KEEPALIVE_ACK | " + userId));
+  });
+
+  callback(null, null);
 }
 
 function initStatsUpdate(callback){
@@ -1435,6 +1698,7 @@ function initialize(cnf, callback){
   }
 
   cnf.processName = process.env.TFE_PROCESS_NAME || "twitterFollowerExplorer";
+  cnf.targetServer = process.env.TFE_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
 
   cnf.minSuccessRate = process.env.TFE_MIN_SUCCESS_RATE || DEFAULT_MIN_SUCCESS_RATE ;
   cnf.numRandomNetworks = process.env.TFE_NUM_RANDOM_NETWORKS || TFE_NUM_RANDOM_NETWORKS ;
@@ -1551,7 +1815,7 @@ function initialize(cnf, callback){
         console.log("--> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
       });
 
-      console.log(chalkLog("USER\n" + jsonPrint(serverUserObj)));
+      console.log(chalkLog("USER\n" + jsonPrint(userObj)));
 
       configArgs = Object.keys(cnf);
       configArgs.forEach(function(arg){
@@ -1594,7 +1858,7 @@ function initialize(cnf, callback){
         console.log("--> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
       });
 
-      console.log(chalkLog("USER\n" + jsonPrint(serverUserObj)));
+      console.log(chalkLog("USER\n" + jsonPrint(userObj)));
 
       configArgs = Object.keys(cnf);
       configArgs.forEach(function(arg){
@@ -3414,155 +3678,144 @@ function initRandomNetworks(params, callback){
   });
 }
 
-function dropboxLongpoll(last_cursor, callback) {
-  dropboxClient.filesListFolderLongpoll({cursor: last_cursor, timeout: 30})
-    .then((result) => {
-      // console.log(chalkAlert("dropboxLongpoll FOLDER: " + lastCursorTruncated + "\n" + jsonPrint(result)));
-      callback(null, result);
-    })
-    .catch((err) => {
-      console.log(err);
-      callback(err, null);
-    });
-}
+// function dropboxLongpoll(last_cursor, callback) {
+//   dropboxClient.filesListFolderLongpoll({cursor: last_cursor, timeout: 30})
+//     .then((result) => {
+//       // console.log(chalkAlert("dropboxLongpoll FOLDER: " + lastCursorTruncated + "\n" + jsonPrint(result)));
+//       callback(null, result);
+//     })
+//     .catch((err) => {
+//       console.log(err);
+//       callback(err, null);
+//     });
+// }
 
-function dropboxFolderGetLastestCursor(folder, callback) {
+// function dropboxFolderGetLastestCursor(folder, callback) {
 
-  if (statsObj.dropbox === undefined) {
-    statsObj.dropbox = {};
-    statsObj.dropbox.lastCursors = {};
-  }
-  if (statsObj.dropbox.lastCursors[folder] === undefined) {
-    statsObj.dropbox.lastCursors[folder] = false;
-    // statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
-  }
-  let lastCursorTruncated = "";
+//   if (statsObj.dropbox === undefined) {
+//     statsObj.dropbox = {};
+//     statsObj.dropbox.lastCursors = {};
+//   }
+//   if (statsObj.dropbox.lastCursors[folder] === undefined) {
+//     statsObj.dropbox.lastCursors[folder] = false;
+//     // statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
+//   }
+//   let lastCursorTruncated = "";
 
-  console.log(chalkAlert("dropboxFolderGetLastestCursor FOLDER: " + folder));
+//   console.log(chalkAlert("dropboxFolderGetLastestCursor FOLDER: " + folder));
 
-  if (statsObj.dropbox.lastCursors[folder]) {
+//   if (statsObj.dropbox.lastCursors[folder]) {
 
-    lastCursorTruncated = statsObj.dropbox.lastCursors[folder].substring(0,20);
+//     lastCursorTruncated = statsObj.dropbox.lastCursors[folder].substring(0,20);
 
-    console.log(chalkAlert("dropboxFolderGetLastestCursor CURSOR: " + lastCursorTruncated));
+//     console.log(chalkAlert("dropboxFolderGetLastestCursor CURSOR: " + lastCursorTruncated));
 
-    dropboxLongpoll(statsObj.dropbox.lastCursors[folder], function(err, results){
-      console.log(chalkAlert("dropboxLongpoll CURSOR: " + lastCursorTruncated + "| CHANGES: " + results.changes));
-      if (results.changes) {
+//     dropboxLongpoll(statsObj.dropbox.lastCursors[folder], function(err, results){
+//       console.log(chalkAlert("dropboxLongpoll CURSOR: " + lastCursorTruncated + "| CHANGES: " + results.changes));
+//       if (results.changes) {
 
-        console.log(chalkAlert(">>> FOLDER CHANGE | " + folder));
+//         console.log(chalkAlert(">>> FOLDER CHANGE | " + folder));
 
-        dropboxClient.filesListFolderContinue({ cursor: last_cursor.cursor})
-        .then(function(response){
-          console.log(chalkAlert("filesListFolderContinue: " + jsonPrint(response)));
-          statsObj.dropbox.lastCursors[folder] = response.cursor;
-          callback(null, response);
-        })
-        .catch(function(err){
-          console.log(chalkError("dropboxFolderGetLastestCursor filesListFolder *** DROPBOX FILES LIST FOLDER ERROR"
-            // + "\nOPTIONS: " + jsonPrint(options)
-            + "\nERROR: " + err 
-            + "\nERROR: " + jsonPrint(err)
-          ));
-          callback(err, last_cursor.cursor);
-        });
-      }
-      else {
-        console.log(chalkAlert("... FOLDER NO CHANGE | " + folder));
-        callback(null, null);
-      }
-    });
+//         dropboxClient.filesListFolderContinue({ cursor: last_cursor.cursor})
+//         .then(function(response){
+//           console.log(chalkAlert("filesListFolderContinue: " + jsonPrint(response)));
+//           statsObj.dropbox.lastCursors[folder] = response.cursor;
+//           callback(null, response);
+//         })
+//         .catch(function(err){
+//           console.log(chalkError("dropboxFolderGetLastestCursor filesListFolder *** DROPBOX FILES LIST FOLDER ERROR"
+//             // + "\nOPTIONS: " + jsonPrint(options)
+//             + "\nERROR: " + err 
+//             + "\nERROR: " + jsonPrint(err)
+//           ));
+//           callback(err, last_cursor.cursor);
+//         });
+//       }
+//       else {
+//         console.log(chalkAlert("... FOLDER NO CHANGE | " + folder));
+//         callback(null, null);
+//       }
+//     });
 
-  }
-  else {
+//   }
+//   else {
 
-    let optionsGetLatestCursor = {
-      path: folder,
-      recursive: false,
-      include_media_info: false,
-      include_deleted: false,
-      include_has_explicit_shared_members: false
-    };
+//     let optionsGetLatestCursor = {
+//       path: folder,
+//       recursive: false,
+//       include_media_info: false,
+//       include_deleted: false,
+//       include_has_explicit_shared_members: false
+//     };
 
-    dropboxClient.filesListFolderGetLatestCursor(optionsGetLatestCursor)
-    .then((last_cursor) => {
+//     dropboxClient.filesListFolderGetLatestCursor(optionsGetLatestCursor)
+//     .then((last_cursor) => {
 
-      statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
+//       statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
 
-      lastCursorTruncated = last_cursor.cursor.substring(0,20);
-      // console.log(chalkAlert("last_cursor\n" + jsonPrint(last_cursor)));
-      console.log(chalkAlert("lastCursorTruncated: " + lastCursorTruncated));
+//       lastCursorTruncated = last_cursor.cursor.substring(0,20);
+//       // console.log(chalkAlert("last_cursor\n" + jsonPrint(last_cursor)));
+//       console.log(chalkAlert("lastCursorTruncated: " + lastCursorTruncated));
 
-      dropboxLongpoll(last_cursor.cursor, function(err, results){
+//       dropboxLongpoll(last_cursor.cursor, function(err, results){
 
-        // console.log(chalkAlert("dropboxLongpoll CURSOR: " + lastCursorTruncated + "\n" + jsonPrint(results)));
-        console.log(chalkAlert("dropboxLongpoll CURSOR: " + lastCursorTruncated + "| CHANGES: " + results.changes));
+//         // console.log(chalkAlert("dropboxLongpoll CURSOR: " + lastCursorTruncated + "\n" + jsonPrint(results)));
+//         console.log(chalkAlert("dropboxLongpoll CURSOR: " + lastCursorTruncated + "| CHANGES: " + results.changes));
 
-        if (results.changes) {
+//         if (results.changes) {
 
-          console.log(chalkAlert(">>> FOLDER CHANGE | " + folder));
+//           console.log(chalkAlert(">>> FOLDER CHANGE | " + folder));
 
-          dropboxClient.filesListFolderContinue({ cursor: last_cursor.cursor})
-          .then(function(response){
-            console.log(chalkAlert("filesListFolderContinue: " + jsonPrint(response)));
-            statsObj.dropbox.lastCursors[folder] = response.cursor;
-            callback(null, response);
-          })
-          .catch(function(err){
-            console.log(chalkError("dropboxFolderGetLastestCursor filesListFolder *** DROPBOX FILES LIST FOLDER ERROR"
-              // + "\nOPTIONS: " + jsonPrint(options)
-              + "\nERROR: " + err 
-              + "\nERROR: " + jsonPrint(err)
-            ));
-            callback(err, last_cursor.cursor);
-          });
-        }
-        else {
-          console.log(chalkAlert("... FOLDER NO CHANGE | " + folder));
-          callback(null, null);
-        }
-        // if (statsObj.dropbox === undefined) {
-        //   statsObj.dropbox = {};
-        //   statsObj.dropbox.lastCursors = {};
-        // }
-        // if (statsObj.dropbox.lastCursors[folder] === undefined) {
-        //   statsObj.dropbox.lastCursors[folder] = {};
-        //   statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
-        // }
-        // else if (statsObj.dropbox.lastCursors[folder] !== last_cursor.cursor) {
-        //   statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
-        //   console.log(chalkAlert("FOLDER CHANGE | " + folder));
-        // }
-        // else {
-        //   console.log(chalkAlert("FOLDER SAME   | " + folder));
-        // }
+//           dropboxClient.filesListFolderContinue({ cursor: last_cursor.cursor})
+//           .then(function(response){
+//             console.log(chalkAlert("filesListFolderContinue: " + jsonPrint(response)));
+//             statsObj.dropbox.lastCursors[folder] = response.cursor;
+//             callback(null, response);
+//           })
+//           .catch(function(err){
+//             console.log(chalkError("dropboxFolderGetLastestCursor filesListFolder *** DROPBOX FILES LIST FOLDER ERROR"
+//               // + "\nOPTIONS: " + jsonPrint(options)
+//               + "\nERROR: " + err 
+//               + "\nERROR: " + jsonPrint(err)
+//             ));
+//             callback(err, last_cursor.cursor);
+//           });
+//         }
+//         else {
+//           console.log(chalkAlert("... FOLDER NO CHANGE | " + folder));
+//           callback(null, null);
+//         }
+//         // if (statsObj.dropbox === undefined) {
+//         //   statsObj.dropbox = {};
+//         //   statsObj.dropbox.lastCursors = {};
+//         // }
+//         // if (statsObj.dropbox.lastCursors[folder] === undefined) {
+//         //   statsObj.dropbox.lastCursors[folder] = {};
+//         //   statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
+//         // }
+//         // else if (statsObj.dropbox.lastCursors[folder] !== last_cursor.cursor) {
+//         //   statsObj.dropbox.lastCursors[folder] = last_cursor.cursor;
+//         //   console.log(chalkAlert("FOLDER CHANGE | " + folder));
+//         // }
+//         // else {
+//         //   console.log(chalkAlert("FOLDER SAME   | " + folder));
+//         // }
 
-      });
+//       });
 
-    })
-    .catch((err) => {
-      console.log(err);
-      callback(err, folder);
-    });
-  }
-
-}
-
+//     })
+//     .catch((err) => {
+//       console.log(err);
+//       callback(err, folder);
+//     });
+//   }
+// }
 
 
 function loadBestNetworkDropboxFolder(folder, callback){
 
   let options = {path: folder};
   let newBestNetwork = false;
-
-  // let loadDropboxFolderTimeout = setTimeout(function dropboxFolderTimeout() {
-  //   console.log(chalkError("*** TIMEOUT FOR DROPBOX FOLDER LIST : " + DEFAULT_DROPBOX_TIMEOUT + " MS"));
-  //   callback("DROPBOX_TIMEOUT", null);
-  // }, DEFAULT_DROPBOX_TIMEOUT);
-
-  // dropboxFolderGetLastestCursor(folder, function(err){
-
-  // });
 
   dropboxClient.filesListFolder(options)
   .then(function(response){
@@ -4266,19 +4519,6 @@ initialize(configuration, function(err, cnf){
     }
   }
 
-  let dropboxFolderGetLastestCursorInterval;
-  let dropboxFolderGetLastestCursorReady = true;
-
-
-  dropboxFolderGetLastestCursorInterval = setInterval(function(){
-    if (dropboxFolderGetLastestCursorReady) {
-      dropboxFolderGetLastestCursorReady = false;
-      dropboxFolderGetLastestCursor("/config/test", function(err){
-        dropboxFolderGetLastestCursorReady = true;
-      });
-    }
-  }, 5000);
-
   console.log(chalkTwitter(cnf.processName 
     + " STARTED " + getTimeStamp() 
     // + "\n" + jsonPrint(cnf)
@@ -4324,6 +4564,8 @@ initialize(configuration, function(err, cnf){
       // if (nnObj) { debug("nnObj: " + nnObj.networkId); }
 
     neuralNetworkInitialized = true;
+
+    initSocket(cnf, function(err, result){});
 
     initTwitterUsers(function(e){
 
