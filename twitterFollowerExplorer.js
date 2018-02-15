@@ -3592,30 +3592,36 @@ function processFriends(callback){
       twitterImageParser.clearGlobalHistograms();
 
       randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
+        randomNetworkTree.send({ op: "LOAD_NETWORKS", networksObj: ranNetObj }, function(err){
+          networksSentFlag = true;
+          console.log(chalkAlert("SEND RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
+
+          currentTwitterUserIndex = 0;
+          currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
+
+          statsObj.user[currentTwitterUser].nextCursor = false;
+          statsObj.user[currentTwitterUser].nextCursorValid = false;
+          statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
+          statsObj.user[currentTwitterUser].twitterRateLimit = 0;
+          statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
+          statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
+          statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
+          statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
+          statsObj.user[currentTwitterUser].friendsProcessed = 0;
+          statsObj.user[currentTwitterUser].percentProcessed = 0;
+
+          setTimeout(function(){
+            console.log(chalkTwitterBold("=========================\n=========================\n*** RESTART FETCH USERS *** | ===== NEW FETCH USER @" 
+              + currentTwitterUser + " ====="
+              + " | " + getTimeStamp()
+            ));
+
+            callback(null, currentTwitterUser);
+          }, 2000);
+
+        });
       });
 
-      currentTwitterUserIndex = 0;
-      currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
-
-      statsObj.user[currentTwitterUser].nextCursor = false;
-      statsObj.user[currentTwitterUser].nextCursorValid = false;
-      statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimit = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-      statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
-      statsObj.user[currentTwitterUser].friendsProcessed = 0;
-      statsObj.user[currentTwitterUser].percentProcessed = 0;
-
-      setTimeout(function(){
-        console.log(chalkTwitterBold("=========================\n=========================\n*** RESTART FETCH USERS *** | ===== NEW FETCH USER @" 
-          + currentTwitterUser + " ====="
-          + " | " + getTimeStamp()
-        ));
-
-        callback(null, currentTwitterUser);
-      }, 2000);
     }
   }
 }
