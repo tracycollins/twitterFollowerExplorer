@@ -3591,8 +3591,8 @@ function processFriends(callback){
       twitterTextParser.clearGlobalHistograms();
       twitterImageParser.clearGlobalHistograms();
 
-      // randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
-      // });
+      randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
+      });
 
       currentTwitterUserIndex = 0;
       currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
@@ -4234,9 +4234,12 @@ function updateNetworkFetchFriends(){
                 statsObj.user[currentTwitterUser].endFetch = false;
                 debug(chalkInfo("+++ NEW CURRENT USER: " + newCurrentUser));
               }
-              else if (configuration.quitOnComplete) {
-                console.log(chalkAlert("QUITTING ON COMPLETE"));
-                quit("COMPLETE");
+              else {
+                statsObj.user[currentTwitterUser].endFetch = true;
+                if (configuration.quitOnComplete) {
+                  console.log(chalkAlert("QUITTING ON COMPLETE"));
+                  quit("COMPLETE");
+                }
               }
             });
 
