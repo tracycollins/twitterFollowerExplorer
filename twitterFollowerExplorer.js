@@ -25,7 +25,7 @@ const MAX_HISTOGRAM_KEYS = 100;
 
 const TEST_MODE_TOTAL_FETCH_COUNT = 100;  // total twitter user fetch count
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
-const TEST_MODE_FETCH_COUNT = 20;  // per request twitter user fetch count
+const TEST_MODE_FETCH_COUNT = 47;  // per request twitter user fetch count
 
 const bestRuntimeNetworkFileName = "bestRuntimeNetwork.json";
 let bestRuntimeNetworkId = false;
@@ -113,6 +113,8 @@ let langAnalyzerIdle = false;
 let abortCursor = false;
 let nextUser = false;
 let classifiedUserHashmapReadyFlag = false;
+
+let updateNetworkFetchFriendsReadyFlag = true;
 
 let neuralNetworkInitialized = false;
 let currentTwitterUser ;
@@ -265,20 +267,21 @@ let timerIntervalometer = intervalometer.timerIntervalometer;
 let langAnalyzer;
 let waitLanguageAnalysisReadyInterval;
 let langAnalyzerMessageRxQueueInterval;
-let langAnalyzerMessageRxQueueReady = true;
+let langAnalyzerMessageRxQueueReadyFlag = true;
 let languageAnalysisReadyFlag = false;
 let langAnalyzerMessageRxQueue = [];
 
 // let waitRandomNetworkTreeReadyInterval;
 let randomNetworkTree;
 let randomNetworkTreeMessageRxQueueInterval;
-let randomNetworkTreeMessageRxQueueReady = true;
+let randomNetworkTreeMessageRxQueueReadyFlag = true;
 let randomNetworkTreeReadyFlag = false;
+let randomNetworkTreeBusyFlag = false;
 let randomNetworkTreeMessageRxQueue = [];
 let randomNetworksObj = {};
 
 let userDbUpdateQueueInterval;
-let userDbUpdateQueueReady = true;
+let userDbUpdateQueueReadyFlag = true;
 let userDbUpdateQueue = [];
 
 let network;
@@ -327,6 +330,35 @@ let bestNetworkHashMap = new HashMap();
 let defaultNeuralNetworkFile = "neuralNetwork.json";
 
 configuration.neuralNetworkFile = defaultNeuralNetworkFile;
+
+const runEnableArgs = {};
+runEnableArgs.updateNetworkFetchFriendsReadyFlag = updateNetworkFetchFriendsReadyFlag;
+runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
+runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
+runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
+runEnableArgs.langAnalyzerMessageRxQueueReadyFlag = langAnalyzerMessageRxQueueReadyFlag;
+runEnableArgs.classifiedUserHashmapReadyFlag = classifiedUserHashmapReadyFlag;
+
+function runEnable(displayArgs) {
+
+  runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
+  runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
+  runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
+  runEnableArgs.langAnalyzerMessageRxQueueReadyFlag = langAnalyzerMessageRxQueueReadyFlag;
+  runEnableArgs.classifiedUserHashmapReadyFlag = classifiedUserHashmapReadyFlag;
+
+  const runEnableKeys = Object.keys(runEnableArgs);
+
+  runEnableKeys.forEach(function(key){
+    if (!runEnableArgs[key]) {
+      return false;
+    }
+  });
+
+  return true;
+
+}
+
 
 function indexOfMax (arr, callback) {
   if (arr.length === 0) {
@@ -428,7 +460,7 @@ if (commandLineConfig.targetServer === "REMOTE"){
   commandLineConfig.targetServer = "http://word.threeceelabs.com/util";
 }
 
-process.title = "twitterFollowerExplorer";
+process.title = "node_twitterFollowerExplorer";
 console.log("\n\n=================================");
 console.log("HOST:          " + hostname);
 console.log("PROCESS TITLE: " + process.title);
@@ -660,14 +692,12 @@ function updateGlobalHistograms(callback){
 }
 
 function showStats(options){
+  runEnable(true);
   if (langAnalyzer !== undefined) {
     langAnalyzer.send({op: "STATS", options: options});
   }
   if (options) {
-
     updateGlobalHistograms(function(){
-                  // const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "histograms", "languageAnalysis"]);
-
       console.log("STATS\n" + jsonPrint(omit(statsObj, ["histograms"])));
     });
   }
@@ -720,28 +750,79 @@ function saveHistograms(callback){
 }
 
 function quit(cause){
+
+  if (randomNetworkTree !== undefined) { randomNetworkTree.send({op: "STATS"}); }
+
+  saveHistograms();
+
   console.log( "\n... QUITTING ..." );
+
   if (cause) {
     console.log( "CAUSE: " + cause );
   }
+
   if (fetchTwitterFriendsIntervalometer !== undefined) { fetchTwitterFriendsIntervalometer.stop(); }
 
-  clearInterval(waitLanguageAnalysisReadyInterval);
-  clearInterval(statsUpdateInterval);
-  clearInterval(checkRateLimitInterval);
-  clearInterval(userDbUpdateQueueInterval);
+  let quitWaitInterval = setInterval(function () {
 
-  showStats(true);
-  process.exit();
+    if (!saveFileBusy 
+      && !randomNetworkTreeBusyFlag
+      && (saveFileQueue.length === 0)
+      && (langAnalyzerMessageRxQueue.length === 0)
+      && (randomNetworkTreeMessageRxQueue.length === 0)
+      && (userDbUpdateQueue.length === 0)
+      && randomNetworkTreeMessageRxQueueReadyFlag
+      && randomNetworkTreeReadyFlag
+      && languageAnalysisReadyFlag
+      && userDbUpdateQueueReadyFlag
+      ){
+
+      clearInterval(waitLanguageAnalysisReadyInterval);
+      clearInterval(statsUpdateInterval);
+      clearInterval(checkRateLimitInterval);
+      clearInterval(userDbUpdateQueueInterval);
+      clearInterval(quitWaitInterval);
+
+      // showStats(true);
+
+      console.log(chalkAlert("ALL PROCESSES COMPLETE ... QUITTING"
+       + " | SAVE FILE BUSY: " + saveFileBusy
+       + " | SAVE FILE Q: " + saveFileQueue.length
+       + " | RNT BUSY: " + randomNetworkTreeBusyFlag
+       + " | RNT READY: " + randomNetworkTreeReadyFlag
+       + " | RNT Q: " + randomNetworkTreeMessageRxQueue.length
+       + " | LA Q: " + langAnalyzerMessageRxQueue.length
+       + " | USR DB Q: " + userDbUpdateQueue.length
+      ));
+
+      setTimeout(function(){
+        process.exit();      
+      }, 5000);
+    }
+    else {
+      if (randomNetworkTree !== undefined) { randomNetworkTree.send({op: "STATS"}); }
+      console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
+       + " | SAVE FILE BUSY: " + saveFileBusy
+       + " | SAVE FILE Q: " + saveFileQueue.length
+       + " | RNT BUSY: " + randomNetworkTreeBusyFlag
+       + " | RNT READY: " + randomNetworkTreeReadyFlag
+       + " | RNT Q: " + randomNetworkTreeMessageRxQueue.length
+       + " | LA Q: " + langAnalyzerMessageRxQueue.length
+       + " | USR DB Q: " + userDbUpdateQueue.length
+      ));
+    }
+
+  }, 1000);
+
 }
 
 process.on( "SIGINT", function() {
   quit("SIGINT");
 });
 
-process.on("exit", function() {
-  if (langAnalyzer !== undefined) { langAnalyzer.kill("SIGINT"); }
-});
+// process.on("exit", function() {
+//   if (langAnalyzer !== undefined) { langAnalyzer.kill("SIGINT"); }
+// });
 
 function getTimeStamp(inputTime) {
   let currentTimeStamp ;
@@ -1273,44 +1354,12 @@ function initStatsUpdate(callback){
 
     showStats();
 
-    if (configuration.quitOnComplete && statsObj.fetchUsersComplete) {
-      console.log(chalkTwitterBold(moment().format(compactDateTimeFormat)
-        + " | QUITTING ON COMPLETE"
-      ));
-
-      fetchTwitterFriendsIntervalometer.stop();
-
-      clearInterval(waitLanguageAnalysisReadyInterval);
-      clearInterval(statsUpdateInterval);
-
-      saveHistograms();
-      saveFileQueue.push({folder:classifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
-
-      setTimeout(function(){
-        quit("QUIT ON COMPLETE");
-      }, 5000);
-
-    }
-
   }, configuration.statsUpdateIntervalTime);
 
   callback(null);
 }
 
 function checkRateLimit(callback){
-
-  // if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
-  //   && statsObj.user[currentTwitterUser].twitterRateLimitResetAt.isBefore(moment())){
-
-  //   statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-  // // 
-  //   console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
-  //     + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
-  //     + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
-  //     + " | EXP @: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
-  //     + " | NOW: " + moment().format(compactDateTimeFormat)
-  //   ));
-  // }
 
   twitterUserHashMap[currentTwitterUser].twit.get(
     "application/rate_limit_status", 
@@ -1703,6 +1752,7 @@ function initialize(cnf, callback){
       classifiedUserHashmap = classifiedUsersObj;
       console.log(chalkTwitterBold("LOADED " + Object.keys(classifiedUserHashmap).length + " TOTAL CLASSIFED USERS"));
       classifiedUserHashmapReadyFlag = true;
+      runEnable(true);
     }
   });
 
@@ -1935,15 +1985,15 @@ function updateNetworkStats(networkStatsObj, callback) {
 
 function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
-  randomNetworkTreeMessageRxQueueReady = true;
+  randomNetworkTreeMessageRxQueueReadyFlag = true;
 
   console.log(chalkInfo("INIT RANDOM NETWORK TREE QUEUE INTERVAL: " + interval + " ms"));
 
   randomNetworkTreeMessageRxQueueInterval = setInterval(function () {
 
-    if (randomNetworkTreeMessageRxQueueReady && (randomNetworkTreeMessageRxQueue.length > 0)) {
+    if (randomNetworkTreeMessageRxQueueReadyFlag && (randomNetworkTreeMessageRxQueue.length > 0)) {
 
-      randomNetworkTreeMessageRxQueueReady = false;
+      randomNetworkTreeMessageRxQueueReadyFlag = false;
 
       let m = randomNetworkTreeMessageRxQueue.shift();
 
@@ -1954,9 +2004,11 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
       switch (m.op) {
 
         case "IDLE":
-          randomNetworkTreeMessageRxQueueReady = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
-          debug(chalkInfo("... RNT IDLE ..."));
+          randomNetworkTreeBusyFlag = false;
+          runEnable(true);
+          console.log(chalkAlert("... RNT IDLE ..."));
         break;
 
         case "STATS":
@@ -1965,50 +2017,57 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
           ));
 
           updateNetworkStats(m.statsObj.loadedNetworks, function(){
-            randomNetworkTreeMessageRxQueueReady = true;
+            randomNetworkTreeMessageRxQueueReadyFlag = true;
             randomNetworkTreeReadyFlag = true;
           });
 
         break;
 
         case "NETWORK_READY":
-          randomNetworkTreeMessageRxQueueReady = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
           debug(chalkInfo("... RNT NETWORK_READY ..."));
+          runEnable(true);
         break;
 
         case "NETWORK_BUSY":
-          randomNetworkTreeMessageRxQueueReady = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
+          randomNetworkTreeBusyFlag = true;
           debug(chalkInfo("... RNT NETWORK_BUSY ..."));
         break;
 
         case "QUEUE_READY":
-          randomNetworkTreeMessageRxQueueReady = true;
-          randomNetworkTreeReadyFlag = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
+          // randomNetworkTreeReadyFlag = true;
           debug(chalkInfo("RNT Q READY"));
+          runEnable(true);
         break;
 
         case "QUEUE_EMPTY":
-          randomNetworkTreeMessageRxQueueReady = true;
-          randomNetworkTreeReadyFlag = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
+          // randomNetworkTreeReadyFlag = true;
           debug(chalkInfo("RNT Q EMPTY"));
+          runEnable(true);
         break;
 
         case "QUEUE_FULL":
-          randomNetworkTreeMessageRxQueueReady = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
+          randomNetworkTreeBusyFlag = true;
           console.log(chalkError("!!! RNT Q FULL"));
         break;
 
         case "RNT_TEST_PASS":
-          randomNetworkTreeMessageRxQueueReady = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
           console.log(chalkTwitter(getTimeStamp() + " | RNT_TEST_PASS | RNT READY: " + randomNetworkTreeReadyFlag));
+          runEnable(true);
         break;
 
         case "RNT_TEST_FAIL":
-          randomNetworkTreeMessageRxQueueReady = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
+          randomNetworkTreeIdleFlag = false;
           console.log(chalkAlert(getTimeStamp() + " | RNT_TEST_FAIL"));
           quit("RNT_TEST_FAIL");
         break;
@@ -2076,8 +2135,9 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
           }
 
-          randomNetworkTreeMessageRxQueueReady = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
+          runEnable(true);
         break;
 
         case "BEST_MATCH_RATE":
@@ -2122,52 +2182,17 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             ));
           }
 
-          randomNetworkTreeMessageRxQueueReady = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
+          runEnable(true);
         break;
 
         default:
-          randomNetworkTreeMessageRxQueueReady = true;
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
           console.error(chalkError("*** UNKNOWN RNT OP | " + m.op));
       }
 
-      // switch (m.op) {
-
-
-      //   case "NETWORK_RESULTS":
-
-      //     debug(chalkLog("M<"
-      //       + " [Q: " + randomNetworkTreeMessageRxQueue.length
-      //       + " | OP: " + m.op
-      //       + " | OUTPUT: " + m.networkOutput
-      //     ));
-      //     randomNetworkTreeReadyFlag = true;
-      //     randomNetworkTreeMessageRxQueueReady = true;
-      //   break;
-
-      //   case "QUEUE_FULL":
-      //     debug(chalkError("M<"
-      //       + " [Q: " + randomNetworkTreeMessageRxQueue.length + "]"
-      //       + " | OP: " + m.op
-      //     ));
-      //     randomNetworkTreeReadyFlag = false;
-      //     randomNetworkTreeMessageRxQueueReady = true;
-      //   break;
-
-      //   case "QUEUE_READY":
-      //     debug(chalkError("M<"
-      //       + " [Q: " + randomNetworkTreeMessageRxQueue.length + "]"
-      //       + " | OP: " + m.op
-      //     ));
-      //     randomNetworkTreeReadyFlag = true;
-      //     randomNetworkTreeMessageRxQueueReady = true;
-      //   break;
-
-      //   default:
-      //     console.log(chalkError("??? UNKNOWN RANDOM NETWORK TREE OP: " + m.op));
-      //     randomNetworkTreeMessageRxQueueReady = true;
-      // }
     }
   }, interval);
 
@@ -2176,7 +2201,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
 function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
-  langAnalyzerMessageRxQueueReady = true;
+  langAnalyzerMessageRxQueueReadyFlag = true;
 
   console.log(chalkInfo("INIT LANG ANALIZER QUEUE INTERVAL: " + interval + " ms"));
 
@@ -2184,9 +2209,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
   langAnalyzerMessageRxQueueInterval = setInterval(function () {
 
-    if (langAnalyzerMessageRxQueueReady && (langAnalyzerMessageRxQueue.length > 0)) {
+    if (langAnalyzerMessageRxQueueReadyFlag && (langAnalyzerMessageRxQueue.length > 0)) {
 
-      langAnalyzerMessageRxQueueReady = false;
+      langAnalyzerMessageRxQueueReadyFlag = false;
 
       let m = langAnalyzerMessageRxQueue.shift();
 
@@ -2225,7 +2250,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
               ));
               m.obj.languageAnalyzed = false;
               setTimeout(function(){
-                langAnalyzerMessageRxQueueReady = true;
+                langAnalyzerMessageRxQueueReadyFlag = true;
               }, 1000);
             }
             else if (m.error.code === 3){ // LANGUAGE unsupported
@@ -2243,7 +2268,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
               ));
               m.obj.languageAnalyzed = false;
               setTimeout(function(){
-                langAnalyzerMessageRxQueueReady = true;
+                langAnalyzerMessageRxQueueReadyFlag = true;
               }, 1000);
             }
 
@@ -2285,7 +2310,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   // + "\nLA Es: " + laEnts
                 ));
               }
-              langAnalyzerMessageRxQueueReady = true;
+              langAnalyzerMessageRxQueueReadyFlag = true;
             }); 
           }
           else if (langEntityKeys.length > 0) {
@@ -2369,7 +2394,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   ));
                 }
 
-                langAnalyzerMessageRxQueueReady = true;
+                langAnalyzerMessageRxQueueReadyFlag = true;
               }); 
             });
           }
@@ -2427,7 +2452,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   // + "\nLA Es: " + laEnts
                 ));
               }
-              langAnalyzerMessageRxQueueReady = true;
+              langAnalyzerMessageRxQueueReadyFlag = true;
             }); 
           }
         break;
@@ -2438,7 +2463,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             + " | OP: " + m.op
           ));
           languageAnalysisReadyFlag = false;
-          langAnalyzerMessageRxQueueReady = true;
+          langAnalyzerMessageRxQueueReadyFlag = true;
         break;
 
         case "QUEUE_READY":
@@ -2447,13 +2472,13 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             + " | OP: " + m.op
           ));
           languageAnalysisReadyFlag = true;
-          langAnalyzerMessageRxQueueReady = true;
+          langAnalyzerMessageRxQueueReadyFlag = true;
         break;
 
         default:
           console.log(chalkError("??? UNKNOWN LANG_ANALIZE OP: " + m.op
           ));
-          langAnalyzerMessageRxQueueReady = true;
+          langAnalyzerMessageRxQueueReadyFlag = true;
       }
     }
   }, interval);
@@ -3376,8 +3401,9 @@ function fetchFriends(params, callback) {
   }
   else if (
     !statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag
-    && randomNetworkTreeReadyFlag
-    && languageAnalysisReadyFlag
+    // && randomNetworkTreeReadyFlag
+    // && languageAnalysisReadyFlag
+    && runEnable(true)
     ) {
 
     twitterUserHashMap[currentTwitterUser].twit.get("friends/list", params, function(err, data, response){
@@ -3408,18 +3434,26 @@ function fetchFriends(params, callback) {
 
         if (configuration.testMode 
           && (statsObj.user[currentTwitterUser].totalFriendsFetched >= TEST_MODE_TOTAL_FETCH_COUNT)) {
+
           statsObj.user[currentTwitterUser].nextCursorValid = false;
           statsObj.user[currentTwitterUser].endFetch = true;
+
           nextUser = true;
-          console.log(chalkAlert("TEST MODE END FETCH"
+
+          console.log(chalkAlert("\n\n ***** TEST MODE END FETCH"
             + " | @" + currentTwitterUser
+            + " | USER " + (currentTwitterUserIndex+1) + " OF " + twitterUsersArray.length
             + " | TOTAL FRIENDS FETCHED: " + statsObj.user[currentTwitterUser].totalFriendsFetched
           ));
+
         }
         else if (data.next_cursor_str > 0) {
+
           statsObj.user[currentTwitterUser].nextCursorValid = true;
+
         }
         else {
+
           statsObj.user[currentTwitterUser].nextCursorValid = false;
           statsObj.user[currentTwitterUser].endFetch = true;
         }
@@ -3481,7 +3515,7 @@ function fetchFriends(params, callback) {
           else {
             callback(null, subFriendsSortedArray);
           }
-      });
+        });
 
       }
 
@@ -3509,6 +3543,7 @@ function fetchFriends(params, callback) {
       + " | RATE LIMIT: " + statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag
       + " | randomNetworkTreeReadyFlag: " + randomNetworkTreeReadyFlag
       + " | languageAnalysisReadyFlag: " + languageAnalysisReadyFlag
+      + " | runEnable: " + runEnable(true)
     ));
 
     callback(null, []);
@@ -3577,11 +3612,6 @@ function processFriends(callback){
     }
     else if (configuration.quitOnComplete) {
       console.log("QUITTING ON COMPLETE");
-
-      saveHistograms();
-
-      clearInterval(waitLanguageAnalysisReadyInterval);
-      fetchTwitterFriendsIntervalometer.stop();
       callback(null, null);
     }
     else {
@@ -4169,38 +4199,25 @@ function loadBestNeuralNetworkFile(callback){
           callback(null, bnwObj);
         }
 
-
-        // statsObj.bestRuntimeNetworkId = bestRuntimeNetworkId;
-        // statsObj.currentBestNetworkId = bnwObj.networkId;
-        // statsObj.network.networkId = bnwObj.networkId;
-        // statsObj.network.networkType = bnwObj.networkType;
-        // statsObj.network.successRate = bnwObj.successRate;
-        // statsObj.network.input = bnwObj.network.input;
-        // statsObj.network.output = bnwObj.network.output;
-        // statsObj.network.evolve = {};
-        // statsObj.network.evolve = bnwObj.evolve;
-        // statsObj.network.evolve.options.networkObj = null;
-
-        // callback(null, bnwObj);
-
       });
 
     }
   });
 }
 
-function updateNetworkFetchFriends(){
+function updateNetworkFetchFriends(callback){
 
-  debug(chalkAlert("updateNetworkFetchFriends | @" + currentTwitterUser));
+  updateNetworkFetchFriendsReadyFlag = false;
+
+  console.log(chalkAlert("UPDATE NETWORK + FETCH FRIENDS | @" + currentTwitterUser));
 
   loadBestNeuralNetworkFile(function(err, nnObj){
 
     if (err) {
       console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
-      return;
+      return callback(err);
+      updateNetworkFetchFriendsReadyFlag = true;
     }
-
-    // debug("updateNetworkFetchFriends: nnObj: " + nnObj.networkId);
 
     let params = {};
     params.count = statsObj.user[currentTwitterUser].count;
@@ -4213,19 +4230,21 @@ function updateNetworkFetchFriends(){
       statsObj.user[currentTwitterUser].cursor = null;
     }
 
-    debug("params\n" + jsonPrint(params));
+    debug("updateNetworkFetchFriends fetchFriends params\n" + jsonPrint(params));
 
-    if (languageAnalysisReadyFlag) {
+    if (runEnable()) {
 
       fetchFriends(params, function(err, subFriendsSortedArray){
         if (err) {
           console.log(chalkError("FETCH FRIENDS ERROR: " + err));
+          updateNetworkFetchFriendsReadyFlag = true;
         }
         else {
 
           console.log(chalkLog("FETCH FRIENDS" 
             + " | @" + currentTwitterUser
             + " | FETCHED " + subFriendsSortedArray.length
+            + " | END FETCH: " + statsObj.user[currentTwitterUser].endFetch
           ));
 
           if (nextUser || statsObj.user[currentTwitterUser].endFetch) {
@@ -4235,26 +4254,38 @@ function updateNetworkFetchFriends(){
             processFriends(function(err, newCurrentUser){
               if (err) {
                 console.log(chalkError("PROCESS FRIENDS ERROR: " + err));
+                updateNetworkFetchFriendsReadyFlag = true;
+                callback(err, {endFetch: statsObj.user[currentTwitterUser].endFetch, nextUser: nextUser});
               }
               else if (newCurrentUser) {
                 statsObj.user[currentTwitterUser].endFetch = false;
                 debug(chalkInfo("+++ NEW CURRENT USER: " + newCurrentUser));
+                updateNetworkFetchFriendsReadyFlag = true;
+                callback(null, {endFetch: statsObj.user[currentTwitterUser].endFetch, nextUser: nextUser});
               }
               else {
                 statsObj.user[currentTwitterUser].endFetch = true;
                 if (configuration.quitOnComplete) {
+                  updateNetworkFetchFriendsReadyFlag = true;
                   console.log(chalkAlert("QUITTING ON COMPLETE"));
+                  fetchTwitterFriendsIntervalometer.stop();
                   quit("COMPLETE");
+                  callback(null, {endFetch: statsObj.user[currentTwitterUser].endFetch, nextUser: nextUser});
                 }
               }
             });
-
+          }
+          else {
+            updateNetworkFetchFriendsReadyFlag = true;
+            callback(null, {endFetch: statsObj.user[currentTwitterUser].endFetch, nextUser: nextUser});
           }
         }
       });
     }
     else {
-      console.log(chalkLog("languageAnalysisReadyFlag: " + languageAnalysisReadyFlag));
+      console.log(chalkLog("updateNetworkFetchFriends RUN ENABLED: " + runEnable()));
+      updateNetworkFetchFriendsReadyFlag = true;
+      callback(null, {endFetch: statsObj.user[currentTwitterUser].endFetch, nextUser: nextUser});
     }
   });
 }
@@ -4275,21 +4306,10 @@ function initFetchTwitterFriendsInterval(interval){
   statsObj.user[currentTwitterUser].count = configuration.fetchCount;
   debug("statsObj.user[currentTwitterUser]\n" + jsonPrint(statsObj.user[currentTwitterUser]));
 
+  fetchTwitterFriendsIntervalometer = timerIntervalometer(function fetchTwitterFriendsIntervalFunc(){
 
-  if (languageAnalysisReadyFlag && classifiedUserHashmapReadyFlag){
-    updateNetworkFetchFriends();
-  }
-  else {
-    console.log(chalkAlert("fetchTwitterFriendsIntervalometer NOT READY"
-      + " | languageAnalysisReadyFlag: " + languageAnalysisReadyFlag
-      + " | classifiedUserHashmapReadyFlag: " + classifiedUserHashmapReadyFlag
-    ));
-    showStats();
-  }
-
-  fetchTwitterFriendsIntervalometer = timerIntervalometer(function(){
-    if (languageAnalysisReadyFlag && classifiedUserHashmapReadyFlag){
-      updateNetworkFetchFriends();
+    if (runEnable(true)){
+      updateNetworkFetchFriends(function(err, results){});
     }
     else {
       console.log(chalkAlert("fetchTwitterFriendsIntervalometer NOT READY"
@@ -4300,13 +4320,20 @@ function initFetchTwitterFriendsInterval(interval){
     }
   }, interval);
 
-  waitLanguageAnalysisReadyInterval = setInterval(function(){
-    if (languageAnalysisReadyFlag && classifiedUserHashmapReadyFlag){
+  waitLanguageAnalysisReadyInterval = setInterval(function waitLanguageAnalysisReadyFunc(){
+
+    const enabled = runEnable();
+
+    if (enabled){
       clearInterval(waitLanguageAnalysisReadyInterval);
-      // updateNetworkFetchFriends();
       fetchTwitterFriendsIntervalometer.start();
+      fsm.fetchStart();
     }
-  }, 100);
+    else {
+      console.log("waitLanguageAnalysisReadyInterval | runEnable: " + enabled);
+    }
+
+  }, 5000);
 }
 
 function initUserDbUpdateQueueInterval(interval){
@@ -4315,17 +4342,17 @@ function initUserDbUpdateQueueInterval(interval){
 
   clearInterval(userDbUpdateQueueInterval);
 
-  userDbUpdateQueueInterval = setInterval(function(){
+  userDbUpdateQueueInterval = setInterval(function userDbUpdateQueueInterval(){
 
-    if (userDbUpdateQueueReady && (userDbUpdateQueue.length > 0)) {
+    if (userDbUpdateQueueReadyFlag && (userDbUpdateQueue.length > 0)) {
 
-      userDbUpdateQueueReady = false;
+      userDbUpdateQueueReadyFlag = false;
 
       let user = userDbUpdateQueue.shift();
 
       userServer.findOneUser(user, {noInc: true}, function updateUserComplete(err, updatedUserObj){
 
-        userDbUpdateQueueReady = true;
+        userDbUpdateQueueReadyFlag = true;
 
         if (err){
           console.trace(chalkError("ERROR DB UPDATE USER - updateUserDb"
@@ -4419,6 +4446,7 @@ function initInputArrays(cnf, callback){
 }
 
 let prevBestNetworkId = "";
+
 function initRandomNetworkTree(callback){
 
   console.log(chalkAlert("INIT RANDOM NETWORK TREE CHILD PROCESS"));
@@ -4428,26 +4456,47 @@ function initRandomNetworkTree(callback){
 
   randomNetworkTree.on("message", function(m){
 
-    randomNetworkTreeMessageRxQueue.push(m);
+    switch (m.op) {
+      case "IDLE":
+        randomNetworkTreeBusyFlag = false;
+        console.log(chalkAlert("<== RNT RX"
+          + " [" + randomNetworkTreeMessageRxQueue.length + "]"
+          + " | " + m.op
+        ));
+      break;
+      case "BUSY":
+        randomNetworkTreeBusyFlag = true;
+        console.log(chalkAlert("<== RNT RX"
+          + " [" + randomNetworkTreeMessageRxQueue.length + "]"
+          + " | " + m.op
+        ));
+      break;
+      default:
 
-    debug(chalkAlert("<== RNT RX"
-      + " [" + randomNetworkTreeMessageRxQueue.length + "]"
-      + " | " + m.op
-    ));
+        randomNetworkTreeMessageRxQueue.push(m);
+
+        debug(chalkAlert("<== RNT RX"
+          + " [" + randomNetworkTreeMessageRxQueue.length + "]"
+          + " | " + m.op
+        ));
+    }
 
   });
 
   randomNetworkTree.on("error", function(err){
+    randomNetworkTreeBusyFlag = false;
     console.log(chalkError("*** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
     quit(err);
   });
 
   randomNetworkTree.on("exit", function(err){
+    randomNetworkTreeBusyFlag = false;
     console.log(chalkError("*** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
     quit(err);
   });
 
   randomNetworkTree.on("close", function(code){
+    randomNetworkTreeBusyFlag = false;
     console.log(chalkError("*** randomNetworkTree CLOSE *** | " + code));
     quit(code);
   });
@@ -4592,7 +4641,7 @@ initialize(configuration, function(err, cnf){
 
     neuralNetworkInitialized = true;
 
-    initTwitterUsers(function(e){
+    initTwitterUsers(function initTwitterUsersCallback(e){
 
       if (e) {
         console.error(chalkError("*** ERROR INIT TWITTER USERS: " + e));
@@ -4624,7 +4673,7 @@ initialize(configuration, function(err, cnf){
           fetchTwitterFriendsIntervalTime = TEST_TWITTER_FETCH_FRIENDS_INTERVAL;
         }
         initFetchTwitterFriendsInterval(fetchTwitterFriendsIntervalTime);
-        fsm.fetchStart();
+        // fsm.fetchStart();
       }
     });
     // });

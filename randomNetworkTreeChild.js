@@ -265,7 +265,10 @@ const sortedObjectValues = function(params) {
   });
 };
 
+let generateNetworkInputBusy = false;
 function generateNetworkInput(histograms, networkInputsObj, callback){
+
+  generateNetworkInputBusy = true;
 
   const inputTypes = Object.keys(networkInputsObj).sort();
   let networkInput = [];
@@ -298,13 +301,15 @@ function generateNetworkInput(histograms, networkInputsObj, callback){
     });
 
   }, function(err){
+    generateNetworkInputBusy = false;
     callback(err, networkInput);
   });
 }
 
-// function activateNetwork2(languageAnalysis, histograms, callback){
+let activateNetworkBusy = false;
 function activateNetwork2(histograms, callback){
 
+  activateNetworkBusy = true;
   let networkOutput = {};
   let userHistograms = {};
 
@@ -380,6 +385,7 @@ function activateNetwork2(histograms, callback){
     });
 
   }, function(err){
+    activateNetworkBusy = false;
     callback(err, networkOutput);
   });
 }
@@ -388,7 +394,11 @@ const sum = (r, a) => r.map((b, i) => a[i] + b);
 
 let prevBestNetworkId = "";
 
+let generateNetworksOutputBusy = false;
+
 function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutput, callback){
+
+  generateNetworksOutputBusy = true;
 
   let arrayOfArrays = [];
   // let matchFlag = false;
@@ -647,6 +657,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
               results.bestNetwork = {none: 0};
               results.keyword = "none";
           }
+          generateNetworksOutputBusy = false;
           callback(null, results);
         });
 
@@ -655,6 +666,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     })
     .catch(function(err){
       console.log(chalkError("SORTER ERROR: " + err));
+      generateNetworksOutputBusy = false;
       callback(err, {});
     });
 
@@ -737,7 +749,6 @@ function initActivateNetworkInterval(interval){
         maxQueueFlag = true;
       }
 
-      // activateNetwork2(obj.user.languageAnalysis, obj.user.histograms, function(err, networkOutputObj){
       activateNetwork2(obj.user.histograms, function(err, networkOutputObj){
 
         if (err){
@@ -913,7 +924,11 @@ function getInputNames(nodes, callback){
   });
 }
 
+let loadNetworksBusy = false;
+
 function loadNetworks(networksObj, callback){
+
+  loadNetworksBusy = true;
 
   // console.log("networksObj\n" + jsonPrint(networksObj));
   debug("networksObj\n" + Object.keys(networksObj));
@@ -966,6 +981,8 @@ function loadNetworks(networksObj, callback){
     });
 
   }, function(err){
+
+    loadNetworksBusy = false;
 
     if (callback) { callback(err); }
 
@@ -1088,10 +1105,17 @@ process.on("message", function(m) {
         + " | INTERVAL: " + m.interval
       ));
       initActivateNetworkInterval(m.interval);
+      process.send({ op: "IDLE" });
     break;
 
     case "STATS":
       showStats(m.options);
+      if (busy()) {
+        process.send({ op: "BUSY" });
+      }
+      else {
+        process.send({ op: "IDLE" });
+      }
     break;
 
     case "GET_STATS":
@@ -1229,6 +1253,20 @@ function saveFile (path, file, jsonObj, callback){
     });
 }
 
+let initializeBusy = false;
+
+
+function busy(){
+  if (loadNetworksBusy) { return true; }
+  if (initializeBusy) { return true; }
+  if (generateNetworksOutputBusy) { return true; }
+  if (activateNetworkBusy) { return true; }
+  if (generateNetworkInputBusy) { return true; }
+  if (rxActivateNetworkQueue.length > 0) { return true; }
+
+  return false;
+}
+
 function initStatsUpdate(cnf){
 
   clearInterval(statsUpdateInterval);
@@ -1242,10 +1280,19 @@ function initStatsUpdate(cnf){
 
     saveFile(statsFolder, statsFile, statsObj);
 
+    if (busy()) {
+      process.send({ op: "BUSY" });
+    }
+    else {
+      process.send({ op: "IDLE" });
+    }
+
   }, cnf.statsUpdateIntervalTime);
 }
 
 function initialize(cnf, callback){
+
+  initializeBusy = true;
 
   if (debug.enabled || debugCache.enabled){
     console.log("\n%%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
@@ -1271,11 +1318,14 @@ function initialize(cnf, callback){
 setTimeout(function(){
 
   initialize(configuration, function(err, cnf){
+
+    initializeBusy = false;
+
     if (err && (err.status !== 404)) {
       console.error(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
       quit();
     }
-    console.log(chalkInfo(cnf.processName + " STARTED " + getTimeStamp() + "\n"));
+    console.log(chalkInfo(cnf.processName + " STARTED " + getTimeStamp() + "\n" + jsonPrint(cnf)));
     initStatsUpdate(cnf);
   });
 }, 1 * ONE_SECOND);
