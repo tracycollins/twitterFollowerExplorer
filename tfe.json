@@ -6,6 +6,7 @@
     "cwd": "/Volumes/RAID1/projects/twitterFollowerExplorer",
     "node_args": "--max-old-space-size=6144",
     "autorestart": true,
+    "restart_delay": 120000,
     "env": {
       "NODE_ENV": "production",
       "GCLOUD_PROJECT": "graphic-tangent-627",

@@ -432,10 +432,6 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
     statsObj.loadedNetworks[nnId].output = nnOutput;
 
-    // if (!statsObj.bestNetwork.networkId) { 
-    //   statsObj.bestNetwork = deepcopy(statsObj.loadedNetworks[nnId]);
-    // }
-
     if (expectedOutput[0] === 1 || expectedOutput[1] === 1 || expectedOutput[2] === 1) {
 
       statsObj.loadedNetworks[nnId].total += 1;
@@ -513,6 +509,8 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
         console.log(chalkAlert("*** NEW BEST NETWORK"
           + " | " + statsObj.bestNetwork.networkId
+          + " | " + statsObj.bestNetwork.numInputs + " IN"
+          + " | IN ID: " + statsObj.bestNetwork.inputsId
           + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
           + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
         ));
@@ -529,7 +527,9 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           op: "BEST_MATCH_RATE", 
           networkId: statsObj.bestNetwork.networkId, 
           matchRate: statsObj.bestNetwork.matchRate,
-          successRate: statsObj.bestNetwork.successRate 
+          successRate: statsObj.bestNetwork.successRate, 
+          inputsId: statsObj.bestNetwork.inputsId,
+          numInputs: statsObj.bestNetwork.numInputs 
         });
       }
 
@@ -815,7 +815,8 @@ function initActivateNetworkInterval(interval){
 
                     console.log(chalk.blue("+++ AUTO KEYWORD MATCH"
                       + " | " + statsObj.bestNetwork.networkId
-                      + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
+                      + " | " + statsObj.bestNetwork.numInputs + " IN"
+                      + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
                       + " | TOT: " + statsObj.bestNetwork.total
                       + " | MATCH: " + statsObj.bestNetwork.match
                       // + " | L: " + statsObj.bestNetwork.left
@@ -835,7 +836,8 @@ function initActivateNetworkInterval(interval){
 
                     console.log(chalk.red("--- AUTO KEYWORD MISS "
                       + " | " + statsObj.bestNetwork.networkId
-                      + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
+                      + " | " + statsObj.bestNetwork.numInputs + " IN"
+                      + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
                       + " | TOT: " + statsObj.bestNetwork.total
                       + " | MATCH: " + statsObj.bestNetwork.match
                       // + " | L: " + statsObj.bestNetwork.left
@@ -963,9 +965,11 @@ function loadNetworks(networksObj, callback){
       if (statsObj.loadedNetworks[nnId] === undefined) {
         statsObj.loadedNetworks[nnId] = {};
         statsObj.loadedNetworks[nnId].networkId = nnId;
-        statsObj.loadedNetworks[nnId].total = 0;
+        statsObj.loadedNetworks[nnId].numInputs = networkObj.numInputs;
+        statsObj.loadedNetworks[nnId].inputsId = networkObj.inputsId;
         statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
         statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
+        statsObj.loadedNetworks[nnId].total = 0;
         statsObj.loadedNetworks[nnId].match = 0;
         statsObj.loadedNetworks[nnId].mismatch = 0;
         statsObj.loadedNetworks[nnId].matchFlag = false;
