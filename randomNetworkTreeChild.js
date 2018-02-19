@@ -366,15 +366,19 @@ function activateNetwork2(histograms, callback){
         switch (maxOutputIndex) {
           case 0:
             networkOutput[nnId].output = [1,0,0];
+            networkOutput[nnId].left += 1;
           break;
           case 1:
             networkOutput[nnId].output = [0,1,0];
+            networkOutput[nnId].neutral += 1;
           break;
           case 2:
             networkOutput[nnId].output = [0,0,1];
+            networkOutput[nnId].right += 1;
           break;
           default:
             networkOutput[nnId].output = [0,0,0];
+            networkOutput[nnId].none += 1;
         }
 
         async.setImmediate(function() {
@@ -416,6 +420,8 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     if (statsObj.loadedNetworks[nnId] === undefined) {
       statsObj.loadedNetworks[nnId] = {};
       statsObj.loadedNetworks[nnId].networkId = nnId;
+      statsObj.loadedNetworks[nnId].inputsId = nn.inputsId;
+      statsObj.loadedNetworks[nnId].numInputs = nn.numInputs;
       statsObj.loadedNetworks[nnId].output = [];
       statsObj.loadedNetworks[nnId].successRate = nn.successRate;
       statsObj.loadedNetworks[nnId].total = 0;
@@ -1039,6 +1045,7 @@ function resetStats(callback){
   statsObj.categorize.positive = 0;
   statsObj.categorize.negative = 0;
 
+  statsObj.loadedNetworks.multiNeuralNet.networkId = "multiNeuralNet";
   statsObj.loadedNetworks.multiNeuralNet.matchRate = 0;
   statsObj.loadedNetworks.multiNeuralNet.total = 0;
   statsObj.loadedNetworks.multiNeuralNet.match = 0;
@@ -1063,6 +1070,9 @@ function resetStats(callback){
     networksHashMap.set(nnId, networkObj);
 
     statsObj.loadedNetworks[nnId] = {};
+    statsObj.loadedNetworks[nnId].networkId = nnId;
+    statsObj.loadedNetworks[nnId].inputsId = networkObj.inputsId;
+    statsObj.loadedNetworks[nnId].numInputs = networkObj.numInputs;
     statsObj.loadedNetworks[nnId].total = 0;
     statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
     statsObj.loadedNetworks[nnId].matchRate = 0;
@@ -1075,7 +1085,8 @@ function resetStats(callback){
     statsObj.loadedNetworks[nnId].positive = 0;
     statsObj.loadedNetworks[nnId].negative = 0;
 
-    cb();
+    async.setImmediate(function() { cb(); });
+    // cb();
 
   }, function(err){
 
@@ -1110,6 +1121,15 @@ process.on("message", function(m) {
       ));
       initActivateNetworkInterval(m.interval);
       process.send({ op: "IDLE" });
+    break;
+
+    case "GET_BUSY":
+      if (busy()) {
+        process.send({ op: "BUSY" });
+      }
+      else {
+        process.send({ op: "IDLE" });
+      }
     break;
 
     case "STATS":
