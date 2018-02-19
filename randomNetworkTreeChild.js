@@ -642,25 +642,25 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           switch (maxOutputIndex) {
             case 0:
               if (enableLog) { console.log(chalk.blue("NAKW | L | " + bestNetworkOutput + " | " + maxOutputIndex)); }
-              results.bestNetwork = {left: 100};
+              results.bestNetwork.left = 100;
               results.keyword = "left";
             break;
             case 1:
               if (enableLog) { console.log(chalk.black("NAKW | N | " + bestNetworkOutput + " | " + maxOutputIndex)); }
               // console.log(chalk.black("NAKW | N | " + bestNetworkOutput + " | " + maxOutputIndex));
-              results.bestNetwork = {neutral: 100};
+              results.bestNetwork.neutral = 100;
               results.keyword = "neutral";
             break;
             case 2:
               if (enableLog) { console.log(chalk.red("NAKW | R | " + bestNetworkOutput + " | " + maxOutputIndex)); }
               // console.log(chalk.red("NAKW | R | " + bestNetworkOutput + " | " + maxOutputIndex));
-              results.bestNetwork = {right: 100};
+              results.bestNetwork.right = 100;
               results.keyword = "right";
             break;
             default:
               if (enableLog) { console.log(chalk.gray("NAKW | 0 | " + bestNetworkOutput + " | " + maxOutputIndex)); }
               // console.log(chalk.gray("NAKW | 0 | " + bestNetworkOutput + " | " + maxOutputIndex));
-              results.bestNetwork = {none: 0};
+              results.bestNetwork.none = 100;
               results.keyword = "none";
           }
           generateNetworksOutputBusy = false;
