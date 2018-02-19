@@ -112,6 +112,7 @@ console.log("=================================");
 
 let statsObj = {};
 
+statsObj.networksLoaded = false;
 statsObj.normalization = {};
 
 statsObj.loadedNetworks = {};
@@ -338,6 +339,12 @@ function activateNetwork2(histograms, callback){
 
     networkOutput[nnId] = {};
     networkOutput[nnId].output = [];
+    networkOutput[nnId].left = statsObj.loadedNetworks[nnId].left;
+    networkOutput[nnId].neutral = statsObj.loadedNetworks[nnId].neutral;
+    networkOutput[nnId].right = statsObj.loadedNetworks[nnId].right;
+    networkOutput[nnId].none = statsObj.loadedNetworks[nnId].none;
+    networkOutput[nnId].positive = statsObj.loadedNetworks[nnId].positive;
+    networkOutput[nnId].negative = statsObj.loadedNetworks[nnId].negative;
     // networkOutput[nnId].successRate = networkObj.successRate;
 
     if (networkObj.inputsObj.inputs === undefined) {
@@ -409,6 +416,8 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
   let bestNetworkOutput = [0,0,0];
   let multiNeuralNetOutput = [0,0,0];
   let statsTextArray = [];
+
+  // console.log("networkOutputObj\n" + jsonPrint(networkOutputObj));
 
   async.each(Object.keys(networkOutputObj), function(nnId, cb){
 
@@ -673,6 +682,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     .catch(function(err){
       console.log(chalkError("SORTER ERROR: " + err));
       generateNetworksOutputBusy = false;
+      quit();
       callback(err, {});
     });
 
@@ -727,7 +737,7 @@ function initActivateNetworkInterval(interval){
 
   activateNetworkInterval = setInterval(function(){ 
 
-    if ((rxActivateNetworkQueue.length > 0) && activateNetworkReady) {
+    if (statsObj.networksLoaded && (rxActivateNetworkQueue.length > 0) && activateNetworkReady) {
 
       activateNetworkReady = false;
 
@@ -1159,6 +1169,7 @@ process.on("message", function(m) {
         // + "\n" + jsonPrint(m.networksObj)
       ));
       loadNetworks(m.networksObj, function(){
+        statsObj.networksLoaded = true;
         process.send({op: "NETWORK_READY"}, function(err){
           if (err) { quit("NETWORK_READY PROCESS SEND ERRROR"); }
         });

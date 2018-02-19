@@ -4215,10 +4215,22 @@ function loadBestNeuralNetworkFile(callback){
       initRandomNetworks({ numRandomNetworks: configuration.numRandomNetworks }, function(err, ranNetObj){
 
         if (loadedNetworksFlag && !networksSentFlag && (randomNetworkTree !== undefined)) {
+          console.log(chalkAlert("SEND RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
+
+          networksSentFlag = true;
+
           randomNetworkTree.send({ op: "LOAD_NETWORKS", networksObj: ranNetObj }, function(err){
-            networksSentFlag = true;
+            networksSentFlag = false;
             console.log(chalkAlert("SEND RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
           });
+        }
+        else {
+          console.log(chalkAlert("*** RANDOM NETWORKS NOT SENT"
+            + " | NNs: " + Object.keys(ranNetObj).length
+            + " | randomNetworkTree: " + (randomNetworkTree !== undefined)
+            + " | loadedNetworksFlag: " + loadedNetworksFlag
+            + " | networksSentFlag: " + networksSentFlag
+          ));
         }
 
         let bnwObj;
