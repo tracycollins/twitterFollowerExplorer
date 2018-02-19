@@ -248,6 +248,8 @@ statsObj.normalization.score.max = -1.0;
 statsObj.normalization.magnitude.min = 0;
 statsObj.normalization.magnitude.max = -Infinity;
 
+statsObj.numLangAnalyzed = 0;
+
 inputTypes.forEach(function(type){
 
   statsObj.histograms[type] = {};
@@ -3039,6 +3041,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
   if (callback !== undefined) { callback(); }
 }
 
+
+
 function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
   langAnalyzerMessageRxQueueReadyFlag = true;
@@ -3060,6 +3064,8 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
       switch (m.op) {
 
         case "LANG_RESULTS":
+
+          statsObj.numLangAnalyzed += 1;
 
           if (m.results.entities !== undefined) {
             langEntityKeys = Object.keys(m.results.entities);
@@ -3135,20 +3141,22 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                 }
 
-                console.log(chalkLog("UPDATE LANG ERR | USER>DB"
-                  + " | " + updatedUserObj.userId
-                  // + " | NID: " + updatedUserObj.nodeId
-                  + " | @" + updatedUserObj.screenName
-                  + " | " + updatedUserObj.name
-                  + " | Ts: " + updatedUserObj.statusesCount
-                  + " | FLs: " + updatedUserObj.followersCount
-                  + " | FRs: " + updatedUserObj.friendsCount
-                  + " | 3CF: " + threeceeFollowing
-                  + " | KWs: " + kws
-                  + " | KWA: " + kwsAuto
-                  + " | LA: " + updatedUserObj.languageAnalyzed
-                  // + "\nLA Es: " + laEnts
-                ));
+                if (statsObj.numLangAnalyzed % 50 === 0) {
+                  console.log(chalkLog("UPDATE LANG ERR | USER>DB"
+                    + " | " + updatedUserObj.userId
+                    // + " | NID: " + updatedUserObj.nodeId
+                    + " | @" + updatedUserObj.screenName
+                    + " | " + updatedUserObj.name
+                    + " | Ts: " + updatedUserObj.statusesCount
+                    + " | FLs: " + updatedUserObj.followersCount
+                    + " | FRs: " + updatedUserObj.friendsCount
+                    + " | 3CF: " + threeceeFollowing
+                    + " | KWs: " + kws
+                    + " | KWA: " + kwsAuto
+                    + " | LA: " + updatedUserObj.languageAnalyzed
+                    // + "\nLA Es: " + laEnts
+                  ));
+                }
               }
               langAnalyzerMessageRxQueueReadyFlag = true;
             }); 
@@ -3215,23 +3223,26 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                     threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                   }
 
-                  console.log(chalkLog("UPDATE LANG ANLZD"
-                    + " | LA ENTS: " + langEntityKeys.length
-                    + " | USER>DB"
-                    + " | " + updatedUserObj.userId
-                    + " | @" + updatedUserObj.screenName
-                    + " | " + updatedUserObj.name
-                    + " | Ts: " + updatedUserObj.statusesCount
-                    + " | FLs: " + updatedUserObj.followersCount
-                    + " | FRs: " + updatedUserObj.friendsCount
-                    + " | 3CF: " + threeceeFollowing
-                    + " | KWs: " + kws
-                    + " | KWA: " + kwsAuto
-                    + " | LA: " + updatedUserObj.languageAnalyzed
-                    + " S: " + updatedUserObj.languageAnalysis.sentiment.score.toFixed(2)
-                    + " M: " + updatedUserObj.languageAnalysis.sentiment.magnitude.toFixed(2)
-                    // + "\nLA Es: " + laEnts
-                  ));
+                  if (statsObj.numLangAnalyzed % 50 === 0) {
+                    console.log(chalkLog("UPDATE LANG ANLZD"
+                      + " | LA ENTS: " + langEntityKeys.length
+                      + " | USER>DB"
+                      + " | " + updatedUserObj.userId
+                      + " | @" + updatedUserObj.screenName
+                      + " | " + updatedUserObj.name
+                      + " | Ts: " + updatedUserObj.statusesCount
+                      + " | FLs: " + updatedUserObj.followersCount
+                      + " | FRs: " + updatedUserObj.friendsCount
+                      + " | 3CF: " + threeceeFollowing
+                      + " | KWs: " + kws
+                      + " | KWA: " + kwsAuto
+                      + " | LA: " + updatedUserObj.languageAnalyzed
+                      + " S: " + updatedUserObj.languageAnalysis.sentiment.score.toFixed(2)
+                      + " M: " + updatedUserObj.languageAnalysis.sentiment.magnitude.toFixed(2)
+                      // + "\nLA Es: " + laEnts
+                    ));
+                  }
+
                 }
 
                 langAnalyzerMessageRxQueueReadyFlag = true;
@@ -3274,23 +3285,26 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
                 }
 
-                console.log(chalkLog("UPDATE LANG ANLZD"
-                  + " | LA ENTS: " + langEntityKeys.length
-                  + " | USER>DB"
-                  + " | " + updatedUserObj.userId
-                  + " | @" + updatedUserObj.screenName
-                  + " | " + updatedUserObj.name
-                  + " | Ts: " + updatedUserObj.statusesCount
-                  + " | FLs: " + updatedUserObj.followersCount
-                  + " | FRs: " + updatedUserObj.friendsCount
-                  + " | 3CF: " + threeceeFollowing
-                  + " | KWs: " + kws
-                  + " | KWA: " + kwsAuto
-                  + " | LA: " + updatedUserObj.languageAnalyzed
-                  + " S: " + updatedUserObj.languageAnalysis.sentiment.score.toFixed(2)
-                  + " M: " + updatedUserObj.languageAnalysis.sentiment.magnitude.toFixed(2)
-                  // + "\nLA Es: " + laEnts
-                ));
+                if (statsObj.numLangAnalyzed % 50 === 0) {
+                  console.log(chalkLog("UPDATE LANG ANLZD"
+                    + " | LA ENTS: " + langEntityKeys.length
+                    + " | USER>DB"
+                    + " | " + updatedUserObj.userId
+                    + " | @" + updatedUserObj.screenName
+                    + " | " + updatedUserObj.name
+                    + " | Ts: " + updatedUserObj.statusesCount
+                    + " | FLs: " + updatedUserObj.followersCount
+                    + " | FRs: " + updatedUserObj.friendsCount
+                    + " | 3CF: " + threeceeFollowing
+                    + " | KWs: " + kws
+                    + " | KWA: " + kwsAuto
+                    + " | LA: " + updatedUserObj.languageAnalyzed
+                    + " S: " + updatedUserObj.languageAnalysis.sentiment.score.toFixed(2)
+                    + " M: " + updatedUserObj.languageAnalysis.sentiment.magnitude.toFixed(2)
+                    // + "\nLA Es: " + laEnts
+                  ));
+                }
+
               }
               langAnalyzerMessageRxQueueReadyFlag = true;
             }); 
