@@ -1046,6 +1046,7 @@ function resetStats(callback){
   statsObj.categorize.negative = 0;
 
   statsObj.loadedNetworks.multiNeuralNet.networkId = "multiNeuralNet";
+  statsObj.loadedNetworks.multiNeuralNet.successRate = 0;
   statsObj.loadedNetworks.multiNeuralNet.matchRate = 0;
   statsObj.loadedNetworks.multiNeuralNet.total = 0;
   statsObj.loadedNetworks.multiNeuralNet.match = 0;
