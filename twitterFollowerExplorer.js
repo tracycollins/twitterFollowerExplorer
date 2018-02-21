@@ -2938,6 +2938,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
       let user = {};
       let entry = {};
       let hmObj = {};
+      let prevHmObj = {};
       let fileObj = {};
       let file;
 
@@ -3080,12 +3081,14 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         break;
 
         case "BEST_MATCH_RATE":
-          console.log(chalkBlue(getTimeStamp() + " | RNT_BEST_MATCH_RATE"
+          console.log(chalkAlert("*** RNT_BEST_MATCH_RATE"
             + " | " + m.networkId
             + " | IN ID: " + m.inputsId
             + " | " + m.numInputs + " IN"
             + " | SR: " + m.successRate.toFixed(2) + "%"
             + " | MR: " + m.matchRate.toFixed(2) + "%"
+            + "\n PREV: " + m.previousBestNetworkId
+            + " | PMR: " + m.previousBestMatchRate.toFixed(2) + "%)"
           ));
 
           if (bestNetworkHashMap.has(m.networkId)) {
@@ -3121,6 +3124,21 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
               + " | " + m.networkId
               + " | " + m.matchRate.toFixed(2)
             ));
+          }
+
+          if (m.previousBestNetworkId && bestNetworkHashMap.has(m.previousBestNetworkId)) {
+
+            prevHmObj = bestNetworkHashMap.get(m.previousBestNetworkId);
+            prevHmObj.network.matchRate = m.previousBestMatchRate;
+
+            bestNetworkHashMap.set(m.previousBestNetworkId, prevHmObj);
+
+            if (hostname === "google") {
+
+              console.log(chalkBlue("... PREV BEST NETWORK | " + m.previousBestNetworkId + " | " + m.previousBestMatchRate.toFixed(2)));
+
+              saveFileQueue.push({folder: bestNetworkFolder, file: m.previousBestNetworkId + ".json", obj: prevHmObj });
+            }
           }
 
           randomNetworkTreeMessageRxQueueReadyFlag = true;
@@ -4384,6 +4402,8 @@ function loadBestNeuralNetworkFile(callback){
               // + "\n\n"
             ));
 
+            nnObj.network = deepcopy(bnwObj);
+            bestNetworkHashMap.set(currentBestNetworkId, nnObj);
             printNetworkObj("LOADED NETWORK", bnwObj);
 
           }
@@ -4416,6 +4436,9 @@ function loadBestNeuralNetworkFile(callback){
             + " | MATCH: " + bnwObj.matchRate.toFixed(2) 
             // + "\n\n"
           ));
+
+          nnObj.network = deepcopy(bnwObj);
+          bestNetworkHashMap.set(currentBestNetworkId, nnObj);
 
           printNetworkObj("LOADED NETWORK", bnwObj);
           callback(null, bnwObj);

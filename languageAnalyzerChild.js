@@ -82,8 +82,10 @@ function msToTime(duration) {
   return days + ":" + hours + ":" + minutes + ":" + seconds;
 }
 
+process.title = "node_languageAnalyzer";
 console.log("\n\n=================================");
 console.log("HOST:          " + hostname);
+console.log("PROCESS TITLE: " + process.title);
 console.log("PROCESS ID:    " + process.pid);
 console.log("PROCESS ARGS:  " + util.inspect(process.argv, {showHidden: false, depth: 1}));
 console.log("=================================");

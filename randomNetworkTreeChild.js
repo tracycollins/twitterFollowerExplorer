@@ -3,8 +3,8 @@
 
 // let enableLog = true;
 
-const bestNetworkFolder = "/config/utility/best/neuralNetworks";
-const bestNetworkFile = "bestNetworkId";
+// const bestNetworkFolder = "/config/utility/best/neuralNetworks";
+// const bestNetworkFile = "bestNetworkId";
 
 const ONE_SECOND = 1000;
 const MAX_Q_SIZE = 500;
@@ -109,6 +109,7 @@ console.log("PROCESS ID:    " + process.pid);
 console.log("PROCESS ARGS:  " + util.inspect(process.argv, {showHidden: false, depth: 1}));
 console.log("=================================");
 
+let initializeBusy = false;
 
 let statsObj = {};
 
@@ -380,7 +381,8 @@ function activateNetwork2(histograms, callback){
 
 const sum = (r, a) => r.map((b, i) => a[i] + b);
 
-let prevBestNetworkId = "";
+let previousBestNetworkId = false;
+let previousBestNetworkMatchRate = 0;
 
 let generateNetworksOutputBusy = false;
 
@@ -492,9 +494,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
       bestNetworkOutput = statsObj.bestNetwork.output;
 
-      if ((statsObj.bestNetwork.networkId !== undefined) && (prevBestNetworkId !== statsObj.bestNetwork.networkId)) {
-
-        prevBestNetworkId = statsObj.bestNetwork.networkId;
+      if ((statsObj.bestNetwork.networkId !== undefined) && (previousBestNetworkId !== statsObj.bestNetwork.networkId)) {
 
         console.log(chalkAlert("*** NEW BEST NETWORK"
           + " | " + statsObj.bestNetwork.networkId
@@ -502,6 +502,8 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           + " | IN ID: " + statsObj.bestNetwork.inputsId
           + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
           + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+          + "\n PREV: " + previousBestNetworkId
+          + " | PMR: " + previousBestNetworkMatchRate.toFixed(2) + "%)"
         ));
 
         console.log(chalk.blue(
@@ -512,14 +514,22 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           + "\n-------------------------------------------------------------------------------"
         ));
 
+        if (previousBestNetworkId) {
+          previousBestNetworkMatchRate = statsObj.loadedNetworks[previousBestNetworkId].matchRate;
+        }
+
         process.send({
           op: "BEST_MATCH_RATE", 
           networkId: statsObj.bestNetwork.networkId, 
           matchRate: statsObj.bestNetwork.matchRate,
           successRate: statsObj.bestNetwork.successRate, 
           inputsId: statsObj.bestNetwork.inputsId,
-          numInputs: statsObj.bestNetwork.numInputs 
+          numInputs: statsObj.bestNetwork.numInputs,
+          previousBestNetworkId: previousBestNetworkId,
+          previousBestMatchRate: previousBestNetworkMatchRate
         });
+
+        previousBestNetworkId = statsObj.bestNetwork.networkId;
       }
 
       // Calculate MULTI network output, use for "Concensus" score
@@ -998,6 +1008,17 @@ function printCategorizeHistory(){
   });
 }
 
+function busy(){
+  if (loadNetworksBusy) { return true; }
+  if (initializeBusy) { return true; }
+  if (generateNetworksOutputBusy) { return true; }
+  if (activateNetworkBusy) { return true; }
+  if (generateNetworkInputBusy) { return true; }
+  if (rxActivateNetworkQueue.length > 0) { return true; }
+
+  return false;
+}
+
 function resetStats(callback){
 
   statsObj.categorize.endTime = moment().valueOf();
@@ -1259,19 +1280,8 @@ function saveFile (path, file, jsonObj, callback){
     });
 }
 
-let initializeBusy = false;
 
 
-function busy(){
-  if (loadNetworksBusy) { return true; }
-  if (initializeBusy) { return true; }
-  if (generateNetworksOutputBusy) { return true; }
-  if (activateNetworkBusy) { return true; }
-  if (generateNetworkInputBusy) { return true; }
-  if (rxActivateNetworkQueue.length > 0) { return true; }
-
-  return false;
-}
 
 function initStatsUpdate(cnf){
 
