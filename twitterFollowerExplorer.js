@@ -1107,7 +1107,7 @@ function loadFile(path, file, callback) {
           callback(null, fileObj);
         }
         catch(e){
-          console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
+          console.trace(chalkError("TFE | JSON PARSE ERROR: " + jsonPrint(e)));
           callback("JSON PARSE ERROR", null);
         }
       }
@@ -3137,7 +3137,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
               console.log(chalkBlue("... PREV BEST NETWORK | " + m.previousBestNetworkId + " | " + m.previousBestMatchRate.toFixed(2)));
 
-              saveFileQueue.push({folder: bestNetworkFolder, file: m.previousBestNetworkId + ".json", obj: prevHmObj });
+              saveFileQueue.push({folder: bestNetworkFolder, file: m.previousBestNetworkId + ".json", obj: prevHmObj.network });
             }
           }
 
