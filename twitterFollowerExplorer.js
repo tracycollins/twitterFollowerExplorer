@@ -2906,7 +2906,14 @@ function updateNetworkStats(networkStatsObj, callback) {
 
   }, function(err){
 
-    const folder = "/test";
+    let folder;
+
+    if (hostname === "google"){
+      folder = configuration.testMode ? "/test" : bestNetworkFolder;
+    }
+    else {
+      folder = configuration.testMode ? "/test" : localBestNetworkFolder;
+    }
 
     saveNetworkHashMap({folder: folder}, function(){
       if (callback !== undefined) { callback(); }
