@@ -186,7 +186,7 @@ function showStats(options){
 function quit(message) {
   let msg = "";
   if (message) { msg = message; }
-  showStats(true);
+  showStats(false);
   console.log(process.argv[1]
     + " | RANDOM NETWORK TREE: **** QUITTING"
     + " | CAUSE: " + msg
@@ -316,23 +316,6 @@ function activateNetwork2(histograms, callback){
 
   userHistograms = deepcopy(histograms);
 
-  // const score = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.score : 0;
-  // const mag = (languageAnalysis !== undefined && languageAnalysis.sentiment !== undefined) ? languageAnalysis.sentiment.magnitude : 0;
-
-  // let magnitudeNormalized = 0;
-  // let scoreNormalized = 0.5;
-
-  // if (statsObj.normalization.magnitude.max !== undefined) {
-  //   if (!statsObj.normalization.magnitude.max) {
-  //     statsObj.normalization.magnitude.max = 5; // KLUDGE!!
-  //   }
-  //   magnitudeNormalized = mag/statsObj.normalization.magnitude.max;
-  // }
-
-  // if ((statsObj.normalization.score.min !== undefined) && (statsObj.normalization.score.max !== undefined)) {
-  //   scoreNormalized = (score + Math.abs(statsObj.normalization.score.min))/(Math.abs(statsObj.normalization.score.min) + Math.abs(statsObj.normalization.score.max));
-  // }
-
   async.eachSeries(networksHashMap.keys(), function(nnId, cb){
 
     const networkObj = networksHashMap.get(nnId);
@@ -345,18 +328,12 @@ function activateNetwork2(histograms, callback){
     networkOutput[nnId].none = statsObj.loadedNetworks[nnId].none;
     networkOutput[nnId].positive = statsObj.loadedNetworks[nnId].positive;
     networkOutput[nnId].negative = statsObj.loadedNetworks[nnId].negative;
-    // networkOutput[nnId].successRate = networkObj.successRate;
 
     if (networkObj.inputsObj.inputs === undefined) {
       console.log(chalkError("UNDEFINED NETWORK INPUTS OBJ | NETWORK OBJ KEYS: " + Object.keys(networkObj)));
     }
 
     generateNetworkInput(userHistograms, networkObj.inputsObj.inputs, function(err, networkInput){
-
-      // networkInput[0] = magnitudeNormalized;
-      // networkInput[1] = scoreNormalized;
-
-      // printDatum(nnId, networkInput);
 
       const out = networkObj.network.activate(networkInput);
 
@@ -412,12 +389,9 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
   generateNetworksOutputBusy = true;
 
   let arrayOfArrays = [];
-  // let matchFlag = false;
   let bestNetworkOutput = [0,0,0];
   let multiNeuralNetOutput = [0,0,0];
   let statsTextArray = [];
-
-  // console.log("networkOutputObj\n" + jsonPrint(networkOutputObj));
 
   async.each(Object.keys(networkOutputObj), function(nnId, cb){
 
@@ -548,7 +522,6 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
         });
       }
 
-
       // Calculate MULTI network output, use for "Concensus" score
 
       const sumArray = arrayOfArrays.reduce(sum);
@@ -656,19 +629,16 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
             break;
             case 1:
               if (enableLog) { console.log(chalk.black("NAKW | N | " + bestNetworkOutput + " | " + maxOutputIndex)); }
-              // console.log(chalk.black("NAKW | N | " + bestNetworkOutput + " | " + maxOutputIndex));
               results.bestNetwork.neutral = 100;
               results.keyword = "neutral";
             break;
             case 2:
               if (enableLog) { console.log(chalk.red("NAKW | R | " + bestNetworkOutput + " | " + maxOutputIndex)); }
-              // console.log(chalk.red("NAKW | R | " + bestNetworkOutput + " | " + maxOutputIndex));
               results.bestNetwork.right = 100;
               results.keyword = "right";
             break;
             default:
               if (enableLog) { console.log(chalk.gray("NAKW | 0 | " + bestNetworkOutput + " | " + maxOutputIndex)); }
-              // console.log(chalk.gray("NAKW | 0 | " + bestNetworkOutput + " | " + maxOutputIndex));
               results.bestNetwork.none = 100;
               results.keyword = "none";
           }
