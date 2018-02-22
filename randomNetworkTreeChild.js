@@ -990,15 +990,16 @@ function loadNetworks(networksObj, callback){
 }
 
 function printCategorizeHistory(){
+  console.log(chalkAlert("RNT CATGORIZE HISTORY ===========================================");
   statsObj.categorizeHistory.forEach(function(catStats){
-    console.log(chalkAlert("RNT"
+    console.log(chalkAlert("RNT CATGORIZE HISTORY"
       + " | S: " + moment(catStats.startTime).format(compactDateTimeFormat)
       + " E: " + moment(catStats.endTime).format(compactDateTimeFormat)
       + " R: " + msToTime(catStats.endTime - catStats.startTime)
       + " | BEST: " + catStats.bestNetwork.networkId
-      + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SUCCESS"
-      + " - " + catStats.bestNetwork.matchRate.toFixed(2) + "% MATCH"
-      + " | RATE: " + catStats.matchRate.toFixed(1) + "%"
+      + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SR"
+      + " - " + catStats.bestNetwork.matchRate.toFixed(2) + "% MR"
+      + " | MR: " + catStats.matchRate.toFixed(1) + "%"
       + " | TOT: " + catStats.total
       + " | MATCH: " + catStats.match
       + " | L: " + catStats.left
