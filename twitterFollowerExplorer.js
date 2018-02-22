@@ -156,6 +156,10 @@ const Stately = require("stately.js");
 
 let fsmPreviousState = "IDLE";
 
+function getPreviousState() {
+  return fsmPreviousState;
+}
+
 function reporter(event, oldState, newState) {
   fsmPreviousState = oldState;
   console.log(chalkAlert("-----------------------------------\n<< FSM >>"
@@ -234,11 +238,13 @@ const fsmStates = {
   "PAUSE_RATE_LIMIT":{
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
-      fsmPreviousState = oldState;
-      console.log("PAUSE_RATE_LIMIT | PREV STATE: " + fsmPreviousState);
+      // fsmPreviousState = oldState;
+      console.log("PAUSE_RATE_LIMIT | PREV STATE: " + oldState);
     },
     "fsm_reset": "RESET",
-    "fsm_rateLimitEnd": fsmPreviousState,
+    "fsm_rateLimitEnd": function(){
+      return getPreviousState();
+    },
     "fsm_fetchUserEnd": "FETCH_ALL"
   }
 };
@@ -1523,6 +1529,7 @@ function checkRateLimit(callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
           + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
         ));
+        fsmPreviousState = fsm.getMachineState();
         fsm.fsm_rateLimitStart();
       }
       else {
@@ -3603,6 +3610,7 @@ function fetchFriends(params, callback) {
           statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = true;
           statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
           checkRateLimit();
+          fsmPreviousState = fsm.getMachineState();
           fsm.fsm_rateLimitStart();
         }
         callback(err, []);
