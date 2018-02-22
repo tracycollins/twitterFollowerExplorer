@@ -990,7 +990,7 @@ function loadNetworks(networksObj, callback){
 }
 
 function printCategorizeHistory(){
-  console.log(chalkAlert("RNT CATGORIZE HISTORY ===========================================");
+  console.log(chalkAlert("RNT CATGORIZE HISTORY ==========================================="));
   statsObj.categorizeHistory.forEach(function(catStats){
     console.log(chalkAlert("RNT CATGORIZE HISTORY"
       + " | S: " + moment(catStats.startTime).format(compactDateTimeFormat)

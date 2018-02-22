@@ -5,7 +5,7 @@
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
-const DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN = 4;
+const DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN = 5;
 const DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN = 0.4;
 
 const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
@@ -2701,9 +2701,13 @@ function initialize(cnf, callback){
   cnf.processName = process.env.TFE_PROCESS_NAME || "twitterFollowerExplorer";
   cnf.targetServer = process.env.TFE_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
 
+  cnf.histogramParseDominantMin = process.env.TFE_HISTOGRAM_PARSE_DOMINANT_MIN || DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN ;
+  cnf.histogramParseTotalMin = process.env.TFE_HISTOGRAM_PARSE_TOTAL_MIN || DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN;
+
   cnf.minSuccessRate = process.env.TFE_MIN_SUCCESS_RATE || DEFAULT_MIN_SUCCESS_RATE ;
   cnf.numRandomNetworks = process.env.TFE_NUM_RANDOM_NETWORKS || TFE_NUM_RANDOM_NETWORKS ;
   cnf.testMode = (process.env.TFE_TEST_MODE === "true") ? true : cnf.testMode;
+
   cnf.quitOnError = process.env.TFE_QUIT_ON_ERROR || false ;
   if (process.env.TFE_QUIT_ON_COMPLETE === "false") {
     cnf.quitOnComplete = false;
@@ -2753,6 +2757,16 @@ function initialize(cnf, callback){
       if (loadedConfigObj.TFE_QUIT_ON_COMPLETE !== undefined){
         console.log("LOADED TFE_QUIT_ON_COMPLETE: " + loadedConfigObj.TFE_QUIT_ON_COMPLETE);
         cnf.quitOnComplete = loadedConfigObj.TFE_QUIT_ON_COMPLETE;
+      }
+
+      if (loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined){
+        console.log("LOADED TFE_HISTOGRAM_PARSE_DOMINANT_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN);
+        cnf.histogramParseDominantMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN;
+      }
+
+      if (loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN !== undefined){
+        console.log("LOADED TFE_HISTOGRAM_PARSE_TOTAL_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN);
+        cnf.histogramParseTotalMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN;
       }
 
       if (loadedConfigObj.TFE_MIN_SUCCESS_RATE !== undefined){
