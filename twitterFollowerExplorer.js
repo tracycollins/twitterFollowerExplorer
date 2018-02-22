@@ -155,12 +155,16 @@ let TFE_USER_DB_CRAWL = false;
 const Stately = require("stately.js");
 
 let fsmPreviousState = "IDLE";
+let fsmPreviousPauseState;
 
-function getPreviousState() {
-  return fsmPreviousState;
+function getPreviousPauseState() {
+  return fsmPreviousPauseState;
 }
 
 function reporter(event, oldState, newState) {
+  if (newState === "PAUSE_RATE_LIMIT") {
+    fsmPreviousPauseState = oldState;
+  }
   fsmPreviousState = oldState;
   console.log(chalkAlert("-----------------------------------\n<< FSM >>"
     + " | " + event
@@ -214,18 +218,25 @@ const fsmStates = {
     "fsm_reset": "RESET",
     "fsm_rateLimitStart": "PAUSE_RATE_LIMIT",
     "fsm_fetchAllEnd": "READY", 
-    "fsm_fetchUserStart": function() {
-      updateNetworkFetchFriends(function(err, results){});
-      return this.FETCH_USER;
-    }
+    "fsm_fetchUserStart": "FETCH_USER"
+    // "fsm_fetchUserStart": function() {
+    //   updateNetworkFetchFriends(function(err, results){});
+    //   return this.FETCH_USER;
+    // }
   },
   "FETCH_USER":{
-    onEnter: reporter,
-    "fsm_reset": "RESET",
-    "fsm_fetchUserContinue": function() {
+    // onEnter: reporter,
+    onEnter: function(event, oldState, newState){
+      reporter(event, oldState, newState);
       updateNetworkFetchFriends(function(err, results){});
       return this.FETCH_USER;
-    }, 
+    },
+    "fsm_reset": "RESET",
+    "fsm_fetchUserContinue": "FETCH_USER",
+    // "fsm_fetchUserContinue": function() {
+    //   updateNetworkFetchFriends(function(err, results){});
+    //   return this.FETCH_USER;
+    // }, 
     "fsm_fetchUserEnd": "FETCH_ALL",
     "fsm_rateLimitStart": "PAUSE_RATE_LIMIT"
   },
@@ -243,7 +254,7 @@ const fsmStates = {
     },
     "fsm_reset": "RESET",
     "fsm_rateLimitEnd": function(){
-      return getPreviousState();
+      return getPreviousPauseState();
     },
     "fsm_fetchUserEnd": "FETCH_ALL"
   }
