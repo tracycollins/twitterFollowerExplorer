@@ -4910,7 +4910,7 @@ function generateInputSets(params, callback) {
       console.log(chalkAlert("HISTOGRAMS PARSED"
         + " | PARSE TOT MIN: " + params.histogramParseTotalMin
         + " | PARSE DOM MIN: " + params.histogramParseDominantMin.toFixed(2)
-        + " | NUM INPUTS: " + newInputsObj.meta,numInputs
+        + " | NUM INPUTS: " + newInputsObj.meta.numInputs
       ));
 
 
