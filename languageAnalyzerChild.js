@@ -303,11 +303,13 @@ function initAnalyzeLanguageInterval(interval){
           statsObj.analyzer.errors += 1;
 
           if (err.code === 3) {
-            debug(chalkAlert("LAC [RXLQ: " + rxLangObjQueue.length + "]"
+            console.log(chalkAlert("LAC [RXLQ: " + rxLangObjQueue.length + "]"
               + " | UNSUPPORTED LANG"
               + " | " + langObj.obj.userId
               + " | @" + langObj.obj.screenName
               + " | " + err
+              + "\nERROR" + jsonPrint(err)
+              + "\nRESULTS" + jsonPrint(results)
             ));
           }
           else if (err.code === 8) {
@@ -315,7 +317,7 @@ function initAnalyzeLanguageInterval(interval){
               + " | LANGUAGE QUOTA"
               + " | " + langObj.obj.userId
               + " | @" + langObj.obj.screenName
-              + " | " + err
+              + " | RESOURCE_EXHAUSTED"
               // + "\n" + jsonPrint(err)
             ));
             rxLangObjQueue.push(langObj);
