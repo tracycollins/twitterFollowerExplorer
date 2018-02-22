@@ -26,9 +26,9 @@ const TFE_NUM_RANDOM_NETWORKS = 100;
 const MIN_HISTOGRAM_KEYS = 50;
 const MAX_HISTOGRAM_KEYS = 100;
 
-const TEST_MODE_TOTAL_FETCH = 500;  // total twitter user fetch count
+const TEST_MODE_TOTAL_FETCH = 20;  // total twitter user fetch count
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
-const TEST_MODE_FETCH_COUNT = 50;  // per request twitter user fetch count
+const TEST_MODE_FETCH_COUNT = 10;  // per request twitter user fetch count
 
 const bestRuntimeNetworkFileName = "bestRuntimeNetwork.json";
 let bestRuntimeNetworkId = false;
