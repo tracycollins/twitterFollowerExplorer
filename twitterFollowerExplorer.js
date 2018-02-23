@@ -4995,7 +4995,7 @@ function generateInputSets(params, callback) {
           console.log(chalkAlert("ADJUST totalMin: " + totalMin));
         }
         else if (dominantMin > 0.35) {
-          dominantMin -= 0.05;
+          dominantMin -= 0.025;
           console.log(chalkAlert("ADJUST dominantMin: " + dominantMin.toFixed(3)));
         }
         else {
@@ -5014,7 +5014,7 @@ function generateInputSets(params, callback) {
           console.log(chalkAlert("ADJUST totalMin: " + totalMin));
         }
         else if (dominantMin < 1.0) {
-          dominantMin += 0.05;
+          dominantMin += 0.025;
           console.log(chalkAlert("ADJUST dominantMin: " + dominantMin.toFixed(3)));
         }
         else {
