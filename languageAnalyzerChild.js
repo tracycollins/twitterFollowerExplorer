@@ -308,8 +308,8 @@ function initAnalyzeLanguageInterval(interval){
               + " | " + langObj.obj.userId
               + " | @" + langObj.obj.screenName
               + " | " + err
-              + "\nERROR" + jsonPrint(err)
-              + "\nRESULTS" + jsonPrint(results)
+              // + "\nERROR" + jsonPrint(err)
+              // + "\nRESULTS" + jsonPrint(results)
             ));
           }
           else if (err.code === 8) {
