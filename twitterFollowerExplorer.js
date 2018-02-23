@@ -4944,7 +4944,7 @@ function initLangAnalyzer(callback){
 
 function generateInputSets(params, callback) {
 
-  console.log(chalkInfo("NNT | GENERATING INPUT SETS"));
+  console.log(chalkInfo("NNT | GENERATING INPUT SETS\nPARAMS\n" + jsonPrint(params)));
 
   histogramParser.parse({histogram: params.histogramsObj.histograms, dominantMin: params.histogramParseDominantMin, totalMin: params.histogramParseTotalMin}, function(err, histResults){
 
@@ -5005,25 +5005,27 @@ initialize(configuration, function(err, cnf){
     }
   }
 
-  console.log(chalkTwitter(cnf.processName 
+  configuration = deepcopy(cnf);
+
+  console.log(chalkTwitter(configuration.processName 
     + " STARTED " + getTimeStamp() 
     // + "\n" + jsonPrint(cnf)
   ));
 
   initSaveFileQueue(cnf);
 
-  if (cnf.testMode) {
-    cnf.fetchCount = TEST_MODE_FETCH_COUNT;
+  if (configuration.testMode) {
+    configuration.fetchCount = TEST_MODE_FETCH_COUNT;
   }
 
-  if (cnf.loadNeuralNetworkID) {
-    cnf.neuralNetworkFile = "neuralNetwork_" + cnf.loadNeuralNetworkID + ".json";
+  if (configuration.loadNeuralNetworkID) {
+    configuration.neuralNetworkFile = "neuralNetwork_" + configuration.loadNeuralNetworkID + ".json";
   }
   else {
-    cnf.neuralNetworkFile = defaultNeuralNetworkFile;
+    configuration.neuralNetworkFile = defaultNeuralNetworkFile;
   }
 
-  console.log(chalkTwitter(cnf.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
+  console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
   // initInputArrays(cnf, function(err){
 
@@ -5057,7 +5059,7 @@ initialize(configuration, function(err, cnf){
       initCheckRateLimitInterval(checkRateLimitIntervalTime);
       initSocket(cnf, function(err, result){});
 
-      if (cnf.userDbCrawl) { 
+      if (configuration.userDbCrawl) { 
         console.log(chalkTwitter("\n\n*** CRAWLING USER DB ***\n\n"));
       }
       else {
@@ -5067,7 +5069,7 @@ initialize(configuration, function(err, cnf){
         ));
         debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[currentTwitterUser]) + "\n\n"));
 
-        if (cnf.testMode) {
+        if (configuration.testMode) {
           fetchTwitterFriendsIntervalTime = TEST_TWITTER_FETCH_FRIENDS_INTERVAL;
         }
         fsm.fsm_initComplete();
