@@ -857,8 +857,14 @@ function saveHistograms(callback){
   }
 
   generateInputSets(genInParams, function(err, inputsObj){
-    console.log(chalkAlert("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
-    saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
+    if (err) {
+      console.log(chalkError("ERROR | NOT SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+      // saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
+    }
+    else {
+      console.log(chalkAlert("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+      saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
+    }
     if (callback !== undefined) { callback(null, hId); }
   });
 
