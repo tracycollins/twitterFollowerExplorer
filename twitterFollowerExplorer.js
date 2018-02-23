@@ -1,6 +1,8 @@
  /*jslint node: true */
 "use strict";
 
+const DEFAULT_MIN_INPUTS_GENERATED = 400 ;
+const DEFAULT_MAX_INPUTS_GENERATED = 750 ;
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -339,6 +341,10 @@ inputTypes.forEach(function(type){
 });
 
 let configuration = {};
+
+configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
+configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
+
 configuration.histogramParseTotalMin = DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN;
 configuration.histogramParseDominantMin = DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN;
 
@@ -1145,16 +1151,17 @@ function loadFile(path, file, callback) {
         + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
       ));
 
-      let payload = data.fileBinary;
-      debug(payload);
-
       if (file.match(/\.json$/gi)) {
+        let payload = data.fileBinary;
+        debug(payload);
+
         try {
           let fileObj = JSON.parse(payload);
           callback(null, fileObj);
         }
         catch(e){
           console.trace(chalkError("TFE | JSON PARSE ERROR: " + jsonPrint(e)));
+          console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
           callback("JSON PARSE ERROR", null);
         }
       }
@@ -4128,6 +4135,7 @@ function printNetworkObj(title, nnObj){
 function initRandomNetworks(params, callback){
 
   if (loadedNetworksFlag) {
+    console.log(chalkAlert("SKIP INIT RANDOM NETWORKS: loadedNetworksFlag: " + loadedNetworksFlag));
     return callback(null, randomNetworksObj);
   }
 
@@ -4147,6 +4155,8 @@ function initRandomNetworks(params, callback){
     async.whilst(
 
       function() {
+
+        // console.log("Object.keys(availableNeuralNetHashMap).length: " + Object.keys(availableNeuralNetHashMap).length);
 
         return (Object.keys(availableNeuralNetHashMap).length > 0) 
         && (Object.keys(randomNetworksObj).length < params.numRandomNetworks) ;
@@ -4422,7 +4432,7 @@ function loadBestNeuralNetworkFile(callback){
 
       initRandomNetworks({ numRandomNetworks: configuration.numRandomNetworks }, function(err, ranNetObj){
 
-        if (loadedNetworksFlag && !networksSentFlag && (randomNetworkTree !== undefined)) {
+        if (loadedNetworksFlag && !networksSentFlag && (randomNetworkTree !== undefined) && (Object.keys(ranNetObj).length > 0)) {
           console.log(chalkBlue("SEND RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
 
           networksSentFlag = true;
@@ -4944,53 +4954,119 @@ function initLangAnalyzer(callback){
 
 function generateInputSets(params, callback) {
 
-  console.log(chalkInfo("NNT | GENERATING INPUT SETS\nPARAMS\n" + jsonPrint(params)));
+  console.log(chalkInfo("NNT | GENERATING INPUT SETS"
+    + " | HIST ID: " + params.histogramsObj.histogramsId
+    + " | TOT MIN: " + params.histogramParseTotalMin
+    + " | DOM MIN: " + params.histogramParseDominantMin.toFixed(2)
+    // + jsonPrint(params)
+  ));
 
-  histogramParser.parse({histogram: params.histogramsObj.histograms, dominantMin: params.histogramParseDominantMin, totalMin: params.histogramParseTotalMin}, function(err, histResults){
+  let totalMin = params.histogramParseTotalMin;
+  let dominantMin = params.histogramParseDominantMin;
 
-    if (err){
-      console.log(chalkError("HISTOGRAM PARSE ERROR: " + err));
-      return callback(err, null);
-    }
+  let newInputsObj = {};
+  newInputsObj.inputsId = params.histogramsObj.histogramsId;
+  newInputsObj.meta = {};
+  newInputsObj.meta.numInputs = 0;
+  newInputsObj.meta.histogramParseTotalMin = totalMin;
+  newInputsObj.meta.histogramParseDominantMin = dominantMin;
+  newInputsObj.inputs = {};
 
-    debug(chalkNetwork("HISTOGRAMS RESULTS\n" + jsonPrint(histResults)));
+  async.whilst(
 
-    let newInputsObj = {};
+    function() {
 
-    newInputsObj.inputsId = params.histogramsObj.histogramsId;
-    newInputsObj.meta = {};
-    newInputsObj.meta.numInputs = 0;
-    newInputsObj.meta.histogramParseTotalMin = params.histogramParseTotalMin;
-    newInputsObj.meta.histogramParseDominantMin = params.histogramParseDominantMin;
-    newInputsObj.inputs = {};
+      return ((newInputsObj.meta.numInputs < configuration.minInputsGenerated) || (newInputsObj.meta.numInputs > configuration.maxInputsGenerated)) ;
 
-    const inTypyes = Object.keys(histResults.entries);
+    },
 
-    async.eachSeries(inTypyes, function(type, cb){
+    function(cb0){
 
-      newInputsObj.inputs[type] = [];
-      newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
-      newInputsObj.meta.numInputs += newInputsObj.inputs[type].length;
+      if (newInputsObj.meta.numInputs < configuration.minInputsGenerated) {
+        console.log(chalkAlert("NUM INPUTS < configuration.minInputsGenerated: " + newInputsObj.meta.numInputs));
+        if (totalMin > 4) {
+          totalMin -= 1;
+          console.log(chalkAlert("ADJUST totalMin: " + totalMin));
+        }
+        else if (dominantMin > 0.35) {
+          dominantMin -= 0.05;
+          console.log(chalkAlert("ADJUST dominantMin: " + dominantMin.toFixed(3)));
+        }
+        else {
+          console.log(chalkError("*** ERROR generateInputSets: FAIL TO ADJUST"
+            + " | TOT MIN: " + totalMin
+            + " | DOM MIN: " + dominantMin.toFixed(3)
+          ));
+          return cb0("ERROR generateInputSets: FAIL TO ADJUST");
+        }
+      }
 
-      console.log(chalkAlert("HISTOGRAM PARSE | INPUTS | " + type + ": " + newInputsObj.inputs[type].length));
+      if (newInputsObj.meta.numInputs > configuration.maxInputsGenerated) {
+        console.log(chalkAlert("NUM INPUTS > configuration.maxInputsGenerated: " + newInputsObj.meta.numInputs));
+        if (totalMin < 100) {
+          totalMin += 1;
+          console.log(chalkAlert("ADJUST totalMin: " + totalMin));
+        }
+        else if (dominantMin < 1.0) {
+          dominantMin += 0.05;
+          console.log(chalkAlert("ADJUST dominantMin: " + dominantMin.toFixed(3)));
+        }
+        else {
+          console.log(chalkError("*** ERROR generateInputSets: FAIL TO ADJUST"
+            + " | TOT MIN: " + totalMin
+            + " | DOM MIN: " + dominantMin.toFixed(3)
+          ));
+          return cb0("ERROR generateInputSets: FAIL TO ADJUST");
+        }
+      }
 
-      cb();
+      const hpParams = {};
+      hpParams.histogram = params.histogramsObj.histograms;
+      hpParams.options = {};
+      hpParams.options.totalMin = totalMin;
+      hpParams.options.dominantMin = dominantMin;
 
-    }, function(){
+      histogramParser.parse(hpParams, function(err, histResults){
 
-      debug(chalkNetwork("NEW INPUTS\n" + jsonPrint(newInputsObj)));
+        if (err){
+          console.log(chalkError("HISTOGRAM PARSE ERROR: " + err));
+          return cb0(err);
+        }
 
-      console.log(chalkAlert("HISTOGRAMS PARSED"
-        + " | PARSE TOT MIN: " + params.histogramParseTotalMin
-        + " | PARSE DOM MIN: " + params.histogramParseDominantMin.toFixed(2)
-        + " | NUM INPUTS: " + newInputsObj.meta.numInputs
-      ));
+        debug(chalkNetwork("HISTOGRAMS RESULTS\n" + jsonPrint(histResults)));
 
+        const inTypyes = Object.keys(histResults.entries);
 
-      callback(null, newInputsObj);
+        newInputsObj.meta.numInputs = 0;
 
-    });
+        async.eachSeries(inTypyes, function(type, cb1){
 
+          newInputsObj.inputs[type] = [];
+          newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
+          newInputsObj.meta.numInputs +=newInputsObj.inputs[type].length;
+
+          console.log(chalkAlert("HISTOGRAM PARSE | INPUTS | " + type + ": " + newInputsObj.inputs[type].length));
+
+          cb1();
+
+        }, function(){
+
+          debug(chalkNetwork("NEW INPUTS\n" + jsonPrint(newInputsObj)));
+
+          console.log(chalkAlert("HISTOGRAMS PARSED"
+            + " | PARSE TOT MIN: " + totalMin
+            + " | PARSE DOM MIN: " + dominantMin.toFixed(3)
+            + " | NUM INPUTS: " + newInputsObj.meta.numInputs
+          ));
+
+          cb0();
+
+        });
+
+      });
+
+  }, function(err){
+    callback(err, newInputsObj);
   });
 
 }
@@ -5070,7 +5146,53 @@ initialize(configuration, function(err, cnf){
         debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[currentTwitterUser]) + "\n\n"));
 
         if (configuration.testMode) {
+
           fetchTwitterFriendsIntervalTime = TEST_TWITTER_FETCH_FRIENDS_INTERVAL;
+
+          setTimeout(function() {
+
+            console.log("LOAD " + localHistogramsFolder + "/histograms.json");
+
+            loadFile(localHistogramsFolder, "histograms.json", function(err, histogramsObj){
+              if (err) {
+                console.log(chalkError("LOAD histograms.json ERROR\n" + jsonPrint(err)));
+              }
+              else {
+                console.log(chalkAlert("histogramsObj: " + histogramsObj.histogramsId));
+                const genInParams = {
+                  histogramsObj: { 
+                    histogramsId: "testHistograms", 
+                    histograms: histogramsObj.histograms
+                  },
+                  histogramParseDominantMin: configuration.histogramParseDominantMin,
+                  histogramParseTotalMin: configuration.histogramParseTotalMin
+                };
+
+                let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
+
+                if (configuration.testMode) { 
+                  inFolder = inFolder + "_test";
+                }
+
+                const hId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+                const inFile = hId + ".json"; 
+
+                generateInputSets(genInParams, function(err, inputsObj){
+                  if (err) {
+                    console.log(chalkError("ERROR | NOT SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+                    // saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
+                  }
+                  else {
+                    console.log(chalkAlert("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+                    saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
+                  }
+                });
+              }
+
+            });
+
+          }, 1000);
+
         }
         fsm.fsm_initComplete();
         fsm.fsm_fetchAllStart();
