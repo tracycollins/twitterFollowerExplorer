@@ -36,7 +36,7 @@
     "mentions-regex": "^2.0.3",
     "moment": "^2.20.1",
     "mongodb": "^3.0.2",
-    "mongoose": "^5.0.6",
+    "mongoose": "^5.0.7",
     "mongoose-paginate": "^5.0.3",
     "neataptic": "^1.4.7",
     "node-cache": "^4.1.1",
