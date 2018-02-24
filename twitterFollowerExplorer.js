@@ -150,7 +150,6 @@ let updateNetworkFetchFriendsReadyFlag = true;
 let neuralNetworkInitialized = false;
 let currentTwitterUser ;
 let currentTwitterUserIndex = 0;
-let twitterUsersArray = [];
 
 let TFE_USER_DB_CRAWL = false;
 
@@ -341,6 +340,8 @@ inputTypes.forEach(function(type){
 });
 
 let configuration = {};
+
+configuration.twitterUsers = ["altthreecee00", "altthreecee02", "ninjathreecee"];
 
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
 configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
@@ -2556,13 +2557,12 @@ function initTwitterUsers(callback){
   else {
 
     let twitterDefaultUser = configuration.twitterDefaultUser;
-    twitterUsersArray = ["altthreecee00", "ninjathreecee"];
 
     console.log(chalkTwitter("USERS"
-      + " | FOUND: " + twitterUsersArray.length
+      + " | FOUND: " + configuration.twitterUsers.length
     ));
 
-    async.each(twitterUsersArray, function(userId, cb){
+    async.each(configuration.twitterUsers, function(userId, cb){
 
       userId = userId.toLowerCase();
 
@@ -2741,7 +2741,7 @@ function initialize(cnf, callback){
 
 
   cnf.twitterDefaultUser = process.env.TFE_TWITTER_DEFAULT_USER || TWITTER_DEFAULT_USER ;
-  cnf.twitterUsers = process.env.TFE_TWITTER_USERS || { "altthreecee00": "altthreecee00", "ninjathreecee": "ninjathreecee" } ;
+  cnf.twitterUsers = process.env.TFE_TWITTER_USERS || [ "altthreecee00", "atlthreecee02", "ninjathreecee" ] ;
   cnf.statsUpdateIntervalTime = process.env.TFE_STATS_UPDATE_INTERVAL || ONE_MINUTE;
 
   cnf.twitterConfigFolder = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER || "/config/twitter";
@@ -3664,7 +3664,7 @@ function fetchFriends(params, callback) {
 
           console.log(chalkAlert("\n=====================================\n"
             + " *** TEST MODE END FETCH"
-            + "\n@" + currentTwitterUser + " | USER " + (currentTwitterUserIndex+1) + " OF " + twitterUsersArray.length
+            + "\n@" + currentTwitterUser + " | USER " + (currentTwitterUserIndex+1) + " OF " + configuration.twitterUsers.length
             + "\nTEST_MODE_FETCH_COUNT: " + TEST_MODE_FETCH_COUNT
             + " | TEST_MODE_TOTAL_FETCH: " + TEST_MODE_TOTAL_FETCH
             + " | TOTAL FRIENDS FETCHED: " + statsObj.user[currentTwitterUser].totalFriendsFetched
@@ -3789,7 +3789,7 @@ function initNextTwitterUser(callback){
 
   console.log(chalkBlue("INIT NEXT TWITTER USER"
     // + " | CURRENT USER: @" + currentTwitterUser
-    // + " | USER " + (currentTwitterUserIndex+1) + " OF " + twitterUsersArray.length
+    // + " | USER " + (currentTwitterUserIndex+1) + " OF " + configuration.twitterUsers.length
     // + " | FRIENDS: " + statsObj.user[currentTwitterUser].friendsCount
     // + " | TEST MODE: " + configuration.testMode
     // + " | FETCH COUNT: " + configuration.fetchCount
@@ -3811,15 +3811,15 @@ function initNextTwitterUser(callback){
     + "\nTEST_MODE_TOTAL_FETCH: " + TEST_MODE_TOTAL_FETCH
   ));
 
-  if (currentTwitterUserIndex < twitterUsersArray.length-1) {
+  if (currentTwitterUserIndex < configuration.twitterUsers.length-1) {
 
     currentTwitterUserIndex += 1;
 
-    currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
+    currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
 
     console.log(chalkTwitterBold("===== NEW FETCH USER"
       + " @" + currentTwitterUser + " ====="
-      + " | USER " + (currentTwitterUserIndex+1) + " OF " + twitterUsersArray.length
+      + " | USER " + (currentTwitterUserIndex+1) + " OF " + configuration.twitterUsers.length
       + " | " + getTimeStamp()
     ));
 
@@ -3905,7 +3905,7 @@ function initNextTwitterUser(callback){
         randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
 
           currentTwitterUserIndex = 0;
-          currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
+          currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
 
           statsObj.user[currentTwitterUser].nextCursor = false;
           statsObj.user[currentTwitterUser].nextCursorValid = false;
@@ -3945,183 +3945,6 @@ function initNextTwitterUser(callback){
 
   }
 }
-
-// function processFriends(callback){
-
-//   processFriendsReady = false;
-
-//   console.log(chalkBlue("PROCESS TOTAL FRIENDS FETCHED"
-//     + " | TEST MODE: " + configuration.testMode
-//     + " | FETCH COUNT: " + configuration.fetchCount
-//     + " | @" + currentTwitterUser
-//     + " | " + statsObj.user[currentTwitterUser].totalFriendsFetched
-//   ));
-
-//   if (nextUser 
-//     || abortCursor 
-//     || (configuration.testMode && (statsObj.user[currentTwitterUser].totalFriendsFetched >= TEST_MODE_TOTAL_FETCH) && !statsObj.user[currentTwitterUser].nextCursorValid)
-//     || ((statsObj.user[currentTwitterUser].totalFriendsFetched >= statsObj.user[currentTwitterUser].friendsCount) && !statsObj.user[currentTwitterUser].nextCursorValid)
-//     ) {
-
-//     console.log(chalkTwitterBold("\n\n===== END FETCH USER @" + currentTwitterUser + " ====="
-//       + " | USER " + (currentTwitterUserIndex+1) + " OF " + twitterUsersArray.length
-//       + " | " + getTimeStamp()
-//       + "\nnextCursorValid:     " + statsObj.user[currentTwitterUser].nextCursorValid
-//       + "\nnextUser:            " + nextUser
-//       + "\nabortCursor:         " + abortCursor
-//       + "\ntestMode:            " + configuration.testMode
-//       + "\nendFetch:            " + statsObj.user[currentTwitterUser].endFetch
-//       + "\ntotalFriendsFetched: " + statsObj.user[currentTwitterUser].totalFriendsFetched
-//       + "\nfriendsCount:        " + statsObj.user[currentTwitterUser].friendsCount
-//       + "\n\n"
-//     ));
-
-//     if (nextUser) { nextUser = false; }
-
-//     updateGlobalHistograms();
-
-//     abortCursor = false;
-
-//     if (currentTwitterUserIndex < twitterUsersArray.length-1) {
-
-//       currentTwitterUserIndex += 1;
-
-//       currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
-
-//       console.log(chalkTwitterBold("===== NEW FETCH USER"
-//         + " @" + currentTwitterUser + " ====="
-//         + " | USER " + (currentTwitterUserIndex+1) + " OF " + twitterUsersArray.length
-//         + " | " + getTimeStamp()
-//       ));
-
-//       twitterUserUpdate(currentTwitterUser, function(err){
-//        if (err){
-//           console.log("!!!!! TWITTER SHOW USER ERROR"
-//             + " | @" + currentTwitterUser 
-//             + " | " + getTimeStamp() 
-//             + "\n" + jsonPrint(err));
-//           callback(new Error(err), null);
-//         }
-//         statsObj.user[currentTwitterUser].nextCursor = false;
-//         statsObj.user[currentTwitterUser].nextCursorValid = false;
-//         statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
-//         statsObj.user[currentTwitterUser].twitterRateLimit = 0;
-//         statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-//         statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
-//         statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
-//         statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
-//         statsObj.user[currentTwitterUser].friendsProcessed = 0;
-//         statsObj.user[currentTwitterUser].percentProcessed = 0;
-
-//         processFriendsReady = true;
-
-//         callback(null, currentTwitterUser);
-//       });
-//     }
-//     else if (configuration.quitOnComplete) {
-//       processFriendsReady = true;
-//       console.log("QUITTING ON COMPLETE");
-//       callback(null, null);
-//     }
-//     else {
-
-//       saveHistograms();
-
-//       twitterTextParser.clearGlobalHistograms();
-//       twitterImageParser.clearGlobalHistograms();
-
-//       let waitTimeoutReady = true;
-//       let waitTimeout;
-
-//       randomNetworkTree.send({ op: "GET_STATS"}, function(err){
-
-//         async.until(
-
-//           function() {
-
-//             return (
-//               !randomNetworkTreeBusyFlag
-//               && (randomNetworkTreeMessageRxQueue.length === 0)
-//               && randomNetworkTreeMessageRxQueueReadyFlag
-//               && randomNetworkTreeReadyFlag
-//             );
-
-//           },
-
-//           function(cb){
-
-//             if (waitTimeoutReady) {
-
-//               waitTimeoutReady = false;
-
-//               clearTimeout(waitTimeout);
-
-//               waitTimeout = setTimeout(function(){
-//                 console.log(chalkBlue("... WAIT RANDOM_NETWORK_TREE IDLE..."
-//                   + " | " + getTimeStamp()
-//                   + " | randomNetworkTreeBusyFlag: " + randomNetworkTreeBusyFlag 
-//                   + " | randomNetworkTreeMessageRxQueueReadyFlag: " + randomNetworkTreeMessageRxQueueReadyFlag 
-//                   + " | randomNetworkTreeReadyFlag: " + randomNetworkTreeReadyFlag 
-//                   + " | randomNetworkTreeMessageRxQueue: " + randomNetworkTreeMessageRxQueue.length 
-//                 ));
-
-//                 waitTimeoutReady = true;
-
-//                 cb();
-//               }, 1000);
-
-//             }
-//             else {
-//               cb();
-//             }
-
-
-//         }, function(err){
-
-//           randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
-
-//             currentTwitterUserIndex = 0;
-//             currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
-
-//             statsObj.user[currentTwitterUser].nextCursor = false;
-//             statsObj.user[currentTwitterUser].nextCursorValid = false;
-//             statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
-//             statsObj.user[currentTwitterUser].twitterRateLimit = 0;
-//             statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-//             statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
-//             statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
-//             statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
-//             statsObj.user[currentTwitterUser].friendsProcessed = 0;
-//             statsObj.user[currentTwitterUser].percentProcessed = 0;
-
-//             console.log(chalkTwitterBold("\n=========================\n"
-//               + "=========================\n"
-//               + "=========================\n"
-//               + "*** RESTART FETCH USERS ***"
-//               + " | ===== NEW FETCH USER @" 
-//               + currentTwitterUser + " ====="
-//               + " | " + getTimeStamp()
-//               + "\n=========================\n"
-//               + "=========================\n"
-//               + "=========================\n"
-//             ));
-
-//             processFriendsReady = true;
-
-//             callback(null, currentTwitterUser);
-
-//           });
-
-//         });
-
-//       });
-//     }
-//   }
-//   else {
-//     processFriendsReady = true;
-//     callback(null, currentTwitterUser);
-//   }
-// }
 
 function printNetworkObj(title, nnObj){
   console.log(chalkNetwork("======================================"
@@ -5057,6 +4880,9 @@ function generateInputSets(params, callback) {
 
         }, function(){
 
+          newInputsObj.meta.histogramParseTotalMin = totalMin;
+          newInputsObj.meta.histogramParseDominantMin = dominantMin;
+
           debug(chalkNetwork("NEW INPUTS\n" + jsonPrint(newInputsObj)));
 
           console.log(chalkAlert("HISTOGRAMS PARSED"
@@ -5132,7 +4958,7 @@ initialize(configuration, function(err, cnf){
       }
 
       if (currentTwitterUser === undefined) { 
-        currentTwitterUser = twitterUsersArray[currentTwitterUserIndex];
+        currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
       }
 
       console.log(chalkTwitter("CURRENT TWITTER USER: " + currentTwitterUser));
