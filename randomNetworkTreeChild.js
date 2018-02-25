@@ -830,7 +830,7 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.mismatch += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                    console.log(chalk.red("--- AUTO KEYWORD MISS "
+                    console.log(chalk.red("000 auto keyword miss "
                       + " | " + statsObj.bestNetwork.networkId
                       + " | " + statsObj.bestNetwork.numInputs + " IN"
                       + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
