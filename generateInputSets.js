@@ -10,10 +10,10 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 const DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN = 5;
 const DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN = 0.4;
 
-const MIN_TOTAL_MIN = 3;
+const MIN_TOTAL_MIN = 10;
 const MAX_TOTAL_MIN = 100;
 
-const MIN_DOMINANT_MIN = 0.1;
+const MIN_DOMINANT_MIN = 0.3;
 const MAX_DOMINANT_MIN = 0.9;
 
 const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
@@ -573,10 +573,10 @@ function generateInputSets(params, callback) {
   let totalMin = randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
   let dominantMin = randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
 
-
   let newInputsObj = {};
-  newInputsObj.inputsId = params.histogramsObj.histogramsId;
+  newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
   newInputsObj.meta = {};
+  newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
   newInputsObj.meta.numInputs = 0;
   newInputsObj.meta.histogramParseTotalMin = totalMin;
   newInputsObj.meta.histogramParseDominantMin = dominantMin;
@@ -692,6 +692,7 @@ function generateInputSets(params, callback) {
 
     console.log(chalkAlert("\n================================================================================\n"
       + "INPUT SET COMPLETE"
+      + " | ID: " + newInputsObj.inputsId
       + " | PARSE TOT MIN: " + totalMin
       + " | PARSE DOM MIN: " + dominantMin.toFixed(3)
       + " | NUM INPUTS: " + newInputsObj.meta.numInputs
@@ -1286,9 +1287,10 @@ initialize(configuration, function(err, cnf){
     }
     else {
       console.log(chalkAlert("histogramsObj: " + histogramsObj.histogramsId));
+
       const genInParams = {
         histogramsObj: { 
-          histogramsId: "testHistograms", 
+          histogramsId: histogramsObj.histogramsId, 
           histograms: histogramsObj.histograms
         },
         histogramParseDominantMin: configuration.histogramParseDominantMin,
@@ -1301,14 +1303,13 @@ initialize(configuration, function(err, cnf){
         inFolder = inFolder + "_test";
       }
 
-      const hId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-      const inFile = hId + ".json"; 
 
       generateInputSets(genInParams, function(err, inputsObj){
         if (err) {
           console.log(chalkError("ERROR | NOT SAVING INPUTS FILE: " + inFolder + "/" + inFile));
         }
         else {
+          const inFile = inputsObj.inputsId + ".json"; 
           console.log(chalkAlert("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
           saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
         }
