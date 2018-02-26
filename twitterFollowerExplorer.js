@@ -4,6 +4,12 @@
 const DEFAULT_MIN_INPUTS_GENERATED = 400 ;
 const DEFAULT_MAX_INPUTS_GENERATED = 750 ;
 
+const MIN_TOTAL_MIN = 10;
+const MAX_TOTAL_MIN = 100;
+
+const MIN_DOMINANT_MIN = 0.3;
+const MAX_DOMINANT_MIN = 1.0;
+
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
@@ -40,6 +46,8 @@ let currentBestNetworkId = false;
 
 const histogramParser = require("@threeceelabs/histogram-parser");
 
+const randomFloat = require("random-float");
+const randomInt = require("random-int");
 const moment = require("moment");
 
 const table = require("text-table");
@@ -766,7 +774,7 @@ function updateGlobalHistograms(callback){
 
               statsObj.histograms[histogramName][k] = currentHistogram[k];
 
-              console.log(currentHistogram[k] + " | " + k);
+              debug(currentHistogram[k] + " | " + k);
             }
           }
         });
@@ -1979,7 +1987,7 @@ function activateNetwork(obj){
   }
 }
 
-function generateAutoKeywords(user, callback){
+function generateAutoKeywords(params, user, callback){
 
   // PARSE USER STATUS + DESC, IF EXIST
   async.waterfall([
@@ -2176,7 +2184,19 @@ function generateAutoKeywords(user, callback){
         updateImageHistograms({user: user, histogram: bannerResults.label.images});
       }
 
-      userServer.updateHistograms({user: user, histograms: hist}, function(err, updatedUser){
+      const updateCountHistory = params.updateCountHistory 
+      && (user.followersCount !== undefined) 
+      && (user.friendsCount !== undefined) 
+      && (user.statusesCount !== undefined);
+
+      // console.log("generateAutoKeywords | updateCountHistory: " + updateCountHistory
+      //   + " | params.updateCountHistory " + params.updateCountHistory
+      //   + " | user.followersCount " + user.followersCount
+      //   + " | user.friendsCount " + user.friendsCount
+      //   + " | user.statusesCount " + user.statusesCount
+      // );
+
+      userServer.updateHistograms({user: user, histograms: hist, updateCountHistory: updateCountHistory}, function(err, updatedUser){
 
         if (err) {
           console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
@@ -2198,7 +2218,7 @@ function generateAutoKeywords(user, callback){
         statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
 
 
-        debug(chalkInfo("GEN AKWs"
+        console.log(chalkInfo("GEN AKWs"
           + " [@" + currentTwitterUser + "]"
           + " | @" + updatedUser.screenName
           + " | " + updatedUser.userId
@@ -2254,7 +2274,9 @@ function generateAutoKeywords(user, callback){
   });
 }
 
-function processUser(userIn, lastTweeId, callback) {
+function processUser(params, userIn, lastTweeId, callback) {
+
+  let updateCountHistory = false;
 
   debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
 
@@ -2385,6 +2407,12 @@ function processUser(userIn, lastTweeId, callback) {
             user.mentions = userDb.mentions;
           }
 
+          if (user.followersCount && (user.followersCount !== userDb.followersCount)
+            || (user.friendsCount !== userDb.friendsCount)
+            || (user.statusesCount !== userDb.statusesCount)) {
+            updateCountHistory = true;
+          }
+
           if ((user.followersCount === 0) && (userDb.followersCount > 0)) {
             user.followersCount = userDb.followersCount;
           }
@@ -2428,6 +2456,13 @@ function processUser(userIn, lastTweeId, callback) {
           cb(err, user);
         }
         else {
+          debug(chalkInfo("CLU U"
+            + " | @" + u.screenName.toLowerCase()
+            + " | " + u.userId
+            + " | " + getTimeStamp(u.createdAt)
+            + " | KWs: " + Object.keys(u.get("keywords"))
+            + " | KWAs: " + Object.keys(u.get("keywordsAuto"))
+          ));
           cb(null, u);
         }
 
@@ -2435,10 +2470,15 @@ function processUser(userIn, lastTweeId, callback) {
     },
 
     function genKeywords(user, cb){
+
       if (!neuralNetworkInitialized) { return(cb(null, user)); }
-      generateAutoKeywords(user, function (err, uObj){
+
+      // console.log("genKeywords | updateCountHistory: " + updateCountHistory);
+
+      generateAutoKeywords({updateCountHistory: updateCountHistory}, user, function (err, uObj){
         cb(err, uObj);
       });
+
     }
 
   ], function (err, user) {
@@ -2491,7 +2531,7 @@ function initTwitter(currentTwitterUser, callback){
         followMessage.target.threeceeFollowing = {};
         followMessage.target.threeceeFollowing.screenName = currentTwitterUser;
 
-        processUser(followMessage.target, null, function(err, user){
+        processUser({}, followMessage.target, null, function(err, user){
           if (err) {
             console.trace("processUser ERROR");
           }
@@ -3308,7 +3348,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
               }, 1000);
             }
 
-            userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
+            // console.log("LANG_RESULTS ERR | updateCountHistory: " + true);
+
+            userServer.findOneUser(m.obj, {noInc: true, updateCountHistory: true }, function(err, updatedUserObj){
               if (err) { 
                 console.log(chalkError("ERROR DB UPDATE USER"
                   + "\n" + err
@@ -3390,7 +3432,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
               statsObj.normalization.magnitude.min = Math.min(m.results.sentiment.magnitude, statsObj.normalization.magnitude.min);
               statsObj.normalization.magnitude.max = Math.max(m.results.sentiment.magnitude, statsObj.normalization.magnitude.max);
 
-              userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
+              // console.log("LANG_RESULTS ENTS | updateCountHistory: " + true);
+
+              userServer.findOneUser(m.obj, {noInc: true, updateCountHistory: true}, function(err, updatedUserObj){
                 if (err) { 
                   console.log(chalkError("ERROR DB UPDATE USER"
                     + "\n" + err
@@ -3452,7 +3496,9 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             statsObj.normalization.magnitude.min = Math.min(m.results.sentiment.magnitude, statsObj.normalization.magnitude.min);
             statsObj.normalization.magnitude.max = Math.max(m.results.sentiment.magnitude, statsObj.normalization.magnitude.max);
 
-            userServer.findOneUser(m.obj, {noInc: true}, function(err, updatedUserObj){
+            // console.log("LANG_RESULTS NO ENTS | updateCountHistory: " + true);
+
+            userServer.findOneUser(m.obj, {noInc: true, updateCountHistory: true}, function(err, updatedUserObj){
               if (err) { 
                 console.log(chalkError("ERROR DB UPDATE USER"
                   + "\n" + err
@@ -3705,7 +3751,7 @@ function fetchFriends(params, callback) {
           friend.threeceeFollowing = {};
           friend.threeceeFollowing.screenName = currentTwitterUser;
 
-          processUser(friend, null, function(err, user){
+          processUser({}, friend, null, function(err, user){
             if (err) {
               console.trace("processUser ERROR");
               return (cb(err));
@@ -3851,94 +3897,96 @@ function initNextTwitterUser(callback){
   else {
 
     updateGlobalHistograms(function(){
-      saveHistograms();
-    });
 
-    let waitTimeoutReady = true;
-    let waitTimeout;
+      saveHistograms(function() {
 
-    randomNetworkTree.send({ op: "GET_STATS"}, function(err){
+        let waitTimeoutReady = true;
+        let waitTimeout;
 
-      async.until(
+        randomNetworkTree.send({ op: "GET_STATS"}, function(err){
 
-        function() {
+          async.until(
 
-          return (
-            !randomNetworkTreeBusyFlag
-            && (randomNetworkTreeMessageRxQueue.length === 0)
-            && randomNetworkTreeMessageRxQueueReadyFlag
-            && randomNetworkTreeReadyFlag
-          );
+            function() {
 
-        },
+              return (
+                !randomNetworkTreeBusyFlag
+                && (randomNetworkTreeMessageRxQueue.length === 0)
+                && randomNetworkTreeMessageRxQueueReadyFlag
+                && randomNetworkTreeReadyFlag
+              );
 
-        function(cb){
+            },
 
-          if (waitTimeoutReady) {
+            function(cb){
 
-            waitTimeoutReady = false;
+              if (waitTimeoutReady) {
 
-            clearTimeout(waitTimeout);
+                waitTimeoutReady = false;
 
-            waitTimeout = setTimeout(function(){
-              console.log(chalkBlue("... WAIT RANDOM_NETWORK_TREE IDLE..."
+                clearTimeout(waitTimeout);
+
+                waitTimeout = setTimeout(function(){
+                  console.log(chalkBlue("... WAIT RANDOM_NETWORK_TREE IDLE..."
+                    + " | " + getTimeStamp()
+                    + " | randomNetworkTreeBusyFlag: " + randomNetworkTreeBusyFlag 
+                    + " | randomNetworkTreeMessageRxQueueReadyFlag: " + randomNetworkTreeMessageRxQueueReadyFlag 
+                    + " | randomNetworkTreeReadyFlag: " + randomNetworkTreeReadyFlag 
+                    + " | randomNetworkTreeMessageRxQueue: " + randomNetworkTreeMessageRxQueue.length 
+                  ));
+
+                  waitTimeoutReady = true;
+
+                  cb();
+                }, 1000);
+
+              }
+              else {
+                cb();
+              }
+
+
+          }, function(err){
+
+            randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
+
+              currentTwitterUserIndex = 0;
+              currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
+
+              statsObj.user[currentTwitterUser].nextCursor = false;
+              statsObj.user[currentTwitterUser].nextCursorValid = false;
+              statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
+              statsObj.user[currentTwitterUser].twitterRateLimit = 0;
+              statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
+              statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
+              statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
+              statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
+              statsObj.user[currentTwitterUser].friendsProcessed = 0;
+              statsObj.user[currentTwitterUser].percentProcessed = 0;
+              statsObj.user[currentTwitterUser].friendsProcessStart = moment();
+              statsObj.user[currentTwitterUser].friendsProcessEnd = moment();
+              statsObj.user[currentTwitterUser].friendsProcessElapsed = 0;
+
+              console.log(chalkTwitterBold("\n=========================\n"
+                + "=========================\n"
+                + "=========================\n"
+                + "*** RESTART FETCH USERS ***"
+                + " | ===== NEW FETCH USER @" 
+                + currentTwitterUser + " ====="
                 + " | " + getTimeStamp()
-                + " | randomNetworkTreeBusyFlag: " + randomNetworkTreeBusyFlag 
-                + " | randomNetworkTreeMessageRxQueueReadyFlag: " + randomNetworkTreeMessageRxQueueReadyFlag 
-                + " | randomNetworkTreeReadyFlag: " + randomNetworkTreeReadyFlag 
-                + " | randomNetworkTreeMessageRxQueue: " + randomNetworkTreeMessageRxQueue.length 
+                + "\n=========================\n"
+                + "=========================\n"
+                + "=========================\n"
               ));
 
-              waitTimeoutReady = true;
+              processFriendsReady = true;
 
-              cb();
-            }, 1000);
+              callback(null, currentTwitterUser);
 
-          }
-          else {
-            cb();
-          }
+            });
 
-
-      }, function(err){
-
-        randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
-
-          currentTwitterUserIndex = 0;
-          currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
-
-          statsObj.user[currentTwitterUser].nextCursor = false;
-          statsObj.user[currentTwitterUser].nextCursorValid = false;
-          statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
-          statsObj.user[currentTwitterUser].twitterRateLimit = 0;
-          statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-          statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
-          statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
-          statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
-          statsObj.user[currentTwitterUser].friendsProcessed = 0;
-          statsObj.user[currentTwitterUser].percentProcessed = 0;
-          statsObj.user[currentTwitterUser].friendsProcessStart = moment();
-          statsObj.user[currentTwitterUser].friendsProcessEnd = moment();
-          statsObj.user[currentTwitterUser].friendsProcessElapsed = 0;
-
-          console.log(chalkTwitterBold("\n=========================\n"
-            + "=========================\n"
-            + "=========================\n"
-            + "*** RESTART FETCH USERS ***"
-            + " | ===== NEW FETCH USER @" 
-            + currentTwitterUser + " ====="
-            + " | " + getTimeStamp()
-            + "\n=========================\n"
-            + "=========================\n"
-            + "=========================\n"
-          ));
-
-          processFriendsReady = true;
-
-          callback(null, currentTwitterUser);
-
+          });
         });
-
       });
 
     });
@@ -4546,7 +4594,9 @@ function initUserDbUpdateQueueInterval(interval){
 
       let user = userDbUpdateQueue.shift();
 
-      userServer.findOneUser(user, {noInc: true}, function updateUserComplete(err, updatedUserObj){
+      // console.log("userDbUpdateQueue | updateCountHistory: " + true);
+
+      userServer.findOneUser(user, {noInc: true, updateCountHistory: true}, function updateUserComplete(err, updatedUserObj){
 
         userDbUpdateQueueReadyFlag = true;
 
@@ -4783,15 +4833,15 @@ function initLangAnalyzer(callback){
 
 function generateInputSets(params, callback) {
 
-  console.log(chalkInfo("NNT | GENERATING INPUT SETS"
+  console.log(chalkInfo("TFE | GENERATING INPUT SETS"
     + " | HIST ID: " + params.histogramsObj.histogramsId
     + " | TOT MIN: " + params.histogramParseTotalMin
     + " | DOM MIN: " + params.histogramParseDominantMin.toFixed(2)
     // + jsonPrint(params)
   ));
 
-  let totalMin = params.histogramParseTotalMin;
-  let dominantMin = params.histogramParseDominantMin;
+  let totalMin = randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
+  let dominantMin = randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
 
   let newInputsObj = {};
   newInputsObj.inputsId = params.histogramsObj.histogramsId;
@@ -4805,49 +4855,67 @@ function generateInputSets(params, callback) {
 
     function() {
 
+      if (configuration.testMode) {
+        return ((newInputsObj.meta.numInputs < 10) || (newInputsObj.meta.numInputs > 100)) ;
+      }
       return ((newInputsObj.meta.numInputs < configuration.minInputsGenerated) || (newInputsObj.meta.numInputs > configuration.maxInputsGenerated)) ;
 
     },
 
     function(cb0){
 
-      if (newInputsObj.meta.numInputs < configuration.minInputsGenerated) {
-        console.log(chalkAlert("NUM INPUTS < configuration.minInputsGenerated: " + newInputsObj.meta.numInputs));
-        if (totalMin > 4) {
-          totalMin -= 1;
-          console.log(chalkAlert("ADJUST totalMin: " + totalMin));
-        }
-        else if (dominantMin > 0.35) {
-          dominantMin -= 0.025;
-          console.log(chalkAlert("ADJUST dominantMin: " + dominantMin.toFixed(3)));
-        }
-        else {
-          console.log(chalkError("*** ERROR generateInputSets: FAIL TO ADJUST"
-            + " | TOT MIN: " + totalMin
-            + " | DOM MIN: " + dominantMin.toFixed(3)
-          ));
-          return cb0("ERROR generateInputSets: FAIL TO ADJUST");
-        }
+      totalMin = randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
+      dominantMin = randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
+
+      if (configuration.testMode) {
+        totalMin = randomInt(1, MAX_TOTAL_MIN);
+        dominantMin = randomFloat(0.1, MAX_DOMINANT_MIN);
       }
 
-      if (newInputsObj.meta.numInputs > configuration.maxInputsGenerated) {
-        console.log(chalkAlert("NUM INPUTS > configuration.maxInputsGenerated: " + newInputsObj.meta.numInputs));
-        if (totalMin < 100) {
-          totalMin += 1;
-          console.log(chalkAlert("ADJUST totalMin: " + totalMin));
-        }
-        else if (dominantMin < 1.0) {
-          dominantMin += 0.025;
-          console.log(chalkAlert("ADJUST dominantMin: " + dominantMin.toFixed(3)));
-        }
-        else {
-          console.log(chalkError("*** ERROR generateInputSets: FAIL TO ADJUST"
-            + " | TOT MIN: " + totalMin
-            + " | DOM MIN: " + dominantMin.toFixed(3)
-          ));
-          return cb0("ERROR generateInputSets: FAIL TO ADJUST");
-        }
-      }
+      console.log(chalkInfo("... GENERATING INPUT SETS"
+        + " | HIST ID: " + params.histogramsObj.histogramsId
+        + " | TOT MIN: " + totalMin
+        + " | DOM MIN: " + dominantMin.toFixed(3)
+        // + jsonPrint(params)
+      ));
+
+      // if (newInputsObj.meta.numInputs < configuration.minInputsGenerated) {
+      //   console.log(chalkAlert("NUM INPUTS < configuration.minInputsGenerated: " + newInputsObj.meta.numInputs));
+      //   if (totalMin > 4) {
+      //     totalMin -= 1;
+      //     console.log(chalkAlert("ADJUST totalMin: " + totalMin));
+      //   }
+      //   else if (dominantMin > 0.35) {
+      //     dominantMin -= 0.025;
+      //     console.log(chalkAlert("ADJUST dominantMin: " + dominantMin.toFixed(3)));
+      //   }
+      //   else {
+      //     console.log(chalkError("*** ERROR generateInputSets: FAIL TO ADJUST"
+      //       + " | TOT MIN: " + totalMin
+      //       + " | DOM MIN: " + dominantMin.toFixed(3)
+      //     ));
+      //     return cb0("ERROR generateInputSets: FAIL TO ADJUST");
+      //   }
+      // }
+
+      // if (newInputsObj.meta.numInputs > configuration.maxInputsGenerated) {
+      //   console.log(chalkAlert("NUM INPUTS > configuration.maxInputsGenerated: " + newInputsObj.meta.numInputs));
+      //   if (totalMin < 100) {
+      //     totalMin += 1;
+      //     console.log(chalkAlert("ADJUST totalMin: " + totalMin));
+      //   }
+      //   else if (dominantMin < 1.0) {
+      //     dominantMin += 0.025;
+      //     console.log(chalkAlert("ADJUST dominantMin: " + dominantMin.toFixed(3)));
+      //   }
+      //   else {
+      //     console.log(chalkError("*** ERROR generateInputSets: FAIL TO ADJUST"
+      //       + " | TOT MIN: " + totalMin
+      //       + " | DOM MIN: " + dominantMin.toFixed(3)
+      //     ));
+      //     return cb0("ERROR generateInputSets: FAIL TO ADJUST");
+      //   }
+      // }
 
       const hpParams = {};
       hpParams.histogram = params.histogramsObj.histograms;
@@ -4991,14 +5059,6 @@ initialize(configuration, function(err, cnf){
               }
               else {
                 console.log(chalkAlert("histogramsObj: " + histogramsObj.histogramsId));
-                const genInParams = {
-                  histogramsObj: { 
-                    histogramsId: "testHistograms", 
-                    histograms: histogramsObj.histograms
-                  },
-                  histogramParseDominantMin: configuration.histogramParseDominantMin,
-                  histogramParseTotalMin: configuration.histogramParseTotalMin
-                };
 
                 let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
 
@@ -5008,6 +5068,15 @@ initialize(configuration, function(err, cnf){
 
                 const hId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
                 const inFile = hId + ".json"; 
+
+                const genInParams = {
+                  histogramsObj: { 
+                    histogramsId: hId, 
+                    histograms: histogramsObj.histograms
+                  },
+                  histogramParseDominantMin: configuration.histogramParseDominantMin,
+                  histogramParseTotalMin: configuration.histogramParseTotalMin
+                };
 
                 generateInputSets(genInParams, function(err, inputsObj){
                   if (err) {
