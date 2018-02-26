@@ -2218,7 +2218,7 @@ function generateAutoKeywords(params, user, callback){
         statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
 
 
-        console.log(chalkInfo("GEN AKWs"
+        debug(chalkInfo("GEN AKWs"
           + " [@" + currentTwitterUser + "]"
           + " | @" + updatedUser.screenName
           + " | " + updatedUser.userId
