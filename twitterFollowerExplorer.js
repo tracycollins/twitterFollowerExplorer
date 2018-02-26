@@ -1434,7 +1434,7 @@ function initSocket(cnf, callback){
   socket.on("DROPBOX_CHANGE", function(response){
     
     response.entries.forEach(function(entry){
-      console.log(chalkInfo(">R DROPBOX_CHANGE"
+      debug(chalkInfo(">R DROPBOX_CHANGE"
         + " | " + entry[".tag"].toUpperCase()
         + " | " + entry.path_lower
         // + " | NAME: " + entry.name
