@@ -3205,7 +3205,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             + " | " + m.numInputs + " IN"
             + " | SR: " + m.successRate.toFixed(2) + "%"
             + " | MR: " + m.matchRate.toFixed(2) + "%"
-            + "\n   PREV: " + m.previousBestNetworkId
+            + "\n*** PREV: " + m.previousBestNetworkId
             + " | PMR: " + m.previousBestMatchRate.toFixed(2) + "%"
           ));
 
