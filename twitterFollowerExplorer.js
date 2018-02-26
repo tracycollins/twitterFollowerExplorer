@@ -328,6 +328,9 @@ statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueO
 statsObj.bestNetworks = {};
 statsObj.totalInputs = 0;
 
+statsObj.numNetworksLoaded = 0;
+statsObj.numNetworksUpdated = 0;
+
 statsObj.histograms = {};
 
 statsObj.normalization = {};
@@ -3202,8 +3205,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             + " | " + m.numInputs + " IN"
             + " | SR: " + m.successRate.toFixed(2) + "%"
             + " | MR: " + m.matchRate.toFixed(2) + "%"
-            + "\n PREV: " + m.previousBestNetworkId
-            + " | PMR: " + m.previousBestMatchRate.toFixed(2) + "%)"
+            + "\n   PREV: " + m.previousBestNetworkId
+            + " | PMR: " + m.previousBestMatchRate.toFixed(2) + "%"
           ));
 
           if (bestNetworkHashMap.has(m.networkId)) {
@@ -4074,6 +4077,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
   let options = {path: folder};
   let newBestNetwork = false;
+  statsObj.numNetworksLoaded = 0;
+  statsObj.numNetworksUpdated = 0;
 
   dropboxClient.filesListFolder(options)
   .then(function(response){
@@ -4104,8 +4109,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
     async.eachSeries(response.entries, function(entry, cb){
 
-      debug(chalkInfo("DROPBOX NETWORK FOUND"
-        // + " | " + getTimeStamp(entry.client_modified)
+      debug(chalkLog("DROPBOX NETWORK FOUND"
+        + " | " + options.path
         + " | " + entry.name
       ));
 
@@ -4134,10 +4139,10 @@ function loadBestNetworkDropboxFolder(folder, callback){
         if (bno.entry.content_hash !== entry.content_hash) {
 
           console.log(chalkInfo("DROPBOX NETWORK CONTENT CHANGE"
-            // + " | " + getTimeStamp(entry.client_modified)
+            + " | " + getTimeStamp(entry.client_modified)
             + " | " + entry.name
-            + "\nCUR HASH: " + entry.content_hash
-            + "\nOLD HASH: " + bno.entry.content_hash
+            // + "\nCUR HASH: " + entry.content_hash
+            // + "\nOLD HASH: " + bno.entry.content_hash
           ));
 
           loadFile(folder, entry.name, function(err, networkObj){
@@ -4149,8 +4154,11 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
 
-            console.log(chalkInfo("DROPBOX LOAD NETWORK"
-              + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+            statsObj.numNetworksUpdated += 1;
+
+            console.log(chalkInfo("+0+ LOADED UPDATED DROPBOX NETWORK"
+              + " [ UPDATED: " + statsObj.numNetworksUpdated + " | LOADED: " + statsObj.numNetworksLoaded + "]" 
+              + " SR: " + networkObj.successRate.toFixed(2) + "%"
               + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
               + " | " + getTimeStamp(networkObj.createdAt)
               + " | " + networkObj.networkId
@@ -4158,6 +4166,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
               + " | IN: " + networkObj.numInputs
               + " | OUT: " + networkObj.numOutputs
             ));
+
 
             const hmObj = {
               entry: entry,
@@ -4209,8 +4218,11 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
 
-            console.log(chalkBlue("+++ DROPBOX NETWORK"
-              + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+            statsObj.numNetworksLoaded += 1;
+
+            console.log(chalkBlue("+++ LOADED NEW DROPBOX NETWORK"
+              + " [ UPDATED: " + statsObj.numNetworksUpdated + " | LOADED: " + statsObj.numNetworksLoaded + "]" 
+              + " SR: " + networkObj.successRate.toFixed(2) + "%"
               + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
               + " | " + networkObj.networkCreateMode
               + " | IN: " + networkObj.numInputs
@@ -4218,6 +4230,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
               + " | " + getTimeStamp(networkObj.createdAt)
               + " | " + networkObj.networkId
             ));
+
 
             bestNetworkHashMap.set(networkObj.networkId, { entry: entry, network: networkObj});
 
@@ -4245,8 +4258,9 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
           }
           else {
-            debug(chalkInfo("... DROPBOX NETWORK"
-              + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+            console.log(chalkInfo("--- DROPBOX NETWORK ... SKIPPING"
+              + " [ UPDATED: " + statsObj.numNetworksUpdated + " | LOADED: " + statsObj.numNetworksLoaded + "]" 
+              + " SR: " + networkObj.successRate.toFixed(2) + "%"
               + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
               + " | " + getTimeStamp(networkObj.createdAt)
               + " | " + networkObj.networkId
@@ -4268,6 +4282,15 @@ function loadBestNetworkDropboxFolder(folder, callback){
         // statsObj.bestRuntimeNetworkId = currentBestNetwork.networkId;
         printNetworkObj("BEST NETWORK", currentBestNetwork);
       }
+
+      console.log(chalkAlert("\n===================================\n"
+        + "LOADED DROPBOX NETWORKS"
+        + "\nFOLDER:        " + options.path
+        + "\nFILES FOUND:   " + response.entries.length + " FILES"
+        + "\nNN DOWNLOADED: " + statsObj.numNetworksLoaded
+        + "\nNN UPDATED:    " + statsObj.numNetworksUpdated
+        + "\n===================================\n"
+      ));
 
       if (callback !== undefined) { callback( null, {best: currentBestNetwork} ); }
     });
