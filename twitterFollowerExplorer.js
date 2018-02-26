@@ -4546,39 +4546,39 @@ function updateNetworkFetchFriends(callback){
   });
 }
 
-function initFetchTwitterFriendsInterval(interval){
+// function initFetchTwitterFriendsInterval(interval){
 
 
-  console.log(chalkBlue("\n\nINIT GET TWITTER FRIENDS"
-    + " | INTERVAL: " + msToTime(interval)
-    + " | RUN AT: " + moment().add(interval, "ms").format(compactDateTimeFormat)
-    + "\n\n"
-  ));
+//   console.log(chalkBlue("\n\nINIT GET TWITTER FRIENDS"
+//     + " | INTERVAL: " + msToTime(interval)
+//     + " | RUN AT: " + moment().add(interval, "ms").format(compactDateTimeFormat)
+//     + "\n\n"
+//   ));
 
-  if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag) {
-    console.error(chalkAlert("RATE LIMIT EXCEPTION"));
-    return;
-  }
+//   if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag) {
+//     console.error(chalkAlert("RATE LIMIT EXCEPTION"));
+//     return;
+//   }
 
-  statsObj.user[currentTwitterUser].count = configuration.fetchCount;
-  debug("statsObj.user[currentTwitterUser]\n" + jsonPrint(statsObj.user[currentTwitterUser]));
+//   statsObj.user[currentTwitterUser].count = configuration.fetchCount;
+//   debug("statsObj.user[currentTwitterUser]\n" + jsonPrint(statsObj.user[currentTwitterUser]));
 
-  fetchTwitterFriendsIntervalometer = timerIntervalometer(function fetchTwitterFriendsIntervalFunc(){
+//   fetchTwitterFriendsIntervalometer = timerIntervalometer(function fetchTwitterFriendsIntervalFunc(){
 
-    if (runEnable()){
-      updateNetworkFetchFriends(function(err, results){});
-    }
-    else {
-      console.log(chalkAlert("fetchTwitterFriendsIntervalometer NOT READY"
-        + " | languageAnalysisReadyFlag: " + languageAnalysisReadyFlag
-        + " | classifiedUserHashmapReadyFlag: " + classifiedUserHashmapReadyFlag
-      ));
-      showStats();
-    }
-  }, interval);
+//     if (runEnable()){
+//       updateNetworkFetchFriends(function(err, results){});
+//     }
+//     else {
+//       console.log(chalkAlert("fetchTwitterFriendsIntervalometer NOT READY"
+//         + " | languageAnalysisReadyFlag: " + languageAnalysisReadyFlag
+//         + " | classifiedUserHashmapReadyFlag: " + classifiedUserHashmapReadyFlag
+//       ));
+//       showStats();
+//     }
+//   }, interval);
 
-  fetchTwitterFriendsIntervalometer.start();
-}
+//   fetchTwitterFriendsIntervalometer.start();
+// }
 
 function initUserDbUpdateQueueInterval(interval){
 
