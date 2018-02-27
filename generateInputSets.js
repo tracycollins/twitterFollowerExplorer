@@ -1279,9 +1279,10 @@ initialize(configuration, function(err, cnf){
 
   console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
-  console.log("LOAD " + localHistogramsFolder + "/histograms.json");
+  // console.log("LOAD " + localHistogramsFolder + "/histograms.json");
+  console.log("LOAD " + defaultHistogramsFolder + "/histograms.json");
 
-  loadFile(localHistogramsFolder, "histograms.json", function(err, histogramsObj){
+  loadFile(defaultHistogramsFolder, "histograms.json", function(err, histogramsObj){
     if (err) {
       console.log(chalkError("LOAD histograms.json ERROR\n" + jsonPrint(err)));
     }
