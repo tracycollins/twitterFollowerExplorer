@@ -4289,6 +4289,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
         + "\nFILES FOUND:   " + response.entries.length + " FILES"
         + "\nNN DOWNLOADED: " + statsObj.numNetworksLoaded
         + "\nNN UPDATED:    " + statsObj.numNetworksUpdated
+        + "\nNN IN HASHMAP: " + bestNetworkHashMap.size
+        + "\nNN AVAIL:      " + Object.keys(availableNeuralNetHashMap).length
         + "\n===================================\n"
       ));
 
