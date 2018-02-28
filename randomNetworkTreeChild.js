@@ -116,6 +116,20 @@ let statsObj = {};
 statsObj.networksLoaded = false;
 statsObj.normalization = {};
 
+statsObj.allTimeLoadedNetworks = {};
+statsObj.allTimeLoadedNetworks.multiNeuralNet = {};
+statsObj.allTimeLoadedNetworks.multiNeuralNet.total = 0;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.matchRate = 0.0;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.successRate = 0.0;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.match = 0;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.mismatch = 0;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.matchFlag = false;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.left = 0;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.neutral = 0;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.right = 0;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.positive = 0;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.negative = 0;
+
 statsObj.loadedNetworks = {};
 statsObj.loadedNetworks.multiNeuralNet = {};
 statsObj.loadedNetworks.multiNeuralNet.total = 0;
@@ -261,6 +275,7 @@ const sortedObjectValues = function(params) {
       resolve({sortKey: params.sortKey, sortedKeys: sortedKeys.slice(0,params.max)});
     }
     else {
+      console.error("sortedObjectValues ERROR | params\n" + jsonPrint(params));
       reject(new Error("ERROR"));
     }
 
@@ -379,6 +394,7 @@ function activateNetwork2(histograms, callback){
   });
 }
 
+
 const sum = (r, a) => r.map((b, i) => a[i] + b);
 
 let previousBestNetworkId = false;
@@ -395,6 +411,36 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
   let multiNeuralNetOutput = [0,0,0];
   let statsTextArray = [];
 
+      // nnId,
+      // statsObj.allTimeLoadedNetworks[nnId].successRate.toFixed(2),
+      // statsObj.allTimeLoadedNetworks[nnId].matchRate.toFixed(2),
+      // statsObj.allTimeLoadedNetworks[nnId].total,
+      // statsObj.allTimeLoadedNetworks[nnId].match,
+      // statsObj.allTimeLoadedNetworks[nnId].mismatch,
+      // statsObj.loadedNetworks[nnId].successRate.toFixed(2),
+      // statsObj.loadedNetworks[nnId].matchFlag,
+      // nnOutput,
+      // statsObj.loadedNetworks[nnId].matchRate.toFixed(2),
+      // statsObj.loadedNetworks[nnId].total,
+      // statsObj.loadedNetworks[nnId].match,
+      // statsObj.loadedNetworks[nnId].mismatch
+
+  statsTextArray.push([
+    "NNID",
+    "ASR",
+    "AMR",
+    "ATOT",
+    "AM",
+    "AMM",
+    "SR",
+    "MFLAG",
+    "OUTPUT",
+    "TOT",
+    " M",
+    " MM",
+    " MR"
+  ]);
+
   async.each(Object.keys(networkOutputObj), function(nnId, cb){
 
     arrayOfArrays.push(networkOutputObj[nnId].output);
@@ -403,6 +449,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     const nn = networksHashMap.get(nnId);
 
     if (statsObj.loadedNetworks[nnId] === undefined) {
+      console.log(chalkAlert("INIT statsObj.loadNetworks " + nnId));
       statsObj.loadedNetworks[nnId] = {};
       statsObj.loadedNetworks[nnId].networkId = nnId;
       statsObj.loadedNetworks[nnId].inputsId = nn.inputsId;
@@ -421,11 +468,32 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       statsObj.loadedNetworks[nnId].negative = 0;
     }
 
+    if (statsObj.allTimeLoadedNetworks[nnId] === undefined) {
+      console.log(chalkAlert("INIT statsObj.allTimeLoadedNetworks " + nnId));
+      statsObj.allTimeLoadedNetworks[nnId] = {};
+      statsObj.allTimeLoadedNetworks[nnId].networkId = nnId;
+      statsObj.allTimeLoadedNetworks[nnId].inputsId = nn.inputsId;
+      statsObj.allTimeLoadedNetworks[nnId].numInputs = nn.numInputs;
+      statsObj.allTimeLoadedNetworks[nnId].output = [];
+      statsObj.allTimeLoadedNetworks[nnId].successRate = nn.successRate;
+      statsObj.allTimeLoadedNetworks[nnId].total = 0;
+      statsObj.allTimeLoadedNetworks[nnId].matchRate = 0.0;
+      statsObj.allTimeLoadedNetworks[nnId].match = 0;
+      statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
+      statsObj.allTimeLoadedNetworks[nnId].matchFlag = false;
+      statsObj.allTimeLoadedNetworks[nnId].left = 0;
+      statsObj.allTimeLoadedNetworks[nnId].neutral = 0;
+      statsObj.allTimeLoadedNetworks[nnId].right = 0;
+      statsObj.allTimeLoadedNetworks[nnId].positive = 0;
+      statsObj.allTimeLoadedNetworks[nnId].negative = 0;
+    }
+
     statsObj.loadedNetworks[nnId].output = nnOutput;
 
     if (expectedOutput[0] === 1 || expectedOutput[1] === 1 || expectedOutput[2] === 1) {
 
       statsObj.loadedNetworks[nnId].total += 1;
+      statsObj.allTimeLoadedNetworks[nnId].total += 1;
 
       if ((nnOutput[0] === expectedOutput[0])
         && (nnOutput[1] === expectedOutput[1])
@@ -433,36 +501,58 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
         statsObj.loadedNetworks[nnId].match += 1;
         statsObj.loadedNetworks[nnId].matchFlag = true;
+        statsObj.allTimeLoadedNetworks[nnId].match += 1;
 
       }
       else {
         statsObj.loadedNetworks[nnId].mismatch += 1;
+        statsObj.allTimeLoadedNetworks[nnId].mismatch += 1;
         statsObj.loadedNetworks[nnId].matchFlag = false;
       }
 
       statsObj.loadedNetworks[nnId].matchRate = 100.0 * statsObj.loadedNetworks[nnId].match / statsObj.loadedNetworks[nnId].total;
+      statsObj.allTimeLoadedNetworks[nnId].matchRate = 100.0 * statsObj.allTimeLoadedNetworks[nnId].match / statsObj.allTimeLoadedNetworks[nnId].total;
     }
     else {
       statsObj.loadedNetworks[nnId].matchFlag = "---";
+      // statsObj.allTimeLoadedNetworks[nnId].matchFlag = "---";
     }
+
+          // "MULTI",
+          // "---",
+          // statsObj.allTimeLoadedNetworks.multiNeuralNet.total,
+          // statsObj.allTimeLoadedNetworks.multiNeuralNet.match,
+          // statsObj.allTimeLoadedNetworks.multiNeuralNet.mismatch,
+          // statsObj.allTimeLoadedNetworks.multiNeuralNet.matchRate.toFixed(2),
+          // "---",
+          // statsObj.loadedNetworks.multiNeuralNet.matchFlag,
+          // sumArrayNorm,
+          // statsObj.loadedNetworks.multiNeuralNet.total,
+          // statsObj.loadedNetworks.multiNeuralNet.match,
+          // statsObj.loadedNetworks.multiNeuralNet.mismatch,
+          // statsObj.loadedNetworks.multiNeuralNet.matchRate.toFixed(2)
 
     statsTextArray.push([
       nnId,
-      "---",
-      statsObj.loadedNetworks[nnId].successRate.toFixed(1),
+      statsObj.allTimeLoadedNetworks[nnId].successRate.toFixed(2),
+      statsObj.allTimeLoadedNetworks[nnId].total,
+      statsObj.allTimeLoadedNetworks[nnId].match,
+      statsObj.allTimeLoadedNetworks[nnId].mismatch,
+      statsObj.allTimeLoadedNetworks[nnId].matchRate.toFixed(2),
+      statsObj.loadedNetworks[nnId].successRate.toFixed(2),
       statsObj.loadedNetworks[nnId].matchFlag,
       nnOutput,
-      statsObj.loadedNetworks[nnId].matchRate.toFixed(1),
       statsObj.loadedNetworks[nnId].total,
       statsObj.loadedNetworks[nnId].match,
-      statsObj.loadedNetworks[nnId].mismatch
+      statsObj.loadedNetworks[nnId].mismatch,
+      statsObj.loadedNetworks[nnId].matchRate.toFixed(2)
     ]);
 
-    async.setImmediate(function() {
+    // async.setImmediate(function() {
       cb();
-    });
+    // });
 
-  }, function(){
+  }, function generateNetworksOutputAsyncCallback(){
 
     sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: 100})
     .then(function(sortedNetworkResults){
@@ -486,31 +576,27 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
         + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
         + " | TOT: " + statsObj.bestNetwork.total
         + " | MATCH: " + statsObj.bestNetwork.match
-        // + " | L: " + statsObj.bestNetwork.left
-        // + " | N: " + statsObj.bestNetwork.neutral
-        // + " | R: " + statsObj.bestNetwork.right
-        // + "\n" + jsonPrint(statsObj.bestNetwork)
       ));
 
       bestNetworkOutput = statsObj.bestNetwork.output;
 
       if ((statsObj.bestNetwork.networkId !== undefined) && (previousBestNetworkId !== statsObj.bestNetwork.networkId)) {
 
-        console.log(chalkAlert("*** NEW BEST NETWORK"
+        console.log(chalkAlert("RNT | *** NEW BEST NETWORK"
           + " | " + statsObj.bestNetwork.networkId
           + " | " + statsObj.bestNetwork.numInputs + " IN"
           + " | IN ID: " + statsObj.bestNetwork.inputsId
           + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
           + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-          + "\n PREV: " + previousBestNetworkId
-          + " | PMR: " + previousBestNetworkMatchRate.toFixed(2) + "%)"
+          + "\nRNT | PREV: " + previousBestNetworkId
+          + " | PMR: " + previousBestNetworkMatchRate.toFixed(2) + "%"
         ));
 
         console.log(chalk.blue(
             "\n-------------------------------------------------------------------------------"
           + "\n" + title 
           + "\n-------------------------------------------------------------------------------\n"
-          + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r", "r"] })
+          + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
           + "\n-------------------------------------------------------------------------------"
         ));
 
@@ -584,13 +670,17 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
         statsTextArray.push([
           "MULTI",
           "---",
+          statsObj.allTimeLoadedNetworks.multiNeuralNet.total,
+          statsObj.allTimeLoadedNetworks.multiNeuralNet.match,
+          statsObj.allTimeLoadedNetworks.multiNeuralNet.mismatch,
+          statsObj.allTimeLoadedNetworks.multiNeuralNet.matchRate.toFixed(2),
           "---",
           statsObj.loadedNetworks.multiNeuralNet.matchFlag,
           sumArrayNorm,
-          statsObj.loadedNetworks.multiNeuralNet.matchRate.toFixed(1),
           statsObj.loadedNetworks.multiNeuralNet.total,
           statsObj.loadedNetworks.multiNeuralNet.match,
-          statsObj.loadedNetworks.multiNeuralNet.mismatch
+          statsObj.loadedNetworks.multiNeuralNet.mismatch,
+          statsObj.loadedNetworks.multiNeuralNet.matchRate.toFixed(2)
         ]);
 
         if (enableLog) {
@@ -598,7 +688,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
               "\n-------------------------------------------------------------------------------"
             + "\n" + title 
             + "\n-------------------------------------------------------------------------------\n"
-            + table(statsTextArray, { align: [ "l", "r", "l", "l", ".", "r", "r", "r", "r"] })
+            + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
             + "\n-------------------------------------------------------------------------------"
           ));
         }
@@ -611,7 +701,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       results.multiNetworkIds = [];
       results.multiNetworkIds = sortedNetworkResults.sortedKeys;
 
-      indexOfMax(sumArray, function(maxMultiOutputIndex){
+      indexOfMax(sumArray, function sumArrayIndexOfMax (maxMultiOutputIndex){
 
         results.multiNetwork = {left: sumArray[0], neutral: sumArray[1], right: sumArray[2]};
 
@@ -629,7 +719,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
             if (enableLog) { console.log(chalk.blue("XAKW | 0 | " + sumArray + " | " + maxMultiOutputIndex)); }
         }
 
-        indexOfMax(bestNetworkOutput, function(maxOutputIndex){
+        indexOfMax(bestNetworkOutput, function bestNetworkOutputIndexOfMax(maxOutputIndex){
 
           switch (maxOutputIndex) {
             case 0:
@@ -660,9 +750,9 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
     })
     .catch(function(err){
-      console.log(chalkError("SORTER ERROR: " + err));
+      console.trace(chalkError("SORTER ERROR: " + err));
       generateNetworksOutputBusy = false;
-      quit();
+      quit(err);
       callback(err, {});
     });
 
@@ -727,20 +817,20 @@ function initActivateNetworkInterval(interval){
 
       if (maxQueueFlag && (rxActivateNetworkQueue.length < MAX_Q_SIZE)) {
         process.send({op: "QUEUE_READY", queue: rxActivateNetworkQueue.length}, function(err){
-          if (err) { quit("ERRROR"); }
+          if (err) { quit("SEND QUEUE_READY ERRROR"); }
         });
         maxQueueFlag = false;
       }
       else if (rxActivateNetworkQueue.length === 0){
         process.send({op: "QUEUE_EMPTY", queue: rxActivateNetworkQueue.length}, function(err){
-          if (err) { quit("ERRROR"); }
+          if (err) { quit("SEND QUEUE_EMPTY ERRROR"); }
         });
         maxQueueFlag = false;
       }
 
       if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
         process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
-          if (err) { quit("ERRROR"); }
+          if (err) { quit("SEND QUEUE_FULL ERRROR"); }
         });
         maxQueueFlag = true;
       }
@@ -812,7 +902,7 @@ function initActivateNetworkInterval(interval){
                     console.log(chalk.blue("+++ AUTO KEYWORD MATCH"
                       + " | " + statsObj.bestNetwork.networkId
                       + " | " + statsObj.bestNetwork.numInputs + " IN"
-                      + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
+                      + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                       + " | TOT: " + statsObj.bestNetwork.total
                       + " | MATCH: " + statsObj.bestNetwork.match
                       // + " | L: " + statsObj.bestNetwork.left
@@ -833,7 +923,7 @@ function initActivateNetworkInterval(interval){
                     console.log(chalk.gray("000 auto keyword miss "
                       + " | " + statsObj.bestNetwork.networkId
                       + " | " + statsObj.bestNetwork.numInputs + " IN"
-                      + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
+                      + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                       + " | TOT: " + statsObj.bestNetwork.total
                       + " | MATCH: " + statsObj.bestNetwork.match
                       // + " | L: " + statsObj.bestNetwork.left
@@ -848,7 +938,7 @@ function initActivateNetworkInterval(interval){
                 }
                 else {
                   debug(chalkLog("NETWORK OUT"
-                      + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
+                      + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                       + " | TOT: " + statsObj.bestNetwork.total
                       + " | MATCH: " + statsObj.bestNetwork.match
                       + " | L: " + statsObj.bestNetwork.left
@@ -863,7 +953,7 @@ function initActivateNetworkInterval(interval){
               }
               else {
                 debug(chalkLog("NETWORK OUT"
-                  + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(1) + "%"
+                  + " | RATE: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                   + " | TOT: " + statsObj.bestNetwork.total
                   + " | MATCH: " + statsObj.bestNetwork.match
                   + " | L: " + statsObj.bestNetwork.left
@@ -958,22 +1048,64 @@ function loadNetworks(networksObj, callback){
 
       networksHashMap.set(nnId, networkObj);
 
+      // if (statsObj.loadedNetworks[nnId] === undefined) {
+      //   statsObj.loadedNetworks[nnId] = {};
+      //   statsObj.loadedNetworks[nnId].networkId = nnId;
+      //   statsObj.loadedNetworks[nnId].numInputs = networkObj.numInputs;
+      //   statsObj.loadedNetworks[nnId].inputsId = networkObj.inputsId;
+      //   statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
+      //   statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
+      //   statsObj.loadedNetworks[nnId].total = 0;
+      //   statsObj.loadedNetworks[nnId].match = 0;
+      //   statsObj.loadedNetworks[nnId].mismatch = 0;
+      //   statsObj.loadedNetworks[nnId].matchFlag = false;
+      //   statsObj.loadedNetworks[nnId].left = 0;
+      //   statsObj.loadedNetworks[nnId].right = 0;
+      //   statsObj.loadedNetworks[nnId].neutral = 0;
+      //   statsObj.loadedNetworks[nnId].positive = 0;
+      //   statsObj.loadedNetworks[nnId].negative = 0;
+      // }
+
       if (statsObj.loadedNetworks[nnId] === undefined) {
+        console.log(chalkAlert("INIT statsObj.loadNetworks " + nnId));
         statsObj.loadedNetworks[nnId] = {};
         statsObj.loadedNetworks[nnId].networkId = nnId;
-        statsObj.loadedNetworks[nnId].numInputs = networkObj.numInputs;
         statsObj.loadedNetworks[nnId].inputsId = networkObj.inputsId;
+        statsObj.loadedNetworks[nnId].numInputs = networkObj.numInputs;
+        statsObj.loadedNetworks[nnId].output = [];
         statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
         statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
         statsObj.loadedNetworks[nnId].total = 0;
+        statsObj.loadedNetworks[nnId].matchRate = 0.0;
         statsObj.loadedNetworks[nnId].match = 0;
         statsObj.loadedNetworks[nnId].mismatch = 0;
         statsObj.loadedNetworks[nnId].matchFlag = false;
         statsObj.loadedNetworks[nnId].left = 0;
-        statsObj.loadedNetworks[nnId].right = 0;
         statsObj.loadedNetworks[nnId].neutral = 0;
+        statsObj.loadedNetworks[nnId].right = 0;
         statsObj.loadedNetworks[nnId].positive = 0;
         statsObj.loadedNetworks[nnId].negative = 0;
+      }
+
+      if (statsObj.allTimeLoadedNetworks[nnId] === undefined) {
+        console.log(chalkAlert("INIT statsObj.allTimeLoadedNetworks " + nnId));
+        statsObj.allTimeLoadedNetworks[nnId] = {};
+        statsObj.allTimeLoadedNetworks[nnId].networkId = nnId;
+        statsObj.allTimeLoadedNetworks[nnId].inputsId = networkObj.inputsId;
+        statsObj.allTimeLoadedNetworks[nnId].numInputs = networkObj.numInputs;
+        statsObj.allTimeLoadedNetworks[nnId].output = [];
+        statsObj.allTimeLoadedNetworks[nnId].successRate = networkObj.successRate;
+        statsObj.allTimeLoadedNetworks[nnId].matchRate = networkObj.matchRate;
+        statsObj.allTimeLoadedNetworks[nnId].total = 0;
+        statsObj.allTimeLoadedNetworks[nnId].matchRate = 0.0;
+        statsObj.allTimeLoadedNetworks[nnId].match = 0;
+        statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
+        statsObj.allTimeLoadedNetworks[nnId].matchFlag = false;
+        statsObj.allTimeLoadedNetworks[nnId].left = 0;
+        statsObj.allTimeLoadedNetworks[nnId].neutral = 0;
+        statsObj.allTimeLoadedNetworks[nnId].right = 0;
+        statsObj.allTimeLoadedNetworks[nnId].positive = 0;
+        statsObj.allTimeLoadedNetworks[nnId].negative = 0;
       }
 
       cb();
@@ -999,7 +1131,7 @@ function printCategorizeHistory(){
       + " | BEST: " + catStats.bestNetwork.networkId
       + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SR"
       + " - " + catStats.bestNetwork.matchRate.toFixed(2) + "% MR"
-      + " | MR: " + catStats.matchRate.toFixed(1) + "%"
+      + " | MR: " + catStats.matchRate.toFixed(2) + "%"
       + " | TOT: " + catStats.total
       + " | MATCH: " + catStats.match
       + " | L: " + catStats.left
@@ -1340,7 +1472,7 @@ setTimeout(function(){
 
     if (err && (err.status !== 404)) {
       console.error(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
-      quit();
+      quit(err);
     }
     console.log(chalkInfo(cnf.processName + " STARTED " + getTimeStamp() + "\n" + jsonPrint(cnf)));
     initStatsUpdate(cnf);

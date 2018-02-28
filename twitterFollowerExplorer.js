@@ -883,19 +883,27 @@ function saveHistograms(callback){
 }
 
 let quitWaitInterval;
+let quitFlag = false;
 
 function quit(cause){
 
+  quitFlag = true;
+
   fsm.fsm_reset();
 
-  if (randomNetworkTree !== undefined) { randomNetworkTree.send({op: "STATS"}); }
+  if (cause && (cause.source === "RNT")) { 
+    randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeReadyFlag = true;
+  }
+  
+  if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { randomNetworkTree.send({op: "STATS"}); }
 
   // saveHistograms();
 
-  console.log( "\n... QUITTING ..." );
+  console.log( "\nTFE | ... QUITTING ..." );
 
   if (cause) {
-    console.log( "CAUSE: " + cause );
+    console.log( "CAUSE: " + jsonPrint(cause) );
   }
 
   if (fetchTwitterFriendsIntervalometer !== undefined) { fetchTwitterFriendsIntervalometer.stop(); }
@@ -935,7 +943,7 @@ function quit(cause){
       }, 5000);
     }
     else {
-      if (randomNetworkTree !== undefined) { randomNetworkTree.send({op: "STATS"}); }
+      if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { randomNetworkTree.send({op: "STATS"}); }
       console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
        + " | SAVE FILE BUSY: " + saveFileBusy
        + " | SAVE FILE Q: " + saveFileQueue.length
@@ -951,7 +959,7 @@ function quit(cause){
 }
 
 process.on( "SIGINT", function() {
-  quit("SIGINT");
+  quit({source: "SIGINT"});
 });
 
 function getTimeStamp(inputTime) {
@@ -2410,7 +2418,7 @@ function processUser(params, userIn, lastTweeId, callback) {
             user.mentions = userDb.mentions;
           }
 
-          if (user.followersCount && (user.followersCount !== userDb.followersCount)
+          if ((user.followersCount && (user.followersCount !== userDb.followersCount))
             || (user.friendsCount !== userDb.friendsCount)
             || (user.statusesCount !== userDb.statusesCount)) {
             updateCountHistory = true;
@@ -2538,7 +2546,15 @@ function initTwitter(currentTwitterUser, callback){
           if (err) {
             console.trace("processUser ERROR");
           }
-          console.log("NEW FOLLOW | PROCESSED USER | " + currentTwitterUser + "\n" + jsonPrint(user));
+          console.log(chalkTwitter(">>> NEW FOLLOW"
+            + " 3C @" + currentTwitterUser
+            + " | @" + user.screenName
+            + " | Ts: " + user.statusesCount
+            + " | Ms: " + user.mentions
+            + " | FLWRs: " + user.followersCount
+            + " | FRNDs: " + user.friendsCount
+            // + "\n" + jsonPrint(user)
+          ));
         });
       });
 
@@ -2715,7 +2731,7 @@ function initStdIn(){
       break;
       case "q":
       case "Q":
-        quit();
+        quit({source: "STDIN"});
       break;
       case "s":
         showStats();
@@ -2910,7 +2926,7 @@ function initialize(cnf, callback){
         loadFile(cnf.twitterConfigFolder, cnf.twitterConfigFile, function(err, tc){
           if (err){
             console.error(chalkError("*** TWITTER YAML CONFIG LOAD ERROR\n" + err));
-            quit();
+            quit({source: "CONFIG", error: err});
             return;
           }
 
@@ -3127,7 +3143,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         case "RNT_TEST_FAIL":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           console.log(chalkAlert(getTimeStamp() + " | RNT_TEST_FAIL"));
-          quit("RNT_TEST_FAIL");
+          quit({source: "RNT", error: "RNT_TEST_FAIL"});
         break;
 
         case "NETWORK_OUTPUT":
@@ -3199,7 +3215,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         break;
 
         case "BEST_MATCH_RATE":
-          console.log(chalkAlert("*** RNT_BEST_MATCH_RATE"
+          console.log(chalkAlert("\n================================================================================================\n"
+            + "*** RNT_BEST_MATCH_RATE"
             + " | " + m.networkId
             + " | IN ID: " + m.inputsId
             + " | " + m.numInputs + " IN"
@@ -3207,6 +3224,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             + " | MR: " + m.matchRate.toFixed(2) + "%"
             + "\n*** PREV: " + m.previousBestNetworkId
             + " | PMR: " + m.previousBestMatchRate.toFixed(2) + "%"
+            + "\n================================================================================================\n"
           ));
 
           if (bestNetworkHashMap.has(m.networkId)) {
@@ -3253,7 +3271,10 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
             if (hostname === "google") {
 
-              console.log(chalkBlue("... PREV BEST NETWORK | " + m.previousBestNetworkId + " | " + m.previousBestMatchRate.toFixed(2)));
+              console.log(chalkBlue("... SAVING PREV BEST NETWORK"
+                + " | " + m.previousBestMatchRate.toFixed(2) + "%"
+                + " | " + m.previousBestNetworkId + ".json"
+              ));
 
               saveFileQueue.push({folder: bestNetworkFolder, file: m.previousBestNetworkId + ".json", obj: prevHmObj.network });
             }
@@ -4756,20 +4777,21 @@ function initRandomNetworkTree(callback){
 
   randomNetworkTree.on("error", function(err){
     randomNetworkTreeBusyFlag = false;
-    console.log(chalkError("*** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
-    quit(err);
+    console.log(chalkError("*** randomNetworkTree ERROR *** : " + err));
+    // console.log(chalkError("*** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
+    if (!quitFlag) { quit({source: "RNT", error: err }); }
   });
 
   randomNetworkTree.on("exit", function(err){
     randomNetworkTreeBusyFlag = false;
     console.log(chalkError("*** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
-    quit(err);
+    if (!quitFlag) { quit({source: "RNT", error: err }); }
   });
 
   randomNetworkTree.on("close", function(code){
     randomNetworkTreeBusyFlag = false;
     console.log(chalkError("*** randomNetworkTree CLOSE *** | " + code));
-    quit(code);
+    if (!quitFlag) { quit({source: "RNT", code: code }); }
   });
 
   randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL }, function(){
@@ -4838,17 +4860,17 @@ function initLangAnalyzer(callback){
 
   langAnalyzer.on("error", function(err){
     console.log(chalkError("*** langAnalyzer ERROR ***\n" + jsonPrint(err)));
-    quit(err);
+    if (!quitFlag) { quit({source: "LA", error: err }); }
   });
 
   langAnalyzer.on("exit", function(err){
     console.log(chalkError("*** langAnalyzer EXIT ***\n" + jsonPrint(err)));
-    quit(err);
+    if (!quitFlag) { quit({source: "LA", error: err }); }
   });
 
   langAnalyzer.on("close", function(code){
     console.log(chalkError("*** langAnalyzer CLOSE *** | " + code));
-    quit(code);
+    if (!quitFlag) { quit({source: "LA", code: code }); }
   });
 
   langAnalyzer.send({ op: "INIT", interval: LANGUAGE_ANALYZE_INTERVAL }, function(){
@@ -5047,7 +5069,7 @@ initialize(configuration, function(err, cnf){
 
       if (e) {
         console.error(chalkError("*** ERROR INIT TWITTER USERS: " + e));
-        return quit(e);
+        return quit({source: "TFE", error: e});
       }
 
       if (currentTwitterUser === undefined) { 
