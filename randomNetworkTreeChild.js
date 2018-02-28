@@ -428,10 +428,10 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
   statsTextArray.push([
     "NNID",
     "ASR",
-    "AMR",
     "ATOT",
     "AM",
     "AMM",
+    "AMR",
     "SR",
     "MFLAG",
     "OUTPUT",
