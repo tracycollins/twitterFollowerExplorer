@@ -842,6 +842,7 @@ function saveHistograms(callback){
 
   const hId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
   const hFile = "histograms_" + hId + ".json"; 
+  const defaultFile = "histograms.json"; 
   const inFile = hId + ".json"; 
 
   let histObj = {};
@@ -851,6 +852,7 @@ function saveHistograms(callback){
 
   let folder = (hostname === "google") ? defaultHistogramsFolder : localHistogramsFolder;
 
+  saveFileQueue.push({folder: folder, file: defaultFile, obj: histObj});
   saveFileQueue.push({folder: folder, file: hFile, obj: histObj});
 
   const genInParams = {
