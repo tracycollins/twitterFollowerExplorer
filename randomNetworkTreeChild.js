@@ -16,6 +16,7 @@ const HashMap = require("hashmap").HashMap;
 const networksHashMap = new HashMap();
 let rxActivateNetworkQueue = [];
 let maxQueueFlag = false;
+let maxInputHashMap = {};
 
 let activateNetworkInterval;
 let activateNetworkReady = false;
@@ -300,22 +301,49 @@ function generateNetworkInput(params, callback){
 
     async.eachSeries(networkInputTypeNames, function(inputName, cb1){
 
-      const inputValue = histogramObj[inputName];
+      // let inputValue = histogramObj[inputName];
 
-      if (inputValue !== undefined) {
-        networkInput.push(inputValue);
-        inputHits.push({type: inputType, inputName: inputName, inputValue: inputValue});
-        debug(chalkLog("RNT | GENERATE NET INPUT"
-          + " | IN LENGTH: " + networkInput.length
-          + " | IN HITS: " + inputHits.length
-          + " | @" + params.userScreenName
-          + " | TYPE: " + inputType
-          + " | " + inputName
-          + " | " + inputValue
-        ));
-        async.setImmediate(function() { 
-          cb1(); 
-        });
+      if (histogramObj[inputName] !== undefined) {
+
+        if ((params.maxInputHashMap === undefined) 
+          || (params.maxInputHashMap[inputType] === undefined)) {
+
+          console.log(chalkAlert("UNDEFINED??? params.maxInputHashMap." + inputType + " | " + inputName
+            + "\n" + jsonPrint(params.maxInputHashMap)
+          ));
+
+          networkInput.push(1);
+          inputHits.push({type: inputType, inputName: inputName, inputValue: histogramObj[inputName]});
+
+          debug(chalkLog("RNT | GENERATE NET INPUT"
+            + " | IN LENGTH: " + networkInput.length
+            + " | IN HITS: " + inputHits.length
+            + " | @" + params.userScreenName
+            + " | TYPE: " + inputType
+            + " | " + inputName
+            + " | " + histogramObj[inputName]
+          ));
+
+          async.setImmediate(function() { 
+            cb1(); 
+          });
+
+        }
+        else {
+
+          const inputValue = (params.maxInputHashMap[inputType][inputName] > 0) 
+            ? histogramObj[inputName]/params.maxInputHashMap[inputType][inputName] 
+            : 1;
+
+          networkInput.push(inputValue);
+          inputHits.push({type: inputType, inputName: inputName, inputValue: inputValue});
+
+          async.setImmediate(function() {
+            cb1();
+          });
+        }
+
+
       }
       else {
         networkInput.push(0);
@@ -379,7 +407,8 @@ function activateNetwork2(user, callback){
       userScreenName: user.screenName,
       histograms: userHistograms,
       languageAnalysis: languageAnalysis,
-      inputsObj: networkObj.inputsObj
+      inputsObj: networkObj.inputsObj,
+      maxInputHashMap: maxInputHashMap
     };
 
     generateNetworkInput(params, function(err, networkInput){
@@ -1261,6 +1290,14 @@ process.on("message", function(m) {
       ));
       initActivateNetworkInterval(m.interval);
       process.send({ op: "IDLE" });
+    break;
+
+    case "LOAD_MAX_INPUTS_HASHMAP":
+      maxInputHashMap = {};
+      maxInputHashMap = deepcopy(m.maxInputHashMap);
+      console.log(chalkAlert("RNT LOAD_MAX_INPUTS_HASHMAP"
+        + " | " + Object.keys(maxInputHashMap)
+      ));
     break;
 
     case "GET_BUSY":

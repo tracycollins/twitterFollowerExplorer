@@ -70,6 +70,8 @@ const HashMap = require("hashmap").HashMap;
 let bestNetworkHashMap = new HashMap();
 let trainingSetHashMap = new HashMap();
 
+let maxInputHashMap = {};
+
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
@@ -522,6 +524,8 @@ function loadTrainingSetsDropboxFolder(folder, callback){
             }
             else {
 
+              maxInputHashMap = {};
+              maxInputHashMap = deepcopy(trainingSetObj.maxInputHashMap);
               trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry, trainingSetObj: trainingSetObj} );
 
               console.log(chalkInfo("NNT | DROPBOX TRAINING SET"
@@ -559,6 +563,8 @@ function loadTrainingSetsDropboxFolder(folder, callback){
           }
           else {
 
+            maxInputHashMap = {};
+            maxInputHashMap = deepcopy(trainingSetObj.maxInputHashMap);
             trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry, trainingSetObj: trainingSetObj} );
 
             console.log(chalkNetwork("NNT | LOADED DROPBOX TRAINING SET"
@@ -2826,7 +2832,9 @@ const fsmStates = {
   },
   "FETCH_ALL":{
     onEnter: function(event, oldState, newState){
+
       reporter(event, oldState, newState);
+
       if (event === "fsm_fetchUserEnd") {
         console.log("FETCH_ALL"
          + " | " + event
@@ -2834,14 +2842,21 @@ const fsmStates = {
         );
 
         loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function(){
-          updateGlobalHistograms();
-          initNextTwitterUser(function(err, nextTwitterUser){
-            if (err) {
-              console.log(chalkError("initNextTwitterUser ERROR: " + err));
-            }
-            debug(chalkError("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
-            fsm.fsm_fetchUserStart();
+
+          randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function(){
+            console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+
+            updateGlobalHistograms();
+            initNextTwitterUser(function(err, nextTwitterUser){
+              if (err) {
+                console.log(chalkError("initNextTwitterUser ERROR: " + err));
+              }
+              debug(chalkError("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
+              fsm.fsm_fetchUserStart();
+            });
+
           });
+
         });
       }
     },
@@ -3074,7 +3089,9 @@ function quit(cause){
     randomNetworkTreeReadyFlag = true;
   }
   
-  if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { randomNetworkTree.send({op: "STATS"}); }
+  if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
+    randomNetworkTree.send({op: "STATS"}); 
+  }
 
   console.log( "\nTFE | ... QUITTING ..." );
 
@@ -3116,7 +3133,10 @@ function quit(cause){
       }, 5000);
     }
     else {
-      if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { randomNetworkTree.send({op: "STATS"}); }
+      if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
+        randomNetworkTree.send({op: "STATS"}); 
+      }
+      
       console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
        + " | SAVE FILE BUSY: " + saveFileBusy
        + " | SAVE FILE Q: " + saveFileQueue.length
@@ -4977,11 +4997,19 @@ initialize(configuration, function(err, cnf){
             });
 
           }, 1000);
-
         }
-        fsm.fsm_initComplete();
-        fsm.fsm_fetchAllStart();
-        fsm.fsm_fetchUserStart();
+
+        loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function(){
+
+          randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function(){
+            console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+
+            fsm.fsm_initComplete();
+            fsm.fsm_fetchAllStart();
+            fsm.fsm_fetchUserStart();
+          });
+
+        });
 
       }
     });
