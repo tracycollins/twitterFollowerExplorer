@@ -339,7 +339,7 @@ function generateNetworkInput(params, callback){
 
   }, function(err){
     generateNetworkInputBusy = false;
-    console.log("USER @" + params.userScreenName
+    debug("USER @" + params.userScreenName
       + " | inputsId: " + params.inputsObj.inputsId
       + " | inputHits\n" + jsonPrint(inputHits)
     );
