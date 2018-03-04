@@ -283,54 +283,80 @@ const sortedObjectValues = function(params) {
 };
 
 let generateNetworkInputBusy = false;
-function generateNetworkInput(histograms, networkInputsObj, callback){
+function generateNetworkInput(params, callback){
 
   generateNetworkInputBusy = true;
 
-  const inputTypes = Object.keys(networkInputsObj).sort();
+  const inputTypes = Object.keys(params.inputsObj.inputs).sort();
   let networkInput = [];
+  let inputHits = [];
 
   async.eachSeries(inputTypes, function(inputType, cb0){
 
-    debug("inputType: " + inputType);
+    debug("RNT | GENERATE NET INPUT | TYPE: " + inputType);
 
-    let histogramObj = histograms[inputType];
-
-    const networkInputTypeNames = networkInputsObj[inputType];
+    const histogramObj = params.histograms[inputType];
+    const networkInputTypeNames = params.inputsObj.inputs[inputType];
 
     async.eachSeries(networkInputTypeNames, function(inputName, cb1){
 
-      if (histogramObj[inputName] !== undefined) {
-        networkInput.push(1);
-        debug(inputType + " | * " + inputName);
-        async.setImmediate(function() { cb1(); });
+      const inputValue = histogramObj[inputName];
+
+      if (inputValue !== undefined) {
+        networkInput.push(inputValue);
+        inputHits.push({type: inputType, inputName: inputName, inputValue: inputValue});
+        debug(chalkLog("RNT | GENERATE NET INPUT"
+          + " | IN LENGTH: " + networkInput.length
+          + " | IN HITS: " + inputHits.length
+          + " | @" + params.userScreenName
+          + " | TYPE: " + inputType
+          + " | " + inputName
+          + " | " + inputValue
+        ));
+        async.setImmediate(function() { 
+          cb1(); 
+        });
       }
       else {
         networkInput.push(0);
-        // debug(inputType + " | . " + inputName);
-        async.setImmediate(function() { cb1(); });
+        debug(chalkLog("RNT | GENERATE NET INPUT"
+          + " | TYPE: " + inputType
+          + " | " + inputName
+          + " | 0"
+        ));
+        async.setImmediate(function() { 
+          cb1(); 
+        });
       }
 
     }, function(err){
 
-      cb0();
+      async.setImmediate(function() { 
+        cb0(); 
+      });
 
     });
 
   }, function(err){
     generateNetworkInputBusy = false;
+    console.log("USER @" + params.userScreenName
+      + " | inputsId: " + params.inputsObj.inputsId
+      + " | inputHits\n" + jsonPrint(inputHits)
+    );
     callback(err, networkInput);
   });
 }
 
 let activateNetworkBusy = false;
-function activateNetwork2(histograms, callback){
+function activateNetwork2(user, callback){
 
   activateNetworkBusy = true;
   let networkOutput = {};
   let userHistograms = {};
+  let languageAnalysis = {};
 
-  userHistograms = deepcopy(histograms);
+  userHistograms = deepcopy(user.histograms);
+  languageAnalysis = deepcopy(user.languageAnalysis);
 
   async.eachSeries(networksHashMap.keys(), function(nnId, cb){
 
@@ -349,7 +375,14 @@ function activateNetwork2(histograms, callback){
       console.log(chalkError("UNDEFINED NETWORK INPUTS OBJ | NETWORK OBJ KEYS: " + Object.keys(networkObj)));
     }
 
-    generateNetworkInput(userHistograms, networkObj.inputsObj.inputs, function(err, networkInput){
+    const params = {
+      userScreenName: user.screenName,
+      histograms: userHistograms,
+      languageAnalysis: languageAnalysis,
+      inputsObj: networkObj.inputsObj
+    };
+
+    generateNetworkInput(params, function(err, networkInput){
 
       const out = networkObj.network.activate(networkInput);
 
@@ -411,28 +444,14 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
   let multiNeuralNetOutput = [0,0,0];
   let statsTextArray = [];
 
-      // nnId,
-      // statsObj.allTimeLoadedNetworks[nnId].successRate.toFixed(2),
-      // statsObj.allTimeLoadedNetworks[nnId].matchRate.toFixed(2),
-      // statsObj.allTimeLoadedNetworks[nnId].total,
-      // statsObj.allTimeLoadedNetworks[nnId].match,
-      // statsObj.allTimeLoadedNetworks[nnId].mismatch,
-      // statsObj.loadedNetworks[nnId].successRate.toFixed(2),
-      // statsObj.loadedNetworks[nnId].matchFlag,
-      // nnOutput,
-      // statsObj.loadedNetworks[nnId].matchRate.toFixed(2),
-      // statsObj.loadedNetworks[nnId].total,
-      // statsObj.loadedNetworks[nnId].match,
-      // statsObj.loadedNetworks[nnId].mismatch
-
   statsTextArray.push([
     "NNID",
-    "ASR",
+    "SR",
     "ATOT",
     "AM",
     "AMM",
     "AMR",
-    "SR",
+    // "SR",
     "MFLAG",
     "OUTPUT",
     "TOT",
@@ -518,20 +537,6 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       // statsObj.allTimeLoadedNetworks[nnId].matchFlag = "---";
     }
 
-          // "MULTI",
-          // "---",
-          // statsObj.allTimeLoadedNetworks.multiNeuralNet.total,
-          // statsObj.allTimeLoadedNetworks.multiNeuralNet.match,
-          // statsObj.allTimeLoadedNetworks.multiNeuralNet.mismatch,
-          // statsObj.allTimeLoadedNetworks.multiNeuralNet.matchRate.toFixed(2),
-          // "---",
-          // statsObj.loadedNetworks.multiNeuralNet.matchFlag,
-          // sumArrayNorm,
-          // statsObj.loadedNetworks.multiNeuralNet.total,
-          // statsObj.loadedNetworks.multiNeuralNet.match,
-          // statsObj.loadedNetworks.multiNeuralNet.mismatch,
-          // statsObj.loadedNetworks.multiNeuralNet.matchRate.toFixed(2)
-
     statsTextArray.push([
       nnId,
       statsObj.allTimeLoadedNetworks[nnId].successRate.toFixed(2),
@@ -539,7 +544,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       statsObj.allTimeLoadedNetworks[nnId].match,
       statsObj.allTimeLoadedNetworks[nnId].mismatch,
       statsObj.allTimeLoadedNetworks[nnId].matchRate.toFixed(2),
-      statsObj.loadedNetworks[nnId].successRate.toFixed(2),
+      // statsObj.loadedNetworks[nnId].successRate.toFixed(2),
       statsObj.loadedNetworks[nnId].matchFlag,
       nnOutput,
       statsObj.loadedNetworks[nnId].total,
@@ -596,7 +601,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
             "\n-------------------------------------------------------------------------------"
           + "\n" + title 
           + "\n-------------------------------------------------------------------------------\n"
-          + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+          + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
           + "\n-------------------------------------------------------------------------------"
         ));
 
@@ -674,7 +679,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           statsObj.allTimeLoadedNetworks.multiNeuralNet.match,
           statsObj.allTimeLoadedNetworks.multiNeuralNet.mismatch,
           statsObj.allTimeLoadedNetworks.multiNeuralNet.matchRate.toFixed(2),
-          "---",
+          // "---",
           statsObj.loadedNetworks.multiNeuralNet.matchFlag,
           sumArrayNorm,
           statsObj.loadedNetworks.multiNeuralNet.total,
@@ -688,7 +693,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
               "\n-------------------------------------------------------------------------------"
             + "\n" + title 
             + "\n-------------------------------------------------------------------------------\n"
-            + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+            + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
             + "\n-------------------------------------------------------------------------------"
           ));
         }
@@ -835,7 +840,7 @@ function initActivateNetworkInterval(interval){
         maxQueueFlag = true;
       }
 
-      activateNetwork2(obj.user.histograms, function(err, networkOutputObj){
+      activateNetwork2(obj.user, function(err, networkOutputObj){
 
         if (err){
           console.error(chalkError("ACTIVATE NETWORK ERROR"
@@ -1353,8 +1358,6 @@ debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
-
-
 function saveFile (path, file, jsonObj, callback){
 
   const fullPath = path + "/" + file;
@@ -1412,9 +1415,6 @@ function saveFile (path, file, jsonObj, callback){
       }
     });
 }
-
-
-
 
 function initStatsUpdate(cnf){
 
@@ -1478,5 +1478,3 @@ setTimeout(function(){
     initStatsUpdate(cnf);
   });
 }, 1 * ONE_SECOND);
-
-

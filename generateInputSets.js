@@ -391,7 +391,6 @@ function initKeepalive(interval){
   }, interval);
 }
 
-
 function initSocket(cnf, callback){
 
   if (OFFLINE_MODE) {
@@ -567,7 +566,6 @@ function initSocket(cnf, callback){
   callback(null, null);
 }
 
-
 function generateInputSets(params, callback) {
 
   let totalMin = randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
@@ -585,9 +583,8 @@ function generateInputSets(params, callback) {
   async.whilst(
 
     function() {
-
-      return ((newInputsObj.meta.numInputs < configuration.minInputsGenerated) || (newInputsObj.meta.numInputs > configuration.maxInputsGenerated)) ;
-
+      return ((newInputsObj.meta.numInputs < configuration.minInputsGenerated) 
+           || (newInputsObj.meta.numInputs > configuration.maxInputsGenerated)) ;
     },
 
     function(cb0){
@@ -599,46 +596,7 @@ function generateInputSets(params, callback) {
         + " | HIST ID: " + params.histogramsObj.histogramsId
         + " | TOT MIN: " + totalMin
         + " | DOM MIN: " + dominantMin.toFixed(3)
-        // + jsonPrint(params)
       ));
-
-      // if (newInputsObj.meta.numInputs < configuration.minInputsGenerated) {
-      //   console.log(chalkAlert("NUM INPUTS < configuration.minInputsGenerated: " + newInputsObj.meta.numInputs));
-      //   if (totalMin > 4) {
-      //     totalMin -= 1;
-      //     console.log(chalkAlert("ADJUST totalMin: " + totalMin));
-      //   }
-      //   else if (dominantMin > 0.35) {
-      //     dominantMin -= 0.025;
-      //     console.log(chalkAlert("ADJUST dominantMin: " + dominantMin.toFixed(3)));
-      //   }
-      //   else {
-      //     console.log(chalkError("*** ERROR generateInputSets: FAIL TO ADJUST"
-      //       + " | TOT MIN: " + totalMin
-      //       + " | DOM MIN: " + dominantMin.toFixed(3)
-      //     ));
-      //     return cb0("ERROR generateInputSets: FAIL TO ADJUST");
-      //   }
-      // }
-
-      // if (newInputsObj.meta.numInputs > configuration.maxInputsGenerated) {
-      //   console.log(chalkAlert("NUM INPUTS > configuration.maxInputsGenerated: " + newInputsObj.meta.numInputs));
-      //   if (totalMin < 100) {
-      //     totalMin += 1;
-      //     console.log(chalkAlert("ADJUST totalMin: " + totalMin));
-      //   }
-      //   else if (dominantMin < 1.0) {
-      //     dominantMin += 0.025;
-      //     console.log(chalkAlert("ADJUST dominantMin: " + dominantMin.toFixed(3)));
-      //   }
-      //   else {
-      //     console.log(chalkError("*** ERROR generateInputSets: FAIL TO ADJUST"
-      //       + " | TOT MIN: " + totalMin
-      //       + " | DOM MIN: " + dominantMin.toFixed(3)
-      //     ));
-      //     return cb0("ERROR generateInputSets: FAIL TO ADJUST");
-      //   }
-      // }
 
       const hpParams = {};
       hpParams.histogram = params.histogramsObj.histograms;
@@ -655,21 +613,37 @@ function generateInputSets(params, callback) {
 
         debug(chalkNetwork("HISTOGRAMS RESULTS\n" + jsonPrint(histResults)));
 
-        const inTypyes = Object.keys(histResults.entries);
+        let inTypyes = Object.keys(histResults.entries);
+        inTypyes.push("sentiment");
+        inTypyes.sort();
 
         newInputsObj.meta.numInputs = 0;
 
         async.eachSeries(inTypyes, function(type, cb1){
 
           newInputsObj.inputs[type] = [];
-          newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
-          newInputsObj.meta.numInputs +=newInputsObj.inputs[type].length;
 
-          console.log(chalkLog("... PARSE | " + type + ": " + newInputsObj.inputs[type].length));
+          if (type === "sentiment") {
+            newInputsObj.inputs[type] = ["magnitude", "score"];
+            newInputsObj.meta.numInputs += newInputsObj.inputs[type].length;
+            console.log(chalkLog("... PARSE | " + type + ": " + newInputsObj.inputs[type].length));
 
-          cb1();
+            cb1();
+          }
+          else {
+            newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
+            newInputsObj.meta.numInputs += newInputsObj.inputs[type].length;
+
+            console.log(chalkLog("... PARSE | " + type + ": " + newInputsObj.inputs[type].length));
+
+            cb1();
+          }
 
         }, function(){
+
+          // newInputsObj.inputs.sentiment = [];
+          // newInputsObj.inputs.sentiment = ["magnitude", "score"];
+          // newInputsObj.meta.numInputs += 2;
 
           newInputsObj.meta.histogramParseTotalMin = totalMin;
           newInputsObj.meta.histogramParseDominantMin = dominantMin;
