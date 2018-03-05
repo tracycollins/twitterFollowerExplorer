@@ -74,6 +74,9 @@ let maxInputHashMap = {};
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+let quitWaitInterval;
+let quitFlag = false;
+
 const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
 const slackChannel = "#tfe";
 const Slack = require("slack-node");
@@ -206,7 +209,7 @@ let TFE_USER_DB_CRAWL = false;
 
 let configuration = {};
 
-configuration.twitterUsers = ["altthreecee00", "altthreecee02", "ninjathreecee"];
+configuration.twitterUsers = ["altthreecee00", "atlthreecee02", "ninjathreecee"];
 
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
 configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
@@ -273,7 +276,6 @@ let statsUpdateInterval;
 let autoClassifiedUserHashmap = {};
 let classifiedUserHashmap = {};
 let twitterUserHashMap = {};
-
 
 let defaultNeuralNetworkFile = "neuralNetwork.json";
 
@@ -2285,6 +2287,79 @@ function generateAutoKeywords(params, user, callback){
   });
 }
 
+function quit(cause){
+
+  quitFlag = true;
+
+  fsm.fsm_reset();
+
+  if (cause && (cause.source === "RNT")) { 
+    randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeReadyFlag = true;
+  }
+  
+  if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
+    randomNetworkTree.send({op: "STATS"}); 
+  }
+
+  console.log( "\nTFE | ... QUITTING ..." );
+
+  if (cause) {
+    console.log( "CAUSE: " + jsonPrint(cause) );
+  }
+
+  quitWaitInterval = setInterval(function () {
+
+    if (!saveFileBusy 
+      && !randomNetworkTreeBusyFlag
+      && (saveFileQueue.length === 0)
+      && (langAnalyzerMessageRxQueue.length === 0)
+      && (randomNetworkTreeMessageRxQueue.length === 0)
+      && (userDbUpdateQueue.length === 0)
+      && randomNetworkTreeMessageRxQueueReadyFlag
+      && randomNetworkTreeReadyFlag
+      && languageAnalysisReadyFlag
+      && userDbUpdateQueueReadyFlag
+      ){
+
+      clearInterval(statsUpdateInterval);
+      clearInterval(checkRateLimitInterval);
+      clearInterval(userDbUpdateQueueInterval);
+      clearInterval(quitWaitInterval);
+
+      console.log(chalkAlert("ALL PROCESSES COMPLETE ... QUITTING"
+       + " | SAVE FILE BUSY: " + saveFileBusy
+       + " | SAVE FILE Q: " + saveFileQueue.length
+       + " | RNT BUSY: " + randomNetworkTreeBusyFlag
+       + " | RNT READY: " + randomNetworkTreeReadyFlag
+       + " | RNT Q: " + randomNetworkTreeMessageRxQueue.length
+       + " | LA Q: " + langAnalyzerMessageRxQueue.length
+       + " | USR DB Q: " + userDbUpdateQueue.length
+      ));
+
+      setTimeout(function(){
+        process.exit();      
+      }, 5000);
+    }
+    else {
+      if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
+        randomNetworkTree.send({op: "STATS"}); 
+      }
+      
+      console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
+       + " | SAVE FILE BUSY: " + saveFileBusy
+       + " | SAVE FILE Q: " + saveFileQueue.length
+       + " | RNT BUSY: " + randomNetworkTreeBusyFlag
+       + " | RNT READY: " + randomNetworkTreeReadyFlag
+       + " | RNT Q: " + randomNetworkTreeMessageRxQueue.length
+       + " | LA Q: " + langAnalyzerMessageRxQueue.length
+       + " | USR DB Q: " + userDbUpdateQueue.length
+      ));
+    }
+
+  }, 1000);
+}
+
 function processUser(userIn, lastTweeId, callback) {
 
   let updateCountHistory = false;
@@ -2311,10 +2386,14 @@ function processUser(userIn, lastTweeId, callback) {
 
     function unfollowFriend(user, cb) {
 
-      if ((currentTwitterUser === "altthreecee00")
-        && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined)) {
+      if (
+           ((currentTwitterUser === "altthreecee00") && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined))
+        || ((currentTwitterUser === "atlthreecee02") && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined))
+        || ((currentTwitterUser === "atlthreecee02") && (twitterUserHashMap.altthreecee00.friends[user.userId] !== undefined))
 
-        console.log(chalkInfo("SKIP | ninjathreecee FOLLOWING"
+        ) {
+
+        console.log(chalkInfo("SKIP | ninjathreecee OR altthreecee00 FOLLOWING"
           + " | " + user.userId
           + " | " + user.screenName.toLowerCase()
         ));
@@ -2331,11 +2410,11 @@ function processUser(userIn, lastTweeId, callback) {
               debug("data\n" + jsonPrint(data));
               debug("response\n" + jsonPrint(response));
 
-              console.log(chalkInfo("UNFOLLOW altthreecee00"
+              console.log(chalkInfo("UNFOLLOW " + currentTwitterUser
                 + " | " + user.userId
                 + " | " + user.screenName.toLowerCase()
               ));
-              const slackText = "UNFOLLOW altthreecee00"
+              const slackText = "UNFOLLOW " + currentTwitterUser
                 + "\n@" + user.screenName.toLowerCase()
                 + "\n" + user.userId;
               slackPostMessage(slackChannel, slackText);
@@ -2934,7 +3013,7 @@ const testMode = { name: "testMode", alias: "X", type: Boolean, defaultValue: fa
 const loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
 const targetServer = { name: "targetServer", alias: "t", type: String};
 
-const optionDefinitions = [enableStdin, targetServer, quitOnError, quitOnComplete, loadNeuralNetworkID, userDbCrawl, testMode];
+const optionDefinitions = [enableStdin, numRandomNetworks, targetServer, quitOnError, quitOnComplete, loadNeuralNetworkID, userDbCrawl, testMode];
 
 const commandLineConfig = cla(optionDefinitions);
 
@@ -3014,11 +3093,14 @@ statsObj.users.grandTotalFriendsFetched = 0;
 statsObj.user = {};
 statsObj.user.ninjathreecee = {};
 statsObj.user.altthreecee00 = {};
+statsObj.user.atlthreecee02 = {};
 
 statsObj.user.ninjathreecee.friendsProcessed = 0;
 statsObj.user.ninjathreecee.percentProcessed = 0;
 statsObj.user.altthreecee00.friendsProcessed = 0;
 statsObj.user.altthreecee00.percentProcessed = 0;
+statsObj.user.atlthreecee02.friendsProcessed = 0;
+statsObj.user.atlthreecee02.percentProcessed = 0;
 
 statsObj.analyzer = {};
 statsObj.analyzer.total = 0;
@@ -3073,82 +3155,6 @@ function showStats(options){
       ));
     }
   }
-}
-
-let quitWaitInterval;
-let quitFlag = false;
-
-function quit(cause){
-
-  quitFlag = true;
-
-  fsm.fsm_reset();
-
-  if (cause && (cause.source === "RNT")) { 
-    randomNetworkTreeBusyFlag = false;
-    randomNetworkTreeReadyFlag = true;
-  }
-  
-  if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
-    randomNetworkTree.send({op: "STATS"}); 
-  }
-
-  console.log( "\nTFE | ... QUITTING ..." );
-
-  if (cause) {
-    console.log( "CAUSE: " + jsonPrint(cause) );
-  }
-
-  quitWaitInterval = setInterval(function () {
-
-    if (!saveFileBusy 
-      && !randomNetworkTreeBusyFlag
-      && (saveFileQueue.length === 0)
-      && (langAnalyzerMessageRxQueue.length === 0)
-      && (randomNetworkTreeMessageRxQueue.length === 0)
-      && (userDbUpdateQueue.length === 0)
-      && randomNetworkTreeMessageRxQueueReadyFlag
-      && randomNetworkTreeReadyFlag
-      && languageAnalysisReadyFlag
-      && userDbUpdateQueueReadyFlag
-      ){
-
-      clearInterval(statsUpdateInterval);
-      clearInterval(checkRateLimitInterval);
-      clearInterval(userDbUpdateQueueInterval);
-      clearInterval(quitWaitInterval);
-
-      console.log(chalkAlert("ALL PROCESSES COMPLETE ... QUITTING"
-       + " | SAVE FILE BUSY: " + saveFileBusy
-       + " | SAVE FILE Q: " + saveFileQueue.length
-       + " | RNT BUSY: " + randomNetworkTreeBusyFlag
-       + " | RNT READY: " + randomNetworkTreeReadyFlag
-       + " | RNT Q: " + randomNetworkTreeMessageRxQueue.length
-       + " | LA Q: " + langAnalyzerMessageRxQueue.length
-       + " | USR DB Q: " + userDbUpdateQueue.length
-      ));
-
-      setTimeout(function(){
-        process.exit();      
-      }, 5000);
-    }
-    else {
-      if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
-        randomNetworkTree.send({op: "STATS"}); 
-      }
-      
-      console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
-       + " | SAVE FILE BUSY: " + saveFileBusy
-       + " | SAVE FILE Q: " + saveFileQueue.length
-       + " | RNT BUSY: " + randomNetworkTreeBusyFlag
-       + " | RNT READY: " + randomNetworkTreeReadyFlag
-       + " | RNT Q: " + randomNetworkTreeMessageRxQueue.length
-       + " | LA Q: " + langAnalyzerMessageRxQueue.length
-       + " | USR DB Q: " + userDbUpdateQueue.length
-      ));
-    }
-
-  }, 1000);
 }
 
 process.on( "SIGINT", function() {
@@ -3716,7 +3722,6 @@ function initTwitterUsers(callback){
       twitterUserHashMap[userId].userInfo = {};
       twitterUserHashMap[userId].friends = {};
       twitterUserHashMap[userId].userInfo = twitterUserObj;
-
 
       initTwitter(userId, function(err, twitObj){
         if (err) {
