@@ -2398,6 +2398,8 @@ function processUser(userIn, lastTweeId, callback) {
           + " | " + user.screenName.toLowerCase()
         ));
 
+        delete twitterUserHashMap[currentTwitterUser].friends[user.userId];
+
         twitterUserHashMap[currentTwitterUser].twit.post(
           "friendships/destroy", 
           {user_id: user.userId}, 
@@ -2571,7 +2573,6 @@ function processUser(userIn, lastTweeId, callback) {
       generateAutoKeywords({updateCountHistory: updateCountHistory}, user, function (err, uObj){
         cb(err, uObj);
       });
-
     }
 
   ], function (err, user) {
@@ -2678,6 +2679,8 @@ function fetchFriends(params, callback) {
 
           friend.threeceeFollowing = {};
           friend.threeceeFollowing.screenName = currentTwitterUser;
+
+          twitterUserHashMap[currentTwitterUser].friends[friend.id_str] = friend.screen_name.toLowerCase();
 
           processUser(friend, null, function(err, user){
             if (err) {
