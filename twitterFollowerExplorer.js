@@ -4,8 +4,6 @@ require("isomorphic-fetch");
 
 const TFE_NUM_RANDOM_NETWORKS = 100;
 
-const MAX_ITERATIONS_INPUTS_GENERATE = 20;
-
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
 const DEFAULT_MIN_SUCCESS_RATE = 80;
 const DEFAULT_MIN_INPUTS_GENERATED = 400 ;
@@ -17,8 +15,10 @@ const TEST_MODE_TOTAL_FETCH = 500;  // total twitter user fetch count
 const TEST_MODE_FETCH_COUNT = 50;  // per request twitter user fetch count
 const TEST_DROPBOX_NN_LOAD = 20;
 
-const MIN_TOTAL_MIN = 10;
-const MAX_TOTAL_MIN = 100;
+const MAX_ITERATIONS_INPUTS_GENERATE = 100;
+
+const MIN_TOTAL_MIN = 5;
+const MAX_TOTAL_MIN = 50;
 
 const MIN_DOMINANT_MIN = 0.3;
 const MAX_DOMINANT_MIN = 1.0;
