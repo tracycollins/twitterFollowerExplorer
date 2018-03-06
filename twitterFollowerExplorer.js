@@ -11,8 +11,8 @@ const DEFAULT_MAX_INPUTS_GENERATED = 750 ;
 const DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN = 5;
 const DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN = 0.4;
 
-const TEST_MODE_TOTAL_FETCH = 500;  // total twitter user fetch count
-const TEST_MODE_FETCH_COUNT = 50;  // per request twitter user fetch count
+const TEST_MODE_TOTAL_FETCH = 100;  // total twitter user fetch count
+const TEST_MODE_FETCH_COUNT = 26;  // per request twitter user fetch count
 const TEST_DROPBOX_NN_LOAD = 20;
 
 const MAX_ITERATIONS_INPUTS_GENERATE = 100;
@@ -20,8 +20,17 @@ const MAX_ITERATIONS_INPUTS_GENERATE = 100;
 const MIN_TOTAL_MIN = 5;
 const MAX_TOTAL_MIN = 50;
 
+const TEST_MIN_TOTAL_MIN = 2;
+const TEST_MAX_TOTAL_MIN = 10;
+
+const TEST_MIN_INPUTS_GENERATED = 50;
+const TEST_MAX_INPUTS_GENERATED = 750;
+
 const MIN_DOMINANT_MIN = 0.3;
 const MAX_DOMINANT_MIN = 1.0;
+
+const TEST_MIN_DOMINANT_MIN = 0.3;
+const TEST_MAX_DOMINANT_MIN = 1.0;
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -209,7 +218,7 @@ let TFE_USER_DB_CRAWL = false;
 
 let configuration = {};
 
-configuration.twitterUsers = ["altthreecee00", "atlthreecee02", "ninjathreecee"];
+configuration.twitterUsers = ["ninjathreecee", "altthreecee00", "atlthreecee02"];
 
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
 configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
@@ -238,6 +247,7 @@ statsObj.heartbeatsReceived = 0;
 const TFE_RUN_ID = hostname 
   + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat)
   + "_" + process.pid;
+
 
 statsObj.fetchUsersComplete = false;
 statsObj.runId = TFE_RUN_ID;
@@ -718,14 +728,14 @@ function twitterUserUpdate(userScreenName, callback){
     statsObj.user[userScreenName].friendsProcessEnd = moment();
     statsObj.user[userScreenName].friendsProcessElapsed = 0;
 
-    console.log(chalkTwitterBold("\n=================================================="
+    console.log(chalkTwitterBold("====================================================================="
       + "\nTWITTER USER"
       + " | @" + statsObj.user[userScreenName].screenName 
       + " | " + statsObj.user[userScreenName].name 
-      + " | Ts:    " + statsObj.user[userScreenName].statusesCount 
+      + " | Ts: " + statsObj.user[userScreenName].statusesCount 
       + " | FRNDS: " + statsObj.user[userScreenName].friendsCount 
       + " | FLWRs: " + statsObj.user[userScreenName].followersCount
-      + "\n=================================================="
+      + "\n====================================================================="
     ));
 
     callback(null);
@@ -736,8 +746,11 @@ function generateInputSets(params, callback) {
 
   let iterations = 0;
 
-  let totalMin = randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
-  let dominantMin = randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
+  let totalMin = configuration.testMode ? randomInt(TEST_MIN_TOTAL_MIN, TEST_MAX_TOTAL_MIN) : randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
+  let dominantMin = configuration.testMode ? randomFloat(TEST_MIN_DOMINANT_MIN, TEST_MAX_DOMINANT_MIN) : randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
+
+  let minInputsGenerated = configuration.testMode ? TEST_MIN_INPUTS_GENERATED : configuration.minInputsGenerated;
+  let maxInputsGenerated = configuration.testMode ? TEST_MAX_INPUTS_GENERATED : configuration.maxInputsGenerated;
 
   let newInputsObj = {};
   newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
@@ -752,15 +765,15 @@ function generateInputSets(params, callback) {
 
     function() {
       return ((iterations <= MAX_ITERATIONS_INPUTS_GENERATE) 
-            && ((newInputsObj.meta.numInputs < configuration.minInputsGenerated) 
-           || (newInputsObj.meta.numInputs > configuration.maxInputsGenerated))) ;
+            && ((newInputsObj.meta.numInputs < minInputsGenerated) 
+           || (newInputsObj.meta.numInputs > maxInputsGenerated))) ;
     },
 
     function(cb0){
 
       iterations += 1;
-      totalMin = randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
-      dominantMin = randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
+      totalMin = configuration.testMode ? randomInt(TEST_MIN_TOTAL_MIN, TEST_MAX_TOTAL_MIN) : randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
+      dominantMin = configuration.testMode ? randomFloat(TEST_MIN_DOMINANT_MIN, TEST_MAX_DOMINANT_MIN) : randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
 
       console.log(chalkInfo("... GENERATING INPUT SETS"
         + " | ITERATION: " + iterations
@@ -833,11 +846,11 @@ function generateInputSets(params, callback) {
 
     console.log(chalkAlert("\n================================================================================\n"
       + "INPUT SET COMPLETE"
-      + " | ITERATION: " + iterations
-      + " | ID: " + newInputsObj.inputsId
-      + " | PARSE TOT MIN: " + totalMin
-      + " | PARSE DOM MIN: " + dominantMin.toFixed(3)
-      + " | NUM INPUTS: " + newInputsObj.meta.numInputs
+      + "\nITERATION:     " + iterations
+      + "\nID:            " + newInputsObj.inputsId
+      + "\nPARSE TOT MIN: " + totalMin
+      + "\nPARSE DOM MIN: " + dominantMin.toFixed(3)
+      + "\nNUM INPUTS:    " + newInputsObj.meta.numInputs
       + "\n================================================================================\n"
     ));
 
@@ -903,15 +916,6 @@ function initNextTwitterUser(callback){
   statsObj.user[currentTwitterUser].friendsProcessElapsed = moment().diff(statsObj.user[currentTwitterUser].friendsProcessStart);
 
   console.log(chalkBlue("INIT NEXT TWITTER USER"
-    // + " | CURRENT USER: @" + currentTwitterUser
-    // + " | USER " + (currentTwitterUserIndex+1) + " OF " + configuration.twitterUsers.length
-    // + " | FRIENDS: " + statsObj.user[currentTwitterUser].friendsCount
-    // + " | TEST MODE: " + configuration.testMode
-    // + " | FETCH COUNT: " + configuration.fetchCount
-    // + " | TOTAL FETCHED: " + statsObj.user[currentTwitterUser].totalFriendsFetched
-    // + " | ABORT CURSOR: " + abortCursor
-    // + " | NEXT CURSOR: " + statsObj.user[currentTwitterUser].nextCursorValid
-    // + " | TEST MODE: " + configuration.testMode
     + " | TEST MODE: " + configuration.testMode
     + "\nCURRENT USER:  @" + currentTwitterUser
     + "\nFRIENDS:       " + statsObj.user[currentTwitterUser].friendsCount
@@ -939,13 +943,32 @@ function initNextTwitterUser(callback){
     ));
 
     twitterUserUpdate(currentTwitterUser, function(err){
+
       if (err){
         console.log("!!!!! TWITTER SHOW USER ERROR"
           + " | @" + currentTwitterUser 
           + " | " + getTimeStamp() 
           + "\n" + jsonPrint(err));
-        callback(new Error(err), null);
+        return callback(new Error(err), null);
       }
+
+      statsObj.users.totalTwitterFriends = 0;
+      statsObj.users.totalFriendsFetched = 0;
+
+      configuration.twitterUsers.forEach(function(tUserScreenName){
+        statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
+        statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
+        statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
+      });
+
+      console.log(chalkTwitterBold("================================================================================================"
+        + "\nALL TWITTER USERS"
+        + " | " + statsObj.users.totalTwitterFriends + " GRAND TOTAL FRIENDS"
+        + " | " + statsObj.users.totalFriendsFetched + " GRAND TOTAL FETCHED"
+        + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
+        + "\n================================================================================================"
+      ));
+
       statsObj.user[currentTwitterUser].nextCursor = false;
       statsObj.user[currentTwitterUser].nextCursorValid = false;
       statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
@@ -1018,6 +1041,23 @@ function initNextTwitterUser(callback){
           }, function(){
 
             randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
+
+              statsObj.users.totalTwitterFriends = 0;
+              statsObj.users.totalFriendsFetched = 0;
+
+              configuration.twitterUsers.forEach(function(tUserScreenName){
+                statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
+                statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
+                statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
+              });
+
+              console.log(chalkTwitterBold("====================================================================="
+                + "\nALL TWITTER USERS"
+                + " | " + statsObj.users.totalTwitterFriends + " GRAND TOTAL FRIENDS"
+                + " | " + statsObj.users.totalFriendsFetched + " GRAND TOTAL FETCHED"
+                + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
+                + "\n====================================================================="
+              ));
 
               currentTwitterUserIndex = 0;
               currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
@@ -2628,6 +2668,7 @@ function fetchFriends(params, callback) {
         statsObj.users.grandTotalFriendsFetched += data.users.length;
 
         statsObj.user[currentTwitterUser].totalFriendsFetched += data.users.length;
+        statsObj.user[currentTwitterUser].totalPercentFetched = 100*(statsObj.user[currentTwitterUser].totalFriendsFetched/statsObj.user[currentTwitterUser].friendsCount); 
         statsObj.user[currentTwitterUser].nextCursor = data.next_cursor_str;
         statsObj.user[currentTwitterUser].percentFetched = 100*(statsObj.user[currentTwitterUser].totalFriendsFetched/statsObj.user[currentTwitterUser].friendsCount); 
 
@@ -2638,11 +2679,11 @@ function fetchFriends(params, callback) {
           statsObj.user[currentTwitterUser].endFetch = true;
 
           console.log(chalkAlert("\n=====================================\n"
-            + " *** TEST MODE END FETCH"
+            + "*** TEST MODE END FETCH ***"
             + "\n@" + currentTwitterUser + " | USER " + (currentTwitterUserIndex+1) + " OF " + configuration.twitterUsers.length
             + "\nTEST_MODE_FETCH_COUNT: " + TEST_MODE_FETCH_COUNT
-            + " | TEST_MODE_TOTAL_FETCH: " + TEST_MODE_TOTAL_FETCH
-            + " | TOTAL FRIENDS FETCHED: " + statsObj.user[currentTwitterUser].totalFriendsFetched
+            + "\nTEST_MODE_TOTAL_FETCH: " + TEST_MODE_TOTAL_FETCH
+            + "\nTOTAL FRIENDS FETCHED: " + statsObj.user[currentTwitterUser].totalFriendsFetched
             + "\n=====================================\n"
           ));
 
@@ -2659,18 +2700,19 @@ function fetchFriends(params, callback) {
           statsObj.user[currentTwitterUser].endFetch = true;
         }
 
-        console.log(chalkTwitter("END FETCH ==========================================================================\n"
-          + getTimeStamp()
+        console.log(chalkTwitter("===========================================================\n"
+          + "---- END FETCH ----"
+          + " | " + getTimeStamp()
           + " | @" + statsObj.user[currentTwitterUser].screenName
-          + " | TOTAL FRIENDS: " + statsObj.user[currentTwitterUser].friendsCount
-          + " | TOTAL FETCHED: " + statsObj.user[currentTwitterUser].totalFriendsFetched
-          + " [ " + statsObj.user[currentTwitterUser].percentFetched.toFixed(1) + "% ]"
-          + " | COUNT: " + configuration.fetchCount
-          + " | FETCHED: " + data.users.length
-          + " | GRAND TOTAL FETCHED: " + statsObj.users.grandTotalFriendsFetched
-          + " | END FETCH: " + statsObj.user[currentTwitterUser].endFetch
-          + " | MORE: " + statsObj.user[currentTwitterUser].nextCursorValid
-          + "\n===================================================================================="
+          + "\nFRIENDS:      " + statsObj.user[currentTwitterUser].friendsCount
+          + "\nTOT FETCHED:  " + statsObj.user[currentTwitterUser].totalFriendsFetched
+          + " (" + statsObj.user[currentTwitterUser].percentFetched.toFixed(1) + "%)"
+          + "\nCOUNT:        " + configuration.fetchCount
+          + "\nFETCHED:      " + data.users.length
+          + "\nGTOT FETCHED: " + statsObj.users.grandTotalFriendsFetched
+          + "\nEND FETCH:    " + statsObj.user[currentTwitterUser].endFetch
+          + "\nMORE:         " + statsObj.user[currentTwitterUser].nextCursorValid
+          + "\n==========================================================="
         ));
 
         const subFriendsSortedArray = sortOn(data.users, "-followers_count");
@@ -3089,9 +3131,12 @@ statsObj.classification.auto.other = 0;
 statsObj.classification.auto.none = 0;
 
 statsObj.users = {};
+statsObj.users.totalTwitterFriends = 0;
+statsObj.users.grandTotalFriendsFetched = 0;
+statsObj.users.totalFriendsFetched = 0;
+statsObj.users.totalPercentFetched = 0;
 statsObj.users.classifiedAuto = 0;
 statsObj.users.classified = 0;
-statsObj.users.grandTotalFriendsFetched = 0;
 
 statsObj.user = {};
 statsObj.user.ninjathreecee = {};
@@ -3134,20 +3179,31 @@ function showStats(options){
       statsObj.user[currentTwitterUser].percentProcessed = 100*statsObj.user[currentTwitterUser].friendsProcessed/statsObj.user[currentTwitterUser].friendsCount;
       statsObj.user[currentTwitterUser].friendsProcessElapsed = moment().diff(statsObj.user[currentTwitterUser].friendsProcessStart);
 
-      console.log(chalkLog("- FE S"
-        + " | " + currentTwitterUser
-        + " | E: " + statsObj.elapsed
-        + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
-        + " | FSM: " + fsm.getMachineState()
-        + " | FRNDs PRCSSD: " + statsObj.user[currentTwitterUser].friendsProcessed + "/" + statsObj.user[currentTwitterUser].friendsCount
+      statsObj.users.totalTwitterFriends = 0;
+      statsObj.users.totalFriendsFetched = 0;
+
+      configuration.twitterUsers.forEach(function(tUserScreenName){
+        statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
+        statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
+        statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
+      });
+
+      console.log(chalkLog("--- STATS --------------------------------------\n"
+        + "CUR USR: @" + currentTwitterUser
+        + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
+        + "\nELAPSED: " + statsObj.elapsed
+        + "\nFSM:     " + fsm.getMachineState()
+        + "\nU PRCSD: " + statsObj.user[currentTwitterUser].friendsProcessed + " / " + statsObj.user[currentTwitterUser].friendsCount
         + " (" + statsObj.user[currentTwitterUser].percentProcessed.toFixed(2) + "%)"
-        + " | ACL Us: " + Object.keys(autoClassifiedUserHashmap).length
-        + " | CL Us: " + Object.keys(classifiedUserHashmap).length
-        + " | NN " + statsObj.network.networkId
-        // + " - " + statsObj.network.successRate.toFixed(2) + "%"
-        + " || " + statsObj.analyzer.analyzed + " ANLs"
+        + "\nT FTCHD: " + statsObj.users.totalFriendsFetched + " / " + statsObj.users.totalTwitterFriends
+        + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
+        + "\nCL AUTO: " + Object.keys(autoClassifiedUserHashmap).length
+        + "\nCL MANU: " + Object.keys(classifiedUserHashmap).length
+        + "\nNET ID:  " + statsObj.network.networkId
+        + "\nANLYZD:  " + statsObj.analyzer.analyzed + " ANLs"
         + " | " + statsObj.analyzer.skipped + " SKPs"
         + " | " + statsObj.analyzer.total + " TOT"
+        + "\n------------------------------------------------\n"
       ));
     }
     else {
@@ -3430,15 +3486,8 @@ function initSocket(cnf, callback){
           statsObj.serverConnected = true ;
           statsObj.userAuthenticated = true ;
 
-          // if (userId === userObj.tags.entity) {
-            initKeepalive(cnf.keepaliveInterval);
-          // }
+          initKeepalive(cnf.keepaliveInterval);
 
-          // initTwitterStreamQueueInterval(10);
-          // sendUserReady(userObj);
-          // socket.emit("USER_READY", userObj); 
-          
-        // }, 1*ONE_SECOND);
       });
 
     });
@@ -3449,7 +3498,6 @@ function initSocket(cnf, callback){
       console.log(chalkConnect(moment().format(compactDateTimeFormat)
         + " | SOCKET DISCONNECT: " + socket.id
       ));
-      // reset("disconnect");
     });
   });
 
@@ -3593,9 +3641,9 @@ function initStatsUpdate(callback){
 
 function initTwitter(currentTwitterUser, callback){
 
-  console.log(chalkInfo("INIT TWITTER: " + currentTwitterUser));
-
   let twitterConfigFile =  currentTwitterUser + ".json";
+
+  debug(chalkInfo("INIT TWITTER USER @" + currentTwitterUser + " | " + twitterConfigFile));
 
   loadFile(configuration.twitterConfigFolder, twitterConfigFile, function(err, twitterConfig){
 
@@ -3606,8 +3654,8 @@ function initTwitter(currentTwitterUser, callback){
     }
     else {
       console.log(chalkTwitter("LOADED TWITTER CONFIG"
-        + " | " + twitterConfigFile
-        // + "\n" + jsonPrint(twitterConfig)
+        + " | @" + currentTwitterUser
+        + " | CONFIG FILE: " + configuration.twitterConfigFolder + "/" + twitterConfigFile
       ));
 
       const newTwit = new Twit({
@@ -3621,7 +3669,7 @@ function initTwitter(currentTwitterUser, callback){
 
       newTwitStream.on("follow", function(followMessage){
 
-        console.log(chalkInfo("USER " + currentTwitterUser + " FOLLOW"
+        console.log(chalkInfo("TFE | USER @" + currentTwitterUser + " FOLLOW"
           + " | " +  followMessage.target.id_str
           + " | " +  followMessage.target.screen_name.toLowerCase()
         ));
@@ -3633,7 +3681,7 @@ function initTwitter(currentTwitterUser, callback){
           if (err) {
             console.trace("processUser ERROR");
           }
-          console.log(chalkTwitter(">>> NEW FOLLOW"
+          console.log(chalkTwitter("TFE | >>> NEW FOLLOW"
             + " 3C @" + currentTwitterUser
             + " | @" + user.screenName
             + " | Ts: " + user.statusesCount
@@ -3662,7 +3710,8 @@ function initTwitter(currentTwitterUser, callback){
             twitterUserHashMap[userScreenName].twit = {};
             twitterUserHashMap[userScreenName].twit = newTwit;
 
-            console.log(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: " + userScreenName));
+            debug(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: @" + userScreenName));
+
             debug(chalkTwitter("TWITTER ACCOUNT SETTINGS\n" + jsonPrint(accountSettings)));
 
             twitterUserUpdate(userScreenName, function(err){
@@ -3671,7 +3720,7 @@ function initTwitter(currentTwitterUser, callback){
                   + "\n" + jsonPrint(err));
                 return(cb(err, null));
               }
-              cb(null, { screenName: userScreenName, twit: newTwit});
+              cb(null, { screenName: userScreenName, twit: newTwit } );
             });
           });
         },
@@ -3704,29 +3753,22 @@ function initTwitterUsers(callback){
 
     let twitterDefaultUser = configuration.twitterDefaultUser;
 
-    console.log(chalkTwitter("USERS"
-      + " | FOUND: " + configuration.twitterUsers.length
+    console.log(chalkTwitter("TFE | INIT TWITTER USERS"
+      + " | FOUND " + configuration.twitterUsers.length + " USERS"
     ));
 
-    async.each(configuration.twitterUsers, function(userId, cb){
+    async.each(configuration.twitterUsers, function(userScreenName, cb){
 
-      userId = userId.toLowerCase();
+      userScreenName = userScreenName.toLowerCase();
 
       let twitterUserObj = {};
 
-      console.log("userId: " + userId);
-      console.log("screenName: " + configuration.twitterUsers[userId]);
+      console.log(chalkTwitter("TFE | INIT TWITTER USER @" + userScreenName));
 
-      twitterUserObj.isDefault = (twitterDefaultUser === userId) || false;
-      twitterUserObj.userId = userId ;
-      twitterUserObj.screenName = configuration.twitterUsers[userId] ;
+      twitterUserHashMap[userScreenName] = {};
+      twitterUserHashMap[userScreenName].friends = {};
 
-      twitterUserHashMap[userId] = {};
-      twitterUserHashMap[userId].userInfo = {};
-      twitterUserHashMap[userId].friends = {};
-      twitterUserHashMap[userId].userInfo = twitterUserObj;
-
-      initTwitter(userId, function(err, twitObj){
+      initTwitter(userScreenName, function(err, twitObj){
         if (err) {
           console.log(chalkError("INIT TWITTER ERROR\n" + jsonPrint(err)));
           return(cb(err));
@@ -3734,18 +3776,29 @@ function initTwitterUsers(callback){
 
         debug("INIT TWITTER twitObj\n" + jsonPrint(twitObj));
 
-        console.log(chalkTwitter("ADDED TWITTER USER"
-          + " | NAME: " + userId
-          + " | FEED ID: " + twitterUserHashMap[userId].userInfo.userId
-          + " | DEFAULT USER: " + twitterUserHashMap[userId].userInfo.isDefault
-        ));
-
         cb();
 
       });
 
     }, function(err){
-      console.log(chalkTwitter("\nADD TWITTER USERS COMPLETE\n"));
+
+      statsObj.users.totalTwitterFriends = 0;
+      statsObj.users.totalFriendsFetched = 0;
+
+      configuration.twitterUsers.forEach(function(tUserScreenName){
+        statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
+        statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
+        statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
+      });
+
+      console.log(chalkTwitterBold("====================================================================="
+        + "\nALL TWITTER USERS"
+        + " | " + statsObj.users.totalTwitterFriends + " GRAND TOTAL FRIENDS"
+        + " | " + statsObj.users.totalFriendsFetched + " GRAND TOTAL FETCHED"
+        + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
+        + "\n====================================================================="
+      ));
+
       if (callback !== undefined) { callback(err); }
     });
 
@@ -4082,10 +4135,10 @@ function saveNetworkHashMap(params, callback){
     const networkObj = bestNetworkHashMap.get(nnId);
 
     console.log(chalkNetwork("SAVING NN"
-      + " | " + networkObj.network.networkId
       + " | " + networkObj.network.numInputs + " IN"
       + " | SR: " + networkObj.network.successRate.toFixed(2) + "%"
       + " | MR: " + networkObj.network.matchRate.toFixed(2) + "%"
+      + " | " + networkObj.network.networkId
       + " | " + networkObj.entry.name
     ));
 
@@ -4299,7 +4352,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         break;
 
         case "BEST_MATCH_RATE":
-          console.log(chalkAlert("\n================================================================================================\n"
+          debug(chalkAlert("\n================================================================================================\n"
             + "*** RNT_BEST_MATCH_RATE"
             + " | " + m.networkId
             + " | IN ID: " + m.inputsId
@@ -4939,7 +4992,7 @@ initialize(configuration, function(err, cnf){
         currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
       }
 
-      console.log(chalkTwitter("CURRENT TWITTER USER: " + currentTwitterUser));
+      console.log(chalkTwitter("CURRENT TWITTER USER: @" + currentTwitterUser));
 
       checkRateLimit();
       initCheckRateLimitInterval(checkRateLimitIntervalTime);
