@@ -2274,7 +2274,7 @@ function generateAutoKeywords(params, user, callback){
         statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
 
 
-        console.log(chalkInfo("GEN AKWs"
+        debug(chalkInfo("GEN AKWs"
           + " [@" + currentTwitterUser + "]"
           + " | @" + updatedUser.screenName
           + " | " + updatedUser.userId
@@ -2478,7 +2478,7 @@ function processUser(userIn, lastTweeId, callback) {
       }
       else {
         user.threeceeFollowing = currentTwitterUser;
-        console.log(chalkInfo("UPDATE 3CF"
+        debug(chalkInfo("UPDATE 3CF"
           + " | " + user.userId
           + " | " + user.screenName.toLowerCase()
           + " | 3CF: " + user.threeceeFollowing
@@ -2579,7 +2579,7 @@ function processUser(userIn, lastTweeId, callback) {
             user.friendsCount = userDb.friendsCount;
           }
 
-          console.log(chalkInfo("USER DB HIT "
+          debug(chalkInfo("USER DB HIT "
             + " | @" + user.screenName.toLowerCase()
             + " | " + user.userId
             + " | " + getTimeStamp(user.createdAt)
