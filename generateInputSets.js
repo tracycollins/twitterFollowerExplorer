@@ -13,9 +13,9 @@ const DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN = 0.4;
 const MAX_ITERATIONS_INPUTS_GENERATE = 50;
 
 const MIN_TOTAL_MIN = 3;
-const MAX_TOTAL_MIN = 10;
+const MAX_TOTAL_MIN = 5;
 
-const MIN_DOMINANT_MIN = 0.333;
+const MIN_DOMINANT_MIN = 0.4;
 const MAX_DOMINANT_MIN = 0.9;
 
 const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
@@ -567,113 +567,6 @@ function initSocket(cnf, callback){
 
   callback(null, null);
 }
-
-// function generateInputSets(params, callback) {
-
-//   let totalMin = randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
-//   let dominantMin = randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
-
-//   let newInputsObj = {};
-//   newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-//   newInputsObj.meta = {};
-//   newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
-//   newInputsObj.meta.numInputs = 0;
-//   newInputsObj.meta.histogramParseTotalMin = totalMin;
-//   newInputsObj.meta.histogramParseDominantMin = dominantMin;
-//   newInputsObj.inputs = {};
-
-//   async.whilst(
-
-//     function() {
-//       return ((newInputsObj.meta.numInputs < configuration.minInputsGenerated) 
-//            || (newInputsObj.meta.numInputs > configuration.maxInputsGenerated)) ;
-//     },
-
-//     function(cb0){
-
-//       totalMin = randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
-//       dominantMin = randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
-
-//       console.log(chalkInfo("... GENERATING INPUT SETS"
-//         + " | HIST ID: " + params.histogramsObj.histogramsId
-//         + " | TOT MIN: " + totalMin
-//         + " | DOM MIN: " + dominantMin.toFixed(3)
-//       ));
-
-//       const hpParams = {};
-//       hpParams.histogram = params.histogramsObj.histograms;
-//       hpParams.options = {};
-//       hpParams.options.totalMin = totalMin;
-//       hpParams.options.dominantMin = dominantMin;
-
-//       histogramParser.parse(hpParams, function(err, histResults){
-
-//         if (err){
-//           console.log(chalkError("HISTOGRAM PARSE ERROR: " + err));
-//           return cb0(err);
-//         }
-
-//         debug(chalkNetwork("HISTOGRAMS RESULTS\n" + jsonPrint(histResults)));
-
-//         let inTypyes = Object.keys(histResults.entries);
-//         inTypyes.push("sentiment");
-//         inTypyes.sort();
-
-//         newInputsObj.meta.numInputs = 0;
-
-//         async.eachSeries(inTypyes, function(type, cb1){
-
-//           newInputsObj.inputs[type] = [];
-
-//           if (type === "sentiment") {
-//             newInputsObj.inputs[type] = ["magnitude", "score"];
-//             newInputsObj.meta.numInputs += newInputsObj.inputs[type].length;
-//             console.log(chalkLog("... PARSE | " + type + ": " + newInputsObj.inputs[type].length));
-
-//             cb1();
-//           }
-//           else {
-//             newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
-//             newInputsObj.meta.numInputs += newInputsObj.inputs[type].length;
-
-//             console.log(chalkLog("... PARSE | " + type + ": " + newInputsObj.inputs[type].length));
-
-//             cb1();
-//           }
-
-//         }, function(){
-
-//           newInputsObj.meta.histogramParseTotalMin = totalMin;
-//           newInputsObj.meta.histogramParseDominantMin = dominantMin;
-
-//           debug(chalkNetwork("NEW INPUTS\n" + jsonPrint(newInputsObj)));
-
-//           console.log(chalkAlert(">>> HISTOGRAMS PARSED"
-//             + " | PARSE TOT MIN: " + totalMin
-//             + " | PARSE DOM MIN: " + dominantMin.toFixed(3)
-//             + " | NUM INPUTS: " + newInputsObj.meta.numInputs
-//           ));
-
-//           cb0();
-
-//         });
-
-//       });
-
-//   }, function(err){
-
-//     console.log(chalkAlert("\n================================================================================\n"
-//       + "INPUT SET COMPLETE"
-//       + " | ID: " + newInputsObj.inputsId
-//       + " | PARSE TOT MIN: " + totalMin
-//       + " | PARSE DOM MIN: " + dominantMin.toFixed(3)
-//       + " | NUM INPUTS: " + newInputsObj.meta.numInputs
-//       + "\n================================================================================\n"
-//     ));
-
-//     callback(err, newInputsObj);
-//   });
-// }
 
 function generateInputSets(params, callback) {
 
@@ -1393,7 +1286,6 @@ initialize(configuration, function(err, cnf){
       if (configuration.testMode) { 
         inFolder = inFolder + "_test";
       }
-
 
       generateInputSets(genInParams, function(err, inputsObj){
         if (err) {
