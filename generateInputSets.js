@@ -7,36 +7,26 @@ const DEFAULT_MAX_INPUTS_GENERATED = 1000 ;
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
-const DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN = 5;
-const DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN = 0.4;
+const DEFAULT_MAX_ITERATIONS = 50;
 
-const MAX_ITERATIONS_INPUTS_GENERATE = 50;
+const DEFAULT_MIN_TOTAL_MIN = 5;
+const DEFAULT_MAX_TOTAL_MIN = 10;
 
-const MIN_TOTAL_MIN = 5;
-const MAX_TOTAL_MIN = 10;
+const DEFAULT_MIN_DOMINANT_MIN = 0.33;
+const DEFAULT_MAX_DOMINANT_MIN = 0.6;
 
-const MIN_DOMINANT_MIN = 0.33;
-const MAX_DOMINANT_MIN = 0.6;
-
-const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
 const OFFLINE_MODE = false;
-const ONLINE_MODE = false;
 
 const histogramParser = require("@threeceelabs/histogram-parser");
 
 const moment = require("moment");
 
 const chalk = require("chalk");
-const chalkConnect = chalk.green;
 const chalkNetwork = chalk.blue;
 const chalkTwitter = chalk.blue;
-const chalkBlackBold = chalk.bold.black;
-const chalkTwitterBold = chalk.bold.blue;
-const chalkRed = chalk.red;
 const chalkBlue = chalk.blue;
 const chalkError = chalk.bold.red;
 const chalkAlert = chalk.red;
-const chalkWarn = chalk.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 
@@ -44,17 +34,10 @@ let saveFileQueue = [];
 let saveFileQueueInterval;
 let saveFileBusy = false;
 
-let socket;
-let socketKeepAliveInterval;
-
 const inputTypes = ["emoji", "hashtags", "mentions", "urls", "words", "images"];
 inputTypes.sort();
 
 let stdin;
-
-const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
-const slackChannel = "#gis";
-const Slack = require("slack-node");
 
 require("isomorphic-fetch");
 // const Dropbox = require("dropbox").Dropbox;
@@ -63,13 +46,9 @@ const Dropbox = require("./js/dropbox").Dropbox;
 const os = require("os");
 const util = require("util");
 const deepcopy = require("deep-copy");
-const randomItem = require("random-item");
-const randomFloat = require('random-float');
-const randomInt = require('random-int');
-const arrayNormalize = require("array-normalize");
-const table = require("text-table");
+const randomFloat = require("random-float");
+const randomInt = require("random-int");
 const fs = require("fs");
-const HashMap = require("hashmap").HashMap;
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
@@ -135,11 +114,15 @@ inputTypes.forEach(function(type){
 
 let configuration = {};
 
+configuration.maxIterations = DEFAULT_MAX_ITERATIONS;
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
 configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
 
-configuration.histogramParseTotalMin = DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN;
-configuration.histogramParseDominantMin = DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN;
+configuration.minDominantMin = DEFAULT_MIN_DOMINANT_MIN;
+configuration.maxDominantMin = DEFAULT_MAX_DOMINANT_MIN;
+
+configuration.minTotalMin = DEFAULT_MIN_TOTAL_MIN;
+configuration.maxTotalMin = DEFAULT_MAX_TOTAL_MIN;
 
 configuration.saveFileQueueInterval = 1000;
 configuration.testMode = false;
@@ -156,44 +139,10 @@ histograms.emoji = {};
 histograms.images = {};
 
 const async = require("async");
-const sortOn = require("sort-on");
 
 const debug = require("debug")("gis");
 
 let statsUpdateInterval;
-
-
-function indexOfMax (arr, callback) {
-  if (arr.length === 0) {
-    console.log(chalkAlert("indexOfMax: 0 LENG ARRAY: -1"));
-    return callback(-1);
-  }
-  if ((arr[0] === arr[1]) && (arr[1] === arr[2])){
-    debug(chalkAlert("indexOfMax: ALL EQUAL: " + arr[0]));
-    return callback(-1);
-  }
-
-  debug("B4 ARR: " + arr[0].toFixed(2) + " - " + arr[1].toFixed(2) + " - " + arr[2].toFixed(2));
-  arrayNormalize(arr);
-  debug("AF ARR: " + arr[0].toFixed(2) + " - " + arr[1].toFixed(2) + " - " + arr[2].toFixed(2));
-
-  let max = arr[0];
-  let maxIndex = 0;
-
-  async.eachOfSeries(arr, function(val, index, cb){
-    if (val > max) {
-      maxIndex = index;
-      max = val;
-    }
-    async.setImmediate(function() { cb(); });
-  }, function(){
-    debug(chalk.blue("indexOfMax: " + maxIndex 
-      + " | " + arr[maxIndex].toFixed(2)
-      + " | " + arr[0].toFixed(2) + " - " + arr[1].toFixed(2) + " - " + arr[2].toFixed(2)
-    ));
-    callback(maxIndex) ; 
-  });
-}
 
 const jsonPrint = function (obj){
   if (obj) {
@@ -271,25 +220,6 @@ process.on("message", function(msg) {
   }
 });
 
-let slack = new Slack(slackOAuthAccessToken);
-function slackPostMessage(channel, text, callback){
-
-  debug(chalkInfo("SLACK POST: " + text));
-
-  slack.api("chat.postMessage", {
-    text: text,
-    channel: channel
-  }, function(err, response){
-    if (err){
-      console.error(chalkError("*** SLACK POST MESSAGE ERROR\n" + err));
-    }
-    else {
-      debug(response);
-    }
-    if (callback !== undefined) { callback(err, response); }
-  });
-}
-
 // ==================================================================
 // DROPBOX
 // ==================================================================
@@ -334,246 +264,12 @@ function showStats(options){
   }
 }
 
-function reset(cause, callback){
-
-  console.log(chalkAlert("\nRESET | CAUSE: " + cause + "\n"));
-
-  clearInterval(socketKeepAliveInterval);
-
-  if (callback !== undefined) { callback(); } 
-}
-
-function sendKeepAlive(userObj, callback){
-  
-  if (statsObj.userAuthenticated && statsObj.serverConnected){
-    debug(chalkLog("TX KEEPALIVE"
-      + " | " + userObj.userId
-      + " | " + moment().format(compactDateTimeFormat)
-    ));
-    socket.emit("SESSION_KEEPALIVE", userObj);
-    callback(null, null);
-  }
-  else {
-    console.log(chalkError("!!!! CANNOT TX KEEPALIVE"
-      + " | " + userObj.userId
-      + " | CONNECTED: " + statsObj.serverConnected
-      + " | READY ACK: " + statsObj.userAuthenticated
-      + " | " + moment().format(compactDateTimeFormat)
-    ));
-    callback("ERROR", null);
-  }
-}
-
-function initKeepalive(interval){
-
-  clearInterval(socketKeepAliveInterval);
-
-  console.log(chalkConnect("START KEEPALIVE"
-    // + " | USER ID: " + userId
-    + " | READY ACK: " + statsObj.userAuthenticated
-    + " | SERVER CONNECTED: " + statsObj.serverConnected
-    + " | INTERVAL: " + interval + " ms"
-  ));
-
-  socketKeepAliveInterval = setInterval(function(){ // TX KEEPALIVE
-
-    userObj.stats.tweetsPerMinute = statsObj.tweetsPerMinute;
-    userObj.stats.tweetsPerSecond = statsObj.tweetsPerSecond;
-
-    sendKeepAlive(userObj, function(err, results){
-      if (err) {
-        console.log(chalkError("KEEPALIVE ERROR: " + err));
-      }
-      else if (results){
-        console.log(chalkConnect("KEEPALIVE"
-          + " | " + moment().format(compactDateTimeFormat)
-        ));
-      }
-    });
-  }, interval);
-}
-
-function initSocket(cnf, callback){
-
-  if (OFFLINE_MODE) {
-    console.log(chalkError("*** OFFLINE MODE *** "));
-    return(callback(null, null));
-  }
-
-  console.log(chalkLog("INIT SOCKET"
-    + " | " + cnf.targetServer
-    + " | " + jsonPrint(userObj)
-  ));
-
-  socket = require("socket.io-client")(cnf.targetServer, { reconnection: true });
-
-  socket.on("connect", function(){
-
-    console.log(chalkConnect("SOCKET CONNECT | " + socket.id + " ... AUTHENTICATE ..."));
-
-    socket.on("unauthorized", function(err){
-      console.log(chalkError("*** AUTHENTICATION ERROR: ", err.message));
-    });
-
-    socket.emit("authentication", { namespace: "util", userId: userObj.userId, password: "0123456789" });
-
-    socket.on("authenticated", function() {
-
-      console.log("AUTHENTICATED | " + socket.id);
-
-      reset("connect", function(){
-
-        statsObj.socketId = socket.id;
-
-        console.log(chalkConnect( "CONNECTED TO HOST" 
-          + " | SERVER: " + cnf.targetServer 
-          + " | ID: " + socket.id 
-          ));
-
-        // wait for server to init before tx USER_READY
-
-        userObj.timeStamp = moment().valueOf();
-
-        console.log(chalkInfo(socket.id 
-          + " | TX USER_READY"
-          + " | " + moment().format(compactDateTimeFormat)
-          + " | " + userObj.userId
-          + " | " + userObj.url
-          + " | " + userObj.screenName
-          + " | " + userObj.type
-          + " | " + userObj.mode
-          + "\nTAGS\n" + jsonPrint(userObj.tags)
-        ));
-
-        statsObj.serverConnected = true ;
-        statsObj.userAuthenticated = true ;
-
-        initKeepalive(cnf.keepaliveInterval);
-      });
-
-    });
-
-    socket.on("disconnect", function(){
-      statsObj.userAuthenticated = false ;
-      statsObj.serverConnected = false;
-      console.log(chalkConnect(moment().format(compactDateTimeFormat)
-        + " | SOCKET DISCONNECT: " + socket.id
-      ));
-      // reset("disconnect");
-    });
-  });
-
-  socket.on("reconnect", function(){
-    console.error(chalkInfo("RECONNECT" 
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + socket.id
-    ));
-  });
-
-  socket.on("USER_READY_ACK", function(userId) {
-
-    statsObj.userAuthenticated = true ;
-
-    debug(chalkInfo("RX USER_READY_ACK MESSAGE"
-      + " | " + socket.id
-      + " | USER ID: " + userId
-      + " | " + moment().format(compactDateTimeFormat)
-    ));
-
-    if (userId === userObj.tags.entity) {
-      initKeepalive(cnf.keepaliveInterval);
-    }
-  });
-
-  socket.on("error", function(error){
-    statsObj.userAuthenticated = false ;
-    statsObj.serverConnected = false ;
-    socket.disconnect();
-    console.error(chalkError(moment().format(compactDateTimeFormat) 
-      + " | *** SOCKET ERROR"
-      + " | " + socket.id
-      + " | " + error
-    ));
-    reset("error");
-  });
-
-  socket.on("connect_error", function(err){
-    statsObj.userAuthenticated = false ;
-    statsObj.serverConnected = false ;
-    console.error(chalkError("*** CONNECT ERROR " 
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + err.type
-      + " | " + err.description
-      // + "\n" + jsonPrint(err)
-    ));
-    reset("connect_error");
-  });
-
-  socket.on("reconnect_error", function(err){
-    statsObj.userAuthenticated = false ;
-    statsObj.serverConnected = false ;
-    console.error(chalkError("*** RECONNECT ERROR " 
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + err.type
-      + " | " + err.description
-      // + "\n" + jsonPrint(err)
-    ));
-    // reset("reconnect_error");
-  });
-
-  socket.on("SESSION_ABORT", function(sessionId){
-    console.log(chalkAlert("@@@@@ RX SESSION_ABORT | " + sessionId));
-    if (sessionId === statsObj.socketId){
-      console.error(chalkAlert("***** RX SESSION_ABORT HIT | " + sessionId));
-      console.log(chalkAlert("***** RX SESSION_ABORT HIT | " + sessionId));
-      socket.disconnect();
-      statsObj.userAuthenticated = false ;
-      statsObj.serverConnected = false;
-    }
-    reset("SESSION_ABORT");
-  });
-
-  socket.on("SESSION_EXPIRED", function(sessionId){
-    console.log(chalkAlert("RX SESSION_EXPIRED | " + sessionId));
-    if (sessionId === statsObj.socketId){
-      console.error(chalkAlert("***** RX SESSION_EXPIRED HIT | " + sessionId));
-      console.log(chalkAlert("***** RX SESSION_EXPIRED HIT | " + sessionId));
-      socket.disconnect();
-      statsObj.userAuthenticated = false ;
-      statsObj.serverConnected = false;
-    }
-    reset("SESSION_EXPIRED");
-  });
-
-  socket.on("DROPBOX_CHANGE", function(response){
-    
-    response.entries.forEach(function(entry){
-      console.log(chalkInfo(">R DROPBOX_CHANGE"
-        + " | " + entry[".tag"].toUpperCase()
-        + " | " + entry.path_lower
-        // + " | NAME: " + entry.name
-      ));
-    });
-
-  });
-
-  socket.on("HEARTBEAT", function(){
-    statsObj.heartbeatsReceived += 1;
-  });
-
-  socket.on("KEEPALIVE_ACK", function(userId) {
-    debug(chalkLog("RX KEEPALIVE_ACK | " + userId));
-  });
-
-  callback(null, null);
-}
-
 function generateInputSets(params, callback) {
 
   let iterations = 0;
 
-  let totalMin = randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
-  let dominantMin = randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
+  let totalMin = randomInt(configuration.minTotalMin, configuration.maxTotalMin);
+  let dominantMin = randomFloat(configuration.minDominantMin, configuration.maxDominantMin);
 
   let newInputsObj = {};
   newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
@@ -587,7 +283,7 @@ function generateInputSets(params, callback) {
   async.whilst(
 
     function() {
-      return ((iterations <= MAX_ITERATIONS_INPUTS_GENERATE) 
+      return ((iterations <= configuration.maxIterations) 
             && ((newInputsObj.meta.numInputs < configuration.minInputsGenerated) 
            || (newInputsObj.meta.numInputs > configuration.maxInputsGenerated))) ;
     },
@@ -595,8 +291,8 @@ function generateInputSets(params, callback) {
     function(cb0){
 
       iterations += 1;
-      totalMin = randomInt(MIN_TOTAL_MIN, MAX_TOTAL_MIN);
-      dominantMin = randomFloat(MIN_DOMINANT_MIN, MAX_DOMINANT_MIN);
+      totalMin = randomInt(configuration.minTotalMin, configuration.maxTotalMin);
+      dominantMin = randomFloat(configuration.minDominantMin, configuration.maxDominantMin);
 
       console.log(chalkInfo("... GENERATING INPUT SETS"
         + " | ITERATION: " + iterations
@@ -667,17 +363,17 @@ function generateInputSets(params, callback) {
 
   }, function(err){
 
-    console.log(chalkAlert("\n================================================================================\n"
+    console.log(chalkAlert("\n===========================================\n"
       + "INPUT SET COMPLETE"
-      + " | ITERATION: " + iterations
-      + " | ID: " + newInputsObj.inputsId
-      + " | PARSE TOT MIN: " + totalMin
-      + " | PARSE DOM MIN: " + dominantMin.toFixed(3)
-      + " | NUM INPUTS: " + newInputsObj.meta.numInputs
-      + "\n================================================================================\n"
+      + "\nITERATION: " + iterations
+      + "\nID:        " + newInputsObj.inputsId
+      + "\nTOT MIN:   " + totalMin
+      + "\nDOM MIN:   " + dominantMin.toFixed(3)
+      + "\nINPUTS:    " + newInputsObj.meta.numInputs
+      + "\n===========================================\n"
     ));
 
-    if (iterations >= MAX_ITERATIONS_INPUTS_GENERATE) {
+    if (iterations >= configuration.maxIterations) {
       callback("MAX ITERATIONS: " + iterations, null);
     }
     else {
@@ -915,6 +611,10 @@ function loadFile(path, file, callback) {
       debug(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
     }
     fs.readFile(fullPath, "utf8", function(err, data) {
+      if (err) {
+        console.log(chalkError("LOAD FILE ERROR: " + err));
+        return (callback(err, null));
+      }
       debug(chalkLog(getTimeStamp()
         + " | LOADING FILE FROM DROPBOX FILE"
         + " | " + fullPath
@@ -1050,8 +750,12 @@ function initialize(cnf, callback){
   cnf.processName = process.env.GIS_PROCESS_NAME || "generateInputSets";
   cnf.targetServer = process.env.GIS_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
 
-  cnf.histogramParseDominantMin = process.env.GIS_HISTOGRAM_PARSE_DOMINANT_MIN || DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN ;
-  cnf.histogramParseTotalMin = process.env.GIS_HISTOGRAM_PARSE_TOTAL_MIN || DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN;
+  cnf.minDominantMin = process.env.GIS_MIN_DOMINANT_MIN || DEFAULT_MIN_DOMINANT_MIN ;
+  cnf.maxDominantMin = process.env.GIS_MAX_DOMINANT_MIN || DEFAULT_MAX_DOMINANT_MIN ;
+
+  cnf.minTotalMin = process.env.GIS_MIN_TOTAL_MIN || DEFAULT_MIN_TOTAL_MIN ;
+  cnf.maxTotalMin = process.env.GIS_MAX_TOTAL_MIN || DEFAULT_MAX_TOTAL_MIN ;
+
 
   cnf.testMode = (process.env.GIS_TEST_MODE === "true") ? true : cnf.testMode;
 
@@ -1074,9 +778,47 @@ function initialize(cnf, callback){
     if (!err) {
       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
 
-      if (loadedConfigObj.GIS_UTIL_TARGET_SERVER !== undefined){
-        console.log("LOADED GIS_UTIL_TARGET_SERVER: " + loadedConfigObj.GIS_UTIL_TARGET_SERVER);
-        cnf.targetServer = loadedConfigObj.GIS_UTIL_TARGET_SERVER;
+  // "GIS_MAX_ITERATIONS_INPUTS_GENERATE": 50,
+  // "GIS_MIN_INPUTS_GENERATED": 500,
+  // "GIS_MAX_INPUTS_GENERATED": 1000,
+  // "GIS_MIN_TOTAL_MIN": 5,
+  // "GIS_MAX_TOTAL_MIN": 10,
+  // "GIS_MIN_DOMINANT_MIN": 0.33,
+  // "GIS_MAX_DOMINANT_MIN": 0.6
+
+      if (loadedConfigObj.GIS_MAX_ITERATIONS !== undefined){
+        console.log("LOADED GIS_MAX_ITERATIONS: " + loadedConfigObj.GIS_MAX_ITERATIONS);
+        cnf.maxIterations = loadedConfigObj.GIS_MAX_ITERATIONS;
+      }
+
+      if (loadedConfigObj.GIS_MIN_INPUTS_GENERATED !== undefined){
+        console.log("LOADED GIS_MIN_INPUTS_GENERATED: " + loadedConfigObj.GIS_MIN_INPUTS_GENERATED);
+        cnf.minInputsGenerated = loadedConfigObj.GIS_MIN_INPUTS_GENERATED;
+      }
+
+      if (loadedConfigObj.GIS_MAX_INPUTS_GENERATED !== undefined){
+        console.log("LOADED GIS_MAX_INPUTS_GENERATED: " + loadedConfigObj.GIS_MAX_INPUTS_GENERATED);
+        cnf.maxInputsGenerated = loadedConfigObj.GIS_MAX_INPUTS_GENERATED;
+      }
+
+      if (loadedConfigObj.GIS_MIN_TOTAL_MIN !== undefined){
+        console.log("LOADED GIS_MIN_TOTAL_MIN: " + loadedConfigObj.GIS_MIN_TOTAL_MIN);
+        cnf.minTotalMin = loadedConfigObj.GIS_MIN_TOTAL_MIN;
+      }
+
+      if (loadedConfigObj.GIS_MAX_TOTAL_MIN !== undefined){
+        console.log("LOADED GIS_MAX_TOTAL_MIN: " + loadedConfigObj.GIS_MAX_TOTAL_MIN);
+        cnf.maxTotalMin = loadedConfigObj.GIS_MAX_TOTAL_MIN;
+      }
+
+      if (loadedConfigObj.GIS_MIN_DOMINANT_MIN !== undefined){
+        console.log("LOADED GIS_MIN_DOMINANT_MIN: " + loadedConfigObj.GIS_MIN_DOMINANT_MIN);
+        cnf.minDominantMin = loadedConfigObj.GIS_MIN_DOMINANT_MIN;
+      }
+
+      if (loadedConfigObj.GIS_MAX_DOMINANT_MIN !== undefined){
+        console.log("LOADED GIS_MAX_DOMINANT_MIN: " + loadedConfigObj.GIS_MAX_DOMINANT_MIN);
+        cnf.maxDominantMin = loadedConfigObj.GIS_MAX_DOMINANT_MIN;
       }
 
       if (loadedConfigObj.GIS_TEST_MODE !== undefined){
@@ -1156,84 +898,6 @@ function initialize(cnf, callback){
         return(callback(err, cnf));
       });
      }
-  });
-}
-
-const sortedObjectValues = function(params) {
-
-  return new Promise(function(resolve, reject) {
-
-    const keys = Object.keys(params.obj);
-
-    const sortedKeys = keys.sort(function(a,b){
-      const objA = params.obj[a];
-      const objB = params.obj[b];
-      return objB[params.sortKey] - objA[params.sortKey];
-    });
-
-    if (keys.length !== undefined) {
-      resolve({sortKey: params.sortKey, sortedKeys: sortedKeys.slice(0,params.max)});
-    }
-    else {
-      reject(new Error("ERROR"));
-    }
-
-  });
-};
-
-function printHistogram(title, hist){
-  let tableArray = [];
-
-  const sortedLabels = Object.keys(hist).sort(function(a,b){
-    return hist[b] - hist[a];
-  });
-
-  async.eachSeries(sortedLabels, function(label, cb){
-    tableArray.push([hist[label], label]);
-    cb();
-  }, function(){
-    console.log(chalkInfo(
-        "\n--------------------------------------------------------------"
-      + "\n" + title + " | " + sortedLabels.length + " ENTRIES"  
-      + "\n--------------------------------------------------------------\n"
-      + table(tableArray, { align: [ "r", "l"] })
-      + "\n--------------------------------------------------------------\n"
-    ));
-  });
-}
-
-function printDatum(title, input){
-
-  let row = "";
-  let col = 0;
-  let rowNum = 0;
-  const COLS = 50;
-
-  debug("\n------------- " + title + " -------------");
-
-  input.forEach(function(bit, i){
-    if (i === 0) {
-      row = row + bit.toFixed(10) + " | " ;
-    }
-    else if (i === 1) {
-      row = row + bit.toFixed(10);
-    }
-    else if (i === 2) {
-      debug("ROW " + rowNum + " | " + row);
-      row = bit ? "X" : ".";
-      col = 1;
-      rowNum += 1;
-    }
-    else if (col < COLS){
-      row = row + (bit ? "X" : ".");
-      col += 1;
-    }
-    else {
-      debug("ROW " + rowNum + " | " + row);
-      row = bit ? "X" : ".";
-      col = 1;
-      rowNum += 1;
-    }
   });
 }
 
