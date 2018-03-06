@@ -538,7 +538,8 @@ function loadTrainingSetsDropboxFolder(folder, callback){
 
               maxInputHashMap = {};
               maxInputHashMap = deepcopy(trainingSetObj.maxInputHashMap);
-              trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry, trainingSetObj: trainingSetObj} );
+
+              trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry} );
 
               console.log(chalkInfo("NNT | DROPBOX TRAINING SET"
                 + " [" + trainingSetHashMap.count() + "]"
@@ -577,7 +578,7 @@ function loadTrainingSetsDropboxFolder(folder, callback){
 
             maxInputHashMap = {};
             maxInputHashMap = deepcopy(trainingSetObj.maxInputHashMap);
-            trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry, trainingSetObj: trainingSetObj} );
+            trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry} );
 
             console.log(chalkNetwork("NNT | LOADED DROPBOX TRAINING SET"
               + " [" + trainingSetHashMap.count() + "]"
@@ -2273,13 +2274,14 @@ function generateAutoKeywords(params, user, callback){
         statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
 
 
-        debug(chalkInfo("GEN AKWs"
+        console.log(chalkInfo("GEN AKWs"
           + " [@" + currentTwitterUser + "]"
           + " | @" + updatedUser.screenName
           + " | " + updatedUser.userId
           + " | Ts: " + updatedUser.statusesCount
           + " | FLWRs: " + updatedUser.followersCount
           + " | FRNDs: " + updatedUser.friendsCount
+          + " | 3CF: " + updatedUser.threeceeFollowing
           + " | LAd: " + updatedUser.languageAnalyzed
           + " | LA: S: " + score.toFixed(2)
           + " M: " + mag.toFixed(2)
@@ -2431,11 +2433,20 @@ function processUser(userIn, lastTweeId, callback) {
         || ((currentTwitterUser === "atlthreecee02") && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined))
         || ((currentTwitterUser === "atlthreecee02") && (twitterUserHashMap.altthreecee00.friends[user.userId] !== undefined))
 
-        ) {
+      ) {
 
-        console.log(chalkInfo("SKIP | ninjathreecee OR altthreecee00 FOLLOWING"
+        if (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined) {
+          user.threeceeFollowing = "ninjathreecee";
+        }
+
+        if (twitterUserHashMap.altthreecee00.friends[user.userId] !== undefined) {
+          user.threeceeFollowing = "altthreecee00";
+        }
+
+        console.log(chalkInfo("UNFOLLOW | ninjathreecee OR altthreecee00 FOLLOWING"
           + " | " + user.userId
           + " | " + user.screenName.toLowerCase()
+          + " | 3CF: " + user.threeceeFollowing
         ));
 
         delete twitterUserHashMap[currentTwitterUser].friends[user.userId];
@@ -2466,6 +2477,12 @@ function processUser(userIn, lastTweeId, callback) {
         );
       }
       else {
+        user.threeceeFollowing = currentTwitterUser;
+        console.log(chalkInfo("UPDATE 3CF"
+          + " | " + user.userId
+          + " | " + user.screenName.toLowerCase()
+          + " | 3CF: " + user.threeceeFollowing
+        ));
         cb(null, user);
       }
     },
@@ -2562,10 +2579,11 @@ function processUser(userIn, lastTweeId, callback) {
             user.friendsCount = userDb.friendsCount;
           }
 
-          debug(chalkInfo("USER DB HIT "
+          console.log(chalkInfo("USER DB HIT "
             + " | @" + user.screenName.toLowerCase()
             + " | " + user.userId
             + " | " + getTimeStamp(user.createdAt)
+            + " | 3CF: " + user.threeceeFollowing
             + " | LAd: " + user.languageAnalyzed
             + " | KWs: " + Object.keys(user.get("keywords"))
             + " | KWAs: " + Object.keys(user.get("keywordsAuto"))
@@ -2597,6 +2615,7 @@ function processUser(userIn, lastTweeId, callback) {
             + " | @" + u.screenName.toLowerCase()
             + " | " + u.userId
             + " | " + getTimeStamp(u.createdAt)
+            + " | 3CF: " + u.threeceeFollowing
             + " | KWs: " + Object.keys(u.get("keywords"))
             + " | KWAs: " + Object.keys(u.get("keywordsAuto"))
           ));
@@ -2719,8 +2738,8 @@ function fetchFriends(params, callback) {
 
         async.eachSeries(subFriendsSortedArray, function (friend, cb){
 
-          friend.threeceeFollowing = {};
-          friend.threeceeFollowing.screenName = currentTwitterUser;
+          // friend.threeceeFollowing = {};
+          friend.threeceeFollowing = currentTwitterUser;
 
           twitterUserHashMap[currentTwitterUser].friends[friend.id_str] = friend.screen_name.toLowerCase();
 
