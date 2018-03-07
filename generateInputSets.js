@@ -274,6 +274,7 @@ function generateInputSets(params, callback) {
   let newInputsObj = {};
   newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
   newInputsObj.meta = {};
+  newInputsObj.meta.type = {};
   newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
   newInputsObj.meta.numInputs = 0;
   newInputsObj.meta.histogramParseTotalMin = totalMin;
@@ -329,6 +330,7 @@ function generateInputSets(params, callback) {
           if (type === "sentiment") {
             newInputsObj.inputs[type] = ["magnitude", "score"];
             newInputsObj.meta.numInputs += newInputsObj.inputs[type].length;
+            newInputsObj.meta.type[type] = newInputsObj.inputs[type].length;
             debug(chalkLog("... PARSE | " + type + ": " + newInputsObj.inputs[type].length));
 
             cb1();
@@ -336,6 +338,7 @@ function generateInputSets(params, callback) {
           else {
             newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
             newInputsObj.meta.numInputs += newInputsObj.inputs[type].length;
+            newInputsObj.meta.type[type] = newInputsObj.inputs[type].length;
 
             debug(chalkLog("... PARSE | " + type + ": " + newInputsObj.inputs[type].length));
 
@@ -350,10 +353,16 @@ function generateInputSets(params, callback) {
           debug(chalkNetwork("NEW INPUTS\n" + jsonPrint(newInputsObj)));
 
           console.log(chalkAlert(">>> HISTOGRAMS PARSED"
-            + " | PARSE TOT MIN: " + totalMin
-            + " | PARSE DOM MIN: " + dominantMin.toFixed(3)
-            + " | NUM INPUTS: " + newInputsObj.meta.numInputs
+            + "\nTOT MIN:     " + totalMin
+            + "\nDOM MIN:     " + dominantMin.toFixed(3)
+            + "\nNUM INPUTS:  " + newInputsObj.meta.numInputs
+            // + "\nINPUT TYPES: " + Object.keys(newInputsObj.inputs)
           ));
+
+          Object.keys(newInputsObj.inputs).forEach(function(type){
+            console.log(chalkAlert(type.toUpperCase() + ": " + newInputsObj.meta.type[type]
+            ));
+          });
 
           cb0();
 
