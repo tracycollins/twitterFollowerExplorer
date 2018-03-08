@@ -1621,7 +1621,11 @@ function checkRateLimit(callback){
     debug("application/rate_limit_status response: " + jsonPrint(response));
     
     if (err){
-      console.error("!!!!! TWITTER ACCOUNT ERROR | " + getTimeStamp() + "\n" + JSON.stringify(err, null, 3));
+      console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
+        + " | @" + currentTwitterUser
+        + " | " + getTimeStamp()
+        + "\n" + JSON.stringify(err, null, 3)
+      ));
       statsObj.twitterErrors+= 1;
 
       if (callback !== undefined) { callback(err, null); }
@@ -2452,11 +2456,10 @@ function processUser(userIn, lastTweeId, callback) {
         delete twitterUserHashMap[currentTwitterUser].friends[user.userId];
 
         twitterUserHashMap[currentTwitterUser].twit.post(
-          "friendships/destroy", 
-          {user_id: user.userId}, 
+          "friendships/destroy", {user_id: user.userId}, 
           function destroyFriend(err, data, response){
             if (err) {
-              console.error(chalkError("UNFOLLOW ERROR" + err));
+              console.error(chalkError("UNFOLLOW ERROR: " + err));
               cb(err, user);
             }
             else {
@@ -2633,10 +2636,10 @@ function processUser(userIn, lastTweeId, callback) {
         cb(err, uObj);
       });
     }
-
   ], function (err, user) {
 
     if (err) {
+      console.log(chalkError("PROCESS USER ERROR: " + err));
       callback(new Error(err), null);
     }
     else {
@@ -5090,7 +5093,6 @@ initialize(configuration, function(err, cnf){
           });
 
         });
-
       }
     });
     // });
