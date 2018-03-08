@@ -1624,7 +1624,10 @@ function checkRateLimit(callback){
       console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
         + " | @" + currentTwitterUser
         + " | " + getTimeStamp()
-        + "\n" + JSON.stringify(err, null, 3)
+        + " | CODE: " + err.code
+        + " | STATUS CODE: " + err.statusCode
+        + "\n" + err.message
+        // + "\n" + jsonPrint(err)
       ));
       statsObj.twitterErrors+= 1;
 
@@ -3721,7 +3724,16 @@ function initTwitter(currentTwitterUser, callback){
 
           newTwit.get("account/settings", function(err, accountSettings, response) {
             if (err){
-              console.log("!!!!! TWITTER ACCOUNT ERROR | " + getTimeStamp() + "\n" + jsonPrint(err));
+              // console.log("!!!!! TWITTER ACCOUNT ERROR | " + getTimeStamp() + "\n" + jsonPrint(err));
+              console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
+                + " | @" + currentTwitterUser
+                + " | " + getTimeStamp()
+                + " | CODE: " + err.code
+                + " | STATUS CODE: " + err.statusCode
+                + "\n" + err.message
+                // + "\n" + jsonPrint(err)
+              ));
+              statsObj.twitterErrors+= 1;
               return(cb(err, null));
             }
 
