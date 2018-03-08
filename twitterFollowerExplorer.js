@@ -1626,7 +1626,7 @@ function checkRateLimit(callback){
         + " | " + getTimeStamp()
         + " | CODE: " + err.code
         + " | STATUS CODE: " + err.statusCode
-        + "\n" + err.message
+        + " | " + err.message
         // + "\n" + jsonPrint(err)
       ));
       statsObj.twitterErrors+= 1;
@@ -3730,7 +3730,7 @@ function initTwitter(currentTwitterUser, callback){
                 + " | " + getTimeStamp()
                 + " | CODE: " + err.code
                 + " | STATUS CODE: " + err.statusCode
-                + "\n" + err.message
+                + " | " + err.message
                 // + "\n" + jsonPrint(err)
               ));
               statsObj.twitterErrors+= 1;
@@ -3804,7 +3804,7 @@ function initTwitterUsers(callback){
 
       initTwitter(userScreenName, function(err, twitObj){
         if (err) {
-          console.log(chalkError("INIT TWITTER ERROR\n" + jsonPrint(err)));
+          console.log(chalkError("INIT TWITTER ERROR: " + err.message));
           return(cb(err));
         }
 

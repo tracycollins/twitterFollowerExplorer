@@ -303,7 +303,7 @@ function generateNetworkInput(params, callback){
 
       // let inputValue = histogramObj[inputName];
 
-      if (histogramObj[inputName] !== undefined) {
+      if (histogramObj && (histogramObj[inputName] !== undefined)) {
 
         if ((params.maxInputHashMap === undefined) 
           || (params.maxInputHashMap[inputType] === undefined)) {
@@ -342,8 +342,6 @@ function generateNetworkInput(params, callback){
             cb1();
           });
         }
-
-
       }
       else {
         networkInput.push(0);
