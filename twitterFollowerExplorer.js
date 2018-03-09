@@ -11,9 +11,9 @@ const DEFAULT_MAX_INPUTS_GENERATED = 750 ;
 const DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN = 5;
 const DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN = 0.4;
 
-const TEST_MODE_TOTAL_FETCH = 100;  // total twitter user fetch count
-const TEST_MODE_FETCH_COUNT = 26;  // per request twitter user fetch count
-const TEST_DROPBOX_NN_LOAD = 20;
+const TEST_MODE_TOTAL_FETCH = 40;  // total twitter user fetch count
+const TEST_MODE_FETCH_COUNT = 15;  // per request twitter user fetch count
+const TEST_DROPBOX_NN_LOAD = 30;
 
 const MAX_ITERATIONS_INPUTS_GENERATE = 100;
 
@@ -1983,41 +1983,55 @@ function classifyUser(user, callback){
   });
 }
 
-function updateImageHistograms(params){
+function updateImageHistograms(params, callback){
+
+  if (!params.bannerResults || (params.bannerResults.label.images === undefined)) {
+    return callback(null, {});
+  }
 
   let user = params.user;
-  let imagesObj = params.histogram;
+  let imagesObj = params.bannerResults.label.images;
+  let histogramsImages = {};
 
   Object.keys(imagesObj).forEach(function(imageLabel){
 
+    // console.log("imageLabel: " + imageLabel);
+
     if (user.keywords && Object.keys(user.keywords).length > 0) {
-      if (histograms.images[imageLabel] === undefined) {
-        histograms.images[imageLabel] = {};
-        histograms.images[imageLabel].total = 0;
-        histograms.images[imageLabel].left = 0;
-        histograms.images[imageLabel].neutral = 0;
-        histograms.images[imageLabel].right = 0;
-        histograms.images[imageLabel].positive = 0;
-        histograms.images[imageLabel].negative = 0;
-        histograms.images[imageLabel].uncategorized = 0;
+
+      if (histogramsImages[imageLabel] === undefined) {
+        histogramsImages[imageLabel] = {};
+        histogramsImages[imageLabel].total = 0;
+        histogramsImages[imageLabel].left = 0;
+        histogramsImages[imageLabel].neutral = 0;
+        histogramsImages[imageLabel].right = 0;
+        histogramsImages[imageLabel].positive = 0;
+        histogramsImages[imageLabel].negative = 0;
+        histogramsImages[imageLabel].uncategorized = 0;
       }
 
-      histograms.images[imageLabel].total += 1;
+      histogramsImages[imageLabel].total += 1;
       
       if (user.keywords) {
-        if (user.keywords.left !== undefined) { histograms.images[imageLabel].left += 1; }
-        if (user.keywords.neutral !== undefined) { histograms.images[imageLabel].neutral += 1; }
-        if (user.keywords.right !== undefined) { histograms.images[imageLabel].right += 1; }
-        if (user.keywords.positive !== undefined) { histograms.images[imageLabel].positive += 1; }
-        if (user.keywords.negative !== undefined) { histograms.images[imageLabel].negative += 1; }
+        if (user.keywords.left !== undefined) { histogramsImages[imageLabel].left += 1; }
+        if (user.keywords.neutral !== undefined) { histogramsImages[imageLabel].neutral += 1; }
+        if (user.keywords.right !== undefined) { histogramsImages[imageLabel].right += 1; }
+        if (user.keywords.positive !== undefined) { histogramsImages[imageLabel].positive += 1; }
+        if (user.keywords.negative !== undefined) { histogramsImages[imageLabel].negative += 1; }
       }
       else {
-        histograms.images[imageLabel].uncategorized += 1;
+        histogramsImages[imageLabel].uncategorized += 1;
       }
  
-    }
+      // console.log(chalkLog("imageLabel: " + imageLabel 
+      //   + " | user kws\n" + jsonPrint(user.keywords)
+      //   + " | hist\n" + jsonPrint(histogramsImages[imageLabel])
+      // ));
 
+    }
   });
+
+  callback(null, histogramsImages);
 }
 
 function enableAnalysis(user, languageAnalysis){
@@ -2251,87 +2265,88 @@ function generateAutoKeywords(params, user, callback){
 
       hist.images = {};
 
-      if (bannerResults && bannerResults.label && bannerResults.label.images) {
-        hist.images = deepcopy(bannerResults.label.images);
-        updateImageHistograms({user: user, histogram: bannerResults.label.images});
-      }
-
       const updateCountHistory = params.updateCountHistory 
       && (user.followersCount !== undefined) 
       && (user.friendsCount !== undefined) 
       && (user.statusesCount !== undefined);
 
-      userServer.updateHistograms({user: user, histograms: hist, updateCountHistory: updateCountHistory}, function(err, updatedUser){
+      updateImageHistograms({user: user, bannerResults: bannerResults}, function(err, histImages){
 
-        if (err) {
-          console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
-          console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\nUSER\n" + jsonPrint(user)));
-          callback(new Error(err), null);
-        }
+        hist.images = histImages;
 
-        updatedUser.inputHits = 0;
+        userServer.updateHistograms({user: user, histograms: histograms, updateCountHistory: updateCountHistory}, function(err, updatedUser){
 
-        const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
-        const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
+          if (err) {
+            console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
+            console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\nUSER\n" + jsonPrint(user)));
+            callback(new Error(err), null);
+          }
 
-        statsObj.normalization.score.min = Math.min(score, statsObj.normalization.score.min);
-        statsObj.normalization.score.max = Math.max(score, statsObj.normalization.score.max);
+          updatedUser.inputHits = 0;
 
-        statsObj.normalization.magnitude.min = Math.min(mag, statsObj.normalization.magnitude.min);
-        statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
+          const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
+          const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
+
+          statsObj.normalization.score.min = Math.min(score, statsObj.normalization.score.min);
+          statsObj.normalization.score.max = Math.max(score, statsObj.normalization.score.max);
+
+          statsObj.normalization.magnitude.min = Math.min(mag, statsObj.normalization.magnitude.min);
+          statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
 
 
-        debug(chalkInfo("GEN AKWs"
-          + " [@" + currentTwitterUser + "]"
-          + " | @" + updatedUser.screenName
-          + " | " + updatedUser.userId
-          + " | Ts: " + updatedUser.statusesCount
-          + " | FLWRs: " + updatedUser.followersCount
-          + " | FRNDs: " + updatedUser.friendsCount
-          + " | 3CF: " + updatedUser.threeceeFollowing
-          + " | LAd: " + updatedUser.languageAnalyzed
-          + " | LA: S: " + score.toFixed(2)
-          + " M: " + mag.toFixed(2)
-        ));
-
-        statsObj.analyzer.total += 1;
-
-        if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
-          debug(chalkLog(">>>> LANG ANALYZE"
-            + " [ ANLd: " + statsObj.analyzer.analyzed
-            + " [ SKPd: " + statsObj.analyzer.skipped
-            + " | " + updatedUser.userId
+          debug(chalkInfo("GEN AKWs"
+            + " [@" + currentTwitterUser + "]"
             + " | @" + updatedUser.screenName
+            + " | " + updatedUser.userId
+            + " | Ts: " + updatedUser.statusesCount
+            + " | FLWRs: " + updatedUser.followersCount
+            + " | FRNDs: " + updatedUser.friendsCount
+            + " | 3CF: " + updatedUser.threeceeFollowing
             + " | LAd: " + updatedUser.languageAnalyzed
             + " | LA: S: " + score.toFixed(2)
             + " M: " + mag.toFixed(2)
           ));
-          langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function(){
-            statsObj.analyzer.analyzed += 1;
-          });
-        }
-        else {
 
-          statsObj.analyzer.skipped += 1;
+          statsObj.analyzer.total += 1;
 
-          debug(chalkLog("SKIP LANG ANALYZE"
-            + " [ ANLd: " + statsObj.analyzer.analyzed
-            + " [ SKPd: " + statsObj.analyzer.skipped
-            + " | " + updatedUser.userId
-            + " | @" + updatedUser.screenName
-            + " | LAd: " + updatedUser.languageAnalyzed
-            + " | LA: S: " + score.toFixed(2)
-            + " M: " + mag.toFixed(2)
-          ));
-        }
+          if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
+            debug(chalkLog(">>>> LANG ANALYZE"
+              + " [ ANLd: " + statsObj.analyzer.analyzed
+              + " [ SKPd: " + statsObj.analyzer.skipped
+              + " | " + updatedUser.userId
+              + " | @" + updatedUser.screenName
+              + " | LAd: " + updatedUser.languageAnalyzed
+              + " | LA: S: " + score.toFixed(2)
+              + " M: " + mag.toFixed(2)
+            ));
+            langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function(){
+              statsObj.analyzer.analyzed += 1;
+            });
+          }
+          else {
 
-        const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "histograms", "languageAnalysis"]);
+            statsObj.analyzer.skipped += 1;
 
-        activateNetwork({user: u, normalization: statsObj.normalization});
+            debug(chalkLog("SKIP LANG ANALYZE"
+              + " [ ANLd: " + statsObj.analyzer.analyzed
+              + " [ SKPd: " + statsObj.analyzer.skipped
+              + " | " + updatedUser.userId
+              + " | @" + updatedUser.screenName
+              + " | LAd: " + updatedUser.languageAnalyzed
+              + " | LA: S: " + score.toFixed(2)
+              + " M: " + mag.toFixed(2)
+            ));
+          }
 
-        callback(null, updatedUser);
+          const u = pick(updatedUser, ["userId", "screenName", "keywords", "keywordsAuto", "histograms", "languageAnalysis"]);
+
+          activateNetwork({user: u, normalization: statsObj.normalization});
+
+          callback(null, updatedUser);
+        });
 
       });
+
     });
   });
 }
@@ -4279,20 +4294,20 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         case "NETWORK_BUSY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
-          randomNetworkTreeBusyFlag = true;
+          randomNetworkTreeBusyFlag = "NETWORK_BUSY";
           debug(chalkInfo("... RNT NETWORK_BUSY ..."));
         break;
 
         case "QUEUE_READY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          // randomNetworkTreeReadyFlag = true;
+          randomNetworkTreeReadyFlag = true;
           debug(chalkInfo("RNT Q READY"));
           runEnable();
         break;
 
         case "QUEUE_EMPTY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          // randomNetworkTreeReadyFlag = true;
+          randomNetworkTreeReadyFlag = true;
           debug(chalkInfo("RNT Q EMPTY"));
           runEnable();
         break;
@@ -4300,7 +4315,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         case "QUEUE_FULL":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
-          randomNetworkTreeBusyFlag = true;
+          randomNetworkTreeBusyFlag = "QUEUE_FULL";
           console.log(chalkError("!!! RNT Q FULL"));
         break;
 
@@ -4847,10 +4862,11 @@ function initRandomNetworkTree(callback){
       break;
       case "BUSY":
         randomNetworkTreeReadyFlag = false;
-        randomNetworkTreeBusyFlag = true;
-        debug(chalkAlert("<== RNT RX"
+        randomNetworkTreeBusyFlag = m.cause;
+        debug(chalkAlert("<== RNT RX BUSY"
           + " [" + randomNetworkTreeMessageRxQueue.length + "]"
           + " | " + m.op
+          + " | " + m.cause
         ));
       break;
       default:

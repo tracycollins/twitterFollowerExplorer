@@ -18,6 +18,7 @@ const DEFAULT_MAX_DOMINANT_MIN = 0.6;
 const OFFLINE_MODE = false;
 
 const histogramParser = require("@threeceelabs/histogram-parser");
+// const histogramParser = require("../histogram-parser");
 
 const moment = require("moment");
 
@@ -304,9 +305,15 @@ function generateInputSets(params, callback) {
 
       const hpParams = {};
       hpParams.histogram = params.histogramsObj.histograms;
+
       hpParams.options = {};
-      hpParams.options.totalMin = totalMin;
-      hpParams.options.dominantMin = dominantMin;
+      hpParams.options.totalMin = {};
+      hpParams.options.dominantMin = {};
+      hpParams.options.totalMin.images = 0.5 * totalMin;
+      hpParams.options.dominantMin.images = 0.5 * dominantMin;
+
+      hpParams.options.globalTotalMin = totalMin;
+      hpParams.options.globalDominantMin = dominantMin;
 
       histogramParser.parse(hpParams, function(err, histResults){
 

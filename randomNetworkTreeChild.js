@@ -884,20 +884,20 @@ function initActivateNetworkInterval(interval){
 
       if (maxQueueFlag && (rxActivateNetworkQueue.length < MAX_Q_SIZE)) {
         process.send({op: "QUEUE_READY", queue: rxActivateNetworkQueue.length}, function(err){
-          if (err) { quit("SEND QUEUE_READY ERRROR"); }
+          if (err) { quit("SEND QUEUE_READY ERROR"); }
         });
         maxQueueFlag = false;
       }
       else if (rxActivateNetworkQueue.length === 0){
         process.send({op: "QUEUE_EMPTY", queue: rxActivateNetworkQueue.length}, function(err){
-          if (err) { quit("SEND QUEUE_EMPTY ERRROR"); }
+          if (err) { quit("SEND QUEUE_EMPTY ERROR"); }
         });
         maxQueueFlag = false;
       }
 
       if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
         process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
-          if (err) { quit("SEND QUEUE_FULL ERRROR"); }
+          if (err) { quit("SEND QUEUE_FULL ERROR"); }
         });
         maxQueueFlag = true;
       }
@@ -1179,12 +1179,12 @@ function printCategorizeHistory(){
 }
 
 function busy(){
-  if (loadNetworksBusy) { return true; }
-  if (initializeBusy) { return true; }
-  if (generateNetworksOutputBusy) { return true; }
-  if (activateNetworkBusy) { return true; }
-  if (generateNetworkInputBusy) { return true; }
-  if (rxActivateNetworkQueue.length > 0) { return true; }
+  if (loadNetworksBusy) { return "loadNetworksBusy"; }
+  if (initializeBusy) { return "initializeBusy"; }
+  if (generateNetworksOutputBusy) { return "generateNetworksOutputBusy"; }
+  if (activateNetworkBusy) { return "activateNetworkBusy"; }
+  if (generateNetworkInputBusy) { return "generateNetworkInputBusy"; }
+  if (rxActivateNetworkQueue.length > 0) { return "rxActivateNetworkQueue"; }
 
   return false;
 }
@@ -1296,8 +1296,9 @@ process.on("message", function(m) {
     break;
 
     case "GET_BUSY":
-      if (busy()) {
-        process.send({ op: "BUSY" });
+      const cause = busy();
+      if (cause) {
+        process.send({ op: "BUSY", cause: cause });
       }
       else {
         process.send({ op: "IDLE" });
@@ -1307,7 +1308,7 @@ process.on("message", function(m) {
     case "STATS":
       showStats(m.options);
       if (busy()) {
-        process.send({ op: "BUSY" });
+        process.send({ op: "BUSY", cause: busy() });
       }
       else {
         process.send({ op: "IDLE" });
@@ -1460,7 +1461,7 @@ function initStatsUpdate(cnf){
     saveFile(statsFolder, statsFile, statsObj);
 
     if (busy()) {
-      process.send({ op: "BUSY" });
+      process.send({ op: "BUSY", cause: busy() });
     }
     else {
       process.send({ op: "IDLE" });
