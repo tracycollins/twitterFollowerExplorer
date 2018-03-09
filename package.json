@@ -5,7 +5,7 @@
   "main": "twitterFollowerExplorer.js",
   "dependencies": {
     "@google-cloud/language": "^1.1.0",
-    "@threeceelabs/histogram-parser": "^1.0.11",
+    "@threeceelabs/histogram-parser": "^1.0.12",
     "@threeceelabs/mongoose-twitter": "^1.0.86",
     "@threeceelabs/tweet-server-controller": "^1.0.121",
     "@threeceelabs/twitter-image-parser": "^1.0.38",

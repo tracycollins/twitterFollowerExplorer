@@ -238,7 +238,7 @@ let statsFolder = "/stats/" + hostname + "/generateInputSets";
 let statsFile = DROPBOX_GIS_STATS_FILE;
 
 const defaultHistogramsFolder = "/config/utility/default/histograms";
-const localHistogramsFolder = "/config/utility/" + hostname + "/histograms";
+// const localHistogramsFolder = "/config/utility/" + hostname + "/histograms";
 
 const localInputsFolder = dropboxConfigHostFolder + "/inputs";
 const defaultInputsFolder = dropboxConfigDefaultFolder + "/inputs";
@@ -296,24 +296,27 @@ function generateInputSets(params, callback) {
       totalMin = randomInt(configuration.minTotalMin, configuration.maxTotalMin);
       dominantMin = randomFloat(configuration.minDominantMin, configuration.maxDominantMin);
 
+      let hpParams = {};
+      hpParams.histogram = {};
+      hpParams.histogram = params.histogramsObj.histograms;
+
+      hpParams.options = {};
+      // hpParams.options.totalMin = {};
+      // hpParams.options.dominantMin = {};
+      // hpParams.options.totalMin.images = 0.5 * totalMin;
+      // hpParams.options.dominantMin.images = 0.5 * dominantMin;
+
+      hpParams.options.globalTotalMin = totalMin;
+      hpParams.options.globalDominantMin = dominantMin;
+
       console.log(chalkInfo("... GENERATING INPUT SETS"
         + " | ITERATION: " + iterations
         + " | HIST ID: " + params.histogramsObj.histogramsId
         + " | TOT MIN: " + totalMin
         + " | DOM MIN: " + dominantMin.toFixed(3)
+        // + "\nhpParams\n" + jsonPrint(hpParams.options)
       ));
 
-      const hpParams = {};
-      hpParams.histogram = params.histogramsObj.histograms;
-
-      hpParams.options = {};
-      hpParams.options.totalMin = {};
-      hpParams.options.dominantMin = {};
-      hpParams.options.totalMin.images = 0.5 * totalMin;
-      hpParams.options.dominantMin.images = 0.5 * dominantMin;
-
-      hpParams.options.globalTotalMin = totalMin;
-      hpParams.options.globalDominantMin = dominantMin;
 
       histogramParser.parse(hpParams, function(err, histResults){
 
@@ -322,7 +325,7 @@ function generateInputSets(params, callback) {
           return cb0(err);
         }
 
-        debug(chalkNetwork("HISTOGRAMS RESULTS\n" + jsonPrint(histResults)));
+        // console.log(chalkNetwork("HISTOGRAMS RESULTS\n" + jsonPrint(histResults)));
 
         let inTypyes = Object.keys(histResults.entries);
         inTypyes.push("sentiment");
@@ -346,7 +349,6 @@ function generateInputSets(params, callback) {
             newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
             newInputsObj.meta.numInputs += newInputsObj.inputs[type].length;
             newInputsObj.meta.type[type] = newInputsObj.inputs[type].length;
-
             debug(chalkLog("... PARSE | " + type + ": " + newInputsObj.inputs[type].length));
 
             cb1();
@@ -655,7 +657,7 @@ function loadFile(path, file, callback) {
   else {
     dropboxClient.filesDownload({path: fullPath})
     .then(function(data) {
-      debug(chalkLog(getTimeStamp()
+      console.log(chalkLog(getTimeStamp()
         + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
       ));
 
@@ -668,7 +670,7 @@ function loadFile(path, file, callback) {
           callback(null, fileObj);
         }
         catch(e){
-          console.trace(chalkError("GIS | JSON PARSE ERROR: " + jsonPrint(e)));
+          // console.trace(chalkError("GIS | JSON PARSE ERROR: " + jsonPrint(e)));
           console.trace(chalkError("GIS | JSON PARSE ERROR: " + e));
           callback("JSON PARSE ERROR", null);
         }
@@ -793,14 +795,6 @@ function initialize(cnf, callback){
 
     if (!err) {
       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
-
-  // "GIS_MAX_ITERATIONS_INPUTS_GENERATE": 50,
-  // "GIS_MIN_INPUTS_GENERATED": 500,
-  // "GIS_MAX_INPUTS_GENERATED": 1000,
-  // "GIS_MIN_TOTAL_MIN": 5,
-  // "GIS_MAX_TOTAL_MIN": 10,
-  // "GIS_MIN_DOMINANT_MIN": 0.33,
-  // "GIS_MAX_DOMINANT_MIN": 0.6
 
       if (loadedConfigObj.GIS_MAX_ITERATIONS !== undefined){
         console.log("LOADED GIS_MAX_ITERATIONS: " + loadedConfigObj.GIS_MAX_ITERATIONS);

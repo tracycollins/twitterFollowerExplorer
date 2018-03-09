@@ -784,10 +784,13 @@ function generateInputSets(params, callback) {
       ));
 
       const hpParams = {};
+      hpParams.histogram = {};
       hpParams.histogram = params.histogramsObj.histograms;
       hpParams.options = {};
-      hpParams.options.totalMin = totalMin;
-      hpParams.options.dominantMin = dominantMin;
+      // hpParams.options.totalMin = totalMin;
+      // hpParams.options.dominantMin = dominantMin;
+      hpParams.options.globalTotalMin = totalMin;
+      hpParams.options.globalDominantMin = dominantMin;
 
       histogramParser.parse(hpParams, function(err, histResults){
 
