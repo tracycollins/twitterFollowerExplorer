@@ -18,8 +18,12 @@ const DEFAULT_MAX_DOMINANT_MIN = 0.6;
 const OFFLINE_MODE = false;
 
 const histogramParser = require("@threeceelabs/histogram-parser");
-// const histogramParser = require("../histogram-parser");
-
+const os = require("os");
+const util = require("util");
+const deepcopy = require("deep-copy");
+const randomFloat = require("random-float");
+const randomInt = require("random-int");
+const fs = require("fs");
 const moment = require("moment");
 
 const chalk = require("chalk");
@@ -35,7 +39,7 @@ let saveFileQueue = [];
 let saveFileQueueInterval;
 let saveFileBusy = false;
 
-const inputTypes = ["emoji", "hashtags", "mentions", "urls", "words", "images"];
+const inputTypes = ["emoji", "hashtags", "mentions", "urls", "words", "images", "sentiment"];
 inputTypes.sort();
 
 let stdin;
@@ -43,13 +47,6 @@ let stdin;
 require("isomorphic-fetch");
 // const Dropbox = require("dropbox").Dropbox;
 const Dropbox = require("./js/dropbox").Dropbox;
-
-const os = require("os");
-const util = require("util");
-const deepcopy = require("deep-copy");
-const randomFloat = require("random-float");
-const randomInt = require("random-int");
-const fs = require("fs");
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
@@ -172,26 +169,39 @@ let userObj = {
 } ;
 
 const cla = require("command-line-args");
+
+const minInputsGenerated = { name: "minInputsGenerated", type: Number};
+const maxInputsGenerated = { name: "maxInputsGenerated", type: Number};
+
+const minDominantMin = { name: "minDominantMin", type: Number};
+const maxDominantMin = { name: "maxDominantMin", type: Number};
+
+const minTotalMin = { name: "minTotalMin", type: Number};
+const maxTotalMin = { name: "maxTotalMin", type: Number};
+
 const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
 const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean, defaultValue: false};
 const quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
-const targetServer = { name: "targetServer", alias: "t", type: String};
 const testMode = { name: "testMode", alias: "X", type: Boolean, defaultValue: false};
 
-const optionDefinitions = [enableStdin, quitOnComplete, quitOnError, targetServer, testMode];
+const optionDefinitions = [
+  minInputsGenerated,
+  maxInputsGenerated,
+  minTotalMin, 
+  maxTotalMin, 
+  minDominantMin, 
+  maxDominantMin, 
+  enableStdin, 
+  quitOnComplete, 
+  quitOnError, 
+  testMode
+];
 
 const commandLineConfig = cla(optionDefinitions);
 
 console.log(chalkInfo("COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
 
 console.log("COMMAND LINE OPTIONS\n" + jsonPrint(commandLineConfig));
-
-if (commandLineConfig.targetServer === "LOCAL"){
-  commandLineConfig.targetServer = "http://127.0.0.1:9997/util";
-}
-if (commandLineConfig.targetServer === "REMOTE"){
-  commandLineConfig.targetServer = "http://word.threeceelabs.com/util";
-}
 
 process.title = "node_generateInputSets";
 console.log("\n\n=================================");
@@ -766,14 +776,12 @@ function initialize(cnf, callback){
   }
 
   cnf.processName = process.env.GIS_PROCESS_NAME || "generateInputSets";
-  cnf.targetServer = process.env.GIS_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
 
   cnf.minDominantMin = process.env.GIS_MIN_DOMINANT_MIN || DEFAULT_MIN_DOMINANT_MIN ;
   cnf.maxDominantMin = process.env.GIS_MAX_DOMINANT_MIN || DEFAULT_MAX_DOMINANT_MIN ;
 
   cnf.minTotalMin = process.env.GIS_MIN_TOTAL_MIN || DEFAULT_MIN_TOTAL_MIN ;
   cnf.maxTotalMin = process.env.GIS_MAX_TOTAL_MIN || DEFAULT_MAX_TOTAL_MIN ;
-
 
   cnf.testMode = (process.env.GIS_TEST_MODE === "true") ? true : cnf.testMode;
 
