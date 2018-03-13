@@ -1963,7 +1963,7 @@ function classifyUser(user, callback){
         + " | Ts: " + user.statusesCount
         + " | FLWRs: " + user.followersCount
         + " | FRNDs: " + user.friendsCount
-        + " | 3CF: " + user.threeceeFollowing.screenName
+        + " | 3CF: " + user.threeceeFollowing
         + "\n MKW: [ L: " + statsObj.classification.manual.left
         + " | R: " + statsObj.classification.manual.right
         + " | +: " + statsObj.classification.manual.positive
@@ -2762,7 +2762,6 @@ function fetchFriends(params, callback) {
 
         async.eachSeries(subFriendsSortedArray, function (friend, cb){
 
-          // friend.threeceeFollowing = {};
           friend.threeceeFollowing = currentTwitterUser;
 
           twitterUserHashMap[currentTwitterUser].friends[friend.id_str] = friend.screen_name.toLowerCase();
@@ -2790,7 +2789,7 @@ function fetchFriends(params, callback) {
                 + " | E: " + msToTime(statsObj.user[currentTwitterUser].friendsProcessElapsed)
                 // + " | " + friend.id_str
                 + " | @" + friend.screen_name
-                // + " | 3CF: " + friend.threeceeFollowing.screenName
+                + " | 3CF: " + friend.threeceeFollowing
                 + " | Ts: " + friend.statuses_count
                 + " | FLWRs: " + friend.followers_count
                 + " | FRNDs: " + friend.friends_count
@@ -3717,8 +3716,7 @@ function initTwitter(currentTwitterUser, callback){
           + " | " +  followMessage.target.screen_name.toLowerCase()
         ));
 
-        followMessage.target.threeceeFollowing = {};
-        followMessage.target.threeceeFollowing.screenName = currentTwitterUser;
+        followMessage.target.threeceeFollowing = currentTwitterUser;
 
         processUser(followMessage.target, null, function(err, user){
           if (err) {
@@ -4580,12 +4578,6 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                 const kwsAuto = (updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined)) 
                   ? Object.keys(updatedUserObj.keywordsAuto) : [];
 
-                let threeceeFollowing = false;
-
-                if (updatedUserObj.threeceeFollowing){
-                  threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
-                }
-
                 if (statsObj.numLangAnalyzed % 50 === 0) {
                   console.log(chalkLog("UPDATE LANG ERR | USER>DB"
                     + " | " + updatedUserObj.userId
@@ -4595,7 +4587,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                     + " | Ts: " + updatedUserObj.statusesCount
                     + " | FLs: " + updatedUserObj.followersCount
                     + " | FRs: " + updatedUserObj.friendsCount
-                    + " | 3CF: " + threeceeFollowing
+                    + " | 3CF: " + updatedUserObj.threeceeFollowing
                     + " | KWs: " + kws
                     + " | KWA: " + kwsAuto
                     + " | LA: " + updatedUserObj.languageAnalyzed
@@ -4655,20 +4647,10 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                   ));
                 }
                 else {
-                  // let laEnts = 0;
-                  // if (updatedUserObj.languageAnalysis.entities !== undefined) {
-                  //   laEnts = Object.keys(updatedUserObj.languageAnalysis.entities);
-                  // }
                   const kws = (updatedUserObj.keywords && (updatedUserObj.keywords !== undefined)) 
                     ? Object.keys(updatedUserObj.keywords) : [];
                   const kwsAuto = (updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined))
                     ? Object.keys(updatedUserObj.keywordsAuto) : [];
-
-                  let threeceeFollowing = false;
-
-                  if (updatedUserObj.threeceeFollowing){
-                    threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
-                  }
 
                   if (statsObj.numLangAnalyzed % 50 === 0) {
                     console.log(chalkLog("UPDATE LANG ANLZD"
@@ -4680,13 +4662,12 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                       + " | Ts: " + updatedUserObj.statusesCount
                       + " | FLs: " + updatedUserObj.followersCount
                       + " | FRs: " + updatedUserObj.friendsCount
-                      + " | 3CF: " + threeceeFollowing
+                      + " | 3CF: " + updatedUserObj.threeceeFollowing
                       + " | KWs: " + kws
                       + " | KWA: " + kwsAuto
                       + " | LA: " + updatedUserObj.languageAnalyzed
                       + " S: " + updatedUserObj.languageAnalysis.sentiment.score.toFixed(2)
                       + " M: " + updatedUserObj.languageAnalysis.sentiment.magnitude.toFixed(2)
-                      // + "\nLA Es: " + laEnts
                     ));
                   }
 
@@ -4719,20 +4700,10 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                 ));
               }
               else {
-                // let laEnts = 0;
-                // if (updatedUserObj.languageAnalysis.entities !== undefined) {
-                //   laEnts = Object.keys(updatedUserObj.languageAnalysis.entities);
-                // }
                 const kws = (updatedUserObj.keywords && (updatedUserObj.keywords !== undefined)) 
                   ? Object.keys(updatedUserObj.keywords) : [];
                 const kwsAuto = (updatedUserObj.keywordsAuto && (updatedUserObj.keywordsAuto !== undefined))
                   ? Object.keys(updatedUserObj.keywordsAuto) : [];
-
-                let threeceeFollowing = false;
-                
-                if (updatedUserObj.threeceeFollowing){
-                  threeceeFollowing = (updatedUserObj.threeceeFollowing.screenName === undefined) ? false : updatedUserObj.threeceeFollowing.screenName ;
-                }
 
                 if (statsObj.numLangAnalyzed % 50 === 0) {
                   console.log(chalkLog("UPDATE LANG ANLZD"
@@ -4744,7 +4715,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                     + " | Ts: " + updatedUserObj.statusesCount
                     + " | FLs: " + updatedUserObj.followersCount
                     + " | FRs: " + updatedUserObj.friendsCount
-                    + " | 3CF: " + threeceeFollowing
+                    + " | 3CF: " + updatedUserObj.threeceeFollowing
                     + " | KWs: " + kws
                     + " | KWA: " + kwsAuto
                     + " | LA: " + updatedUserObj.languageAnalyzed
