@@ -116,6 +116,7 @@ statsObj.allTimeLoadedNetworks = {};
 statsObj.allTimeLoadedNetworks.multiNeuralNet = {};
 statsObj.allTimeLoadedNetworks.multiNeuralNet.total = 0;
 statsObj.allTimeLoadedNetworks.multiNeuralNet.matchRate = 0.0;
+statsObj.allTimeLoadedNetworks.multiNeuralNet.overallMatchRate = 0.0;
 statsObj.allTimeLoadedNetworks.multiNeuralNet.successRate = 0.0;
 statsObj.allTimeLoadedNetworks.multiNeuralNet.match = 0;
 statsObj.allTimeLoadedNetworks.multiNeuralNet.mismatch = 0;
@@ -130,6 +131,7 @@ statsObj.loadedNetworks = {};
 statsObj.loadedNetworks.multiNeuralNet = {};
 statsObj.loadedNetworks.multiNeuralNet.total = 0;
 statsObj.loadedNetworks.multiNeuralNet.matchRate = 0.0;
+statsObj.loadedNetworks.multiNeuralNet.overallMatchRate = 0.0;
 statsObj.loadedNetworks.multiNeuralNet.successRate = 0.0;
 statsObj.loadedNetworks.multiNeuralNet.match = 0;
 statsObj.loadedNetworks.multiNeuralNet.mismatch = 0;
@@ -144,10 +146,10 @@ statsObj.bestNetwork = {};
 statsObj.bestNetwork.networkId = false;
 statsObj.bestNetwork.successRate = 0;
 statsObj.bestNetwork.matchRate = 0;
+statsObj.bestNetwork.overallMatchRate = 0;
 statsObj.bestNetwork.total = 0;
 statsObj.bestNetwork.match = 0;
 statsObj.bestNetwork.mismatch = 0;
-statsObj.bestNetwork.matchRate = 0;
 statsObj.bestNetwork.left = 0;
 statsObj.bestNetwork.neutral = 0;
 statsObj.bestNetwork.right = 0;
@@ -164,6 +166,7 @@ statsObj.categorize.total = 0;
 statsObj.categorize.match = 0;
 statsObj.categorize.mismatch = 0;
 statsObj.categorize.matchRate = 0;
+statsObj.categorize.overallMatchRate = 0;
 statsObj.categorize.left = 0;
 statsObj.categorize.neutral = 0;
 statsObj.categorize.right = 0;
@@ -497,8 +500,9 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       statsObj.loadedNetworks[nnId].numInputs = nn.numInputs;
       statsObj.loadedNetworks[nnId].output = [];
       statsObj.loadedNetworks[nnId].successRate = nn.successRate;
+      statsObj.loadedNetworks[nnId].matchRate = nn.matchRate;
+      statsObj.loadedNetworks[nnId].overallMatchRate = nn.overallMatchRate;
       statsObj.loadedNetworks[nnId].total = 0;
-      statsObj.loadedNetworks[nnId].matchRate = 0.0;
       statsObj.loadedNetworks[nnId].match = 0;
       statsObj.loadedNetworks[nnId].mismatch = 0;
       statsObj.loadedNetworks[nnId].matchFlag = false;
@@ -517,8 +521,9 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       statsObj.allTimeLoadedNetworks[nnId].numInputs = nn.numInputs;
       statsObj.allTimeLoadedNetworks[nnId].output = [];
       statsObj.allTimeLoadedNetworks[nnId].successRate = nn.successRate;
+      statsObj.allTimeLoadedNetworks[nnId].matchRate = nn.matchRate;
+      statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = nn.overallMatchRate;
       statsObj.allTimeLoadedNetworks[nnId].total = 0;
-      statsObj.allTimeLoadedNetworks[nnId].matchRate = 0.0;
       statsObj.allTimeLoadedNetworks[nnId].match = 0;
       statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
       statsObj.allTimeLoadedNetworks[nnId].matchFlag = false;
@@ -556,7 +561,6 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     }
     else {
       statsObj.loadedNetworks[nnId].matchFlag = "---";
-      // statsObj.allTimeLoadedNetworks[nnId].matchFlag = "---";
     }
 
     statsTextArray.push([
@@ -566,7 +570,6 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       statsObj.allTimeLoadedNetworks[nnId].match,
       statsObj.allTimeLoadedNetworks[nnId].mismatch,
       statsObj.allTimeLoadedNetworks[nnId].matchRate.toFixed(2),
-      // statsObj.loadedNetworks[nnId].successRate.toFixed(2),
       statsObj.loadedNetworks[nnId].matchFlag,
       nnOutput,
       statsObj.loadedNetworks[nnId].total,
@@ -581,7 +584,8 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
   }, function generateNetworksOutputAsyncCallback(){
 
-    sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: 100})
+    // sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: 100})
+    sortedObjectValues({ sortKey: "matchRate", obj: statsObj.allTimeLoadedNetworks, max: 100})
     .then(function(sortedNetworkResults){
 
       debugger;
@@ -595,12 +599,14 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       debug(chalkAlert("sortedNetworkResults.sortedKeys\n" + jsonPrint(sortedNetworkResults.sortedKeys)));
 
       statsObj.bestNetwork.matchRate = (statsObj.bestNetwork.matchRate === undefined) ? 0 : statsObj.bestNetwork.matchRate;
+      statsObj.bestNetwork.overallMatchRate = (statsObj.bestNetwork.overallMatchRate === undefined) ? 0 : statsObj.bestNetwork.overallMatchRate;
 
 
       debug(chalkLog("BEST NETWORK"
         + " | " + statsObj.bestNetwork.networkId
         + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
         + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+        + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
         + " | TOT: " + statsObj.bestNetwork.total
         + " | MATCH: " + statsObj.bestNetwork.match
       ));
@@ -614,8 +620,9 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           + "\nNETWORK ID:   " + statsObj.bestNetwork.networkId
           + "\nINPUTS ID:    " + statsObj.bestNetwork.inputsId
           + "\nINPUTS:       " + statsObj.bestNetwork.numInputs
-          + "\nSUCCESS RATE: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
-          + "\nMATCH RATE:   " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+          + "\nSR:           " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
+          + "\nMR:           " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+          + "\nOAMR:         " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
           + "\nPREV BEST:    " + previousBestNetworkMatchRate.toFixed(2) + "%" + " | ID: " + previousBestNetworkId
           + "\n==================================================================\n"
         ));
@@ -636,6 +643,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           op: "BEST_MATCH_RATE", 
           networkId: statsObj.bestNetwork.networkId, 
           matchRate: statsObj.bestNetwork.matchRate,
+          overallMatchRate: statsObj.bestNetwork.overallMatchRate,
           successRate: statsObj.bestNetwork.successRate, 
           inputsId: statsObj.bestNetwork.inputsId,
           numInputs: statsObj.bestNetwork.numInputs,
@@ -965,7 +973,8 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
                     console.log(chalk.blue("+++ MATCH"
-                      + " | " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+                      + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+                      + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
                       + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                       + " | " + statsObj.bestNetwork.networkId
                       + " | " + statsObj.bestNetwork.numInputs + " IN"
@@ -981,7 +990,8 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
                     console.log(chalk.gray("000 miss "
-                      + " | " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+                      + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+                      + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
                       + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                       + " | " + statsObj.bestNetwork.networkId
                       + " | " + statsObj.bestNetwork.numInputs + " IN"
@@ -995,7 +1005,8 @@ function initActivateNetworkInterval(interval){
                 else {
 
                   debug(chalkLog("NETWORK OUT"
-                    + " | " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+                    + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+                    + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
                     + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                     + " | " + statsObj.bestNetwork.networkId
                     + " | " + statsObj.bestNetwork.numInputs + " IN"
@@ -1008,7 +1019,8 @@ function initActivateNetworkInterval(interval){
               }
               else {
                 debug(chalkLog("NETWORK OUT"
-                  + " | " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+                  + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+                  + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
                   + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                   + " | " + statsObj.bestNetwork.networkId
                   + " | " + statsObj.bestNetwork.numInputs + " IN"
@@ -1077,9 +1089,12 @@ function loadNetworks(networksObj, callback){
 
     let networkObj = deepcopy(networksObj[nnId].network);
 
+    networkObj.overallMatchRate = (networkObj.overallMatchRate) ? networkObj.overallMatchRate : networkObj.matchRate;
+
     console.log(chalkLog("RNT | LOAD NETWORK"
       + " | SR: " + networkObj.successRate.toFixed(2) + "%"
       + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
+      + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
       + " | " + nnId
     ));
 
@@ -1095,6 +1110,7 @@ function loadNetworks(networksObj, callback){
       }
 
       networkObj.matchRate = networkObj.matchRate || 0 ;
+      networkObj.overallMatchRate = networkObj.overallMatchRate || 0 ;
 
       networksHashMap.set(nnId, networkObj);
 
@@ -1107,8 +1123,9 @@ function loadNetworks(networksObj, callback){
         statsObj.loadedNetworks[nnId].output = [];
         statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
         statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
+        statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
         statsObj.loadedNetworks[nnId].total = 0;
-        statsObj.loadedNetworks[nnId].matchRate = 0.0;
+        // statsObj.loadedNetworks[nnId].matchRate = 0.0;
         statsObj.loadedNetworks[nnId].match = 0;
         statsObj.loadedNetworks[nnId].mismatch = 0;
         statsObj.loadedNetworks[nnId].matchFlag = false;
@@ -1128,8 +1145,9 @@ function loadNetworks(networksObj, callback){
         statsObj.allTimeLoadedNetworks[nnId].output = [];
         statsObj.allTimeLoadedNetworks[nnId].successRate = networkObj.successRate;
         statsObj.allTimeLoadedNetworks[nnId].matchRate = networkObj.matchRate;
+        statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
         statsObj.allTimeLoadedNetworks[nnId].total = 0;
-        statsObj.allTimeLoadedNetworks[nnId].matchRate = 0.0;
+        // statsObj.allTimeLoadedNetworks[nnId].matchRate = 0.0;
         statsObj.allTimeLoadedNetworks[nnId].match = 0;
         statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
         statsObj.allTimeLoadedNetworks[nnId].matchFlag = false;
@@ -1162,8 +1180,10 @@ function printCategorizeHistory(){
       + " R: " + msToTime(catStats.endTime - catStats.startTime)
       + " | BEST: " + catStats.bestNetwork.networkId
       + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SR"
-      + " - " + catStats.bestNetwork.matchRate.toFixed(2) + "% MR"
+      + " - MR: " + catStats.bestNetwork.matchRate.toFixed(2) + "% MR"
+      + " - OAMR:" + catStats.bestNetwork.overallMatchRate.toFixed(2) + "% MR"
       + " | MR: " + catStats.matchRate.toFixed(2) + "%"
+      + " | OAMR: " + catStats.overallMatchRate.toFixed(2) + "%"
       + " | TOT: " + catStats.total
       + " | MATCH: " + catStats.match
       + " | L: " + catStats.left
@@ -1201,6 +1221,7 @@ function resetStats(callback){
   statsObj.categorize.match = 0;
   statsObj.categorize.mismatch = 0;
   statsObj.categorize.matchRate = 0;
+  statsObj.categorize.overallMatchRate = 0;
   statsObj.categorize.left = 0;
   statsObj.categorize.neutral = 0;
   statsObj.categorize.right = 0;
@@ -1210,6 +1231,7 @@ function resetStats(callback){
   statsObj.loadedNetworks.multiNeuralNet.networkId = "multiNeuralNet";
   statsObj.loadedNetworks.multiNeuralNet.successRate = 0;
   statsObj.loadedNetworks.multiNeuralNet.matchRate = 0;
+  statsObj.loadedNetworks.multiNeuralNet.overallMatchRate = 0;
   statsObj.loadedNetworks.multiNeuralNet.total = 0;
   statsObj.loadedNetworks.multiNeuralNet.match = 0;
   statsObj.loadedNetworks.multiNeuralNet.mismatch = 0;
@@ -1238,6 +1260,7 @@ function resetStats(callback){
     statsObj.loadedNetworks[nnId].numInputs = networkObj.numInputs;
     statsObj.loadedNetworks[nnId].total = 0;
     statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
+    statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
     statsObj.loadedNetworks[nnId].matchRate = 0;
     statsObj.loadedNetworks[nnId].match = 0;
     statsObj.loadedNetworks[nnId].mismatch = 0;

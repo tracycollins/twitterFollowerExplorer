@@ -311,7 +311,7 @@ configuration.neuralNetworkFile = "";
 
 const bestNetworkFolder = "/config/utility/best/neuralNetworks";
 const localBestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
-const localNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/local";
+// const localNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/local";
 
 const defaultHistogramsFolder = "/config/utility/default/histograms";
 const localHistogramsFolder = "/config/utility/" + hostname + "/histograms";
@@ -320,7 +320,7 @@ const localInputsFolder = dropboxConfigHostFolder + "/inputs";
 const defaultInputsFolder = dropboxConfigDefaultFolder + "/inputs";
 
 const defaultTrainingSetFolder = dropboxConfigDefaultFolder + "/trainingSets";
-const localTrainingSetFolder = dropboxConfigHostFolder + "/trainingSets";
+// const localTrainingSetFolder = dropboxConfigHostFolder + "/trainingSets";
 
 console.log("DROPBOX_TFE_CONFIG_FILE: " + DROPBOX_TFE_CONFIG_FILE);
 console.log("DROPBOX_TFE_STATS_FILE : " + DROPBOX_TFE_STATS_FILE);
@@ -340,7 +340,6 @@ const classifiedUsersDefaultFile = "classifiedUsers.json";
 const Dropbox = require("./js/dropbox").Dropbox;
 
 const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
-
 
 let fsmPreviousState = "IDLE";
 let fsmPreviousPauseState;
@@ -1112,12 +1111,12 @@ function printNetworkObj(title, nnObj){
     + "\n" + title
     + "\nID:         " + nnObj.networkId
     + "\nCREATED:    " + getTimeStamp(nnObj.createdAt)
-    + "\nSUCCESS:    " + nnObj.successRate.toFixed(2) + "%" 
-    + "\nMATCH:      " + nnObj.matchRate.toFixed(2) + "%" 
+    + "\nSR:         " + nnObj.successRate.toFixed(2) + "%" 
+    + "\nMR:         " + nnObj.matchRate.toFixed(2) + "%" 
+    + "\nOAMR:       " + nnObj.overallMatchRate.toFixed(2) + "%" 
     + "\nINPUTS ID:  " + nnObj.inputsId
     + "\nINPUTS:     " + Object.keys(nnObj.inputsObj.inputs)
     + "\nNUM INPUTS: " + nnObj.numInputs
-    // + "\nEVOLVE\n" + jsonPrint(nnObj.evolve)
     + "\n======================================\n"
   ));
 }
@@ -1191,8 +1190,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
           console.log(chalkInfo("DROPBOX NETWORK CONTENT CHANGE"
             + " | " + getTimeStamp(entry.client_modified)
             + " | " + entry.name
-            // + "\nCUR HASH: " + entry.content_hash
-            // + "\nOLD HASH: " + bno.entry.content_hash
           ));
 
           loadFile(folder, entry.name, function(err, networkObj){
@@ -1203,6 +1200,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             }
 
             if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
+            if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
 
             statsObj.numNetworksUpdated += 1;
 
@@ -1210,6 +1208,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
               + " [ UPDATED: " + statsObj.numNetworksUpdated + " | LOADED: " + statsObj.numNetworksLoaded + "]" 
               + " SR: " + networkObj.successRate.toFixed(2) + "%"
               + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
+              + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
               + " | " + getTimeStamp(networkObj.createdAt)
               + " | " + networkObj.networkId
               + " | " + networkObj.networkCreateMode
@@ -1225,8 +1224,11 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             bestNetworkHashMap.set(networkObj.networkId, hmObj);
 
-            if (!currentBestNetwork || (networkObj.matchRate > currentBestNetwork.matchRate)) {
-              // currentBestNetwork = {};
+            if (!currentBestNetwork 
+              || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
+              || (networkObj.matchRate > currentBestNetwork.matchRate)
+            ) {
+
               currentBestNetwork = deepcopy(networkObj);
               prevBestNetworkId = bestRuntimeNetworkId;
               bestRuntimeNetworkId = networkObj.networkId;
@@ -1236,7 +1238,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
                 const fileObj = {
                   networkId: bestRuntimeNetworkId, 
                   successRate: networkObj.successRate, 
-                  matchRate:  networkObj.matchRate
+                  matchRate:  networkObj.matchRate,
+                  overallMatchRate:  networkObj.overallMatchRate
                 };
 
                 saveFileQueue.push({folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj });
@@ -1264,9 +1267,15 @@ function loadBestNetworkDropboxFolder(folder, callback){
             return(cb());
           }
 
-          if ((networkObj.successRate >= configuration.minSuccessRate) || (networkObj.matchRate >= configuration.minSuccessRate)) {
+          if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
+          if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
 
-            if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
+
+          if ((networkObj.successRate >= configuration.minSuccessRate) 
+            || (networkObj.matchRate >= configuration.minSuccessRate)
+            || (networkObj.overallMatchRate >= configuration.minSuccessRate)
+          ) {
+
 
             statsObj.numNetworksLoaded += 1;
 
@@ -1274,6 +1283,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
               + " [ UPDATED: " + statsObj.numNetworksUpdated + " | LOADED: " + statsObj.numNetworksLoaded + "]" 
               + " SR: " + networkObj.successRate.toFixed(2) + "%"
               + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
+              + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
               + " | " + networkObj.networkCreateMode
               + " | IN: " + networkObj.numInputs
               + " | OUT: " + networkObj.numOutputs
@@ -1286,7 +1296,11 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             availableNeuralNetHashMap[networkObj.networkId] = true;
 
-            if (!currentBestNetwork || (networkObj.matchRate > currentBestNetwork.matchRate)) {
+            if (!currentBestNetwork 
+              || (networkObj.matchRate > currentBestNetwork.matchRate)
+              || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
+            ) {
+
               currentBestNetwork = deepcopy(networkObj);
               prevBestNetworkId = bestRuntimeNetworkId;
               bestRuntimeNetworkId = networkObj.networkId;
@@ -1297,6 +1311,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
                 const fileObj = {
                   networkId: bestRuntimeNetworkId, 
                   successRate: networkObj.successRate, 
+                  overallMatchRate:  networkObj.overallMatchRate,
                   matchRate:  networkObj.matchRate
                 };
 
@@ -1312,6 +1327,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
               + " [ UPDATED: " + statsObj.numNetworksUpdated + " | LOADED: " + statsObj.numNetworksLoaded + "]" 
               + " SR: " + networkObj.successRate.toFixed(2) + "%"
               + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
+              + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
               + " | " + getTimeStamp(networkObj.createdAt)
               + " | " + networkObj.networkId
               + " | " + networkObj.networkCreateMode
@@ -1406,6 +1422,7 @@ function initRandomNetworks(params, callback){
           + " | AVAIL NNs: " + Object.keys(availableNeuralNetHashMap).length
           + " | SR: " + randomNetworksObj[nnId].network.successRate.toFixed(2) + "%"
           + " | MR: " + randomNetworksObj[nnId].network.matchRate.toFixed(2) + "%"
+          + " | OAMR: " + randomNetworksObj[nnId].network.overallMatchRate.toFixed(2) + "%"
           + " | " + nnId
         ));
 
@@ -1483,11 +1500,13 @@ function loadBestNeuralNetworkFile(callback){
             bnwObj = deepcopy(nnObj.network);
 
             bnwObj.matchRate = (bnwObj.matchRate !== undefined) ? bnwObj.matchRate : 0;
+            bnwObj.overallMatchRate = (bnwObj.overallMatchRate !== undefined) ? bnwObj.overallMatchRate : 0;
 
             console.log(chalkBlue(">>> NEW BEST RUNTIME NETWORK"
               + " | " + bnwObj.networkId 
-              + " | SUCCESS: " + bnwObj.successRate.toFixed(2) 
-              + " | MATCH: " + bnwObj.matchRate.toFixed(2) 
+              + " | SR: " + bnwObj.successRate.toFixed(2) 
+              + " | MR: " + bnwObj.matchRate.toFixed(2) 
+              + " | OAMR: " + bnwObj.overallMatchRate.toFixed(2) 
               // + "\n\n"
             ));
 
@@ -1508,11 +1527,13 @@ function loadBestNeuralNetworkFile(callback){
             bnwObj = deepcopy(nnObj.network);
 
             bnwObj.matchRate = (bnwObj.matchRate !== undefined) ? bnwObj.matchRate : 0;
+            bnwObj.overallMatchRate = (bnwObj.overallMatchRate !== undefined) ? bnwObj.overallMatchRate : 0;
 
             console.log(chalkBlue("... UPDATED BEST RUNTIME NETWORK"
               + " | " + bnwObj.networkId 
-              + " | SUCCESS: " + bnwObj.successRate.toFixed(2) 
-              + " | MATCH: " + bnwObj.matchRate.toFixed(2) 
+              + " | SR: " + bnwObj.successRate.toFixed(2) 
+              + " | MR: " + bnwObj.matchRate.toFixed(2) 
+              + " | OAMR: " + bnwObj.overallMatchRate.toFixed(2) 
               // + "\n\n"
             ));
 
@@ -1543,12 +1564,13 @@ function loadBestNeuralNetworkFile(callback){
           bnwObj = deepcopy(nnObj.network);
 
           bnwObj.matchRate = (bnwObj.matchRate !== undefined) ? bnwObj.matchRate : 0;
+          bnwObj.overallMatchRate = (bnwObj.overallMatchRate !== undefined) ? bnwObj.overallMatchRate : 0;
 
           console.log(chalkBlue("... UPDATED BEST RUNTIME NETWORK"
             + " | " + bnwObj.networkId 
-            + " | SUCCESS: " + bnwObj.successRate.toFixed(2) 
-            + " | MATCH: " + bnwObj.matchRate.toFixed(2) 
-            // + "\n\n"
+            + " | SR: " + bnwObj.successRate.toFixed(2) 
+            + " | MR: " + bnwObj.matchRate.toFixed(2) 
+            + " | OAMR: " + bnwObj.overallMatchRate.toFixed(2) 
           ));
 
           nnObj.network = deepcopy(bnwObj);
@@ -2274,6 +2296,11 @@ function generateAutoKeywords(params, user, callback){
       && (user.statusesCount !== undefined);
 
       updateImageHistograms({user: user, bannerResults: bannerResults}, function(err, histImages){
+
+        if (err) {
+          console.log(chalkError("*** ERROR updateImageHistograms: " + err));
+          return callback(new Error(err), null);
+        }
 
         hist.images = histImages;
 
@@ -3801,8 +3828,6 @@ function initTwitterUsers(callback){
   }
   else {
 
-    let twitterDefaultUser = configuration.twitterDefaultUser;
-
     console.log(chalkTwitter("TFE | INIT TWITTER USERS"
       + " | FOUND " + configuration.twitterUsers.length + " USERS"
     ));
@@ -3810,8 +3835,6 @@ function initTwitterUsers(callback){
     async.each(configuration.twitterUsers, function(userScreenName, cb){
 
       userScreenName = userScreenName.toLowerCase();
-
-      let twitterUserObj = {};
 
       console.log(chalkTwitter("TFE | INIT TWITTER USER @" + userScreenName));
 
@@ -3881,7 +3904,7 @@ function initClassifiedUserHashmap(folder, file, callback){
             + " | " + results.count + " CLASSIFED"
             + " | " + results.manual + " MAN"
             + " | " + results.auto + " AUTO"
-            + " | " + results.matchRate.toFixed(1) + "% MATCH"
+            + " | " + results.matchRate.toFixed(1) + "% MR"
           ));
 
           const classifiedUsersObj = defaults(dropboxClassifiedUsersObj, results.obj);
@@ -4188,6 +4211,7 @@ function saveNetworkHashMap(params, callback){
       + " | " + networkObj.network.numInputs + " IN"
       + " | SR: " + networkObj.network.successRate.toFixed(2) + "%"
       + " | MR: " + networkObj.network.matchRate.toFixed(2) + "%"
+      + " | OAMR: " + networkObj.network.overallMatchRate.toFixed(2) + "%"
       + " | " + networkObj.network.networkId
       + " | " + networkObj.entry.name
     ));
@@ -4204,6 +4228,7 @@ function saveNetworkHashMap(params, callback){
 }
 
 function updateNetworkStats(networkStatsObj, callback) {
+
   const nnIds = Object.keys(networkStatsObj);
 
   async.eachSeries(nnIds, function(nnId, cb) {
@@ -4211,9 +4236,11 @@ function updateNetworkStats(networkStatsObj, callback) {
     if (bestNetworkHashMap.has(nnId)) {
       let networkObj = bestNetworkHashMap.get(nnId);
       networkObj.network.matchRate = networkStatsObj[nnId].matchRate;
+      networkObj.network.overallMatchRate = networkStatsObj[nnId].matchRate;
       bestNetworkHashMap.set(nnId, networkObj);
-      console.log(chalkNetwork("... UPDATED NETWORK MATCHRATE"
-        + " | " + networkObj.network.matchRate.toFixed(2)
+      console.log(chalkNetwork("... UPDATED NN MATCHRATE"
+        + " | MR: " + networkObj.network.matchRate.toFixed(2) + "%"
+        + " | OAMR: " + networkObj.network.overallMatchRate.toFixed(2) + "%"
         + " | " + networkObj.network.networkId
       ));
       cb();
@@ -4346,10 +4373,12 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             hmObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
 
             hmObj.network.matchRate = m.bestNetwork.matchRate;
+            hmObj.network.overallMatchRate = m.bestNetwork.overallMatchRate;
             hmObj.network.successRate = m.bestNetwork.successRate;
 
             currentBestNetwork = deepcopy(hmObj.network);
             currentBestNetwork.matchRate = m.bestNetwork.matchRate;
+            currentBestNetwork.overallMatchRate = m.bestNetwork.overallMatchRate;
             currentBestNetwork.successRate = m.bestNetwork.successRate;
 
             bestNetworkHashMap.set(bestRuntimeNetworkId, hmObj);
@@ -4358,12 +4387,17 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
               prevBestNetworkId = bestRuntimeNetworkId;
 
-              console.log(chalkNetwork("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
+              console.log(chalkNetwork("... SAVING NEW BEST NETWORK"
+                + " | " + currentBestNetwork.networkId 
+                + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
+                + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
+              ));
 
               fileObj = {
                 networkId: bestRuntimeNetworkId, 
                 successRate: m.bestNetwork.successRate, 
                 matchRate:  m.bestNetwork.matchRate,
+                overallMatchRate:  m.bestNetwork.overallMatchRate,
                 updatedAt: moment()
               };
 
@@ -4377,9 +4411,9 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             debug(chalkAlert("NETWORK_OUTPUT"
               + " | " + moment().format(compactDateTimeFormat)
               + " | " + m.bestNetwork.networkId
-              + " | RATE: " + currentBestNetwork.successRate.toFixed(1) + "%"
-              + " | RT RATE: " + m.bestNetwork.matchRate.toFixed(1) + "%"
-              // + " | TR RATE: " + currentBestNetwork.successRate.toFixed(1) + "%"
+              + " | SR: " + currentBestNetwork.successRate.toFixed(1) + "%"
+              + " | MR: " + m.bestNetwork.matchRate.toFixed(2) + "%"
+              + " | OAMR: " + m.bestNetwork.overallMatchRate.toFixed(2) + "%"
               + " | @" + m.user.screenName
               + " | KWs: " + Object.keys( m.user.keywords)
               + " | KWAs: " + Object.keys( m.user.keywordsAuto)
@@ -4409,6 +4443,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             + " | " + m.numInputs + " IN"
             + " | SR: " + m.successRate.toFixed(2) + "%"
             + " | MR: " + m.matchRate.toFixed(2) + "%"
+            + " | OAMR: " + m.overallMatchRate.toFixed(2) + "%"
             + "\n*** PREV: " + m.previousBestNetworkId
             + " | PMR: " + m.previousBestMatchRate.toFixed(2) + "%"
             + "\n================================================================================================\n"
@@ -4418,9 +4453,11 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
             hmObj = bestNetworkHashMap.get(m.networkId);
             hmObj.network.matchRate = m.matchRate;
+            hmObj.network.overallMatchRate = m.overallMatchRate;
 
             currentBestNetwork = deepcopy(hmObj.network);
             currentBestNetwork.matchRate = m.matchRate;
+            currentBestNetwork.overallMatchRate = m.overallMatchRate;
 
             bestNetworkHashMap.set(m.networkId, hmObj);
 
@@ -4428,12 +4465,17 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
               prevBestNetworkId = m.networkId;
 
-              console.log(chalkBlue("... SAVING NEW BEST NETWORK | " + currentBestNetwork.networkId + " | " + currentBestNetwork.matchRate.toFixed(2)));
+              console.log(chalkBlue("... SAVING NEW BEST NETWORK"
+                + " | " + currentBestNetwork.networkId 
+                + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
+                + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
+              ));
 
               fileObj = {
                 networkId: currentBestNetwork.networkId, 
                 successRate: currentBestNetwork.successRate, 
-                matchRate:  currentBestNetwork.matchRate
+                matchRate:  currentBestNetwork.matchRate,
+                overallMatchRate:  currentBestNetwork.overallMatchRate
               };
 
               file = currentBestNetwork.networkId + ".json";
@@ -4445,7 +4487,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
           else {
             console.log(chalkError(getTimeStamp() + "??? | RNT_BEST_MATCH_RATE | NETWORK NOT IN BEST NETWORK HASHMAP?"
               + " | " + m.networkId
-              + " | " + m.matchRate.toFixed(2)
+              + " | MR: " + m.matchRate.toFixed(2)
+              + " | OAMR: " + m.overallMatchRate.toFixed(2)
             ));
           }
 
