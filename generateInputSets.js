@@ -371,11 +371,11 @@ function generateInputSets(params, callback) {
 
           debug(chalkNetwork("NEW INPUTS\n" + jsonPrint(newInputsObj)));
 
-          console.log(chalkAlert(">>> HISTOGRAMS PARSED"
-            + "\nTOT MIN:     " + totalMin
-            + "\nDOM MIN:     " + dominantMin.toFixed(3)
-            + "\nNUM INPUTS:  " + newInputsObj.meta.numInputs
-            // + "\nINPUT TYPES: " + Object.keys(newInputsObj.inputs)
+          console.log(chalkAlert("--- HISTOGRAMS PARSED ------------"
+            + "\nNUM IN:  " + newInputsObj.meta.numInputs
+            + "\nTOT MIN: " + totalMin
+            + "\nDOM MIN: " + dominantMin.toFixed(3)
+            + "\n----------------------------------"
           ));
 
           Object.keys(newInputsObj.inputs).forEach(function(type){
