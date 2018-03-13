@@ -371,7 +371,7 @@ function generateInputSets(params, callback) {
 
           debug(chalkNetwork("NEW INPUTS\n" + jsonPrint(newInputsObj)));
 
-          console.log(chalkAlert("--- HISTOGRAMS PARSED ------------"
+          console.log(chalkLog("--- HISTOGRAMS PARSED ------------"
             + "\nNUM IN:  " + newInputsObj.meta.numInputs
             + "\nTOT MIN: " + totalMin
             + "\nDOM MIN: " + dominantMin.toFixed(3)
@@ -379,7 +379,7 @@ function generateInputSets(params, callback) {
           ));
 
           Object.keys(newInputsObj.inputs).forEach(function(type){
-            console.log(chalkAlert(type.toUpperCase() + ": " + newInputsObj.meta.type[type]
+            console.log(chalkLog(type.toUpperCase() + ": " + newInputsObj.meta.type[type]
             ));
           });
 
@@ -439,7 +439,7 @@ function quit(cause){
       }, 1000);
     }
     else {
-      console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
+      console.log(chalkInfo("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
        + " | SAVE FILE BUSY: " + saveFileBusy
        + " | SAVE FILE Q: " + saveFileQueue.length
       ));
@@ -952,7 +952,7 @@ initialize(configuration, function(err, cnf){
       console.log(chalkError("LOAD histograms.json ERROR\n" + jsonPrint(err)));
     }
     else {
-      console.log(chalkAlert("histogramsObj: " + histogramsObj.histogramsId));
+      console.log(chalkInfo("histogramsObj: " + histogramsObj.histogramsId));
 
       const genInParams = {
         histogramsObj: { 
@@ -975,7 +975,7 @@ initialize(configuration, function(err, cnf){
         }
         else {
           const inFile = inputsObj.inputsId + ".json"; 
-          console.log(chalkAlert("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+          console.log(chalkInfo("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
           saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
         }
         quit();
