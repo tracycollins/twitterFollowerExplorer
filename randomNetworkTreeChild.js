@@ -1,11 +1,6 @@
 /*jslint node: true */
 "use strict";
 
-// let enableLog = true;
-
-// const bestNetworkFolder = "/config/utility/best/neuralNetworks";
-// const bestNetworkFile = "bestNetworkId";
-
 const ONE_SECOND = 1000;
 const MAX_Q_SIZE = 500;
 
@@ -43,8 +38,8 @@ const arrayNormalize = require("array-normalize");
 const deepcopy = require("deep-copy");
 const table = require("text-table");
 
-const neataptic = require("neataptic");
-// const neataptic = require("./js/neataptic");
+// const neataptic = require("neataptic");
+const neataptic = require("./js/neataptic");
 
 let hostname = os.hostname();
 hostname = hostname.replace(/\.home/g, "");
