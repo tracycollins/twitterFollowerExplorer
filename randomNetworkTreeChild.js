@@ -43,8 +43,8 @@ const arrayNormalize = require("array-normalize");
 const deepcopy = require("deep-copy");
 const table = require("text-table");
 
-// const neataptic = require("neataptic");
-const neataptic = require("./js/neataptic");
+const neataptic = require("neataptic");
+// const neataptic = require("./js/neataptic");
 
 let hostname = os.hostname();
 hostname = hostname.replace(/\.home/g, "");
