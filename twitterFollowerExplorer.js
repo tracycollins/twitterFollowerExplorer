@@ -2528,7 +2528,7 @@ function processUser(userIn, lastTweeId, callback) {
         );
       }
       else {
-        user.threeceeFollowing = currentTwitterUser;
+        // user.threeceeFollowing = currentTwitterUser;
         debug(chalkInfo("UPDATE 3CF"
           + " | " + user.userId
           + " | " + user.screenName.toLowerCase()
@@ -4240,7 +4240,7 @@ function updateNetworkStats(networkStatsObj, callback) {
       bestNetworkHashMap.set(nnId, networkObj);
       console.log(chalkNetwork("... UPDATED NN MATCHRATE"
         + " | MR: " + networkObj.network.matchRate.toFixed(2) + "%"
-        + " | OAMR: " + networkObj.network.overallMatchRate.toFixed(2) + "%"
+        // + " | OAMR: " + networkObj.network.overallMatchRate.toFixed(2) + "%"
         + " | " + networkObj.network.networkId
       ));
       cb();
