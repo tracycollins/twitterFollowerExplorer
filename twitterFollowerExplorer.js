@@ -2507,8 +2507,11 @@ function processUser(userIn, lastTweeId, callback) {
           "friendships/destroy", {user_id: user.userId}, 
           function destroyFriend(err, data, response){
             if (err) {
-              console.error(chalkError("UNFOLLOW ERROR: " + err));
-              cb(err, user);
+              console.error(chalkError("UNFOLLOW ERROR"
+                + " | @" + currentTwitterUser
+                + " | " + err
+              ));
+              cb(null, user);
             }
             else {
               debug("data\n" + jsonPrint(data));
