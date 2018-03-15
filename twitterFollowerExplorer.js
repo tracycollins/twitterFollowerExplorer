@@ -218,7 +218,7 @@ let TFE_USER_DB_CRAWL = false;
 
 let configuration = {};
 
-configuration.twitterUsers = ["ninjathreecee", "altthreecee00", "altthreecee02"];
+configuration.twitterUsers = ["ninjathreecee", "altthreecee00", "altthreecee01", "altthreecee02"];
 
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
 configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
@@ -866,7 +866,7 @@ function generateInputSets(params, callback) {
         callback(err, newInputsObj);
       }
     }
-    
+
   );
 }
 
@@ -3217,12 +3217,18 @@ statsObj.users.classified = 0;
 statsObj.user = {};
 statsObj.user.ninjathreecee = {};
 statsObj.user.altthreecee00 = {};
+statsObj.user.altthreecee01 = {};
 statsObj.user.altthreecee02 = {};
 
 statsObj.user.ninjathreecee.friendsProcessed = 0;
 statsObj.user.ninjathreecee.percentProcessed = 0;
+
 statsObj.user.altthreecee00.friendsProcessed = 0;
 statsObj.user.altthreecee00.percentProcessed = 0;
+
+statsObj.user.altthreecee01.friendsProcessed = 0;
+statsObj.user.altthreecee01.percentProcessed = 0;
+
 statsObj.user.altthreecee02.friendsProcessed = 0;
 statsObj.user.altthreecee02.percentProcessed = 0;
 
@@ -4019,7 +4025,7 @@ function initialize(cnf, callback){
 
 
   cnf.twitterDefaultUser = process.env.TFE_TWITTER_DEFAULT_USER || TWITTER_DEFAULT_USER ;
-  cnf.twitterUsers = process.env.TFE_TWITTER_USERS || [ "altthreecee00", "altthreecee02", "ninjathreecee" ] ;
+  cnf.twitterUsers = process.env.TFE_TWITTER_USERS || [ "altthreecee00", "altthreecee01", "altthreecee02", "ninjathreecee" ] ;
   cnf.statsUpdateIntervalTime = process.env.TFE_STATS_UPDATE_INTERVAL || ONE_MINUTE;
 
   cnf.twitterConfigFolder = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER || "/config/twitter";
