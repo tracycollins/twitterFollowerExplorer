@@ -845,25 +845,29 @@ function generateInputSets(params, callback) {
 
       });
 
-  }, function(err){
+    },
 
-    console.log(chalkAlert("\n================================================================================\n"
-      + "INPUT SET COMPLETE"
-      + "\nITERATION:     " + iterations
-      + "\nID:            " + newInputsObj.inputsId
-      + "\nPARSE TOT MIN: " + totalMin
-      + "\nPARSE DOM MIN: " + dominantMin.toFixed(3)
-      + "\nNUM INPUTS:    " + newInputsObj.meta.numInputs
-      + "\n================================================================================\n"
-    ));
+    function(err){
 
-    if (iterations >= MAX_ITERATIONS_INPUTS_GENERATE) {
-      callback("MAX ITERATIONS: " + iterations, null);
+      console.log(chalkAlert("\n================================================================================\n"
+        + "INPUT SET COMPLETE"
+        + "\nITERATION:     " + iterations
+        + "\nID:            " + newInputsObj.inputsId
+        + "\nPARSE TOT MIN: " + totalMin
+        + "\nPARSE DOM MIN: " + dominantMin.toFixed(3)
+        + "\nNUM INPUTS:    " + newInputsObj.meta.numInputs
+        + "\n================================================================================\n"
+      ));
+
+      if (iterations >= MAX_ITERATIONS_INPUTS_GENERATE) {
+        callback("MAX ITERATIONS: " + iterations, null);
+      }
+      else {
+        callback(err, newInputsObj);
+      }
     }
-    else {
-      callback(err, newInputsObj);
-    }
-  });
+    
+  );
 }
 
 function saveHistograms(callback){
