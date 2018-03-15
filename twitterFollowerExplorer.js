@@ -2486,18 +2486,34 @@ function processUser(userIn, lastTweeId, callback) {
 
       if (
            ((currentTwitterUser === "altthreecee00") && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined))
+
+        || ((currentTwitterUser === "altthreecee01") && (twitterUserHashMap.altthreecee00.friends[user.userId] !== undefined))
+        || ((currentTwitterUser === "altthreecee01") && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined))
+        
         || ((currentTwitterUser === "altthreecee02") && (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined))
         || ((currentTwitterUser === "altthreecee02") && (twitterUserHashMap.altthreecee00.friends[user.userId] !== undefined))
+        || ((currentTwitterUser === "altthreecee02") && (twitterUserHashMap.altthreecee01.friends[user.userId] !== undefined))
 
       ) {
 
         if (twitterUserHashMap.ninjathreecee.friends[user.userId] !== undefined) {
+          delete twitterUserHashMap.altthreecee00.friends[user.userId];
+          delete twitterUserHashMap.altthreecee01.friends[user.userId];
+          delete twitterUserHashMap.altthreecee02.friends[user.userId];
           user.threeceeFollowing = "ninjathreecee";
         }
-
-        if (twitterUserHashMap.altthreecee00.friends[user.userId] !== undefined) {
+        else if (twitterUserHashMap.altthreecee00.friends[user.userId] !== undefined) {
+          delete twitterUserHashMap.altthreecee01.friends[user.userId];
+          delete twitterUserHashMap.altthreecee02.friends[user.userId];
           user.threeceeFollowing = "altthreecee00";
         }
+        else if (twitterUserHashMap.altthreecee01.friends[user.userId] !== undefined) {
+          delete twitterUserHashMap.altthreecee02.friends[user.userId];
+          user.threeceeFollowing = "altthreecee01";
+        }
+        // else if (twitterUserHashMap.altthreecee02.friends[user.userId] !== undefined) {
+        //   user.threeceeFollowing = "altthreecee02";
+        // }
 
         console.log(chalkInfo("UNFOLLOW | ninjathreecee OR altthreecee00 FOLLOWING"
           + " | " + user.userId
@@ -2505,7 +2521,7 @@ function processUser(userIn, lastTweeId, callback) {
           + " | 3CF: " + user.threeceeFollowing
         ));
 
-        delete twitterUserHashMap[currentTwitterUser].friends[user.userId];
+        // delete twitterUserHashMap[currentTwitterUser].friends[user.userId];
 
         twitterUserHashMap[currentTwitterUser].twit.post(
           "friendships/destroy", {user_id: user.userId}, 
