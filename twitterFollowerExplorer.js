@@ -688,7 +688,10 @@ function updateGlobalHistograms(callback){
   });
 }
 
-function twitterUserUpdate(userScreenName, callback){
+// function twitterUserUpdate(userScreenName, callback){
+function twitterUserUpdate(params, callback){
+
+  const userScreenName = params.userScreenName;
 
   twitterUserHashMap[userScreenName].twit.get("users/show", {screen_name: userScreenName}, function(err, userShowData, response) {
   
@@ -701,7 +704,9 @@ function twitterUserUpdate(userScreenName, callback){
     debug(chalkTwitter("TWITTER USER DATA\n" + jsonPrint(userShowData)));
     debug(chalkTwitter("TWITTER USER RESPONSE\n" + jsonPrint(response)));
 
-    statsObj.user[userScreenName] = {};
+    if (statsObj.user[userScreenName] === undefined) {
+      statsObj.user[userScreenName] = {};
+    }
 
     statsObj.user[userScreenName].id = userShowData.id_str;
     statsObj.user[userScreenName].name = userShowData.name;
@@ -712,21 +717,24 @@ function twitterUserUpdate(userScreenName, callback){
     statsObj.user[userScreenName].friendsCount = userShowData.friends_count;
     statsObj.user[userScreenName].followersCount = userShowData.followers_count;
 
-    statsObj.user[userScreenName].totalFriendsFetched = 0;
-    statsObj.user[userScreenName].endFetch = false;
-    statsObj.user[userScreenName].count = configuration.fetchCount;
-    statsObj.user[userScreenName].friendsProcessed = 0;
-    statsObj.user[userScreenName].percentProcessed = 0;
-    statsObj.user[userScreenName].nextCursor = false;
-    statsObj.user[userScreenName].nextCursorValid = false;
-    statsObj.user[userScreenName].twitterRateLimit = 0;
-    statsObj.user[userScreenName].twitterRateLimitExceptionFlag = false;
-    statsObj.user[userScreenName].twitterRateLimitRemaining = 0;
-    statsObj.user[userScreenName].twitterRateLimitResetAt = moment();
-    statsObj.user[userScreenName].twitterRateLimitRemainingTime = 0;
-    statsObj.user[userScreenName].friendsProcessStart = moment();
-    statsObj.user[userScreenName].friendsProcessEnd = moment();
-    statsObj.user[userScreenName].friendsProcessElapsed = 0;
+
+    if (params.resetStats) {
+      statsObj.user[userScreenName].totalFriendsFetched = 0;
+      statsObj.user[userScreenName].endFetch = false;
+      statsObj.user[userScreenName].count = configuration.fetchCount;
+      statsObj.user[userScreenName].friendsProcessed = 0;
+      statsObj.user[userScreenName].percentProcessed = 0;
+      statsObj.user[userScreenName].nextCursor = false;
+      statsObj.user[userScreenName].nextCursorValid = false;
+      statsObj.user[userScreenName].twitterRateLimit = 0;
+      statsObj.user[userScreenName].twitterRateLimitExceptionFlag = false;
+      statsObj.user[userScreenName].twitterRateLimitRemaining = 0;
+      statsObj.user[userScreenName].twitterRateLimitResetAt = moment();
+      statsObj.user[userScreenName].twitterRateLimitRemainingTime = 0;
+      statsObj.user[userScreenName].friendsProcessStart = moment();
+      statsObj.user[userScreenName].friendsProcessEnd = moment();
+      statsObj.user[userScreenName].friendsProcessElapsed = 0;
+    }
 
     console.log(chalkTwitterBold("====================================================================="
       + "\nTWITTER USER"
@@ -949,7 +957,7 @@ function initNextTwitterUser(callback){
       + " | " + getTimeStamp()
     ));
 
-    twitterUserUpdate(currentTwitterUser, function(err){
+    twitterUserUpdate({userScreenName: currentTwitterUser, resetStats: true}, function(err){
 
       if (err){
         console.log("!!!!! TWITTER SHOW USER ERROR"
@@ -3281,9 +3289,15 @@ function showStats(options){
       statsObj.users.totalFriendsFetched = 0;
 
       configuration.twitterUsers.forEach(function(tUserScreenName){
-        statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
-        statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
-        statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
+        twitterUserUpdate({userScreenName: tUserScreenName, resetStats: false}, function(err){
+         if (err){
+            console.log("!!!!! TWITTER USER UPDATE ERROR | @" + tUserScreenName + " | " + getTimeStamp() 
+              + "\n" + jsonPrint(err));
+          }
+          statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
+          statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
+          statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
+        });
       });
 
       console.log(chalkLog("--- STATS --------------------------------------\n"
@@ -3587,22 +3601,23 @@ function initSocket(cnf, callback){
           initKeepalive(cnf.keepaliveInterval);
 
       });
-
     });
 
-    socket.on("disconnect", function(){
+    socket.on("disconnect", function(reason){
       statsObj.userAuthenticated = false ;
       statsObj.serverConnected = false;
       console.log(chalkConnect(moment().format(compactDateTimeFormat)
         + " | SOCKET DISCONNECT: " + socket.id
+        + " | REASON: " + reason
       ));
     });
   });
 
-  socket.on("reconnect", function(){
+  socket.on("reconnect", function(reason){
     console.error(chalkInfo("RECONNECT" 
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + socket.id
+      + " | REASON: " + reason
     ));
   });
 
@@ -3820,7 +3835,7 @@ function initTwitter(currentTwitterUser, callback){
 
             debug(chalkTwitter("TWITTER ACCOUNT SETTINGS\n" + jsonPrint(accountSettings)));
 
-            twitterUserUpdate(userScreenName, function(err){
+            twitterUserUpdate({userScreenName: userScreenName, resetStats: true}, function(err){
              if (err){
                 console.log("!!!!! TWITTER SHOW USER ERROR | @" + userScreenName + " | " + getTimeStamp() 
                   + "\n" + jsonPrint(err));
