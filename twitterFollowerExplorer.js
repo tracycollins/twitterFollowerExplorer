@@ -2565,7 +2565,7 @@ function processUser(userIn, lastTweeId, callback) {
         );
       }
       else {
-        // user.threeceeFollowing = currentTwitterUser;
+        user.threeceeFollowing = currentTwitterUser;
         debug(chalkInfo("UPDATE 3CF"
           + " | " + user.userId
           + " | " + user.screenName.toLowerCase()
