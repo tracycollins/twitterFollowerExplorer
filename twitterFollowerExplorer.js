@@ -3524,7 +3524,7 @@ function initSaveFileQueue(cnf){
           saveFileQueue.push(saveFileObj);
         }
         else {
-          console.log(chalkLog("TFE | SAVED FILE | " + saveFileObj.folder + "/" + saveFileObj.file));
+          console.log(chalkLog("TFE | SAVED FILE [Q: " + saveFileQueue.length + "] " + saveFileObj.folder + "/" + saveFileObj.file));
         }
         saveFileBusy = false;
       });
