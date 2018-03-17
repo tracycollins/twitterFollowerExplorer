@@ -691,7 +691,13 @@ function updateGlobalHistograms(callback){
 // function twitterUserUpdate(userScreenName, callback){
 function twitterUserUpdate(params, callback){
 
+  debug("TWITTER USER UPDATE | params " + jsonPrint(params));
+
   const userScreenName = params.userScreenName;
+
+  if (twitterUserHashMap[userScreenName] === undefined) {
+    return(callback("USER @" + userScreenName + " NOT IN HASHMAP"));
+  }
 
   twitterUserHashMap[userScreenName].twit.get("users/show", {screen_name: userScreenName}, function(err, userShowData, response) {
   
@@ -716,12 +722,12 @@ function twitterUserUpdate(params, callback){
     statsObj.user[userScreenName].statusesCount = userShowData.statuses_count;
     statsObj.user[userScreenName].friendsCount = userShowData.friends_count;
     statsObj.user[userScreenName].followersCount = userShowData.followers_count;
+    statsObj.user[userScreenName].count = configuration.fetchCount;
 
 
     if (params.resetStats) {
       statsObj.user[userScreenName].totalFriendsFetched = 0;
       statsObj.user[userScreenName].endFetch = false;
-      statsObj.user[userScreenName].count = configuration.fetchCount;
       statsObj.user[userScreenName].friendsProcessed = 0;
       statsObj.user[userScreenName].percentProcessed = 0;
       statsObj.user[userScreenName].nextCursor = false;
@@ -3288,7 +3294,9 @@ function showStats(options){
       statsObj.users.totalTwitterFriends = 0;
       statsObj.users.totalFriendsFetched = 0;
 
-      configuration.twitterUsers.forEach(function(tUserScreenName){
+      // configuration.twitterUsers.forEach(function(tUserScreenName){
+
+      async.eachSeries(configuration.twitterUsers, function(tUserScreenName, cb){
         twitterUserUpdate({userScreenName: tUserScreenName, resetStats: false}, function(err){
          if (err){
             console.log("!!!!! TWITTER USER UPDATE ERROR | @" + tUserScreenName + " | " + getTimeStamp() 
@@ -3297,26 +3305,29 @@ function showStats(options){
           statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
           statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
           statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
+          cb();
         });
-      });
+      }, function(err){
 
-      console.log(chalkLog("--- STATS --------------------------------------\n"
-        + "CUR USR: @" + currentTwitterUser
-        + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
-        + "\nELAPSED: " + statsObj.elapsed
-        + "\nFSM:     " + fsm.getMachineState()
-        + "\nU PRCSD: " + statsObj.user[currentTwitterUser].friendsProcessed + " / " + statsObj.user[currentTwitterUser].friendsCount
-        + " (" + statsObj.user[currentTwitterUser].percentProcessed.toFixed(2) + "%)"
-        + "\nT FTCHD: " + statsObj.users.totalFriendsFetched + " / " + statsObj.users.totalTwitterFriends
-        + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
-        + "\nCL AUTO: " + Object.keys(autoClassifiedUserHashmap).length
-        + "\nCL MANU: " + Object.keys(classifiedUserHashmap).length
-        + "\nNET ID:  " + statsObj.network.networkId
-        + "\nANLYZD:  " + statsObj.analyzer.analyzed + " ANLs"
-        + " | " + statsObj.analyzer.skipped + " SKPs"
-        + " | " + statsObj.analyzer.total + " TOT"
-        + "\n------------------------------------------------\n"
-      ));
+        console.log(chalkLog("--- STATS --------------------------------------\n"
+          + "CUR USR: @" + currentTwitterUser
+          + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
+          + "\nELAPSED: " + statsObj.elapsed
+          + "\nFSM:     " + fsm.getMachineState()
+          + "\nU PRCSD: " + statsObj.user[currentTwitterUser].friendsProcessed + " / " + statsObj.user[currentTwitterUser].friendsCount
+          + " (" + statsObj.user[currentTwitterUser].percentProcessed.toFixed(2) + "%)"
+          + "\nT FTCHD: " + statsObj.users.totalFriendsFetched + " / " + statsObj.users.totalTwitterFriends
+          + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
+          + "\nCL AUTO: " + Object.keys(autoClassifiedUserHashmap).length
+          + "\nCL MANU: " + Object.keys(classifiedUserHashmap).length
+          + "\nNET ID:  " + statsObj.network.networkId
+          + "\nANLYZD:  " + statsObj.analyzer.analyzed + " ANLs"
+          + " | " + statsObj.analyzer.skipped + " SKPs"
+          + " | " + statsObj.analyzer.total + " TOT"
+          + "\n------------------------------------------------\n"
+        ));
+
+      });
     }
     else {
       console.log(chalkLog("- FE S"
