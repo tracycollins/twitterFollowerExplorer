@@ -2490,7 +2490,7 @@ function quit(cause){
   }, 1000);
 }
 
-function processUser(userIn, lastTweeId, callback) {
+function processUser(threeCeeUser, userIn, lastTweeId, callback) {
 
   let updateCountHistory = false;
 
@@ -2668,6 +2668,7 @@ function processUser(userIn, lastTweeId, callback) {
           
           user.createdAt = userDb.createdAt;
           user.languageAnalyzed = userDb.languageAnalyzed;
+          user.threeceeFollowing = 
 
           if (userDb.languageAnalyzed) { 
             user.languageAnalysis = userDb.languageAnalysis;
@@ -2708,7 +2709,7 @@ function processUser(userIn, lastTweeId, callback) {
             user.friendsCount = userDb.friendsCount;
           }
 
-          debug(chalkInfo("USER DB HIT "
+          console.log(chalkInfo("USER DB HIT "
             + " | @" + user.screenName.toLowerCase()
             + " | " + user.userId
             + " | " + getTimeStamp(user.createdAt)
@@ -2869,7 +2870,7 @@ function fetchFriends(params, callback) {
 
           friend.threeceeFollowing = currentTwitterUser;
 
-          processUser(friend, null, function(err, user){
+          processUser(currentTwitterUser, friend, null, function(err, user){
             if (err) {
               console.trace("processUser ERROR");
               return (cb(err));
@@ -3801,11 +3802,11 @@ function initStatsUpdate(callback){
   callback(null);
 }
 
-function initTwitter(currentTwitterUser, callback){
+function initTwitter(threeCeeUser, callback){
 
-  let twitterConfigFile =  currentTwitterUser + ".json";
+  let twitterConfigFile =  threeCeeUser + ".json";
 
-  debug(chalkInfo("INIT TWITTER USER @" + currentTwitterUser + " | " + twitterConfigFile));
+  debug(chalkInfo("INIT TWITTER USER @" + threeCeeUser + " | " + twitterConfigFile));
 
   loadFile(configuration.twitterConfigFolder, twitterConfigFile, function(err, twitterConfig){
 
@@ -3816,7 +3817,7 @@ function initTwitter(currentTwitterUser, callback){
     }
     else {
       console.log(chalkTwitter("LOADED TWITTER CONFIG"
-        + " | @" + currentTwitterUser
+        + " | @" + threeCeeUser
         + " | CONFIG FILE: " + configuration.twitterConfigFolder + "/" + twitterConfigFile
       ));
 
@@ -3831,19 +3832,19 @@ function initTwitter(currentTwitterUser, callback){
 
       newTwitStream.on("follow", function(followMessage){
 
-        console.log(chalkInfo("TFE | USER @" + currentTwitterUser + " FOLLOW"
+        console.log(chalkInfo("TFE | USER @" + threeCeeUser + " FOLLOW"
           + " | " +  followMessage.target.id_str
           + " | " +  followMessage.target.screen_name.toLowerCase()
         ));
 
-        followMessage.target.threeceeFollowing = currentTwitterUser;
+        followMessage.target.threeceeFollowing = threeCeeUser;
 
         processUser(followMessage.target, null, function(err, user){
           if (err) {
             console.trace("processUser ERROR");
           }
           console.log(chalkTwitter("TFE | >>> NEW FOLLOW"
-            + " 3C @" + currentTwitterUser
+            + " 3C @" + threeCeeUser
             + " | @" + user.screenName
             + " | Ts: " + user.statusesCount
             + " | Ms: " + user.mentions
@@ -3862,7 +3863,7 @@ function initTwitter(currentTwitterUser, callback){
             if (err){
               // console.log("!!!!! TWITTER ACCOUNT ERROR | " + getTimeStamp() + "\n" + jsonPrint(err));
               console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
-                + " | @" + currentTwitterUser
+                + " | @" + threeCeeUser
                 + " | " + getTimeStamp()
                 + " | CODE: " + err.code
                 + " | STATUS CODE: " + err.statusCode
