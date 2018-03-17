@@ -2869,8 +2869,6 @@ function fetchFriends(params, callback) {
 
           friend.threeceeFollowing = currentTwitterUser;
 
-          // twitterUserHashMap[currentTwitterUser].friends[friend.id_str] = friend.screen_name.toLowerCase();
-
           processUser(friend, null, function(err, user){
             if (err) {
               console.trace("processUser ERROR");
@@ -2892,9 +2890,8 @@ function fetchFriends(params, callback) {
                 + " (" + statsObj.user[currentTwitterUser].percentProcessed.toFixed(2) + "%)"
                 + " | S: " + statsObj.user[currentTwitterUser].friendsProcessStart.format(compactDateTimeFormat)
                 + " | E: " + msToTime(statsObj.user[currentTwitterUser].friendsProcessElapsed)
-                // + " | " + friend.id_str
-                + " | @" + friend.screen_name
                 + " | 3CF: " + friend.threeceeFollowing
+                + " | @" + friend.screen_name
                 + " | Ts: " + friend.statuses_count
                 + " | FLWRs: " + friend.followers_count
                 + " | FRNDs: " + friend.friends_count
