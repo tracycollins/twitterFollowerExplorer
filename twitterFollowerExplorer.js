@@ -2504,7 +2504,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
   async.waterfall(
   [
     function convertUser(cb) {
-      userServer.convertRawUser(userIn, lastTweeId, function(err, user){
+      userServer.convertRawUser({user:userIn, lastTweeId: lastTweeId}, function(err, user){
         if (err) {
           cb(err, null);
         }
