@@ -2709,7 +2709,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
             user.friendsCount = userDb.friendsCount;
           }
 
-          console.log(chalkInfo("USER DB HIT "
+          debug(chalkInfo("USER DB HIT "
             + " | @" + user.screenName.toLowerCase()
             + " | " + user.userId
             + " | " + getTimeStamp(user.createdAt)
