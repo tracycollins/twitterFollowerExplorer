@@ -492,6 +492,8 @@ function cloneTwitterFriends(params){
     }
     else {
 
+      cloneTwitterFriendsBusy = true;
+      
       params.cursor = parseInt(statsObj.user[sourceScreenName].nextCursor);
       console.log(chalkAlert("cloneTwitterFriends params\n" + jsonPrint(params)));
 
