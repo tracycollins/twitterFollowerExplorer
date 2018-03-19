@@ -471,7 +471,7 @@ function cloneTwitterFriends(params){
 
   clearInterval(cloneTwitterFriendsInterval);
 
-  cloneTwitterFriendsBusy = false;
+  // cloneTwitterFriendsBusy = false;
 
   const sourceScreenName = params.source;
   const destinationScreenName = params.destination;
@@ -501,7 +501,7 @@ function cloneTwitterFriends(params){
 
         if (err) {
 
-          cloneTwitterFriendsBusy = false;
+          // cloneTwitterFriendsBusy = false;
 
           console.log(chalkError(getTimeStamp()
             + " | @" + sourceScreenName
