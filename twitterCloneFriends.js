@@ -121,7 +121,7 @@ let currentTwitterUserIndex = 0;
 
 let configuration = {};
 
-configuration.cloneTwitterFriendsIntervalTime = ONE_MINUTE;
+configuration.cloneTwitterFriendsIntervalTime = 10*ONE_SECOND;
 configuration.twitterUsers = [];
 
 configuration.saveFileQueueInterval = 1000;
