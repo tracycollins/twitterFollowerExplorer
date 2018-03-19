@@ -3842,7 +3842,7 @@ function initTwitter(threeCeeUser, callback){
 
         followMessage.target.threeceeFollowing = threeCeeUser;
 
-        processUser(followMessage.target, null, function(err, user){
+        processUser(threeCeeUser, followMessage.target, null, function(err, user){
           if (err) {
             console.trace("processUser ERROR");
           }
