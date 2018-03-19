@@ -1446,9 +1446,9 @@ function initialize(cnf, callback){
       });
     }
     else {
-      console.error("dropboxConfigFile: " + dropboxConfigFile + "\n" + jsonPrint(err));
-
-      // OVERIDE CONFIG WITH COMMAND LINE ARGS
+      console.log(chalkAlert("!!! TWITTER CONFIG FILE NOT FOUND ... USING DEFAULTS" 
+        + " | " + cnf.twitterConfigFolder + "/" + cnf.twitterConfigFile
+      ));
 
       commandLineArgs = Object.keys(commandLineConfig);
 
