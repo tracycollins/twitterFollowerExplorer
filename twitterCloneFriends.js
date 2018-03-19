@@ -832,21 +832,27 @@ function loadFile(path, file, callback) {
       }
     })
     .catch(function(error) {
-      console.log(chalkError("TFE | DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
-      console.log(chalkError("TFE | !!! DROPBOX READ " + fullPath + " ERROR"));
-      console.log(chalkError("TFE | " + jsonPrint(error.error)));
+      console.log(chalkError("TFE | DROPBOX LOAD FILE ERROR"
+        + " | " + fullPath
+        + " | ERROR STATUS: " + error.response.status
+      ));
+      // console.log(chalkError("TFE | !!! DROPBOX READ " + fullPath + " ERROR"));
+      // console.log(chalkError("TFE | " + jsonPrint(error.error)));
 
-      if (error.status === 404) {
+      if (error.response.status === 404) {
         console.error(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
           + " ... SKIPPING ...")
         );
         return(callback(null, null));
       }
-      if (error.status === 409) {
-        console.error(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"));
+      if (error.response.status === 409) {
+        console.log(chalkError("TFE | DROPBOX LOAD FILE NOT FOUND"
+          + " | " + fullPath
+          // + " | ERROR STATUS: " + error.response.status
+        ));
         return(callback(error, null));
       }
-      if (error.status === 0) {
+      if (error.response.status === 0) {
         console.error(chalkError("TFE | !!! DROPBOX NO RESPONSE"
           + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
         return(callback(null, null));
