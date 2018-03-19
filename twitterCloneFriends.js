@@ -489,7 +489,6 @@ function cloneTwitterFriends(params){
   cloneTwitterFriendsInterval = setInterval(function(){
 
     if (cloneTwitterFriendsBusy) {
-
     }
     else {
 
@@ -634,7 +633,9 @@ function cloneTwitterFriends(params){
                     + " | " + friend.id_str
                     + " | @" + friend.screen_name
                   ));
-                  cb();
+                  setTimeout(function(){
+                    cb();
+                  }, 1000);
                 });
 
               }
@@ -664,9 +665,7 @@ function cloneTwitterFriends(params){
 
         }
       });
-
     }
-
   }, params.interval);
 }
 
