@@ -1184,7 +1184,7 @@ function initTwitter(currentTwitterUser, callback){
       newTwit.get("account/settings", function(err, accountSettings, response) {
 
         if (err){
-          console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
+          console.log(chalkError("*** TWITTER ACCOUNT ERROR"
             + " | @" + currentTwitterUser
             + " | " + getTimeStamp()
             + " | CODE: " + err.code
@@ -1246,7 +1246,10 @@ function initTwitterUsers(callback){
 
       initTwitter(userScreenName, function(err, twitObj){
         if (err) {
-          console.log(chalkError("INIT TWITTER ERROR: " + err.message));
+          console.log(chalkError("INIT TWITTER ERROR"
+            + " | @" + userScreenName
+            + " | ERROR: " + err.message
+          ));
           return(cb(err));
         }
 
@@ -1257,6 +1260,10 @@ function initTwitterUsers(callback){
       });
 
     }, function(err){
+
+      if (err) {
+        if (callback !== undefined) { return(callback(err)); }
+      }
 
       statsObj.users.totalTwitterFriends = 0;
       statsObj.users.totalFriendsFetched = 0;
