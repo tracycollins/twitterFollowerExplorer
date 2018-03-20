@@ -8,7 +8,7 @@
     "@threeceelabs/histogram-parser": "^1.0.14",
     "@threeceelabs/mongoose-twitter": "^1.0.87",
     "@threeceelabs/tweet-server-controller": "^1.0.128",
-    "@threeceelabs/twitter-image-parser": "^1.0.38",
+    "@threeceelabs/twitter-image-parser": "^1.0.39",
     "@threeceelabs/twitter-text-parser": "^1.0.38",
     "@threeceelabs/user-server-controller": "^1.0.186",
     "@threeceelabs/word-server-controller": "^1.0.19",
