@@ -3336,13 +3336,24 @@ function showStats(options){
       statsObj.users.totalTwitterFriends = 0;
       statsObj.users.totalFriendsFetched = 0;
 
-      // configuration.twitterUsers.forEach(function(tUserScreenName){
-
       async.eachSeries(configuration.twitterUsers, function(tUserScreenName, cb){
         twitterUserUpdate({userScreenName: tUserScreenName, resetStats: false}, function(err){
          if (err){
-            console.log("!!!!! TWITTER USER UPDATE ERROR | @" + tUserScreenName + " | " + getTimeStamp() 
-              + "\n" + jsonPrint(err));
+            if (err.code === 88) {
+              console.log(chalkError("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
+                + " | " + getTimeStamp() 
+                + " | @" + tUserScreenName 
+                // + "\n" + jsonPrint(err)
+              ));
+            }
+            else {
+              console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
+                + " | " + getTimeStamp() 
+                + " | @" + tUserScreenName 
+                + "\n" + jsonPrint(err)
+              ));
+            }
+            return(cb());
           }
           statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
           statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
