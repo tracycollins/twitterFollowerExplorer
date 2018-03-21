@@ -155,6 +155,7 @@ dbConnection.once("open", function() {
   User = mongoose.model("User", userModel.UserSchema);
   Word = mongoose.model("Word", wordModel.WordSchema);
   userServer = require("@threeceelabs/user-server-controller");
+  // userServer = require("../userServerController/index.js");
   userServerReady = true;
 });
 
@@ -218,7 +219,7 @@ let TFE_USER_DB_CRAWL = false;
 
 let configuration = {};
 
-configuration.twitterUsers = ["ninjathreecee", "altthreecee00", "altthreecee01", "altthreecee02"];
+configuration.twitterUsers = ["altthreecee02", "altthreecee01", "altthreecee00"];
 
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
 configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
@@ -2505,7 +2506,11 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
     function convertUser(cb) {
       userServer.convertRawUser({user:userIn, lastTweeId: lastTweeId}, function(err, user){
         if (err) {
-          console.log(chalkError("TFE | CONVERT USER ERROR: " + err));
+          console.log(chalkError("TFE | CONVERT USER ERROR"
+            + " | @" + userIn.screen_name
+            + " | LAST TWEET: " + lastTweeId
+            + " | " + err
+          ));
           cb(err, null);
         }
         else {
@@ -2517,33 +2522,14 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
     function unfollowFriend(user, cb) {
 
       if (
-           ((currentTwitterUser === "altthreecee00") && twitterUserHashMap.ninjathreecee.friends.includes(user.userId))
-
-        || ((currentTwitterUser === "altthreecee01") && twitterUserHashMap.ninjathreecee.friends.includes(user.userId))
-        || ((currentTwitterUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.userId))
+           ((currentTwitterUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.userId))
         
-        || ((currentTwitterUser === "altthreecee02") && twitterUserHashMap.ninjathreecee.friends.includes(user.userId))
         || ((currentTwitterUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.includes(user.userId))
         || ((currentTwitterUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.includes(user.userId))
 
       ) {
 
-        if (twitterUserHashMap.ninjathreecee.friends.includes(user.userId)) {
-
-          if (twitterUserHashMap.altthreecee00.friends.includes(user.userId)) {
-            twitterUserHashMap.altthreecee00.friends.splice(twitterUserHashMap.altthreecee00.friends.indexOf(user.userId), 1);
-          }
-          if (twitterUserHashMap.altthreecee01.friends.includes(user.userId)) {
-            twitterUserHashMap.altthreecee01.friends.splice(twitterUserHashMap.altthreecee01.friends.indexOf(user.userId), 1);
-          }
-          if (twitterUserHashMap.altthreecee02.friends.includes(user.userId)) {
-            twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.userId), 1);
-          }
-
-          user.threeceeFollowing = "ninjathreecee";
-        }
-
-        else if (twitterUserHashMap.altthreecee00.friends.includes(user.userId)) {
+        if (twitterUserHashMap.altthreecee00.friends.includes(user.userId)) {
 
           if (twitterUserHashMap.altthreecee01.friends.includes(user.userId)) {
             twitterUserHashMap.altthreecee01.friends.splice(twitterUserHashMap.altthreecee01.friends.indexOf(user.userId), 1);
@@ -2570,7 +2556,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
         }
 
 
-        console.log(chalkInfo("UNFOLLOW | ninjathreecee OR altthreecee00 OR altthreecee01 FOLLOWING"
+        console.log(chalkInfo("UNFOLLOW | altthreecee00 OR altthreecee01 FOLLOWING"
           + " | " + user.userId
           + " | " + user.screenName.toLowerCase()
           + " | 3CF: " + user.threeceeFollowing
@@ -3287,13 +3273,9 @@ statsObj.users.classifiedAuto = 0;
 statsObj.users.classified = 0;
 
 statsObj.user = {};
-statsObj.user.ninjathreecee = {};
 statsObj.user.altthreecee00 = {};
 statsObj.user.altthreecee01 = {};
 statsObj.user.altthreecee02 = {};
-
-statsObj.user.ninjathreecee.friendsProcessed = 0;
-statsObj.user.ninjathreecee.percentProcessed = 0;
 
 statsObj.user.altthreecee00.friendsProcessed = 0;
 statsObj.user.altthreecee00.percentProcessed = 0;
@@ -4120,7 +4102,7 @@ function initialize(cnf, callback){
 
 
   cnf.twitterDefaultUser = process.env.TFE_TWITTER_DEFAULT_USER || TWITTER_DEFAULT_USER ;
-  cnf.twitterUsers = process.env.TFE_TWITTER_USERS || [ "altthreecee00", "altthreecee01", "altthreecee02", "ninjathreecee" ] ;
+  cnf.twitterUsers = process.env.TFE_TWITTER_USERS || [ "altthreecee00", "altthreecee01", "altthreecee02" ] ;
   cnf.statsUpdateIntervalTime = process.env.TFE_STATS_UPDATE_INTERVAL || ONE_MINUTE;
 
   cnf.twitterConfigFolder = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER || "/config/twitter";
