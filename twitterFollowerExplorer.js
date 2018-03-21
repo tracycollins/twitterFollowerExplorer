@@ -2505,6 +2505,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
     function convertUser(cb) {
       userServer.convertRawUser({user:userIn, lastTweeId: lastTweeId}, function(err, user){
         if (err) {
+          console.log(chalkError("TFE | CONVERT USER ERROR: " + err));
           cb(err, null);
         }
         else {
