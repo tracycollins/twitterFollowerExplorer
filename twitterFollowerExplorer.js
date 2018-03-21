@@ -876,7 +876,6 @@ function generateInputSets(params, callback) {
         });
 
       });
-
     },
 
     function(err){
