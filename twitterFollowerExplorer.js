@@ -155,7 +155,6 @@ dbConnection.once("open", function() {
   User = mongoose.model("User", userModel.UserSchema);
   Word = mongoose.model("Word", wordModel.WordSchema);
   userServer = require("@threeceelabs/user-server-controller");
-  // userServer = require("../userServerController/index.js");
   userServerReady = true;
 });
 
@@ -189,10 +188,8 @@ let currentBestNetwork;
 let previousRandomNetworksHashMap = {};
 let availableNeuralNetHashMap = {};
 
-
 const LANGUAGE_ANALYZE_INTERVAL = 1000;
-const RANDOM_NETWORK_TREE_INTERVAL = 50;
-
+const RANDOM_NETWORK_TREE_INTERVAL = 10;
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
 
@@ -210,6 +207,7 @@ let stdin;
 let abortCursor = false;
 let nextUser = false;
 let classifiedUserHashmapReadyFlag = false;
+let autoClassifiedUserHashmapReadyFlag = false;
 
 let neuralNetworkInitialized = false;
 let currentTwitterUser ;
@@ -336,7 +334,8 @@ debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 const defaultClassifiedUsersFolder = dropboxConfigDefaultFolder;
 // const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
 const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
-const classifiedUsersDefaultFile = "classifiedUsers.json";
+const classifiedUsersDefaultFile = "classifiedUsers_manual.json";
+const autoClassifiedUsersDefaultFile = "classifiedUsers_auto.json";
 
 
 const Dropbox = require("./js/dropbox").Dropbox;
@@ -480,27 +479,27 @@ function loadFile(path, file, callback) {
 
 function loadTrainingSetsDropboxFolder(folder, callback){
 
-  console.log(chalkNetwork("NNT | ... LOADING DROPBOX TRAINING SETS FOLDER | " + folder));
+  console.log(chalkNetwork("TFE | ... LOADING DROPBOX TRAINING SETS FOLDER | " + folder));
 
   let options = {path: folder};
 
   dropboxClient.filesListFolder(options)
   .then(function(response){
 
-    debug(chalkLog("NNT | DROPBOX LIST FOLDER"
+    debug(chalkLog("TFE | DROPBOX LIST FOLDER"
       + " | " + options.path
       + " | NUM ENTRIES: " + response.entries.length
     ));
 
     async.eachSeries(response.entries, function(entry, cb){
 
-      console.log(chalkLog("NNT | DROPBOX TRAINING SET FOUND"
+      console.log(chalkLog("TFE | DROPBOX TRAINING SET FOUND"
         + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
         + " | " + entry.name
       ));
 
       if (!entry.name.endsWith(".json")){
-        console.log("NNT | ... IGNORE DROPBOX TRAINING SETS FOLDER FILE: " + entry.name);
+        console.log("TFE | ... IGNORE DROPBOX TRAINING SETS FOLDER FILE: " + entry.name);
         return(cb());
       }
 
@@ -518,7 +517,7 @@ function loadTrainingSetsDropboxFolder(folder, callback){
 
         if (oldContentHash !== entry.content_hash) {
 
-          console.log(chalkInfo("NNT | DROPBOX TRAINING SET CONTENT CHANGE"
+          console.log(chalkInfo("TFE | DROPBOX TRAINING SET CONTENT CHANGE"
             + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
             + " | TRAINING SET ID: " + trainingSetId
             + " | " + entry.name
@@ -528,11 +527,11 @@ function loadTrainingSetsDropboxFolder(folder, callback){
 
           loadFile(folder, entry.name, function(err, trainingSetObj){
             if (err) {
-              console.log(chalkError("NNT | DROPBOX TRAINING SET LOAD FILE ERROR: " + err));
+              console.log(chalkError("TFE | DROPBOX TRAINING SET LOAD FILE ERROR: " + err));
               cb();
             }
             else if ((trainingSetObj === undefined) || !trainingSetObj) {
-              console.log(chalkError("NNT | DROPBOX TRAINING SET LOAD FILE ERROR | JSON UNDEFINED ??? "));
+              console.log(chalkError("TFE | DROPBOX TRAINING SET LOAD FILE ERROR | JSON UNDEFINED ??? "));
               cb();
             }
             else {
@@ -542,7 +541,7 @@ function loadTrainingSetsDropboxFolder(folder, callback){
 
               trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry} );
 
-              console.log(chalkInfo("NNT | DROPBOX TRAINING SET"
+              console.log(chalkInfo("TFE | DROPBOX TRAINING SET"
                 + " [" + trainingSetHashMap.count() + "]"
                 + " | TRAINING SET SIZE: " + trainingSetObj.trainingSet.meta.setSize
                 // + " | " + trainingSetObj.trainingSet.meta.numInputs + " INPUTS"
@@ -557,7 +556,7 @@ function loadTrainingSetsDropboxFolder(folder, callback){
           });
         }
         else{
-          console.log(chalkLog("NNT | DROPBOX TRAINING SET CONTENT SAME  "
+          console.log(chalkLog("TFE | DROPBOX TRAINING SET CONTENT SAME  "
             + " | " + entry.name
             + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
           ));
@@ -568,11 +567,11 @@ function loadTrainingSetsDropboxFolder(folder, callback){
 
         loadFile(folder, entry.name, function(err, trainingSetObj){
           if (err) {
-            console.log(chalkError("NNT | DROPBOX TRAINING SET LOAD FILE ERROR: " + err));
+            console.log(chalkError("TFE | DROPBOX TRAINING SET LOAD FILE ERROR: " + err));
             cb();
           }
           else if ((trainingSetObj === undefined) || !trainingSetObj) {
-            console.log(chalkError("NNT | DROPBOX TRAINING SET LOAD FILE ERROR | JSON UNDEFINED ??? "));
+            console.log(chalkError("TFE | DROPBOX TRAINING SET LOAD FILE ERROR | JSON UNDEFINED ??? "));
             cb();
           }
           else {
@@ -581,7 +580,7 @@ function loadTrainingSetsDropboxFolder(folder, callback){
             maxInputHashMap = deepcopy(trainingSetObj.maxInputHashMap);
             trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry} );
 
-            console.log(chalkNetwork("NNT | LOADED DROPBOX TRAINING SET"
+            console.log(chalkNetwork("TFE | LOADED DROPBOX TRAINING SET"
               + " [" + trainingSetHashMap.count() + "]"
               + " | TRAINING SET SIZE: " + trainingSetObj.trainingSet.meta.setSize
               + " | " + folder + "/" + entry.name
@@ -598,7 +597,7 @@ function loadTrainingSetsDropboxFolder(folder, callback){
       }
 
     }, function(){
-      console.log(chalkNetwork("NNT | =*=*= END LOAD DROPBOX TRAINING SETS"
+      console.log(chalkNetwork("TFE | =*=*= END LOAD DROPBOX TRAINING SETS"
         + " | " + trainingSetHashMap.count() + " TRAINING SETS IN HASHMAP"
       ));
       if (callback !== undefined) { callback(null); }
@@ -606,7 +605,7 @@ function loadTrainingSetsDropboxFolder(folder, callback){
 
   })
   .catch(function(err){
-    console.log(chalkError("NNT | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
+    console.log(chalkError("TFE | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
     // quit("DROPBOX FILES LIST FOLDER ERROR");
     if (callback !== undefined) { callback(err); }
   });
@@ -746,8 +745,11 @@ function twitterUserUpdate(params, callback){
     twitterUserHashMap[userScreenName].twit.get("friends/ids", {screen_name: userScreenName}, function(err, userFriendsIds, response) {
 
       if (err){
-        console.log("!!!!! TWITTER USER FRIENDS IDS ERROR | @" + userScreenName + " | " + getTimeStamp() 
-          + "\n" + jsonPrint(err));
+        console.log(chalkError("TWITTER USER FRIENDS IDS ERROR"
+          + " | @" + userScreenName 
+          + " | " + getTimeStamp() 
+          + " | " + err.message
+        ));
         return(callback(err));
       }
 
@@ -1731,7 +1733,6 @@ function checkRateLimit(callback){
       if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
         && statsObj.user[currentTwitterUser].twitterRateLimitResetAt.isBefore(moment())){
 
-
         fsm.fsm_rateLimitEnd();
         statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
       // 
@@ -1752,8 +1753,10 @@ function checkRateLimit(callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
           + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
         ));
-        fsmPreviousState = fsm.getMachineState();
-        fsm.fsm_rateLimitStart();
+        // fsmPreviousState = fsm.getMachineState();
+        // fsm.fsm_rateLimitStart();
+        fsm.fsm_fetchUserEnd();
+        // nextUser = true;
       }
       else {
         debug(chalkInfo("... NO TWITTER RATE LIMIT"
@@ -2174,10 +2177,16 @@ function generateAutoCategory(params, user, callback){
           {screenName: user.screenName, category: user.category, updateGlobalHistograms: true}, 
           function(err, results){
             if (err) {
-              console.log(chalkError("PARSE BANNER IMAGE ERROR"
-                // + "\nREQ\n" + jsonPrint(results)
-                // + "\nERR\n" + jsonPrint(err)
-              ));
+              if (err.code === 8) {
+                console.log(chalkAlert("PARSE BANNER IMAGE QUOTA ERROR"
+                ));
+              }
+              else{
+                console.log(chalkError("PARSE BANNER IMAGE ERROR"
+                  // + "\nREQ\n" + jsonPrint(results)
+                  + "\nERR\n" + jsonPrint(err)
+                ));
+              }
               cb(null, text, null);
             }
             else {
@@ -2681,8 +2690,10 @@ function fetchFriends(params, callback) {
           statsObj.user[threeCeeUser].twitterRateLimitExceptionFlag = true;
           statsObj.user[threeCeeUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
           checkRateLimit();
-          fsmPreviousState = fsm.getMachineState();
-          fsm.fsm_rateLimitStart();
+          fsm.fsm_fetchUserEnd();
+          // nextUser = true;
+          // fsmPreviousState = fsm.getMachineState();
+          // fsm.fsm_rateLimitStart();
         }
         callback(err, []);
       }
@@ -3047,7 +3058,6 @@ const fsmStates = {
 fsm = Stately.machine(fsmStates);
 
 inputTypes.forEach(function(type){
-
   statsObj.histograms[type] = {};
 });
 
@@ -3230,6 +3240,8 @@ function showStats(options){
         });
       }, function(err){
 
+        statsObj.numNetworksLoaded = bestNetworkHashMap.size;
+
         console.log(chalkLog("--- STATS --------------------------------------\n"
           + "CUR USR: @" + currentTwitterUser
           + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
@@ -3241,6 +3253,7 @@ function showStats(options){
           + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
           + "\nCL AUTO: " + Object.keys(autoClassifiedUserHashmap).length
           + "\nCL MANU: " + Object.keys(classifiedUserHashmap).length
+          + "\nNNs HM:  " + statsObj.numNetworksLoaded
           + "\nNET ID:  " + statsObj.network.networkId
           + "\nANLYZD:  " + statsObj.analyzer.analyzed + " ANLs"
           + " | " + statsObj.analyzer.skipped + " SKPs"
@@ -3668,9 +3681,11 @@ function initStatsUpdate(callback){
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
     saveFileQueue.push({folder:classifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
+    saveFileQueue.push({folder:classifiedUsersFolder, file:autoClassifiedUsersDefaultFile, obj:autoClassifiedUserHashmap});
 
     if (classifiedUserHashmapReadyFlag && (hostname === "google")) {
       saveFileQueue.push({folder:defaultClassifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
+      saveFileQueue.push({folder:defaultClassifiedUsersFolder, file:autoClassifiedUsersDefaultFile, obj:autoClassifiedUserHashmap});
     }
 
     twitterTextParser.getGlobalHistograms(function(){
@@ -3857,43 +3872,66 @@ function initTwitterUsers(callback){
   }
 }
 
-function initClassifiedUserHashmap(folder, file, callback){
+function initClassifiedUserHashmap(folder, callback){
 
-  console.log(chalkTwitter("INIT CLASSIFED USERS HASHMAP FROM DB"));
+  console.log(chalkTwitter("INIT CLASSIFED USERS HASHMAPS FROM DB"));
 
-  loadFile(folder, file, function(err, dropboxClassifiedUsersObj){
-    if (err) {
-      console.error(chalkError("ERROR: loadFile: " + folder + "/" + file));
-      console.log(chalkError("ERROR: loadFile: " + folder + "/" + file));
-      callback(err, file);
-    }
-    else {
-      console.log(chalkTwitter("LOADED CLASSIFED USERS FILE: " + folder + "/" + file));
-      console.log(chalkTwitter("DROPBOX DEFAULT | " + Object.keys(dropboxClassifiedUsersObj).length + " CLASSIFED USERS"));
+  let classifiedUsersObj = {};
 
-      const params = { auto: false, verbose: true };
+  async.eachSeries(["manual", "auto"], function(searchKey, cb){
 
-      userServer.findClassifiedUsersCursor(params, function(err, results){
-        if (err) {
-          console.error(chalkError("ERROR: initClassifiedUserHashmap: "));
-          callback(err, null);
-        }
-        else {
-          console.log(chalkTwitter("LOADED CLASSIFED USERS FROM DB"
-            + " | " + results.count + " CLASSIFED"
-            + " | " + results.manual + " MAN"
-            + " | " + results.auto + " AUTO"
-            + " | " + results.matchRate.toFixed(1) + "% MR"
-          ));
+    const file = "classifiedUsers_" + searchKey + ".json";
 
-          const classifiedUsersObj = defaults(dropboxClassifiedUsersObj, results.obj);
+    classifiedUsersObj[searchKey] = {};
 
-          callback(null, classifiedUsersObj);
-        }
-      });
+    loadFile(folder, file, function(err, dropboxClassifiedUsersObj){
+      if (err) {
+        console.error(chalkError("ERROR: loadFile: " + folder + "/" + file));
+        console.log(chalkError("ERROR: loadFile: " + folder + "/" + file));
+        callback(err, file);
+      }
+      else {
+        console.log(chalkTwitter("LOADED " + searchKey.toUpperCase() + " CLASSIFED USERS FILE: " + folder + "/" + file));
+        console.log(chalkTwitter("DROPBOX DEFAULT"
+          + " | " + Object.keys(dropboxClassifiedUsersObj).length + " " + searchKey.toUpperCase() + " CLASSIFED USERS"
+        ));
 
-    }
+        let params = {};
+        params.auto = (searchKey === "auto") ? true : false;
+        params.verbose = false;
+
+        userServer.findClassifiedUsersCursor(params, function(err, results){
+          if (err) {
+            console.error(chalkError("ERROR: initClassifiedUserHashmap: "));
+            cb(err);
+          }
+          else {
+            console.log(chalkTwitter("LOADED " + searchKey.toUpperCase() + " CLASSIFED USERS FROM DB"
+              + " | " + results.count + " CLASSIFED"
+              + " | " + results.manual + " MAN"
+              + " | " + results.auto + " AUTO"
+              + " | " + results.matchRate.toFixed(2) + "% MR"
+            ));
+
+            classifiedUsersObj[searchKey] = omit(results, ["obj"]);
+            classifiedUsersObj[searchKey].obj = {};
+            classifiedUsersObj[searchKey].obj = defaults(dropboxClassifiedUsersObj, results.obj);
+
+            cb();
+          }
+        });
+
+      }
+    });
+
+  }, function (err){
+    console.log(chalkAlert("LOADED CLASSIFED USERS FROM DB COMPLETE"
+      + " | " + classifiedUsersObj.manual.count + " MANUAL"
+      + " | " + classifiedUsersObj.auto.count + " AUTO"
+    ));
+    callback(null, classifiedUsersObj);
   });
+
 }
 
 function initStdIn(){
@@ -3945,14 +3983,20 @@ function initialize(cnf, callback){
   fsm.fsm_reset();
   fsm.fsm_initStart();
 
-  initClassifiedUserHashmap(defaultClassifiedUsersFolder, classifiedUsersDefaultFile, function(err, classifiedUsersObj){
+  initClassifiedUserHashmap(defaultClassifiedUsersFolder, function(err, results){
     if (err) {
       console.error(chalkError("*** ERROR: CLASSIFED USER HASHMAP NOT INITIALIZED: ", err));
     }
     else {
-      classifiedUserHashmap = classifiedUsersObj;
-      console.log(chalkTwitterBold("LOADED " + Object.keys(classifiedUserHashmap).length + " TOTAL CLASSIFED USERS"));
+      // classifiedUserHashmap = classifiedUsersObj;
+      classifiedUserHashmap = results.manual.obj;
+      autoClassifiedUserHashmap = results.auto.obj;
+      console.log(chalkTwitterBold("LOADED " + Object.keys(classifiedUserHashmap).length + " TOTAL MANUAL CLASSIFED USERS"));
+      console.log(chalkTwitterBold("MANUAL MATCHRATE: " + results.manual.matchRate.toFixed(2) + "%"));
+      console.log(chalkTwitterBold("LOADED " + Object.keys(autoClassifiedUserHashmap).length + " TOTAL AUTO CLASSIFED USERS"));
+      console.log(chalkTwitterBold("AUTO   MATCHRATE: " + results.auto.matchRate.toFixed(2) + "%"));
       classifiedUserHashmapReadyFlag = true;
+      autoClassifiedUserHashmapReadyFlag = true;
       runEnable();
     }
   });
