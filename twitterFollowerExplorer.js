@@ -336,7 +336,7 @@ debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 const defaultClassifiedUsersFolder = dropboxConfigDefaultFolder;
 // const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
 const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
-const classifiedUsersDefaultFile = "classifiedUsersNew.json";
+const classifiedUsersDefaultFile = "classifiedUsers.json";
 
 
 const Dropbox = require("./js/dropbox").Dropbox;
@@ -3945,7 +3945,7 @@ function initialize(cnf, callback){
   fsm.fsm_reset();
   fsm.fsm_initStart();
 
-  initClassifiedUserHashmap(classifiedUsersFolder, classifiedUsersDefaultFile, function(err, classifiedUsersObj){
+  initClassifiedUserHashmap(defaultClassifiedUsersFolder, classifiedUsersDefaultFile, function(err, classifiedUsersObj){
     if (err) {
       console.error(chalkError("*** ERROR: CLASSIFED USER HASHMAP NOT INITIALIZED: ", err));
     }
