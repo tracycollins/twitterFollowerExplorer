@@ -199,50 +199,6 @@ function analyzeLanguage(langObj, callback){
     ));
 
     if (callback !== undefined) { callback(null, results); }
-
-    // async.each(annotations.entities, function(entity, cb){
-
-    //   async.each(entity.mentions, function(mention, cb2){
-
-    //     debugLang(chalkRed("ENTITY"
-    //       + " | TYPE: " + entity.type + " - " + mention.type
-    //       + " | SAL: " + entity.salience.toFixed(1)
-    //       + " | " + entity.name
-    //     ));
-
-    //     if (mention.type === "PROPER") {
-    //       if (entity.metadata.wikipedia_url !== undefined) {
-    //         debugLang(chalkInfo("ENTITY"
-    //           + " | " + entity.type + " - " + mention.type
-    //           + " | SAL: " + entity.salience.toFixed(1)
-    //           + " | WIKI: " + entity.metadata.wikipedia_url
-    //           + " | " + entity.name
-    //         ));
-    //       }
-    //       else {
-    //         debugLang(chalkLog("ENTITY"
-    //           + " | " + entity.type + " - " + mention.type
-    //           + " | SAL: " + entity.salience.toFixed(1)
-    //           + " | " + entity.name
-    //         ));
-    //       }
-    //     }
-
-    //     results.entities[entity.name.toLowerCase()] = entity;
-
-    //     async.setImmediate(function() {
-    //       cb2();
-    //     });
-
-    //   }, function(){
-    //     async.setImmediate(function() {
-    //       cb();
-    //     });
-    //   });
-
-    // }, function(){
-    //   if (callback !== undefined) { callback(null, results); }
-    // });
   })
   .catch(function(err) {
     debug(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
@@ -264,9 +220,6 @@ function initAnalyzeLanguageInterval(interval){
   analyzeLanguageReady = true;
 
   let messageObj;
-  // messageObj.obj = {};
-  // messageObj.results = {};
-  // messageObj.stats = {};
 
   analyzeLanguageInterval = setInterval(function(){ // TX KEEPALIVE
 

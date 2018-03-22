@@ -466,7 +466,6 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
   let arrayOfArrays = [];
   let bestNetworkOutput = [0,0,0];
-  let multiNeuralNetOutput = [0,0,0];
   let statsTextArray = [];
 
   statsTextArray.push([
@@ -584,11 +583,10 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
   }, function generateNetworksOutputAsyncCallback(){
 
-    // sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: 100})
     sortedObjectValues({ sortKey: "matchRate", obj: statsObj.allTimeLoadedNetworks, max: 100})
     .then(function(sortedNetworkResults){
 
-      debugger;
+      // debugger;
 
       let bnId = sortedNetworkResults.sortedKeys[0];
 
@@ -761,22 +759,22 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
             case 0:
               if (enableLog) { console.log(chalk.blue("NAKW | L | " + bestNetworkOutput + " | " + maxOutputIndex)); }
               results.bestNetwork.left = 100;
-              results.keyword = "left";
+              results.categoryAuto = "left";
             break;
             case 1:
               if (enableLog) { console.log(chalk.black("NAKW | N | " + bestNetworkOutput + " | " + maxOutputIndex)); }
               results.bestNetwork.neutral = 100;
-              results.keyword = "neutral";
+              results.categoryAuto = "neutral";
             break;
             case 2:
               if (enableLog) { console.log(chalk.red("NAKW | R | " + bestNetworkOutput + " | " + maxOutputIndex)); }
               results.bestNetwork.right = 100;
-              results.keyword = "right";
+              results.categoryAuto = "right";
             break;
             default:
               if (enableLog) { console.log(chalk.gray("NAKW | 0 | " + bestNetworkOutput + " | " + maxOutputIndex)); }
               results.bestNetwork.none = 100;
-              results.keyword = "none";
+              results.categoryAuto = "none";
           }
           generateNetworksOutputBusy = false;
           callback(null, results);
@@ -796,73 +794,71 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
   });
 }
 
-function printDatum(title, input){
+// function printDatum(title, input){
 
-  let row = "";
-  let col = 0;
-  let rowNum = 0;
-  const COLS = 100;
+//   let row = "";
+//   let col = 0;
+//   let rowNum = 0;
+//   const COLS = 100;
 
-  console.log("\n------------- " + title + " -------------");
+//   console.log("\n------------- " + title + " -------------");
 
-  input.forEach(function(bit, i){
-    if (i === 0) {
-      row = row + bit.toFixed(3) + " | " ;
-    }
-    else if (i === 1) {
-      row = row + bit.toFixed(3);
-    }
-    else if (i === 2) {
-      console.log("ROW " + rowNum + " | " + row);
-      row = bit ? "X" : ".";
-      col = 1;
-      rowNum += 1;
-    }
-    else if (col < COLS){
-      row = row + (bit ? "X" : ".");
-      col += 1;
-    }
-    else {
-      console.log("ROW " + rowNum + " | " + row);
-      row = bit ? "X" : ".";
-      col = 1;
-      rowNum += 1;
-    }
-  });
-}
+//   input.forEach(function(bit, i){
+//     if (i === 0) {
+//       row = row + bit.toFixed(3) + " | " ;
+//     }
+//     else if (i === 1) {
+//       row = row + bit.toFixed(3);
+//     }
+//     else if (i === 2) {
+//       console.log("ROW " + rowNum + " | " + row);
+//       row = bit ? "X" : ".";
+//       col = 1;
+//       rowNum += 1;
+//     }
+//     else if (col < COLS){
+//       row = row + (bit ? "X" : ".");
+//       col += 1;
+//     }
+//     else {
+//       console.log("ROW " + rowNum + " | " + row);
+//       row = bit ? "X" : ".";
+//       col = 1;
+//       rowNum += 1;
+//     }
+//   });
+// }
 
-function keywordToString(kw) {
+function categoryToString(c) {
 
-  if (kw === undefined) {
+  if (c === undefined) {
     return "";
   }
 
-  let kws = "";
+  let cs = "";
 
-  switch (kw) {
+  switch (c) {
     case "left":
-      kws = "L";
+      cs = "L";
     break;
     case "neutral":
-      kws = "N";
+      cs = "N";
     break;
     case "right":
-      kws = "R";
+      cs = "R";
     break;
     case "positive":
-      kws = "+";
+      cs = "+";
     break;
     case "negative":
-      kws = "-";
+      cs = "-";
     break;
     case "none":
-      kws = "0";
+      cs = "0";
     break;
-    // default:
-    //   kws = kw.toUpperCase();
   }
 
-  return kws;
+  return cs;
 }
 
 function initActivateNetworkInterval(interval){
@@ -917,19 +913,15 @@ function initActivateNetworkInterval(interval){
         }
         else {
 
-          let kw = false;
-          let nkwa = false;
+          const category = obj.user.category;
+
           let expectedOutput = false;
           let title = "@" + obj.user.screenName;
           let enableLog = false;
 
+          if (category) {
 
-          if (Object.keys(obj.user.keywords).length > 0) {
-            kw = Object.keys(obj.user.keywords)[0];
-
-            // enableLog = true;
-
-            switch (kw) {
+            switch (category) {
               case "left":
                 expectedOutput = [1,0,0];
                 title = title + " | MKW: LEFT";
@@ -953,21 +945,15 @@ function initActivateNetworkInterval(interval){
 
             if (Object.keys(results.bestNetwork).length > 0){
 
-              nkwa = results.keyword;
+              if (category) {
 
-              const mKwString = keywordToString(kw);
-              const aKwString = keywordToString(nkwa);
+                statsObj.categorize[results.categoryAuto] += 1;
 
-
-              if (kw) {
-
-                statsObj.categorize[nkwa] += 1;
-
-                if ((kw === "left") || (kw === "neutral")|| (kw === "right")) {
+                if ((category === "left") || (category === "neutral")|| (category === "right")) {
 
                   statsObj.categorize.total += 1;
 
-                  if (kw === nkwa) {
+                  if (category === results.categoryAuto) {
 
                     statsObj.categorize.match += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
@@ -978,8 +964,8 @@ function initActivateNetworkInterval(interval){
                       + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                       + " | " + statsObj.bestNetwork.networkId
                       + " | " + statsObj.bestNetwork.numInputs + " IN"
-                      + " | MKW: " + mKwString
-                      + " | AKW: " + aKwString
+                      + " | C: " + categoryToString(category)
+                      + " | CA: " + categoryToString(results.categoryAuto)
                       + " | @" + obj.user.screenName
                     ));
 
@@ -995,8 +981,8 @@ function initActivateNetworkInterval(interval){
                       + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                       + " | " + statsObj.bestNetwork.networkId
                       + " | " + statsObj.bestNetwork.numInputs + " IN"
-                      + " | MKW: " + mKwString
-                      + " | AKW: " + aKwString
+                      + " | C: " + categoryToString(category)
+                      + " | CA: " + categoryToString(results.categoryAuto)
                       + " | @" + obj.user.screenName
                     ));
 
@@ -1010,8 +996,8 @@ function initActivateNetworkInterval(interval){
                     + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                     + " | " + statsObj.bestNetwork.networkId
                     + " | " + statsObj.bestNetwork.numInputs + " IN"
-                    + " | MKW: " + mKwString
-                    + " | AKW: " + aKwString
+                    + " | C: " + categoryToString(category)
+                    + " | CA: " + categoryToString(results.categoryAuto)
                     + " | @" + obj.user.screenName
                   ));
 
@@ -1024,8 +1010,8 @@ function initActivateNetworkInterval(interval){
                   + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                   + " | " + statsObj.bestNetwork.networkId
                   + " | " + statsObj.bestNetwork.numInputs + " IN"
-                  + " | MKW: " + mKwString
-                  + " | AKW: " + aKwString
+                  + " | C: " + categoryToString(category)
+                  + " | CA: " + categoryToString(results.categoryAuto)
                   + " | @" + obj.user.screenName
                 ));
               }
@@ -1037,8 +1023,8 @@ function initActivateNetworkInterval(interval){
             messageObj.user = obj.user;
             messageObj.bestNetwork = {};
             messageObj.bestNetwork = statsObj.bestNetwork;
-            messageObj.keywordsAuto = {};
-            messageObj.keywordsAuto = results.bestNetwork;
+            messageObj.category = obj.user.category;
+            messageObj.categoryAuto = results.categoryAuto;
             messageObj.output = {};
             messageObj.output = networkOutputObj;
 
@@ -1089,7 +1075,7 @@ function loadNetworks(networksObj, callback){
 
     let networkObj = deepcopy(networksObj[nnId].network);
 
-    networkObj.overallMatchRate = (networkObj.overallMatchRate) ? networkObj.overallMatchRate : networkObj.matchRate;
+    networkObj.overallMatchRate = networkObj.overallMatchRate || networkObj.matchRate;
 
     console.log(chalkLog("RNT | LOAD NETWORK"
       + " | SR: " + networkObj.successRate.toFixed(2) + "%"
@@ -1115,7 +1101,6 @@ function loadNetworks(networksObj, callback){
       networksHashMap.set(nnId, networkObj);
 
       if (statsObj.loadedNetworks[nnId] === undefined) {
-        // console.log(chalkAlert("INIT statsObj.loadNetworks " + nnId));
         statsObj.loadedNetworks[nnId] = {};
         statsObj.loadedNetworks[nnId].networkId = nnId;
         statsObj.loadedNetworks[nnId].inputsId = networkObj.inputsId;
@@ -1125,7 +1110,6 @@ function loadNetworks(networksObj, callback){
         statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
         statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
         statsObj.loadedNetworks[nnId].total = 0;
-        // statsObj.loadedNetworks[nnId].matchRate = 0.0;
         statsObj.loadedNetworks[nnId].match = 0;
         statsObj.loadedNetworks[nnId].mismatch = 0;
         statsObj.loadedNetworks[nnId].matchFlag = false;
@@ -1137,7 +1121,6 @@ function loadNetworks(networksObj, callback){
       }
 
       if (statsObj.allTimeLoadedNetworks[nnId] === undefined) {
-        // console.log(chalkAlert("INIT statsObj.allTimeLoadedNetworks " + nnId));
         statsObj.allTimeLoadedNetworks[nnId] = {};
         statsObj.allTimeLoadedNetworks[nnId].networkId = nnId;
         statsObj.allTimeLoadedNetworks[nnId].inputsId = networkObj.inputsId;
@@ -1147,7 +1130,6 @@ function loadNetworks(networksObj, callback){
         statsObj.allTimeLoadedNetworks[nnId].matchRate = networkObj.matchRate;
         statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
         statsObj.allTimeLoadedNetworks[nnId].total = 0;
-        // statsObj.allTimeLoadedNetworks[nnId].matchRate = 0.0;
         statsObj.allTimeLoadedNetworks[nnId].match = 0;
         statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
         statsObj.allTimeLoadedNetworks[nnId].matchFlag = false;
@@ -1295,6 +1277,8 @@ process.on("message", function(m) {
     + " | KEYS: " + Object.keys(m)
   ));
 
+  let cause;
+
   switch (m.op) {
 
     case "INIT":
@@ -1314,7 +1298,7 @@ process.on("message", function(m) {
     break;
 
     case "GET_BUSY":
-      const cause = busy();
+      cause = busy();
       if (cause) {
         process.send({ op: "BUSY", cause: cause });
       }
@@ -1363,7 +1347,7 @@ process.on("message", function(m) {
         + " [" + rxActivateNetworkQueue.length + "]"
         + " | " + m.obj.user.userId
         + " | @" + m.obj.user.screenName
-        + " | KWs" + Object.keys(m.obj.user.keywords)
+        + " | C: " + m.obj.user.category
       ));
 
       process.send({op: "NETWORK_BUSY"}, function(err){
