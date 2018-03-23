@@ -1691,7 +1691,6 @@ function checkRateLimit(callback){
         + " | CODE: " + err.code
         + " | STATUS CODE: " + err.statusCode
         + " | " + err.message
-        // + "\n" + jsonPrint(err)
       ));
       statsObj.twitterErrors+= 1;
 
@@ -1705,10 +1704,9 @@ function checkRateLimit(callback){
       if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
         && statsObj.user[currentTwitterUser].twitterRateLimitResetAt.isBefore(moment())){
 
-
         fsm.fsm_rateLimitEnd();
         statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-      // 
+
         console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
           + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
           + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
@@ -1735,7 +1733,7 @@ function checkRateLimit(callback){
 
         fsm.fsm_rateLimitEnd();
         statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-      // 
+
         console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
           + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
           + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
@@ -1753,10 +1751,8 @@ function checkRateLimit(callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
           + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
         ));
-        // fsmPreviousState = fsm.getMachineState();
-        // fsm.fsm_rateLimitStart();
-        fsm.fsm_fetchUserEnd();
-        // nextUser = true;
+        fsmPreviousState = fsm.getMachineState();
+        fsm.fsm_rateLimitStart();
       }
       else {
         debug(chalkInfo("... NO TWITTER RATE LIMIT"
@@ -2690,10 +2686,8 @@ function fetchFriends(params, callback) {
           statsObj.user[threeCeeUser].twitterRateLimitExceptionFlag = true;
           statsObj.user[threeCeeUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
           checkRateLimit();
-          fsm.fsm_fetchUserEnd();
-          // nextUser = true;
-          // fsmPreviousState = fsm.getMachineState();
-          // fsm.fsm_rateLimitStart();
+          fsmPreviousState = fsm.getMachineState();
+          fsm.fsm_rateLimitStart();
         }
         callback(err, []);
       }
@@ -3988,7 +3982,6 @@ function initialize(cnf, callback){
       console.error(chalkError("*** ERROR: CLASSIFED USER HASHMAP NOT INITIALIZED: ", err));
     }
     else {
-      // classifiedUserHashmap = classifiedUsersObj;
       classifiedUserHashmap = results.manual.obj;
       autoClassifiedUserHashmap = results.auto.obj;
       console.log(chalkTwitterBold("LOADED " + Object.keys(classifiedUserHashmap).length + " TOTAL MANUAL CLASSIFED USERS"));
@@ -5119,7 +5112,4 @@ initialize(configuration, function(err, cnf){
         });
       }
     });
-    // });
-
-  // });
 });
