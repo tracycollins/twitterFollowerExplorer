@@ -2876,7 +2876,7 @@ function updateNetworkFetchFriends(threeCeeUser, callback){
               + "\nEND FETCH:    " + statsObj.user[threeCeeUser].endFetch
               + "\nSTART:        " + statsObj.user[threeCeeUser].friendsProcessStart.format(compactDateTimeFormat)
               + "\nEND:          " + statsObj.user[threeCeeUser].friendsProcessEnd.format(compactDateTimeFormat)
-              + "\nNOW:          " + moment.format(compactDateTimeFormat)
+              + "\nNOW:          " + moment().format(compactDateTimeFormat)
               + "\nELPSD:        " + msToTime(statsObj.user[threeCeeUser].friendsProcessElapsed)
               + "\nNEXT USER:    " + nextUser
               + "\nABORT CURSOR: " + abortCursor
@@ -2901,7 +2901,7 @@ function updateNetworkFetchFriends(threeCeeUser, callback){
               + "\nEND FETCH:    " + statsObj.user[threeCeeUser].endFetch
               + "\nSTART:        " + statsObj.user[threeCeeUser].friendsProcessStart.format(compactDateTimeFormat)
               + "\nEND:          " + statsObj.user[threeCeeUser].friendsProcessEnd.format(compactDateTimeFormat)
-              + "\nNOW:          " + moment.format(compactDateTimeFormat)
+              + "\nNOW:          " + moment().format(compactDateTimeFormat)
               + "\nELPSD:        " + msToTime(statsObj.user[threeCeeUser].friendsProcessElapsed)
               + "\nNEXT USER:    " + nextUser
               + "\nABORT CURSOR: " + abortCursor
