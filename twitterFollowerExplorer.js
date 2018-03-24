@@ -498,6 +498,11 @@ function loadTrainingSetsDropboxFolder(folder, callback){
         + " | " + entry.name
       ));
 
+      if (!entry.name.startsWith("globalTrainingSet")){
+        console.log("TFE | ... IGNORE DROPBOX TRAINING SETS FOLDER FILE: " + entry.name);
+        return(cb());
+      }
+
       if (!entry.name.endsWith(".json")){
         console.log("TFE | ... IGNORE DROPBOX TRAINING SETS FOLDER FILE: " + entry.name);
         return(cb());
