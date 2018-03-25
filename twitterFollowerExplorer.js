@@ -1855,6 +1855,7 @@ function classifyUser(user, callback){
               statsObj.classification.manual.none += 1;
             break;
             default:
+              user.category = false;
               classManualText = user.category;
               chalkAutoCurrent = chalk.black;
               statsObj.classification.manual.other += 1;
@@ -1906,6 +1907,7 @@ function classifyUser(user, callback){
               statsObj.classification.auto.none += 1;
             break;
             default:
+              user.categoryAuto = false;
               classAutoText = user.categoryAuto;
               chalkAutoCurrent = chalk.bold.black;
               statsObj.classification.auto.other += 1;
