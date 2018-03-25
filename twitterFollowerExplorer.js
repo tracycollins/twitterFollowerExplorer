@@ -1930,6 +1930,7 @@ function classifyUser(user, callback){
         + " | Ts: " + user.statusesCount
         + " | FLWRs: " + user.followersCount
         + " | FRNDs: " + user.friendsCount
+        + " | FLWg: " + user.following
         + " | 3CF: " + user.threeceeFollowing
         + "\n C: [ L: " + statsObj.classification.manual.left
         + " | R: " + statsObj.classification.manual.right
@@ -2279,6 +2280,7 @@ function generateAutoCategory(params, user, callback){
             + " | Ts: " + updatedUser.statusesCount
             + " | FLWRs: " + updatedUser.followersCount
             + " | FRNDs: " + updatedUser.friendsCount
+            + " | FLWg: " + updatedUser.following
             + " | 3CF: " + updatedUser.threeceeFollowing
             + " | LAd: " + updatedUser.languageAnalyzed
             + " | LA: S: " + score.toFixed(2)
@@ -2450,6 +2452,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
             twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.userId), 1);
           }
           
+          user.following = true;
           user.threeceeFollowing = "altthreecee00";
         }
 
@@ -2459,11 +2462,13 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
             twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.userId), 1);
           }
           
+          user.following = true;
           user.threeceeFollowing = "altthreecee01";
         }
 
         else if (twitterUserHashMap.altthreecee02.friends.includes(user.userId)) {
 
+          user.following = true;
           user.threeceeFollowing = "altthreecee02";
         }
 
@@ -2471,10 +2476,9 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
         console.log(chalkInfo("UNFOLLOW | altthreecee00 OR altthreecee01 FOLLOWING"
           + " | " + user.userId
           + " | " + user.screenName.toLowerCase()
+          + " | FLWg: " + user.following
           + " | 3CF: " + user.threeceeFollowing
         ));
-
-        // delete twitterUserHashMap[currentTwitterUser].friends[user.userId];
 
         twitterUserHashMap[currentTwitterUser].twit.post(
           "friendships/destroy", {user_id: user.userId}, 
@@ -2504,12 +2508,17 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
         );
       }
       else {
+
+        user.following = true;
         user.threeceeFollowing = currentTwitterUser;
+
         debug(chalkInfo("UPDATE 3CF"
           + " | " + user.userId
           + " | " + user.screenName.toLowerCase()
+          + " | FLWg: " + user.following
           + " | 3CF: " + user.threeceeFollowing
         ));
+
         cb(null, user);
       }
     },
@@ -2560,6 +2569,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
           
           user.createdAt = userDb.createdAt;
           user.languageAnalyzed = userDb.languageAnalyzed;
+          user.following = true;
           user.threeceeFollowing = threeCeeUser;
 
           if (!user.category && userDb.category) {
@@ -2605,6 +2615,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
             + " | @" + user.screenName.toLowerCase()
             + " | " + user.userId
             + " | " + getTimeStamp(user.createdAt)
+            + " | FLWg: " + user.following
             + " | 3CF: " + user.threeceeFollowing
             + " | LAd: " + user.languageAnalyzed
           ));
@@ -2627,6 +2638,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
             + " | @" + u.screenName.toLowerCase()
             + " | " + u.userId
             + " | " + getTimeStamp(u.createdAt)
+            + " | FLWg: " + u.following
             + " | 3CF: " + u.threeceeFollowing
             + " | C: " + u.category
             + " | CA: " + u.categoryAuto
@@ -2751,6 +2763,7 @@ function fetchFriends(params, callback) {
 
         async.eachSeries(subFriendsSortedArray, function (friend, cb){
 
+          friend.following = true;
           friend.threeceeFollowing = threeCeeUser;
 
           processUser(threeCeeUser, friend, null, function(err, user){
@@ -2774,6 +2787,7 @@ function fetchFriends(params, callback) {
                 + " (" + statsObj.user[threeCeeUser].percentProcessed.toFixed(2) + "%)"
                 + " | S: " + statsObj.user[threeCeeUser].friendsProcessStart.format(compactDateTimeFormat)
                 + " | E: " + msToTime(statsObj.user[threeCeeUser].friendsProcessElapsed)
+                + " | FLWg: " + friend.following
                 + " | 3CF: " + friend.threeceeFollowing
                 + " | @" + friend.screen_name
                 + " | Ts: " + friend.statuses_count
@@ -4641,6 +4655,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                     + " | Ts: " + updatedUserObj.statusesCount
                     + " | FLs: " + updatedUserObj.followersCount
                     + " | FRs: " + updatedUserObj.friendsCount
+                    + " | FLWg: " + updatedUserObj.following
                     + " | 3CF: " + updatedUserObj.threeceeFollowing
                     + " | LA: " + updatedUserObj.languageAnalyzed
                   ));
@@ -4708,6 +4723,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                       + " | Ts: " + updatedUserObj.statusesCount
                       + " | FLs: " + updatedUserObj.followersCount
                       + " | FRs: " + updatedUserObj.friendsCount
+                      + " | FLWg: " + updatedUserObj.following
                       + " | 3CF: " + updatedUserObj.threeceeFollowing
                       + " | LA: " + updatedUserObj.languageAnalyzed
                       + " S: " + updatedUserObj.languageAnalysis.sentiment.score.toFixed(2)
@@ -4752,6 +4768,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
                     + " | Ts: " + updatedUserObj.statusesCount
                     + " | FLs: " + updatedUserObj.followersCount
                     + " | FRs: " + updatedUserObj.friendsCount
+                    + " | FLWg: " + updatedUserObj.following
                     + " | 3CF: " + updatedUserObj.threeceeFollowing
                     + " | LA: " + updatedUserObj.languageAnalyzed
                     + " S: " + updatedUserObj.languageAnalysis.sentiment.score.toFixed(2)
