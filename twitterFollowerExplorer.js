@@ -3725,7 +3725,10 @@ function initSocket(cnf, callback){
       loadFile(bestNetworkFolder, entry.name, function(err, networkObj){
 
         if (err) {
-          console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR: " + err));
+          console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR"
+            + " | " + bestNetworkFolder + "/" + entry.name
+            + " | " + err
+          ));
           return;
         }
 
