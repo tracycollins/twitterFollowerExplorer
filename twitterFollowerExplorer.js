@@ -85,6 +85,8 @@ const HashMap = require("hashmap").HashMap;
 let bestNetworkHashMap = new HashMap();
 let trainingSetHashMap = new HashMap();
 
+let bestNetworkFolderLoaded = false;
+
 let maxInputHashMap = {};
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
@@ -1508,6 +1510,13 @@ function initRandomNetworks(params, callback){
 
 function loadBestNeuralNetworkFile(callback){
 
+  if (bestNetworkFolderLoaded){
+    console.log(chalkLog("DROPBOX NEURAL NETWORKS ALREADY LOADED ... SKIPPING"
+      + " | FOLDER: " + bestNetworkFolder
+    ));
+    return(callback(null, null));
+  }
+
   console.log(chalkLog("... LOADING DROPBOX NEURAL NETWORKS"
     + " | FOLDER: " + bestNetworkFolder
     + " | TIMEOUT: " + DEFAULT_DROPBOX_TIMEOUT + " MS"
@@ -1586,7 +1595,6 @@ function loadBestNeuralNetworkFile(callback){
               ));
               inputArrays[type] = bnwObj.inputsObj.inputs[type];
             });
-
           }
           else {
 
@@ -1607,7 +1615,6 @@ function loadBestNeuralNetworkFile(callback){
             nnObj.network = deepcopy(bnwObj);
             bestNetworkHashMap.set(currentBestNetworkId, nnObj);
             printNetworkObj("LOADED NETWORK", bnwObj);
-
           }
 
           if (bnwObj.inputsObj.inputs.images === undefined) { bnwObj.inputsObj.inputs.images = ["businesss"]; }
@@ -1623,6 +1630,7 @@ function loadBestNeuralNetworkFile(callback){
           statsObj.network.evolve = bnwObj.evolve;
           statsObj.network.evolve.options.networkObj = null;
 
+          bestNetworkFolderLoaded = true;
           callback(null, bnwObj);
         }
         else if (currentBestNetworkId && bestNetworkHashMap.has(currentBestNetworkId)) {
@@ -1644,6 +1652,9 @@ function loadBestNeuralNetworkFile(callback){
           bestNetworkHashMap.set(currentBestNetworkId, nnObj);
 
           printNetworkObj("LOADED NETWORK", bnwObj);
+
+          bestNetworkFolderLoaded = true;
+
           callback(null, bnwObj);
         }
 
@@ -2889,14 +2900,14 @@ function updateNetworkFetchFriends(threeCeeUser, callback){
 
   console.log(chalkBlue("UPDATE NETWORK + FETCH FRIENDS | @" + threeCeeUser));
 
-  // loadBestNeuralNetworkFile(function(err, nnObj){
+  loadBestNeuralNetworkFile(function(err, nnObj){
 
-  //   if (err) {
-  //     console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
-  //     return callback(err);
-  //   }
+    if (err) {
+      console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
+      return callback(err);
+    }
 
-  //   debug("loadBestNeuralNetworkFile nnObj\n" + jsonPrint(nnObj));
+    debug("loadBestNeuralNetworkFile nnObj\n" + jsonPrint(nnObj));
 
     let params = {};
     params.count = statsObj.user[threeCeeUser].count;
@@ -2994,7 +3005,7 @@ function updateNetworkFetchFriends(threeCeeUser, callback){
       ));
       callback(null, {endFetch: statsObj.user[threeCeeUser].endFetch, nextUser: nextUser});
     }
-  // });
+  });
 }
 
 function getPreviousPauseState() {
