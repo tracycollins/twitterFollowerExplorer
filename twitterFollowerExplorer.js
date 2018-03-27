@@ -3711,67 +3711,65 @@ function initSocket(cnf, callback){
   socket.on("DROPBOX_CHANGE", function(response){
     
     response.entries.forEach(function(entry){
+
       debug(chalkInfo(">R DROPBOX_CHANGE"
         + " | " + entry[".tag"].toUpperCase()
         + " | " + entry.path_lower
         + " | NAME: " + entry.name
       ));
+
       const nnId = entry.name.split(".")[0];
-      if (bestNetworkHashMap.has(nnId)){
 
-        loadFile(bestNetworkFolder, entry.name, function(err, networkObj){
+      loadFile(bestNetworkFolder, entry.name, function(err, networkObj){
 
-          if (err) {
-            console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR: " + err));
-            return;
+        if (err) {
+          console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR: " + err));
+          return;
+        }
+
+        if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
+        if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
+
+        console.log(chalkInfo("+0+ UPDATED NN"
+          + " SR: " + networkObj.successRate.toFixed(2) + "%"
+          + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
+          + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+          + " | CR: " + getTimeStamp(networkObj.createdAt)
+          + " | IN: " + networkObj.numInputs
+          + " | " + networkObj.networkId
+        ));
+
+        const hmObj = {
+          entry: entry,
+          network: networkObj
+        };
+
+        bestNetworkHashMap.set(networkObj.networkId, hmObj);
+
+        if (!currentBestNetwork 
+          || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
+          || (networkObj.matchRate > currentBestNetwork.matchRate)) {
+
+          currentBestNetwork = deepcopy(networkObj);
+          prevBestNetworkId = bestRuntimeNetworkId;
+          bestRuntimeNetworkId = networkObj.networkId;
+
+          printNetworkObj("BEST NETWORK", currentBestNetwork);
+
+          if (hostname === "google") {
+
+            const fileObj = {
+              networkId: bestRuntimeNetworkId, 
+              successRate: networkObj.successRate, 
+              matchRate:  networkObj.matchRate,
+              overallMatchRate:  networkObj.overallMatchRate
+            };
+
+            saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
           }
+        }
 
-          if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
-          if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
-
-          console.log(chalkInfo("+0+ UPDATED NN"
-            + " SR: " + networkObj.successRate.toFixed(2) + "%"
-            + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
-            + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-            + " | CR: " + getTimeStamp(networkObj.createdAt)
-            + " | IN: " + networkObj.numInputs
-            + " | " + networkObj.networkId
-          ));
-
-          const hmObj = {
-            entry: entry,
-            network: networkObj
-          };
-
-          bestNetworkHashMap.set(networkObj.networkId, hmObj);
-
-          if (!currentBestNetwork 
-            || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
-            || (networkObj.matchRate > currentBestNetwork.matchRate)
-          ) {
-
-            currentBestNetwork = deepcopy(networkObj);
-            prevBestNetworkId = bestRuntimeNetworkId;
-            bestRuntimeNetworkId = networkObj.networkId;
-
-            printNetworkObj("BEST NETWORK", currentBestNetwork);
-
-            if (hostname === "google") {
-
-              const fileObj = {
-                networkId: bestRuntimeNetworkId, 
-                successRate: networkObj.successRate, 
-                matchRate:  networkObj.matchRate,
-                overallMatchRate:  networkObj.overallMatchRate
-              };
-
-              saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
-            }
-
-          }
-
-        });
-      }
+      });
     });
 
   });
