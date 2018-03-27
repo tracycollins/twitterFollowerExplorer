@@ -5,7 +5,7 @@
     "script": "twitterFollowerExplorer.js",
     "cwd": "/home/tc/twitterFollowerExplorer",
     "node_args": "--max-old-space-size=6144",
-    "autorestart": true,
+    "autorestart": false,
     "restart_delay": 120000,
     "env": {
       "NODE_ENV": "production",
