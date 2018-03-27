@@ -3717,7 +3717,7 @@ function initSocket(cnf, callback){
 
       const entryNameArray = entry.name.split(".");
 
-      if ((entryNameArray[1] !== "json") || (entryNameArray === bestRuntimeNetworkFileName)){
+      if ((entryNameArray[1] !== "json") || (entry.name === bestRuntimeNetworkFileName)){
         console.log(chalkAlert("SKIP: " + entry.path_lower));
         return;
       }
