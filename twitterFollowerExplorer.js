@@ -4,6 +4,8 @@ require("isomorphic-fetch");
 
 const TFE_NUM_RANDOM_NETWORKS = 100;
 
+const IMAGE_QUOTA_TIMEOUT = 60000;
+
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
 const DEFAULT_MIN_SUCCESS_RATE = 80;
 const DEFAULT_MIN_INPUTS_GENERATED = 400 ;
@@ -72,6 +74,10 @@ const Twit = require("twit");
 const async = require("async");
 const sortOn = require("sort-on");
 const Stately = require("stately.js");
+
+const padStart = require("lodash.padstart");
+const padEnd = require("lodash.padend");
+
 let fsm;
 
 const HashMap = require("hashmap").HashMap;
@@ -90,6 +96,7 @@ const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db579
 const slackChannel = "#tfe";
 const Slack = require("slack-node");
 let slack = new Slack(slackOAuthAccessToken);
+
 function slackPostMessage(channel, text, callback){
 
   debug(chalkInfo("SLACK POST: " + text));
@@ -161,6 +168,8 @@ dbConnection.once("open", function() {
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
+
+let enableImageAnalysis = true;
 
 let langAnalyzer;
 let langAnalyzerMessageRxQueueInterval;
@@ -387,6 +396,16 @@ function msToTime(duration) {
   seconds = (seconds < 10) ? "0" + seconds : seconds;
 
   return days + ":" + hours + ":" + minutes + ":" + seconds;
+}
+
+function printCat(c){
+  if (c === "left") { return "L"; }
+  if (c === "neutral") { return "N"; }
+  if (c === "right") { return "R"; }
+  if (c === "positive") { return "+"; }
+  if (c === "negative") { return "-"; }
+  if (c === "none") { return "0"; }
+  return ".";
 }
 
 function loadFile(path, file, callback) {
@@ -2040,6 +2059,13 @@ function activateNetwork(obj){
   }
 }
 
+function startImageQuotaTimeout(){
+  setTimeout(function(){
+    enableImageAnalysis = true;
+    console.log(chalkLog("RE-ENABLE IMAGE ANALYSIS"));
+  }, IMAGE_QUOTA_TIMEOUT);
+}
+
 function generateAutoCategory(params, user, callback){
 
   // PARSE USER STATUS + DESC, IF EXIST
@@ -2175,7 +2201,7 @@ function generateAutoCategory(params, user, callback){
     },
 
     function userBannerImage(text, cb) {
-      if (user.bannerImageUrl) {
+      if (enableImageAnalysis && user.bannerImageUrl) {
         twitterImageParser.parseImage(
           user.bannerImageUrl, 
           {screenName: user.screenName, category: user.category, updateGlobalHistograms: true}, 
@@ -2184,6 +2210,8 @@ function generateAutoCategory(params, user, callback){
               if (err.code === 8) {
                 console.log(chalkAlert("PARSE BANNER IMAGE QUOTA ERROR"
                 ));
+                enableImageAnalysis = false;
+                startImageQuotaTimeout();
               }
               else{
                 console.log(chalkError("PARSE BANNER IMAGE ERROR"
@@ -2574,8 +2602,12 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
           user.following = true;
           user.threeceeFollowing = threeCeeUser;
 
-          if (!user.category && userDb.category) {
-            user.category = userDb.category;
+          if ((!user.category || (user.category === "false")) && userDb.category) {
+            user.category = (userDb.category === "false") ? false : userDb.category;
+          }
+
+          if ((!user.categoryAuto || (user.categoryAuto === "false")) && userDb.categoryAuto) {
+            user.categoryAuto = (userDb.categoryAuto === "false") ? false : userDb.categoryAuto;
           }
 
           if (userDb.languageAnalyzed) { 
@@ -2611,16 +2643,20 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
             user.friendsCount = userDb.friendsCount;
           }
 
-          debug(chalkInfo("USER DB HIT "
-            + " | C: " + user.category
-            + " | CA: " + user.categoryAuto
-            + " | @" + user.screenName.toLowerCase()
-            + " | " + user.userId
-            + " | " + getTimeStamp(user.createdAt)
-            + " | FLWg: " + user.following
-            + " | 3CF: " + user.threeceeFollowing
-            + " | LAd: " + user.languageAnalyzed
+          console.log(chalkInfo("USER DB HIT "
+            + " | C: " + printCat(user.category)
+            + " | CA: " + printCat(user.categoryAuto)
+            + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
+            + " | FLWg: " + padEnd(user.following, 5)
+            + " | FLWRs: " + padStart(user.followersCount, 7)
+            + " | FRNDs: " + padStart(user.friendsCount, 7)
+            + " | Ts: " + padStart(user.statusesCount, 7)
+            + " | LAd: " + padEnd(user.languageAnalyzed, 5)
+            + " | CR: " + getTimeStamp(user.createdAt)
+            + " | @" + padEnd(user.screenName.toLowerCase(), 10)
+            + " | " + padStart(user.userId, 16)
           ));
+
           cb(null, user);
         }
       });
@@ -3947,7 +3983,6 @@ function initClassifiedUserHashmap(folder, callback){
     ));
     callback(null, classifiedUsersObj);
   });
-
 }
 
 function initStdIn(){
