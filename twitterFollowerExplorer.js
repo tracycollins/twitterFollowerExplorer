@@ -267,6 +267,7 @@ statsObj.totalInputs = 0;
 
 statsObj.numNetworksLoaded = 0;
 statsObj.numNetworksUpdated = 0;
+statsObj.numNetworksSkipped = 0;
 
 statsObj.histograms = {};
 
@@ -1191,6 +1192,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
   let newBestNetwork = false;
   statsObj.numNetworksLoaded = 0;
   statsObj.numNetworksUpdated = 0;
+  statsObj.numNetworksSkipped = 0;
 
   dropboxClient.filesListFolder(options)
   .then(function(response){
@@ -1267,16 +1269,16 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             statsObj.numNetworksUpdated += 1;
 
-            console.log(chalkInfo("+0+ LOADED UPDATED DROPBOX NETWORK"
-              + " [ UPDATED: " + statsObj.numNetworksUpdated + " | LOADED: " + statsObj.numNetworksLoaded + "]" 
+            console.log(chalkInfo("+0+ UPDATED NN"
+              + " [ UPDATED: " + statsObj.numNetworksUpdated 
+              + " | LOADED: " + statsObj.numNetworksLoaded
+              + " | SKIPPED: " + statsObj.numNetworksSkipped + " ]" 
               + " SR: " + networkObj.successRate.toFixed(2) + "%"
               + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
               + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-              + " | " + getTimeStamp(networkObj.createdAt)
-              + " | " + networkObj.networkId
-              + " | " + networkObj.networkCreateMode
+              + " | CR: " + getTimeStamp(networkObj.createdAt)
               + " | IN: " + networkObj.numInputs
-              + " | OUT: " + networkObj.numOutputs
+              + " | " + networkObj.networkId
             ));
 
 
@@ -1309,8 +1311,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
               }
             }
             async.setImmediate(function() { cb(); });
-
           });
+
         }
         else {
           debug(chalkLog("DROPBOX NETWORK CONTENT SAME  "
@@ -1342,15 +1344,15 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
             statsObj.numNetworksLoaded += 1;
 
-            console.log(chalkBlue("+++ LOADED NEW DROPBOX NETWORK"
-              + " [ UPDATED: " + statsObj.numNetworksUpdated + " | LOADED: " + statsObj.numNetworksLoaded + "]" 
+            console.log(chalkBlue("+++ LOADED NN"
+              + " [ UPDATED: " + statsObj.numNetworksUpdated 
+              + " | LOADED: " + statsObj.numNetworksLoaded
+              + " | SKIPPED: " + statsObj.numNetworksSkipped + " ]" 
               + " SR: " + networkObj.successRate.toFixed(2) + "%"
               + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
               + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-              + " | " + networkObj.networkCreateMode
+              + " | CR: " + getTimeStamp(networkObj.createdAt)
               + " | IN: " + networkObj.numInputs
-              + " | OUT: " + networkObj.numOutputs
-              + " | " + getTimeStamp(networkObj.createdAt)
               + " | " + networkObj.networkId
             ));
 
@@ -1386,16 +1388,19 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
           }
           else {
-            console.log(chalkInfo("--- SKIP LOAD DROPBOX NETWORK "
-              + " [ UPDATED: " + statsObj.numNetworksUpdated + " | LOADED: " + statsObj.numNetworksLoaded + "]" 
+
+            statsObj.numNetworksSkipped += 1;
+
+            console.log(chalkInfo("--- SKIP LOAD NN "
+              + " [ UPDATED: " + statsObj.numNetworksUpdated 
+              + " | LOADED: " + statsObj.numNetworksLoaded
+              + " | SKIPPED: " + statsObj.numNetworksSkipped + " ]" 
               + " SR: " + networkObj.successRate.toFixed(2) + "%"
               + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
               + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-              + " | " + getTimeStamp(networkObj.createdAt)
-              + " | " + networkObj.networkId
-              + " | " + networkObj.networkCreateMode
+              + " | CR: " + getTimeStamp(networkObj.createdAt)
               + " | IN: " + networkObj.numInputs
-              + " | OUT: " + networkObj.numOutputs
+              + " | " + networkObj.networkId
             ));
             async.setImmediate(function() { cb(); });
           }
@@ -1418,6 +1423,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
         + "\nFILES FOUND:   " + response.entries.length + " FILES"
         + "\nNN DOWNLOADED: " + statsObj.numNetworksLoaded
         + "\nNN UPDATED:    " + statsObj.numNetworksUpdated
+        + "\nNN SKIPPED:    " + statsObj.numNetworksSkipped
         + "\nNN IN HASHMAP: " + bestNetworkHashMap.size
         + "\nNN AVAIL:      " + Object.keys(availableNeuralNetHashMap).length
         + "\n===================================\n"
@@ -1427,8 +1433,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
     });
   })
   .catch(function(err){
-
-    // clearTimeout(loadDropboxFolderTimeout);
 
     console.log(chalkError("loadBestNetworkDropboxFolder *** DROPBOX FILES LIST FOLDER ERROR"
       + "\nOPTIONS: " + jsonPrint(options)
@@ -2653,8 +2657,8 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
             + " | Ts: " + padStart(user.statusesCount, 7)
             + " | LAd: " + padEnd(user.languageAnalyzed, 5)
             + " | CR: " + getTimeStamp(user.createdAt)
-            + " | @" + padEnd(user.screenName.toLowerCase(), 10)
-            + " | " + padStart(user.userId, 16)
+            + " | @" + padEnd(user.screenName.toLowerCase(), 20)
+            + " | " + user.userId
           ));
 
           cb(null, user);
@@ -2885,14 +2889,14 @@ function updateNetworkFetchFriends(threeCeeUser, callback){
 
   console.log(chalkBlue("UPDATE NETWORK + FETCH FRIENDS | @" + threeCeeUser));
 
-  loadBestNeuralNetworkFile(function(err, nnObj){
+  // loadBestNeuralNetworkFile(function(err, nnObj){
 
-    if (err) {
-      console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
-      return callback(err);
-    }
+  //   if (err) {
+  //     console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
+  //     return callback(err);
+  //   }
 
-    debug("loadBestNeuralNetworkFile nnObj\n" + jsonPrint(nnObj));
+  //   debug("loadBestNeuralNetworkFile nnObj\n" + jsonPrint(nnObj));
 
     let params = {};
     params.count = statsObj.user[threeCeeUser].count;
@@ -2990,7 +2994,7 @@ function updateNetworkFetchFriends(threeCeeUser, callback){
       ));
       callback(null, {endFetch: statsObj.user[threeCeeUser].endFetch, nextUser: nextUser});
     }
-  });
+  // });
 }
 
 function getPreviousPauseState() {
@@ -3699,8 +3703,64 @@ function initSocket(cnf, callback){
       debug(chalkInfo(">R DROPBOX_CHANGE"
         + " | " + entry[".tag"].toUpperCase()
         + " | " + entry.path_lower
-        // + " | NAME: " + entry.name
+        + " | NAME: " + entry.name
       ));
+      const nnId = entry.name.split(".")[0];
+      if (bestNetworkHashMap.has(nnId)){
+
+        loadFile(bestNetworkFolder, entry.name, function(err, networkObj){
+
+          if (err) {
+            console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR: " + err));
+            return;
+          }
+
+          if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
+          if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
+
+          console.log(chalkInfo("+0+ UPDATED NN"
+            + " SR: " + networkObj.successRate.toFixed(2) + "%"
+            + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
+            + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+            + " | CR: " + getTimeStamp(networkObj.createdAt)
+            + " | IN: " + networkObj.numInputs
+            + " | " + networkObj.networkId
+          ));
+
+          const hmObj = {
+            entry: entry,
+            network: networkObj
+          };
+
+          bestNetworkHashMap.set(networkObj.networkId, hmObj);
+
+          if (!currentBestNetwork 
+            || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
+            || (networkObj.matchRate > currentBestNetwork.matchRate)
+          ) {
+
+            currentBestNetwork = deepcopy(networkObj);
+            prevBestNetworkId = bestRuntimeNetworkId;
+            bestRuntimeNetworkId = networkObj.networkId;
+
+            printNetworkObj("BEST NETWORK", currentBestNetwork);
+
+            if (hostname === "google") {
+
+              const fileObj = {
+                networkId: bestRuntimeNetworkId, 
+                successRate: networkObj.successRate, 
+                matchRate:  networkObj.matchRate,
+                overallMatchRate:  networkObj.overallMatchRate
+              };
+
+              saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+            }
+
+          }
+
+        });
+      }
     });
 
   });
