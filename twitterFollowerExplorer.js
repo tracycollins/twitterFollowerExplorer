@@ -2655,7 +2655,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
             user.friendsCount = userDb.friendsCount;
           }
 
-          console.log(chalkInfo("USER DB HIT "
+          debug(chalkInfo("USER DB HIT "
             + " | C: " + printCat(user.category)
             + " | CA: " + printCat(user.categoryAuto)
             + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
