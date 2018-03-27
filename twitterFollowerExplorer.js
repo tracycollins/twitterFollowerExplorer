@@ -2565,30 +2565,30 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
       }
     },
 
-    function checkCategory(user, cb) {
-      checkUserWordCategory(user, function(err, category){
-        if (err) {
-          console.error(chalkError("CHECK USER CATEGORY ERROR"
-            + " | @" + user.screenName
-            + " | " + user.userId
-            + " | " + err
-          ));
-          return(cb(err,user));
-        }
-        if (category) {
-          debug("WORD-USER HIT"
-            + " | " + user.userId
-            + " | @" + user.screenName.toLowerCase()
-            + " | C: " + user.category
-            + " | CA: " + user.categoryAuto
-          );
-          cb(null, user);
-        }
-        else {
-          cb(null, user);
-        }
-      });
-    },
+    // function checkCategory(user, cb) {
+    //   checkUserWordCategory(user, function(err, category){
+    //     if (err) {
+    //       console.error(chalkError("CHECK USER CATEGORY ERROR"
+    //         + " | @" + user.screenName
+    //         + " | " + user.userId
+    //         + " | " + err
+    //       ));
+    //       return(cb(err,user));
+    //     }
+    //     if (category) {
+    //       debug("WORD-USER HIT"
+    //         + " | " + user.userId
+    //         + " | @" + user.screenName.toLowerCase()
+    //         + " | C: " + user.category
+    //         + " | CA: " + user.categoryAuto
+    //       );
+    //       cb(null, user);
+    //     }
+    //     else {
+    //       cb(null, user);
+    //     }
+    //   });
+    // },
 
     function findUserInDb(user, cb) {
 
@@ -2637,22 +2637,25 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
             user.mentions = userDb.mentions;
           }
 
-          if ((user.followersCount && (user.followersCount !== userDb.followersCount))
-            || (user.friendsCount !== userDb.friendsCount)
-            || (user.statusesCount !== userDb.statusesCount)) {
-            updateCountHistory = true;
-          }
+          // if ((user.followersCount && (user.followersCount !== userDb.followersCount))
+          //   || (user.friendsCount && (user.friendsCount !== userDb.friendsCount))
+          //   || (user.statusesCount && (user.statusesCount !== userDb.statusesCount)) ) {
+          //   updateCountHistory = true;
+          // }
 
           if ((user.followersCount === 0) && (userDb.followersCount > 0)) {
             user.followersCount = userDb.followersCount;
+            updateCountHistory = true;
           }
 
           if ((user.statusesCount === 0) && (userDb.statusesCount > 0)) {
             user.statusesCount = userDb.statusesCount;
+            updateCountHistory = true;
           }
 
           if ((user.friendsCount === 0) && (userDb.friendsCount > 0)) {
             user.friendsCount = userDb.friendsCount;
+            updateCountHistory = true;
           }
 
           debug(chalkInfo("USER DB HIT "
@@ -3709,7 +3712,7 @@ function initSocket(cnf, callback){
     
     response.entries.forEach(function(entry){
 
-      console.log(chalkInfo(">R DROPBOX_CHANGE"
+      debug(chalkInfo(">R DROPBOX_CHANGE"
         + " | " + entry[".tag"].toUpperCase()
         + " | " + entry.path_lower
         + " | NAME: " + entry.name
@@ -3718,7 +3721,7 @@ function initSocket(cnf, callback){
       const entryNameArray = entry.name.split(".");
 
       if ((entryNameArray[1] !== "json") || (entry.name === bestRuntimeNetworkFileName)){
-        console.log(chalkAlert("SKIP: " + entry.path_lower));
+        debug(chalkAlert("SKIP: " + entry.path_lower));
         return;
       }
 
@@ -4025,7 +4028,7 @@ function initClassifiedUserHashmap(folder, callback){
         ));
 
         let params = {};
-        params.auto = (searchKey === "auto") ? true : false;
+        params.auto = (searchKey === "auto") || false;
         params.verbose = false;
 
         userServer.findClassifiedUsersCursor(params, function(err, results){
@@ -4573,13 +4576,29 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             user.category = m.category;
             user.categoryAuto = m.categoryAuto;
 
-            userDbUpdateQueue.push(user);
+            classifiedUserHashmap[user.userId] = user.category;
+            autoClassifiedUserHashmap[user.userId] = user.categoryAuto;
 
+            userDbUpdateQueue.push(user);
+          }
+          else {
+            console.log(chalkError("*** ERROR:  NETWORK_OUTPUT | BEST NN NOT IN HASHMAP???"
+              + " | " + moment().format(compactDateTimeFormat)
+              + " | " + bestRuntimeNetworkId
+              + " | " + m.bestNetwork.networkId
+              + " | SR: " + currentBestNetwork.successRate.toFixed(1) + "%"
+              + " | MR: " + m.bestNetwork.matchRate.toFixed(2) + "%"
+              + " | OAMR: " + m.bestNetwork.overallMatchRate.toFixed(2) + "%"
+              + " | @" + m.user.screenName
+              + " | C: " + m.user.category
+              + " | CA: " + m.categoryAuto
+            ));
           }
 
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
           runEnable();
+
         break;
 
         case "BEST_MATCH_RATE":
