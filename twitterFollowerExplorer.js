@@ -3712,13 +3712,18 @@ function initSocket(cnf, callback){
     
     response.entries.forEach(function(entry){
 
-      debug(chalkInfo(">R DROPBOX_CHANGE"
+      console.log(chalkInfo(">R DROPBOX_CHANGE"
         + " | " + entry[".tag"].toUpperCase()
         + " | " + entry.path_lower
         + " | NAME: " + entry.name
       ));
 
-      const nnId = entry.name.split(".")[0];
+      const entryNameArray = entry.name.split(".");
+
+      if ((entryNameArray[1] !== "json") || (entryNameArray === bestRuntimeNetworkFileName)){
+        console.log(chalkAlert("SKIP: " + entry.path_lower));
+        return;
+      }
 
       loadFile(bestNetworkFolder, entry.name, function(err, networkObj){
 
