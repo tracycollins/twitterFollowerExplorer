@@ -1340,9 +1340,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
           if ((networkObj.successRate >= configuration.minSuccessRate) 
             || (networkObj.matchRate >= configuration.minSuccessRate)
-            || (networkObj.overallMatchRate >= configuration.minSuccessRate)
-          ) {
-
+            || (networkObj.overallMatchRate >= configuration.minSuccessRate)) {
 
             statsObj.numNetworksLoaded += 1;
 
@@ -1357,7 +1355,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
               + " | IN: " + networkObj.numInputs
               + " | " + networkObj.networkId
             ));
-
 
             bestNetworkHashMap.set(networkObj.networkId, { entry: entry, network: networkObj});
 
@@ -3734,6 +3731,8 @@ function initSocket(cnf, callback){
 
         if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
         if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
+
+        if (networkObj.numInputs === undefined) { networkObj.numInputs = networkObj.network.input; }
 
         console.log(chalkInfo("+0+ UPDATED NN"
           + " SR: " + networkObj.successRate.toFixed(2) + "%"
