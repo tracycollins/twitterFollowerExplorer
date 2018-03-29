@@ -1714,9 +1714,7 @@ function checkRateLimit(callback){
     }
   }
 
-  twitterUserHashMap[currentTwitterUser].twit.get(
-    "application/rate_limit_status", 
-    function(err, data, response) {
+  twitterUserHashMap[currentTwitterUser].twit.get("application/rate_limit_status", function(err, data, response) {
 
     debug("application/rate_limit_status response: " + jsonPrint(response));
     
