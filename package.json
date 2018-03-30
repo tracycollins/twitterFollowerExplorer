@@ -7,7 +7,7 @@
     "@google-cloud/language": "^1.2.0",
     "@threeceelabs/histogram-parser": "^1.0.14",
     "@threeceelabs/mongoose-twitter": "^1.0.96",
-    "@threeceelabs/tweet-server-controller": "^1.0.213",
+    "@threeceelabs/tweet-server-controller": "^1.0.214",
     "@threeceelabs/twitter-image-parser": "^1.0.40",
     "@threeceelabs/twitter-text-parser": "^1.0.40",
     "@threeceelabs/user-server-controller": "^1.0.237",
