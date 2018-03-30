@@ -258,7 +258,7 @@ function initAnalyzeLanguageInterval(interval){
           if (err.code === 3) {
             debug(chalkLog("LAC [RXLQ: " + rxLangObjQueue.length + "]"
               + " | UNSUPPORTED LANG"
-              + " | " + langObj.obj.userId
+              + " | " + langObj.obj.nodeId
               + " | @" + langObj.obj.screenName
               + " | " + err
               // + "\nERROR" + jsonPrint(err)
@@ -268,7 +268,7 @@ function initAnalyzeLanguageInterval(interval){
           else if (err.code === 8) {
             console.error(chalkAlert("LAC [RXLQ: " + rxLangObjQueue.length + "]"
               + " | LANGUAGE QUOTA"
-              + " | " + langObj.obj.userId
+              + " | " + langObj.obj.nodeId
               + " | @" + langObj.obj.screenName
               + " | RESOURCE_EXHAUSTED"
               // + "\n" + jsonPrint(err)
@@ -278,7 +278,7 @@ function initAnalyzeLanguageInterval(interval){
           else {
             console.error(chalkError("LAC [RXLQ: " + rxLangObjQueue.length + "]"
               + " | LANGUAGE TEXT ERROR"
-              + " | " + langObj.obj.userId
+              + " | " + langObj.obj.nodeId
               + " | @" + langObj.obj.screenName
               + " | " + err
               + "\n" + jsonPrint(err)
@@ -309,7 +309,7 @@ function initAnalyzeLanguageInterval(interval){
 
           debug(chalkInfo("==> LANG RESULTS [RXLQ: " + rxLangObjQueue.length + "]"
             + " | @" + langObj.obj.screenName
-            + " | UID: " + langObj.obj.userId
+            + " | NID: " + langObj.obj.nodeId
             + " | M " + 10*results.sentiment.magnitude.toFixed(2)
             + " | S " + 10*results.sentiment.score.toFixed(1)
             + " | C " + results.sentiment.comp.toFixed(2)

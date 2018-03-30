@@ -1345,7 +1345,7 @@ process.on("message", function(m) {
 
       debug(chalkInfo("ACTIVATE"
         + " [" + rxActivateNetworkQueue.length + "]"
-        + " | " + m.obj.user.userId
+        + " | " + m.obj.user.nodeId
         + " | @" + m.obj.user.screenName
         + " | C: " + m.obj.user.category
       ));

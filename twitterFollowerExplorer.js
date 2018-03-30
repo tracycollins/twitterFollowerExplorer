@@ -1833,7 +1833,7 @@ function checkUserWordCategory(user, callback){
         + " | " + word.category
       );
 
-      classifiedUserHashmap[user.userId] = word.category;
+      classifiedUserHashmap[user.nodeId] = word.category;
 
       callback(null, word.category);
     }
@@ -1854,7 +1854,7 @@ function classifyUser(user, callback){
 
       category: function(cb){
         if (user.category) {
-          classifiedUserHashmap[user.userId] = user.category;
+          classifiedUserHashmap[user.nodeId] = user.category;
 
           statsObj.users.classified = Object.keys(classifiedUserHashmap).length;
 
@@ -1900,7 +1900,7 @@ function classifyUser(user, callback){
 
         if (user.categoryAuto) {
 
-          autoClassifiedUserHashmap[user.userId] = user.categoryAuto;
+          autoClassifiedUserHashmap[user.nodeId] = user.categoryAuto;
 
           statsObj.users.classifiedAuto = Object.keys(autoClassifiedUserHashmap).length;
 
@@ -1955,7 +1955,7 @@ function classifyUser(user, callback){
         + " | CA: " + classAutoText
         + " [ TOT M: " + Object.keys(classifiedUserHashmap).length + "]"
         + " [ TOT A: " + Object.keys(autoClassifiedUserHashmap).length + "]"
-        + " | " + user.userId
+        + " | " + user.nodeId
         + " | @" + user.screenName
         + " | " + user.name
         + " | Ts: " + user.statusesCount
@@ -2316,7 +2316,7 @@ function generateAutoCategory(params, user, callback){
           debug(chalkInfo("GEN CA"
             + " [@" + currentTwitterUser + "]"
             + " | @" + updatedUser.screenName
-            + " | " + updatedUser.userId
+            + " | " + updatedUser.nodeId
             + " | Ts: " + updatedUser.statusesCount
             + " | FLWRs: " + updatedUser.followersCount
             + " | FRNDs: " + updatedUser.friendsCount
@@ -2333,7 +2333,7 @@ function generateAutoCategory(params, user, callback){
             debug(chalkLog(">>>> LANG ANALYZE"
               + " [ ANLd: " + statsObj.analyzer.analyzed
               + " [ SKPd: " + statsObj.analyzer.skipped
-              + " | " + updatedUser.userId
+              + " | " + updatedUser.nodeId
               + " | @" + updatedUser.screenName
               + " | LAd: " + updatedUser.languageAnalyzed
               + " | LA: S: " + score.toFixed(2)
@@ -2350,7 +2350,7 @@ function generateAutoCategory(params, user, callback){
             debug(chalkLog("SKIP LANG ANALYZE"
               + " [ ANLd: " + statsObj.analyzer.analyzed
               + " [ SKPd: " + statsObj.analyzer.skipped
-              + " | " + updatedUser.userId
+              + " | " + updatedUser.nodeId
               + " | @" + updatedUser.screenName
               + " | LAd: " + updatedUser.languageAnalyzed
               + " | LA: S: " + score.toFixed(2)
@@ -2358,7 +2358,7 @@ function generateAutoCategory(params, user, callback){
             ));
           }
 
-          const u = pick(updatedUser, ["userId", "screenName", "category", "categoryAuto", "histograms", "languageAnalysis"]);
+          const u = pick(updatedUser, ["nodeId", "screenName", "category", "categoryAuto", "histograms", "languageAnalysis"]);
 
           activateNetwork({user: u, normalization: statsObj.normalization});
 
@@ -2476,37 +2476,37 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
     function unfollowFriend(user, cb) {
 
       if (
-           ((currentTwitterUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.userId))
+           ((currentTwitterUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
         
-        || ((currentTwitterUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.includes(user.userId))
-        || ((currentTwitterUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.includes(user.userId))
+        || ((currentTwitterUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
+        || ((currentTwitterUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.includes(user.nodeId))
 
       ) {
 
-        if (twitterUserHashMap.altthreecee00.friends.includes(user.userId)) {
+        if (twitterUserHashMap.altthreecee00.friends.includes(user.nodeId)) {
 
-          if (twitterUserHashMap.altthreecee01.friends.includes(user.userId)) {
-            twitterUserHashMap.altthreecee01.friends.splice(twitterUserHashMap.altthreecee01.friends.indexOf(user.userId), 1);
+          if (twitterUserHashMap.altthreecee01.friends.includes(user.nodeId)) {
+            twitterUserHashMap.altthreecee01.friends.splice(twitterUserHashMap.altthreecee01.friends.indexOf(user.nodeId), 1);
           }
-          if (twitterUserHashMap.altthreecee02.friends.includes(user.userId)) {
-            twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.userId), 1);
+          if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
+            twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.nodeId), 1);
           }
           
           user.following = true;
           user.threeceeFollowing = "altthreecee00";
         }
 
-        else if (twitterUserHashMap.altthreecee01.friends.includes(user.userId)) {
+        else if (twitterUserHashMap.altthreecee01.friends.includes(user.nodeId)) {
 
-          if (twitterUserHashMap.altthreecee02.friends.includes(user.userId)) {
-            twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.userId), 1);
+          if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
+            twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.nodeId), 1);
           }
           
           user.following = true;
           user.threeceeFollowing = "altthreecee01";
         }
 
-        else if (twitterUserHashMap.altthreecee02.friends.includes(user.userId)) {
+        else if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
 
           user.following = true;
           user.threeceeFollowing = "altthreecee02";
@@ -2514,14 +2514,14 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
 
 
         console.log(chalkInfo("UNFOLLOW | altthreecee00 OR altthreecee01 FOLLOWING"
-          + " | " + user.userId
+          + " | " + user.nodeId
           + " | " + user.screenName.toLowerCase()
           + " | FLWg: " + user.following
           + " | 3CF: " + user.threeceeFollowing
         ));
 
         twitterUserHashMap[currentTwitterUser].twit.post(
-          "friendships/destroy", {user_id: user.userId}, 
+          "friendships/destroy", {user_id: user.nodeId}, 
           function destroyFriend(err, data, response){
             if (err) {
               console.error(chalkError("UNFOLLOW ERROR"
@@ -2535,12 +2535,12 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
               debug("response\n" + jsonPrint(response));
 
               console.log(chalkInfo("UNFOLLOW " + currentTwitterUser
-                + " | " + user.userId
+                + " | " + user.nodeId
                 + " | " + user.screenName.toLowerCase()
               ));
               const slackText = "UNFOLLOW " + currentTwitterUser
                 + "\n@" + user.screenName.toLowerCase()
-                + "\n" + user.userId;
+                + "\n" + user.nodeId;
               slackPostMessage(slackChannel, slackText);
               cb(null, user);
             }
@@ -2553,7 +2553,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
         user.threeceeFollowing = currentTwitterUser;
 
         debug(chalkInfo("UPDATE 3CF"
-          + " | " + user.userId
+          + " | " + user.nodeId
           + " | " + user.screenName.toLowerCase()
           + " | FLWg: " + user.following
           + " | 3CF: " + user.threeceeFollowing
@@ -2568,14 +2568,14 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
     //     if (err) {
     //       console.error(chalkError("CHECK USER CATEGORY ERROR"
     //         + " | @" + user.screenName
-    //         + " | " + user.userId
+    //         + " | " + user.nodeId
     //         + " | " + err
     //       ));
     //       return(cb(err,user));
     //     }
     //     if (category) {
     //       debug("WORD-USER HIT"
-    //         + " | " + user.userId
+    //         + " | " + user.nodeId
     //         + " | @" + user.screenName.toLowerCase()
     //         + " | C: " + user.category
     //         + " | CA: " + user.categoryAuto
@@ -2590,7 +2590,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
 
     function findUserInDb(user, cb) {
 
-      User.find({ userId: user.userId }).limit(1).exec(function(err, uArray) {
+      User.find({ nodeId: user.nodeId }).limit(1).exec(function(err, uArray) {
 
         if (err) {
           console.log(chalkError("ERROR DB FIND ONE USER | " + err));
@@ -2599,7 +2599,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
         else if (uArray.length === 0) {
           console.log(chalkInfo("USER DB MISS"
             + " | @" + user.screenName.toLowerCase()
-            + " | " + user.userId
+            + " | " + user.nodeId
           ));
           cb(null, user);
         }
@@ -2667,7 +2667,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
             + " | LAd: " + padEnd(user.languageAnalyzed, 5)
             + " | CR: " + getTimeStamp(user.createdAt)
             + " | @" + padEnd(user.screenName.toLowerCase(), 20)
-            + " | " + user.userId
+            + " | " + user.nodeId
           ));
 
           cb(null, user);
@@ -2679,7 +2679,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
 
       classifyUser(user, function genClassifiedUserCategory(err, u){
         if (err) {
-          console.trace(chalkError("ERROR classifyUser | UID: " + user.userId
+          console.trace(chalkError("ERROR classifyUser | NID: " + user.nodeId
             + "\n" + err
           ));
           cb(err, user);
@@ -2687,7 +2687,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
         else {
           debug(chalkInfo("CLU U"
             + " | @" + u.screenName.toLowerCase()
-            + " | " + u.userId
+            + " | " + u.nodeId
             + " | " + getTimeStamp(u.createdAt)
             + " | FLWg: " + u.following
             + " | 3CF: " + u.threeceeFollowing
@@ -4574,8 +4574,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             user.category = m.category;
             user.categoryAuto = m.categoryAuto;
 
-            classifiedUserHashmap[user.userId] = user.category;
-            autoClassifiedUserHashmap[user.userId] = user.categoryAuto;
+            classifiedUserHashmap[user.nodeId] = user.category;
+            autoClassifiedUserHashmap[user.nodeId] = user.categoryAuto;
 
             userDbUpdateQueue.push(user);
           }
@@ -4725,7 +4725,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             + " " + statsObj.analyzer.skipped + " SKP"
             + " " + statsObj.analyzer.total + " TOT ]"
             + " | OP: " + m.op
-            + " | UID: " + m.obj.userId
+            + " | NID: " + m.obj.nodeId
             + " | SN: " + m.obj.screenName
             + " | N: " + m.obj.name
           ));
@@ -4738,7 +4738,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
             if (m.error.code === 8){ // LANGUAGE QUOTA; will be automatically retried
               console.log(chalkAlert("*** LANG QUOTA ERROR ... RETRY"
-                + " | " + m.obj.userId
+                + " | " + m.obj.nodeId
                 + " | " + m.obj.screenName
                 + " | CODE: " + m.error.code
               ));
@@ -4749,14 +4749,14 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             }
             else if (m.error.code === 3){ // LANGUAGE unsupported
               console.log(chalkLog("... LANG ERROR ... UNSUPPORTED LANG"
-                + " | " + m.obj.userId
+                + " | " + m.obj.nodeId
                 + " | " + m.obj.screenName
                 + " | CODE: " + m.error.code
               ));
             }
             else {
               console.log(chalkError("*** LANG ERROR"
-                + " | " + m.obj.userId
+                + " | " + m.obj.nodeId
                 + " | " + m.obj.screenName
                 + " | CODE: " + m.error.code
               ));
@@ -4777,7 +4777,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
                 if (statsObj.numLangAnalyzed % 50 === 0) {
                   console.log(chalkLog("UPDATE LANG ERR | USER>DB"
-                    + " | " + updatedUserObj.userId
+                    + " | " + updatedUserObj.nodeId
                     + " | C: " + updatedUserObj.category
                     + " | CA: " + updatedUserObj.categoryAuto
                     + " | @" + updatedUserObj.screenName
@@ -4968,7 +4968,7 @@ function initUserDbUpdateQueueInterval(interval){
         }
 
         debug(chalkInfo("US UPD<"
-          + " | " + updatedUserObj.userId
+          + " | " + updatedUserObj.nodeId
           + " | TW: " + updatedUserObj.isTwitterUser
           + " | C: " + updatedUserObj.category
           + " | CA: " + updatedUserObj.categoryAuto
