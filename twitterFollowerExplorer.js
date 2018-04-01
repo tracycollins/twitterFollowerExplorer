@@ -3813,7 +3813,7 @@ function initStatsUpdate(callback){
     saveFileQueue.push({folder:classifiedUsersFolder, file:autoClassifiedUsersDefaultFile, obj:autoClassifiedUserHashmap});
 
     if (classifiedUserHashmapReadyFlag && (hostname === "google")) {
-      saveFileQueue.push({folder:defaultClassifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
+      // saveFileQueue.push({folder:defaultClassifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
       saveFileQueue.push({folder:defaultClassifiedUsersFolder, file:autoClassifiedUsersDefaultFile, obj:autoClassifiedUserHashmap});
     }
 
