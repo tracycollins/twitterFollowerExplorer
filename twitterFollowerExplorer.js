@@ -84,6 +84,7 @@ const HashMap = require("hashmap").HashMap;
 
 let bestNetworkHashMap = new HashMap();
 let trainingSetHashMap = new HashMap();
+let categorizedUserHashMap = new HashMap();
 
 let bestNetworkFolderLoaded = false;
 
@@ -217,8 +218,7 @@ let checkRateLimitIntervalTime = ONE_MINUTE;
 let stdin;
 let abortCursor = false;
 let nextUser = false;
-let classifiedUserHashmapReadyFlag = false;
-let autoClassifiedUserHashmapReadyFlag = false;
+let categorizedUserHashMapReadyFlag = false;
 
 let neuralNetworkInitialized = false;
 let currentTwitterUser ;
@@ -284,6 +284,22 @@ statsObj.normalization.magnitude.max = -Infinity;
 
 statsObj.numLangAnalyzed = 0;
 
+statsObj.categorized = {};
+statsObj.categorized.manual = {};
+statsObj.categorized.auto = {};
+
+Object.keys(statsObj.categorized).forEach(function(cat){
+  statsObj.categorized[cat].left = 0;
+  statsObj.categorized[cat].right = 0;
+  statsObj.categorized[cat].neutral = 0;
+  statsObj.categorized[cat].positive = 0;
+  statsObj.categorized[cat].negative = 0;
+  statsObj.categorized[cat].none = 0;
+  statsObj.categorized[cat].other = 0;
+});
+
+statsObj.categorized.total = 0;
+
 let histograms = {};
 histograms.words = {};
 histograms.urls = {};
@@ -294,8 +310,6 @@ histograms.images = {};
 
 let statsUpdateInterval;
 
-let autoClassifiedUserHashmap = {};
-let classifiedUserHashmap = {};
 let twitterUserHashMap = {};
 
 let defaultNeuralNetworkFile = "neuralNetwork.json";
@@ -343,12 +357,15 @@ debug("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
 debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 
-const defaultClassifiedUsersFolder = dropboxConfigDefaultFolder;
+// const defaultClassifiedUsersFolder = dropboxConfigDefaultFolder;
 // const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
-const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
-const classifiedUsersDefaultFile = "classifiedUsers_manual.json";
-const autoClassifiedUsersDefaultFile = "classifiedUsers_auto.json";
+// const classifiedUsersFolder = dropboxConfigHostFolder + "/classifiedUsers";
+// const classifiedUsersDefaultFile = "classifiedUsers_manual.json";
+// const autoClassifiedUsersDefaultFile = "classifiedUsers_auto.json";
 
+// const categorizedFolder = dropboxConfigDefaultFolder + "/categorized";
+// const categorizedUsersFile = "categorizedUsers.json";
+// const categorizedHashtagsFile = "categorizedHashtags.json";
 
 const Dropbox = require("./js/dropbox").Dropbox;
 
@@ -716,7 +733,6 @@ function updateGlobalHistograms(callback){
   });
 }
 
-// function twitterUserUpdate(userScreenName, callback){
 function twitterUserUpdate(params, callback){
 
   debug("TWITTER USER UPDATE | params " + jsonPrint(params));
@@ -1667,7 +1683,7 @@ runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
 runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
 runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
 runEnableArgs.langAnalyzerMessageRxQueueReadyFlag = langAnalyzerMessageRxQueueReadyFlag;
-runEnableArgs.classifiedUserHashmapReadyFlag = classifiedUserHashmapReadyFlag;
+runEnableArgs.categorizedUserHashMapReadyFlag = categorizedUserHashMapReadyFlag;
 
 function runEnable(displayArgs) {
 
@@ -1684,7 +1700,7 @@ function runEnable(displayArgs) {
   runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
   runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
   runEnableArgs.langAnalyzerMessageRxQueueReadyFlag = langAnalyzerMessageRxQueueReadyFlag;
-  runEnableArgs.classifiedUserHashmapReadyFlag = classifiedUserHashmapReadyFlag;
+  runEnableArgs.categorizedUserHashMapReadyFlag = categorizedUserHashMapReadyFlag;
 
   const runEnableKeys = Object.keys(runEnableArgs);
 
@@ -1804,44 +1820,7 @@ function checkRateLimit(callback){
   });
 }
 
-function checkUserWordCategory(user, callback){
-
-  Word.findOne({nodeId: user.screenName.toLowerCase()}, function(err, word){
-    if (err) {
-      console.error(chalkError("FIND ONE WORD ERROR: " + err));
-      callback(err, user);
-    }
-    else if (!word) {
-      debug(chalkInfo("USER WORD NOT FOUND: " + user.screenName.toLowerCase()));
-      callback(null, null);
-    }
-    else if (word.category === undefined) {
-      debug("WORD-USER CATEGORY UNDEFINED"
-        + " | " + user.screenName.toLowerCase()
-      );
-      callback(null, null);
-    }
-    else if (!word.category) {
-      debug("WORD-USER CATEGORY FALSE"
-        + " | " + user.screenName.toLowerCase()
-      );
-      callback(null, null);
-    }
-    else {
-      debug("WORD-USER CATEGORY"
-        + " | " + user.screenName.toLowerCase()
-        + " | " + word.category
-      );
-
-      classifiedUserHashmap[user.nodeId] = word.category;
-
-      callback(null, word.category);
-    }
-
-  });
-}
-
-function classifyUser(user, callback){
+function updateUserCategoryStats(user, callback){
 
   return new Promise(function() {
 
@@ -1850,44 +1829,45 @@ function classifyUser(user, callback){
     let classManualText = " ";
     let classAutoText = " ";
 
+    let catObj = {};
+    catObj.manual = false;
+    catObj.auto = false;
+
     async.parallel({
 
       category: function(cb){
         if (user.category) {
-          classifiedUserHashmap[user.nodeId] = user.category;
-
-          statsObj.users.classified = Object.keys(classifiedUserHashmap).length;
 
           switch (user.category) {
             case "right":
               classManualText = "R";
-              statsObj.classification.manual.right += 1;
+              statsObj.categorized.manual.right += 1;
             break;
             case "left":
               classManualText = "L";
-              statsObj.classification.manual.left += 1;
+              statsObj.categorized.manual.left += 1;
             break;
             case "neutral":
               classManualText = "N";
-              statsObj.classification.manual.neutral += 1;
+              statsObj.categorized.manual.neutral += 1;
             break;
             case "positive":
               classManualText = "+";
-              statsObj.classification.manual.positive += 1;
+              statsObj.categorized.manual.positive += 1;
             break;
             case "negative":
               classManualText = "-";
-              statsObj.classification.manual.negative += 1;
+              statsObj.categorized.manual.negative += 1;
             break;
             case "none":
               classManualText = "0";
-              statsObj.classification.manual.none += 1;
+              statsObj.categorized.manual.none += 1;
             break;
             default:
               user.category = false;
               classManualText = user.category;
               chalkAutoCurrent = chalk.black;
-              statsObj.classification.manual.other += 1;
+              statsObj.categorized.manual.other += 1;
           }
           cb();
         }
@@ -1900,46 +1880,42 @@ function classifyUser(user, callback){
 
         if (user.categoryAuto) {
 
-          autoClassifiedUserHashmap[user.nodeId] = user.categoryAuto;
-
-          statsObj.users.classifiedAuto = Object.keys(autoClassifiedUserHashmap).length;
-
           switch (user.categoryAuto) {
             case "right":
               classAutoText = "R";
               chalkAutoCurrent = chalk.yellow;
-              statsObj.classification.auto.right += 1;
+              statsObj.categorized.auto.right += 1;
             break;
             case "left":
               classAutoText = "L";
               chalkAutoCurrent = chalk.blue;
-              statsObj.classification.auto.left += 1;
+              statsObj.categorized.auto.left += 1;
             break;
             case "neutral":
               classAutoText = "N";
               chalkAutoCurrent = chalk.black;
-              statsObj.classification.auto.neutral += 1;
+              statsObj.categorized.auto.neutral += 1;
             break;
             case "positive":
               classAutoText = "+";
               chalkAutoCurrent = chalk.green;
-              statsObj.classification.auto.positive += 1;
+              statsObj.categorized.auto.positive += 1;
             break;
             case "negative":
               classAutoText = "-";
               chalkAutoCurrent = chalk.bold.yellow;
-              statsObj.classification.auto.negative += 1;
+              statsObj.categorized.auto.negative += 1;
             break;
             case "none":
               classAutoText = "0";
               chalkAutoCurrent = chalk.black;
-              statsObj.classification.auto.none += 1;
+              statsObj.categorized.auto.none += 1;
             break;
             default:
               user.categoryAuto = false;
               classAutoText = user.categoryAuto;
               chalkAutoCurrent = chalk.bold.black;
-              statsObj.classification.auto.other += 1;
+              statsObj.categorized.auto.other += 1;
           }
           cb();
 
@@ -1950,34 +1926,47 @@ function classifyUser(user, callback){
       }
     }, function(){
 
-      debug(chalkAutoCurrent(">USR KWs"
-        + " | C: " + classManualText
-        + " | CA: " + classAutoText
-        + " [ TOT M: " + Object.keys(classifiedUserHashmap).length + "]"
-        + " [ TOT A: " + Object.keys(autoClassifiedUserHashmap).length + "]"
-        + " | " + user.nodeId
-        + " | @" + user.screenName
-        + " | " + user.name
-        + " | Ts: " + user.statusesCount
-        + " | FLWRs: " + user.followersCount
-        + " | FRNDs: " + user.friendsCount
-        + " | FLWg: " + user.following
-        + " | 3CF: " + user.threeceeFollowing
-        + "\n C: [ L: " + statsObj.classification.manual.left
-        + " | R: " + statsObj.classification.manual.right
-        + " | +: " + statsObj.classification.manual.positive
-        + " | -: " + statsObj.classification.manual.negative
-        + " | N: " + statsObj.classification.manual.neutral
-        + " | O: " + statsObj.classification.manual.other
-        + " | X: " + statsObj.classification.manual.none + " ]"
-        + "\n CA: [ L: " + statsObj.classification.auto.left
-        + " | R: " + statsObj.classification.auto.right
-        + " | +: " + statsObj.classification.auto.positive
-        + " | -: " + statsObj.classification.auto.negative
-        + " | N: " + statsObj.classification.auto.neutral
-        + " | O: " + statsObj.classification.auto.other
-        + " | X: " + statsObj.classification.auto.none + " ]"
-      ));
+      statsObj.categorized.total += statsObj.categorized.manual.left;
+      statsObj.categorized.total += statsObj.categorized.manual.right;
+      statsObj.categorized.total += statsObj.categorized.manual.neutral;
+      statsObj.categorized.total += statsObj.categorized.manual.positive;
+      statsObj.categorized.total += statsObj.categorized.manual.negative;
+
+      statsObj.categorized.total += statsObj.categorized.auto.left;
+      statsObj.categorized.total += statsObj.categorized.auto.right;
+      statsObj.categorized.total += statsObj.categorized.auto.neutral;
+      statsObj.categorized.total += statsObj.categorized.auto.positive;
+      statsObj.categorized.total += statsObj.categorized.auto.negative;
+
+
+      // debug(chalkAutoCurrent(">USR KWs"
+      //   + " | C: " + classManualText
+      //   + " | CA: " + classAutoText
+      //   + " [ TOT M: " + statsObj.categorized.total.manual + "]"
+      //   + " [ TOT A: " + statsObj.categorized.total.auto + "]"
+      //   + " | " + user.nodeId
+      //   + " | @" + user.screenName
+      //   + " | " + user.name
+      //   + " | Ts: " + user.statusesCount
+      //   + " | FLWRs: " + user.followersCount
+      //   + " | FRNDs: " + user.friendsCount
+      //   + " | FLWg: " + user.following
+      //   + " | 3CF: " + user.threeceeFollowing
+      //   + "\n CM: [ L: " + statsObj.categorized.manual.left
+      //   + " | R: " + statsObj.categorized.manual.right
+      //   + " | +: " + statsObj.categorized.manual.positive
+      //   + " | -: " + statsObj.categorized.manual.negative
+      //   + " | N: " + statsObj.categorized.manual.neutral
+      //   + " | O: " + statsObj.categorized.manual.other
+      //   + " | X: " + statsObj.categorized.manual.none + " ]"
+      //   + "\n CA: [ L: " + statsObj.categorized.auto.left
+      //   + " | R: " + statsObj.categorized.auto.right
+      //   + " | +: " + statsObj.categorized.auto.positive
+      //   + " | -: " + statsObj.categorized.auto.negative
+      //   + " | N: " + statsObj.categorized.auto.neutral
+      //   + " | O: " + statsObj.categorized.auto.other
+      //   + " | X: " + statsObj.categorized.auto.none + " ]"
+      // ));
 
       callback(null, user);
     });
@@ -2312,7 +2301,6 @@ function generateAutoCategory(params, user, callback){
           statsObj.normalization.magnitude.min = Math.min(mag, statsObj.normalization.magnitude.min);
           statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
 
-
           debug(chalkInfo("GEN CA"
             + " [@" + currentTwitterUser + "]"
             + " | @" + updatedUser.screenName
@@ -2563,31 +2551,6 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
       }
     },
 
-    // function checkCategory(user, cb) {
-    //   checkUserWordCategory(user, function(err, category){
-    //     if (err) {
-    //       console.error(chalkError("CHECK USER CATEGORY ERROR"
-    //         + " | @" + user.screenName
-    //         + " | " + user.nodeId
-    //         + " | " + err
-    //       ));
-    //       return(cb(err,user));
-    //     }
-    //     if (category) {
-    //       debug("WORD-USER HIT"
-    //         + " | " + user.nodeId
-    //         + " | @" + user.screenName.toLowerCase()
-    //         + " | C: " + user.category
-    //         + " | CA: " + user.categoryAuto
-    //       );
-    //       cb(null, user);
-    //     }
-    //     else {
-    //       cb(null, user);
-    //     }
-    //   });
-    // },
-
     function findUserInDb(user, cb) {
 
       User.find({ nodeId: user.nodeId }).limit(1).exec(function(err, uArray) {
@@ -2606,19 +2569,21 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
         else {
 
           let userDb = uArray[0];
-          
+
+          let catObj = {};
+
+          catObj.manual = userDb.category || false;
+          catObj.auto = userDb.categoryAuto || false;
+
+          categorizedUserHashMap.set(userDb.nodeId, catObj);
+
+          user.category = userDb.category;
+          user.categoryAuto = userDb.categoryAuto;
+
           user.createdAt = userDb.createdAt;
           user.languageAnalyzed = userDb.languageAnalyzed;
           user.following = true;
           user.threeceeFollowing = threeCeeUser;
-
-          if ((!user.category || (user.category === "false")) && userDb.category) {
-            user.category = (userDb.category === "false") ? false : userDb.category;
-          }
-
-          if ((!user.categoryAuto || (user.categoryAuto === "false")) && userDb.categoryAuto) {
-            user.categoryAuto = (userDb.categoryAuto === "false") ? false : userDb.categoryAuto;
-          }
 
           if (userDb.languageAnalyzed) { 
             user.languageAnalysis = userDb.languageAnalysis;
@@ -2634,12 +2599,6 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
           if ((user.mentions === 0) && (userDb.mentions > 0)) {
             user.mentions = userDb.mentions;
           }
-
-          // if ((user.followersCount && (user.followersCount !== userDb.followersCount))
-          //   || (user.friendsCount && (user.friendsCount !== userDb.friendsCount))
-          //   || (user.statusesCount && (user.statusesCount !== userDb.statusesCount)) ) {
-          //   updateCountHistory = true;
-          // }
 
           if ((user.followersCount === 0) && (userDb.followersCount > 0)) {
             user.followersCount = userDb.followersCount;
@@ -2657,7 +2616,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
           }
 
           debug(chalkInfo("USER DB HIT "
-            + " | C: " + printCat(user.category)
+            + " | CM: " + printCat(user.category)
             + " | CA: " + printCat(user.categoryAuto)
             + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
             + " | FLWg: " + padEnd(user.following, 5)
@@ -2675,9 +2634,9 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
       });
     },
 
-    function updateClassifyUser(user, cb) {
+    function updateUserCategory(user, cb) {
 
-      classifyUser(user, function genClassifiedUserCategory(err, u){
+      updateUserCategoryStats(user, function(err, u){
         if (err) {
           console.trace(chalkError("ERROR classifyUser | NID: " + user.nodeId
             + "\n" + err
@@ -2700,7 +2659,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
       });
     },
 
-    function genCategory(user, cb){
+    function genAutoCat(user, cb){
 
       if (!neuralNetworkInitialized) { return(cb(null, user)); }
 
@@ -3205,26 +3164,6 @@ statsObj.network = {};
 statsObj.network.networkId = "";
 statsObj.network.successRate = 0;
 
-statsObj.classification = {};
-statsObj.classification.auto = {};
-statsObj.classification.manual = {};
-
-statsObj.classification.manual.left = 0;
-statsObj.classification.manual.right = 0;
-statsObj.classification.manual.positive = 0;
-statsObj.classification.manual.negative = 0;
-statsObj.classification.manual.neutral = 0;
-statsObj.classification.manual.other = 0;
-statsObj.classification.manual.none = 0;
-
-statsObj.classification.auto.left = 0;
-statsObj.classification.auto.right = 0;
-statsObj.classification.auto.positive = 0;
-statsObj.classification.auto.negative = 0;
-statsObj.classification.auto.neutral = 0;
-statsObj.classification.auto.other = 0;
-statsObj.classification.auto.none = 0;
-
 statsObj.users = {};
 statsObj.users.totalTwitterFriends = 0;
 statsObj.users.grandTotalFriendsFetched = 0;
@@ -3280,6 +3219,7 @@ function showStats(options){
       statsObj.users.totalFriendsFetched = 0;
 
       async.eachSeries(configuration.twitterUsers, function(tUserScreenName, cb){
+
         twitterUserUpdate({userScreenName: tUserScreenName, resetStats: false}, function(err){
          if (err){
             if (err.code === 88) {
@@ -3316,8 +3256,8 @@ function showStats(options){
           + " (" + statsObj.user[currentTwitterUser].percentProcessed.toFixed(2) + "%)"
           + "\nT FTCHD: " + statsObj.users.totalFriendsFetched + " / " + statsObj.users.totalTwitterFriends
           + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
-          + "\nCL AUTO: " + Object.keys(autoClassifiedUserHashmap).length
-          + "\nCL MANU: " + Object.keys(classifiedUserHashmap).length
+          + "\nCL AUTO: " + statsObj.categorized.auto
+          + "\nCL MANU: " + statsObj.categorized.manual
           + "\nNNs HM:  " + statsObj.numNetworksLoaded
           + "\nNET ID:  " + statsObj.network.networkId
           + "\nANLYZD:  " + statsObj.analyzer.analyzed + " ANLs"
@@ -3809,14 +3749,6 @@ function initStatsUpdate(callback){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
-    saveFileQueue.push({folder:classifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
-    saveFileQueue.push({folder:classifiedUsersFolder, file:autoClassifiedUsersDefaultFile, obj:autoClassifiedUserHashmap});
-
-    if (classifiedUserHashmapReadyFlag && (hostname === "google")) {
-      // saveFileQueue.push({folder:defaultClassifiedUsersFolder, file:classifiedUsersDefaultFile, obj:classifiedUserHashmap});
-      saveFileQueue.push({folder:defaultClassifiedUsersFolder, file:autoClassifiedUsersDefaultFile, obj:autoClassifiedUserHashmap});
-    }
-
     twitterTextParser.getGlobalHistograms(function(){
       saveFileQueue.push({folder: statsFolder, file: statsFile, obj: statsObj});
     });
@@ -4001,66 +3933,35 @@ function initTwitterUsers(callback){
   }
 }
 
-function initClassifiedUserHashmap(folder, callback){
+function initCategorizedUserHashMap(callback){
 
-  console.log(chalkTwitter("INIT CLASSIFED USERS HASHMAPS FROM DB"));
+  console.log(chalkTwitter("INIT CATEGORIZED USER HASHMAPS FROM DB"));
 
-  let classifiedUsersObj = {};
+  userServer.findCategorizedUsersCursor({}, function(err, results){
+    if (err) {
+      console.error(chalkError("ERROR: initCategoryHashmaps: findCategorizedUsersCursor:"
+        + " " + err
+      ));
+      if (callback !== undefined) { callback(err);}
+    }
+    else {
+      console.log(chalkTwitter("LOADED CATEGORIZED USERS FROM DB"
+        + " | " + results.count + " CATEGORIZED"
+        + " | " + results.manual + " MAN"
+        + " | " + results.auto + " AUTO"
+        + " | " + results.matchRate.toFixed(2) + "% MR"
+      ));
 
-  async.eachSeries(["manual", "auto"], function(searchKey, cb){
-
-    const file = "classifiedUsers_" + searchKey + ".json";
-
-    classifiedUsersObj[searchKey] = {};
-
-    loadFile(folder, file, function(err, dropboxClassifiedUsersObj){
-      if (err) {
-        console.error(chalkError("ERROR: loadFile: " + folder + "/" + file));
-        console.log(chalkError("ERROR: loadFile: " + folder + "/" + file));
-        callback(err, file);
-      }
-      else {
-        console.log(chalkTwitter("LOADED " + searchKey.toUpperCase() + " CLASSIFED USERS FILE: " + folder + "/" + file));
-        console.log(chalkTwitter("DROPBOX DEFAULT"
-          + " | " + Object.keys(dropboxClassifiedUsersObj).length + " " + searchKey.toUpperCase() + " CLASSIFED USERS"
-        ));
-
-        let params = {};
-        params.auto = (searchKey === "auto") || false;
-        params.verbose = false;
-
-        userServer.findClassifiedUsersCursor(params, function(err, results){
-          if (err) {
-            console.error(chalkError("ERROR: initClassifiedUserHashmap: "));
-            cb(err);
-          }
-          else {
-            console.log(chalkTwitter("LOADED " + searchKey.toUpperCase() + " CLASSIFED USERS FROM DB"
-              + " | " + results.count + " CLASSIFED"
-              + " | " + results.manual + " MAN"
-              + " | " + results.auto + " AUTO"
-              + " | " + results.matchRate.toFixed(2) + "% MR"
-            ));
-
-            classifiedUsersObj[searchKey] = omit(results, ["obj"]);
-            classifiedUsersObj[searchKey].obj = {};
-            classifiedUsersObj[searchKey].obj = defaults(dropboxClassifiedUsersObj, results.obj);
-
-            cb();
-          }
-        });
-
-      }
-    });
-
-  }, function (err){
-    console.log(chalkAlert("LOADED CLASSIFED USERS FROM DB COMPLETE"
-      + " | " + classifiedUsersObj.manual.count + " MANUAL"
-      + " | " + classifiedUsersObj.auto.count + " AUTO"
-    ));
-    callback(null, classifiedUsersObj);
+      // categorizedUsersObj[user.nodeId.toString()] = { manual: user.category, auto: user.categoryAuto };
+      Object.keys(results.obj).forEach(function(nodeId){
+        categorizedUserHashMap.set(nodeId, results.obj[nodeId]);
+      });
+      categorizedUserHashMapReadyFlag = true;
+      if (callback !== undefined) { callback(err);}
+    }
   });
 }
+
 
 function initStdIn(){
 
@@ -4111,23 +4012,6 @@ function initialize(cnf, callback){
   fsm.fsm_reset();
   fsm.fsm_initStart();
 
-  initClassifiedUserHashmap(defaultClassifiedUsersFolder, function(err, results){
-    if (err) {
-      console.error(chalkError("*** ERROR: CLASSIFED USER HASHMAP NOT INITIALIZED: ", err));
-    }
-    else {
-      classifiedUserHashmap = results.manual.obj;
-      autoClassifiedUserHashmap = results.auto.obj;
-      console.log(chalkTwitterBold("LOADED " + Object.keys(classifiedUserHashmap).length + " TOTAL MANUAL CLASSIFED USERS"));
-      console.log(chalkTwitterBold("MANUAL MATCHRATE: " + results.manual.matchRate.toFixed(2) + "%"));
-      console.log(chalkTwitterBold("LOADED " + Object.keys(autoClassifiedUserHashmap).length + " TOTAL AUTO CLASSIFED USERS"));
-      console.log(chalkTwitterBold("AUTO   MATCHRATE: " + results.auto.matchRate.toFixed(2) + "%"));
-      classifiedUserHashmapReadyFlag = true;
-      autoClassifiedUserHashmapReadyFlag = true;
-      runEnable();
-    }
-  });
-
   if (debug.enabled){
     console.log("\n%%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
   }
@@ -4159,7 +4043,6 @@ function initialize(cnf, callback){
   cnf.forceLanguageAnalysis = process.env.TFE_FORCE_LANG_ANALYSIS || false ;
 
   console.log(chalkAlert("FORCE LANG ANALYSIS: " + cnf.forceLanguageAnalysis));
-
 
   cnf.twitterDefaultUser = process.env.TFE_TWITTER_DEFAULT_USER || TWITTER_DEFAULT_USER ;
   cnf.twitterUsers = process.env.TFE_TWITTER_USERS || [ "altthreecee02", "altthreecee01", "altthreecee00" ] ;
@@ -4434,7 +4317,6 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
       let m = randomNetworkTreeMessageRxQueue.shift();
 
       let user = {};
-      // let entry = {};
       let hmObj = {};
       let prevHmObj = {};
       let fileObj = {};
@@ -4574,8 +4456,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             user.category = m.category;
             user.categoryAuto = m.categoryAuto;
 
-            classifiedUserHashmap[user.nodeId] = user.category;
-            autoClassifiedUserHashmap[user.nodeId] = user.categoryAuto;
+            categorizedUserHashMap.set(user.nodeId, {manual: m.category, auto: m.categoryAuto});
 
             userDbUpdateQueue.push(user);
           }
@@ -4988,7 +4869,6 @@ function initRandomNetworkTree(callback){
 
   console.log(chalkBlue("INIT RANDOM NETWORK TREE CHILD PROCESS"));
 
-
   randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`);
 
   randomNetworkTree.on("message", function(m){
@@ -5126,6 +5006,82 @@ function initLangAnalyzer(callback){
   });
 }
 
+    // loadFile(categorizedFolder, categorizedUsersFile, function(err, categoriedUserObj){
+    //   if (err){
+    //     if (err.status === 409){
+    //       console.log(chalkError("FILE NOT FOUND: " + categorizedFolder + "/" + categorizedUsersFile));
+    //     }
+    //     else {
+    //       console.log(chalkError("ERROR: " + err));
+    //       return(callback(err));
+    //     }
+    //   }
+
+    //   let cObj = {};
+    //   cObj.manual = false;
+    //   cObj.auto = false;
+
+    //   if (categoriedUserObj) {
+    //     Object.keys(categoriedUserObj).forEach(function(nodeId){
+
+    //       cObj = categoriedUserObj[nodeId];
+
+    //       // value = { manual: hashtag.category, auto: hashtag.categoryAuto };
+    //       if (categorizedUserHashMap.has(nodeId)){
+    //         cObj.auto = categorizedUserHashMap.get(nodeId).auto || false;
+    //       }
+
+    //       categorizedUserHashMap.set(nodeId, cObj);
+
+    //       console.log(chalkInfo("CL USR"
+    //         + " | CM: " + printCat(cObj.manual)
+    //         + " | CA: " + printCat(cObj.auto)
+    //         + " | " + nodeId
+    //       ));
+    //     });
+
+    //     console.log(chalkAlert("LOADED " + Object.keys(categoriedUserManualObj).length + " CATEGORIZED USERS"
+    //       + " | " + categorizedFolder + "/" + categorizedUsersFile
+    //     ));
+    //   }
+
+    //   console.log(chalkAlert(categorizedUserHashMap.count() + " CATEGORIZED USERS IN HASHMAP"
+    //   ));
+
+    //   categorizedUserHashMap.forEach(function(catObj, nodeId){
+
+    //     User.findOneAndUpdate({nodeId: nodeId}, { $set: { category: catObj.manual }}, {}, function(err, updatedUser){
+    //       if (err) { 
+    //         console.log(chalkError("ERROR: SAVE: categorizedUserHashMap: USER FINDEONE AND UPDATE: " + err));
+    //       }
+    //       if (updatedUser) {
+
+    //         console.log("UPDATED DB"
+    //           + " | CM: " + printCat(updatedUser.category)
+    //           + " | CA: " + printCat(updatedUser.categoryAuto)
+    //           + " | @" + updatedUser.screenName
+    //           + " | " + updatedUser.nodeId
+    //         );
+    //         if (typeof updatedUser.category === "object") {
+    //           console.log(chalkAlert("??? CATEGORY IS OBJECT ... SETTING TO false"
+    //             + " | @" + updatedUser.screenName
+    //             + " | " + updatedUser.nodeId
+    //             + "\n" + jsonPrint(updatedUser.category)
+    //           ));
+    //         }
+    //       }
+    //       else {
+    //         console.log("--- MISS UPDATE DB"
+    //           + " | " + nodeId
+    //           + " | CM: " + printCat(catObj.manual)
+    //         );
+    //       }
+    //     });
+    //   });
+    //   callback();
+    // });
+
+
 initialize(configuration, function(err, cnf){
 
   if (err) {
@@ -5158,111 +5114,107 @@ initialize(configuration, function(err, cnf){
 
   console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
-  // initInputArrays(cnf, function(err){
+  initCategorizedUserHashMap();
 
-    // if (err) {
-    //   console.error(chalkError("*** INIT INPUT ARRAYS ERROR\n" + jsonPrint(err)));
-    // }
+  initUserDbUpdateQueueInterval(100);
+  initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
+  initRandomNetworkTree();
 
-    initUserDbUpdateQueueInterval(100);
-    initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
-    initRandomNetworkTree();
+  initLangAnalyzerMessageRxQueueInterval(100);
+  initLangAnalyzer();
 
-    initLangAnalyzerMessageRxQueueInterval(100);
-    initLangAnalyzer();
+  neuralNetworkInitialized = true;
 
-    neuralNetworkInitialized = true;
+  initTwitterUsers(function initTwitterUsersCallback(e){
 
-    initTwitterUsers(function initTwitterUsersCallback(e){
+    if (e) {
+      console.error(chalkError("*** ERROR INIT TWITTER USERS: " + e));
+      return quit({source: "TFE", error: e});
+    }
 
-      if (e) {
-        console.error(chalkError("*** ERROR INIT TWITTER USERS: " + e));
-        return quit({source: "TFE", error: e});
-      }
+    if (currentTwitterUser === undefined) { 
+      currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
+    }
 
-      if (currentTwitterUser === undefined) { 
-        currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
-      }
+    console.log(chalkTwitter("CURRENT TWITTER USER: @" + currentTwitterUser));
 
-      console.log(chalkTwitter("CURRENT TWITTER USER: @" + currentTwitterUser));
+    checkRateLimit();
+    initCheckRateLimitInterval(checkRateLimitIntervalTime);
+    initSocket(cnf, function(){});
 
-      checkRateLimit();
-      initCheckRateLimitInterval(checkRateLimitIntervalTime);
-      initSocket(cnf, function(){});
+    if (configuration.userDbCrawl) { 
+      console.log(chalkTwitter("\n\n*** CRAWLING USER DB ***\n\n"));
+    }
+    else {
+      console.log(chalkTwitter("... GET TWITTER FRIENDS"
+        + " [ USER INDEX: " + currentTwitterUserIndex + "]"
+        + " | @" + statsObj.user[currentTwitterUser].screenName
+      ));
+      debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[currentTwitterUser]) + "\n\n"));
 
-      if (configuration.userDbCrawl) { 
-        console.log(chalkTwitter("\n\n*** CRAWLING USER DB ***\n\n"));
-      }
-      else {
-        console.log(chalkTwitter("... GET TWITTER FRIENDS"
-          + " [ USER INDEX: " + currentTwitterUserIndex + "]"
-          + " | @" + statsObj.user[currentTwitterUser].screenName
-        ));
-        debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[currentTwitterUser]) + "\n\n"));
+      if (configuration.testMode) {
 
-        if (configuration.testMode) {
+        // fetchTwitterFriendsIntervalTime = TEST_TWITTER_FETCH_FRIENDS_INTERVAL;
 
-          // fetchTwitterFriendsIntervalTime = TEST_TWITTER_FETCH_FRIENDS_INTERVAL;
+        setTimeout(function() {
 
-          setTimeout(function() {
+          console.log("LOAD " + localHistogramsFolder + "/histograms.json");
 
-            console.log("LOAD " + localHistogramsFolder + "/histograms.json");
+          loadFile(localHistogramsFolder, "histograms.json", function(err, histogramsObj){
+            if (err) {
+              console.log(chalkError("LOAD histograms.json ERROR\n" + jsonPrint(err)));
+            }
+            else {
+              console.log(chalkAlert("histogramsObj: " + histogramsObj.histogramsId));
 
-            loadFile(localHistogramsFolder, "histograms.json", function(err, histogramsObj){
-              if (err) {
-                console.log(chalkError("LOAD histograms.json ERROR\n" + jsonPrint(err)));
+              let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
+
+              if (configuration.testMode) { 
+                inFolder = inFolder + "_test";
               }
-              else {
-                console.log(chalkAlert("histogramsObj: " + histogramsObj.histogramsId));
 
-                let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
+              const hId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+              const inFile = hId + ".json"; 
 
-                if (configuration.testMode) { 
-                  inFolder = inFolder + "_test";
+              const genInParams = {
+                histogramsObj: { 
+                  histogramsId: hId, 
+                  histograms: histogramsObj.histograms
+                },
+                histogramParseDominantMin: configuration.histogramParseDominantMin,
+                histogramParseTotalMin: configuration.histogramParseTotalMin
+              };
+
+              generateInputSets(genInParams, function(err, inputsObj){
+                if (err) {
+                  console.log(chalkError("ERROR | NOT SAVING INPUTS FILE"
+                    + " | " + err
+                    + " | " + inFolder + "/" + inFile
+                  ));
                 }
+                else {
+                  console.log(chalkAlert("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+                  saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
+                }
+              });
+            }
 
-                const hId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-                const inFile = hId + ".json"; 
-
-                const genInParams = {
-                  histogramsObj: { 
-                    histogramsId: hId, 
-                    histograms: histogramsObj.histograms
-                  },
-                  histogramParseDominantMin: configuration.histogramParseDominantMin,
-                  histogramParseTotalMin: configuration.histogramParseTotalMin
-                };
-
-                generateInputSets(genInParams, function(err, inputsObj){
-                  if (err) {
-                    console.log(chalkError("ERROR | NOT SAVING INPUTS FILE"
-                      + " | " + err
-                      + " | " + inFolder + "/" + inFile
-                    ));
-                  }
-                  else {
-                    console.log(chalkAlert("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
-                    saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
-                  }
-                });
-              }
-
-            });
-
-          }, 1000);
-        }
-
-        loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function(){
-
-          randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function(){
-            console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
-
-            fsm.fsm_initComplete();
-            fsm.fsm_fetchAllStart();
-            fsm.fsm_fetchUserStart();
           });
 
-        });
+        }, 1000);
       }
-    });
+
+      loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function(){
+
+        randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function(){
+          console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+
+          fsm.fsm_initComplete();
+          fsm.fsm_fetchAllStart();
+          fsm.fsm_fetchUserStart();
+        });
+
+      });
+    }
+  });
 });
