@@ -299,6 +299,8 @@ Object.keys(statsObj.categorized).forEach(function(cat){
 });
 
 statsObj.categorized.total = 0;
+statsObj.categorized.totalManual = 0;
+statsObj.categorized.totalAuto = 0;
 
 let histograms = {};
 histograms.words = {};
@@ -1926,17 +1928,21 @@ function updateUserCategoryStats(user, callback){
       }
     }, function(){
 
-      statsObj.categorized.total += statsObj.categorized.manual.left;
-      statsObj.categorized.total += statsObj.categorized.manual.right;
-      statsObj.categorized.total += statsObj.categorized.manual.neutral;
-      statsObj.categorized.total += statsObj.categorized.manual.positive;
-      statsObj.categorized.total += statsObj.categorized.manual.negative;
+      statsObj.categorized.totalManual = 0;
+      statsObj.categorized.totalManual += statsObj.categorized.manual.left;
+      statsObj.categorized.totalManual += statsObj.categorized.manual.right;
+      statsObj.categorized.totalManual += statsObj.categorized.manual.neutral;
+      statsObj.categorized.totalManual += statsObj.categorized.manual.positive;
+      statsObj.categorized.totalManual += statsObj.categorized.manual.negative;
 
-      statsObj.categorized.total += statsObj.categorized.auto.left;
-      statsObj.categorized.total += statsObj.categorized.auto.right;
-      statsObj.categorized.total += statsObj.categorized.auto.neutral;
-      statsObj.categorized.total += statsObj.categorized.auto.positive;
-      statsObj.categorized.total += statsObj.categorized.auto.negative;
+      statsObj.categorized.totalAuto = 0;
+      statsObj.categorized.totalAuto += statsObj.categorized.auto.left;
+      statsObj.categorized.totalAuto += statsObj.categorized.auto.right;
+      statsObj.categorized.totalAuto += statsObj.categorized.auto.neutral;
+      statsObj.categorized.totalAuto += statsObj.categorized.auto.positive;
+      statsObj.categorized.totalAuto += statsObj.categorized.auto.negative;
+
+      statsObj.categorized.total = statsObj.categorized.totalManual + statsObj.categorized.totalAuto;
 
 
       // debug(chalkAutoCurrent(">USR KWs"
@@ -3256,8 +3262,8 @@ function showStats(options){
           + " (" + statsObj.user[currentTwitterUser].percentProcessed.toFixed(2) + "%)"
           + "\nT FTCHD: " + statsObj.users.totalFriendsFetched + " / " + statsObj.users.totalTwitterFriends
           + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
-          + "\nCL AUTO: " + statsObj.categorized.auto
-          + "\nCL MANU: " + statsObj.categorized.manual
+          + "\nCL AUTO: " + statsObj.categorized.totalAuto
+          + "\nCL MANU: " + statsObj.categorized.totalManual
           + "\nNNs HM:  " + statsObj.numNetworksLoaded
           + "\nNET ID:  " + statsObj.network.networkId
           + "\nANLYZD:  " + statsObj.analyzer.analyzed + " ANLs"
