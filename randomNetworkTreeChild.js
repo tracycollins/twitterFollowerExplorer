@@ -306,14 +306,14 @@ function generateNetworkInput(params, callback){
         if ((params.maxInputHashMap === undefined) 
           || (params.maxInputHashMap[inputType] === undefined)) {
 
-          console.log(chalkAlert("UNDEFINED??? params.maxInputHashMap." + inputType + " | " + inputName
-            + "\n" + jsonPrint(params.maxInputHashMap)
+          console.log(chalkAlert("??? UNDEFINED??? params.maxInputHashMap." + inputType + " | " + inputName
+            + "\n" + Object.keys(params.maxInputHashMap)
           ));
 
           networkInput.push(1);
           inputHits.push({type: inputType, inputName: inputName, inputValue: histogramObj[inputName]});
 
-          debug(chalkLog("RNT | GENERATE NET INPUT"
+          console.log(chalkLog("RNT | ??? UNDEFINED GENERATE NET INPUT"
             + " | IN LENGTH: " + networkInput.length
             + " | IN HITS: " + inputHits.length
             + " | @" + params.userScreenName
