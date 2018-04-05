@@ -1944,36 +1944,6 @@ function updateUserCategoryStats(user, callback){
 
       statsObj.categorized.total = statsObj.categorized.totalManual + statsObj.categorized.totalAuto;
 
-
-      // debug(chalkAutoCurrent(">USR KWs"
-      //   + " | C: " + classManualText
-      //   + " | CA: " + classAutoText
-      //   + " [ TOT M: " + statsObj.categorized.total.manual + "]"
-      //   + " [ TOT A: " + statsObj.categorized.total.auto + "]"
-      //   + " | " + user.nodeId
-      //   + " | @" + user.screenName
-      //   + " | " + user.name
-      //   + " | Ts: " + user.statusesCount
-      //   + " | FLWRs: " + user.followersCount
-      //   + " | FRNDs: " + user.friendsCount
-      //   + " | FLWg: " + user.following
-      //   + " | 3CF: " + user.threeceeFollowing
-      //   + "\n CM: [ L: " + statsObj.categorized.manual.left
-      //   + " | R: " + statsObj.categorized.manual.right
-      //   + " | +: " + statsObj.categorized.manual.positive
-      //   + " | -: " + statsObj.categorized.manual.negative
-      //   + " | N: " + statsObj.categorized.manual.neutral
-      //   + " | O: " + statsObj.categorized.manual.other
-      //   + " | X: " + statsObj.categorized.manual.none + " ]"
-      //   + "\n CA: [ L: " + statsObj.categorized.auto.left
-      //   + " | R: " + statsObj.categorized.auto.right
-      //   + " | +: " + statsObj.categorized.auto.positive
-      //   + " | -: " + statsObj.categorized.auto.negative
-      //   + " | N: " + statsObj.categorized.auto.neutral
-      //   + " | O: " + statsObj.categorized.auto.other
-      //   + " | X: " + statsObj.categorized.auto.none + " ]"
-      // ));
-
       callback(null, user);
     });
 
@@ -2470,10 +2440,10 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
     function unfollowFriend(user, cb) {
 
       if (
-           ((currentTwitterUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
+           ((threeCeeUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
         
-        || ((currentTwitterUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
-        || ((currentTwitterUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.includes(user.nodeId))
+        || ((threeCeeUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
+        || ((threeCeeUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.includes(user.nodeId))
 
       ) {
 
@@ -2544,7 +2514,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
       else {
 
         user.following = true;
-        user.threeceeFollowing = currentTwitterUser;
+        user.threeceeFollowing = threeCeeUser;
 
         debug(chalkInfo("UPDATE 3CF"
           + " | " + user.nodeId
