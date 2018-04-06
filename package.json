@@ -6,7 +6,7 @@
   "dependencies": {
     "@google-cloud/language": "^1.2.0",
     "@threeceelabs/histogram-parser": "^1.0.14",
-    "@threeceelabs/mongoose-twitter": "^1.0.104",
+    "@threeceelabs/mongoose-twitter": "^1.0.105",
     "@threeceelabs/tweet-server-controller": "^1.0.222",
     "@threeceelabs/twitter-image-parser": "^1.0.40",
     "@threeceelabs/twitter-text-parser": "^1.0.40",
