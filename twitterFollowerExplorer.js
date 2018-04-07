@@ -2408,6 +2408,8 @@ function quit(cause){
   }, 1000);
 }
 
+        // processUser(threeCeeUser, followMessage.target, null, function(err, user){
+
 function processUser(threeCeeUser, userIn, lastTweeId, callback) {
 
   let updateCountHistory = false;
