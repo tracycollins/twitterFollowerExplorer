@@ -228,6 +228,8 @@ let TFE_USER_DB_CRAWL = false;
 
 let configuration = {};
 
+configuration.bestNetworkIncrementalUpdate = false;
+
 configuration.twitterUsers = ["altthreecee02", "altthreecee01", "altthreecee00"];
 
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
@@ -967,34 +969,34 @@ function saveHistograms(callback){
   saveFileQueue.push({folder: folder, file: defaultFile, obj: histObj});
   saveFileQueue.push({folder: folder, file: hFile, obj: histObj});
 
-  const genInParams = {
-    histogramsObj: { 
-      histogramsId: hId, 
-      histograms: globalHistograms
-    },
-    histogramParseDominantMin: configuration.histogramParseDominantMin,
-    histogramParseTotalMin: configuration.histogramParseTotalMin
-  };
+  // const genInParams = {
+  //   histogramsObj: { 
+  //     histogramsId: hId, 
+  //     histograms: globalHistograms
+  //   },
+  //   histogramParseDominantMin: configuration.histogramParseDominantMin,
+  //   histogramParseTotalMin: configuration.histogramParseTotalMin
+  // };
 
-  let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
+  // let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
 
-  if (configuration.testMode) { 
-    inFolder = inFolder + "_test";
-  }
+  // if (configuration.testMode) { 
+  //   inFolder = inFolder + "_test";
+  // }
 
-  generateInputSets(genInParams, function(err, inputsObj){
-    if (err) {
-      console.log(chalkError("ERROR | NOT SAVING INPUTS FILE"
-        + " | " + err
-        + " | " + inFolder + "/" + inFile
-      ));
-    }
-    else {
-      console.log(chalkAlert("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
-      saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
-    }
-    if (callback !== undefined) { callback(null, hId); }
-  });
+  // generateInputSets(genInParams, function(err, inputsObj){
+  //   if (err) {
+  //     console.log(chalkError("ERROR | NOT SAVING INPUTS FILE"
+  //       + " | " + err
+  //       + " | " + inFolder + "/" + inFile
+  //     ));
+  //   }
+  //   else {
+  //     console.log(chalkAlert("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+  //     saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
+  //   }
+  //   if (callback !== undefined) { callback(null, hId); }
+  // });
 }
 
 function initNextTwitterUser(callback){
@@ -1126,6 +1128,30 @@ function initNextTwitterUser(callback){
 
 
           }, function(){
+
+            if (hostname === "google") {
+
+              prevBestNetworkId = bestRuntimeNetworkId;
+
+              console.log(chalkNetwork("... SAVING BEST NETWORK"
+                + " | " + currentBestNetwork.networkId 
+                + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
+                + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
+              ));
+
+              fileObj = {
+                networkId: bestRuntimeNetworkId, 
+                successRate: m.bestNetwork.successRate, 
+                matchRate:  m.bestNetwork.matchRate,
+                overallMatchRate:  m.bestNetwork.overallMatchRate,
+                updatedAt: moment()
+              };
+
+              file = bestRuntimeNetworkId + ".json";
+
+              saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
+              saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+            }
 
             randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
 
@@ -4044,6 +4070,11 @@ function initialize(cnf, callback){
         cnf.targetServer = loadedConfigObj.TFE_UTIL_TARGET_SERVER;
       }
 
+      if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined){
+        console.log("LOADED TFE_BEST_NN_INCREMENTAL_UPDATE: " + loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE);
+        cnf.bestNetworkIncrementalUpdate = loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE;
+      }
+
       if (loadedConfigObj.TFE_TEST_MODE !== undefined){
         console.log("LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
         cnf.testMode = loadedConfigObj.TFE_TEST_MODE;
@@ -4393,7 +4424,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
             bestNetworkHashMap.set(bestRuntimeNetworkId, hmObj);
 
-            if ((hostname === "google") && (prevBestNetworkId !== bestRuntimeNetworkId)) {
+            if ((hostname === "google") && (prevBestNetworkId !== bestRuntimeNetworkId) && configuration.bestNetworkIncrementalUpdate) {
 
               prevBestNetworkId = bestRuntimeNetworkId;
 
@@ -4416,7 +4447,6 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
               saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
               saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
             }
-
 
             debug(chalkAlert("NETWORK_OUTPUT"
               + " | " + moment().format(compactDateTimeFormat)
