@@ -969,6 +969,8 @@ function saveHistograms(callback){
   saveFileQueue.push({folder: folder, file: defaultFile, obj: histObj});
   saveFileQueue.push({folder: folder, file: hFile, obj: histObj});
 
+  if (callback !== undefined) { callback(); }
+
   // const genInParams = {
   //   histogramsObj: { 
   //     histogramsId: hId, 
@@ -1077,9 +1079,22 @@ function initNextTwitterUser(callback){
   }
   else {
 
+    console.log(chalkTwitterBold("===== RESTARTING FETCH OF ALL USERS ====="
+      + " | USERS: " + configuration.twitterUsers.length
+      + " | " + getTimeStamp()
+    ));
+
     updateGlobalHistograms(function(){
 
+      console.log(chalkTwitterBold("===== UPDATED GLOBAL HISTOGRAMS"
+        + " | " + getTimeStamp()
+      ));
+
       saveHistograms(function() {
+
+        console.log(chalkTwitterBold("===== SAVED HISTOGRAMS"
+          + " | " + getTimeStamp()
+        ));
 
         let waitTimeoutReady = true;
         let waitTimeout;
