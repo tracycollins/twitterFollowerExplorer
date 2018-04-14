@@ -1156,9 +1156,9 @@ function initNextTwitterUser(callback){
 
               fileObj = {
                 networkId: bestRuntimeNetworkId, 
-                successRate: m.bestNetwork.successRate, 
-                matchRate:  m.bestNetwork.matchRate,
-                overallMatchRate:  m.bestNetwork.overallMatchRate,
+                successRate: currentBestNetwork.successRate, 
+                matchRate:  currentBestNetwork.matchRate,
+                overallMatchRate:  currentBestNetwork.overallMatchRate,
                 updatedAt: moment()
               };
 
