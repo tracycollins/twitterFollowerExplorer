@@ -1140,8 +1140,6 @@ function initNextTwitterUser(callback){
               else {
                 cb();
               }
-
-
           }, function(){
 
             if (hostname === "google") {
@@ -1154,7 +1152,7 @@ function initNextTwitterUser(callback){
                 + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
               ));
 
-              fileObj = {
+              const fileObj = {
                 networkId: bestRuntimeNetworkId, 
                 successRate: currentBestNetwork.successRate, 
                 matchRate:  currentBestNetwork.matchRate,
@@ -1162,7 +1160,7 @@ function initNextTwitterUser(callback){
                 updatedAt: moment()
               };
 
-              file = bestRuntimeNetworkId + ".json";
+              const file = bestRuntimeNetworkId + ".json";
 
               saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
               saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
