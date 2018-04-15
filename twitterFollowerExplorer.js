@@ -432,6 +432,22 @@ function printCat(c){
   return ".";
 }
 
+function updateBestNetworkStats(networksObj){
+  statsObj.bestRuntimeNetworkId = networksObj.networkId;
+  statsObj.currentBestNetworkId = networksObj.networkId;
+
+  if (statsObj.network === undefined) { statsObj.network = {}; }
+
+  statsObj.network.networkId = networksObj.networkId;
+  statsObj.network.networkType = networksObj.networkType;
+  statsObj.network.successRate = networksObj.successRate;
+  statsObj.network.input = networksObj.network.input;
+  statsObj.network.output = networksObj.network.output;
+  statsObj.network.evolve = {};
+  statsObj.network.evolve = networksObj.evolve;
+  statsObj.network.evolve.options.networkObj = null;
+}
+
 function loadFile(path, file, callback) {
 
   debug(chalkInfo("LOAD FOLDER " + path));
@@ -1152,6 +1168,8 @@ function initNextTwitterUser(callback){
                 + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
               ));
 
+              updateBestNetworkStats(currentBestNetwork);
+
               const fileObj = {
                 networkId: bestRuntimeNetworkId, 
                 successRate: currentBestNetwork.successRate, 
@@ -1357,7 +1375,10 @@ function loadBestNetworkDropboxFolder(folder, callback){
               prevBestNetworkId = bestRuntimeNetworkId;
               bestRuntimeNetworkId = networkObj.networkId;
               newBestNetwork = true;
+
               if (hostname === "google") {
+
+                updateBestNetworkStats(networkObj);
 
                 const fileObj = {
                   networkId: bestRuntimeNetworkId, 
@@ -1427,6 +1448,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
               bestRuntimeNetworkId = networkObj.networkId;
               newBestNetwork = true;
 
+              updateBestNetworkStats(networkObj);
+
               if (hostname === "google") {
 
                 const fileObj = {
@@ -1469,7 +1492,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
       if (newBestNetwork) {
         newBestNetwork = false;
-        // statsObj.bestRuntimeNetworkId = currentBestNetwork.networkId;
         printNetworkObj("BEST NETWORK", currentBestNetwork);
       }
 
@@ -1632,7 +1654,9 @@ function loadBestNeuralNetworkFile(callback){
             bnwObj.matchRate = (bnwObj.matchRate !== undefined) ? bnwObj.matchRate : 0;
             bnwObj.overallMatchRate = (bnwObj.overallMatchRate !== undefined) ? bnwObj.overallMatchRate : 0;
 
-            console.log(chalkBlue(">>> NEW BEST RUNTIME NETWORK"
+            updateBestNetworkStats(bnwObj);
+
+             console.log(chalkBlue(">>> NEW BEST RUNTIME NETWORK"
               + " | " + bnwObj.networkId 
               + " | SR: " + bnwObj.successRate.toFixed(2) 
               + " | MR: " + bnwObj.matchRate.toFixed(2) 
@@ -1673,16 +1697,7 @@ function loadBestNeuralNetworkFile(callback){
 
           if (bnwObj.inputsObj.inputs.images === undefined) { bnwObj.inputsObj.inputs.images = ["businesss"]; }
 
-          statsObj.bestRuntimeNetworkId = bestRuntimeNetworkId;
-          statsObj.currentBestNetworkId = bnwObj.networkId;
-          statsObj.network.networkId = bnwObj.networkId;
-          statsObj.network.networkType = bnwObj.networkType;
-          statsObj.network.successRate = bnwObj.successRate;
-          statsObj.network.input = bnwObj.network.input;
-          statsObj.network.output = bnwObj.network.output;
-          statsObj.network.evolve = {};
-          statsObj.network.evolve = bnwObj.evolve;
-          statsObj.network.evolve.options.networkObj = null;
+          updateBestNetworkStats(bnwObj);
 
           bestNetworkFolderLoaded = true;
           callback(null, bnwObj);
@@ -3719,6 +3734,8 @@ function initSocket(cnf, callback){
           prevBestNetworkId = bestRuntimeNetworkId;
           bestRuntimeNetworkId = networkObj.networkId;
 
+          updateBestNetworkStats(networkObj);
+
           printNetworkObj("BEST NETWORK", currentBestNetwork);
 
           if (hostname === "google") {
@@ -4434,6 +4451,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             currentBestNetwork.matchRate = m.bestNetwork.matchRate;
             currentBestNetwork.overallMatchRate = m.bestNetwork.overallMatchRate;
             currentBestNetwork.successRate = m.bestNetwork.successRate;
+
+            updateBestNetworkStats(hmObj);
 
             bestNetworkHashMap.set(bestRuntimeNetworkId, hmObj);
 
