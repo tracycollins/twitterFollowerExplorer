@@ -445,7 +445,9 @@ function updateBestNetworkStats(networksObj){
   statsObj.network.output = networksObj.network.output;
   statsObj.network.evolve = {};
   statsObj.network.evolve = networksObj.evolve;
-  statsObj.network.evolve.options.networkObj = null;
+  if (statsObj.network.evolve.options !== undefined) {
+    statsObj.network.evolve.options.networkObj = null;
+  }
 }
 
 function loadFile(path, file, callback) {
