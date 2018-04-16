@@ -432,21 +432,21 @@ function printCat(c){
   return ".";
 }
 
-function updateBestNetworkStats(networksObj){
-  statsObj.bestRuntimeNetworkId = networksObj.networkId;
-  statsObj.currentBestNetworkId = networksObj.networkId;
+function updateBestNetworkStats(networkObj){
+  statsObj.bestRuntimeNetworkId = networkObj.networkId;
+  statsObj.currentBestNetworkId = networkObj.networkId;
 
   if (statsObj.network === undefined) { statsObj.network = {}; }
 
-  statsObj.network.networkId = networksObj.networkId;
-  statsObj.network.networkType = networksObj.networkType;
-  statsObj.network.successRate = networksObj.successRate;
-  statsObj.network.input = networksObj.network.input;
-  statsObj.network.output = networksObj.network.output;
+  statsObj.network.networkId = networkObj.networkId;
+  statsObj.network.networkType = networkObj.networkType;
+  statsObj.network.successRate = networkObj.successRate;
+  statsObj.network.input = networkObj.network.input;
+  statsObj.network.output = networkObj.network.output;
   statsObj.network.evolve = {};
-  if (networksObj.evolve !== undefined) {
-    statsObj.network.evolve = networksObj.evolve;
-    statsObj.network.evolve.options.networkObj = null;
+  if (networkObj.evolve !== undefined) {
+    statsObj.network.evolve = networkObj.evolve;
+    if (statsObj.network.evolve.options !== undefined) { statsObj.network.evolve.options.networkObj = null; }
   }
 }
 
@@ -504,7 +504,8 @@ function loadFile(path, file, callback) {
           callback(null, fileObj);
         }
         catch(e){
-          console.trace(chalkError("TFE | JSON PARSE ERROR: " + jsonPrint(e)));
+          console.trace(chalkError("TFE | JSON PARSE ERROR | PATH: " + fullPath));
+          console.trace(chalkError("TFE | JSON PARSE ERROR: " + fullPath + " | " + jsonPrint(e)));
           console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
           callback("JSON PARSE ERROR", null);
         }
@@ -3736,7 +3737,7 @@ function initSocket(cnf, callback){
           prevBestNetworkId = bestRuntimeNetworkId;
           bestRuntimeNetworkId = networkObj.networkId;
 
-          updateBestNetworkStats(networkObj);
+          updateBestNetworkStats(hmObj.network);
 
           printNetworkObj("BEST NETWORK", currentBestNetwork);
 
@@ -4454,7 +4455,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             currentBestNetwork.overallMatchRate = m.bestNetwork.overallMatchRate;
             currentBestNetwork.successRate = m.bestNetwork.successRate;
 
-            updateBestNetworkStats(hmObj);
+            updateBestNetworkStats(hmObj.network);
 
             bestNetworkHashMap.set(bestRuntimeNetworkId, hmObj);
 
