@@ -782,8 +782,9 @@ function twitterUserUpdate(params, callback){
     }
 
     statsObj.user[userScreenName].id = userShowData.id_str;
-    statsObj.user[userScreenName].name = userShowData.name;
-    statsObj.user[userScreenName].screenName = userShowData.screen_name.toLowerCase();
+    // statsObj.user[userScreenName].name = userShowData.name;
+    statsObj.user[userScreenName].name = (userShowData.name !== undefined) ? userShowData.name : "";
+    statsObj.user[userScreenName].screenName = (userShowData.screen_name !== undefined) ? userShowData.screen_name.toLowerCase() : "";
     statsObj.user[userScreenName].description = userShowData.description;
     statsObj.user[userScreenName].url = userShowData.url;
     statsObj.user[userScreenName].statusesCount = userShowData.statuses_count;
