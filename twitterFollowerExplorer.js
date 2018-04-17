@@ -3057,12 +3057,26 @@ const fsmStates = {
             console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
 
             updateGlobalHistograms();
+
             initNextTwitterUser(function(err, nextTwitterUser){
               if (err) {
                 console.log(chalkError("initNextTwitterUser ERROR: " + err));
+                initNextTwitterUser(function(err2, nextTwitterUser2){
+                  console.log(chalkAlert("initNextTwitterUser ON ERROR: nextTwitterUser: " + nextTwitterUser));
+                  if (err2){
+                    console.log(chalkError("initNextTwitterUser ERROR 2: " + err2));
+                  }
+                  else {
+                    debug(chalkError("initNextTwitterUser ON ERROR 2: nextTwitterUser: " + nextTwitterUser));
+                    fsm.fsm_fetchUserStart();
+                  }
+                });
               }
-              debug(chalkError("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
-              fsm.fsm_fetchUserStart();
+              else {
+                debug(chalkError("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
+                fsm.fsm_fetchUserStart();
+              }
+
             });
 
           });
