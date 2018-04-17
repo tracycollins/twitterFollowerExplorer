@@ -1248,7 +1248,7 @@ function initNextTwitterUser(callback){
               const file = bestRuntimeNetworkId + ".json";
 
               // saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
-              saveCache.set(fn, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
+              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
 
               saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
             }
