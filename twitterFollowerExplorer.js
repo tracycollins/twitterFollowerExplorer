@@ -213,7 +213,7 @@ inputTypes.sort();
 let inputArrays = {};
 
 let checkRateLimitInterval;
-let checkRateLimitIntervalTime = ONE_MINUTE;
+let checkRateLimitIntervalTime = 10*ONE_SECOND;
 
 let stdin;
 let abortCursor = false;
@@ -4243,6 +4243,11 @@ function initCheckRateLimitInterval(interval){
 
   checkRateLimitInterval = setInterval(function(){
 
+    console.log(chalkInfo("CHECK RATE INTERVAL"
+      + " | INTERVAL" + msToTime(interval)
+      + " | CURRENT USER: @" + currentTwitterUser
+      + " | EXCEPTION: " + statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag
+    ));
     if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag) {
       checkRateLimit();
     }
