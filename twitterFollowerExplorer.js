@@ -1837,7 +1837,6 @@ function checkRateLimit(callback){
       if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
         && statsObj.user[currentTwitterUser].twitterRateLimitResetAt.isBefore(moment())){
 
-        fsm.fsm_rateLimitEnd();
         statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
 
         statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
@@ -1853,6 +1852,8 @@ function checkRateLimit(callback){
           + " | EXP: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
           + " | NOW: " + moment().format(compactDateTimeFormat)
         ));
+
+        fsm.fsm_rateLimitEnd();
       }
       else if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag){
 
@@ -3077,21 +3078,28 @@ const fsmStates = {
             updateGlobalHistograms();
 
             initNextTwitterUser(function(err, nextTwitterUser){
+
               if (err) {
+
                 console.log(chalkError("initNextTwitterUser ERROR: " + err));
+
                 initNextTwitterUser(function(err2, nextTwitterUser2){
-                  console.log(chalkAlert("initNextTwitterUser ON ERROR: nextTwitterUser: " + nextTwitterUser));
+
+                  console.log(chalkAlert("initNextTwitterUser ON ERROR: nextTwitterUser2: " + nextTwitterUser2));
+
                   if (err2){
                     console.log(chalkError("initNextTwitterUser ERROR 2: " + err2));
                   }
                   else {
-                    debug(chalkError("initNextTwitterUser ON ERROR 2: nextTwitterUser: " + nextTwitterUser));
+                    console.log(chalkAlert("initNextTwitterUser ON ERROR 2: nextTwitterUser2: " + nextTwitterUser2));
                     fsm.fsm_fetchUserStart();
                   }
+
                 });
+                
               }
               else {
-                debug(chalkError("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
+                console.log(chalkAlert("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
                 fsm.fsm_fetchUserStart();
               }
 
