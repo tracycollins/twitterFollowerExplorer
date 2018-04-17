@@ -815,34 +815,52 @@ function twitterUserUpdate(params, callback){
     twitterUserHashMap[userScreenName].twit.get("friends/ids", {screen_name: userScreenName}, function(err, userFriendsIds, response) {
 
       if (err){
+
         console.log(chalkError("TWITTER USER FRIENDS IDS ERROR"
           + " | @" + userScreenName 
           + " | " + getTimeStamp() 
           + " | " + err.message
         ));
-        return(callback(err));
+
+        initNextTwitterUser(function(err1, nextTwitterUser){
+
+          if (err1) {
+            console.log(chalkError("initNextTwitterUser ERROR: " + err1));
+            callback(err1);
+          }
+          else {
+            console.log(chalkAlert("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
+            fsm.fsm_fetchUserStart();
+            callback();
+          }
+
+        });
+
+      }
+      else {
+
+        twitterUserHashMap[userScreenName].friends = userFriendsIds.ids;
+
+        console.log(chalkAlert("friends/ids"
+          + " | IDs: " + userFriendsIds.ids.length
+          + " | PREV CURSOR: " + userFriendsIds.previous_cursor_str
+          + " | NEXT CURSOR: " + userFriendsIds.next_cursor_str
+        ));
+
+        console.log(chalkTwitterBold("====================================================================="
+          + "\nTWITTER USER"
+          + " | @" + statsObj.user[userScreenName].screenName 
+          + " | " + statsObj.user[userScreenName].name 
+          + " | Ts: " + statsObj.user[userScreenName].statusesCount 
+          + " | FLWRs: " + statsObj.user[userScreenName].followersCount
+          + " | FRNDS: " + statsObj.user[userScreenName].friendsCount 
+          + " | FRNDS IDs: " + userFriendsIds.ids.length 
+          + "\n====================================================================="
+        ));
+
+        callback(null);
       }
 
-      twitterUserHashMap[userScreenName].friends = userFriendsIds.ids;
-
-      console.log(chalkAlert("friends/ids"
-        + " | IDs: " + userFriendsIds.ids.length
-        + " | PREV CURSOR: " + userFriendsIds.previous_cursor_str
-        + " | NEXT CURSOR: " + userFriendsIds.next_cursor_str
-      ));
-
-      console.log(chalkTwitterBold("====================================================================="
-        + "\nTWITTER USER"
-        + " | @" + statsObj.user[userScreenName].screenName 
-        + " | " + statsObj.user[userScreenName].name 
-        + " | Ts: " + statsObj.user[userScreenName].statusesCount 
-        + " | FLWRs: " + statsObj.user[userScreenName].followersCount
-        + " | FRNDS: " + statsObj.user[userScreenName].friendsCount 
-        + " | FRNDS IDs: " + userFriendsIds.ids.length 
-        + "\n====================================================================="
-      ));
-
-      callback(null);
 
     });
   });
@@ -998,8 +1016,16 @@ function saveHistograms(callback){
 
 function initNextTwitterUser(callback){
 
+  if (currentTwitterUser === undefined) {
+    currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
+  }
+
   statsObj.user[currentTwitterUser].friendsProcessEnd = moment();
   statsObj.user[currentTwitterUser].friendsProcessElapsed = moment().diff(statsObj.user[currentTwitterUser].friendsProcessStart);
+
+  if (statsObj.user[currentTwitterUser].friendsProcessStart === undefined) {
+    statsObj.user[currentTwitterUser].friendsProcessStart = moment();
+  }
 
   console.log(chalkBlue("INIT NEXT TWITTER USER"
     + " | TEST MODE: " + configuration.testMode
@@ -1041,7 +1067,7 @@ function initNextTwitterUser(callback){
           statsObj.user[currentTwitterUser].twitterRateLimitException = moment();
           statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = true;
           statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(moment().valueOf() + DEFAULT_RATE_LIMIT_RESET_TIME);
-          checkRateLimit();
+          checkRateLimit({user: currentTwitterUser});
 
           fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
           fsm.fsm_rateLimitStart();
@@ -1773,9 +1799,9 @@ function runEnable(displayArgs) {
   return true;
 }
 
-function checkRateLimit(callback){
+function checkRateLimit(params, callback){
 
-  if (twitterUserHashMap[currentTwitterUser] === undefined) {
+  if (twitterUserHashMap[params.user] === undefined) {
 
     if (callback !== undefined) { 
       return(callback(null, null));
@@ -1785,13 +1811,13 @@ function checkRateLimit(callback){
     }
   }
 
-  twitterUserHashMap[currentTwitterUser].twit.get("application/rate_limit_status", function(err, data, response) {
+  twitterUserHashMap[params.user].twit.get("application/rate_limit_status", function(err, data, response) {
 
     debug("application/rate_limit_status response: " + jsonPrint(response));
     
     if (err){
       console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
-        + " | @" + currentTwitterUser
+        + " | @" + params.user
         + " | " + getTimeStamp()
         + " | CODE: " + err.code
         + " | STATUS CODE: " + err.statusCode
@@ -1806,87 +1832,87 @@ function checkRateLimit(callback){
         + JSON.stringify(data, null, 3)
       ));
 
-      // if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
-      //   && statsObj.user[currentTwitterUser].twitterRateLimitResetAt.isBefore(moment())){
+      // if (statsObj.user[params.user].twitterRateLimitExceptionFlag 
+      //   && statsObj.user[params.user].twitterRateLimitResetAt.isBefore(moment())){
 
       //   fsm.fsm_rateLimitEnd();
-      //   statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
+      //   statsObj.user[params.user].twitterRateLimitExceptionFlag = false;
 
       //   console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
-      //     + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
-      //     + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
-      //     + " | EXP @: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
+      //     + " | LIM " + statsObj.user[params.user].twitterRateLimit
+      //     + " | REM: " + statsObj.user[params.user].twitterRateLimitRemaining
+      //     + " | EXP @: " + statsObj.user[params.user].twitterRateLimitException.format(compactDateTimeFormat)
       //     + " | NOW: " + moment().format(compactDateTimeFormat)
       //   ));
       // }
 
-      // statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
-      // statsObj.user[currentTwitterUser].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
-      // statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
-      // statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
+      // statsObj.user[params.user].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
+      // statsObj.user[params.user].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
+      // statsObj.user[params.user].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
+      // statsObj.user[params.user].twitterRateLimitRemainingTime = statsObj.user[params.user].twitterRateLimitResetAt.diff(moment());
 
       console.log(chalkLog("TWITTER RATE LIMIT STATUS"
-        + " | @" + currentTwitterUser
-        + " | LIM: " + statsObj.user[currentTwitterUser].twitterRateLimit
-        + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
-        + " | RST: " + getTimeStamp(statsObj.user[currentTwitterUser].twitterRateLimitResetAt)
+        + " | @" + params.user
+        + " | LIM: " + statsObj.user[params.user].twitterRateLimit
+        + " | REM: " + statsObj.user[params.user].twitterRateLimitRemaining
+        + " | RST: " + getTimeStamp(statsObj.user[params.user].twitterRateLimitResetAt)
         + " | NOW: " + moment().format(compactDateTimeFormat)
-        + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
+        + " | IN " + msToTime(statsObj.user[params.user].twitterRateLimitRemainingTime)
       ));
 
-      if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
-        && statsObj.user[currentTwitterUser].twitterRateLimitResetAt.isBefore(moment())){
+      if (statsObj.user[params.user].twitterRateLimitExceptionFlag 
+        && statsObj.user[params.user].twitterRateLimitResetAt.isBefore(moment())){
 
-        statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
+        statsObj.user[params.user].twitterRateLimitExceptionFlag = false;
 
-        statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
-        statsObj.user[currentTwitterUser].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
-        statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
-        statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
+        statsObj.user[params.user].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
+        statsObj.user[params.user].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
+        statsObj.user[params.user].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
+        statsObj.user[params.user].twitterRateLimitRemainingTime = statsObj.user[params.user].twitterRateLimitResetAt.diff(moment());
 
 
         console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
-          + " | @" + currentTwitterUser
-          + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
-          + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
-          + " | EXP: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
+          + " | @" + params.user
+          + " | LIM " + statsObj.user[params.user].twitterRateLimit
+          + " | REM: " + statsObj.user[params.user].twitterRateLimitRemaining
+          + " | EXP: " + statsObj.user[params.user].twitterRateLimitException.format(compactDateTimeFormat)
           + " | NOW: " + moment().format(compactDateTimeFormat)
         ));
 
         fsm.fsm_rateLimitEnd();
       }
-      else if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag){
+      else if (statsObj.user[params.user].twitterRateLimitExceptionFlag){
 
-        statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
-        statsObj.user[currentTwitterUser].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
-        statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
-        statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
+        statsObj.user[params.user].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
+        statsObj.user[params.user].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
+        statsObj.user[params.user].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
+        statsObj.user[params.user].twitterRateLimitRemainingTime = statsObj.user[params.user].twitterRateLimitResetAt.diff(moment());
 
         console.log(chalkAlert("*** TWITTER RATE LIMIT"
-          + " | @" + currentTwitterUser
-          + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
-          + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
-          + " | EXP: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
-          + " | RST: " + statsObj.user[currentTwitterUser].twitterRateLimitResetAt.format(compactDateTimeFormat)
+          + " | @" + params.user
+          + " | LIM " + statsObj.user[params.user].twitterRateLimit
+          + " | REM: " + statsObj.user[params.user].twitterRateLimitRemaining
+          + " | EXP: " + statsObj.user[params.user].twitterRateLimitException.format(compactDateTimeFormat)
+          + " | RST: " + statsObj.user[params.user].twitterRateLimitResetAt.format(compactDateTimeFormat)
           + " | NOW: " + moment().format(compactDateTimeFormat)
-          + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
+          + " | IN " + msToTime(statsObj.user[params.user].twitterRateLimitRemainingTime)
         ));
         // fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
         // fsm.fsm_rateLimitStart();
       }
       else {
 
-        statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
-        statsObj.user[currentTwitterUser].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
-        statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
-        statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
+        statsObj.user[params.user].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
+        statsObj.user[params.user].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
+        statsObj.user[params.user].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
+        statsObj.user[params.user].twitterRateLimitRemainingTime = statsObj.user[params.user].twitterRateLimitResetAt.diff(moment());
 
         debug(chalkInfo("... NO TWITTER RATE LIMIT"
-          + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
-          + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
-          + " | RST: " + statsObj.user[currentTwitterUser].twitterRateLimitResetAt.format(compactDateTimeFormat)
+          + " | LIM " + statsObj.user[params.user].twitterRateLimit
+          + " | REM: " + statsObj.user[params.user].twitterRateLimitRemaining
+          + " | RST: " + statsObj.user[params.user].twitterRateLimitResetAt.format(compactDateTimeFormat)
           + " | NOW: " + moment().format(compactDateTimeFormat)
-          + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
+          + " | IN " + msToTime(statsObj.user[params.user].twitterRateLimitRemainingTime)
         ));
         // fsm.fsm_rateLimitEnd();
       }
@@ -2422,6 +2448,7 @@ function quit(cause){
   
   if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
     randomNetworkTree.send({op: "STATS"}); 
+    randomNetworkTree.send({op: "QUIT"}); 
   }
 
   console.log( "\nTFE | ... QUITTING ..." );
@@ -2466,6 +2493,7 @@ function quit(cause){
     else {
       if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
         randomNetworkTree.send({op: "STATS"}); 
+        randomNetworkTree.send({op: "QUIT"}); 
       }
       
       console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
@@ -2760,7 +2788,7 @@ function fetchFriends(params, callback) {
           statsObj.user[threeCeeUser].twitterRateLimitException = moment();
           statsObj.user[threeCeeUser].twitterRateLimitExceptionFlag = true;
           statsObj.user[threeCeeUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
-          checkRateLimit();
+          checkRateLimit({user: threeCeeUser});
           fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
           fsm.fsm_rateLimitStart();
         }
@@ -3096,7 +3124,7 @@ const fsmStates = {
                   }
 
                 });
-                
+
               }
               else {
                 console.log(chalkAlert("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
@@ -3303,12 +3331,13 @@ function showStats(options){
                 statsObj.user[tUserScreenName].twitterRateLimitException = moment();
                 statsObj.user[tUserScreenName].twitterRateLimitExceptionFlag = true;
                 statsObj.user[tUserScreenName].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+                checkRateLimit({user: tUserScreenName});
 
               if (tUserScreenName === currentTwitterUser) {
                 // statsObj.user[currentTwitterUser].twitterRateLimitException = moment();
                 // statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = true;
                 // statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
-                checkRateLimit();
+                // checkRateLimit({user: tUserScreenName});
                 fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
                 fsm.fsm_rateLimitStart();
               }
@@ -3905,6 +3934,9 @@ function initTwitter(threeCeeUser, callback){
 
           newTwit.get("account/settings", function(err, accountSettings, response) {
             if (err){
+
+              err.user = threeCeeUser;
+
               // console.log("!!!!! TWITTER ACCOUNT ERROR | " + getTimeStamp() + "\n" + jsonPrint(err));
               console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
                 + " | @" + threeCeeUser
@@ -3931,6 +3963,9 @@ function initTwitter(threeCeeUser, callback){
 
             twitterUserUpdate({userScreenName: userScreenName, resetStats: true}, function(err){
               if (err){
+
+                err.user = userScreenName;
+
                 if (err.code === 88) {
                   console.log(chalkError("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
                     + " | " + getTimeStamp() 
@@ -3946,7 +3981,7 @@ function initTwitter(threeCeeUser, callback){
                     // statsObj.user[currentTwitterUser].twitterRateLimitException = moment();
                     // statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = true;
                     // statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
-                    checkRateLimit();
+                    checkRateLimit({user:userScreenName});
                     fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
                     fsm.fsm_rateLimitStart();
                   }
@@ -4343,14 +4378,23 @@ function initCheckRateLimitInterval(interval){
 
   checkRateLimitInterval = setInterval(function(){
 
-    console.log(chalkInfo("CHECK RATE INTERVAL"
-      + " | INTERVAL: " + msToTime(interval)
-      + " | CURRENT USER: @" + currentTwitterUser
-      + " | EXCEPTION: " + statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag
-    ));
-    if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag) {
-      checkRateLimit();
-    }
+    async.eachSeries(configuration.twitterUsers, function(user, cb){
+
+      console.log(chalkInfo("CHECK RATE INTERVAL"
+        + " | INTERVAL: " + msToTime(interval)
+        + " | CURRENT USER: @" + user
+        + " | EXCEPTION: " + statsObj.user[user].twitterRateLimitExceptionFlag
+      ));
+
+      if (statsObj.user[user].twitterRateLimitExceptionFlag) {
+        checkRateLimit({user:user}, function(){});
+      }
+
+      cb();
+
+    }, function(){
+
+    });
 
   }, interval);
 }
@@ -5265,7 +5309,7 @@ initialize(configuration, function(err, cnf){
 
     console.log(chalkTwitter("CURRENT TWITTER USER: @" + currentTwitterUser));
 
-    checkRateLimit();
+    checkRateLimit({user: currentTwitterUser});
     initCheckRateLimitInterval(checkRateLimitIntervalTime);
     initSocket(cnf, function(){});
 

@@ -1351,6 +1351,11 @@ process.on("message", function(m) {
       resetStats();
     break;
 
+    case "QUIT":
+      process.send({ op: "IDLE" });
+      quit("QUIT OP");
+    break;
+
     case "LOAD_NETWORKS":
       console.log(chalkAlert("LOAD_NETWORKS"
         + " | " + Object.keys(m.networksObj).length
