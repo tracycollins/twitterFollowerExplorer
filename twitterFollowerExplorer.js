@@ -15,7 +15,7 @@ const DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN = 0.4;
 
 const TEST_MODE_TOTAL_FETCH = 40;  // total twitter user fetch count
 const TEST_MODE_FETCH_COUNT = 15;  // per request twitter user fetch count
-const TEST_DROPBOX_NN_LOAD = 30;
+const TEST_DROPBOX_NN_LOAD = 10;
 
 const MAX_ITERATIONS_INPUTS_GENERATE = 100;
 
@@ -991,34 +991,6 @@ function saveHistograms(callback){
 
   if (callback !== undefined) { callback(); }
 
-  // const genInParams = {
-  //   histogramsObj: { 
-  //     histogramsId: hId, 
-  //     histograms: globalHistograms
-  //   },
-  //   histogramParseDominantMin: configuration.histogramParseDominantMin,
-  //   histogramParseTotalMin: configuration.histogramParseTotalMin
-  // };
-
-  // let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
-
-  // if (configuration.testMode) { 
-  //   inFolder = inFolder + "_test";
-  // }
-
-  // generateInputSets(genInParams, function(err, inputsObj){
-  //   if (err) {
-  //     console.log(chalkError("ERROR | NOT SAVING INPUTS FILE"
-  //       + " | " + err
-  //       + " | " + inFolder + "/" + inFile
-  //      ));
-  //   }
-  //   else {
-  //     console.log(chalkAlert("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
-  //     saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
-  //   }
-  //   if (callback !== undefined) { callback(null, hId); }
-  // });
 }
 
 function initNextTwitterUser(callback){
@@ -3012,6 +2984,7 @@ function reporter(event, oldState, newState) {
   fsmPreviousState = oldState;
   console.log(chalkAlert("--------------------------------------------------------\n"
     + "<< FSM >>"
+    + " @" + currentTwitterUser
     + " | " + event
     + " | " + fsmPreviousState
     + " -> " + newState
@@ -3264,6 +3237,11 @@ function showStats(options){
                 + " | @" + tUserScreenName 
                 // + "\n" + jsonPrint(err)
               ));
+
+              if (tUserScreenName === currentTwitterUser) {
+                fsmPreviousState = fsm.getMachineState();
+                fsm.fsm_rateLimitStart();
+              }
             }
             else {
               console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
