@@ -866,19 +866,25 @@ function twitterUserUpdate(params, callback){
           + " | " + err.message
         ));
 
-        initNextTwitterUser(function(err1, nextTwitterUser){
 
-          if (err1) {
-            console.log(chalkError("initNextTwitterUser ERROR: " + err1));
-            callback(err1);
-          }
-          else {
-            console.log(chalkAlert("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
-            fsm.fsm_fetchUserStart();
-            callback();
-          }
+        if (userScreenName === currentTwitterUser) {
+          initNextTwitterUser(function(err1, nextTwitterUser){
 
-        });
+            if (err1) {
+              console.log(chalkError("initNextTwitterUser ERROR: " + err1));
+              callback(err1);
+            }
+            else {
+              console.log(chalkAlert("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
+              fsm.fsm_fetchUserStart();
+              callback();
+            }
+
+          });
+        }
+        else {
+          callback(null);
+        }
 
       }
       else {
