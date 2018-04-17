@@ -1776,11 +1776,12 @@ function runEnable(displayArgs) {
 function checkRateLimit(callback){
 
   if (twitterUserHashMap[currentTwitterUser] === undefined) {
+
     if (callback !== undefined) { 
       return(callback(null, null));
     }
     else {
-    return;
+      return;
     }
   }
 
@@ -1819,10 +1820,10 @@ function checkRateLimit(callback){
       //   ));
       // }
 
-      statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
-      statsObj.user[currentTwitterUser].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
-      statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
-      statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
+      // statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
+      // statsObj.user[currentTwitterUser].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
+      // statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
+      // statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
 
       console.log(chalkLog("TWITTER RATE LIMIT STATUS"
         + " | @" + currentTwitterUser
@@ -1839,6 +1840,12 @@ function checkRateLimit(callback){
         fsm.fsm_rateLimitEnd();
         statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
 
+        statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
+        statsObj.user[currentTwitterUser].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
+        statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
+        statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
+
+
         console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
           + " | @" + currentTwitterUser
           + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
@@ -1849,6 +1856,11 @@ function checkRateLimit(callback){
       }
       else if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag){
 
+        statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
+        statsObj.user[currentTwitterUser].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
+        statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
+        statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
+
         console.log(chalkAlert("*** TWITTER RATE LIMIT"
           + " | @" + currentTwitterUser
           + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
@@ -1858,10 +1870,16 @@ function checkRateLimit(callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
           + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
         ));
-        fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
-        fsm.fsm_rateLimitStart();
+        // fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
+        // fsm.fsm_rateLimitStart();
       }
       else {
+
+        statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
+        statsObj.user[currentTwitterUser].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
+        statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
+        statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = statsObj.user[currentTwitterUser].twitterRateLimitResetAt.diff(moment());
+
         debug(chalkInfo("... NO TWITTER RATE LIMIT"
           + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
           + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
@@ -1869,7 +1887,7 @@ function checkRateLimit(callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
           + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
         ));
-        fsm.fsm_rateLimitEnd();
+        // fsm.fsm_rateLimitEnd();
       }
 
       if (callback !== undefined) { callback(); }
