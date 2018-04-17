@@ -1182,7 +1182,7 @@ function initNextTwitterUser(callback){
               }
           }, function(){
 
-            if (hostname === "google") {
+            if ((currentBestNetwork !== undefined) && (hostname === "google")) {
 
               prevBestNetworkId = bestRuntimeNetworkId;
 
