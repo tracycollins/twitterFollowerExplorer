@@ -2,6 +2,10 @@
 "use strict";
 require("isomorphic-fetch");
 
+const ONE_SECOND = 1000 ;
+const ONE_MINUTE = ONE_SECOND*60 ;
+
+
 const TFE_NUM_RANDOM_NETWORKS = 100;
 
 const IMAGE_QUOTA_TIMEOUT = 60000;
@@ -12,6 +16,8 @@ const DEFAULT_MIN_INPUTS_GENERATED = 400 ;
 const DEFAULT_MAX_INPUTS_GENERATED = 750 ;
 const DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN = 5;
 const DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN = 0.4;
+
+const DEFAULT_RATE_LIMIT_RESET_TIME = 2*ONE_MINUTE;
 
 const TEST_MODE_TOTAL_FETCH = 40;  // total twitter user fetch count
 const TEST_MODE_FETCH_COUNT = 15;  // per request twitter user fetch count
@@ -33,9 +39,6 @@ const MAX_DOMINANT_MIN = 1.0;
 
 const TEST_MIN_DOMINANT_MIN = 0.3;
 const TEST_MAX_DOMINANT_MIN = 1.0;
-
-const ONE_SECOND = 1000 ;
-const ONE_MINUTE = ONE_SECOND*60 ;
 
 const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
 const OFFLINE_MODE = false;
@@ -213,7 +216,7 @@ inputTypes.sort();
 let inputArrays = {};
 
 let checkRateLimitInterval;
-let checkRateLimitIntervalTime = 10*ONE_SECOND;
+let checkRateLimitIntervalTime = 30*ONE_SECOND;
 
 let stdin;
 let abortCursor = false;
@@ -1028,10 +1031,29 @@ function initNextTwitterUser(callback){
     twitterUserUpdate({userScreenName: currentTwitterUser, resetStats: true}, function(err){
 
       if (err){
-        console.log("!!!!! TWITTER SHOW USER ERROR"
-          + " | @" + currentTwitterUser 
-          + " | " + getTimeStamp() 
-          + "\n" + jsonPrint(err));
+        if (err.code === 88) {
+          console.log(chalkError("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
+            + " | " + getTimeStamp() 
+            + " | @" + currentTwitterUser 
+            // + "\n" + jsonPrint(err)
+          ));
+
+          statsObj.user[currentTwitterUser].twitterRateLimitException = moment();
+          statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = true;
+          statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(moment().valueOf() + DEFAULT_RATE_LIMIT_RESET_TIME);
+          checkRateLimit();
+
+          fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
+          fsm.fsm_rateLimitStart();
+
+        }
+        else {
+          console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
+            + " | " + getTimeStamp() 
+            + " | @" + currentTwitterUser 
+            + "\n" + jsonPrint(err)
+          ));
+        }
         return callback(new Error(err), null);
       }
 
@@ -1836,7 +1858,7 @@ function checkRateLimit(callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
           + " | IN " + msToTime(statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime)
         ));
-        fsmPreviousState = fsm.getMachineState();
+        fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
         fsm.fsm_rateLimitStart();
       }
       else {
@@ -2720,7 +2742,7 @@ function fetchFriends(params, callback) {
           statsObj.user[threeCeeUser].twitterRateLimitExceptionFlag = true;
           statsObj.user[threeCeeUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
           checkRateLimit();
-          fsmPreviousState = fsm.getMachineState();
+          fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
           fsm.fsm_rateLimitStart();
         }
         callback(err, []);
@@ -3230,7 +3252,7 @@ function showStats(options){
       async.eachSeries(configuration.twitterUsers, function(tUserScreenName, cb){
 
         twitterUserUpdate({userScreenName: tUserScreenName, resetStats: false}, function(err){
-         if (err){
+          if (err){
             if (err.code === 88) {
               console.log(chalkError("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
                 + " | " + getTimeStamp() 
@@ -3238,8 +3260,16 @@ function showStats(options){
                 // + "\n" + jsonPrint(err)
               ));
 
+                statsObj.user[tUserScreenName].twitterRateLimitException = moment();
+                statsObj.user[tUserScreenName].twitterRateLimitExceptionFlag = true;
+                statsObj.user[tUserScreenName].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+
               if (tUserScreenName === currentTwitterUser) {
-                fsmPreviousState = fsm.getMachineState();
+                // statsObj.user[currentTwitterUser].twitterRateLimitException = moment();
+                // statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = true;
+                // statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+                checkRateLimit();
+                fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
                 fsm.fsm_rateLimitStart();
               }
             }
@@ -3860,11 +3890,41 @@ function initTwitter(threeCeeUser, callback){
             debug(chalkTwitter("TWITTER ACCOUNT SETTINGS\n" + jsonPrint(accountSettings)));
 
             twitterUserUpdate({userScreenName: userScreenName, resetStats: true}, function(err){
-             if (err){
-                console.log("!!!!! TWITTER SHOW USER ERROR | @" + userScreenName + " | " + getTimeStamp() 
-                  + "\n" + jsonPrint(err));
+              if (err){
+                if (err.code === 88) {
+                  console.log(chalkError("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
+                    + " | " + getTimeStamp() 
+                    + " | @" + userScreenName 
+                    // + "\n" + jsonPrint(err)
+                  ));
+
+                    statsObj.user[userScreenName].twitterRateLimitException = moment();
+                    statsObj.user[userScreenName].twitterRateLimitExceptionFlag = true;
+                    statsObj.user[userScreenName].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+
+                  if (userScreenName === currentTwitterUser) {
+                    // statsObj.user[currentTwitterUser].twitterRateLimitException = moment();
+                    // statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = true;
+                    // statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+                    checkRateLimit();
+                    fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
+                    fsm.fsm_rateLimitStart();
+                  }
+                }
+                else {
+                  console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
+                    + " | " + getTimeStamp() 
+                    + " | @" + userScreenName 
+                    + "\n" + jsonPrint(err)
+                  ));
+                }
                 return(cb(err, null));
               }
+              // if (err){
+              //   console.log("!!!!! TWITTER SHOW USER ERROR | @" + userScreenName + " | " + getTimeStamp() 
+              //     + "\n" + jsonPrint(err));
+              //   return(cb(err, null));
+              // }
               cb(null, { screenName: userScreenName, twit: newTwit } );
             });
           });
@@ -4244,7 +4304,7 @@ function initCheckRateLimitInterval(interval){
   checkRateLimitInterval = setInterval(function(){
 
     console.log(chalkInfo("CHECK RATE INTERVAL"
-      + " | INTERVAL" + msToTime(interval)
+      + " | INTERVAL: " + msToTime(interval)
       + " | CURRENT USER: @" + currentTwitterUser
       + " | EXCEPTION: " + statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag
     ));
