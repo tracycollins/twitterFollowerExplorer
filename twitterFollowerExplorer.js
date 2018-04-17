@@ -5,6 +5,7 @@ require("isomorphic-fetch");
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
+const NETWORK_CACHE_DEFAULT_TTL = 120 // seconds
 
 const TFE_NUM_RANDOM_NETWORKS = 100;
 
@@ -389,7 +390,7 @@ let fsmPreviousPauseState;
 // NN CACHE
 // ==================================================================
 let saveCacheTtl = process.env.NETWORK_CACHE_DEFAULT_TTL;
-if (saveCacheTtl === undefined) { saveCacheTtl = 30;}
+if (saveCacheTtl === undefined) { saveCacheTtl = NETWORK_CACHE_DEFAULT_TTL;}
 console.log("SAVE CACHE TTL: " + saveCacheTtl + " SECONDS");
 
 let saveCacheCheckPeriod = process.env.NETWORK_CACHE_CHECK_PERIOD;
