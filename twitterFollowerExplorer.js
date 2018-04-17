@@ -886,6 +886,7 @@ function twitterUserUpdate(params, callback){
         twitterUserHashMap[userScreenName].friends = userFriendsIds.ids;
 
         console.log(chalkAlert("friends/ids"
+          + " | @" + userScreenName 
           + " | IDs: " + userFriendsIds.ids.length
           + " | PREV CURSOR: " + userFriendsIds.previous_cursor_str
           + " | NEXT CURSOR: " + userFriendsIds.next_cursor_str
