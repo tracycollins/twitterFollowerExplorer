@@ -1811,19 +1811,19 @@ function checkRateLimit(callback){
         + JSON.stringify(data, null, 3)
       ));
 
-      if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
-        && statsObj.user[currentTwitterUser].twitterRateLimitResetAt.isBefore(moment())){
+      // if (statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag 
+      //   && statsObj.user[currentTwitterUser].twitterRateLimitResetAt.isBefore(moment())){
 
-        fsm.fsm_rateLimitEnd();
-        statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
+      //   fsm.fsm_rateLimitEnd();
+      //   statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
 
-        console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
-          + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
-          + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
-          + " | EXP @: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
-          + " | NOW: " + moment().format(compactDateTimeFormat)
-        ));
-      }
+      //   console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
+      //     + " | LIM " + statsObj.user[currentTwitterUser].twitterRateLimit
+      //     + " | REM: " + statsObj.user[currentTwitterUser].twitterRateLimitRemaining
+      //     + " | EXP @: " + statsObj.user[currentTwitterUser].twitterRateLimitException.format(compactDateTimeFormat)
+      //     + " | NOW: " + moment().format(compactDateTimeFormat)
+      //   ));
+      // }
 
       statsObj.user[currentTwitterUser].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
       statsObj.user[currentTwitterUser].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
