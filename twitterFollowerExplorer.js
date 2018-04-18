@@ -904,7 +904,7 @@ function twitterUserUpdate(params, callback){
             }
             else {
               console.log(chalkAlert("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
-              fsm.fsm_fetchUserStart();
+              // fsm.fsm_fetchUserStart();
               callback();
             }
 
@@ -1180,6 +1180,10 @@ function initNextTwitterUser(callback){
       ));
 
       if (!statsObj.user[getCurrentTwitterUser()].nextCursorValid){     
+
+        console.log(chalkTwitterBold("RESET TWITTER STATE | NEXT CURSOR NOT VALID"
+        ));
+
         statsObj.user[getCurrentTwitterUser()].nextCursor = false;
         statsObj.user[getCurrentTwitterUser()].nextCursorValid = false;
         statsObj.user[getCurrentTwitterUser()].totalFriendsFetched = 0;
