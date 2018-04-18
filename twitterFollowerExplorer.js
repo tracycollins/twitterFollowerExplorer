@@ -4173,7 +4173,6 @@ function saveNetworkHashMap(params, callback){
     const file = nnId + ".json";
 
     saveCache.set(file, {folder: folder, file: file, obj: networkObj.network }, function(){});
-    // saveFileQueue.push({folder: folder, file: file, obj: networkObj.network });
 
     cb();
 
@@ -4195,7 +4194,6 @@ function updateNetworkStats(networkStatsObj, callback) {
       bestNetworkHashMap.set(nnId, networkObj);
       console.log(chalkNetwork("... UPDATED NN MATCHRATE"
         + " | MR: " + networkObj.network.matchRate.toFixed(2) + "%"
-        // + " | OAMR: " + networkObj.network.overallMatchRate.toFixed(2) + "%"
         + " | " + networkObj.network.networkId
       ));
       cb();
