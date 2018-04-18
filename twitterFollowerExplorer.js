@@ -1127,13 +1127,15 @@ function initNextTwitterUser(callback){
 
     setCurrentTwitterUser(configuration.twitterUsers[currentTwitterUserIndex]);
 
-    console.log(chalkTwitterBold("===== NEW FETCH USER"
+    console.log(chalkTwitterBold("==================================\n NEW FETCH USER"
       + " @" + getCurrentTwitterUser() + " ====="
       + " | USER " + (currentTwitterUserIndex+1) + " OF " + configuration.twitterUsers.length
       + " | " + getTimeStamp()
     ));
 
-    twitterUserUpdate({userScreenName: getCurrentTwitterUser(), resetStats: true}, function(err){
+    const resetStatsFlag = statsObj.user[getCurrentTwitterUser()].endFetch || false ;
+
+    twitterUserUpdate({userScreenName: getCurrentTwitterUser(), resetStats: resetStatsFlag}, function(err){
 
       if (err){
         if (err.code === 88) {
@@ -1182,6 +1184,7 @@ function initNextTwitterUser(callback){
       if (!statsObj.user[getCurrentTwitterUser()].nextCursorValid){     
 
         console.log(chalkTwitterBold("RESET TWITTER STATE | NEXT CURSOR NOT VALID"
+          + " | @" + getCurrentTwitterUser()
         ));
 
         statsObj.user[getCurrentTwitterUser()].nextCursor = false;
