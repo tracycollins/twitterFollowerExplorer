@@ -475,21 +475,20 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
   let statsTextArray = [];
   let statsTextObj = {};
 
-  // statsTextArray.push([
-  //   "NNID",
-  //   "SR",
-  //   "ATOT",
-  //   "AM",
-  //   "AMM",
-  //   "AMR",
-  //   // "SR",
-  //   "MFLAG",
-  //   "OUTPUT",
-  //   "TOT",
-  //   " M",
-  //   " MM",
-  //   " MR"
-  // ]);
+  statsTextArray.push([
+    "NNID",
+    "SR",
+    "ATOT",
+    "AM",
+    "AMM",
+    "AMR",
+    "MFLAG",
+    "OUTPUT",
+    "TOT",
+    " M",
+    " MM",
+    " MR"
+  ]);
 
   async.each(Object.keys(networkOutputObj), function(nnId, cb){
 
@@ -609,7 +608,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
       async.eachSeries(sortedNetworkResults.sortedKeys, function genStatsTextArray(nnId, cb0){
         if (nnId !== "multiNeuralNet") { statsTextArray.push(statsTextObj[nnId]); }
-        cb0();
+        async.setImmediate(function() { cb0(); });
       }, function(){
 
         let bnId = sortedNetworkResults.sortedKeys[0];
