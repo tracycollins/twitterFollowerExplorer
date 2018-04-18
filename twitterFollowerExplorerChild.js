@@ -524,10 +524,12 @@ const fsmStates = {
         }
         else {
           if (statsObj.threeceeUser.nextCursorValid && !statsObj.threeceeUser.endFetch) {
-            // console.log(chalkError("fetchFriends continue... @" + configuration.threeceeUser));
             setTimeout(function(){
               fsm.fsm_fetchUserContinue();
-            }, 100);
+            }, 10*ONE_SECOND);
+          }
+          if (!statsObj.threeceeUser.nextCursorValid && statsObj.threeceeUser.endFetch) {
+            fsm.fsm_fetchUserEnd();
           }
         }
       });
