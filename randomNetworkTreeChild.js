@@ -647,7 +647,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
             + "\n==================================================================\n"
           ));
 
-          statsTextArray.length = 10;
+          statsTextArray.length = Math.min(10, statsTextArray.length);
           console.log(chalk.blue(
               "\n-------------------------------------------------------------------------------"
             + "\n" + title 
@@ -741,7 +741,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           ]);
 
           if (enableLog) {
-            statsTextArray.length = 10;
+            statsTextArray.length = Math.min(10, statsTextArray.length);
             console.log(chalk.blue(
                 "\n-------------------------------------------------------------------------------"
               + "\n" + title 

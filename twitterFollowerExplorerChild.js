@@ -2,13 +2,16 @@
 "use strict";
 require("isomorphic-fetch");
 
+const compactDateTimeFormat = "YYYYMMDD_HHmmss";
+
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
-const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
+let checkRateLimitInterval;
+let checkRateLimitIntervalTime = ONE_MINUTE;
 
-const TEST_MODE_TOTAL_FETCH = 40;  // total twitter user fetch count
-const TEST_MODE_FETCH_COUNT = 15;  // per request twitter user fetch count
+const TEST_MODE_TOTAL_FETCH = 10;  // total twitter user fetch count
+const TEST_MODE_FETCH_COUNT = 6;  // per request twitter user fetch count
 
 const chalk = require("chalk");
 const chalkTwitter = chalk.blue;
@@ -23,7 +26,6 @@ const moment = require("moment");
 const debug = require("debug")("tfec");
 const os = require("os");
 const util = require("util");
-const deepcopy = require("deep-copy");
 const Twit = require("twit");
 const async = require("async");
 const sortOn = require("sort-on");
@@ -35,10 +37,6 @@ let twitStream;
 
 let fsm;
 
-const compactDateTimeFormat = "YYYYMMDD_HHmmss";
-
-let quitWaitInterval;
-let quitFlag = false;
 
 let hostname = os.hostname();
 hostname = hostname.replace(/.local/g, "");
@@ -48,9 +46,16 @@ hostname = hostname.replace(/.fios-router.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 
 
-let checkRateLimitInterval;
-let checkRateLimitIntervalTime = 30*ONE_SECOND;
 let nextUser = false;
+
+const jsonPrint = function (obj){
+  if (obj) {
+    return JSON.stringify(obj, null, 2);
+  }
+  else {
+    return "UNDEFINED";
+  }
+};
 
 
 let configuration = {};
@@ -60,7 +65,13 @@ configuration.threeceeUser = process.env.THREECEE_USER;
 configuration.twitterConfig = {};
 configuration.twitterConfig = process.env.TWITTER_CONFIG;
 configuration.testMode = false;
+if (process.env.TEST_MODE > 0) {
+  configuration.testMode = true;
+}
+
 configuration.fetchCount = process.env.TEST_MODE ? process.env.TEST_MODE_FETCH_COUNT :  process.env.DEFAULT_FETCH_COUNT;
+
+console.log(chalkAlert("CONFIGURATION\n" + jsonPrint(configuration)));
 
 let statsObj = {};
 
@@ -103,15 +114,6 @@ function getTimeStamp(inputTime) {
     return currentTimeStamp;
   }
 }
-
-const jsonPrint = function (obj){
-  if (obj) {
-    return JSON.stringify(obj, null, 2);
-  }
-  else {
-    return "UNDEFINED";
-  }
-};
 
 function msToTime(duration) {
   let seconds = parseInt((duration / 1000) % 60);
@@ -186,6 +188,15 @@ function twitterUserUpdate(params, callback){
           + " | " + getTimeStamp() 
           + " | " + err.message
         ));
+
+        if (err.code === 88){
+          statsObj.threeceeUser.twitterRateLimitException = moment();
+          statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
+          statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+          checkRateLimit({user: configuration.threeceeUser});
+          fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
+          fsm.fsm_rateLimitStart();
+        }
 
         callback(err);
 
@@ -312,8 +323,6 @@ function checkRateLimit(params, callback){
 
 function quit(cause){
 
-  quitFlag = true;
-
   fsm.fsm_reset();
 
   console.log( "\n" + configuration.childId + " | ... QUITTING ..." );
@@ -329,7 +338,7 @@ function quit(cause){
 
 function fetchFriends(params, callback) {
 
-  debug(chalkInfo("FETCH FRIENDS\n" + jsonPrint(params)));
+  if (configuration.testMode) { console.log(chalkInfo("FETCH FRIENDS params\n" + jsonPrint(params))); }
 
   const threeceeUser = configuration.threeceeUser;
 
@@ -471,19 +480,33 @@ function reporter(event, oldState, newState) {
 
 const fsmStates = {
   "IDLE":{
-    onEnter: reporter,
+    onEnter: function(event, oldState, newState){
+      reporter(event, oldState, newState);
+      process.send({op:"IDLE", threeceeUser: configuration.threeceeUser});
+      return this.IDLE;
+    },
+    "fsm_reset": "RESET",
+    "fsm_error": "ERROR",
     "fsm_initStart": "INIT"
   },
   "RESET":{
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
+      resetTwitterUserState();
+      process.send({op:"RESET", threeceeUser: configuration.threeceeUser});
       fsm.fsm_resetEnd();
       return this.RESET;
     },
+    "fsm_error": "ERROR",
     "fsm_resetEnd": "IDLE"
   },
   "ERROR":{
-    onEnter: reporter,
+    onEnter: function(event, oldState, newState){
+      reporter(event, oldState, newState);
+      process.send({op:"ERROR", threeceeUser: configuration.threeceeUser});
+      return this.ERROR;
+    },
+    "fsm_error": "ERROR",
     "fsm_reset": "RESET"
   },
   "INIT":{
@@ -492,12 +515,18 @@ const fsmStates = {
       fsm.fsm_initComplete();
       return this.INIT;
     },
+    "fsm_error": "ERROR",
     "fsm_initComplete": "READY",
     "fsm_rateLimitStart": "PAUSE_RATE_LIMIT",
     "fsm_reset": "RESET"
   },
   "READY":{
-    onEnter: reporter,
+    onEnter: function(event, oldState, newState){
+      reporter(event, oldState, newState);
+      process.send({op:"READY", threeceeUser: configuration.threeceeUser});
+      return this.READY;
+    },
+    "fsm_error": "ERROR",
     "fsm_reset": "RESET",
     "fsm_rateLimitStart": "PAUSE_RATE_LIMIT",
     "fsm_fetchUserStart": "FETCH_USER_START"
@@ -506,12 +535,14 @@ const fsmStates = {
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       fsm.fsm_fetchUser();
+      process.send({op:"FETCH", threeceeUser: configuration.threeceeUser});
       return this.FETCH_USER_START;
     },
+    "fsm_error": "ERROR",
     "fsm_reset": "RESET",
     "fsm_fetchUser": "FETCH_USER",
     "fsm_fetchUserStart": "FETCH_USER_START",
-    "fsm_fetchUserEnd": "READY",
+    "fsm_fetchUserEnd": "FETCH_END",
     "fsm_rateLimitStart": "PAUSE_RATE_LIMIT"
   },
   "FETCH_USER":{
@@ -540,27 +571,42 @@ const fsmStates = {
       });
       return this.FETCH_USER;
     },
+    "fsm_error": "ERROR",
     "fsm_reset": "RESET",
     "fsm_fetchUserContinue": "FETCH_USER",
-    "fsm_fetchUserEnd": "READY",
+    "fsm_fetchUserEnd": "FETCH_END",
     "fsm_rateLimitStart": "PAUSE_RATE_LIMIT"
+  },
+  "FETCH_END":{
+    onEnter: function(event, oldState, newState){
+      reporter(event, oldState, newState);
+      process.send({op:"FETCH_END", threeceeUser: configuration.threeceeUser});
+      console.log("FETCH_END | PREV STATE: " + oldState);
+    },
+    "fsm_initStart": "INIT",
+    "fsm_error": "ERROR",
+    "fsm_reset": "RESET"
   },
   "PAUSE_FETCH_USER":{
     onEnter: reporter,
+    "fsm_error": "ERROR",
     "fsm_reset": "RESET",
     "fsm_rateLimitEnd": "FETCH_USER",
-    "fsm_fetchUserEnd": "READY"
+    "fsm_fetchUserEnd": "FETCH_END"
   },
   "PAUSE_RATE_LIMIT":{
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
+      process.send({op:"PAUSE_RATE_LIMIT", threeceeUser: configuration.threeceeUser});
       console.log("PAUSE_RATE_LIMIT | PREV STATE: " + oldState);
     },
+    "fsm_error": "ERROR",
     "fsm_reset": "RESET",
-    "fsm_rateLimitEnd": function(){
-      return getPreviousPauseState();
-    },
-    "fsm_fetchUserEnd": "READY"
+    "fsm_rateLimitEnd": "FETCH_USER",
+    // "fsm_rateLimitEnd": function(){
+    //   return getPreviousPauseState();
+    // },
+    "fsm_fetchUserEnd": "FETCH_END"
   }
 };
 
@@ -612,15 +658,7 @@ process.on( "SIGINT", function() {
   quit({source: "SIGINT"});
 });
 
-function reset(cause, callback){
-
-  console.log(chalkAlert("\nRESET | CAUSE: " + cause + "\n"));
-
-  if (callback !== undefined) { callback(); } 
-}
-
-function initTwitter(twitterConfig, callback){
-
+function initTwitter(callback){
 
   twitClient = new Twit({
     consumer_key: process.env.CONSUMER_KEY,
@@ -630,6 +668,27 @@ function initTwitter(twitterConfig, callback){
   });
 
   twitStream = twitClient.stream("user", { stringify_friend_ids: true });
+
+  twitStream.on("follow", function(followMessage){
+
+    console.log(chalkInfo("TFC | +++ USER @" + configuration.threeceeUser + " FOLLOW"
+      + " | " +  followMessage.target.id_str
+      + " | @" +  followMessage.target.screen_name.toLowerCase()
+    ));
+
+    followMessage.target.threeceeFollowing = configuration.threeceeUser;
+
+    const friendRawObj = {
+      op:"FRIEND_RAW", 
+      threeceeUser: configuration.threeceeUser, 
+      childId: configuration.childId, 
+      friend: followMessage.target
+    };
+
+    process.send(friendRawObj);
+
+  });
+
   twitClient.get("account/settings", function(err, accountSettings, response) {
     if (err){
 
@@ -691,10 +750,7 @@ function initTwitter(twitterConfig, callback){
 }
 
 function initialize(callback){
-
   fsm.fsm_reset();
-  resetTwitterUserState();
-
   callback();
 }
 
@@ -733,9 +789,9 @@ process.on("message", function(m) {
       ));
 
 
-      initTwitter(m.config, function initTwitterUsersCallback(e){
+      initTwitter(function initTwitterUsersCallback(e){
 
-        initCheckRateLimitInterval(ONE_MINUTE);
+        initCheckRateLimitInterval(checkRateLimitIntervalTime);
 
         twitterUserUpdate({}, function(){
           fsm.fsm_initStart();
@@ -760,7 +816,7 @@ process.on("message", function(m) {
 
     case "STATS":
       showStats();
-      process.send({op:"STATS", childId: configuration.childId, statsObj: statsObj});
+      process.send({op:"STATS", threeceeUser: configuration.threeceeUser, statsObj: statsObj});
     break;
 
     default:
