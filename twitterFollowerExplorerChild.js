@@ -65,7 +65,6 @@ configuration.fetchCount = process.env.TEST_MODE ? process.env.TEST_MODE_FETCH_C
 let statsObj = {};
 
 statsObj.threeceeUser = {};
-statsObj.threeceeUser.twitterRateLimit
 
 statsObj.hostname = hostname;
 statsObj.startTimeMoment = moment();
@@ -518,7 +517,13 @@ const fsmStates = {
   "FETCH_USER":{
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
-      fetchFriends(configuration.threeceeUser, function(err, results){
+
+      let params = {};
+      params.count = statsObj.threeceeUser.count;
+      params.screen_name = configuration.threeceeUser;
+      params.cursor = (statsObj.threeceeUser.nextCursorValid) ? statsObj.threeceeUser.nextCursor : -1;
+
+      fetchFriends(params, function(err, results){
         if (err) {
           console.log(chalkError("fetchFriends ERROR: " + err));
         }
