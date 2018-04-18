@@ -488,6 +488,15 @@ function msToTime(duration) {
   return days + ":" + hours + ":" + minutes + ":" + seconds;
 }
 
+function setCurrentTwitterUser(u){
+  currentTwitterUser = u;
+  return  currentTwitterUser;
+}
+
+function getCurrentTwitterUser(){
+  return  currentTwitterUser;
+}
+
 function printCat(c){
   if (c === "left") { return "L"; }
   if (c === "neutral") { return "N"; }
@@ -886,7 +895,7 @@ function twitterUserUpdate(params, callback){
         ));
 
 
-        if (userScreenName === currentTwitterUser) {
+        if (userScreenName === getCurrentTwitterUser()) {
           initNextTwitterUser(function(err1, nextTwitterUser){
 
             if (err1) {
@@ -1086,26 +1095,26 @@ function saveHistograms(callback){
 
 function initNextTwitterUser(callback){
 
-  if (currentTwitterUser === undefined) {
-    currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
-  }
+  // if (currentTwitterUser === undefined) {
+  //   currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
+  // }
 
-  statsObj.user[currentTwitterUser].friendsProcessEnd = moment();
-  statsObj.user[currentTwitterUser].friendsProcessElapsed = moment().diff(statsObj.user[currentTwitterUser].friendsProcessStart);
+  statsObj.user[getCurrentTwitterUser()].friendsProcessEnd = moment();
+  statsObj.user[getCurrentTwitterUser()].friendsProcessElapsed = moment().diff(statsObj.user[getCurrentTwitterUser()].friendsProcessStart);
 
-  if (statsObj.user[currentTwitterUser].friendsProcessStart === undefined) {
-    statsObj.user[currentTwitterUser].friendsProcessStart = moment();
+  if (statsObj.user[getCurrentTwitterUser()].friendsProcessStart === undefined) {
+    statsObj.user[getCurrentTwitterUser()].friendsProcessStart = moment();
   }
 
   console.log(chalkBlue("INIT NEXT TWITTER USER"
     + " | TEST MODE: " + configuration.testMode
-    + "\nCURRENT USER:  @" + currentTwitterUser
-    + "\nFRIENDS:       " + statsObj.user[currentTwitterUser].friendsCount
-    + "\nTOTAL FETCHED  " + statsObj.user[currentTwitterUser].totalFriendsFetched
-    + "\nEND FETCH:     " + statsObj.user[currentTwitterUser].endFetch
-    + "\nSTART:         " + statsObj.user[currentTwitterUser].friendsProcessStart.format(compactDateTimeFormat)
-    + "\nEND:           " + statsObj.user[currentTwitterUser].friendsProcessEnd.format(compactDateTimeFormat)
-    + "\nELPSD:         " + msToTime(statsObj.user[currentTwitterUser].friendsProcessElapsed)
+    + "\nCURRENT USER:  @" + getCurrentTwitterUser()
+    + "\nFRIENDS:       " + statsObj.user[getCurrentTwitterUser()].friendsCount
+    + "\nTOTAL FETCHED  " + statsObj.user[getCurrentTwitterUser()].totalFriendsFetched
+    + "\nEND FETCH:     " + statsObj.user[getCurrentTwitterUser()].endFetch
+    + "\nSTART:         " + statsObj.user[getCurrentTwitterUser()].friendsProcessStart.format(compactDateTimeFormat)
+    + "\nEND:           " + statsObj.user[getCurrentTwitterUser()].friendsProcessEnd.format(compactDateTimeFormat)
+    + "\nELPSD:         " + msToTime(statsObj.user[getCurrentTwitterUser()].friendsProcessElapsed)
     + "\nNEXT USER:    " + nextUser
     + "\nABORT CURSOR: " + abortCursor
     + "\nTEST_MODE_FETCH_COUNT: " + TEST_MODE_FETCH_COUNT
@@ -1116,28 +1125,28 @@ function initNextTwitterUser(callback){
 
     currentTwitterUserIndex += 1;
 
-    currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
+    setCurrentTwitterUser(configuration.twitterUsers[currentTwitterUserIndex]);
 
     console.log(chalkTwitterBold("===== NEW FETCH USER"
-      + " @" + currentTwitterUser + " ====="
+      + " @" + getCurrentTwitterUser() + " ====="
       + " | USER " + (currentTwitterUserIndex+1) + " OF " + configuration.twitterUsers.length
       + " | " + getTimeStamp()
     ));
 
-    twitterUserUpdate({userScreenName: currentTwitterUser, resetStats: true}, function(err){
+    twitterUserUpdate({userScreenName: getCurrentTwitterUser(), resetStats: true}, function(err){
 
       if (err){
         if (err.code === 88) {
           console.log(chalkError("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
             + " | " + getTimeStamp() 
-            + " | @" + currentTwitterUser 
+            + " | @" + getCurrentTwitterUser() 
             // + "\n" + jsonPrint(err)
           ));
 
-          statsObj.user[currentTwitterUser].twitterRateLimitException = moment();
-          statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = true;
-          statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(moment().valueOf() + DEFAULT_RATE_LIMIT_RESET_TIME);
-          checkRateLimit({user: currentTwitterUser});
+          statsObj.user[getCurrentTwitterUser()].twitterRateLimitException = moment();
+          statsObj.user[getCurrentTwitterUser()].twitterRateLimitExceptionFlag = true;
+          statsObj.user[getCurrentTwitterUser()].twitterRateLimitResetAt = moment(moment().valueOf() + DEFAULT_RATE_LIMIT_RESET_TIME);
+          checkRateLimit({user: getCurrentTwitterUser()});
 
           fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
           fsm.fsm_rateLimitStart();
@@ -1146,7 +1155,7 @@ function initNextTwitterUser(callback){
         else {
           console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
             + " | " + getTimeStamp() 
-            + " | @" + currentTwitterUser 
+            + " | @" + getCurrentTwitterUser() 
             + "\n" + jsonPrint(err)
           ));
         }
@@ -1170,23 +1179,23 @@ function initNextTwitterUser(callback){
         + "\n================================================================================================"
       ));
 
-      if (!statsObj.user[currentTwitterUser].nextCursorValid){     
-        statsObj.user[currentTwitterUser].nextCursor = false;
-        statsObj.user[currentTwitterUser].nextCursorValid = false;
-        statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
-        statsObj.user[currentTwitterUser].twitterRateLimit = 0;
-        statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-        statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
-        statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
-        statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
-        statsObj.user[currentTwitterUser].friendsProcessed = 0;
-        statsObj.user[currentTwitterUser].percentProcessed = 0;
-        statsObj.user[currentTwitterUser].friendsProcessStart = moment();
-        statsObj.user[currentTwitterUser].friendsProcessEnd = moment();
-        statsObj.user[currentTwitterUser].friendsProcessElapsed = 0;
+      if (!statsObj.user[getCurrentTwitterUser()].nextCursorValid){     
+        statsObj.user[getCurrentTwitterUser()].nextCursor = false;
+        statsObj.user[getCurrentTwitterUser()].nextCursorValid = false;
+        statsObj.user[getCurrentTwitterUser()].totalFriendsFetched = 0;
+        statsObj.user[getCurrentTwitterUser()].twitterRateLimit = 0;
+        statsObj.user[getCurrentTwitterUser()].twitterRateLimitExceptionFlag = false;
+        statsObj.user[getCurrentTwitterUser()].twitterRateLimitRemaining = 0;
+        statsObj.user[getCurrentTwitterUser()].twitterRateLimitRemainingTime = 0;
+        statsObj.user[getCurrentTwitterUser()].twitterRateLimitResetAt = moment();
+        statsObj.user[getCurrentTwitterUser()].friendsProcessed = 0;
+        statsObj.user[getCurrentTwitterUser()].percentProcessed = 0;
+        statsObj.user[getCurrentTwitterUser()].friendsProcessStart = moment();
+        statsObj.user[getCurrentTwitterUser()].friendsProcessEnd = moment();
+        statsObj.user[getCurrentTwitterUser()].friendsProcessElapsed = 0;
       }
 
-      callback(null, currentTwitterUser);
+      callback(null, getCurrentTwitterUser());
     });
   }
   else {
@@ -1303,28 +1312,28 @@ function initNextTwitterUser(callback){
               ));
 
               currentTwitterUserIndex = 0;
-              currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
+              setCurrentTwitterUser(configuration.twitterUsers[currentTwitterUserIndex]);
 
-              statsObj.user[currentTwitterUser].nextCursor = false;
-              statsObj.user[currentTwitterUser].nextCursorValid = false;
-              statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
-              statsObj.user[currentTwitterUser].twitterRateLimit = 0;
-              statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-              statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
-              statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
-              statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
-              statsObj.user[currentTwitterUser].friendsProcessed = 0;
-              statsObj.user[currentTwitterUser].percentProcessed = 0;
-              statsObj.user[currentTwitterUser].friendsProcessStart = moment();
-              statsObj.user[currentTwitterUser].friendsProcessEnd = moment();
-              statsObj.user[currentTwitterUser].friendsProcessElapsed = 0;
+              statsObj.user[getCurrentTwitterUser()].nextCursor = false;
+              statsObj.user[getCurrentTwitterUser()].nextCursorValid = false;
+              statsObj.user[getCurrentTwitterUser()].totalFriendsFetched = 0;
+              statsObj.user[getCurrentTwitterUser()].twitterRateLimit = 0;
+              statsObj.user[getCurrentTwitterUser()].twitterRateLimitExceptionFlag = false;
+              statsObj.user[getCurrentTwitterUser()].twitterRateLimitRemaining = 0;
+              statsObj.user[getCurrentTwitterUser()].twitterRateLimitRemainingTime = 0;
+              statsObj.user[getCurrentTwitterUser()].twitterRateLimitResetAt = moment();
+              statsObj.user[getCurrentTwitterUser()].friendsProcessed = 0;
+              statsObj.user[getCurrentTwitterUser()].percentProcessed = 0;
+              statsObj.user[getCurrentTwitterUser()].friendsProcessStart = moment();
+              statsObj.user[getCurrentTwitterUser()].friendsProcessEnd = moment();
+              statsObj.user[getCurrentTwitterUser()].friendsProcessElapsed = 0;
 
               console.log(chalkTwitterBold("\n=========================\n"
                 + "=========================\n"
                 + "=========================\n"
                 + "*** RESTART FETCH USERS ***"
                 + " | ===== NEW FETCH USER @" 
-                + currentTwitterUser + " ====="
+                + getCurrentTwitterUser() + " ====="
                 + " | " + getTimeStamp()
                 + "\n=========================\n"
                 + "=========================\n"
@@ -1333,7 +1342,7 @@ function initNextTwitterUser(callback){
 
               // processFriendsReady = true;
 
-              callback(err, currentTwitterUser);
+              callback(err, getCurrentTwitterUser());
 
             });
 
@@ -2455,7 +2464,7 @@ function generateAutoCategory(params, user, callback){
           statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
 
           debug(chalkInfo("GEN CA"
-            + " [@" + currentTwitterUser + "]"
+            + " [@" + getCurrentTwitterUser() + "]"
             + " | @" + updatedUser.screenName
             + " | " + updatedUser.nodeId
             + " | Ts: " + updatedUser.statusesCount
@@ -2665,12 +2674,12 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
           + " | 3CF: " + user.threeceeFollowing
         ));
 
-        twitterUserHashMap[currentTwitterUser].twit.post(
+        twitterUserHashMap[getCurrentTwitterUser()].twit.post(
           "friendships/destroy", {user_id: user.nodeId}, 
           function destroyFriend(err, data, response){
             if (err) {
               console.error(chalkError("UNFOLLOW ERROR"
-                + " | @" + currentTwitterUser
+                + " | @" + getCurrentTwitterUser()
                 + " | " + err
               ));
               cb(null, user);
@@ -2679,11 +2688,11 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
               debug("data\n" + jsonPrint(data));
               debug("response\n" + jsonPrint(response));
 
-              console.log(chalkInfo("UNFOLLOW " + currentTwitterUser
+              console.log(chalkInfo("UNFOLLOW " + getCurrentTwitterUser()
                 + " | " + user.nodeId
                 + " | " + user.screenName.toLowerCase()
               ));
-              const slackText = "UNFOLLOW " + currentTwitterUser
+              const slackText = "UNFOLLOW " + getCurrentTwitterUser()
                 + "\n@" + user.screenName.toLowerCase()
                 + "\n" + user.nodeId;
               slackPostMessage(slackChannel, slackText);
@@ -3130,7 +3139,7 @@ function reporter(event, oldState, newState) {
   fsmPreviousState = oldState;
   console.log(chalkAlert("--------------------------------------------------------\n"
     + "<< FSM >>"
-    + " @" + currentTwitterUser
+    + " @" + getCurrentTwitterUser()
     + " | " + event
     + " | " + fsmPreviousState
     + " -> " + newState
@@ -3172,7 +3181,7 @@ const fsmStates = {
       if (event === "fsm_fetchUserEnd") {
         console.log("FETCH_ALL"
          + " | " + event
-         + " | currentTwitterUser: @" + currentTwitterUser
+         + " | currentTwitterUser: @" + getCurrentTwitterUser()
         );
 
         loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function(){
@@ -3223,7 +3232,7 @@ const fsmStates = {
   "FETCH_USER":{
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
-      updateNetworkFetchFriends(currentTwitterUser, function(err, results){
+      updateNetworkFetchFriends(getCurrentTwitterUser(), function(err, results){
         if (err) {
           console.log(chalkError("updateNetworkFetchFriends ERROR: " + err));
         }
@@ -3386,10 +3395,10 @@ function showStats(options){
 
     updateGlobalHistograms();
 
-    if (statsObj.user[currentTwitterUser] !== undefined) {
+    if (statsObj.user[getCurrentTwitterUser()] !== undefined) {
 
-      statsObj.user[currentTwitterUser].percentProcessed = 100*statsObj.user[currentTwitterUser].friendsProcessed/statsObj.user[currentTwitterUser].friendsCount;
-      statsObj.user[currentTwitterUser].friendsProcessElapsed = moment().diff(statsObj.user[currentTwitterUser].friendsProcessStart);
+      statsObj.user[getCurrentTwitterUser()].percentProcessed = 100*statsObj.user[getCurrentTwitterUser()].friendsProcessed/statsObj.user[getCurrentTwitterUser()].friendsCount;
+      statsObj.user[getCurrentTwitterUser()].friendsProcessElapsed = moment().diff(statsObj.user[getCurrentTwitterUser()].friendsProcessStart);
 
       statsObj.users.totalTwitterFriends = 0;
       statsObj.users.totalFriendsFetched = 0;
@@ -3410,10 +3419,10 @@ function showStats(options){
                 statsObj.user[tUserScreenName].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
                 checkRateLimit({user: tUserScreenName});
 
-              if (tUserScreenName === currentTwitterUser) {
-                // statsObj.user[currentTwitterUser].twitterRateLimitException = moment();
-                // statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = true;
-                // statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+              if (tUserScreenName === getCurrentTwitterUser()) {
+                // statsObj.user[getCurrentTwitterUser()].twitterRateLimitException = moment();
+                // statsObj.user[getCurrentTwitterUser()].twitterRateLimitExceptionFlag = true;
+                // statsObj.user[getCurrentTwitterUser()].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
                 // checkRateLimit({user: tUserScreenName});
                 fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
                 fsm.fsm_rateLimitStart();
@@ -3438,13 +3447,13 @@ function showStats(options){
         statsObj.numNetworksLoaded = bestNetworkHashMap.size;
 
         console.log(chalkLog("--- STATS --------------------------------------\n"
-          + "CUR USR: @" + currentTwitterUser
+          + "CUR USR: @" + getCurrentTwitterUser()
           + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
           + "\nELAPSED: " + statsObj.elapsed
           + "\nFSM:     " + fsm.getMachineState()
           + "\nSAVE $:  " + saveCache.getStats().keys
-          + "\nU PRCSD: " + statsObj.user[currentTwitterUser].friendsProcessed + " / " + statsObj.user[currentTwitterUser].friendsCount
-          + " (" + statsObj.user[currentTwitterUser].percentProcessed.toFixed(2) + "%)"
+          + "\nU PRCSD: " + statsObj.user[getCurrentTwitterUser()].friendsProcessed + " / " + statsObj.user[getCurrentTwitterUser()].friendsCount
+          + " (" + statsObj.user[getCurrentTwitterUser()].percentProcessed.toFixed(2) + "%)"
           + "\nT FTCHD: " + statsObj.users.totalFriendsFetched + " / " + statsObj.users.totalTwitterFriends
           + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
           + "\nCL AUTO: " + statsObj.categorized.totalAuto
@@ -4056,10 +4065,10 @@ function initTwitter(threeCeeUser, callback){
                     statsObj.user[userScreenName].twitterRateLimitExceptionFlag = true;
                     statsObj.user[userScreenName].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
 
-                  if (userScreenName === currentTwitterUser) {
-                    // statsObj.user[currentTwitterUser].twitterRateLimitException = moment();
-                    // statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = true;
-                    // statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+                  if (userScreenName === getCurrentTwitterUser()) {
+                    // statsObj.user[getCurrentTwitterUser()].twitterRateLimitException = moment();
+                    // statsObj.user[getCurrentTwitterUser()].twitterRateLimitExceptionFlag = true;
+                    // statsObj.user[getCurrentTwitterUser()].twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
                     checkRateLimit({user:userScreenName});
                     fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
                     fsm.fsm_rateLimitStart();
@@ -4811,7 +4820,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
               // saveFileQueue.push({folder: bestNetworkFolder, file: m.previousBestNetworkId + ".json", obj: prevHmObj.network });
 
               file = m.previousBestNetworkId + ".json";
-              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: prevHmObj.network });
+              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: prevHmObj.network }, function(){});
             }
           }
 
@@ -5392,13 +5401,13 @@ initialize(configuration, function(err, cnf){
       return quit({source: "TFE", error: e});
     }
 
-    if (currentTwitterUser === undefined) { 
-      currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
-    }
+    // if (currentTwitterUser === undefined) { 
+    //   currentTwitterUser = configuration.twitterUsers[currentTwitterUserIndex];
+    // }
 
-    console.log(chalkTwitter("CURRENT TWITTER USER: @" + currentTwitterUser));
+    console.log(chalkTwitter("CURRENT TWITTER USER: @" + getCurrentTwitterUser()));
 
-    checkRateLimit({user: currentTwitterUser});
+    checkRateLimit({user: getCurrentTwitterUser()});
     initCheckRateLimitInterval(checkRateLimitIntervalTime);
     initSocket(cnf, function(){});
 
@@ -5408,9 +5417,9 @@ initialize(configuration, function(err, cnf){
     else {
       console.log(chalkTwitter("... GET TWITTER FRIENDS"
         + " [ USER INDEX: " + currentTwitterUserIndex + "]"
-        + " | @" + statsObj.user[currentTwitterUser].screenName
+        + " | @" + statsObj.user[getCurrentTwitterUser()].screenName
       ));
-      debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[currentTwitterUser]) + "\n\n"));
+      debug(chalkTwitter("\n\n*** GET TWITTER FRIENDS *** | @" + jsonPrint(statsObj.user[getCurrentTwitterUser()]) + "\n\n"));
 
       if (configuration.testMode) {
 
