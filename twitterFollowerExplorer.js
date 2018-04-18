@@ -2,10 +2,14 @@
 "use strict";
 require("isomorphic-fetch");
 
+let currentTwitterUser = "altthreecee02";
+let currentTwitterUserIndex = 0;
+
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
-const NETWORK_CACHE_DEFAULT_TTL = 120 // seconds
+const SAVE_CACHE_DEFAULT_TTL = 120; // seconds
+const SAVE_CACHE_CHECK_PERIOD = 10; // seconds
 
 const TFE_NUM_RANDOM_NETWORKS = 100;
 
@@ -228,8 +232,6 @@ let nextUser = false;
 let categorizedUserHashMapReadyFlag = false;
 
 let neuralNetworkInitialized = false;
-let currentTwitterUser ;
-let currentTwitterUserIndex = 0;
 
 let TFE_USER_DB_CRAWL = false;
 
@@ -389,12 +391,16 @@ let fsmPreviousPauseState;
 // ==================================================================
 // NN CACHE
 // ==================================================================
-let saveCacheTtl = process.env.NETWORK_CACHE_DEFAULT_TTL;
-if (saveCacheTtl === undefined) { saveCacheTtl = NETWORK_CACHE_DEFAULT_TTL;}
+let saveCacheTtl = process.env.SAVE_CACHE_DEFAULT_TTL;
+
+if (saveCacheTtl === undefined) { saveCacheTtl = SAVE_CACHE_DEFAULT_TTL; }
+
 console.log("SAVE CACHE TTL: " + saveCacheTtl + " SECONDS");
 
-let saveCacheCheckPeriod = process.env.NETWORK_CACHE_CHECK_PERIOD;
-if (saveCacheCheckPeriod === undefined) { saveCacheCheckPeriod = 10;}
+let saveCacheCheckPeriod = process.env.SAVE_CACHE_CHECK_PERIOD;
+
+if (saveCacheCheckPeriod === undefined) { saveCacheCheckPeriod = 10; }
+
 console.log("SAVE CACHE CHECK PERIOD: " + saveCacheCheckPeriod + " SECONDS");
 
 
@@ -402,6 +408,7 @@ const saveCache = new NodeCache({
   stdTTL: saveCacheTtl,
   checkperiod: saveCacheCheckPeriod
 });
+
 
 function saveCacheExpired(file, fileObj) {
 
@@ -417,10 +424,22 @@ function saveCacheExpired(file, fileObj) {
 saveCache.on("expired", saveCacheExpired);
 
 saveCache.on("set", function(file, fileObj){
-  console.log(chalkAlert("+++ SAVE CACHE"
+  console.log(chalkAlert("$$$ SAVE CACHE"
     + " [" + saveCache.getStats().keys + "]"
     + " | " + file
   ));
+
+  if (file === bestRuntimeNetworkFileName) {
+
+    saveCache.ttl(bestRuntimeNetworkFileName, 30, function( err, changed ){
+      if( !err ){
+        console.log("SAVE CACHE TTL bestRuntimeNetworkFileName: 30 | CHANGED: " + changed ); // true
+        // ... do something ...
+      }
+    });
+
+  }
+
 });
 
 
@@ -1151,19 +1170,21 @@ function initNextTwitterUser(callback){
         + "\n================================================================================================"
       ));
 
-      statsObj.user[currentTwitterUser].nextCursor = false;
-      statsObj.user[currentTwitterUser].nextCursorValid = false;
-      statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimit = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
-      statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
-      statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
-      statsObj.user[currentTwitterUser].friendsProcessed = 0;
-      statsObj.user[currentTwitterUser].percentProcessed = 0;
-      statsObj.user[currentTwitterUser].friendsProcessStart = moment();
-      statsObj.user[currentTwitterUser].friendsProcessEnd = moment();
-      statsObj.user[currentTwitterUser].friendsProcessElapsed = 0;
+      if (!statsObj.user[currentTwitterUser].nextCursorValid){     
+        statsObj.user[currentTwitterUser].nextCursor = false;
+        statsObj.user[currentTwitterUser].nextCursorValid = false;
+        statsObj.user[currentTwitterUser].totalFriendsFetched = 0;
+        statsObj.user[currentTwitterUser].twitterRateLimit = 0;
+        statsObj.user[currentTwitterUser].twitterRateLimitExceptionFlag = false;
+        statsObj.user[currentTwitterUser].twitterRateLimitRemaining = 0;
+        statsObj.user[currentTwitterUser].twitterRateLimitRemainingTime = 0;
+        statsObj.user[currentTwitterUser].twitterRateLimitResetAt = moment();
+        statsObj.user[currentTwitterUser].friendsProcessed = 0;
+        statsObj.user[currentTwitterUser].percentProcessed = 0;
+        statsObj.user[currentTwitterUser].friendsProcessStart = moment();
+        statsObj.user[currentTwitterUser].friendsProcessEnd = moment();
+        statsObj.user[currentTwitterUser].friendsProcessElapsed = 0;
+      }
 
       callback(null, currentTwitterUser);
     });
@@ -1256,9 +1277,10 @@ function initNextTwitterUser(callback){
               const file = bestRuntimeNetworkId + ".json";
 
               // saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
-              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
+              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork }, function(){});
 
-              saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+              // saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+              saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj }, function(){});
             }
 
             randomNetworkTree.send({ op: "RESET_STATS"}, function(err){
@@ -1464,7 +1486,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
                   overallMatchRate:  networkObj.overallMatchRate
                 };
 
-                saveFileQueue.push({folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj });
+                // saveFileQueue.push({folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj });
+                saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj }, function(){});
               }
             }
             async.setImmediate(function() { cb(); });
@@ -1536,7 +1559,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
                   matchRate:  networkObj.matchRate
                 };
 
-                saveFileQueue.push({folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj });
+                // saveFileQueue.push({folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj });
+                saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj }, function(){});
               }
             }
 
@@ -3418,6 +3442,7 @@ function showStats(options){
           + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
           + "\nELAPSED: " + statsObj.elapsed
           + "\nFSM:     " + fsm.getMachineState()
+          + "\nSAVE $:  " + saveCache.getStats().keys
           + "\nU PRCSD: " + statsObj.user[currentTwitterUser].friendsProcessed + " / " + statsObj.user[currentTwitterUser].friendsCount
           + " (" + statsObj.user[currentTwitterUser].percentProcessed.toFixed(2) + "%)"
           + "\nT FTCHD: " + statsObj.users.totalFriendsFetched + " / " + statsObj.users.totalTwitterFriends
@@ -3881,7 +3906,8 @@ function initSocket(cnf, callback){
               overallMatchRate:  networkObj.overallMatchRate
             };
 
-            saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+            // saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+            saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj }, function(){});
           }
         }
 
@@ -4474,7 +4500,7 @@ function saveNetworkHashMap(params, callback){
 
     const file = nnId + ".json";
 
-    saveCache.set(file, {folder: folder, file: file, obj: networkObj.network });
+    saveCache.set(file, {folder: folder, file: file, obj: networkObj.network }, function(){});
     // saveFileQueue.push({folder: folder, file: file, obj: networkObj.network });
 
     cb();
@@ -4662,9 +4688,10 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
               file = bestRuntimeNetworkId + ".json";
 
               // saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
-              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
+              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork }, function(){});
 
-              saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+              // saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+              saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj }, function(){});
             }
 
             debug(chalkAlert("NETWORK_OUTPUT"
@@ -4753,9 +4780,10 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
               file = currentBestNetwork.networkId + ".json";
 
               // saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
-              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
+              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork }, function(){});
+              saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj}, function(){});
 
-              saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+              // saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
             }
           }
           else {
@@ -4782,8 +4810,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
               // saveFileQueue.push({folder: bestNetworkFolder, file: m.previousBestNetworkId + ".json", obj: prevHmObj.network });
 
-              const fn = m.previousBestNetworkId + ".json";
-              saveCache.set(fn, {folder: bestNetworkFolder, file: fn, obj: prevHmObj.network });
+              file = m.previousBestNetworkId + ".json";
+              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: prevHmObj.network });
             }
           }
 
