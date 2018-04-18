@@ -7,22 +7,14 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
 
-// const DEFAULT_RATE_LIMIT_RESET_TIME = 2*ONE_MINUTE;
-
 const TEST_MODE_TOTAL_FETCH = 40;  // total twitter user fetch count
 const TEST_MODE_FETCH_COUNT = 15;  // per request twitter user fetch count
 
-// const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
-// const OFFLINE_MODE = false;
-
 const chalk = require("chalk");
-// const chalkConnect = chalk.green;
 const chalkTwitter = chalk.blue;
 const chalkTwitterBold = chalk.bold.blue;
-// const chalkBlue = chalk.blue;
 const chalkError = chalk.bold.red;
 const chalkAlert = chalk.red;
-// const chalkWarn = chalk.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 
@@ -73,10 +65,6 @@ configuration.fetchCount = process.env.TEST_MODE ? process.env.TEST_MODE_FETCH_C
 let statsObj = {};
 
 statsObj.threeceeUser = {};
-// statsObj.threeceeUser.totalTwitterFriends = 0;
-// statsObj.threeceeUser.totalFriendsFetched = 0;
-// statsObj.threeceeUser.totalPercentFetched = 0;
-// statsObj.threeceeUser.twitterErrors = 0;
 statsObj.threeceeUser.twitterRateLimit
 
 statsObj.hostname = hostname;
@@ -254,9 +242,6 @@ function checkRateLimit(params, callback){
       if (callback !== undefined) { callback(err, null); }
     }
     else {
-      // debug(chalkTwitter("\n-------------------------------------\nTWITTER RATE LIMIT STATUS\n" 
-      //   + JSON.stringify(data, null, 3)
-      // ));
 
       debug(chalkLog("TWITTER RATE LIMIT STATUS"
         + " | @" + configuration.threeceeUser
@@ -304,8 +289,6 @@ function checkRateLimit(params, callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
           + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
         ));
-        // fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
-        // fsm.fsm_rateLimitStart();
       }
       else {
 
@@ -321,7 +304,6 @@ function checkRateLimit(params, callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
           + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
         ));
-        // fsm.fsm_rateLimitEnd();
       }
 
       if (callback !== undefined) { callback(); }
@@ -738,20 +720,15 @@ process.on("message", function(m) {
 
     case "INIT":
 
-      // configuration.childId = m.childId;
-      // configuration.threeceeUser = m.threeceeUser;
-
       console.log(chalkInfo("TFC | TFE CHILD INIT"
         + " | CHILD ID: " + configuration.childId
         + " | 3C: @" + configuration.threeceeUser
-        // + " | config\n" + jsonPrint(m)
       ));
 
-      // configuration.twitterConfig = JSON.parse(m.config);
 
       initTwitter(m.config, function initTwitterUsersCallback(e){
 
-        initCheckRateLimitInterval(30000);
+        initCheckRateLimitInterval(ONE_MINUTE);
 
         twitterUserUpdate({}, function(){
           fsm.fsm_initStart();
