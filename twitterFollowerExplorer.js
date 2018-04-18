@@ -888,7 +888,7 @@ function twitterUserUpdate(params, callback){
 
       if (err){
 
-        console.log(chalkError("TWITTER USER FRIENDS IDS ERROR"
+        console.log(chalkError("*** TWITTER USER FRIENDS IDS ERROR"
           + " | @" + userScreenName 
           + " | " + getTimeStamp() 
           + " | " + err.message
@@ -904,7 +904,7 @@ function twitterUserUpdate(params, callback){
             }
             else {
               console.log(chalkAlert("initNextTwitterUser nextTwitterUser: " + nextTwitterUser));
-              // fsm.fsm_fetchUserStart();
+              fsm.fsm_fetchUserStart();
               callback();
             }
 
@@ -1106,7 +1106,7 @@ function initNextTwitterUser(callback){
     statsObj.user[getCurrentTwitterUser()].friendsProcessStart = moment();
   }
 
-  console.log(chalkBlue("INIT NEXT TWITTER USER"
+  console.log(chalkBlue("\n======================================================\nINIT NEXT TWITTER USER"
     + " | TEST MODE: " + configuration.testMode
     + "\nCURRENT USER:  @" + getCurrentTwitterUser()
     + "\nFRIENDS:       " + statsObj.user[getCurrentTwitterUser()].friendsCount
