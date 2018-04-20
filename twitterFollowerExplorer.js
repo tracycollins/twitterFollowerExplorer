@@ -9,8 +9,8 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 const FSM_TICK_INTERVAL = ONE_SECOND;
 
 // const TEST_MODE_TOTAL_FETCH = 15;  // total twitter user fetch count
-const TEST_MODE_TOTAL_FETCH = 50;
-const TEST_MODE_FETCH_COUNT = 20;  // per request twitter user fetch count
+const TEST_MODE_TOTAL_FETCH = 20;
+const TEST_MODE_FETCH_COUNT = 10;  // per request twitter user fetch count
 const TEST_DROPBOX_NN_LOAD = 5;
 
 const TFC_CHILD_PREFIX = "TFC_";
@@ -2334,10 +2334,19 @@ const fsmStates = {
     onEnter: function(event, oldState, newState){
       if (event !== "fsm_tick") { 
         reporter(event, oldState, newState);
+
+        console.log(chalkAlert("===================================================="));
+        console.log(chalkAlert("================= END FETCH ALL ===================="));
+        console.log(chalkAlert("===================================================="));
+
         console.log(chalkAlert("... PAUSING FOR 5 SECONDS FOR RNT STAT UPDATE ..."));
-        randomNetworkTree.send({op: "STATS"}); 
+        randomNetworkTree.send({op: "GET_STATS"}); 
         setTimeout(function(){
-          fsm.fsm_init();
+          randomNetworkTree.send({op: "RESET_STATS"}); 
+          childSendAll("RESET_TWITTER_USER_STATE");
+          resetAllTwitterUserState(function(){
+            fsm.fsm_init();
+          });
         }, 5000);
       }
     },
@@ -3163,10 +3172,12 @@ function initTwitterFollowerChild(twitterConfig, callback){
       break;
 
       case "FRIEND_RAW":
-        console.log(chalkInfo("TFC | R> FRIEND"
-          + " | 3C: @" + m.threeceeUser
-          + " | @" + m.friend.screen_name
-        ));
+        if (configuration.testMode){
+          console.log(chalkInfo("TFC | R> FRIEND"
+            + " | 3C: @" + m.threeceeUser
+            + " | @" + m.friend.screen_name
+          ));
+        }
         processUserQueue.push(m);
         tfeChildHashMap[m.threeceeUser].status = "FRIEND_RAW";
       break;

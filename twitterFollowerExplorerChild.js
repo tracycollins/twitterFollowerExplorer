@@ -646,20 +646,6 @@ console.log("=================================");
 process.on("exit", function() {
 });
 
-process.on("message", function(msg) {
-
-  if ((msg === "SIGINT") || (msg === "shutdown")) {
-
-    clearInterval(checkRateLimitInterval);
-
-    setTimeout(function() {
-      console.log("QUITTING node_twitterFollowerExplorerChild");
-      process.exit(0);
-    }, 300);
-
-  }
-});
-
 
 function showStats(options){
 
@@ -805,6 +791,15 @@ process.on("message", function(m) {
 
   switch (m.op) {
 
+    case "shutdown":
+    case "SIGINT":
+      clearInterval(checkRateLimitInterval);
+      setTimeout(function() {
+        console.log("QUITTING TFC CHILD | @" + configuration.threeceeUser);
+        process.exit(0);
+      }, 500);
+    break;
+
     case "INIT":
 
       console.log(chalkInfo("TFC | TFE CHILD INIT"
@@ -841,6 +836,11 @@ process.on("message", function(m) {
     case "RESET":
       fsm.fsm_reset();
     break;
+
+    case "RESET_TWITTER_USER_STATE":
+      console.log("TFC @" + configuration.threeceeUser + " | RESET_TWITTER_USER_STATE" );
+      resetTwitterUserState();
+    break;    
 
     case "STATS":
       showStats();
