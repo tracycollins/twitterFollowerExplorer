@@ -66,7 +66,7 @@ if (process.env.TEST_MODE > 0) {
   configuration.testMode = true;
 }
 
-configuration.fetchCount = process.env.TEST_MODE ? process.env.TEST_MODE_FETCH_COUNT :  process.env.DEFAULT_FETCH_COUNT;
+configuration.fetchCount = configuration.testMode ? process.env.TEST_MODE_FETCH_COUNT :  process.env.DEFAULT_FETCH_COUNT;
 
 console.log(chalkAlert("CONFIGURATION\n" + jsonPrint(configuration)));
 
