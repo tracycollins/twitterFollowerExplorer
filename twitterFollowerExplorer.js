@@ -245,12 +245,19 @@ statsObj.network.successRate = 0;
 statsObj.users = {};
 
 statsObj.users.totalFriendsCount = 0;
-statsObj.users.totalFriendsProcessed = 0;
-statsObj.users.grandTotalFriendsFetched = 0;
+
 statsObj.users.totalFriendsFetched = 0;
 statsObj.users.totalPercentFetched = 0;
+
+statsObj.users.totalFriendsProcessed = 0;
 statsObj.users.totalPercentProcessed = 0;
+
+statsObj.users.grandTotalFriendsFetched = 0;
+statsObj.users.grandTotalPercentFetched = 0;
+
+statsObj.users.grandTotalFriendsProcessed = 0;
 statsObj.users.grandTotalPercentProcessed = 0;
+
 statsObj.users.classifiedAuto = 0;
 statsObj.users.classified = 0;
 
@@ -1878,6 +1885,9 @@ function generateAutoCategory(params, user, callback){
 
 function quit(cause){
 
+  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+  statsObj.timeStamp = moment().format(compactDateTimeFormat);
+
   quitFlag = true;
 
   fsm.fsm_reset();
@@ -1901,6 +1911,17 @@ function quit(cause){
   if (cause) {
     console.log( "CAUSE: " + jsonPrint(cause) );
   }
+
+  let slackText = "\n*QUIT*"; 
+  slackText = slackText + "\nSTART:       " + statsObj.startTimeMoment.format(compactDateTimeFormat);
+  slackText = slackText + "\nELPSD:       " + msToTime(statsObj.elapsed);
+  slackText = slackText + "\nFETCH ELPSD: " + msToTime(statsObj.fetchCycleElapsed);
+  slackText = slackText + "\nTOT PRCSSD:  " + statsObj.users.totalFriendsProcessed;
+  slackText = slackText + "\nGTOT PRCSSD: " + statsObj.users.grandTotalFriendsProcessed;
+
+  console.log("TFE | SLACK TEXT: " + slackText);
+
+  slackPostMessage(slackChannel, slackText);
 
   quitWaitInterval = setInterval(function () {
 
@@ -2355,6 +2376,8 @@ const fsmStates = {
               updateGlobalHistograms();
 
               childSendAll("FETCH_USER_START");
+              statsObj.fetchCycleStartMoment = moment();
+              statsObj.fetchCycleElapsed = 0;
 
             });
           });
@@ -2363,6 +2386,7 @@ const fsmStates = {
     },
 
     fsm_tick: function(){
+      statsObj.fetchCycleElapsed = moment().diff(statsObj.fetchCycleStartMoment);
       checkChildrenState("FETCH_END", function(err, acfe){
         debug("FETCH_END TICK"
           + " | Q READY: " + processUserQueueReady
@@ -2450,6 +2474,7 @@ function initFsmTickInterval(interval){
 
   fsmTickInterval = setInterval(function(){
 
+    statsObj.fetchCycleElapsed = moment().diff(statsObj.fetchCycleStartMoment);
     fsm.fsm_tick();
 
   }, FSM_TICK_INTERVAL);
@@ -3109,7 +3134,7 @@ function initStatsUpdate(callback){
 
   statsUpdateInterval = setInterval(function () {
 
-    statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
+    statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
     twitterTextParser.getGlobalHistograms(function(){
