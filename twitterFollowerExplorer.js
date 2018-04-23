@@ -122,6 +122,7 @@ let currentBestNetworkId = false;
 
 let processUserQueue = [];
 let processUserQueueInterval;
+let processUserQueueReady = true;
 
 let socket;
 let socketKeepAliveInterval;
@@ -373,7 +374,7 @@ saveCache.on("expired", saveCacheExpired);
 saveCache.on("set", function(file, fileObj){
   console.log(chalkAlert("$$$ SAVE CACHE"
     + " [" + saveCache.getStats().keys + "]"
-    + " | " + file
+    + " | " + fileObj.folder + "/" + file
   ));
 
   if (file === bestRuntimeNetworkFileName) {
@@ -2158,9 +2159,6 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
   });
 }
 
-let waitAllFetchEndInterval;
-let waitAllReadyInterval;
-
 const checkChildrenState = function (checkState, callback){
 
   async.every(Object.keys(tfeChildHashMap), function(user, cb){
@@ -2173,12 +2171,18 @@ const checkChildrenState = function (checkState, callback){
 
   }, function(err, allCheckState){
 
+    if (err) {
+      console.log(chalkError("*** ERROR: checkChildrenState: " + err));
+      if (callback !== undefined) { return callback(err, allCheckState); }
+      // return(callback(err, allCheckState));
+    }
+
     debug(chalkAlert("MAIN: " + fsm.getMachineState()
       + " | ALL CHILDREN: CHECKSTATE: " + checkState + " | " + allCheckState
     ));
 
-    if (callback !== undefined) { return callback(allCheckState); }
-    return allCheckState;
+    if (callback !== undefined) { return callback(null, allCheckState); }
+    // return allCheckState;
   });
 };
 
@@ -2225,7 +2229,6 @@ const fsmStates = {
   "RESET":{
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
-      clearInterval(waitAllFetchEndInterval);
     },
     "fsm_resetEnd": "IDLE"
   },
@@ -2236,7 +2239,6 @@ const fsmStates = {
   "ERROR":{
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
-      clearInterval(waitAllFetchEndInterval);
     },
     "fsm_reset": "RESET"
   },
@@ -2245,7 +2247,7 @@ const fsmStates = {
 
       if (event !== "fsm_tick") { 
         reporter(event, oldState, newState);
-        checkChildrenState("INIT", function(aci){
+        checkChildrenState("INIT", function(err, aci){
           console.log("ALL CHILDREN INIT: " + aci);
           if (!aci && (event !== "fsm_tick")) { childSendAll("INIT"); }
         });
@@ -2253,12 +2255,13 @@ const fsmStates = {
 
     },
     fsm_tick: function(){
-      checkChildrenState("INIT", function(aci){
+      checkChildrenState("INIT", function(err, aci){
         debug("INIT TICK"
+          + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
           + " | ALL CHILDREN INIT: " + aci
         );
-        if (aci && processUserQueueEmpty()) { fsm.fsm_ready(); }
+        if (aci && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_ready(); }
       });
     },
     "fsm_ready": "READY",
@@ -2270,7 +2273,7 @@ const fsmStates = {
 
       if (event !== "fsm_tick") { 
         reporter(event, oldState, newState); 
-        checkChildrenState("READY", function(aci){
+        checkChildrenState("READY", function(err, aci){
           console.log("ALL CHILDREN READY: " + aci);
           if (!aci && (event !== "fsm_tick")) { childSendAll("READY"); }
         });
@@ -2279,12 +2282,13 @@ const fsmStates = {
 
     },
     fsm_tick: function(){
-      checkChildrenState("READY", function(acr){
+      checkChildrenState("READY", function(err, acr){
         debug("READY TICK"
+          + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
           + " | ALL CHILDREN READY: " + acr
         );
-        if (acr && processUserQueueEmpty()) { fsm.fsm_fetchAllStart(); }
+        if (acr && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_fetchAllStart(); }
       });
     },
 
@@ -2318,12 +2322,13 @@ const fsmStates = {
     },
 
     fsm_tick: function(){
-      checkChildrenState("FETCH_END", function(acfe){
+      checkChildrenState("FETCH_END", function(err, acfe){
         debug("FETCH_END TICK"
+          + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
           + " | ALL CHILDREN FETCH_END: " + acfe
         );
-        if (acfe && processUserQueueEmpty()) { fsm.fsm_fetchAllEnd(); }
+        if (acfe && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_fetchAllEnd(); }
       });
     },
 
@@ -2650,7 +2655,6 @@ function saveFile (params, callback){
 
 function initProcessUserQueueInterval(interval){
 
-  let processUserQueueReady = true;
   let mObj = {};
   let threeceeUser;
 
@@ -3120,7 +3124,6 @@ function initTwitterFollowerChild(twitterConfig, callback){
       return;
     }
 
-    checkChildrenState(m.op);
 
     switch(m.op) {
 
@@ -3128,43 +3131,43 @@ function initTwitterFollowerChild(twitterConfig, callback){
       case "INIT_COMPLETE":
         console.log(chalkInfo("TFC | CHILD INIT COMPLETE | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "INIT";
-        // checkChildrenState("INIT_COMPLETE");
+        checkChildrenState(m.op);
       break;
 
       case "IDLE":
         console.log(chalkInfo("TFC | CHILD IDLE | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "IDLE";
-        // checkChildrenState("IDLE");
+        checkChildrenState(m.op);
       break;
 
       case "RESET":
         console.log(chalkInfo("TFC | CHILD RESET | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "RESET";
-        // checkChildrenState("RESET");
+        checkChildrenState(m.op);
       break;
 
       case "READY":
         console.log(chalkInfo("TFC | CHILD READY | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "READY";
-        // checkChildrenState("READY");
+        checkChildrenState(m.op);
       break;
 
       case "FETCH":
         console.log(chalkInfo("TFC | CHILD FETCH | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "FETCH";
-        // checkChildrenState("FETCH");
+        checkChildrenState(m.op);
       break;
 
       case "FETCH_END":
         console.log(chalkInfo("TFC | CHILD FETCH_END | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "FETCH_END";
-        // checkChildrenState("FETCH_END");
+        checkChildrenState(m.op);
       break;
 
       case "PAUSE_RATE_LIMIT":
         console.log(chalkInfo("TFC | CHILD PAUSE_RATE_LIMIT | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "PAUSE_RATE_LIMIT";
-        // checkChildrenState("PAUSE_RATE_LIMIT");
+        checkChildrenState(m.op);
       break;
 
       case "THREECEE_USER":
