@@ -3266,7 +3266,7 @@ function initTwitterFollowerChild(twitterConfig, callback){
           ));
         }
         processUserQueue.push(m);
-        tfeChildHashMap[m.threeceeUser].status = "FRIEND_RAW";
+        // tfeChildHashMap[m.threeceeUser].status = "FRIEND_RAW";
       break;
 
       case "STATS":
