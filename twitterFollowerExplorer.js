@@ -2504,12 +2504,20 @@ function showStats(options){
 
     updateGlobalHistograms();
 
-    console.log(chalkLog("- FE S"
+    console.log(chalkLog("- FEM S"
       + " | E: " + statsObj.elapsed
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
       + " | PUQ: " + processUserQueue.length
       + " | FSM: " + fsm.getMachineState()
     ));
+
+    Object.keys(tfeChildHashMap).forEach(function(user){
+      console.log(chalkLog("= FEC S"
+        + " | CHILD " + user + " | FSM: " + tfeChildHashMap[user].status
+      ));
+      
+    });
+
   }
 }
 
