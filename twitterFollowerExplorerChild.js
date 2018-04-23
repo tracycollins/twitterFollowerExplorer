@@ -67,6 +67,7 @@ if (process.env.TEST_MODE > 0) {
 }
 
 configuration.fetchCount = configuration.testMode ? process.env.TEST_MODE_FETCH_COUNT :  process.env.DEFAULT_FETCH_COUNT;
+configuration.fetchUserTimeout = process.env.DEFAULT_FETCH_USER_TIMEOUT || ONE_MINUTE;
 
 console.log(chalkAlert("CONFIGURATION\n" + jsonPrint(configuration)));
 
@@ -568,7 +569,7 @@ const fsmStates = {
           if (statsObj.threeceeUser.nextCursorValid && !statsObj.threeceeUser.endFetch) {
             setTimeout(function(){
               fsm.fsm_fetchUserContinue();
-            }, 10*ONE_SECOND);
+            }, configuration.fetchUserTimeout);
           }
           if (!statsObj.threeceeUser.nextCursorValid && statsObj.threeceeUser.endFetch) {
             fsm.fsm_fetchUserEnd();
