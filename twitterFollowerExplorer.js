@@ -178,7 +178,9 @@ let userDbUpdateQueue = [];
 
 const cp = require("child_process");
 
-let currentBestNetwork;
+let currentBestNetwork = {};
+currentBestNetwork.overallMatchRate = 0;
+
 let previousRandomNetworksHashMap = {};
 let availableNeuralNetHashMap = {};
 
@@ -1913,6 +1915,9 @@ function quit(cause){
   }
 
   let slackText = "\n*QUIT*"; 
+  
+  slackText = slackText + "\nBEST:        " + bestRuntimeNetworkId;
+  slackText = slackText + "\nOAMR:        " + currentBestNetwork.overallMatchRate.toFixed(2) + "%";
   slackText = slackText + "\nSTART:       " + statsObj.startTimeMoment.format(compactDateTimeFormat);
   slackText = slackText + "\nELPSD:       " + msToTime(statsObj.elapsed);
   slackText = slackText + "\nFETCH ELPSD: " + msToTime(statsObj.fetchCycleElapsed);
