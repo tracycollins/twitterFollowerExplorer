@@ -1185,11 +1185,11 @@ function printCategorizeHistory(){
       + " | S: " + moment(catStats.startTime).format(compactDateTimeFormat)
       + " E: " + moment(catStats.endTime).format(compactDateTimeFormat)
       + " R: " + msToTime(catStats.endTime - catStats.startTime)
-      + " | BEST: " + catStats.bestNetwork.networkId
+      + "\nBEST: " + catStats.bestNetwork.networkId
       + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SR"
       + " - MR: " + catStats.bestNetwork.matchRate.toFixed(2) + "% MR"
       + " - OAMR:" + catStats.bestNetwork.overallMatchRate.toFixed(2) + "% MR"
-      + " | MR: " + catStats.matchRate.toFixed(2) + "%"
+      + "\nMR: " + catStats.matchRate.toFixed(2) + "%"
       + " | OAMR: " + catStats.overallMatchRate.toFixed(2) + "%"
       + " | TOT: " + catStats.total
       + " | MATCH: " + catStats.match

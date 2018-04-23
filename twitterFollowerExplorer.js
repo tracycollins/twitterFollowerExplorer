@@ -78,28 +78,28 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 let quitWaitInterval;
 let quitFlag = false;
 
-// const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
-// const slackChannel = "#tfe";
-// const Slack = require("slack-node");
-// let slack = new Slack(slackOAuthAccessToken);
+const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
+const slackChannel = "#tfe";
+const Slack = require("slack-node");
+let slack = new Slack(slackOAuthAccessToken);
 
-// function slackPostMessage(channel, text, callback){
+function slackPostMessage(channel, text, callback){
 
-//   debug(chalkInfo("SLACK POST: " + text));
+  debug(chalkInfo("SLACK POST: " + text));
 
-//   slack.api("chat.postMessage", {
-//     text: text,
-//     channel: channel
-//   }, function(err, response){
-//     if (err){
-//       console.error(chalkError("*** SLACK POST MESSAGE ERROR\n" + err));
-//     }
-//     else {
-//       debug(response);
-//     }
-//     if (callback !== undefined) { callback(err, response); }
-//   });
-// }
+  slack.api("chat.postMessage", {
+    text: text,
+    channel: channel
+  }, function(err, response){
+    if (err){
+      console.error(chalkError("*** SLACK POST MESSAGE ERROR\n" + err));
+    }
+    else {
+      debug(response);
+    }
+    if (callback !== undefined) { callback(err, response); }
+  });
+}
 
 let hostname = os.hostname();
 hostname = hostname.replace(/.local/g, "");
@@ -230,18 +230,53 @@ let statsObj = {};
 statsObj.childrenFetchBusy = false;
 statsObj.hostname = hostname;
 statsObj.startTimeMoment = moment();
+statsObj.fetchCycleStartMoment = moment();
+statsObj.fetchCycleEndMoment = moment();
+statsObj.fetchCycleElapsed = 0;
 statsObj.pid = process.pid;
 statsObj.userAuthenticated = false;
 statsObj.serverConnected = false;
 statsObj.heartbeatsReceived = 0;
 
-const TFE_RUN_ID = hostname 
-  + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat)
-  + "_" + process.pid;
+statsObj.network = {};
+statsObj.network.networkId = "";
+statsObj.network.successRate = 0;
 
+statsObj.users = {};
+
+statsObj.users.totalFriendsCount = 0;
+statsObj.users.totalFriendsProcessed = 0;
+statsObj.users.grandTotalFriendsFetched = 0;
+statsObj.users.totalFriendsFetched = 0;
+statsObj.users.totalPercentFetched = 0;
+statsObj.users.totalPercentProcessed = 0;
+statsObj.users.grandTotalPercentProcessed = 0;
+statsObj.users.classifiedAuto = 0;
+statsObj.users.classified = 0;
+
+statsObj.user = {};
+statsObj.user.altthreecee00 = {};
+statsObj.user.altthreecee01 = {};
+statsObj.user.altthreecee02 = {};
+
+statsObj.user.altthreecee00.friendsProcessed = 0;
+statsObj.user.altthreecee00.percentProcessed = 0;
+
+statsObj.user.altthreecee01.friendsProcessed = 0;
+statsObj.user.altthreecee01.percentProcessed = 0;
+
+statsObj.user.altthreecee02.friendsProcessed = 0;
+statsObj.user.altthreecee02.percentProcessed = 0;
+
+statsObj.analyzer = {};
+statsObj.analyzer.total = 0;
+statsObj.analyzer.analyzed = 0;
+statsObj.analyzer.skipped = 0;
+statsObj.analyzer.errors = 0;
+
+statsObj.twitterErrors = 0;
 
 statsObj.fetchUsersComplete = false;
-statsObj.runId = TFE_RUN_ID;
 
 statsObj.elapsed = 0;
 
@@ -282,6 +317,13 @@ Object.keys(statsObj.categorized).forEach(function(cat){
 statsObj.categorized.total = 0;
 statsObj.categorized.totalManual = 0;
 statsObj.categorized.totalAuto = 0;
+
+const TFE_RUN_ID = hostname 
+  + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat)
+  + "_" + process.pid;
+
+statsObj.runId = TFE_RUN_ID;
+
 
 let histograms = {};
 histograms.words = {};
@@ -1875,7 +1917,6 @@ function quit(cause){
       ){
 
       clearInterval(statsUpdateInterval);
-      // clearInterval(checkRateLimitInterval);
       clearInterval(userDbUpdateQueueInterval);
       clearInterval(quitWaitInterval);
 
@@ -2337,22 +2378,58 @@ const fsmStates = {
   },
   "FETCH_END_ALL":{
     onEnter: function(event, oldState, newState){
+
       if (event !== "fsm_tick") { 
+
         reporter(event, oldState, newState);
+
+        statsObj.fetchCycleEndMoment = moment();
+        statsObj.fetchCycleElapsed = moment().diff(statsObj.fetchCycleStartMoment);
 
         console.log(chalkAlert("===================================================="));
         console.log(chalkAlert("================= END FETCH ALL ===================="));
         console.log(chalkAlert("===================================================="));
+        console.log(chalkAlert("FETCH CYCLE START:     " + statsObj.fetchCycleStartMoment.format(compactDateTimeFormat)));
+        console.log(chalkAlert("FETCH CYCLE END:       " + statsObj.fetchCycleEndMoment.format(compactDateTimeFormat)));
+        console.log(chalkAlert("FETCH CYCLE ELAPSED:   " + msToTime(statsObj.fetchCycleElapsed)));
+        console.log(chalkAlert("TOTAL USERS FETCHED:   " + statsObj.users.totalFriendsFetched));
+        console.log(chalkAlert("TOTAL USERS PROCESSED: " + statsObj.users.totalFriendsProcessed));
+        console.log(chalkAlert("===================================================="));
 
-        console.log(chalkAlert("... PAUSING FOR 5 SECONDS FOR RNT STAT UPDATE ..."));
+        console.log(chalkAlert("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
+
         randomNetworkTree.send({op: "GET_STATS"}); 
+
+        let slackText = "\n*FETCH END*"; 
+        slackText = slackText + "\nELPSD:       " + msToTime(statsObj.fetchCycleElapsed);
+        slackText = slackText + "\nTOT PRCSSD:  " + statsObj.users.totalFriendsProcessed;
+        slackText = slackText + "\nGTOT PRCSSD: " + statsObj.users.grandTotalFriendsProcessed;
+
+        console.log("TFE | SLACK TEXT: " + slackText);
+
+        slackPostMessage(slackChannel, slackText);
+
         setTimeout(function(){
+
           randomNetworkTree.send({op: "RESET_STATS"}); 
           childSendAll("RESET_TWITTER_USER_STATE");
+
           resetAllTwitterUserState(function(){
+
+            statsObj.users.totalFriendsCount = 0;
+            statsObj.users.totalFriendsProcessed = 0;
+            // statsObj.users.grandTotalFriendsFetched = 0;
+            statsObj.users.totalFriendsFetched = 0;
+            statsObj.users.totalPercentProcessed = 0;
+            statsObj.users.totalPercentFetched = 0;
+            statsObj.users.classifiedAuto = 0;
+            statsObj.users.classified = 0;
+
             fsm.fsm_init();
           });
-        }, 5000);
+
+        }, 10000);
+
       }
     },
     "fsm_init": "INIT",
@@ -2459,41 +2536,6 @@ process.on("message", function(msg) {
   }
 });
 
-statsObj.network = {};
-statsObj.network.networkId = "";
-statsObj.network.successRate = 0;
-
-statsObj.users = {};
-statsObj.users.totalTwitterFriends = 0;
-statsObj.users.grandTotalFriendsFetched = 0;
-statsObj.users.totalFriendsFetched = 0;
-statsObj.users.totalPercentFetched = 0;
-statsObj.users.classifiedAuto = 0;
-statsObj.users.classified = 0;
-
-statsObj.user = {};
-statsObj.user.altthreecee00 = {};
-statsObj.user.altthreecee01 = {};
-statsObj.user.altthreecee02 = {};
-
-statsObj.user.altthreecee00.friendsProcessed = 0;
-statsObj.user.altthreecee00.percentProcessed = 0;
-
-statsObj.user.altthreecee01.friendsProcessed = 0;
-statsObj.user.altthreecee01.percentProcessed = 0;
-
-statsObj.user.altthreecee02.friendsProcessed = 0;
-statsObj.user.altthreecee02.percentProcessed = 0;
-
-statsObj.analyzer = {};
-statsObj.analyzer.total = 0;
-statsObj.analyzer.analyzed = 0;
-statsObj.analyzer.skipped = 0;
-statsObj.analyzer.errors = 0;
-
-statsObj.totalTwitterFriends = 0;
-
-statsObj.twitterErrors = 0;
 
 function showStats(options){
   runEnable();
@@ -2677,6 +2719,10 @@ function initProcessUserQueueInterval(interval){
           processUserQueueReady = true;
           return;
         }
+
+        statsObj.users.grandTotalFriendsProcessed += 1;
+        statsObj.users.totalFriendsProcessed += 1;
+        statsObj.user[threeceeUser].totalPercentProcessed = 100*statsObj.users.totalFriendsProcessed/statsObj.users.totalFriendsCount;
 
         if (statsObj.user[threeceeUser] === undefined) {
           statsObj.user[threeceeUser].friendsCount = 1;
@@ -3305,18 +3351,20 @@ function initTwitterUsers(callback){
 
     }, function(err){
 
-      statsObj.users.totalTwitterFriends = 0;
+      statsObj.users.totalFriendsCount = 0;
       statsObj.users.totalFriendsFetched = 0;
 
       configuration.twitterUsers.forEach(function(tUserScreenName){
         statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
-        statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
-        statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
+        statsObj.users.totalFriendsCount += statsObj.user[tUserScreenName].friendsCount;
+        statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalFriendsCount;
       });
+
+      statsObj.users.grandTotalFriendsFetched += statsObj.users.totalFriendsFetched;
 
       console.log(chalkTwitterBold("====================================================================="
         // + "\nALL TWITTER USERS"
-        // + " | " + statsObj.users.totalTwitterFriends + " GRAND TOTAL FRIENDS"
+        // + " | " + statsObj.users.totalFriendsCount + " GRAND TOTAL FRIENDS"
         // + " | " + statsObj.users.totalFriendsFetched + " GRAND TOTAL FETCHED"
         // + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
         + "\n====================================================================="
