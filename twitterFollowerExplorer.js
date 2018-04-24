@@ -11,6 +11,8 @@ let elapsed_time = function(note){
     start = process.hrtime(); // reset the timer
 };
 
+let maxInputsHashMap = {};
+
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
@@ -346,13 +348,13 @@ const TFE_RUN_ID = hostname
 statsObj.runId = TFE_RUN_ID;
 
 
-let histograms = {};
-histograms.words = {};
-histograms.urls = {};
-histograms.hashtags = {};
-histograms.mentions = {};
-histograms.emoji = {};
-histograms.images = {};
+// let histograms = {};
+// histograms.words = {};
+// histograms.urls = {};
+// histograms.hashtags = {};
+// histograms.mentions = {};
+// histograms.emoji = {};
+// histograms.images = {};
 
 let statsUpdateInterval;
 
@@ -864,7 +866,7 @@ function updateGlobalHistograms(callback){
         cb();
 
       }, function(){
-        if (callback !== undefined) { callback(histograms); }
+        if (callback !== undefined) { callback(hists); }
       });
 
     });
@@ -1418,33 +1420,25 @@ function updateUserCategoryStats(user, callback){
 
           switch (user.category) {
             case "right":
-              // classManualText = "R";
               statsObj.categorized.manual.right += 1;
             break;
             case "left":
-              // classManualText = "L";
               statsObj.categorized.manual.left += 1;
             break;
             case "neutral":
-              // classManualText = "N";
               statsObj.categorized.manual.neutral += 1;
             break;
             case "positive":
-              // classManualText = "+";
               statsObj.categorized.manual.positive += 1;
             break;
             case "negative":
-              // classManualText = "-";
               statsObj.categorized.manual.negative += 1;
             break;
             case "none":
-              // classManualText = "0";
               statsObj.categorized.manual.none += 1;
             break;
             default:
               user.category = false;
-              // classManualText = user.category;
-              // chalkAutoCurrent = chalk.black;
               statsObj.categorized.manual.other += 1;
           }
           cb();
@@ -1460,39 +1454,25 @@ function updateUserCategoryStats(user, callback){
 
           switch (user.categoryAuto) {
             case "right":
-              // classAutoText = "R";
-              // chalkAutoCurrent = chalk.yellow;
               statsObj.categorized.auto.right += 1;
             break;
             case "left":
-              // classAutoText = "L";
-              // chalkAutoCurrent = chalk.blue;
               statsObj.categorized.auto.left += 1;
             break;
             case "neutral":
-              // classAutoText = "N";
-              // chalkAutoCurrent = chalk.black;
               statsObj.categorized.auto.neutral += 1;
             break;
             case "positive":
-              // classAutoText = "+";
-              // chalkAutoCurrent = chalk.green;
               statsObj.categorized.auto.positive += 1;
             break;
             case "negative":
-              // classAutoText = "-";
-              // chalkAutoCurrent = chalk.bold.yellow;
               statsObj.categorized.auto.negative += 1;
             break;
             case "none":
-              // classAutoText = "0";
-              // chalkAutoCurrent = chalk.black;
               statsObj.categorized.auto.none += 1;
             break;
             default:
               user.categoryAuto = false;
-              // classAutoText = user.categoryAuto;
-              // chalkAutoCurrent = chalk.bold.black;
               statsObj.categorized.auto.other += 1;
           }
           cb();
@@ -1605,9 +1585,9 @@ function enableAnalysis(user, languageAnalysis){
 
 function activateNetwork(obj){
 
-  if (randomNetworkTreeReadyFlag) {
+  // if (randomNetworkTreeReadyFlag) {
     randomNetworkTree.send({op: "ACTIVATE", obj: obj});
-  }
+  // }
 }
 
 function startImageQuotaTimeout(){
@@ -1615,6 +1595,76 @@ function startImageQuotaTimeout(){
     enableImageAnalysis = true;
     console.log(chalkLog("RE-ENABLE IMAGE ANALYSIS"));
   }, IMAGE_QUOTA_TIMEOUT);
+}
+
+// {user: user, histograms: histograms, updateCountHistory: updateCountHistory}
+
+function updateHistograms(params, callback) {
+
+  let comboHistogram = {};
+  let user = {};
+  let histograms = {};
+
+  user = params.user;
+  histograms = params.histograms;
+
+  if (!user.histograms || (user.histograms === undefined)) {
+    user.histograms = {};
+  }
+
+  const inputHistogramTypes = Object.keys(histograms);
+
+  async.each(inputHistogramTypes, function(type, cb0){
+
+    if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
+    if (maxInputsHashMap[type] === undefined) { maxInputsHashMap[type] = {}; }
+
+    const inputHistogramTypeItems = Object.keys(histograms[type]);
+
+    debug(chalkInfo("USC | @" + user.screenName 
+      + " | " + type 
+      + " | NUM: " + inputHistogramTypeItems.length
+    ));
+
+    async.each(inputHistogramTypeItems, function(item, cb1){
+
+      if (user.histograms[type][item] === undefined) {
+        user.histograms[type][item] = histograms[type][item];
+      }
+      else if (params.accumulateFlag) {
+        user.histograms[type][item] += histograms[type][item];
+      }
+
+      if (maxInputsHashMap[type][item] === undefined) { 
+        maxInputsHashMap[type][item] = user.histograms[type][item]; 
+      }
+      else {
+        maxInputsHashMap[type][item] = Math.max(maxInputsHashMap[type][item], user.histograms[type][item]);
+      }
+
+      debug(chalkInfo("USC | @" + user.screenName 
+        + " | " + type 
+        + " | TOT: " + user.histograms[type][item]
+        + " | IN: " + histograms[type][item] 
+        + " | " + item 
+      ));
+
+      async.setImmediate(function() {
+        cb1();
+      });
+
+    }, function (argument) {
+      async.setImmediate(function() {
+        cb0();
+      });
+    });
+
+  }, function(err){
+
+    callback(err, user);
+    
+  });
+
 }
 
 function generateAutoCategory(params, user, callback){
@@ -1754,7 +1804,9 @@ function generateAutoCategory(params, user, callback){
     },
 
     function userBannerImage(text, cb) {
+
       if (enableImageAnalysis && user.bannerImageUrl) {
+
         twitterImageParser.parseImage(
           user.bannerImageUrl, 
           {screenName: user.screenName, category: user.category, updateGlobalHistograms: true}, 
@@ -1840,7 +1892,8 @@ function generateAutoCategory(params, user, callback){
 
         hist.images = histImages;
 
-        userServer.updateHistograms({user: user, histograms: histograms, updateCountHistory: updateCountHistory}, function(err, updatedUser){
+        // userServer.updateHistograms({user: user, histograms: histograms, updateCountHistory: updateCountHistory}, function(err, updatedUser){
+        updateHistograms({user: user, histograms: hist, updateCountHistory: updateCountHistory}, function(err, updatedUser){
 
           if (err) {
             console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
@@ -1890,9 +1943,9 @@ function generateAutoCategory(params, user, callback){
             ));
           }
 
-          const u = pick(updatedUser, ["nodeId", "screenName", "category", "categoryAuto", "histograms", "languageAnalysis"]);
+          // const u = pick(updatedUser, ["nodeId", "screenName", "following", "threeceeFollowing", "category", "categoryAuto", "histograms", "languageAnalysis"]);
 
-          activateNetwork({user: u, normalization: statsObj.normalization});
+          activateNetwork({user: updatedUser, normalization: statsObj.normalization});
 
           // elapsed_time("end generateAutoCategory");
 
@@ -2000,7 +2053,7 @@ function quit(cause){
   }, 1000);
 }
 
-function processUser(threeCeeUser, userIn, lastTweeId, callback) {
+function processUser(threeceeUser, userIn, lastTweeId, callback) {
 
   // elapsed_time("start processUser");
 
@@ -2015,29 +2068,226 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
 
   async.waterfall(
   [
-    function convertUser(cb) {
-      userServer.convertRawUser({user:userIn, lastTweeId: lastTweeId}, function(err, user){
+    function findUserInDb(cb) {
+
+      // console.log("userIn\n" + jsonPrint(userIn));
+
+      User.findOne({ nodeId: userIn.id_str }).exec(function(err, user) {
+
         if (err) {
-          console.log(chalkError("TFE | CONVERT USER ERROR"
-            + " | @" + userIn.screen_name
-            + " | LAST TWEET: " + lastTweeId
-            + " | " + err
+          console.log(chalkError("ERROR DB FIND ONE USER | " + err));
+          return(cb(err, user));
+        }
+        
+        if (!user) {
+
+          userIn.modified = moment();
+          userIn.following = true;
+          userIn.threeceeFollowing = threeceeUser;
+
+          console.log(chalkInfo("USER DB MISS"
+            + " | 3C @" + threeceeUser
+            // + " | @" + userIn.screen_name.toLowerCase()
+            + " | " + userIn.id_str
           ));
-          cb(err, null);
+
+          userServer.convertRawUser({user:userIn, lastTweeId: lastTweeId}, function(err, user){
+            if (err) {
+              console.log(chalkError("TFE | CONVERT USER ERROR"
+                // + " | @" + userIn.screen_name
+                + " | LAST TWEET: " + lastTweeId
+                + " | " + err
+              ));
+              cb(err, null);
+            }
+            else {
+              cb(null, user);
+            }
+          });
         }
         else {
+
+          let catObj = {};
+
+          catObj.manual = user.category || false;
+          catObj.auto = user.categoryAuto || false;
+
+          categorizedUserHashMap.set(user.nodeId, catObj);
+
+          // user.category = userDb.category;
+          // user.categoryAuto = userDb.categoryAuto;
+
+          // user.createdAt = userDb.createdAt;
+          // user.languageAnalyzed = userDb.languageAnalyzed;
+
+          user.following = true;
+          user.threeceeFollowing = threeceeUser;
+
+          user.modified = false;
+          user.modifiedObj = {};
+
+          if (user.name !== userIn.name) {
+            user.name = userIn.name;
+            user.modified = moment();
+            user.modifiedObj.name = true;
+          }
+          
+          if (user.screenName !== userIn.screen_name) {
+            user.screenName = userIn.screen_name;
+            user.screenNameLower = userIn.screen_name.toLowerCase();
+            user.modified = moment();
+            user.modifiedObj.screenName = true;
+          }
+          
+          if (user.url !== userIn.url) {
+            user.url = userIn.url;
+            user.modified = moment();
+            user.modifiedObj.url = true;
+          }
+          
+          if (user.profileImageUrl !== userIn.profileImageUrl) {
+            user.profileImageUrl = userIn.profileImageUrl;
+            user.modified = moment();
+            user.modifiedObj.profileImageUrl = true;
+          }
+          
+          if (user.bannerImageUrl !== userIn.bannerImageUrl) {
+            user.bannerImageUrl = userIn.bannerImageUrl;
+            user.modified = moment();
+            user.modifiedObj.bannerImageUrl = true;
+          }
+          
+          if (user.description !== userIn.description) {
+            user.description = userIn.description;
+            user.modified = moment();
+            user.modifiedObj.description = true;
+          }
+          
+          if (user.status.id_str !== userIn.status.id_str) {
+            user.status = userIn.status;
+            user.modified = moment();
+            user.modifiedObj.status = true;
+          }
+          
+          // if (userDb.languageAnalyzed) { 
+          //   user.languageAnalysis = userDb.languageAnalysis;
+          // }
+          // if (userDb.histograms && (Object.keys(userDb.histograms).length > 0)) { 
+          //   user.histograms = userDb.histograms;
+          // }
+
+          // if ((user.rate === 0) && (userDb.rate > 0)) {
+          //   user.rate = userDb.rate;
+          // }
+
+          // if ((user.mentions === 0) && (userDb.mentions > 0)) {
+          //   user.mentions = userDb.mentions;
+          // }
+
+          // if ((user.followersCount === 0) && (userIn.followersCount > 0)) {
+          //   user.followersCount = userDb.followersCount;
+          //   updateCountHistory = true;
+          // }
+
+          // if ((user.statusesCount === 0) && (userDb.statusesCount > 0)) {
+          //   user.statusesCount = userDb.statusesCount;
+          //   updateCountHistory = true;
+          // }
+
+          // if ((user.friendsCount === 0) && (userDb.friendsCount > 0)) {
+          //   user.friendsCount = userDb.friendsCount;
+          //   updateCountHistory = true;
+          // }
+
+          if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)){
+            user.followersCount = userIn.followers_count;
+            updateCountHistory = true;
+          }
+
+          if ((userIn.friends_count !== undefined) && (user.friendsCount !== userIn.friends_count)){
+            user.friendsCount = userIn.friends_count;
+            updateCountHistory = true;
+          }
+
+          if ((userIn.statuses_count !== undefined) && (user.statusesCount !== userIn.statuses_count)){
+            user.statusesCount = userIn.statuses_count;
+            updateCountHistory = true;
+          }
+
+
+          debug(chalkInfo("USER DB HIT "
+            + " | CM: " + printCat(user.category)
+            + " | CA: " + printCat(user.categoryAuto)
+            + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
+            + " | FLWg: " + padEnd(user.following, 5)
+            + " | FLWRs: " + padStart(user.followersCount, 7)
+            + " | FRNDs: " + padStart(user.friendsCount, 7)
+            + " | Ts: " + padStart(user.statusesCount, 7)
+            + " | LAd: " + padEnd(user.languageAnalyzed, 5)
+            + " | CR: " + getTimeStamp(user.createdAt)
+            + " | @" + padEnd(user.screenName.toLowerCase(), 20)
+            + " | " + user.nodeId
+          ));
+
+          if (user.modified) {
+            debug(chalkInfo("USER DB HIT | * MODIFIED *"
+              + " | CM: " + printCat(user.category)
+              + " | CA: " + printCat(user.categoryAuto)
+              + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
+              + " | FLWg: " + padEnd(user.following, 5)
+              + " | FLWRs: " + padStart(user.followersCount, 7)
+              + " | FRNDs: " + padStart(user.friendsCount, 7)
+              + " | Ts: " + padStart(user.statusesCount, 7)
+              + " | LAd: " + padEnd(user.languageAnalyzed, 5)
+              + " | CR: " + getTimeStamp(user.createdAt)
+              + " | @" + padEnd(user.screenName.toLowerCase(), 20)
+              + " | " + Object.keys(user.modifiedObj)
+            ));
+          }
+          else {
+            debug(chalkInfo("USER DB HIT | - NO CHANGE "
+              + " | CM: " + printCat(user.category)
+              + " | CA: " + printCat(user.categoryAuto)
+              + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
+              + " | FLWg: " + padEnd(user.following, 5)
+              + " | FLWRs: " + padStart(user.followersCount, 7)
+              + " | FRNDs: " + padStart(user.friendsCount, 7)
+              + " | Ts: " + padStart(user.statusesCount, 7)
+              + " | LAd: " + padEnd(user.languageAnalyzed, 5)
+              + " | CR: " + getTimeStamp(user.createdAt)
+              + " | @" + padEnd(user.screenName.toLowerCase(), 20)
+              + " | " + Object.keys(user.modifiedObj)
+            ));
+          }
+
           cb(null, user);
         }
       });
     },
 
+    // function convertUser(cb) {
+    //   userServer.convertRawUser({user:userIn, lastTweeId: lastTweeId}, function(err, user){
+    //     if (err) {
+    //       console.log(chalkError("TFE | CONVERT USER ERROR"
+    //         + " | @" + userIn.screen_name
+    //         + " | LAST TWEET: " + lastTweeId
+    //         + " | " + err
+    //       ));
+    //       cb(err, null);
+    //     }
+    //     else {
+    //       cb(null, user);
+    //     }
+    //   });
+    // },
+
     function unfollowFriend(user, cb) {
 
       if (
-           ((threeCeeUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
+           ((threeceeUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
         
-        || ((threeCeeUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
-        || ((threeCeeUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.includes(user.nodeId))
+        || ((threeceeUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
+        || ((threeceeUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.includes(user.nodeId))
 
       ) {
 
@@ -2077,14 +2327,14 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
           + " | 3CF: " + user.threeceeFollowing
         ));
 
-        twitterUserHashMap[threeCeeUser].twit.post(
+        twitterUserHashMap[threeceeUser].twit.post(
 
           "friendships/destroy", {user_id: user.nodeId}, 
 
           function destroyFriend(err, data, response){
             if (err) {
               console.error(chalkError("UNFOLLOW ERROR"
-                + " | @" + threeCeeUser
+                + " | @" + threeceeUser
                 + " | " + err
               ));
               cb(null, user);
@@ -2093,11 +2343,11 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
               debug("data\n" + jsonPrint(data));
               debug("response\n" + jsonPrint(response));
 
-              console.log(chalkInfo("UNFOLLOW " + threeCeeUser
+              console.log(chalkInfo("UNFOLLOW " + threeceeUser
                 + " | " + user.nodeId
                 + " | " + user.screenName.toLowerCase()
               ));
-              const slackText = "UNFOLLOW " + threeCeeUser
+              const slackText = "UNFOLLOW " + threeceeUser
                 + "\n@" + user.screenName.toLowerCase()
                 + "\n" + user.nodeId;
               slackPostMessage(slackChannel, slackText);
@@ -2109,7 +2359,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
       else {
 
         user.following = true;
-        user.threeceeFollowing = threeCeeUser;
+        user.threeceeFollowing = threeceeUser;
 
         debug(chalkInfo("UPDATE 3CF"
           + " | " + user.nodeId
@@ -2154,7 +2404,7 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
     //       user.createdAt = userDb.createdAt;
     //       user.languageAnalyzed = userDb.languageAnalyzed;
     //       user.following = true;
-    //       user.threeceeFollowing = threeCeeUser;
+    //       user.threeceeFollowing = threeceeUser;
 
     //       if (userDb.languageAnalyzed) { 
     //         user.languageAnalysis = userDb.languageAnalysis;
@@ -2767,7 +3017,7 @@ function saveFile (params, callback){
 function initProcessUserQueueInterval(interval){
 
   let mObj = {};
-  let threeceeUser;
+  let tcUser;
 
   console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + PROCESS_USER_QUEUE_INTERVAL + " MS"));
 
@@ -2783,9 +3033,10 @@ function initProcessUserQueueInterval(interval){
       processUserQueueReady = false;
 
       mObj = processUserQueue.shift();
-      threeceeUser = mObj.threeceeUser;
 
-      processUser(threeceeUser, mObj.friend, null, function(err, user){
+      tcUser = mObj.threeceeUser;
+
+      processUser(tcUser, mObj.friend, null, function(err, user){
         if (err) {
           console.trace("processUser ERROR");
           processUserQueueReady = true;
@@ -2794,31 +3045,31 @@ function initProcessUserQueueInterval(interval){
 
         statsObj.users.grandTotalFriendsProcessed += 1;
         statsObj.users.totalFriendsProcessed += 1;
-        statsObj.user[threeceeUser].totalPercentProcessed = 100*statsObj.users.totalFriendsProcessed/statsObj.users.totalFriendsCount;
+        statsObj.user[tcUser].totalPercentProcessed = 100*statsObj.users.totalFriendsProcessed/statsObj.users.totalFriendsCount;
 
-        if (statsObj.user[threeceeUser] === undefined) {
-          statsObj.user[threeceeUser].friendsCount = 1;
-          statsObj.user[threeceeUser].friendsProcessed = 0;
-          statsObj.user[threeceeUser].percentProcessed = 0;
+        if (statsObj.user[tcUser] === undefined) {
+          statsObj.user[tcUser].friendsCount = 1;
+          statsObj.user[tcUser].friendsProcessed = 0;
+          statsObj.user[tcUser].percentProcessed = 0;
         }
 
-        statsObj.user[threeceeUser].friendsProcessed += 1;
+        statsObj.user[tcUser].friendsProcessed += 1;
 
-        statsObj.user[threeceeUser].percentProcessed = 100*statsObj.user[threeceeUser].friendsProcessed/statsObj.user[threeceeUser].friendsCount;
+        statsObj.user[tcUser].percentProcessed = 100*statsObj.user[tcUser].friendsProcessed/statsObj.user[tcUser].friendsCount;
 
         debug("PROCESSED USER\n" + jsonPrint(user));
 
-        if (configuration.testMode || (statsObj.user[threeceeUser].friendsProcessed % 50 === 0)) {
+        if (configuration.testMode || (statsObj.user[tcUser].friendsProcessed % 50 === 0)) {
 
-          statsObj.user[threeceeUser].friendsProcessElapsed = moment().diff(statsObj.user[threeceeUser].friendsProcessStart);
+          statsObj.user[tcUser].friendsProcessElapsed = moment().diff(statsObj.user[tcUser].friendsProcessStart);
 
           console.log(chalkLog("<FRND PRCSSD"
             + " [ Q: " + processUserQueue.length + " ]"
-            + " | @" + threeceeUser
-            + " | PRCSSD: " + statsObj.user[threeceeUser].friendsProcessed + "/" + statsObj.user[threeceeUser].friendsCount
-            + " (" + statsObj.user[threeceeUser].percentProcessed.toFixed(2) + "%)"
-            + " | S: " + statsObj.user[threeceeUser].friendsProcessStart.format(compactDateTimeFormat)
-            + " | E: " + msToTime(statsObj.user[threeceeUser].friendsProcessElapsed)
+            + " | @" + tcUser
+            + " | PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
+            + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
+            + " | S: " + statsObj.user[tcUser].friendsProcessStart.format(compactDateTimeFormat)
+            + " | E: " + msToTime(statsObj.user[tcUser].friendsProcessElapsed)
             + " | FLWg: " + user.following
             + " | 3CF: " + user.threeceeFollowing
             + " | @" + user.screenName
@@ -3352,11 +3603,11 @@ function initTwitterFollowerChild(twitterConfig, callback){
   if (callback !== undefined) { callback(null, user); }
 }
 
-function initTwitter(threeCeeUser, callback){
+function initTwitter(threeceeUser, callback){
 
-  let twitterConfigFile =  threeCeeUser + ".json";
+  let twitterConfigFile =  threeceeUser + ".json";
 
-  debug(chalkInfo("INIT TWITTER USER @" + threeCeeUser + " | " + twitterConfigFile));
+  debug(chalkInfo("INIT TWITTER USER @" + threeceeUser + " | " + twitterConfigFile));
 
   loadFile(configuration.twitterConfigFolder, twitterConfigFile, function(err, twitterConfig){
 
@@ -3366,10 +3617,10 @@ function initTwitter(threeCeeUser, callback){
       return callback(err);
     }
 
-    twitterConfig.threeceeUser = threeCeeUser;
+    twitterConfig.threeceeUser = threeceeUser;
 
     console.log(chalkTwitter("LOADED TWITTER CONFIG"
-      + " | @" + threeCeeUser
+      + " | @" + threeceeUser
       + " | CONFIG FILE: " + configuration.twitterConfigFolder + "/" + twitterConfigFile
       + "\n" + jsonPrint(twitterConfig)
     ));
