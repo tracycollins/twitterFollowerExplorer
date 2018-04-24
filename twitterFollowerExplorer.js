@@ -2163,7 +2163,7 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
             user.modifiedObj.description = true;
           }
           
-          if (user.status.id_str !== userIn.status.id_str) {
+          if ((user.status !== undefined) && (userIn.status !== undefined) && user.status.id_str && userIn.status.id_str && (user.status.id_str !== userIn.status.id_str)) {
             user.status = userIn.status;
             user.modified = moment();
             user.modifiedObj.status = true;
