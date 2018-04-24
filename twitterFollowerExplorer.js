@@ -2,12 +2,21 @@
 "use strict";
 require("isomorphic-fetch");
 
+let start = process.hrtime();
+
+let elapsed_time = function(note){
+    const precision = 3; // 3 decimal places
+    const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
+    console.log(process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
+    start = process.hrtime(); // reset the timer
+};
+
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
 
 const FSM_TICK_INTERVAL = ONE_SECOND;
-const PROCESS_USER_QUEUE_INTERVAL = 10;
+const PROCESS_USER_QUEUE_INTERVAL = 1;
 
 // const TEST_MODE_TOTAL_FETCH = 15;  // total twitter user fetch count
 const TEST_MODE_TOTAL_FETCH = 20;
@@ -24,7 +33,8 @@ const TFE_NUM_RANDOM_NETWORKS = 100;
 const IMAGE_QUOTA_TIMEOUT = 60000;
 
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
-const DEFAULT_MIN_SUCCESS_RATE = 80;
+const DEFAULT_MIN_SUCCESS_RATE = 75;
+const DEFAULT_MIN_MATCH_RATE = 80;
 const DEFAULT_MIN_INPUTS_GENERATED = 400 ;
 const DEFAULT_MAX_INPUTS_GENERATED = 750 ;
 const DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN = 5;
@@ -33,7 +43,7 @@ const DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN = 0.4;
 const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
 const OFFLINE_MODE = false;
 
-const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 20; // ms
+const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 1; // ms
 
 const chalk = require("chalk");
 const chalkConnect = chalk.green;
@@ -186,7 +196,7 @@ let previousRandomNetworksHashMap = {};
 let availableNeuralNetHashMap = {};
 
 const LANGUAGE_ANALYZE_INTERVAL = 1000;
-const RANDOM_NETWORK_TREE_INTERVAL = 10;
+const RANDOM_NETWORK_TREE_INTERVAL = 1;
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
 
@@ -222,6 +232,7 @@ configuration.histogramParseDominantMin = DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN;
 configuration.saveFileQueueInterval = 1000;
 configuration.testMode = false;
 configuration.minSuccessRate = DEFAULT_MIN_SUCCESS_RATE;
+configuration.minMatchRate = DEFAULT_MIN_MATCH_RATE;
 configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEFAULT_FETCH_COUNT;
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
@@ -887,8 +898,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
   dropboxClient.filesListFolder(options)
   .then(function(response){
 
-    // clearTimeout(loadDropboxFolderTimeout);
-
     if (response.entries.length === 0) {
       console.log(chalkLog("TFE | NO DROPBOX NETWORKS FOUND"
         + " | " + options.path
@@ -907,11 +916,16 @@ function loadBestNetworkDropboxFolder(folder, callback){
       // + " | " + jsonPrint(response)
     ));
 
-    if (configuration.testMode) {
-      response.entries.length = Math.min(response.entries.length, TEST_DROPBOX_NN_LOAD);
-    }
-
     async.eachSeries(response.entries, function(entry, cb){
+
+      if (configuration.testMode && ((bestNetworkHashMap.count() >= TEST_DROPBOX_NN_LOAD) || (statsObj.numNetworksLoaded >= TEST_DROPBOX_NN_LOAD))) {
+        console.log(chalkLog("TFE | *** TEST MODE *** LOADED DROPBOX NETWORKS"
+          + " | TEST_DROPBOX_NN_LOAD: " + TEST_DROPBOX_NN_LOAD
+          + " | FOUND " + response.entries.length + " FILES"
+          // + " | " + jsonPrint(response)
+        ));
+        return(cb("TEST_MODE LOAD DONE"));
+      }
 
       debug(chalkLog("DROPBOX NETWORK FOUND"
         + " | " + options.path
@@ -1028,9 +1042,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
           if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
 
 
-          if ((networkObj.successRate >= configuration.minSuccessRate) 
-            || (networkObj.matchRate >= configuration.minSuccessRate)
-            || (networkObj.overallMatchRate >= configuration.minSuccessRate)) {
+          if (((networkObj.successRate >= configuration.minSuccessRate) && (networkObj.overallMatchRate === 0))
+            || (networkObj.overallMatchRate >= configuration.minMatchRate)) {
 
             statsObj.numNetworksLoaded += 1;
 
@@ -1100,8 +1113,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
         });
       }
     }, function(){
-
-      // let messageText;
 
       if (newBestNetwork) {
         newBestNetwork = false;
@@ -1232,13 +1243,13 @@ function loadBestNeuralNetworkFile(callback){
         }
 
         if (loadedNetworksFlag && !networksSentFlag && (randomNetworkTree !== undefined) && (Object.keys(ranNetObj).length > 0)) {
-          console.log(chalkBlue("SEND RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
+          // console.log(chalkBlue("SEND RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
 
           networksSentFlag = true;
 
           randomNetworkTree.send({ op: "LOAD_NETWORKS", networksObj: ranNetObj }, function(){
             networksSentFlag = false;
-            console.log(chalkBlue("SEND RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
+            console.log(chalkBlue("SENT RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
           });
         }
         else {
@@ -1338,6 +1349,11 @@ function loadBestNeuralNetworkFile(callback){
 
           callback(null, bnwObj);
         }
+        else {
+          console.log(chalkAlert("??? NO BEST RUNTIME NETWORK | loadBestNeuralNetworkFile"
+          ));
+          callback(null, null);
+        }
 
       });
 
@@ -1390,11 +1406,6 @@ function runEnable(displayArgs) {
 function updateUserCategoryStats(user, callback){
 
   return new Promise(function() {
-
-    // let chalkAutoCurrent = chalkLog;
-
-    // let classManualText = " ";
-    // let classAutoText = " ";
 
     let catObj = {};
     catObj.manual = false;
@@ -1608,6 +1619,8 @@ function startImageQuotaTimeout(){
 
 function generateAutoCategory(params, user, callback){
 
+  // elapsed_time("start generateAutoCategory");
+
   // PARSE USER STATUS + DESC, IF EXIST
   async.waterfall([
 
@@ -1814,7 +1827,11 @@ function generateAutoCategory(params, user, callback){
       && (user.friendsCount !== undefined) 
       && (user.statusesCount !== undefined);
 
+      // elapsed_time("start updateImageHistograms");
+
       updateImageHistograms({user: user, bannerResults: bannerResults}, function(err, histImages){
+
+        // elapsed_time("end updateImageHistograms");
 
         if (err) {
           console.log(chalkError("*** ERROR updateImageHistograms: " + err));
@@ -1876,6 +1893,8 @@ function generateAutoCategory(params, user, callback){
           const u = pick(updatedUser, ["nodeId", "screenName", "category", "categoryAuto", "histograms", "languageAnalysis"]);
 
           activateNetwork({user: u, normalization: statsObj.normalization});
+
+          // elapsed_time("end generateAutoCategory");
 
           callback(null, updatedUser);
         });
@@ -1982,6 +2001,8 @@ function quit(cause){
 }
 
 function processUser(threeCeeUser, userIn, lastTweeId, callback) {
+
+  // elapsed_time("start processUser");
 
   let updateCountHistory = false;
 
@@ -2101,88 +2122,88 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
       }
     },
 
-    function findUserInDb(user, cb) {
+    // function findUserInDb(user, cb) {
 
-      User.find({ nodeId: user.nodeId }).limit(1).exec(function(err, uArray) {
+    //   User.find({ nodeId: user.nodeId }).limit(1).exec(function(err, uArray) {
 
-        if (err) {
-          console.log(chalkError("ERROR DB FIND ONE USER | " + err));
-          cb(err, user);
-        }
-        else if (uArray.length === 0) {
-          console.log(chalkInfo("USER DB MISS"
-            + " | @" + user.screenName.toLowerCase()
-            + " | " + user.nodeId
-          ));
-          cb(null, user);
-        }
-        else {
+    //     if (err) {
+    //       console.log(chalkError("ERROR DB FIND ONE USER | " + err));
+    //       cb(err, user);
+    //     }
+    //     else if (uArray.length === 0) {
+    //       console.log(chalkInfo("USER DB MISS"
+    //         + " | @" + user.screenName.toLowerCase()
+    //         + " | " + user.nodeId
+    //       ));
+    //       cb(null, user);
+    //     }
+    //     else {
 
-          let userDb = uArray[0];
+    //       let userDb = uArray[0];
 
-          let catObj = {};
+    //       let catObj = {};
 
-          catObj.manual = userDb.category || false;
-          catObj.auto = userDb.categoryAuto || false;
+    //       catObj.manual = userDb.category || false;
+    //       catObj.auto = userDb.categoryAuto || false;
 
-          categorizedUserHashMap.set(userDb.nodeId, catObj);
+    //       categorizedUserHashMap.set(userDb.nodeId, catObj);
 
-          user.category = userDb.category;
-          user.categoryAuto = userDb.categoryAuto;
+    //       user.category = userDb.category;
+    //       user.categoryAuto = userDb.categoryAuto;
 
-          user.createdAt = userDb.createdAt;
-          user.languageAnalyzed = userDb.languageAnalyzed;
-          user.following = true;
-          user.threeceeFollowing = threeCeeUser;
+    //       user.createdAt = userDb.createdAt;
+    //       user.languageAnalyzed = userDb.languageAnalyzed;
+    //       user.following = true;
+    //       user.threeceeFollowing = threeCeeUser;
 
-          if (userDb.languageAnalyzed) { 
-            user.languageAnalysis = userDb.languageAnalysis;
-          }
-          if (userDb.histograms && (Object.keys(userDb.histograms).length > 0)) { 
-            user.histograms = userDb.histograms;
-          }
+    //       if (userDb.languageAnalyzed) { 
+    //         user.languageAnalysis = userDb.languageAnalysis;
+    //       }
+    //       if (userDb.histograms && (Object.keys(userDb.histograms).length > 0)) { 
+    //         user.histograms = userDb.histograms;
+    //       }
 
-          if ((user.rate === 0) && (userDb.rate > 0)) {
-            user.rate = userDb.rate;
-          }
+    //       if ((user.rate === 0) && (userDb.rate > 0)) {
+    //         user.rate = userDb.rate;
+    //       }
 
-          if ((user.mentions === 0) && (userDb.mentions > 0)) {
-            user.mentions = userDb.mentions;
-          }
+    //       if ((user.mentions === 0) && (userDb.mentions > 0)) {
+    //         user.mentions = userDb.mentions;
+    //       }
 
-          if ((user.followersCount === 0) && (userDb.followersCount > 0)) {
-            user.followersCount = userDb.followersCount;
-            updateCountHistory = true;
-          }
+    //       if ((user.followersCount === 0) && (userDb.followersCount > 0)) {
+    //         user.followersCount = userDb.followersCount;
+    //         updateCountHistory = true;
+    //       }
 
-          if ((user.statusesCount === 0) && (userDb.statusesCount > 0)) {
-            user.statusesCount = userDb.statusesCount;
-            updateCountHistory = true;
-          }
+    //       if ((user.statusesCount === 0) && (userDb.statusesCount > 0)) {
+    //         user.statusesCount = userDb.statusesCount;
+    //         updateCountHistory = true;
+    //       }
 
-          if ((user.friendsCount === 0) && (userDb.friendsCount > 0)) {
-            user.friendsCount = userDb.friendsCount;
-            updateCountHistory = true;
-          }
+    //       if ((user.friendsCount === 0) && (userDb.friendsCount > 0)) {
+    //         user.friendsCount = userDb.friendsCount;
+    //         updateCountHistory = true;
+    //       }
 
-          debug(chalkInfo("USER DB HIT "
-            + " | CM: " + printCat(user.category)
-            + " | CA: " + printCat(user.categoryAuto)
-            + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
-            + " | FLWg: " + padEnd(user.following, 5)
-            + " | FLWRs: " + padStart(user.followersCount, 7)
-            + " | FRNDs: " + padStart(user.friendsCount, 7)
-            + " | Ts: " + padStart(user.statusesCount, 7)
-            + " | LAd: " + padEnd(user.languageAnalyzed, 5)
-            + " | CR: " + getTimeStamp(user.createdAt)
-            + " | @" + padEnd(user.screenName.toLowerCase(), 20)
-            + " | " + user.nodeId
-          ));
+    //       debug(chalkInfo("USER DB HIT "
+    //         + " | CM: " + printCat(user.category)
+    //         + " | CA: " + printCat(user.categoryAuto)
+    //         + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
+    //         + " | FLWg: " + padEnd(user.following, 5)
+    //         + " | FLWRs: " + padStart(user.followersCount, 7)
+    //         + " | FRNDs: " + padStart(user.friendsCount, 7)
+    //         + " | Ts: " + padStart(user.statusesCount, 7)
+    //         + " | LAd: " + padEnd(user.languageAnalyzed, 5)
+    //         + " | CR: " + getTimeStamp(user.createdAt)
+    //         + " | @" + padEnd(user.screenName.toLowerCase(), 20)
+    //         + " | " + user.nodeId
+    //       ));
 
-          cb(null, user);
-        }
-      });
-    },
+    //       cb(null, user);
+    //     }
+    //   });
+    // },
 
     function updateUserCategory(user, cb) {
 
@@ -2214,9 +2235,12 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
       if (!neuralNetworkInitialized) { return(cb(null, user)); }
 
       generateAutoCategory({updateCountHistory: updateCountHistory}, user, function (err, uObj){
+
         cb(err, uObj);
+
       });
     }
+
   ], function (err, user) {
 
     if (err) {
@@ -2224,6 +2248,9 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
       callback(new Error(err), null);
     }
     else {
+
+      // elapsed_time("end processUser");
+
       callback(null, user);
     }
   });
@@ -2367,14 +2394,23 @@ const fsmStates = {
   },
   "FETCH_ALL":{
     onEnter: function(event, oldState, newState){
+
+      // console.log("FETCH_ALL | onEnter");
+
       if (event !== "fsm_tick") { 
+
         reporter(event, oldState, newState);
+
+        console.log("FETCH_ALL | onEnter | " + event);
+
         loadBestNeuralNetworkFile(function(err, nnObj){
           if (err) {
             console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
           }
 
-          debug("loadBestNeuralNetworkFile nnObj\n" + jsonPrint(nnObj));
+          // debug("loadBestNeuralNetworkFile nnObj\n" + jsonPrint(nnObj));
+
+          console.log("FETCH_ALL | loadBestNeuralNetworkFile DONE");
 
           loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function(){
 
@@ -2733,13 +2769,16 @@ function initProcessUserQueueInterval(interval){
   let mObj = {};
   let threeceeUser;
 
-  console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + 20 + " MS"));
+  console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + PROCESS_USER_QUEUE_INTERVAL + " MS"));
 
   clearInterval(processUserQueueInterval);
 
   processUserQueueInterval = setInterval(function () {
 
+
     if (processUserQueueReady && processUserQueue.length > 0) {
+
+      // elapsed_time("start processUserQueue");
 
       processUserQueueReady = false;
 
@@ -2790,6 +2829,7 @@ function initProcessUserQueueInterval(interval){
         }
 
         processUserQueueReady = true;
+        // elapsed_time("end processUserQueue");
 
       });
 
@@ -3491,6 +3531,7 @@ function initialize(cnf, callback){
   cnf.histogramParseTotalMin = process.env.TFE_HISTOGRAM_PARSE_TOTAL_MIN || DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN;
 
   cnf.minSuccessRate = process.env.TFE_MIN_SUCCESS_RATE || DEFAULT_MIN_SUCCESS_RATE ;
+  cnf.minMatchRate = process.env.TFE_MIN_MATCH_RATE || DEFAULT_MIN_MATCH_RATE ;
   cnf.numRandomNetworks = process.env.TFE_NUM_RANDOM_NETWORKS || TFE_NUM_RANDOM_NETWORKS ;
   cnf.testMode = (process.env.TFE_TEST_MODE === "true") ? true : cnf.testMode;
 
@@ -3562,6 +3603,11 @@ function initialize(cnf, callback){
       if (loadedConfigObj.TFE_MIN_SUCCESS_RATE !== undefined){
         console.log("LOADED TFE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_MIN_SUCCESS_RATE);
         cnf.minSuccessRate = loadedConfigObj.TFE_MIN_SUCCESS_RATE;
+      }
+
+      if (loadedConfigObj.TFE_MIN_SUCCESS_RATE !== undefined){
+        console.log("LOADED TFE_MIN_MATCH_RATE: " + loadedConfigObj.TFE_MIN_MATCH_RATE);
+        cnf.minMatchRate = loadedConfigObj.TFE_MIN_MATCH_RATE;
       }
 
       if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined){
@@ -4515,11 +4561,11 @@ initialize(configuration, function(err, cnf){
 
   initCategorizedUserHashMap();
 
-  initUserDbUpdateQueueInterval(100);
+  initUserDbUpdateQueueInterval(1);
   initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
   initRandomNetworkTree();
 
-  initLangAnalyzerMessageRxQueueInterval(100);
+  initLangAnalyzerMessageRxQueueInterval(1);
   initLangAnalyzer();
 
   neuralNetworkInitialized = true;
