@@ -377,6 +377,98 @@ function generateNetworkInput(params, callback){
   });
 }
 
+function generateNetworkInputIndexed(params, callback){
+
+  generateNetworkInputBusy = true;
+
+  const inputTypes = Object.keys(params.inputsObj.inputs).sort();
+  let networkInput = [];
+  let inputHits = [];
+
+  let indexOffset = 0;
+
+  async.eachSeries(inputTypes, function(inputType, cb0){
+
+    debug("RNT | GENERATE NET INPUT | TYPE: " + inputType);
+
+    const histogramObj = params.histograms[inputType];
+    const networkInputTypeNames = params.inputsObj.inputs[inputType];
+
+    async.eachOf(networkInputTypeNames, function(inputName, index, cb1){
+
+      // let inputValue = histogramObj[inputName];
+
+      if (histogramObj && (histogramObj[inputName] !== undefined)) {
+
+        if ((params.maxInputHashMap === undefined) 
+          || (params.maxInputHashMap[inputType] === undefined)) {
+
+          console.log(chalkAlert("??? UNDEFINED??? params.maxInputHashMap." + inputType + " | " + inputName
+            + "\n" + Object.keys(params.maxInputHashMap)
+          ));
+
+          networkInput[indexOffset + index] = 1;
+          inputHits.push({type: inputType, inputName: inputName, inputValue: histogramObj[inputName]});
+
+          console.log(chalkLog("RNT | ??? UNDEFINED GENERATE NET INPUT"
+            + " | IN LENGTH: " + networkInput.length
+            + " | IN HITS: " + inputHits.length
+            + " | @" + params.userScreenName
+            + " | TYPE: " + inputType
+            + " | " + inputName
+            + " | " + histogramObj[inputName]
+          ));
+
+          async.setImmediate(function() { 
+            cb1(); 
+          });
+
+        }
+        else {
+
+          const inputValue = (params.maxInputHashMap[inputType][inputName] > 0) 
+            ? histogramObj[inputName]/params.maxInputHashMap[inputType][inputName] 
+            : 1;
+
+          networkInput[indexOffset + index] = inputValue;
+          inputHits.push({type: inputType, inputName: inputName, inputValue: inputValue});
+
+          async.setImmediate(function() {
+            cb1();
+          });
+        }
+      }
+      else {
+        networkInput[indexOffset + index] = 0;
+        debug(chalkLog("RNT | GENERATE NET INPUT"
+          + " | TYPE: " + inputType
+          + " | " + inputName
+          + " | 0"
+        ));
+        async.setImmediate(function() { 
+          cb1(); 
+        });
+      }
+
+    }, function(err){
+
+      async.setImmediate(function() { 
+        indexOffset += networkInputTypeNames.length;
+        cb0(); 
+      });
+
+    });
+
+  }, function(err){
+    generateNetworkInputBusy = false;
+    debug("USER @" + params.userScreenName
+      + " | inputsId: " + params.inputsObj.inputsId
+      + " | inputHits\n" + jsonPrint(inputHits)
+    );
+    callback(err, networkInput);
+  });
+}
+
 let activateNetworkBusy = false;
 function activateNetwork2(user, callback){
 
@@ -388,7 +480,7 @@ function activateNetwork2(user, callback){
   userHistograms = deepcopy(user.histograms);
   languageAnalysis = deepcopy(user.languageAnalysis);
 
-  async.eachSeries(networksHashMap.keys(), function(nnId, cb){
+  async.each(networksHashMap.keys(), function(nnId, cb){
 
     const networkObj = networksHashMap.get(nnId);
 
@@ -413,7 +505,7 @@ function activateNetwork2(user, callback){
       maxInputHashMap: maxInputHashMap
     };
 
-    generateNetworkInput(params, function(err, networkInput){
+    generateNetworkInputIndexed(params, function(err, networkInput){
 
       const out = networkObj.network.activate(networkInput);
 
