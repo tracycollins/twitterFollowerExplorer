@@ -7,6 +7,7 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 
 
 const FSM_TICK_INTERVAL = ONE_SECOND;
+const PROCESS_USER_QUEUE_INTERVAL = 10;
 
 // const TEST_MODE_TOTAL_FETCH = 15;  // total twitter user fetch count
 const TEST_MODE_TOTAL_FETCH = 20;
@@ -2009,94 +2010,96 @@ function processUser(threeCeeUser, userIn, lastTweeId, callback) {
       });
     },
 
-    // function unfollowFriend(user, cb) {
+    function unfollowFriend(user, cb) {
 
-    //   if (
-    //        ((threeCeeUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
+      if (
+           ((threeCeeUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
         
-    //     || ((threeCeeUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
-    //     || ((threeCeeUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.includes(user.nodeId))
+        || ((threeCeeUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
+        || ((threeCeeUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.includes(user.nodeId))
 
-    //   ) {
+      ) {
 
-    //     if (twitterUserHashMap.altthreecee00.friends.includes(user.nodeId)) {
+        if (twitterUserHashMap.altthreecee00.friends.includes(user.nodeId)) {
 
-    //       if (twitterUserHashMap.altthreecee01.friends.includes(user.nodeId)) {
-    //         twitterUserHashMap.altthreecee01.friends.splice(twitterUserHashMap.altthreecee01.friends.indexOf(user.nodeId), 1);
-    //       }
-    //       if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
-    //         twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.nodeId), 1);
-    //       }
+          if (twitterUserHashMap.altthreecee01.friends.includes(user.nodeId)) {
+            twitterUserHashMap.altthreecee01.friends.splice(twitterUserHashMap.altthreecee01.friends.indexOf(user.nodeId), 1);
+          }
+          if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
+            twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.nodeId), 1);
+          }
           
-    //       user.following = true;
-    //       user.threeceeFollowing = "altthreecee00";
-    //     }
+          user.following = true;
+          user.threeceeFollowing = "altthreecee00";
+        }
 
-    //     else if (twitterUserHashMap.altthreecee01.friends.includes(user.nodeId)) {
+        else if (twitterUserHashMap.altthreecee01.friends.includes(user.nodeId)) {
 
-    //       if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
-    //         twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.nodeId), 1);
-    //       }
+          if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
+            twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.nodeId), 1);
+          }
           
-    //       user.following = true;
-    //       user.threeceeFollowing = "altthreecee01";
-    //     }
+          user.following = true;
+          user.threeceeFollowing = "altthreecee01";
+        }
 
-    //     else if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
+        else if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
 
-    //       user.following = true;
-    //       user.threeceeFollowing = "altthreecee02";
-    //     }
+          user.following = true;
+          user.threeceeFollowing = "altthreecee02";
+        }
 
-    //     console.log(chalkInfo("UNFOLLOW | altthreecee00 OR altthreecee01 FOLLOWING"
-    //       + " | " + user.nodeId
-    //       + " | " + user.screenName.toLowerCase()
-    //       + " | FLWg: " + user.following
-    //       + " | 3CF: " + user.threeceeFollowing
-    //     ));
+        console.log(chalkInfo("XXX UNFOLLOW | altthreecee00 OR altthreecee01 FOLLOWING"
+          + " | " + user.nodeId
+          + " | " + user.screenName.toLowerCase()
+          + " | FLWg: " + user.following
+          + " | 3CF: " + user.threeceeFollowing
+        ));
 
-    //     twitterUserHashMap[getCurrentTwitterUser()].twit.post(
-    //       "friendships/destroy", {user_id: user.nodeId}, 
-    //       function destroyFriend(err, data, response){
-    //         if (err) {
-    //           console.error(chalkError("UNFOLLOW ERROR"
-    //             + " | @" + getCurrentTwitterUser()
-    //             + " | " + err
-    //           ));
-    //           cb(null, user);
-    //         }
-    //         else {
-    //           debug("data\n" + jsonPrint(data));
-    //           debug("response\n" + jsonPrint(response));
+        twitterUserHashMap[threeCeeUser].twit.post(
 
-    //           console.log(chalkInfo("UNFOLLOW " + getCurrentTwitterUser()
-    //             + " | " + user.nodeId
-    //             + " | " + user.screenName.toLowerCase()
-    //           ));
-    //           const slackText = "UNFOLLOW " + getCurrentTwitterUser()
-    //             + "\n@" + user.screenName.toLowerCase()
-    //             + "\n" + user.nodeId;
-    //           slackPostMessage(slackChannel, slackText);
-    //           cb(null, user);
-    //         }
-    //       }
-    //     );
-    //   }
-    //   else {
+          "friendships/destroy", {user_id: user.nodeId}, 
 
-    //     user.following = true;
-    //     user.threeceeFollowing = threeCeeUser;
+          function destroyFriend(err, data, response){
+            if (err) {
+              console.error(chalkError("UNFOLLOW ERROR"
+                + " | @" + threeCeeUser
+                + " | " + err
+              ));
+              cb(null, user);
+            }
+            else {
+              debug("data\n" + jsonPrint(data));
+              debug("response\n" + jsonPrint(response));
 
-    //     debug(chalkInfo("UPDATE 3CF"
-    //       + " | " + user.nodeId
-    //       + " | " + user.screenName.toLowerCase()
-    //       + " | FLWg: " + user.following
-    //       + " | 3CF: " + user.threeceeFollowing
-    //     ));
+              console.log(chalkInfo("UNFOLLOW " + threeCeeUser
+                + " | " + user.nodeId
+                + " | " + user.screenName.toLowerCase()
+              ));
+              const slackText = "UNFOLLOW " + threeCeeUser
+                + "\n@" + user.screenName.toLowerCase()
+                + "\n" + user.nodeId;
+              slackPostMessage(slackChannel, slackText);
+              cb(null, user);
+            }
+          }
+        );
+      }
+      else {
 
-    //     cb(null, user);
-    //   }
-    // },
+        user.following = true;
+        user.threeceeFollowing = threeCeeUser;
+
+        debug(chalkInfo("UPDATE 3CF"
+          + " | " + user.nodeId
+          + " | " + user.screenName.toLowerCase()
+          + " | FLWg: " + user.following
+          + " | 3CF: " + user.threeceeFollowing
+        ));
+
+        cb(null, user);
+      }
+    },
 
     function findUserInDb(user, cb) {
 
@@ -4508,7 +4511,7 @@ initialize(configuration, function(err, cnf){
 
   console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
-  initProcessUserQueueInterval(20);
+  initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
 
   initCategorizedUserHashMap();
 
