@@ -3605,7 +3605,7 @@ function initialize(cnf, callback){
         cnf.minSuccessRate = loadedConfigObj.TFE_MIN_SUCCESS_RATE;
       }
 
-      if (loadedConfigObj.TFE_MIN_SUCCESS_RATE !== undefined){
+      if (loadedConfigObj.TFE_MIN_MATCH_RATE !== undefined){
         console.log("LOADED TFE_MIN_MATCH_RATE: " + loadedConfigObj.TFE_MIN_MATCH_RATE);
         cnf.minMatchRate = loadedConfigObj.TFE_MIN_MATCH_RATE;
       }
