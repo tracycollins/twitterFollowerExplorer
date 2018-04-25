@@ -1952,8 +1952,6 @@ function generateAutoCategory(params, user, callback){
 
           activateNetwork({user: u, normalization: statsObj.normalization});
 
-          // elapsed_time("end generateAutoCategory");
-
           callback(null, updatedUser);
         });
 
@@ -2730,15 +2728,17 @@ function showStats(options){
 
     updateGlobalHistograms();
 
-    console.log(chalkLog("- FEM S"
+    console.log(chalkLog("### FEM S"
+      + " | N: " + getTimeStamp()
       + " | E: " + statsObj.elapsed
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
       + " | PUQ: " + processUserQueue.length
+      + " | RNT: " + randomNetworkTree.getState()
       + " | FSM: " + fsm.getMachineState()
     ));
 
     Object.keys(tfeChildHashMap).forEach(function(user){
-      console.log(chalkLog("= FEC S"
+      console.log(chalkLog("... FEC S"
         + " | CHILD " + user + " | FSM: " + tfeChildHashMap[user].status
       ));
       
@@ -3958,7 +3958,6 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
           updateNetworkStats(m.statsObj.loadedNetworks, function(){
             randomNetworkTreeMessageRxQueueReadyFlag = true;
-            // randomNetworkTreeReadyFlag = true;
           });
 
         break;
@@ -4007,6 +4006,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
         case "RNT_TEST_FAIL":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
+          randomNetworkTreeReadyFlag = false;
           console.log(chalkAlert(getTimeStamp() + " | RNT_TEST_FAIL"));
           quit({source: "RNT", error: "RNT_TEST_FAIL"});
         break;
@@ -4056,10 +4056,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
               file = bestRuntimeNetworkId + ".json";
 
-              // saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
               saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork }, function(){});
-
-              // saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
               saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj }, function(){});
             }
 
@@ -4098,7 +4095,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
           }
 
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          randomNetworkTreeReadyFlag = true;
+          // randomNetworkTreeReadyFlag = true;
           runEnable();
 
         break;
@@ -4185,13 +4182,13 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
           }
 
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          randomNetworkTreeReadyFlag = true;
+          // randomNetworkTreeReadyFlag = true;
           runEnable();
         break;
 
         default:
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          randomNetworkTreeReadyFlag = true;
+          // randomNetworkTreeReadyFlag = true;
           console.error(chalkError("*** UNKNOWN RNT OP | " + m.op));
       }
 

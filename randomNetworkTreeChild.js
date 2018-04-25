@@ -23,7 +23,7 @@ let maxQueueFlag = false;
 let maxInputHashMap = {};
 
 let activateNetworkInterval;
-let activateNetworkReady = false;
+let activateNetworkIntervalBusy = false;
 
 let statsUpdateInterval;
 
@@ -136,21 +136,6 @@ statsObj.allTimeLoadedNetworks.multiNeuralNet.right = 0;
 statsObj.allTimeLoadedNetworks.multiNeuralNet.positive = 0;
 statsObj.allTimeLoadedNetworks.multiNeuralNet.negative = 0;
 
-statsObj.loadedNetworks = {};
-statsObj.loadedNetworks.multiNeuralNet = {};
-statsObj.loadedNetworks.multiNeuralNet.total = 0;
-statsObj.loadedNetworks.multiNeuralNet.matchRate = 0.0;
-statsObj.loadedNetworks.multiNeuralNet.overallMatchRate = 0.0;
-statsObj.loadedNetworks.multiNeuralNet.successRate = 0.0;
-statsObj.loadedNetworks.multiNeuralNet.match = 0;
-statsObj.loadedNetworks.multiNeuralNet.mismatch = 0;
-statsObj.loadedNetworks.multiNeuralNet.matchFlag = false;
-statsObj.loadedNetworks.multiNeuralNet.left = 0;
-statsObj.loadedNetworks.multiNeuralNet.neutral = 0;
-statsObj.loadedNetworks.multiNeuralNet.right = 0;
-statsObj.loadedNetworks.multiNeuralNet.positive = 0;
-statsObj.loadedNetworks.multiNeuralNet.negative = 0;
-
 statsObj.bestNetwork = {};
 statsObj.bestNetwork.networkId = false;
 statsObj.bestNetwork.successRate = 0;
@@ -223,20 +208,15 @@ function quit(message) {
 
 function indexOfMax (arr, callback) {
 
-  // let arr = deepcopy(arrIn);
-
   if (arr.length === 0) {
     console.log(chalkAlert("indexOfMax: 0 LENG ARRAY: -1"));
     return callback(-1);
   }
   if ((arr[0] === arr[1]) && (arr[1] === arr[2])){
-    // debug(chalkAlert("indexOfMax: ALL EQUAL: " + arr[0]));
     return callback(-1);
   }
 
-  // debug("B4 ARR: " + arr[0].toFixed(2) + " - " + arr[1].toFixed(2) + " - " + arr[2].toFixed(2));
   arrayNormalize(arr);
-  // debug("AF ARR: " + arr[0].toFixed(2) + " - " + arr[1].toFixed(2) + " - " + arr[2].toFixed(2));
 
   let max = arr[0];
   let maxIndex = 0;
@@ -252,17 +232,7 @@ function indexOfMax (arr, callback) {
 
   }, function(){
 
-    // debug(chalk.blue("indexOfMax: " + maxIndex 
-    //   + " | " + arr[maxIndex].toFixed(2)
-    //   + " | " + arr[0].toFixed(2) + " - " + arr[1].toFixed(2) + " - " + arr[2].toFixed(2)
-    // ));
-
-    if (callback) {
-      callback(maxIndex) ; 
-    }
-    else {
-      return maxIndex;
-    }
+    callback(maxIndex) ; 
 
   });
 }
@@ -274,8 +244,6 @@ const sortedObjectValues = function(params) {
     const keys = Object.keys(params.obj);
 
     const sortedKeys = keys.sort(function(a,b){
-      // const objA = params.obj[a];
-      // const objB = params.obj[b];
       return params.obj[a][params.sortKey] - params.obj[a][params.sortKey];
     });
 
@@ -299,8 +267,6 @@ const sortedObjectValues = function(params) {
 let generateNetworkInputBusy = false;
 
 function generateNetworkInputIndexed(params, callback){
-
-  // elapsed_time("start generateNetworkInputIndexed");
 
   generateNetworkInputBusy = true;
 
@@ -394,9 +360,6 @@ function activateNetwork2(user, callback){
   let userHistograms = {};
   let languageAnalysis = {};
 
-  // userHistograms = deepcopy(user.histograms);
-  // languageAnalysis = deepcopy(user.languageAnalysis);
-
   userHistograms = user.histograms;
   languageAnalysis = user.languageAnalysis;
 
@@ -428,8 +391,6 @@ function activateNetwork2(user, callback){
     generateNetworkInputIndexed(params, function(err, networkInput){
 
       const output = networkObj.network.activate(networkInput);
-
-      // let output = deepcopy(out);
 
       if (output.length !== 3) {
         console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
@@ -466,7 +427,6 @@ function activateNetwork2(user, callback){
 
   }, function(err){
     activateNetworkBusy = false;
-    // elapsed_time("end activateNetwork2()");
     callback(err, networkOutput);
   });
 }
@@ -495,8 +455,6 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
   statsTextObj = {};
 
   nnIdArray = Object.keys(networkOutputObj);
-
-  // elapsed_time("start asyncEachOf_networkOutputObj");
 
   async.eachOf(nnIdArray, function(nnId, index, cb){
 
@@ -596,10 +554,6 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
   }, function generateNetworksOutputAsyncCallback(){
 
-    // elapsed_time("end asyncEachOf_networkOutputObj");
-
-    // elapsed_time("start generateNetworksOutputAsyncCallback()");
-
     sortedObjectValues({ sortKey: "matchRate", obj: statsObj.allTimeLoadedNetworks, max: 10})
     .then(function(sortedNetworkResults){
 
@@ -607,7 +561,8 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
       if (bnId === "multiNeuralNet") { bnId = sortedNetworkResults.sortedKeys[1]; }
       
-      statsObj.bestNetwork = deepcopy(statsObj.loadedNetworks[bnId]);
+      statsObj.bestNetwork = {};
+      statsObj.bestNetwork = statsObj.loadedNetworks[bnId];
 
       debug(chalkAlert("sortedNetworkResults.sortedKeys\n" + jsonPrint(sortedNetworkResults.sortedKeys)));
 
@@ -779,15 +734,13 @@ function initActivateNetworkInterval(interval){
     + " | INTERVAL: " + interval + " ms"
   ));
 
-  activateNetworkReady = true;
+  activateNetworkIntervalBusy = false;
 
   activateNetworkInterval = setInterval(function(){ 
 
-    if (statsObj.networksLoaded && (rxActivateNetworkQueue.length > 0) && activateNetworkReady) {
+    if (statsObj.networksLoaded && (rxActivateNetworkQueue.length > 0) && !activateNetworkIntervalBusy) {
 
-      // elapsed_time("start activateNetworkInterval()");
-
-      activateNetworkReady = false;
+      activateNetworkIntervalBusy = true;
 
       const obj = rxActivateNetworkQueue.shift();
 
@@ -821,7 +774,7 @@ function initActivateNetworkInterval(interval){
             + " | " + obj.networkInput.length + " INPUTS"
             + " | " + err
           ));
-          activateNetworkReady = true;
+          activateNetworkIntervalBusy = false;
         }
         else {
 
@@ -940,11 +893,9 @@ function initActivateNetworkInterval(interval){
             messageObj.output = {};
             messageObj.output = networkOutputObj;
 
-            process.send(messageObj);
-
-            activateNetworkReady = true;
-
-            // elapsed_time("end activateNetworkInterval()");
+            process.send(messageObj, function(){
+              activateNetworkIntervalBusy = false;
+            });
 
           });
 
@@ -1094,8 +1045,9 @@ function busy(){
   if (initializeBusy) { return "initializeBusy"; }
   if (generateNetworksOutputBusy) { return "generateNetworksOutputBusy"; }
   if (activateNetworkBusy) { return "activateNetworkBusy"; }
+  if (activateNetworkIntervalBusy) { return "activateNetworkIntervalBusy"; }
   if (generateNetworkInputBusy) { return "generateNetworkInputBusy"; }
-  if (rxActivateNetworkQueue.length > 0) { return "rxActivateNetworkQueue"; }
+  if (rxActivateNetworkQueue.length > MAX_Q_SIZE) { return "rxActivateNetworkQueue"; }
 
   return false;
 }
@@ -1123,20 +1075,6 @@ function resetStats(callback){
   statsObj.categorize.right = 0;
   statsObj.categorize.positive = 0;
   statsObj.categorize.negative = 0;
-
-  statsObj.loadedNetworks.multiNeuralNet.networkId = "multiNeuralNet";
-  statsObj.loadedNetworks.multiNeuralNet.successRate = 0;
-  statsObj.loadedNetworks.multiNeuralNet.matchRate = 0;
-  statsObj.loadedNetworks.multiNeuralNet.overallMatchRate = 0;
-  statsObj.loadedNetworks.multiNeuralNet.total = 0;
-  statsObj.loadedNetworks.multiNeuralNet.match = 0;
-  statsObj.loadedNetworks.multiNeuralNet.mismatch = 0;
-  statsObj.loadedNetworks.multiNeuralNet.matchFlag = false;
-  statsObj.loadedNetworks.multiNeuralNet.left = 0;
-  statsObj.loadedNetworks.multiNeuralNet.right = 0;
-  statsObj.loadedNetworks.multiNeuralNet.neutral = 0;
-  statsObj.loadedNetworks.multiNeuralNet.positive = 0;
-  statsObj.loadedNetworks.multiNeuralNet.negative = 0;
 
   async.each(networksHashMap.keys(), function(nnId, cb){
 
