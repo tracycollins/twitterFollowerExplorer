@@ -4120,7 +4120,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         break;
 
         case "BEST_MATCH_RATE":
-          debug(chalkAlert("\n================================================================================================\n"
+
+          console.log(chalkAlert("\n================================================================================================\n"
             + "*** RNT_BEST_MATCH_RATE"
             + " | " + m.networkId
             + " | IN ID: " + m.inputsId
