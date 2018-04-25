@@ -556,7 +556,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
   }, function generateNetworksOutputAsyncCallback(){
 
-    sortedObjectValues({ sortKey: "matchRate", obj: statsObj.allTimeLoadedNetworks, max: 10})
+    sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: 250})
     .then(function(sortedNetworkResults){
 
       let bnId = sortedNetworkResults.sortedKeys[0];

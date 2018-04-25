@@ -21,9 +21,9 @@ const FSM_TICK_INTERVAL = ONE_SECOND;
 const PROCESS_USER_QUEUE_INTERVAL = 1;
 
 // const TEST_MODE_TOTAL_FETCH = 15;  // total twitter user fetch count
-const TEST_MODE_TOTAL_FETCH = 20;
-const TEST_MODE_FETCH_COUNT = 10;  // per request twitter user fetch count
-const TEST_DROPBOX_NN_LOAD = 5;
+const TEST_MODE_TOTAL_FETCH = 100;
+const TEST_MODE_FETCH_COUNT = 24;  // per request twitter user fetch count
+const TEST_DROPBOX_NN_LOAD = 25;
 
 const TFC_CHILD_PREFIX = "TFC_";
 let tfeChildHashMap = {};
