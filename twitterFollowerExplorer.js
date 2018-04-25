@@ -11,7 +11,7 @@ let elapsed_time = function(note){
     start = process.hrtime(); // reset the timer
 };
 
-let maxInputsHashMap = {};
+// let maxInputsHashMap = {};
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -1515,10 +1515,9 @@ function updateImageHistograms(params, callback){
   let user = params.user;
   let imagesObj = params.bannerResults.label.images;
   let histogramsImages = {};
+  const imageLabelArray = Object.keys(imagesObj);
 
-  Object.keys(imagesObj).forEach(function(imageLabel){
-
-    // console.log("imageLabel: " + imageLabel);
+  async.each(imageLabelArray, function(imageLabel, cb){
 
     if (user.category) {
 
@@ -1546,9 +1545,15 @@ function updateImageHistograms(params, callback){
         histogramsImages[imageLabel].uncategorized += 1;
       }
     }
+
+    async.setImmediate(function() {
+      cb();
+    });
+
+  }, function(){
+    callback(null, histogramsImages);
   });
 
-  callback(null, histogramsImages);
 }
 
 function enableAnalysis(user, languageAnalysis){
@@ -1617,14 +1622,14 @@ function updateHistograms(params, callback) {
   async.each(inputHistogramTypes, function(type, cb0){
 
     if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
-    if (maxInputsHashMap[type] === undefined) { maxInputsHashMap[type] = {}; }
+    // if (maxInputsHashMap[type] === undefined) { maxInputsHashMap[type] = {}; }
 
     const inputHistogramTypeItems = Object.keys(histograms[type]);
 
-    debug(chalkInfo("USC | @" + user.screenName 
-      + " | " + type 
-      + " | NUM: " + inputHistogramTypeItems.length
-    ));
+    // debug(chalkInfo("USC | @" + user.screenName 
+    //   + " | " + type 
+    //   + " | NUM: " + inputHistogramTypeItems.length
+    // ));
 
     async.each(inputHistogramTypeItems, function(item, cb1){
 
@@ -1635,19 +1640,19 @@ function updateHistograms(params, callback) {
         user.histograms[type][item] += histograms[type][item];
       }
 
-      if (maxInputsHashMap[type][item] === undefined) { 
-        maxInputsHashMap[type][item] = user.histograms[type][item]; 
-      }
-      else {
-        maxInputsHashMap[type][item] = Math.max(maxInputsHashMap[type][item], user.histograms[type][item]);
-      }
+      // if (maxInputsHashMap[type][item] === undefined) { 
+      //   maxInputsHashMap[type][item] = user.histograms[type][item]; 
+      // }
+      // else {
+      //   maxInputsHashMap[type][item] = Math.max(maxInputsHashMap[type][item], user.histograms[type][item]);
+      // }
 
-      debug(chalkInfo("USC | @" + user.screenName 
-        + " | " + type 
-        + " | TOT: " + user.histograms[type][item]
-        + " | IN: " + histograms[type][item] 
-        + " | " + item 
-      ));
+      // debug(chalkInfo("USC | @" + user.screenName 
+      //   + " | " + type 
+      //   + " | TOT: " + user.histograms[type][item]
+      //   + " | IN: " + histograms[type][item] 
+      //   + " | " + item 
+      // ));
 
       async.setImmediate(function() {
         cb1();
@@ -1943,9 +1948,9 @@ function generateAutoCategory(params, user, callback){
             ));
           }
 
-          // const u = pick(updatedUser, ["nodeId", "screenName", "following", "threeceeFollowing", "category", "categoryAuto", "histograms", "languageAnalysis"]);
+          const u = pick(updatedUser, ["nodeId", "screenName", "following", "threeceeFollowing", "category", "categoryAuto", "histograms", "languageAnalysis"]);
 
-          activateNetwork({user: updatedUser, normalization: statsObj.normalization});
+          activateNetwork({user: u, normalization: statsObj.normalization});
 
           // elapsed_time("end generateAutoCategory");
 
@@ -2070,8 +2075,6 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
   [
     function findUserInDb(cb) {
 
-      // console.log("userIn\n" + jsonPrint(userIn));
-
       User.findOne({ nodeId: userIn.id_str }).exec(function(err, user) {
 
         if (err) {
@@ -2087,14 +2090,12 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
 
           console.log(chalkInfo("USER DB MISS"
             + " | 3C @" + threeceeUser
-            // + " | @" + userIn.screen_name.toLowerCase()
             + " | " + userIn.id_str
           ));
 
           userServer.convertRawUser({user:userIn, lastTweeId: lastTweeId}, function(err, user){
             if (err) {
               console.log(chalkError("TFE | CONVERT USER ERROR"
-                // + " | @" + userIn.screen_name
                 + " | LAST TWEET: " + lastTweeId
                 + " | " + err
               ));
@@ -2113,12 +2114,6 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
           catObj.auto = user.categoryAuto || false;
 
           categorizedUserHashMap.set(user.nodeId, catObj);
-
-          // user.category = userDb.category;
-          // user.categoryAuto = userDb.categoryAuto;
-
-          // user.createdAt = userDb.createdAt;
-          // user.languageAnalyzed = userDb.languageAnalyzed;
 
           user.following = true;
           user.threeceeFollowing = threeceeUser;
@@ -2169,36 +2164,6 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
             user.modifiedObj.status = true;
           }
           
-          // if (userDb.languageAnalyzed) { 
-          //   user.languageAnalysis = userDb.languageAnalysis;
-          // }
-          // if (userDb.histograms && (Object.keys(userDb.histograms).length > 0)) { 
-          //   user.histograms = userDb.histograms;
-          // }
-
-          // if ((user.rate === 0) && (userDb.rate > 0)) {
-          //   user.rate = userDb.rate;
-          // }
-
-          // if ((user.mentions === 0) && (userDb.mentions > 0)) {
-          //   user.mentions = userDb.mentions;
-          // }
-
-          // if ((user.followersCount === 0) && (userIn.followersCount > 0)) {
-          //   user.followersCount = userDb.followersCount;
-          //   updateCountHistory = true;
-          // }
-
-          // if ((user.statusesCount === 0) && (userDb.statusesCount > 0)) {
-          //   user.statusesCount = userDb.statusesCount;
-          //   updateCountHistory = true;
-          // }
-
-          // if ((user.friendsCount === 0) && (userDb.friendsCount > 0)) {
-          //   user.friendsCount = userDb.friendsCount;
-          //   updateCountHistory = true;
-          // }
-
           if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)){
             user.followersCount = userIn.followers_count;
             updateCountHistory = true;
@@ -2214,72 +2179,55 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
             updateCountHistory = true;
           }
 
+          // debug(chalkInfo("USER DB HIT "
+          //   + " | CM: " + printCat(user.category)
+          //   + " | CA: " + printCat(user.categoryAuto)
+          //   + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
+          //   + " | FLWg: " + padEnd(user.following, 5)
+          //   + " | FLWRs: " + padStart(user.followersCount, 7)
+          //   + " | FRNDs: " + padStart(user.friendsCount, 7)
+          //   + " | Ts: " + padStart(user.statusesCount, 7)
+          //   + " | LAd: " + padEnd(user.languageAnalyzed, 5)
+          //   + " | CR: " + getTimeStamp(user.createdAt)
+          //   + " | @" + padEnd(user.screenName.toLowerCase(), 20)
+          //   + " | " + user.nodeId
+          // ));
 
-          debug(chalkInfo("USER DB HIT "
-            + " | CM: " + printCat(user.category)
-            + " | CA: " + printCat(user.categoryAuto)
-            + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
-            + " | FLWg: " + padEnd(user.following, 5)
-            + " | FLWRs: " + padStart(user.followersCount, 7)
-            + " | FRNDs: " + padStart(user.friendsCount, 7)
-            + " | Ts: " + padStart(user.statusesCount, 7)
-            + " | LAd: " + padEnd(user.languageAnalyzed, 5)
-            + " | CR: " + getTimeStamp(user.createdAt)
-            + " | @" + padEnd(user.screenName.toLowerCase(), 20)
-            + " | " + user.nodeId
-          ));
-
-          if (user.modified) {
-            debug(chalkInfo("USER DB HIT | * MODIFIED *"
-              + " | CM: " + printCat(user.category)
-              + " | CA: " + printCat(user.categoryAuto)
-              + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
-              + " | FLWg: " + padEnd(user.following, 5)
-              + " | FLWRs: " + padStart(user.followersCount, 7)
-              + " | FRNDs: " + padStart(user.friendsCount, 7)
-              + " | Ts: " + padStart(user.statusesCount, 7)
-              + " | LAd: " + padEnd(user.languageAnalyzed, 5)
-              + " | CR: " + getTimeStamp(user.createdAt)
-              + " | @" + padEnd(user.screenName.toLowerCase(), 20)
-              + " | " + Object.keys(user.modifiedObj)
-            ));
-          }
-          else {
-            debug(chalkInfo("USER DB HIT | - NO CHANGE "
-              + " | CM: " + printCat(user.category)
-              + " | CA: " + printCat(user.categoryAuto)
-              + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
-              + " | FLWg: " + padEnd(user.following, 5)
-              + " | FLWRs: " + padStart(user.followersCount, 7)
-              + " | FRNDs: " + padStart(user.friendsCount, 7)
-              + " | Ts: " + padStart(user.statusesCount, 7)
-              + " | LAd: " + padEnd(user.languageAnalyzed, 5)
-              + " | CR: " + getTimeStamp(user.createdAt)
-              + " | @" + padEnd(user.screenName.toLowerCase(), 20)
-              + " | " + Object.keys(user.modifiedObj)
-            ));
-          }
+          // if (user.modified) {
+          //   debug(chalkInfo("USER DB HIT | * MODIFIED *"
+          //     + " | CM: " + printCat(user.category)
+          //     + " | CA: " + printCat(user.categoryAuto)
+          //     + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
+          //     + " | FLWg: " + padEnd(user.following, 5)
+          //     + " | FLWRs: " + padStart(user.followersCount, 7)
+          //     + " | FRNDs: " + padStart(user.friendsCount, 7)
+          //     + " | Ts: " + padStart(user.statusesCount, 7)
+          //     + " | LAd: " + padEnd(user.languageAnalyzed, 5)
+          //     + " | CR: " + getTimeStamp(user.createdAt)
+          //     + " | @" + padEnd(user.screenName.toLowerCase(), 20)
+          //     + " | " + Object.keys(user.modifiedObj)
+          //   ));
+          // }
+          // else {
+          //   debug(chalkInfo("USER DB HIT | - NO CHANGE "
+          //     + " | CM: " + printCat(user.category)
+          //     + " | CA: " + printCat(user.categoryAuto)
+          //     + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
+          //     + " | FLWg: " + padEnd(user.following, 5)
+          //     + " | FLWRs: " + padStart(user.followersCount, 7)
+          //     + " | FRNDs: " + padStart(user.friendsCount, 7)
+          //     + " | Ts: " + padStart(user.statusesCount, 7)
+          //     + " | LAd: " + padEnd(user.languageAnalyzed, 5)
+          //     + " | CR: " + getTimeStamp(user.createdAt)
+          //     + " | @" + padEnd(user.screenName.toLowerCase(), 20)
+          //     + " | " + Object.keys(user.modifiedObj)
+          //   ));
+          // }
 
           cb(null, user);
         }
       });
     },
-
-    // function convertUser(cb) {
-    //   userServer.convertRawUser({user:userIn, lastTweeId: lastTweeId}, function(err, user){
-    //     if (err) {
-    //       console.log(chalkError("TFE | CONVERT USER ERROR"
-    //         + " | @" + userIn.screen_name
-    //         + " | LAST TWEET: " + lastTweeId
-    //         + " | " + err
-    //       ));
-    //       cb(err, null);
-    //     }
-    //     else {
-    //       cb(null, user);
-    //     }
-    //   });
-    // },
 
     function unfollowFriend(user, cb) {
 
@@ -2343,9 +2291,10 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
               debug("data\n" + jsonPrint(data));
               debug("response\n" + jsonPrint(response));
 
-              console.log(chalkInfo("UNFOLLOW " + threeceeUser
-                + " | " + user.nodeId
-                + " | " + user.screenName.toLowerCase()
+              console.log(chalkInfo("=X= UNFOLLOW"
+                + " | 3C: @" + threeceeUser
+                + " | NID: " + user.nodeId
+                + " | @" + user.screenName.toLowerCase()
               ));
               const slackText = "UNFOLLOW " + threeceeUser
                 + "\n@" + user.screenName.toLowerCase()
@@ -2361,99 +2310,9 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
         user.following = true;
         user.threeceeFollowing = threeceeUser;
 
-        debug(chalkInfo("UPDATE 3CF"
-          + " | " + user.nodeId
-          + " | " + user.screenName.toLowerCase()
-          + " | FLWg: " + user.following
-          + " | 3CF: " + user.threeceeFollowing
-        ));
-
         cb(null, user);
       }
     },
-
-    // function findUserInDb(user, cb) {
-
-    //   User.find({ nodeId: user.nodeId }).limit(1).exec(function(err, uArray) {
-
-    //     if (err) {
-    //       console.log(chalkError("ERROR DB FIND ONE USER | " + err));
-    //       cb(err, user);
-    //     }
-    //     else if (uArray.length === 0) {
-    //       console.log(chalkInfo("USER DB MISS"
-    //         + " | @" + user.screenName.toLowerCase()
-    //         + " | " + user.nodeId
-    //       ));
-    //       cb(null, user);
-    //     }
-    //     else {
-
-    //       let userDb = uArray[0];
-
-    //       let catObj = {};
-
-    //       catObj.manual = userDb.category || false;
-    //       catObj.auto = userDb.categoryAuto || false;
-
-    //       categorizedUserHashMap.set(userDb.nodeId, catObj);
-
-    //       user.category = userDb.category;
-    //       user.categoryAuto = userDb.categoryAuto;
-
-    //       user.createdAt = userDb.createdAt;
-    //       user.languageAnalyzed = userDb.languageAnalyzed;
-    //       user.following = true;
-    //       user.threeceeFollowing = threeceeUser;
-
-    //       if (userDb.languageAnalyzed) { 
-    //         user.languageAnalysis = userDb.languageAnalysis;
-    //       }
-    //       if (userDb.histograms && (Object.keys(userDb.histograms).length > 0)) { 
-    //         user.histograms = userDb.histograms;
-    //       }
-
-    //       if ((user.rate === 0) && (userDb.rate > 0)) {
-    //         user.rate = userDb.rate;
-    //       }
-
-    //       if ((user.mentions === 0) && (userDb.mentions > 0)) {
-    //         user.mentions = userDb.mentions;
-    //       }
-
-    //       if ((user.followersCount === 0) && (userDb.followersCount > 0)) {
-    //         user.followersCount = userDb.followersCount;
-    //         updateCountHistory = true;
-    //       }
-
-    //       if ((user.statusesCount === 0) && (userDb.statusesCount > 0)) {
-    //         user.statusesCount = userDb.statusesCount;
-    //         updateCountHistory = true;
-    //       }
-
-    //       if ((user.friendsCount === 0) && (userDb.friendsCount > 0)) {
-    //         user.friendsCount = userDb.friendsCount;
-    //         updateCountHistory = true;
-    //       }
-
-    //       debug(chalkInfo("USER DB HIT "
-    //         + " | CM: " + printCat(user.category)
-    //         + " | CA: " + printCat(user.categoryAuto)
-    //         + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
-    //         + " | FLWg: " + padEnd(user.following, 5)
-    //         + " | FLWRs: " + padStart(user.followersCount, 7)
-    //         + " | FRNDs: " + padStart(user.friendsCount, 7)
-    //         + " | Ts: " + padStart(user.statusesCount, 7)
-    //         + " | LAd: " + padEnd(user.languageAnalyzed, 5)
-    //         + " | CR: " + getTimeStamp(user.createdAt)
-    //         + " | @" + padEnd(user.screenName.toLowerCase(), 20)
-    //         + " | " + user.nodeId
-    //       ));
-
-    //       cb(null, user);
-    //     }
-    //   });
-    // },
 
     function updateUserCategory(user, cb) {
 
@@ -2465,15 +2324,15 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
           cb(err, user);
         }
         else {
-          debug(chalkInfo("CLU U"
-            + " | @" + u.screenName.toLowerCase()
-            + " | " + u.nodeId
-            + " | " + getTimeStamp(u.createdAt)
-            + " | FLWg: " + u.following
-            + " | 3CF: " + u.threeceeFollowing
-            + " | C: " + u.category
-            + " | CA: " + u.categoryAuto
-          ));
+          // debug(chalkInfo("CLU U"
+          //   + " | @" + u.screenName.toLowerCase()
+          //   + " | " + u.nodeId
+          //   + " | " + getTimeStamp(u.createdAt)
+          //   + " | FLWg: " + u.following
+          //   + " | 3CF: " + u.threeceeFollowing
+          //   + " | C: " + u.category
+          //   + " | CA: " + u.categoryAuto
+          // ));
           cb(null, u);
         }
 
