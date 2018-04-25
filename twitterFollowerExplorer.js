@@ -2091,6 +2091,7 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
           console.log(chalkInfo("USER DB MISS"
             + " | 3C @" + threeceeUser
             + " | " + userIn.id_str
+            + " | @" + userIn.screen_name
           ));
 
           userServer.convertRawUser({user:userIn, lastTweeId: lastTweeId}, function(err, user){
@@ -2118,50 +2119,50 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
           user.following = true;
           user.threeceeFollowing = threeceeUser;
 
-          user.modified = false;
-          user.modifiedObj = {};
+          // user.modified = false;
+          // user.modifiedObj = {};
 
           if (user.name !== userIn.name) {
             user.name = userIn.name;
-            user.modified = moment();
-            user.modifiedObj.name = true;
+            // user.modified = moment();
+            // user.modifiedObj.name = true;
           }
           
           if (user.screenName !== userIn.screen_name) {
             user.screenName = userIn.screen_name;
             user.screenNameLower = userIn.screen_name.toLowerCase();
-            user.modified = moment();
-            user.modifiedObj.screenName = true;
+            // user.modified = moment();
+            // user.modifiedObj.screenName = true;
           }
           
           if (user.url !== userIn.url) {
             user.url = userIn.url;
-            user.modified = moment();
-            user.modifiedObj.url = true;
+            // user.modified = moment();
+            // user.modifiedObj.url = true;
           }
           
           if (user.profileImageUrl !== userIn.profileImageUrl) {
             user.profileImageUrl = userIn.profileImageUrl;
-            user.modified = moment();
-            user.modifiedObj.profileImageUrl = true;
+            // user.modified = moment();
+            // user.modifiedObj.profileImageUrl = true;
           }
           
           if (user.bannerImageUrl !== userIn.bannerImageUrl) {
             user.bannerImageUrl = userIn.bannerImageUrl;
-            user.modified = moment();
-            user.modifiedObj.bannerImageUrl = true;
+            // user.modified = moment();
+            // user.modifiedObj.bannerImageUrl = true;
           }
           
           if (user.description !== userIn.description) {
             user.description = userIn.description;
-            user.modified = moment();
-            user.modifiedObj.description = true;
+            // user.modified = moment();
+            // user.modifiedObj.description = true;
           }
           
           if ((user.status !== undefined) && (userIn.status !== undefined) && user.status.id_str && userIn.status.id_str && (user.status.id_str !== userIn.status.id_str)) {
             user.status = userIn.status;
-            user.modified = moment();
-            user.modifiedObj.status = true;
+            // user.modified = moment();
+            // user.modifiedObj.status = true;
           }
           
           if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)){

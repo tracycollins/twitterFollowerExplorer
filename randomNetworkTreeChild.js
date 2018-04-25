@@ -297,94 +297,6 @@ const sortedObjectValues = function(params) {
 };
 
 let generateNetworkInputBusy = false;
-// function generateNetworkInput(params, callback){
-
-//   generateNetworkInputBusy = true;
-
-//   const inputTypes = Object.keys(params.inputsObj.inputs).sort();
-//   let networkInput = [];
-//   let inputHits = [];
-
-//   async.eachSeries(inputTypes, function(inputType, cb0){
-
-//     debug("RNT | GENERATE NET INPUT | TYPE: " + inputType);
-
-//     const histogramObj = params.histograms[inputType];
-//     const networkInputTypeNames = params.inputsObj.inputs[inputType];
-
-//     async.eachSeries(networkInputTypeNames, function(inputName, cb1){
-
-//       // let inputValue = histogramObj[inputName];
-
-//       if (histogramObj && (histogramObj[inputName] !== undefined)) {
-
-//         if ((params.maxInputHashMap === undefined) 
-//           || (params.maxInputHashMap[inputType] === undefined)) {
-
-//           console.log(chalkAlert("??? UNDEFINED??? params.maxInputHashMap." + inputType + " | " + inputName
-//             + "\n" + Object.keys(params.maxInputHashMap)
-//           ));
-
-//           networkInput.push(1);
-//           inputHits.push({type: inputType, inputName: inputName, inputValue: histogramObj[inputName]});
-
-//           console.log(chalkLog("RNT | ??? UNDEFINED GENERATE NET INPUT"
-//             + " | IN LENGTH: " + networkInput.length
-//             + " | IN HITS: " + inputHits.length
-//             + " | @" + params.userScreenName
-//             + " | TYPE: " + inputType
-//             + " | " + inputName
-//             + " | " + histogramObj[inputName]
-//           ));
-
-//           async.setImmediate(function() { 
-//             cb1(); 
-//           });
-
-//         }
-//         else {
-
-//           const inputValue = (params.maxInputHashMap[inputType][inputName] > 0) 
-//             ? histogramObj[inputName]/params.maxInputHashMap[inputType][inputName] 
-//             : 1;
-
-//           networkInput.push(inputValue);
-//           inputHits.push({type: inputType, inputName: inputName, inputValue: inputValue});
-
-//           async.setImmediate(function() {
-//             cb1();
-//           });
-//         }
-//       }
-//       else {
-//         networkInput.push(0);
-//         debug(chalkLog("RNT | GENERATE NET INPUT"
-//           + " | TYPE: " + inputType
-//           + " | " + inputName
-//           + " | 0"
-//         ));
-//         async.setImmediate(function() { 
-//           cb1(); 
-//         });
-//       }
-
-//     }, function(err){
-
-//       async.setImmediate(function() { 
-//         cb0(); 
-//       });
-
-//     });
-
-//   }, function(err){
-//     generateNetworkInputBusy = false;
-//     debug("USER @" + params.userScreenName
-//       + " | inputsId: " + params.inputsObj.inputsId
-//       + " | inputHits\n" + jsonPrint(inputHits)
-//     );
-//     callback(err, networkInput);
-//   });
-// }
 
 function generateNetworkInputIndexed(params, callback){
 
@@ -394,7 +306,6 @@ function generateNetworkInputIndexed(params, callback){
 
   const inputTypes = Object.keys(params.inputsObj.inputs).sort();
   let networkInput = [];
-  // let inputHits = [];
 
   let indexOffset = 0;
 
@@ -407,8 +318,6 @@ function generateNetworkInputIndexed(params, callback){
 
     async.eachOf(networkInputTypeNames, function(inputName, index, cb1){
 
-      // let inputValue = histogramObj[inputName];
-
       if (histogramObj && (histogramObj[inputName] !== undefined)) {
 
         if ((params.maxInputHashMap === undefined) 
@@ -419,11 +328,9 @@ function generateNetworkInputIndexed(params, callback){
           ));
 
           networkInput[indexOffset + index] = 1;
-          // inputHits.push({type: inputType, inputName: inputName, inputValue: histogramObj[inputName]});
 
           console.log(chalkLog("RNT | ??? UNDEFINED GENERATE NET INPUT"
             + " | IN LENGTH: " + networkInput.length
-            // + " | IN HITS: " + inputHits.length
             + " | @" + params.userScreenName
             + " | TYPE: " + inputType
             + " | " + inputName
@@ -442,7 +349,6 @@ function generateNetworkInputIndexed(params, callback){
             : 1;
 
           networkInput[indexOffset + index] = inputValue;
-          // inputHits.push({type: inputType, inputName: inputName, inputValue: inputValue});
 
           async.setImmediate(function() {
             cb1();
@@ -450,12 +356,9 @@ function generateNetworkInputIndexed(params, callback){
         }
       }
       else {
+
         networkInput[indexOffset + index] = 0;
-        debug(chalkLog("RNT | GENERATE NET INPUT"
-          + " | TYPE: " + inputType
-          + " | " + inputName
-          + " | 0"
-        ));
+ 
         async.setImmediate(function() { 
           cb1(); 
         });
@@ -471,11 +374,8 @@ function generateNetworkInputIndexed(params, callback){
     });
 
   }, function(err){
+
     generateNetworkInputBusy = false;
-    debug("USER @" + params.userScreenName
-      + " | inputsId: " + params.inputsObj.inputsId
-      // + " | inputHits\n" + jsonPrint(inputHits)
-    );
 
     // elapsed_time("end generateNetworkInputIndexed");
 
@@ -494,8 +394,11 @@ function activateNetwork2(user, callback){
   let userHistograms = {};
   let languageAnalysis = {};
 
-  userHistograms = deepcopy(user.histograms);
-  languageAnalysis = deepcopy(user.languageAnalysis);
+  // userHistograms = deepcopy(user.histograms);
+  // languageAnalysis = deepcopy(user.languageAnalysis);
+
+  userHistograms = user.histograms;
+  languageAnalysis = user.languageAnalysis;
 
   async.each(networksHashMap.keys(), function(nnId, cb){
 
@@ -524,14 +427,14 @@ function activateNetwork2(user, callback){
 
     generateNetworkInputIndexed(params, function(err, networkInput){
 
-      const out = networkObj.network.activate(networkInput);
+      const output = networkObj.network.activate(networkInput);
 
-      let output = deepcopy(out);
+      // let output = deepcopy(out);
 
       if (output.length !== 3) {
         console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
-        quit(" ZERO LENGTH NETWORK OUTPUT");
-        output = [0,0,0];
+        // quit("ZERO LENGTH NETWORK OUTPUT");
+        return(cb("ZERO LENGTH NETWORK OUTPUT", networkOutput));
       }
 
       indexOfMax(output, function maxNetworkOutput(maxOutputIndex){
