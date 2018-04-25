@@ -1590,9 +1590,9 @@ function enableAnalysis(user, languageAnalysis){
 
 function activateNetwork(obj){
 
-  // if (randomNetworkTreeReadyFlag) {
+  if (randomNetworkTreeReadyFlag) {
     randomNetworkTree.send({op: "ACTIVATE", obj: obj});
-  // }
+  }
 }
 
 function startImageQuotaTimeout(){
@@ -3958,7 +3958,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
           updateNetworkStats(m.statsObj.loadedNetworks, function(){
             randomNetworkTreeMessageRxQueueReadyFlag = true;
-            randomNetworkTreeReadyFlag = true;
+            // randomNetworkTreeReadyFlag = true;
           });
 
         break;

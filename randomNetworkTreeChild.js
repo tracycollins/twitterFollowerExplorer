@@ -739,41 +739,6 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
   });
 }
 
-// function printDatum(title, input){
-
-//   let row = "";
-//   let col = 0;
-//   let rowNum = 0;
-//   const COLS = 100;
-
-//   console.log("\n------------- " + title + " -------------");
-
-//   input.forEach(function(bit, i){
-//     if (i === 0) {
-//       row = row + bit.toFixed(3) + " | " ;
-//     }
-//     else if (i === 1) {
-//       row = row + bit.toFixed(3);
-//     }
-//     else if (i === 2) {
-//       console.log("ROW " + rowNum + " | " + row);
-//       row = bit ? "X" : ".";
-//       col = 1;
-//       rowNum += 1;
-//     }
-//     else if (col < COLS){
-//       row = row + (bit ? "X" : ".");
-//       col += 1;
-//     }
-//     else {
-//       console.log("ROW " + rowNum + " | " + row);
-//       row = bit ? "X" : ".";
-//       col = 1;
-//       rowNum += 1;
-//     }
-//   });
-// }
-
 function categoryToString(c) {
 
   if (c === undefined) {
@@ -1308,6 +1273,13 @@ process.on("message", function(m) {
       process.send({op: "NETWORK_BUSY"}, function(err){
         if (err) { quit("NETWORK_BUSY PROCESS SEND ERRROR"); }
       });
+
+      if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
+        process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
+          if (err) { quit("SEND QUEUE_FULL ERROR"); }
+        });
+        maxQueueFlag = true;
+      }
 
     break;
     
