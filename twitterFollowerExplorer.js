@@ -1216,12 +1216,12 @@ function initRandomNetworks(params, callback){
 
 function loadBestNeuralNetworkFile(callback){
 
-  if (bestNetworkFolderLoaded){
-    console.log(chalkLog("DROPBOX NEURAL NETWORKS ALREADY LOADED ... SKIPPING"
-      + " | FOLDER: " + bestNetworkFolder
-    ));
-    return(callback(null, null));
-  }
+  // if (bestNetworkFolderLoaded){
+  //   console.log(chalkLog("DROPBOX NEURAL NETWORKS ALREADY LOADED ... SKIPPING"
+  //     + " | FOLDER: " + bestNetworkFolder
+  //   ));
+  //   return(callback(null, null));
+  // }
 
   console.log(chalkLog("... LOADING DROPBOX NEURAL NETWORKS"
     + " | FOLDER: " + bestNetworkFolder
