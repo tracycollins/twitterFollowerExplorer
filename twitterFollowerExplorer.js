@@ -182,6 +182,7 @@ let randomNetworkTreeMessageRxQueueInterval;
 let randomNetworkTreeMessageRxQueueReadyFlag = true;
 let randomNetworkTreeReadyFlag = false;
 let randomNetworkTreeBusyFlag = false;
+let randomNetworkTreeActivateQueueSize = 0;
 let randomNetworkTreeMessageRxQueue = [];
 let randomNetworksObj = {};
 
@@ -1044,8 +1045,12 @@ function loadBestNetworkDropboxFolder(folder, callback){
           if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
 
 
-          if (((networkObj.successRate >= configuration.minSuccessRate) && (networkObj.overallMatchRate === 0))
-            || (networkObj.overallMatchRate >= configuration.minMatchRate)) {
+          if (
+               ((networkObj.successRate >= configuration.minSuccessRate) && (networkObj.overallMatchRate === 0))
+            || (networkObj.overallMatchRate >= configuration.minMatchRate)
+            || (configuration.testMode && (networkObj.successRate >= 0.5*configuration.minSuccessRate) && (networkObj.overallMatchRate === 0))
+            || (configuration.testMode && (networkObj.overallMatchRate >= 0.5*configuration.minMatchRate))
+          ) {
 
             statsObj.numNetworksLoaded += 1;
 
@@ -1992,6 +1997,7 @@ function quit(cause){
 
   let slackText = "\n*QUIT*"; 
   
+  slackText = slackText + "\nHOST:        " + hostname;
   slackText = slackText + "\nBEST:        " + bestRuntimeNetworkId;
   slackText = slackText + "\nOAMR:        " + currentBestNetwork.overallMatchRate.toFixed(2) + "%";
   slackText = slackText + "\nSTART:       " + statsObj.startTimeMoment.format(compactDateTimeFormat);
@@ -2023,13 +2029,14 @@ function quit(cause){
       clearInterval(quitWaitInterval);
 
       console.log(chalkAlert("ALL PROCESSES COMPLETE ... QUITTING"
-       + " | SAVE FILE BUSY: " + saveFileBusy
-       + " | SAVE FILE Q: " + saveFileQueue.length
-       + " | RNT BUSY: " + randomNetworkTreeBusyFlag
-       + " | RNT READY: " + randomNetworkTreeReadyFlag
-       + " | RNT Q: " + randomNetworkTreeMessageRxQueue.length
-       + " | LA Q: " + langAnalyzerMessageRxQueue.length
-       + " | USR DB Q: " + userDbUpdateQueue.length
+        + " | SAVE FILE BUSY: " + saveFileBusy
+        + " | SAVE FILE Q: " + saveFileQueue.length
+        + " | RNT BUSY: " + randomNetworkTreeBusyFlag
+        + " | RNT READY: " + randomNetworkTreeReadyFlag
+        + " | RNT AQ: " + randomNetworkTreeActivateQueueSize
+        + " | RNT MQ: " + randomNetworkTreeMessageRxQueue.length
+        + " | LA MQ: " + langAnalyzerMessageRxQueue.length
+        + " | USR DB UDQ: " + userDbUpdateQueue.length
       ));
 
       setTimeout(function(){
@@ -2043,13 +2050,14 @@ function quit(cause){
       }
       
       console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
-       + " | SAVE FILE BUSY: " + saveFileBusy
-       + " | SAVE FILE Q: " + saveFileQueue.length
-       + " | RNT BUSY: " + randomNetworkTreeBusyFlag
-       + " | RNT READY: " + randomNetworkTreeReadyFlag
-       + " | RNT Q: " + randomNetworkTreeMessageRxQueue.length
-       + " | LA Q: " + langAnalyzerMessageRxQueue.length
-       + " | USR DB Q: " + userDbUpdateQueue.length
+        + " | SAVE FILE BUSY: " + saveFileBusy
+        + " | SAVE FILE Q: " + saveFileQueue.length
+        + " | RNT BUSY: " + randomNetworkTreeBusyFlag
+        + " | RNT READY: " + randomNetworkTreeReadyFlag
+        + " | RNT AQ: " + randomNetworkTreeActivateQueueSize
+        + " | RNT MQ: " + randomNetworkTreeMessageRxQueue.length
+        + " | LA MQ: " + langAnalyzerMessageRxQueue.length
+        + " | USR DB UDQ: " + userDbUpdateQueue.length
       ));
     }
 
@@ -2295,7 +2303,8 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
                 + " | NID: " + user.nodeId
                 + " | @" + user.screenName.toLowerCase()
               ));
-              const slackText = "UNFOLLOW " + threeceeUser
+              const slackText = hostname
+                + "\nUNFOLLOW @" + threeceeUser
                 + "\n@" + user.screenName.toLowerCase()
                 + "\n" + user.nodeId;
               slackPostMessage(slackChannel, slackText);
@@ -2577,9 +2586,10 @@ const fsmStates = {
         randomNetworkTree.send({op: "GET_STATS"}); 
 
         let slackText = "\n*FETCH END*"; 
-        slackText = slackText + "\nELPSD:       " + msToTime(statsObj.fetchCycleElapsed);
-        slackText = slackText + "\nTOT PRCSSD:  " + statsObj.users.totalFriendsProcessed;
-        slackText = slackText + "\nGTOT PRCSSD: " + statsObj.users.grandTotalFriendsProcessed;
+        slackText = slackText + "\nHOST:  " + hostname;
+        slackText = slackText + "\nELPSD: " + msToTime(statsObj.fetchCycleElapsed);
+        slackText = slackText + "\nTOT:   " + statsObj.users.totalFriendsProcessed;
+        slackText = slackText + "\nGTOT:  " + statsObj.users.grandTotalFriendsProcessed;
 
         console.log("TFE | SLACK TEXT: " + slackText);
 
@@ -2733,8 +2743,12 @@ function showStats(options){
       + " | E: " + statsObj.elapsed
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
       + " | PUQ: " + processUserQueue.length
-      + " | RNT: " + randomNetworkTree.getState()
       + " | FSM: " + fsm.getMachineState()
+    ));
+
+    console.log(chalkLog("... RNT S"
+      + " | BUSY: " + randomNetworkTreeBusyFlag
+      + " | RAQ: " + randomNetworkTreeActivateQueueSize
     ));
 
     Object.keys(tfeChildHashMap).forEach(function(user){
@@ -3978,6 +3992,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
         case "QUEUE_READY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
+          randomNetworkTreeActivateQueueSize = m.queue;
           randomNetworkTreeReadyFlag = true;
           debug(chalkInfo("RNT Q READY"));
           runEnable();
@@ -3985,6 +4000,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
         case "QUEUE_EMPTY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
+          randomNetworkTreeActivateQueueSize = m.queue;
           randomNetworkTreeReadyFlag = true;
           debug(chalkInfo("RNT Q EMPTY"));
           runEnable();
@@ -3992,6 +4008,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
         case "QUEUE_FULL":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
+          randomNetworkTreeActivateQueueSize = m.queue;
           randomNetworkTreeReadyFlag = false;
           randomNetworkTreeBusyFlag = "QUEUE_FULL";
           console.log(chalkError("!!! RNT Q FULL"));
@@ -4012,6 +4029,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
         break;
 
         case "NETWORK_OUTPUT":
+
+          randomNetworkTreeActivateQueueSize = m.queue;
 
           debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
 

@@ -121,6 +121,8 @@ let statsObj = {};
 statsObj.networksLoaded = false;
 statsObj.normalization = {};
 
+statsObj.loadedNetworks = {};
+
 statsObj.allTimeLoadedNetworks = {};
 statsObj.allTimeLoadedNetworks.multiNeuralNet = {};
 statsObj.allTimeLoadedNetworks.multiNeuralNet.total = 0;
@@ -840,7 +842,7 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.mismatch += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                    console.log(chalk.black("000 miss "
+                    console.log(chalk.black("000 MISS "
                       + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                       + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
                       + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
@@ -869,7 +871,7 @@ function initActivateNetworkInterval(interval){
                 }
               }
               else {
-                console.log(chalk.gray("--- UNCAT"
+                console.log(chalk.gray("--- uncat"
                   + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                   + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
                   + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
@@ -884,6 +886,7 @@ function initActivateNetworkInterval(interval){
 
             let messageObj = {};
             messageObj.op = "NETWORK_OUTPUT";
+            messageObj.queue = rxActivateNetworkQueue.length;
             messageObj.user = {};
             messageObj.user = obj.user;
             messageObj.bestNetwork = {};
@@ -1325,7 +1328,7 @@ function initStatsUpdate(cnf){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
     statsObj.timeStamp = moment().format(defaultDateTimeFormat);
 
-    saveFile(statsFolder, statsFile, statsObj);
+    // saveFile(statsFolder, statsFile, statsObj);
 
     if (busy()) {
       process.send({ op: "BUSY", cause: busy() });
@@ -1352,7 +1355,7 @@ function initialize(cnf, callback){
   cnf.testMode = process.env.RNT_TEST_MODE || false ;
   cnf.quitOnError = process.env.RNT_QUIT_ON_ERROR || false ;
 
-  cnf.statsUpdateIntervalTime = process.env.RNT_STATS_UPDATE_INTERVAL || 60000;
+  cnf.statsUpdateIntervalTime = process.env.RNT_STATS_UPDATE_INTERVAL || 1000;
 
   debug("CONFIG\n" + jsonPrint(cnf));
 
