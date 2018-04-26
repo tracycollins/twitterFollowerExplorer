@@ -246,7 +246,7 @@ const sortedObjectValues = function(params) {
     const keys = Object.keys(params.obj);
 
     const sortedKeys = keys.sort(function(a,b){
-      return params.obj[a][params.sortKey] - params.obj[a][params.sortKey];
+      return params.obj[b][params.sortKey] - params.obj[a][params.sortKey];
     });
 
     if (keys.length !== undefined) {
@@ -583,6 +583,40 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       ));
 
       bestNetworkOutput = statsObj.bestNetwork.output;
+
+        // async.eachOf(sortedNetworkResults.sortedKeys, function genStatsTextArray(nnId, index, cb0){
+
+        //   statsTextArray[index] = statsTextObj[nnId];
+
+        //   async.setImmediate(function() { cb0(); });
+
+        // }, function(){
+
+        //   statsTextArray.length = Math.min(10, statsTextArray.length);
+        //   statsTextArray.unshift([
+        //     "NNID",
+        //     "SR",
+        //     "ATOT",
+        //     "AM",
+        //     "AMM",
+        //     "AMR",
+        //     "MFLAG",
+        //     "OUTPUT",
+        //     "TOT",
+        //     " M",
+        //     " MM",
+        //     " MR"
+        //   ]);
+
+        //   console.log(chalk.blue(
+        //       "\n-------------------------------------------------------------------------------"
+        //     + "\n" + title 
+        //     + "\n-------------------------------------------------------------------------------\n"
+        //     + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+        //     + "\n-------------------------------------------------------------------------------"
+        //   ));
+
+        // });
 
       if (previousBestNetworkId !== currentBestNetworkId) {
 
