@@ -137,6 +137,8 @@ let processUserQueue = [];
 let processUserQueueInterval;
 let processUserQueueReady = true;
 
+let updateNetworkStatsReady = true;
+
 let socket;
 let socketKeepAliveInterval;
 let saveFileQueueInterval;
@@ -1015,7 +1017,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
                   overallMatchRate:  networkObj.overallMatchRate
                 };
 
-                // saveFileQueue.push({folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj });
                 saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj }, function(){});
               }
             }
@@ -1091,7 +1092,6 @@ function loadBestNetworkDropboxFolder(folder, callback){
                   matchRate:  networkObj.matchRate
                 };
 
-                // saveFileQueue.push({folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj });
                 saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj }, function(){});
               }
             }
@@ -2439,6 +2439,9 @@ const processUserQueueEmpty = function(){
   return (processUserQueue.length === 0);
 };
 
+
+let waitFileSaveInterval;
+
 const fsmStates = {
   "RESET":{
     onEnter: function(event, oldState, newState){
@@ -2593,28 +2596,41 @@ const fsmStates = {
 
         console.log("TFE | SLACK TEXT: " + slackText);
 
+        clearInterval(waitFileSaveInterval);
+
         slackPostMessage(slackChannel, slackText);
 
-        setTimeout(function(){
+        waitFileSaveInterval = setInterval(function(){
 
-          randomNetworkTree.send({op: "RESET_STATS"}); 
-          childSendAll("RESET_TWITTER_USER_STATE");
+          if (saveFileQueue.length === 0) {
 
-          resetAllTwitterUserState(function(){
+            console.log(chalkAlert("ALL NNs SAVED ..."));
 
-            statsObj.users.totalFriendsCount = 0;
-            statsObj.users.totalFriendsProcessed = 0;
-            // statsObj.users.grandTotalFriendsFetched = 0;
-            statsObj.users.totalFriendsFetched = 0;
-            statsObj.users.totalPercentProcessed = 0;
-            statsObj.users.totalPercentFetched = 0;
-            statsObj.users.classifiedAuto = 0;
-            statsObj.users.classified = 0;
+            randomNetworkTree.send({op: "RESET_STATS"}); 
+            childSendAll("RESET_TWITTER_USER_STATE");
 
-            fsm.fsm_init();
-          });
+            resetAllTwitterUserState(function(){
 
-        }, 10000);
+              statsObj.users.totalFriendsCount = 0;
+              statsObj.users.totalFriendsProcessed = 0;
+              statsObj.users.totalFriendsFetched = 0;
+              statsObj.users.totalPercentProcessed = 0;
+              statsObj.users.totalPercentFetched = 0;
+              statsObj.users.classifiedAuto = 0;
+              statsObj.users.classified = 0;
+
+              clearInterval(waitFileSaveInterval);
+
+              fsm.fsm_init();
+            });
+          }
+          else {
+            console.log(chalkAlert("... WAITING FOR NNs TO BE SAVED ..."
+              + " | SAVE Q: " + saveFileQueue.length
+            ));
+          }
+
+        }, 5000);
 
       }
     },
@@ -3273,7 +3289,6 @@ function initSocket(cnf, callback){
               overallMatchRate:  networkObj.overallMatchRate
             };
 
-            // saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
             saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj }, function(){});
           }
         }
@@ -3901,6 +3916,8 @@ function saveNetworkHashMap(params, callback){
 
 function updateNetworkStats(params, callback) {
 
+  updateNetworkStatsReady = false;
+
   const nnIds = Object.keys(params.networkStatsObj);
 
   async.eachSeries(nnIds, function(nnId, cb) {
@@ -3935,6 +3952,7 @@ function updateNetworkStats(params, callback) {
     }
 
     saveNetworkHashMap({folder: folder, saveImmediate: params.saveImmediate}, function(){
+      updateNetworkStatsReady = true;
       if (callback !== undefined) { callback(err); }
     });
   });
@@ -3977,6 +3995,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
           updateNetworkStats({networkStatsObj: m.statsObj.loadedNetworks, saveImmediate: true}, function(){
             randomNetworkTreeMessageRxQueueReadyFlag = true;
+            updateNetworkStatsReady = true;
           });
 
         break;
@@ -4170,11 +4189,9 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
 
               file = currentBestNetwork.networkId + ".json";
 
-              // saveFileQueue.push({folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
               saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork }, function(){});
               saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj}, function(){});
 
-              // saveFileQueue.push({folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
             }
           }
           else {
@@ -4198,8 +4215,6 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
                 + " | " + m.previousBestMatchRate.toFixed(2) + "%"
                 + " | " + m.previousBestNetworkId + ".json"
               ));
-
-              // saveFileQueue.push({folder: bestNetworkFolder, file: m.previousBestNetworkId + ".json", obj: prevHmObj.network });
 
               file = m.previousBestNetworkId + ".json";
               saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: prevHmObj.network }, function(){});
