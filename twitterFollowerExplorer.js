@@ -3885,7 +3885,12 @@ function saveNetworkHashMap(params, callback){
 
     const file = nnId + ".json";
 
-    saveCache.set(file, {folder: folder, file: file, obj: networkObj.network }, function(){});
+    if (params.saveImmediate) {
+      saveFileQueue.push({folder: folder, file: file, obj: networkObj.network });
+    }
+    else {
+      saveCache.set(file, {folder: folder, file: file, obj: networkObj.network }, function(){});
+    }
 
     cb();
 
@@ -3894,16 +3899,16 @@ function saveNetworkHashMap(params, callback){
   });
 }
 
-function updateNetworkStats(networkStatsObj, callback) {
+function updateNetworkStats(params, callback) {
 
-  const nnIds = Object.keys(networkStatsObj);
+  const nnIds = Object.keys(params.networkStatsObj);
 
   async.eachSeries(nnIds, function(nnId, cb) {
 
     if (bestNetworkHashMap.has(nnId)) {
       let networkObj = bestNetworkHashMap.get(nnId);
-      networkObj.network.matchRate = networkStatsObj[nnId].matchRate;
-      networkObj.network.overallMatchRate = networkStatsObj[nnId].matchRate;
+      networkObj.network.matchRate = params.networkStatsObj[nnId].matchRate;
+      networkObj.network.overallMatchRate = params.networkStatsObj[nnId].matchRate;
       bestNetworkHashMap.set(nnId, networkObj);
       console.log(chalkNetwork("... UPDATED NN MATCHRATE"
         + " | MR: " + networkObj.network.matchRate.toFixed(2) + "%"
@@ -3929,7 +3934,7 @@ function updateNetworkStats(networkStatsObj, callback) {
       folder = configuration.testMode ? "/test" : localBestNetworkFolder;
     }
 
-    saveNetworkHashMap({folder: folder}, function(){
+    saveNetworkHashMap({folder: folder, saveImmediate: params.saveImmediate}, function(){
       if (callback !== undefined) { callback(err); }
     });
   });
@@ -3970,7 +3975,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             + "\n" + jsonPrint(Object.keys(m.statsObj))
           ));
 
-          updateNetworkStats(m.statsObj.loadedNetworks, function(){
+          updateNetworkStats({networkStatsObj: m.statsObj.loadedNetworks, saveImmediate: true}, function(){
             randomNetworkTreeMessageRxQueueReadyFlag = true;
           });
 
