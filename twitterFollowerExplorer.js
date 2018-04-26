@@ -4556,6 +4556,7 @@ function initRandomNetworkTree(callback){
 
   randomNetworkTree.on("error", function(err){
     randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeActivateQueueSize = 0;
     console.log(chalkError("*** randomNetworkTree ERROR *** : " + err));
     // console.log(chalkError("*** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
     if (!quitFlag) { quit({source: "RNT", error: err }); }
@@ -4563,12 +4564,14 @@ function initRandomNetworkTree(callback){
 
   randomNetworkTree.on("exit", function(err){
     randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeActivateQueueSize = 0;
     console.log(chalkError("*** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
     if (!quitFlag) { quit({source: "RNT", error: err }); }
   });
 
   randomNetworkTree.on("close", function(code){
     randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeActivateQueueSize = 0;
     console.log(chalkError("*** randomNetworkTree CLOSE *** | " + code));
     if (!quitFlag) { quit({source: "RNT", code: code }); }
   });
