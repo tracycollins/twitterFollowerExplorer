@@ -291,13 +291,14 @@ function generateNetworkInputIndexed(params, callback){
         if ((params.maxInputHashMap === undefined) 
           || (params.maxInputHashMap[inputType] === undefined)) {
 
-          console.log(chalkAlert("??? UNDEFINED??? params.maxInputHashMap." + inputType + " | " + inputName
-            + "\n" + Object.keys(params.maxInputHashMap)
-          ));
+          // console.log(chalkAlert("??? UNDEFINED??? params.maxInputHashMap." + inputType + " | " + inputName
+          //   + "\n" + Object.keys(params.maxInputHashMap)
+          // ));
 
           networkInput[indexOffset + index] = 1;
 
-          console.log(chalkLog("RNT | ??? UNDEFINED GENERATE NET INPUT"
+          console.log(chalkLog("RNT | ??? UNDEFINED MAX INPUT"
+            + " | IN ID: " + params.inputsObj.inputsId
             + " | IN LENGTH: " + networkInput.length
             + " | @" + params.userScreenName
             + " | TYPE: " + inputType
@@ -383,6 +384,7 @@ function activateNetwork2(user, callback){
     }
 
     const params = {
+      networkId: networkObj.networkId,
       userScreenName: user.screenName,
       histograms: userHistograms,
       languageAnalysis: languageAnalysis,
@@ -559,12 +561,12 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: 250})
     .then(function(sortedNetworkResults){
 
-      let bnId = sortedNetworkResults.sortedKeys[0];
+      let currentBestNetworkId = sortedNetworkResults.sortedKeys[0];
 
-      if (bnId === "multiNeuralNet") { bnId = sortedNetworkResults.sortedKeys[1]; }
+      // if (bnId === "multiNeuralNet") { bnId = sortedNetworkResults.sortedKeys[1]; }
       
       statsObj.bestNetwork = {};
-      statsObj.bestNetwork = statsObj.loadedNetworks[bnId];
+      statsObj.bestNetwork = statsObj.loadedNetworks[currentBestNetworkId];
 
       debug(chalkAlert("sortedNetworkResults.sortedKeys\n" + jsonPrint(sortedNetworkResults.sortedKeys)));
 
@@ -582,7 +584,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
       bestNetworkOutput = statsObj.bestNetwork.output;
 
-      if ((statsObj.bestNetwork.networkId !== undefined) && (previousBestNetworkId !== statsObj.bestNetwork.networkId)) {
+      if (previousBestNetworkId !== currentBestNetworkId) {
 
         console.log(chalkAlert("\n==================================================================\n"
           + "*** NEW BEST NETWORK ***"
@@ -598,7 +600,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
         async.eachOf(sortedNetworkResults.sortedKeys, function genStatsTextArray(nnId, index, cb0){
 
-          if (nnId !== "multiNeuralNet") { statsTextArray[index] = statsTextObj[nnId]; }
+          statsTextArray[index] = statsTextObj[nnId];
 
           async.setImmediate(function() { cb0(); });
 
@@ -636,7 +638,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
         process.send({
           op: "BEST_MATCH_RATE", 
-          networkId: statsObj.bestNetwork.networkId, 
+          networkId: currentBestNetworkId, 
           matchRate: statsObj.bestNetwork.matchRate,
           overallMatchRate: statsObj.bestNetwork.overallMatchRate,
           successRate: statsObj.bestNetwork.successRate, 
@@ -646,7 +648,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           previousBestMatchRate: previousBestNetworkMatchRate
         });
 
-        previousBestNetworkId = statsObj.bestNetwork.networkId;
+        previousBestNetworkId = currentBestNetworkId;
       }
 
       let results = {};
