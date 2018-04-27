@@ -2528,7 +2528,7 @@ const fsmStates = {
 
             console.log(chalkAlert("ALL NNs SAVED ..."));
 
-            randomNetworkTree.send({op: "RESET_STATS"}); 
+            if (randomNetworkTree ) { randomNetworkTree.send({op: "RESET_STATS"}); }
             childSendAll("RESET_TWITTER_USER_STATE");
 
             resetAllTwitterUserState(function(){
