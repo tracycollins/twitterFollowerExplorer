@@ -2099,12 +2099,20 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
         }
         else {
 
-          if (typeof user.threeceeFollowing === "boolean") {
+          if ((typeof user.threeceeFollowing === "object") || (typeof user.threeceeFollowing === "boolean")){
             console.log(chalkAlert(">>> CONVERT TO STRING | USER @" + user.screenName
               + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
               + " | threeceeFollowing: " + user.threeceeFollowing
             ));
-            user.threeceeFollowing = new String(threeceeUser);
+
+            let newUser = new User(user);
+            newUser.threeceeFollowing = threeceeUser;
+            user = new User(newUser);
+
+            console.log(chalkAlert("... CONVERTED STRING | USER @" + user.screenName
+              + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
+              + " | threeceeFollowing: " + user.threeceeFollowing
+            ));
           }
           else {
             user.threeceeFollowing = threeceeUser;
