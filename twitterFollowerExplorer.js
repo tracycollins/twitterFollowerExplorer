@@ -2118,61 +2118,70 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
             user.threeceeFollowing = threeceeUser;
           }
 
-          user.following = true;
+          user.save()
+          .then(function(updatedUser){
 
-          let catObj = {};
+            updatedUser.following = true;
 
-          catObj.manual = user.category || false;
-          catObj.auto = user.categoryAuto || false;
+            let catObj = {};
 
-          categorizedUserHashMap.set(user.nodeId, catObj);
+            catObj.manual = updatedUser.category || false;
+            catObj.auto = updatedUser.categoryAuto || false;
+
+            categorizedUserHashMap.set(updatedUser.nodeId, catObj);
 
 
-          if (user.name !== userIn.name) {
-            user.name = userIn.name;
-          }
-          
-          if (user.screenName !== userIn.screen_name) {
-            user.screenName = userIn.screen_name;
-            user.screenNameLower = userIn.screen_name.toLowerCase();
-          }
-          
-          if (user.url !== userIn.url) {
-            user.url = userIn.url;
-          }
-          
-          if (user.profileImageUrl !== userIn.profileImageUrl) {
-            user.profileImageUrl = userIn.profileImageUrl;
-          }
-          
-          if (user.bannerImageUrl !== userIn.bannerImageUrl) {
-            user.bannerImageUrl = userIn.bannerImageUrl;
-           }
-          
-          if (user.description !== userIn.description) {
-            user.description = userIn.description;
-          }
-          
-          if ((user.status !== undefined) && (userIn.status !== undefined) && user.status.id_str && userIn.status.id_str && (user.status.id_str !== userIn.status.id_str)) {
-            user.status = userIn.status;
-          }
-          
-          if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)){
-            user.followersCount = userIn.followers_count;
-            updateCountHistory = true;
-          }
+            if (updatedUser.name !== userIn.name) {
+              updatedUser.name = userIn.name;
+            }
+            
+            if (updatedUser.screenName !== userIn.screen_name) {
+              updatedUser.screenName = userIn.screen_name;
+              updatedUser.screenNameLower = userIn.screen_name.toLowerCase();
+            }
+            
+            if (updatedUser.url !== userIn.url) {
+              updatedUser.url = userIn.url;
+            }
+            
+            if (updatedUser.profileImageUrl !== userIn.profileImageUrl) {
+              updatedUser.profileImageUrl = userIn.profileImageUrl;
+            }
+            
+            if (updatedUser.bannerImageUrl !== userIn.bannerImageUrl) {
+              updatedUser.bannerImageUrl = userIn.bannerImageUrl;
+             }
+            
+            if (updatedUser.description !== userIn.description) {
+              updatedUser.description = userIn.description;
+            }
+            
+            if ((updatedUser.status !== undefined) && (userIn.status !== undefined) && updatedUser.status.id_str && userIn.status.id_str && (updatedUser.status.id_str !== userIn.status.id_str)) {
+              updatedUser.status = userIn.status;
+            }
+            
+            if ((userIn.followers_count !== undefined) && (updatedUser.followersCount !== userIn.followers_count)){
+              updatedUser.followersCount = userIn.followers_count;
+              updateCountHistory = true;
+            }
 
-          if ((userIn.friends_count !== undefined) && (user.friendsCount !== userIn.friends_count)){
-            user.friendsCount = userIn.friends_count;
-            updateCountHistory = true;
-          }
+            if ((userIn.friends_count !== undefined) && (updatedUser.friendsCount !== userIn.friends_count)){
+              updatedUser.friendsCount = userIn.friends_count;
+              updateCountHistory = true;
+            }
 
-          if ((userIn.statuses_count !== undefined) && (user.statusesCount !== userIn.statuses_count)){
-            user.statusesCount = userIn.statuses_count;
-            updateCountHistory = true;
-          }
+            if ((userIn.statuses_count !== undefined) && (updatedUser.statusesCount !== userIn.statuses_count)){
+              updatedUser.statusesCount = userIn.statuses_count;
+              updateCountHistory = true;
+            }
 
-          cb(null, user);
+            cb(null, updatedUser);
+
+          })
+          .catch(function(err){
+            cb(err, user);
+          });
+
         }
       });
     },
