@@ -1987,6 +1987,8 @@ function quit(cause){
   if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
     randomNetworkTree.send({op: "STATS"}); 
     randomNetworkTree.send({op: "QUIT"}); 
+    randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeReadyFlag = true;
   }
 
   console.log( "\nTFE | ... QUITTING ..." );
@@ -2014,12 +2016,12 @@ function quit(cause){
 
     if (!saveFileBusy 
       && !randomNetworkTreeBusyFlag
+      && randomNetworkTreeReadyFlag
       && (saveFileQueue.length === 0)
       && (langAnalyzerMessageRxQueue.length === 0)
       && (randomNetworkTreeMessageRxQueue.length === 0)
       && (userDbUpdateQueue.length === 0)
       && randomNetworkTreeMessageRxQueueReadyFlag
-      && randomNetworkTreeReadyFlag
       && languageAnalysisReadyFlag
       && userDbUpdateQueueReadyFlag
       ){
@@ -2047,6 +2049,8 @@ function quit(cause){
       if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
         randomNetworkTree.send({op: "STATS"}); 
         randomNetworkTree.send({op: "QUIT"}); 
+        randomNetworkTreeBusyFlag = false;
+        randomNetworkTreeReadyFlag = true;
       }
       
       console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
@@ -2762,8 +2766,10 @@ function showStats(options){
       + " | FSM: " + fsm.getMachineState()
     ));
 
+// RNT READY:
     console.log(chalkLog("... RNT S"
       + " | BUSY: " + randomNetworkTreeBusyFlag
+      + " | READY: " + randomNetworkTreeReadyFlag
       + " | RAQ: " + randomNetworkTreeActivateQueueSize
     ));
 
@@ -4571,6 +4577,7 @@ function initRandomNetworkTree(callback){
 
   randomNetworkTree.on("error", function(err){
     randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeReadyFlag = true;
     randomNetworkTreeActivateQueueSize = 0;
     console.log(chalkError("*** randomNetworkTree ERROR *** : " + err));
     // console.log(chalkError("*** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
@@ -4579,6 +4586,7 @@ function initRandomNetworkTree(callback){
 
   randomNetworkTree.on("exit", function(err){
     randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeReadyFlag = true;
     randomNetworkTreeActivateQueueSize = 0;
     console.log(chalkError("*** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
     if (!quitFlag) { quit({source: "RNT", error: err }); }
@@ -4586,6 +4594,7 @@ function initRandomNetworkTree(callback){
 
   randomNetworkTree.on("close", function(code){
     randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeReadyFlag = true;
     randomNetworkTreeActivateQueueSize = 0;
     console.log(chalkError("*** randomNetworkTree CLOSE *** | " + code));
     if (!quitFlag) { quit({source: "RNT", code: code }); }
