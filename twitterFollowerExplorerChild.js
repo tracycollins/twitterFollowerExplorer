@@ -358,12 +358,6 @@ function fetchFriends(params, callback) {
     twitClient.get("friends/list", params, function(err, data, response){
 
       if (err) {
-        console.log(chalkError(getTimeStamp()
-          + " | @" + threeceeUser
-          + " | *** ERROR GET TWITTER FRIENDS: " + err
-          + " | ERR CODE: " + err.code
-        ));
-
         if (err.code === 88){
           console.log(chalkAlert("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
             + " | " + getTimeStamp() 
@@ -375,8 +369,17 @@ function fetchFriends(params, callback) {
           checkRateLimit({user: threeceeUser});
           // fsmPreviousState = (fsm.getMachineState() !== "PAUSE_RATE_LIMIT") ? fsm.getMachineState() : fsmPreviousState;
           fsm.fsm_rateLimitStart();
+          return(callback(err, []));
         }
-        callback(err, []);
+        console.log(chalkError(getTimeStamp()
+          + " | @" + threeceeUser
+          + " | *** ERROR GET TWITTER FRIENDS: " + err
+          + " | ERR CODE: " + err.code
+          + " | RESPONSE: " + jsonPrint(response)
+        ));
+        fsm.fsm_error();
+
+        callback(err, null);
       }
       else {
 
@@ -564,6 +567,7 @@ const fsmStates = {
       fetchFriends(params, function(err, results){
         if (err) {
           console.log(chalkError("fetchFriends ERROR: " + err));
+
         }
         else {
           if (statsObj.threeceeUser.nextCursorValid && !statsObj.threeceeUser.endFetch) {
