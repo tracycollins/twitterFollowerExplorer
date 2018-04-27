@@ -820,7 +820,7 @@ function updateGlobalHistograms(callback){
         let valB;
 
         const sortedKeys = keys.sort(function(a,b){
-          if (currentHistogram[a] !== null && typeof currentHistogram[a] === "object") {
+          if ((currentHistogram[a] !== null) && (typeof currentHistogram[a] === "object")) {
             valA = currentHistogram[a].total;
             valB = currentHistogram[b].total;
             return valB - valA;
@@ -1249,7 +1249,7 @@ function loadBestNeuralNetworkFile(callback){
           console.log(chalkError("initRandomNetworks ERROR: " + err));
         }
 
-        if (loadedNetworksFlag && !networksSentFlag && (randomNetworkTree !== undefined) && (Object.keys(ranNetObj).length > 0)) {
+        if (loadedNetworksFlag && !networksSentFlag && (randomNetworkTree && (randomNetworkTree !== undefined)) && (Object.keys(ranNetObj).length > 0)) {
           // console.log(chalkBlue("SEND RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
 
           networksSentFlag = true;
@@ -1260,7 +1260,7 @@ function loadBestNeuralNetworkFile(callback){
           });
         }
         else {
-          const randomNetworkTreeDefined = (randomNetworkTree !== undefined);
+          const randomNetworkTreeDefined = (randomNetworkTree && (randomNetworkTree !== undefined));
           console.log(chalkAlert("*** RANDOM NETWORKS NOT SENT"
             + " | NNs: " + Object.keys(ranNetObj).length
             + " | randomNetworkTree: " + randomNetworkTreeDefined
@@ -1378,7 +1378,7 @@ runEnableArgs.categorizedUserHashMapReadyFlag = categorizedUserHashMapReadyFlag;
 
 function runEnable(displayArgs) {
 
-  if (randomNetworkTree !== undefined) { 
+  if (randomNetworkTree && (randomNetworkTree !== undefined)) { 
     randomNetworkTree.send({op: "GET_BUSY"});
   }
   else {
@@ -1627,14 +1627,8 @@ function updateHistograms(params, callback) {
   async.each(inputHistogramTypes, function(type, cb0){
 
     if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
-    // if (maxInputsHashMap[type] === undefined) { maxInputsHashMap[type] = {}; }
 
     const inputHistogramTypeItems = Object.keys(histograms[type]);
-
-    // debug(chalkInfo("USC | @" + user.screenName 
-    //   + " | " + type 
-    //   + " | NUM: " + inputHistogramTypeItems.length
-    // ));
 
     async.each(inputHistogramTypeItems, function(item, cb1){
 
@@ -1644,20 +1638,6 @@ function updateHistograms(params, callback) {
       else if (params.accumulateFlag) {
         user.histograms[type][item] += histograms[type][item];
       }
-
-      // if (maxInputsHashMap[type][item] === undefined) { 
-      //   maxInputsHashMap[type][item] = user.histograms[type][item]; 
-      // }
-      // else {
-      //   maxInputsHashMap[type][item] = Math.max(maxInputsHashMap[type][item], user.histograms[type][item]);
-      // }
-
-      // debug(chalkInfo("USC | @" + user.screenName 
-      //   + " | " + type 
-      //   + " | TOT: " + user.histograms[type][item]
-      //   + " | IN: " + histograms[type][item] 
-      //   + " | " + item 
-      // ));
 
       async.setImmediate(function() {
         cb1();
@@ -1984,7 +1964,7 @@ function quit(cause){
     randomNetworkTreeReadyFlag = true;
   }
   
-  if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
+  if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) { 
     randomNetworkTree.send({op: "STATS"}); 
     randomNetworkTree.send({op: "QUIT"}); 
     randomNetworkTreeBusyFlag = false;
@@ -2046,7 +2026,7 @@ function quit(cause){
       }, 5000);
     }
     else {
-      if (cause && (cause.source !== "RNT") && (randomNetworkTree !== undefined)) { 
+      if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) { 
         randomNetworkTree.send({op: "STATS"}); 
         randomNetworkTree.send({op: "QUIT"}); 
         randomNetworkTreeBusyFlag = false;
@@ -2119,6 +2099,19 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
         }
         else {
 
+          if (typeof user.threeceeFollowing === "boolean") {
+            console.log(chalkAlert(">>> CONVERT TO STRING | USER @" + user.screenName
+              + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
+              + " | threeceeFollowing: " + user.threeceeFollowing
+            ));
+            user.threeceeFollowing = new String(threeceeUser);
+          }
+          else {
+            user.threeceeFollowing = threeceeUser;
+          }
+
+          user.following = true;
+
           let catObj = {};
 
           catObj.manual = user.category || false;
@@ -2126,53 +2119,34 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
 
           categorizedUserHashMap.set(user.nodeId, catObj);
 
-          user.following = true;
-          user.threeceeFollowing = threeceeUser;
-
-          // user.modified = false;
-          // user.modifiedObj = {};
 
           if (user.name !== userIn.name) {
             user.name = userIn.name;
-            // user.modified = moment();
-            // user.modifiedObj.name = true;
           }
           
           if (user.screenName !== userIn.screen_name) {
             user.screenName = userIn.screen_name;
             user.screenNameLower = userIn.screen_name.toLowerCase();
-            // user.modified = moment();
-            // user.modifiedObj.screenName = true;
           }
           
           if (user.url !== userIn.url) {
             user.url = userIn.url;
-            // user.modified = moment();
-            // user.modifiedObj.url = true;
           }
           
           if (user.profileImageUrl !== userIn.profileImageUrl) {
             user.profileImageUrl = userIn.profileImageUrl;
-            // user.modified = moment();
-            // user.modifiedObj.profileImageUrl = true;
           }
           
           if (user.bannerImageUrl !== userIn.bannerImageUrl) {
             user.bannerImageUrl = userIn.bannerImageUrl;
-            // user.modified = moment();
-            // user.modifiedObj.bannerImageUrl = true;
-          }
+           }
           
           if (user.description !== userIn.description) {
             user.description = userIn.description;
-            // user.modified = moment();
-            // user.modifiedObj.description = true;
           }
           
           if ((user.status !== undefined) && (userIn.status !== undefined) && user.status.id_str && userIn.status.id_str && (user.status.id_str !== userIn.status.id_str)) {
             user.status = userIn.status;
-            // user.modified = moment();
-            // user.modifiedObj.status = true;
           }
           
           if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)){
@@ -2189,51 +2163,6 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
             user.statusesCount = userIn.statuses_count;
             updateCountHistory = true;
           }
-
-          // debug(chalkInfo("USER DB HIT "
-          //   + " | CM: " + printCat(user.category)
-          //   + " | CA: " + printCat(user.categoryAuto)
-          //   + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
-          //   + " | FLWg: " + padEnd(user.following, 5)
-          //   + " | FLWRs: " + padStart(user.followersCount, 7)
-          //   + " | FRNDs: " + padStart(user.friendsCount, 7)
-          //   + " | Ts: " + padStart(user.statusesCount, 7)
-          //   + " | LAd: " + padEnd(user.languageAnalyzed, 5)
-          //   + " | CR: " + getTimeStamp(user.createdAt)
-          //   + " | @" + padEnd(user.screenName.toLowerCase(), 20)
-          //   + " | " + user.nodeId
-          // ));
-
-          // if (user.modified) {
-          //   debug(chalkInfo("USER DB HIT | * MODIFIED *"
-          //     + " | CM: " + printCat(user.category)
-          //     + " | CA: " + printCat(user.categoryAuto)
-          //     + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
-          //     + " | FLWg: " + padEnd(user.following, 5)
-          //     + " | FLWRs: " + padStart(user.followersCount, 7)
-          //     + " | FRNDs: " + padStart(user.friendsCount, 7)
-          //     + " | Ts: " + padStart(user.statusesCount, 7)
-          //     + " | LAd: " + padEnd(user.languageAnalyzed, 5)
-          //     + " | CR: " + getTimeStamp(user.createdAt)
-          //     + " | @" + padEnd(user.screenName.toLowerCase(), 20)
-          //     + " | " + Object.keys(user.modifiedObj)
-          //   ));
-          // }
-          // else {
-          //   debug(chalkInfo("USER DB HIT | - NO CHANGE "
-          //     + " | CM: " + printCat(user.category)
-          //     + " | CA: " + printCat(user.categoryAuto)
-          //     + " | 3CF: " + padEnd(user.threeceeFollowing, 10)
-          //     + " | FLWg: " + padEnd(user.following, 5)
-          //     + " | FLWRs: " + padStart(user.followersCount, 7)
-          //     + " | FRNDs: " + padStart(user.friendsCount, 7)
-          //     + " | Ts: " + padStart(user.statusesCount, 7)
-          //     + " | LAd: " + padEnd(user.languageAnalyzed, 5)
-          //     + " | CR: " + getTimeStamp(user.createdAt)
-          //     + " | @" + padEnd(user.screenName.toLowerCase(), 20)
-          //     + " | " + Object.keys(user.modifiedObj)
-          //   ));
-          // }
 
           cb(null, user);
         }
@@ -2336,15 +2265,6 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
           cb(err, user);
         }
         else {
-          // debug(chalkInfo("CLU U"
-          //   + " | @" + u.screenName.toLowerCase()
-          //   + " | " + u.nodeId
-          //   + " | " + getTimeStamp(u.createdAt)
-          //   + " | FLWg: " + u.following
-          //   + " | 3CF: " + u.threeceeFollowing
-          //   + " | C: " + u.category
-          //   + " | CA: " + u.categoryAuto
-          // ));
           cb(null, u);
         }
 
@@ -2356,9 +2276,7 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
       if (!neuralNetworkInitialized) { return(cb(null, user)); }
 
       generateAutoCategory({updateCountHistory: updateCountHistory}, user, function (err, uObj){
-
         cb(err, uObj);
-
       });
     }
 
@@ -2721,7 +2639,7 @@ console.log("=================================");
 
 process.on("exit", function() {
   if (langAnalyzer !== undefined) { langAnalyzer.kill("SIGINT"); }
-  if (randomNetworkTree !== undefined) { randomNetworkTree.kill("SIGINT"); }
+  if (randomNetworkTree && (randomNetworkTree !== undefined)) { randomNetworkTree.kill("SIGINT"); }
 });
 
 process.on("message", function(msg) {
@@ -4579,8 +4497,9 @@ function initRandomNetworkTree(callback){
     randomNetworkTreeBusyFlag = false;
     randomNetworkTreeReadyFlag = true;
     randomNetworkTreeActivateQueueSize = 0;
+    randomNetworkTree = null;
     console.log(chalkError("*** randomNetworkTree ERROR *** : " + err));
-    // console.log(chalkError("*** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
+    console.log(chalkError("*** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
     if (!quitFlag) { quit({source: "RNT", error: err }); }
   });
 
@@ -4588,6 +4507,7 @@ function initRandomNetworkTree(callback){
     randomNetworkTreeBusyFlag = false;
     randomNetworkTreeReadyFlag = true;
     randomNetworkTreeActivateQueueSize = 0;
+    randomNetworkTree = null;
     console.log(chalkError("*** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
     if (!quitFlag) { quit({source: "RNT", error: err }); }
   });
@@ -4596,6 +4516,7 @@ function initRandomNetworkTree(callback){
     randomNetworkTreeBusyFlag = false;
     randomNetworkTreeReadyFlag = true;
     randomNetworkTreeActivateQueueSize = 0;
+    randomNetworkTree = null;
     console.log(chalkError("*** randomNetworkTree CLOSE *** | " + code));
     if (!quitFlag) { quit({source: "RNT", code: code }); }
   });
