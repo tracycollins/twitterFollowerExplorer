@@ -1047,7 +1047,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
 
           if (
-               ((networkObj.successRate >= configuration.minSuccessRate) && (networkObj.overallMatchRate === 0))
+               // ((networkObj.successRate >= configuration.minSuccessRate) && (networkObj.overallMatchRate === 0))
+               (networkObj.overallMatchRate === 0)
             || (networkObj.overallMatchRate >= configuration.minMatchRate)
             || (configuration.testMode && (networkObj.successRate >= 0.5*configuration.minSuccessRate) && (networkObj.overallMatchRate === 0))
             || (configuration.testMode && (networkObj.overallMatchRate >= 0.5*configuration.minMatchRate))
