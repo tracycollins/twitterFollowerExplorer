@@ -200,7 +200,7 @@ currentBestNetwork.overallMatchRate = 0;
 let previousRandomNetworksHashMap = {};
 let availableNeuralNetHashMap = {};
 
-const LANGUAGE_ANALYZE_INTERVAL = 1000;
+const LANGUAGE_ANALYZE_INTERVAL = 100;
 const RANDOM_NETWORK_TREE_INTERVAL = 1;
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
@@ -404,8 +404,6 @@ const Dropbox = require("./js/dropbox").Dropbox;
 const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
 let fsmPreviousState = "IDLE";
-// let fsmPreviousPauseState;
-
 
 // ==================================================================
 // NN CACHE
@@ -518,29 +516,26 @@ function resetTwitterUserState(user, callback){
     + " | @" + user
   ));
 
-  // tfeChildHashMap[user].child.send({op: "INIT"}, function(){
+  if (statsObj.user[user] === undefined) {
+    statsObj.user[user] = {};
+  }
 
-    if (statsObj.user[user] === undefined) {
-      statsObj.user[user] = {};
-    }
+  statsObj.user[user].endFetch = true;
+  statsObj.user[user].nextCursor = false;
+  statsObj.user[user].nextCursorValid = false;
+  statsObj.user[user].totalFriendsFetched = 0;
+  statsObj.user[user].twitterRateLimit = 0;
+  statsObj.user[user].twitterRateLimitExceptionFlag = false;
+  statsObj.user[user].twitterRateLimitRemaining = 0;
+  statsObj.user[user].twitterRateLimitRemainingTime = 0;
+  statsObj.user[user].twitterRateLimitResetAt = moment();
+  statsObj.user[user].friendsProcessed = 0;
+  statsObj.user[user].percentProcessed = 0;
+  statsObj.user[user].friendsProcessStart = moment();
+  statsObj.user[user].friendsProcessEnd = moment();
+  statsObj.user[user].friendsProcessElapsed = 0;
 
-    statsObj.user[user].endFetch = true;
-    statsObj.user[user].nextCursor = false;
-    statsObj.user[user].nextCursorValid = false;
-    statsObj.user[user].totalFriendsFetched = 0;
-    statsObj.user[user].twitterRateLimit = 0;
-    statsObj.user[user].twitterRateLimitExceptionFlag = false;
-    statsObj.user[user].twitterRateLimitRemaining = 0;
-    statsObj.user[user].twitterRateLimitRemainingTime = 0;
-    statsObj.user[user].twitterRateLimitResetAt = moment();
-    statsObj.user[user].friendsProcessed = 0;
-    statsObj.user[user].percentProcessed = 0;
-    statsObj.user[user].friendsProcessStart = moment();
-    statsObj.user[user].friendsProcessEnd = moment();
-    statsObj.user[user].friendsProcessElapsed = 0;
-
-    if (callback !== undefined) { callback(); }
-  // });
+  if (callback !== undefined) { callback(); }
 }
 
 function resetAllTwitterUserState(callback){
@@ -2670,7 +2665,6 @@ process.on("message", function(msg) {
 
     clearInterval(langAnalyzerMessageRxQueueInterval);
     clearInterval(randomNetworkTreeMessageRxQueueInterval);
-    // clearInterval(checkRateLimitInterval);
     clearInterval(statsUpdateInterval);
 
     setTimeout(function() {
@@ -3326,7 +3320,6 @@ function initTwitterFollowerChild(twitterConfig, callback){
       }
       return;
     }
-
 
     switch(m.op) {
 

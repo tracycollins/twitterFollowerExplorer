@@ -14,7 +14,6 @@ let analyzeLanguageInterval;
 let statsUpdateInterval;
 
 const Language = require("@google-cloud/language");
-// const languageClient = Language();
 const languageClient = new Language.LanguageServiceClient();
 
 let rxLangObjQueue = [];
@@ -34,12 +33,10 @@ require("isomorphic-fetch");
 // const Dropbox = require('dropbox').Dropbox;
 const Dropbox = require("./js/dropbox").Dropbox;
 const NodeCache = require("node-cache");
-const async = require("async");
 const debug = require("debug")("la");
 const debugLang = require("debug")("lang");
 const debugCache = require("debug")("cache");
 const debugQ = require("debug")("queue");
-
 
 let hostname = os.hostname();
 hostname = hostname.replace(/\.home/g, "");
@@ -55,9 +52,6 @@ const chalkWarn = chalk.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 const chalkConnect = chalk.blue;
-
-
-// let resetInProgressFlag = false;
 
 const jsonPrint = function (obj){
   if (obj) {
@@ -148,29 +142,9 @@ function quit(message) {
   process.exit();
 }
 
-// const testText = "This is a test of this universe!";
-// // const type = languageClient.types.Document.Type.PLAIN_TEXT;
-// const testDocument = {
-//   "content": testText,
-//   type: "PLAIN_TEXT"
-// };
-
-// // const testDocument = languageClient.document("This is a test of this universe!");
-// languageClient.analyzeSentiment({document: testDocument}).then(function(responses) {
-//     const response = responses[0];
-//     console.log(chalkInfo("=========================\nLANGUAGE TEST\n" + jsonPrint(response)));
-//     // quit();
-// })
-// .catch(function(err) {
-//     console.error(chalkError("*** LANGUAGE TEST ERROR: " + err));
-//     quit();
-// });
-
 function analyzeLanguage(langObj, callback){
 
   debug(chalkAlert("analyzeLanguage\n" + jsonPrint(langObj)));
-
-  // const document = languageClient.document(langObj.text);
 
   const document = {
     "content": langObj.text,
@@ -206,8 +180,6 @@ function analyzeLanguage(langObj, callback){
     if (callback !== undefined) { callback(err, results); }
   });
 }
-
-
 
 function initAnalyzeLanguageInterval(interval){
 
@@ -396,7 +368,6 @@ function initAnalyzeLanguageInterval(interval){
   }, interval);
 }
 
-
 process.on("SIGHUP", function() {
   quit("SIGHUP");
 });
@@ -404,6 +375,13 @@ process.on("SIGHUP", function() {
 process.on("SIGINT", function() {
   quit("SIGINT");
 });
+
+
+const testText = "This is a test of this universe!";
+const testDocument = {
+  "content": testText,
+  type: "PLAIN_TEXT"
+};
 
 
 process.on("message", function(m) {
@@ -421,12 +399,6 @@ process.on("message", function(m) {
       ));
 
       initAnalyzeLanguageInterval(m.interval);
-
-      const testText = "This is a test of this universe!";
-      const testDocument = {
-        "content": testText,
-        type: "PLAIN_TEXT"
-      };
 
       languageClient.analyzeSentiment({document: testDocument}).then(function(responses) {
           const response = responses[0];
@@ -465,10 +437,6 @@ process.on("message", function(m) {
   }
 });
 
-
-
-
-
 wordCache.on("set", function(word, wordObj) {
   debug(chalkLog("WORD CACHE SET"
     + " | " + word 
@@ -492,35 +460,7 @@ wordCache.on("expired", function(word, wordObj) {
   }
 });
 
-
-
-// ==================================================================
-// GOOGLE TRANSLATE
-// ==================================================================
-// const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyAo5FYOZGoZqPNEhGQdf_wofZrC_DHbOyc";
-// const googleTranslate = require("google-translate")(GOOGLE_API_KEY);
-
-// googleTranslate.translate("My name is Brandon", "es", function(err, translation) {
-//   console.log(translation.translatedText);
-//   // =>  Mi nombre es Brandon
-// });
-
-// ==================================================================
-// DROPBOX
-// ==================================================================
-
-// const DROPBOX_DEFAULT_SEARCH_TERM_FILES_DIR;
-
-// if (process.env.DROPBOX_DEFAULT_SEARCH_TERM_FILES_DIR !== undefined) {
-//   DROPBOX_DEFAULT_SEARCH_TERM_FILES_DIR = process.env.DROPBOX_DEFAULT_SEARCH_TERM_FILES_DIR + "/usa" ;
-// }
-// else {
-//   DROPBOX_DEFAULT_SEARCH_TERM_FILES_DIR = "/config/searchTerms/usa" ;
-// }
-
 const DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
-const DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY ;
-const DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
 const DROPBOX_LA_CONFIG_FILE = process.env.DROPBOX_LA_CONFIG_FILE || "languageAnalyzerConfig.json";
 const DROPBOX_LA_STATS_FILE = process.env.DROPBOX_LA_STATS_FILE || "languageAnalyzerStats.json";
 
@@ -537,10 +477,6 @@ debug("dropboxConfigFile : " + dropboxConfigFile);
 
 debug("statsFolder : " + statsFolder);
 debug("statsFile : " + statsFile);
-
-// console.log("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN);
-// console.log("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
-// console.log("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
@@ -560,7 +496,6 @@ function getTimeStamp(inputTime) {
     return currentTimeStamp;
   }
 }
-
 
 function saveFile (path, file, jsonObj, callback){
 
@@ -638,7 +573,6 @@ function initStatsUpdate(cnf){
     saveFile(statsFolder, statsFile, statsObj);
 
   }, cnf.statsUpdateIntervalTime);
-
 }
 
 function initialize(cnf, callback){
@@ -664,8 +598,6 @@ function initialize(cnf, callback){
 
   callback(null, cnf);
 }
-
-
 
 setTimeout(function(){
 
