@@ -2526,6 +2526,8 @@ const fsmStates = {
 
         console.log(chalkAlert("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
 
+        loadedNetworksFlag = false;
+
         randomNetworkTree.send({op: "GET_STATS"}); 
 
         let slackText = "\n*FETCH END*"; 
