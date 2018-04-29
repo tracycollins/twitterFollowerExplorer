@@ -1591,7 +1591,7 @@ function enableAnalysis(user, languageAnalysis){
 
 function activateNetwork(obj){
 
-  if (randomNetworkTreeReadyFlag) {
+  if ((randomNetworkTree !== undefined) && randomNetworkTreeReadyFlag) {
     randomNetworkTree.send({op: "ACTIVATE", obj: obj});
   }
 }
@@ -3568,9 +3568,9 @@ function initStdIn(){
   stdin.on( "data", function( key ){
 
     switch (key) {
-      case "\u0003":
-        process.exit();
-      break;
+      // case "\u0003":
+      //   process.exit();
+      // break;
       case "a":
         abortCursor = true;
         console.log(chalkAlert("ABORT: " + abortCursor));

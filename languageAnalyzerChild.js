@@ -604,7 +604,7 @@ setTimeout(function(){
   initialize(configuration, function(err, cnf){
     if (err && (err.status !== 404)) {
       console.error(chalkError("LAC ***** INIT ERROR *****\n" + jsonPrint(err)));
-      quit();
+      quit("INIT ERROR");
     }
     console.log(chalkInfo(cnf.processName + " STARTED " + getTimeStamp() + "\n"));
     initStatsUpdate(cnf);
