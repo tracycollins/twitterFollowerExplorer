@@ -105,7 +105,7 @@ function slackPostMessage(channel, text, callback){
     channel: channel
   }, function(err, response){
     if (err){
-      console.error(chalkError("*** SLACK POST MESSAGE ERROR\n" + err));
+      console.log(chalkError("*** SLACK POST MESSAGE ERROR\n" + err));
     }
     else {
       debug(response);
@@ -158,7 +158,7 @@ let userServerReady = false;
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const dbConnection = wordAssoDb();
 
-dbConnection.on("error", console.error.bind(console, "connection error:"));
+dbConnection.on("error", console.log.bind(console, "connection error:"));
 
 dbConnection.once("open", function() {
   console.log(chalkAlert("TFE | CONNECT: TWEET SERVER MONGOOSE DEFAULT CONNECTION OPEN"));
@@ -586,7 +586,6 @@ function loadFile(path, file, callback) {
       debug(chalkLog(getTimeStamp()
         + " | LOADING FILE FROM DROPBOX FILE"
         + " | " + fullPath
-        // + "\n" + jsonPrint(data)
       ));
 
       if (file.match(/\.json$/gi)) {
@@ -636,17 +635,17 @@ function loadFile(path, file, callback) {
       console.log(chalkError("TFE | " + jsonPrint(error.error)));
 
       if (error.status === 404) {
-        console.error(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
+        console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
           + " ... SKIPPING ...")
         );
         return(callback(null, null));
       }
       if (error.status === 409) {
-        console.error(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"));
+        console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"));
         return(callback(error, null));
       }
       if (error.status === 0) {
-        console.error(chalkError("TFE | !!! DROPBOX NO RESPONSE"
+        console.log(chalkError("TFE | !!! DROPBOX NO RESPONSE"
           + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
         return(callback(null, null));
       }
@@ -943,7 +942,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
         const bno = bestNetworkHashMap.get(networkId);
 
         if (!bno || (bno === undefined)) {
-          console.error(chalkError("bestNetworkHashMap ENTRY UNDEFINED??? | " + networkId));
+          console.log(chalkError("bestNetworkHashMap ENTRY UNDEFINED??? | " + networkId));
           return(cb());
         }
 
@@ -1835,7 +1834,7 @@ function generateAutoCategory(params, user, callback){
   ], function (err, text, bannerResults) {
 
     if (err) {
-      console.error(chalkError("*** ERROR generateAutoCategory: " + err));
+      console.log(chalkError("*** ERROR generateAutoCategory: " + err));
       callback(err, null);
     }
 
@@ -2234,7 +2233,7 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
 
           function destroyFriend(err, data, response){
             if (err) {
-              console.error(chalkError("UNFOLLOW ERROR"
+              console.log(chalkError("UNFOLLOW ERROR"
                 + " | @" + threeceeUser
                 + " | " + err
               ));
@@ -2460,7 +2459,7 @@ const fsmStates = {
 
         loadBestNeuralNetworkFile(function(err, nnObj){
           if (err) {
-            console.error(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
+            console.log(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
           }
 
           // debug("loadBestNeuralNetworkFile nnObj\n" + jsonPrint(nnObj));
@@ -2750,7 +2749,7 @@ function saveFile (params, callback){
     })
     .catch(function(error){
       if (error.status === 413){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.log(chalkError(moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: 413"
           // + " ERROR\n" + jsonPrint(error.error)
@@ -2758,7 +2757,7 @@ function saveFile (params, callback){
         if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 429){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.log(chalkError(moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: TOO MANY WRITES"
           // + " ERROR\n" + jsonPrint(error.error)
@@ -2766,7 +2765,7 @@ function saveFile (params, callback){
         if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 500){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.log(chalkError(moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: DROPBOX SERVER ERROR"
           // + " ERROR\n" + jsonPrint(error.error)
@@ -2775,7 +2774,7 @@ function saveFile (params, callback){
       }
       else {
         // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.log(chalkError(moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           // + " | ERROR\n" + jsonPrint(error)
           + " | ERROR: " + error
@@ -3076,7 +3075,7 @@ function initSocket(cnf, callback){
   });
 
   socket.on("reconnect", function(reason){
-    console.error(chalkInfo("RECONNECT" 
+    console.log(chalkInfo("RECONNECT" 
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + socket.id
       + " | REASON: " + reason
@@ -3102,7 +3101,7 @@ function initSocket(cnf, callback){
     statsObj.userAuthenticated = false ;
     statsObj.serverConnected = false ;
     socket.disconnect();
-    console.error(chalkError(moment().format(compactDateTimeFormat) 
+    console.log(chalkError(moment().format(compactDateTimeFormat) 
       + " | *** SOCKET ERROR"
       + " | " + socket.id
       + " | " + error
@@ -3113,7 +3112,7 @@ function initSocket(cnf, callback){
   socket.on("connect_error", function(err){
     statsObj.userAuthenticated = false ;
     statsObj.serverConnected = false ;
-    console.error(chalkError("*** CONNECT ERROR " 
+    console.log(chalkError("*** CONNECT ERROR " 
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + err.type
       + " | " + err.description
@@ -3125,7 +3124,7 @@ function initSocket(cnf, callback){
   socket.on("reconnect_error", function(err){
     statsObj.userAuthenticated = false ;
     statsObj.serverConnected = false ;
-    console.error(chalkError("*** RECONNECT ERROR " 
+    console.log(chalkError("*** RECONNECT ERROR " 
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + err.type
       + " | " + err.description
@@ -3137,7 +3136,6 @@ function initSocket(cnf, callback){
   socket.on("SESSION_ABORT", function(sessionId){
     console.log(chalkAlert("@@@@@ RX SESSION_ABORT | " + sessionId));
     if (sessionId === statsObj.socketId){
-      console.error(chalkAlert("***** RX SESSION_ABORT HIT | " + sessionId));
       console.log(chalkAlert("***** RX SESSION_ABORT HIT | " + sessionId));
       socket.disconnect();
       statsObj.userAuthenticated = false ;
@@ -3149,7 +3147,6 @@ function initSocket(cnf, callback){
   socket.on("SESSION_EXPIRED", function(sessionId){
     console.log(chalkAlert("RX SESSION_EXPIRED | " + sessionId));
     if (sessionId === statsObj.socketId){
-      console.error(chalkAlert("***** RX SESSION_EXPIRED HIT | " + sessionId));
       console.log(chalkAlert("***** RX SESSION_EXPIRED HIT | " + sessionId));
       socket.disconnect();
       statsObj.userAuthenticated = false ;
@@ -3314,7 +3311,7 @@ function initTwitterFollowerChild(twitterConfig, callback){
     ));
 
     if (m.error) {
-      console.error(chalkError("TFC | tfeChild RX ERROR\n" + jsonPrint(m)));
+      console.log(chalkError("TFC | tfeChild RX ERROR\n" + jsonPrint(m)));
       if (callback !== undefined) { 
         return(callback(m.error, null));
       }
@@ -3399,7 +3396,7 @@ function initTwitterFollowerChild(twitterConfig, callback){
       break;
 
       default:
-      console.error(chalkError("TFC | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
+      console.log(chalkError("TFC | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
     }
   });
 
@@ -3532,7 +3529,7 @@ function initCategorizedUserHashMap(callback){
 
   userServer.findCategorizedUsersCursor({}, function(err, results){
     if (err) {
-      console.error(chalkError("ERROR: initCategoryHashmaps: findCategorizedUsersCursor:"
+      console.log(chalkError("ERROR: initCategoryHashmaps: findCategorizedUsersCursor:"
         + " " + err
       ));
       if (callback !== undefined) { callback(err);}
@@ -3766,7 +3763,7 @@ function initialize(cnf, callback){
 
         loadFile(cnf.twitterConfigFolder, cnf.twitterConfigFile, function(err, tc){
           if (err){
-            console.error(chalkError("*** TWITTER YAML CONFIG LOAD ERROR"
+            console.log(chalkError("*** TWITTER YAML CONFIG LOAD ERROR"
               + " | " + cnf.twitterConfigFolder + "/" + cnf.twitterConfigFile
               + "\n" + err
             ));
@@ -3788,7 +3785,7 @@ function initialize(cnf, callback){
       });
     }
     else {
-      console.error("dropboxConfigFile: " + dropboxConfigFile + "\n" + jsonPrint(err));
+      console.log("dropboxConfigFile: " + dropboxConfigFile + "\n" + jsonPrint(err));
 
       // OVERIDE CONFIG WITH COMMAND LINE ARGS
 
@@ -4159,14 +4156,12 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
           }
 
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          // randomNetworkTreeReadyFlag = true;
           runEnable();
         break;
 
         default:
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          // randomNetworkTreeReadyFlag = true;
-          console.error(chalkError("*** UNKNOWN RNT OP | " + m.op));
+          console.log(chalkError("*** UNKNOWN RNT OP | " + m.op));
       }
 
     }
@@ -4553,15 +4548,14 @@ function initLangAnalyzer(callback){
     if (m.op === "LANG_TEST_FAIL") {
       console.log(chalkAlert(getTimeStamp() + " | LANG_TEST_FAIL"));
       if (m.err.code ===  8) {
-        console.error(chalkAlert("LANG_TEST_FAIL"
+        console.log(chalkAlert("LANG_TEST_FAIL"
           + " | LANGUAGE QUOTA"
           + " | " + m.err
         ));
         languageAnalysisReadyFlag = true;
-        // langAnalyzerIdle = false;
       }
       else {
-        console.error(chalkAlert("LANG_TEST_FAIL"
+        console.log(chalkAlert("LANG_TEST_FAIL"
           + " | " + m.err
         ));
         quit("LANG_TEST_FAIL");
@@ -4569,12 +4563,10 @@ function initLangAnalyzer(callback){
     }
     else if (m.op === "LANG_TEST_PASS") {
       languageAnalysisReadyFlag = true;
-      // langAnalyzerIdle = false;
       console.log(chalkTwitter(getTimeStamp() + " | LANG_TEST_PASS | LANG ANAL READY: " + languageAnalysisReadyFlag));
     }
     else if (m.op === "QUEUE_FULL") {
       languageAnalysisReadyFlag = false;
-      // langAnalyzerIdle = false;
       console.log(chalkError("!!! LANG Q FULL"));
     }
     else if (m.op === "QUEUE_EMPTY") {
@@ -4582,7 +4574,6 @@ function initLangAnalyzer(callback){
       debug(chalkInfo("LANG Q EMPTY"));
     }
     else if (m.op === "IDLE") {
-      // langAnalyzerIdle = true;
       languageAnalysisReadyFlag = true;
       debug(chalkInfo("... LANG ANAL IDLE ..."));
     }
@@ -4593,7 +4584,6 @@ function initLangAnalyzer(callback){
     else {
       debug(chalkInfo("LANG Q PUSH"));
       languageAnalysisReadyFlag = false;
-      // langAnalyzerIdle = false;
       langAnalyzerMessageRxQueue.push(m);
     }
   });
@@ -4622,7 +4612,7 @@ function initLangAnalyzer(callback){
 initialize(configuration, function(err, cnf){
 
   if (err) {
-    console.error(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
+    console.log(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
     if (err.code !== 404){
       console.log("err.status: " + err.status);
       quit();
@@ -4633,7 +4623,6 @@ initialize(configuration, function(err, cnf){
 
   console.log(chalkTwitter(configuration.processName 
     + " STARTED " + getTimeStamp() 
-    // + "\n" + jsonPrint(cnf)
   ));
 
   initSaveFileQueue(cnf);
@@ -4669,7 +4658,7 @@ initialize(configuration, function(err, cnf){
   initTwitterUsers(function initTwitterUsersCallback(e){
 
     if (e) {
-      console.error(chalkError("*** ERROR INIT TWITTER USERS: " + e));
+      console.log(chalkError("*** ERROR INIT TWITTER USERS: " + e));
       return quit({source: "TFE", error: e});
     }
 

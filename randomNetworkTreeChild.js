@@ -259,7 +259,7 @@ const sortedObjectValues = function(params) {
 
     }
     else {
-      console.error("sortedObjectValues ERROR | params\n" + jsonPrint(params));
+      console.log("sortedObjectValues ERROR | params\n" + jsonPrint(params));
       reject(new Error("ERROR"));
     }
 
@@ -397,7 +397,7 @@ function activateNetwork2(user, callback){
       const output = networkObj.network.activate(networkInput);
 
       if (output.length !== 3) {
-        console.error(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
+        console.log(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
         // quit("ZERO LENGTH NETWORK OUTPUT");
         return(cb("ZERO LENGTH NETWORK OUTPUT", networkOutput));
       }
@@ -807,7 +807,7 @@ function initActivateNetworkInterval(interval){
       activateNetwork2(obj.user, function(err, networkOutputObj){
 
         if (err){
-          console.error(chalkError("ACTIVATE NETWORK ERROR"
+          console.log(chalkError("ACTIVATE NETWORK ERROR"
             + " | @" + obj.user.screenName
             + " | " + obj.networkInput.length + " INPUTS"
             + " | " + err
@@ -1317,7 +1317,7 @@ function saveFile (path, file, jsonObj, callback){
     })
     .catch(function(error){
       if (error.status === 413){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.log(chalkError(moment().format(compactDateTimeFormat) 
           + " | RNT | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: 413"
           // + " ERROR\n" + jsonPrint(error.error)
@@ -1325,7 +1325,7 @@ function saveFile (path, file, jsonObj, callback){
         if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 429){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.log(chalkError(moment().format(compactDateTimeFormat) 
           + " | RNT | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: TOO MANY WRITES"
           // + " ERROR\n" + jsonPrint(error.error)
@@ -1333,7 +1333,7 @@ function saveFile (path, file, jsonObj, callback){
         if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 500){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.log(chalkError(moment().format(compactDateTimeFormat) 
           + " | RNT | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: DROPBOX SERVER ERROR"
           // + " ERROR\n" + jsonPrint(error.error)
@@ -1342,7 +1342,7 @@ function saveFile (path, file, jsonObj, callback){
       }
       else {
         // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.log(chalkError(moment().format(compactDateTimeFormat) 
           + " | RNT | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           // + " | ERROR\n" + jsonPrint(error)
           + " | ERROR: " + error
@@ -1408,7 +1408,7 @@ setTimeout(function(){
     initializeBusy = false;
 
     if (err && (err.status !== 404)) {
-      console.error(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
+      console.log(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
       quit(err);
     }
     console.log(chalkInfo(cnf.processName + " STARTED " + getTimeStamp() + "\n" + jsonPrint(cnf)));
