@@ -810,10 +810,15 @@ process.on("message", function(m) {
     case "INIT":
 
       console.log(chalkInfo("TFC | TFE CHILD INIT"
-        + " | CHILD ID: " + configuration.childId
-        + " | 3C: @" + configuration.threeceeUser
-        + " | " + jsonPrint(m.twitterConfig)
+        + " | CHILD ID: " + m.childId
+        + " | 3C: @" + m.threeceeUser
+        + " | TWITTER CONFIG\n" + jsonPrint(m.twitterConfig)
       ));
+
+      configuration.childId = m.childId;
+      configuration.threeceeUser = m.threeceeUser;
+      configuration.twitterConfig = {};
+      configuration.twitterConfig = m.twitterConfig;
 
       initTwitter(m.twitterConfig, function initTwitterUsersCallback(e){
 

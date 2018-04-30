@@ -2342,7 +2342,15 @@ function childSendAll(op, callback){
     const curChild = tfeChildHashMap[threeceeUser].child;
 
     if (op === "INIT") {
-      curChild.send({op: op, twitterConfig: tfeChildHashMap[threeceeUser].twitterConfig}, function(err){
+
+      const initObj = {
+        op: op,
+        childId: tfeChildHashMap[threeceeUser].childId,
+        threeceeUser: tfeChildHashMap[threeceeUser].threeceeUser,
+        twitterConfig: tfeChildHashMap[threeceeUser].twitterConfig
+      };
+
+      curChild.send(initObj, function(err){
         if (err) {
           console.log(chalkError("*** CHILD SEND ALL INIT ERROR" 
             + " | @" + threeceeUser 
