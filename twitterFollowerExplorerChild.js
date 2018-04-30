@@ -680,85 +680,98 @@ function initTwitter(twitterConfig, callback){
   //   access_token_secret: process.env.TOKEN_SECRET
   // });
 
-  twitClient = new Twit(twitterConfig);
+  if (!twitClient || (twitClient === undefined)){
 
-  twitStream = twitClient.stream("user", { stringify_friend_ids: true });
+    twitClient = new Twit(twitterConfig);
 
-  twitStream.on("follow", function(followMessage){
+    twitStream = twitClient.stream("user", { stringify_friend_ids: true });
 
-    console.log(chalkInfo("TFC | +++ USER @" + configuration.threeceeUser + " FOLLOW"
-      + " | " +  followMessage.target.id_str
-      + " | @" +  followMessage.target.screen_name.toLowerCase()
+    twitStream.on("follow", function(followMessage){
+
+      console.log(chalkInfo("TFC | +++ USER @" + configuration.threeceeUser + " FOLLOW"
+        + " | " +  followMessage.target.id_str
+        + " | @" +  followMessage.target.screen_name.toLowerCase()
+      ));
+
+      followMessage.target.threeceeFollowing = configuration.threeceeUser;
+
+      const friendRawObj = {
+        op:"FRIEND_RAW", 
+        threeceeUser: configuration.threeceeUser, 
+        childId: configuration.childId, 
+        friend: followMessage.target
+      };
+
+      process.send(friendRawObj);
+    });
+
+    callback(null, null);
+  }
+  else {
+    
+    console.log(chalkLog("TFC | TWITTER ALREADY INITIALIZED" 
+      + " | " + getTimeStamp() 
+      + " | @" + configuration.threeceeUser 
+      + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
     ));
 
-    followMessage.target.threeceeFollowing = configuration.threeceeUser;
-
-    const friendRawObj = {
-      op:"FRIEND_RAW", 
-      threeceeUser: configuration.threeceeUser, 
-      childId: configuration.childId, 
-      friend: followMessage.target
-    };
-
-    process.send(friendRawObj);
-
-  });
-
-  twitClient.get("account/settings", function(err, accountSettings, response) {
-    if (err){
-
-      err.user = configuration.threeceeUser;
-
-      console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
-        + " | @" + configuration.threeceeUser
-        + " | " + getTimeStamp()
-        + " | CODE: " + err.code
-        + " | STATUS CODE: " + err.statusCode
-        + " | " + err.message
-        // + "\n" + jsonPrint(err)
-      ));
-      statsObj.threeceeUser.twitterErrors+= 1;
-      return(callback(err, null));
-    }
-
-    debug(chalkTwitter("TWITTER ACCOUNT SETTINGS RESPONSE\n" + jsonPrint(response)));
-
-    const userScreenName = accountSettings.screen_name.toLowerCase();
-
-    debug(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: @" + userScreenName));
-
-    debug(chalkTwitter("TWITTER ACCOUNT SETTINGS\n" + jsonPrint(accountSettings)));
-
-    twitterUserUpdate({userScreenName: userScreenName}, function(err){
+    twitClient.get("account/settings", function(err, accountSettings, response) {
       if (err){
 
-        err.user = userScreenName;
+        err.user = configuration.threeceeUser;
 
-        if (err.code === 88) {
-          console.log(chalkAlert("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
-            + " | " + getTimeStamp() 
-            + " | @" + userScreenName 
-          ));
-
-          statsObj.threeceeUser.twitterRateLimitException = moment();
-          statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
-          statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
-          fsm.fsm_rateLimitStart();
-        }
-        else {
-          console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
-            + " | " + getTimeStamp() 
-            + " | @" + userScreenName 
-            + "\n" + jsonPrint(err)
-          ));
-        }
+        console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
+          + " | @" + configuration.threeceeUser
+          + " | " + getTimeStamp()
+          + " | CODE: " + err.code
+          + " | STATUS CODE: " + err.statusCode
+          + " | " + err.message
+          // + "\n" + jsonPrint(err)
+        ));
+        statsObj.threeceeUser.twitterErrors+= 1;
         return(callback(err, null));
       }
 
-      callback(err);
+      debug(chalkTwitter("TWITTER ACCOUNT SETTINGS RESPONSE\n" + jsonPrint(response)));
 
+      const userScreenName = accountSettings.screen_name.toLowerCase();
+
+      debug(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: @" + userScreenName));
+
+      debug(chalkTwitter("TWITTER ACCOUNT SETTINGS\n" + jsonPrint(accountSettings)));
+
+      twitterUserUpdate({userScreenName: userScreenName}, function(err){
+        if (err){
+
+          err.user = userScreenName;
+
+          if (err.code === 88) {
+            console.log(chalkAlert("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
+              + " | " + getTimeStamp() 
+              + " | @" + userScreenName 
+            ));
+
+            statsObj.threeceeUser.twitterRateLimitException = moment();
+            statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
+            statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+            fsm.fsm_rateLimitStart();
+          }
+          else {
+            console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
+              + " | " + getTimeStamp() 
+              + " | @" + userScreenName 
+              + "\n" + jsonPrint(err)
+            ));
+          }
+          return(callback(err, null));
+        }
+
+        callback(err);
+
+      });
     });
-  });
+
+  }
 }
 
 function initialize(callback){
