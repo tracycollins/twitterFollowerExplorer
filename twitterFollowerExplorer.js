@@ -176,7 +176,7 @@ let enableImageAnalysis = true;
 let langAnalyzer;
 let langAnalyzerMessageRxQueueInterval;
 let langAnalyzerMessageRxQueueReadyFlag = true;
-let languageAnalysisReadyFlag = false;
+let languageAnalysisBusyFlag = false;
 let langAnalyzerMessageRxQueue = [];
 
 let randomNetworkTree;
@@ -1999,7 +1999,7 @@ function quit(cause){
       && (randomNetworkTreeMessageRxQueue.length === 0)
       && (userDbUpdateQueue.length === 0)
       && randomNetworkTreeMessageRxQueueReadyFlag
-      && languageAnalysisReadyFlag
+      && !languageAnalysisBusyFlag
       && userDbUpdateQueueReadyFlag
       ){
 
@@ -4433,7 +4433,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             + " [Q: " + langAnalyzerMessageRxQueue.length + "]"
             + " | OP: " + m.op
           ));
-          languageAnalysisReadyFlag = false;
+          languageAnalysisBusyFlag = true;
           langAnalyzerMessageRxQueueReadyFlag = true;
         break;
 
@@ -4442,7 +4442,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
             + " [Q: " + langAnalyzerMessageRxQueue.length + "]"
             + " | OP: " + m.op
           ));
-          languageAnalysisReadyFlag = true;
+          languageAnalysisBusyFlag = false;
           langAnalyzerMessageRxQueueReadyFlag = true;
         break;
 
@@ -4589,38 +4589,46 @@ function initLangAnalyzer(callback){
           + " | LANGUAGE QUOTA"
           + " | " + m.err
         ));
-        languageAnalysisReadyFlag = true;
+        languageAnalysisBusyFlag = false;
+      }
+      else if (m.err.code ===  7) {
+        console.log(chalkAlert("LANG_TEST_FAIL"
+          + " | PERMISSION DENIED"
+          + "\n" + m.err.details
+        ));
+        languageAnalysisBusyFlag = false;
       }
       else {
         console.log(chalkAlert("LANG_TEST_FAIL"
-          + " | " + m.err
+          + "\n" + m.err
         ));
-        quit("LANG_TEST_FAIL");
+        languageAnalysisBusyFlag = false;
+        if (configuration.quitOnError) { quit("LANG_TEST_FAIL") };
       }
     }
     else if (m.op === "LANG_TEST_PASS") {
-      languageAnalysisReadyFlag = true;
-      console.log(chalkTwitter(getTimeStamp() + " | LANG_TEST_PASS | LANG ANAL READY: " + languageAnalysisReadyFlag));
+      languageAnalysisBusyFlag = false;
+      console.log(chalkTwitter(getTimeStamp() + " | LANG_TEST_PASS | LANG ANAL BUSY: " + languageAnalysisBusyFlag));
     }
     else if (m.op === "QUEUE_FULL") {
-      languageAnalysisReadyFlag = false;
+      languageAnalysisBusyFlag = true;
       console.log(chalkError("!!! LANG Q FULL"));
     }
     else if (m.op === "QUEUE_EMPTY") {
-      languageAnalysisReadyFlag = true;
+      languageAnalysisBusyFlag = false;
       debug(chalkInfo("LANG Q EMPTY"));
     }
     else if (m.op === "IDLE") {
-      languageAnalysisReadyFlag = true;
+      languageAnalysisBusyFlag = false;
       debug(chalkInfo("... LANG ANAL IDLE ..."));
     }
     else if (m.op === "QUEUE_READY") {
-      languageAnalysisReadyFlag = true;
+      languageAnalysisBusyFlag = false;
       debug(chalkInfo("LANG Q READY"));
     }
     else {
       debug(chalkInfo("LANG Q PUSH"));
-      languageAnalysisReadyFlag = false;
+      languageAnalysisBusyFlag = true;
       langAnalyzerMessageRxQueue.push(m);
     }
   });
