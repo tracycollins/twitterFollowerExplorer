@@ -705,73 +705,74 @@ function initTwitter(twitterConfig, callback){
       process.send(friendRawObj);
     });
 
-    callback(null, null);
+    // callback(null, null);
   }
   else {
-    
+
     console.log(chalkLog("TFC | TWITTER ALREADY INITIALIZED" 
       + " | " + getTimeStamp() 
       + " | @" + configuration.threeceeUser 
       + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
     ));
 
-    twitClient.get("account/settings", function(err, accountSettings, response) {
+  }
+
+  twitClient.get("account/settings", function(err, accountSettings, response) {
+    if (err){
+
+      err.user = configuration.threeceeUser;
+
+      console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
+        + " | @" + configuration.threeceeUser
+        + " | " + getTimeStamp()
+        + " | CODE: " + err.code
+        + " | STATUS CODE: " + err.statusCode
+        + " | " + err.message
+        // + "\n" + jsonPrint(err)
+      ));
+      statsObj.threeceeUser.twitterErrors+= 1;
+      return(callback(err, null));
+    }
+
+    debug(chalkTwitter("TWITTER ACCOUNT SETTINGS RESPONSE\n" + jsonPrint(response)));
+
+    const userScreenName = accountSettings.screen_name.toLowerCase();
+
+    debug(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: @" + userScreenName));
+
+    debug(chalkTwitter("TWITTER ACCOUNT SETTINGS\n" + jsonPrint(accountSettings)));
+
+    twitterUserUpdate({userScreenName: userScreenName}, function(err){
       if (err){
 
-        err.user = configuration.threeceeUser;
+        err.user = userScreenName;
 
-        console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
-          + " | @" + configuration.threeceeUser
-          + " | " + getTimeStamp()
-          + " | CODE: " + err.code
-          + " | STATUS CODE: " + err.statusCode
-          + " | " + err.message
-          // + "\n" + jsonPrint(err)
-        ));
-        statsObj.threeceeUser.twitterErrors+= 1;
+        if (err.code === 88) {
+          console.log(chalkAlert("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
+            + " | " + getTimeStamp() 
+            + " | @" + userScreenName 
+          ));
+
+          statsObj.threeceeUser.twitterRateLimitException = moment();
+          statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
+          statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+          fsm.fsm_rateLimitStart();
+        }
+        else {
+          console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
+            + " | " + getTimeStamp() 
+            + " | @" + userScreenName 
+            + "\n" + jsonPrint(err)
+          ));
+        }
         return(callback(err, null));
       }
 
-      debug(chalkTwitter("TWITTER ACCOUNT SETTINGS RESPONSE\n" + jsonPrint(response)));
+      callback(null, null);
 
-      const userScreenName = accountSettings.screen_name.toLowerCase();
-
-      debug(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: @" + userScreenName));
-
-      debug(chalkTwitter("TWITTER ACCOUNT SETTINGS\n" + jsonPrint(accountSettings)));
-
-      twitterUserUpdate({userScreenName: userScreenName}, function(err){
-        if (err){
-
-          err.user = userScreenName;
-
-          if (err.code === 88) {
-            console.log(chalkAlert("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
-              + " | " + getTimeStamp() 
-              + " | @" + userScreenName 
-            ));
-
-            statsObj.threeceeUser.twitterRateLimitException = moment();
-            statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
-            statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
-            fsm.fsm_rateLimitStart();
-          }
-          else {
-            console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
-              + " | " + getTimeStamp() 
-              + " | @" + userScreenName 
-              + "\n" + jsonPrint(err)
-            ));
-          }
-          return(callback(err, null));
-        }
-
-        callback(err);
-
-      });
     });
+  });
 
-  }
 }
 
 function initialize(callback){
