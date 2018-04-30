@@ -1247,12 +1247,14 @@ function loadBestNeuralNetworkFile(callback){
         if (loadedNetworksFlag && !networksSentFlag && (randomNetworkTree && (randomNetworkTree !== undefined)) && (Object.keys(ranNetObj).length > 0)) {
           // console.log(chalkBlue("SEND RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
 
-          networksSentFlag = true;
 
-          randomNetworkTree.send({ op: "LOAD_NETWORKS", networksObj: ranNetObj }, function(){
-            networksSentFlag = false;
-            console.log(chalkBlue("SENT RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
-          });
+          if (randomNetworkTree && (randomNetworkTree !== undefined)) { 
+            networksSentFlag = true;
+            randomNetworkTree.send({ op: "LOAD_NETWORKS", networksObj: ranNetObj }, function(){
+              networksSentFlag = false;
+              console.log(chalkBlue("SENT RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
+            });
+          }
         }
         else {
           const randomNetworkTreeDefined = (randomNetworkTree && (randomNetworkTree !== undefined));
@@ -1590,7 +1592,7 @@ function enableAnalysis(user, languageAnalysis){
 
 function activateNetwork(obj){
 
-  if ((randomNetworkTree !== undefined) && randomNetworkTreeReadyFlag) {
+  if ((randomNetworkTree !== undefined) && randomNetworkTree && randomNetworkTreeReadyFlag) {
     randomNetworkTree.send({op: "ACTIVATE", obj: obj});
   }
 }
@@ -2335,18 +2337,35 @@ function childSendAll(op, callback){
 
   console.log(chalkAlert(">>> CHILD SEND ALL | OP: " + op));
 
-  async.each(Object.keys(tfeChildHashMap), function(user, cb){
-    const curChild = tfeChildHashMap[user].child;
-    curChild.send({op: op}, function(err){
-      if (err) {
-        console.log(chalkError("*** CHILD SEND ALL ERROR" 
-          + " | @" + user 
-          + " | OP: " + op 
-          + " | ERR: " + err
-        ));
-      }
-      cb(err);
-    });
+  async.each(Object.keys(tfeChildHashMap), function(threeceeUser, cb){
+
+    const curChild = tfeChildHashMap[threeceeUser].child;
+
+    if (op === "INIT") {
+      curChild.send({op: op, twitterConfig: tfeChildHashMap[threeceeUser].twitterConfig}, function(err){
+        if (err) {
+          console.log(chalkError("*** CHILD SEND ALL INIT ERROR" 
+            + " | @" + threeceeUser 
+            + " | OP: " + op 
+            + " | ERR: " + err
+          ));
+        }
+        cb(err);
+      });
+    }
+    else {
+      curChild.send({op: op}, function(err){
+        if (err) {
+          console.log(chalkError("*** CHILD SEND ALL ERROR" 
+            + " | @" + threeceeUser 
+            + " | OP: " + op 
+            + " | ERR: " + err
+          ));
+        }
+        cb(err);
+      });
+    }
+
   }, function(err){
     if (callback !== undefined) { callback(err); }
   });
@@ -2465,16 +2484,15 @@ const fsmStates = {
 
           loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function(){
 
-            randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function(){
-              console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
-
-              updateGlobalHistograms();
-
-              childSendAll("FETCH_USER_START");
-              statsObj.fetchCycleStartMoment = moment();
-              statsObj.fetchCycleElapsed = 0;
-
-            });
+            if (randomNetworkTree && (randomNetworkTree !== undefined)) { 
+              randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function(){
+                console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+                updateGlobalHistograms();
+                childSendAll("FETCH_USER_START");
+                statsObj.fetchCycleStartMoment = moment();
+                statsObj.fetchCycleElapsed = 0;
+              });
+            }
           });
         });
       }
@@ -2519,7 +2537,7 @@ const fsmStates = {
 
         loadedNetworksFlag = false;
 
-        randomNetworkTree.send({op: "GET_STATS"}); 
+        if (randomNetworkTree && (randomNetworkTree !== undefined)) { randomNetworkTree.send({op: "GET_STATS"}); }
 
         let slackText = "\n*FETCH END*"; 
         slackText = slackText + "\nHOST:  " + hostname;
@@ -2539,7 +2557,7 @@ const fsmStates = {
 
             console.log(chalkAlert("ALL NNs SAVED ..."));
 
-            if (randomNetworkTree ) { randomNetworkTree.send({op: "RESET_STATS"}); }
+            if (randomNetworkTree && (randomNetworkTree !== undefined)) { randomNetworkTree.send({op: "RESET_STATS"}); }
             childSendAll("RESET_TWITTER_USER_STATE");
 
             resetAllTwitterUserState(function(){
@@ -3275,11 +3293,12 @@ function initTwitterFollowerChild(twitterConfig, callback){
 
   let childEnv = {};
   childEnv.env = {};
-  childEnv.env.TWITTER_CONFIG = {};
+  // childEnv.env.TWITTER_CONFIG = {};
+  // childEnv.env.TWITTER_CONFIG = twitterConfig;
 
-  Object.keys(twitterConfig).forEach(function(key){
-    childEnv.env[key] = twitterConfig[key];
-  });
+  // Object.keys(twitterConfig).forEach(function(key){
+  //   childEnv.env[key] = twitterConfig[key];
+  // });
 
   childEnv.env.CHILD_ID = childId;
   childEnv.env.THREECEE_USER = twitterConfig.threeceeUser;
@@ -3289,15 +3308,30 @@ function initTwitterFollowerChild(twitterConfig, callback){
   childEnv.env.TEST_MODE_FETCH_COUNT = TEST_MODE_FETCH_COUNT;
   childEnv.env.TEST_MODE = (configuration.testMode) ? 1 : 0;
 
-  console.log(chalkAlert("+++ NEW TFE CHILD | childEnv\n" + jsonPrint(childEnv)));
-
-  const tfeChild = cp.fork(`twitterFollowerExplorerChild.js`, childEnv );
-
   tfeChildHashMap[user] = {};
   tfeChildHashMap[user].childId = childId;
   tfeChildHashMap[user].threeceeUser = user;
   tfeChildHashMap[user].child = {};
   tfeChildHashMap[user].status = "IDLE";
+
+
+  tfeChildHashMap[user].twitterConfig = {};
+  tfeChildHashMap[user].twitterConfig.consumer_key = twitterConfig.CONSUMER_KEY;
+  tfeChildHashMap[user].twitterConfig.consumer_secret = twitterConfig.CONSUMER_SECRET;
+  tfeChildHashMap[user].twitterConfig.access_token = twitterConfig.TOKEN;
+  tfeChildHashMap[user].twitterConfig.access_token_secret = twitterConfig.TOKEN_SECRET;
+  // twitClient = new Twit({
+  //   consumer_key: process.env.CONSUMER_KEY,
+  //   consumer_secret: process.env.CONSUMER_SECRET,
+  //   access_token: process.env.TOKEN,
+  //   access_token_secret: process.env.TOKEN_SECRET
+  // });
+
+  console.log(chalkAlert("+++ NEW TFE CHILD | childEnv\n" + jsonPrint(childEnv)));
+  console.log(chalkAlert("+++ NEW TFE CHILD | twitterConfig\n" + jsonPrint(tfeChildHashMap[user].twitterConfig)));
+
+  const tfeChild = cp.fork(`twitterFollowerExplorerChild.js`, childEnv );
+
 
   tfeChild.on("message", function(m){
 
@@ -4665,15 +4699,16 @@ initialize(configuration, function(err, cnf){
 
     loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function(){
 
-      randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function(){
-        console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+    if (randomNetworkTree && (randomNetworkTree !== undefined)) { 
+        randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function(){
+          console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
 
-        setTimeout(function(){
-          fsm.fsm_init();
-          initFsmTickInterval(FSM_TICK_INTERVAL);
-        }, 3000);
-      });
-
+          setTimeout(function(){
+            fsm.fsm_init();
+            initFsmTickInterval(FSM_TICK_INTERVAL);
+          }, 3000);
+        });
+      }
     });
 
   });

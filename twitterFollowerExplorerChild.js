@@ -671,14 +671,16 @@ process.on( "SIGINT", function() {
   quit({source: "SIGINT"});
 });
 
-function initTwitter(callback){
+function initTwitter(twitterConfig, callback){
 
-  twitClient = new Twit({
-    consumer_key: process.env.CONSUMER_KEY,
-    consumer_secret: process.env.CONSUMER_SECRET,
-    access_token: process.env.TOKEN,
-    access_token_secret: process.env.TOKEN_SECRET
-  });
+  // twitClient = new Twit({
+  //   consumer_key: process.env.CONSUMER_KEY,
+  //   consumer_secret: process.env.CONSUMER_SECRET,
+  //   access_token: process.env.TOKEN,
+  //   access_token_secret: process.env.TOKEN_SECRET
+  // });
+
+  twitClient = new Twit(twitterConfig);
 
   twitStream = twitClient.stream("user", { stringify_friend_ids: true });
 
@@ -810,10 +812,10 @@ process.on("message", function(m) {
       console.log(chalkInfo("TFC | TFE CHILD INIT"
         + " | CHILD ID: " + configuration.childId
         + " | 3C: @" + configuration.threeceeUser
+        + " | " + jsonPrint(m.twitterConfig)
       ));
 
-
-      initTwitter(function initTwitterUsersCallback(e){
+      initTwitter(m.twitterConfig, function initTwitterUsersCallback(e){
 
         initCheckRateLimitInterval(checkRateLimitIntervalTime);
 
