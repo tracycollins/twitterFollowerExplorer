@@ -2299,9 +2299,6 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
       callback(new Error(err), null);
     }
     else {
-
-      // elapsed_time("end processUser");
-
       callback(null, user);
     }
   });
@@ -2854,8 +2851,6 @@ function initProcessUserQueueInterval(interval){
 
 
     if (processUserQueueReady && processUserQueue.length > 0) {
-
-      // elapsed_time("start processUserQueue");
 
       processUserQueueReady = false;
 
@@ -4247,7 +4242,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
             userServer.findOneUser(m.obj, {noInc: true, updateCountHistory: true }, function(err, updatedUserObj){
               if (err) { 
-                console.log(chalkError("ERROR DB UPDATE USER"
+                console.log(chalkError("ERROR DB UPDATE USER languageAnalysis0"
                   + "\n" + err
                   + "\n" + jsonPrint(m.obj)
                 ));
@@ -4314,7 +4309,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
               userServer.findOneUser(m.obj, {noInc: true, updateCountHistory: true}, function(err, updatedUserObj){
                 if (err) { 
-                  console.log(chalkError("ERROR DB UPDATE USER"
+                  console.log(chalkError("ERROR DB UPDATE USER languageAnalysis1"
                     + "\n" + err
                     + "\n" + jsonPrint(m.obj)
                   ));
@@ -4359,7 +4354,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback){
 
             userServer.findOneUser(m.obj, {noInc: true, updateCountHistory: true}, function(err, updatedUserObj){
               if (err) { 
-                console.log(chalkError("ERROR DB UPDATE USER"
+                console.log(chalkError("ERROR DB UPDATE USER languageAnalysis2"
                   + "\n" + err
                   + "\n" + jsonPrint(m.obj)
                 ));
