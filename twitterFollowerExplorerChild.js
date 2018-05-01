@@ -693,19 +693,21 @@ function initTwitter(twitterConfig, callback){
         + " | @" +  followMessage.target.screen_name.toLowerCase()
       ));
 
+      followMessage.target.following = true;
       followMessage.target.threeceeFollowing = configuration.threeceeUser;
 
       const friendRawObj = {
         op:"FRIEND_RAW", 
-        threeceeUser: configuration.threeceeUser, 
+        threeceeUser: configuration.threeceeUser,
         childId: configuration.childId, 
         friend: followMessage.target
       };
 
-      process.send(friendRawObj);
+      process.send({op:"FRIEND_RAW", threeceeUser: configuration.threeceeUser, childId: configuration.childId, friend: friend}, function(){
+      });
+
     });
 
-    // callback(null, null);
   }
   else {
 
