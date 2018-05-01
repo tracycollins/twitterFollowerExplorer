@@ -2045,7 +2045,7 @@ function quit(cause){
   }, 1000);
 }
 
-function processUser(threeceeUser, userIn, lastTweeId, callback) {
+function processUser(threeceeUser, userIn, callback) {
 
   // elapsed_time("start processUser");
 
@@ -2081,10 +2081,9 @@ function processUser(threeceeUser, userIn, lastTweeId, callback) {
             + " | @" + userIn.screen_name
           ));
 
-          userServer.convertRawUser({user:userIn, lastTweeId: lastTweeId}, function(err, user){
+          userServer.convertRawUser({user:userIn}, function(err, user){
             if (err) {
               console.log(chalkError("TFE | CONVERT USER ERROR"
-                + " | LAST TWEET: " + lastTweeId
                 + " | " + err
               ));
               cb(err, null);
@@ -2884,7 +2883,7 @@ function initProcessUserQueueInterval(interval){
 
       tcUser = mObj.threeceeUser;
 
-      processUser(tcUser, mObj.friend, null, function(err, user){
+      processUser(tcUser, mObj.friend, function(err, user){
         if (err) {
           console.trace("processUser ERROR");
           processUserQueueReady = true;
