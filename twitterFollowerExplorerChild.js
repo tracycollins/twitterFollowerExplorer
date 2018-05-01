@@ -703,8 +703,7 @@ function initTwitter(twitterConfig, callback){
         friend: followMessage.target
       };
 
-      process.send({op:"FRIEND_RAW", threeceeUser: configuration.threeceeUser, childId: configuration.childId, friend: friend}, function(){
-      });
+      process.send(friendRawObj, function(){});
 
     });
 
