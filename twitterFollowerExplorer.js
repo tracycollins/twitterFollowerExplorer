@@ -241,7 +241,7 @@ configuration.minMatchRate = DEFAULT_MIN_MATCH_RATE;
 configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEFAULT_FETCH_COUNT;
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
-configuration.enableLanguageAnalysis = true;
+configuration.enableLanguageAnalysis = false;
 configuration.forceLanguageAnalysis = false;
 configuration.quitOnComplete = true;
 
@@ -3658,7 +3658,7 @@ function initialize(cnf, callback){
     cnf.userDbCrawl = true;
   }
 
-  cnf.enableLanguageAnalysis = process.env.TFE_ENABLE_LANG_ANALYSIS || true ;
+  cnf.enableLanguageAnalysis = process.env.TFE_ENABLE_LANG_ANALYSIS || false ;
   cnf.forceLanguageAnalysis = process.env.TFE_FORCE_LANG_ANALYSIS || false ;
 
   console.log(chalkAlert("FORCE LANG ANALYSIS: " + cnf.forceLanguageAnalysis));
