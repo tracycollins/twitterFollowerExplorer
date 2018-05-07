@@ -47,8 +47,8 @@ const arrayNormalize = require("array-normalize");
 const deepcopy = require("deep-copy");
 const table = require("text-table");
 
-// const neataptic = require("neataptic");
-const neataptic = require("./js/neataptic");
+const neataptic = require("neataptic");
+// const neataptic = require("./js/neataptic");
 
 let hostname = os.hostname();
 hostname = hostname.replace(/\.home/g, "");
@@ -952,6 +952,7 @@ function getInputNames(nodes, callback){
   async.eachSeries(nodes, function(node, cb){
     if (node.type === "input") {
       if (node.name === undefined) {
+        console.log(chalkError("NODE NAME UNDEFINED"));
         return cb("NODE NAME UNDEFINED");
       }
       inputNames.push(node.name);
@@ -993,11 +994,11 @@ function loadNetworks(networksObj, callback){
     networkObj.network = {};
     networkObj.network = network;
 
-    getInputNames(network.nodes, function(err, inputNames){
+    // getInputNames(network.nodes, function(err, inputNames){
 
-      if (err) {
-        return cb(err);
-      }
+    //   if (err) {
+    //     return cb(err);
+    //   }
 
       networkObj.matchRate = networkObj.matchRate || 0 ;
       networkObj.overallMatchRate = networkObj.overallMatchRate || 0 ;
@@ -1046,7 +1047,7 @@ function loadNetworks(networksObj, callback){
 
       cb();
 
-    });
+    // });
 
   }, function(err){
 
@@ -1224,8 +1225,8 @@ process.on("message", function(m) {
     break;
 
     case "LOAD_NETWORKS":
-      console.log(chalkAlert("LOAD_NETWORKS"
-        + " | " + Object.keys(m.networksObj).length
+      console.log(chalkAlert("RNT | LOAD_NETWORKS"
+        + " | " + Object.keys(m.networksObj).length + " NNs"
       ));
       loadNetworks(m.networksObj, function(){
         statsObj.networksLoaded = true;

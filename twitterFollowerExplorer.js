@@ -264,15 +264,15 @@ let userServerReady = false;
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
-wordAssoDb(function(err, dbConnection){
+wordAssoDb.connect(function(err, dbConnection){
   if (err) {
-    console.log(chalkError("*** MONGO DB CONNECTION ERROR: " + err));
+    console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR: " + err));
     quit("MONGO DB CONNECTION ERROR");
   }
   else {
-    dbConnection.on("error", console.error.bind(console, "*** MONGO DB CONNECTION ERROR ***\n"));
+    dbConnection.on("error", console.error.bind(console, "*** TFE | MONGO DB CONNECTION ERROR ***\n"));
     dbConnectionReady = true;
-    console.log(chalkAlert("TFE | CONNECT: TWEET SERVER MONGOOSE DEFAULT CONNECTION OPEN"));
+    console.log(chalkAlert("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
     User = mongoose.model("User", userModel.UserSchema);
     userServer = require("@threeceelabs/user-server-controller");
     userServerReady = true;
