@@ -88,6 +88,9 @@ let maxInputHashMap = {};
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+let dbConnectionReadyInterval;
+let dbConnectionReady = false;
+
 let quitWaitInterval;
 let quitFlag = false;
 
@@ -146,6 +149,110 @@ let saveFileBusy = false;
 
 let prevBestNetworkId = "";
 
+const quit = function(cause){
+
+  clearInterval(dbConnectionReadyInterval);
+
+  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+  statsObj.timeStamp = moment().format(compactDateTimeFormat);
+
+  quitFlag = true;
+
+  fsm.fsm_reset();
+
+  Object.keys(tfeChildHashMap).forEach(function(user){
+    tfeChildHashMap[user].child.send({op: "QUIT"}); 
+  });
+
+  if (cause && (cause.source === "RNT")) { 
+    randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeReadyFlag = true;
+  }
+  
+  if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) { 
+    randomNetworkTree.send({op: "STATS"}); 
+    randomNetworkTree.send({op: "QUIT"}); 
+    randomNetworkTreeBusyFlag = false;
+    randomNetworkTreeReadyFlag = true;
+  }
+
+  console.log( "\nTFE | ... QUITTING ..." );
+
+  if (cause) {
+    console.log( "CAUSE: " + jsonPrint(cause) );
+  }
+
+  let slackText = "\n*QUIT*"; 
+  
+  slackText = slackText + "\nHOST:        " + hostname;
+  slackText = slackText + "\nBEST:        " + bestRuntimeNetworkId;
+  slackText = slackText + "\nOAMR:        " + currentBestNetwork.overallMatchRate.toFixed(2) + "%";
+  slackText = slackText + "\nSTART:       " + statsObj.startTimeMoment.format(compactDateTimeFormat);
+  slackText = slackText + "\nELPSD:       " + msToTime(statsObj.elapsed);
+  slackText = slackText + "\nFETCH ELPSD: " + msToTime(statsObj.fetchCycleElapsed);
+  slackText = slackText + "\nTOT PRCSSD:  " + statsObj.users.totalFriendsProcessed;
+  slackText = slackText + "\nGTOT PRCSSD: " + statsObj.users.grandTotalFriendsProcessed;
+
+  console.log("TFE | SLACK TEXT: " + slackText);
+
+  slackPostMessage(slackChannel, slackText);
+
+  quitWaitInterval = setInterval(function () {
+
+    if (!saveFileBusy 
+      && (!randomNetworkTreeBusyFlag || randomNetworkTreeReadyFlag)
+      && (saveFileQueue.length === 0)
+      && (langAnalyzerMessageRxQueue.length === 0)
+      && (randomNetworkTreeMessageRxQueue.length === 0)
+      && (userDbUpdateQueue.length === 0)
+      && randomNetworkTreeMessageRxQueueReadyFlag
+      && !languageAnalysisBusyFlag
+      && userDbUpdateQueueReadyFlag
+      ){
+
+      clearInterval(statsUpdateInterval);
+      clearInterval(userDbUpdateQueueInterval);
+      clearInterval(quitWaitInterval);
+
+      console.log(chalkAlert("ALL PROCESSES COMPLETE ... QUITTING"
+        + " | SAVE FILE BUSY: " + saveFileBusy
+        + " | SAVE FILE Q: " + saveFileQueue.length
+        + " | RNT BUSY: " + randomNetworkTreeBusyFlag
+        + " | RNT READY: " + randomNetworkTreeReadyFlag
+        + " | RNT AQ: " + randomNetworkTreeActivateQueueSize
+        + " | RNT MQ: " + randomNetworkTreeMessageRxQueue.length
+        + " | LA MQ: " + langAnalyzerMessageRxQueue.length
+        + " | USR DB UDQ: " + userDbUpdateQueue.length
+      ));
+
+      setTimeout(function(){
+        process.exit();      
+      }, 5000);
+    }
+    else {
+      if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) { 
+        randomNetworkTree.send({op: "STATS"}); 
+        randomNetworkTree.send({op: "QUIT"}); 
+        randomNetworkTreeBusyFlag = false;
+        randomNetworkTreeReadyFlag = true;
+      }
+      
+      console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
+        + " | SAVE FILE BUSY: " + saveFileBusy
+        + " | SAVE FILE Q: " + saveFileQueue.length
+        + " | RNT BUSY: " + randomNetworkTreeBusyFlag
+        + " | RNT READY: " + randomNetworkTreeReadyFlag
+        + " | RNT AQ: " + randomNetworkTreeActivateQueueSize
+        + " | RNT MQ: " + randomNetworkTreeMessageRxQueue.length
+        + " | LA MQ: " + langAnalyzerMessageRxQueue.length
+        + " | USR DB UDQ: " + userDbUpdateQueue.length
+      ));
+    }
+
+  }, 1000);
+};
+
+
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
 
@@ -156,17 +263,22 @@ let userServer;
 let userServerReady = false;
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
-const dbConnection = wordAssoDb();
 
-dbConnection.on("error", console.log.bind(console, "connection error:"));
+wordAssoDb(function(err, dbConnection){
+  if (err) {
+    console.log(chalkError("*** MONGO DB CONNECTION ERROR: " + err));
+    quit("MONGO DB CONNECTION ERROR");
+  }
+  else {
+    dbConnection.on("error", console.error.bind(console, "*** MONGO DB CONNECTION ERROR ***\n"));
+    dbConnectionReady = true;
+    console.log(chalkAlert("TFE | CONNECT: TWEET SERVER MONGOOSE DEFAULT CONNECTION OPEN"));
+    User = mongoose.model("User", userModel.UserSchema);
+    userServer = require("@threeceelabs/user-server-controller");
+    userServerReady = true;
+  }
 
-dbConnection.once("open", function() {
-  console.log(chalkAlert("TFE | CONNECT: TWEET SERVER MONGOOSE DEFAULT CONNECTION OPEN"));
-  User = mongoose.model("User", userModel.UserSchema);
-  userServer = require("@threeceelabs/user-server-controller");
-  userServerReady = true;
 });
-
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
@@ -1941,108 +2053,6 @@ function generateAutoCategory(params, user, callback){
 
     });
   });
-}
-
-function quit(cause){
-
-  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
-  statsObj.timeStamp = moment().format(compactDateTimeFormat);
-
-  quitFlag = true;
-
-  fsm.fsm_reset();
-
-  Object.keys(tfeChildHashMap).forEach(function(user){
-    tfeChildHashMap[user].child.send({op: "QUIT"}); 
-  });
-
-  if (cause && (cause.source === "RNT")) { 
-    randomNetworkTreeBusyFlag = false;
-    randomNetworkTreeReadyFlag = true;
-  }
-  
-  if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) { 
-    randomNetworkTree.send({op: "STATS"}); 
-    randomNetworkTree.send({op: "QUIT"}); 
-    randomNetworkTreeBusyFlag = false;
-    randomNetworkTreeReadyFlag = true;
-  }
-
-  console.log( "\nTFE | ... QUITTING ..." );
-
-  if (cause) {
-    console.log( "CAUSE: " + jsonPrint(cause) );
-  }
-
-  let slackText = "\n*QUIT*"; 
-  
-  slackText = slackText + "\nHOST:        " + hostname;
-  slackText = slackText + "\nBEST:        " + bestRuntimeNetworkId;
-  slackText = slackText + "\nOAMR:        " + currentBestNetwork.overallMatchRate.toFixed(2) + "%";
-  slackText = slackText + "\nSTART:       " + statsObj.startTimeMoment.format(compactDateTimeFormat);
-  slackText = slackText + "\nELPSD:       " + msToTime(statsObj.elapsed);
-  slackText = slackText + "\nFETCH ELPSD: " + msToTime(statsObj.fetchCycleElapsed);
-  slackText = slackText + "\nTOT PRCSSD:  " + statsObj.users.totalFriendsProcessed;
-  slackText = slackText + "\nGTOT PRCSSD: " + statsObj.users.grandTotalFriendsProcessed;
-
-  console.log("TFE | SLACK TEXT: " + slackText);
-
-  slackPostMessage(slackChannel, slackText);
-
-  quitWaitInterval = setInterval(function () {
-
-    if (!saveFileBusy 
-      && !randomNetworkTreeBusyFlag
-      && randomNetworkTreeReadyFlag
-      && (saveFileQueue.length === 0)
-      && (langAnalyzerMessageRxQueue.length === 0)
-      && (randomNetworkTreeMessageRxQueue.length === 0)
-      && (userDbUpdateQueue.length === 0)
-      && randomNetworkTreeMessageRxQueueReadyFlag
-      && !languageAnalysisBusyFlag
-      && userDbUpdateQueueReadyFlag
-      ){
-
-      clearInterval(statsUpdateInterval);
-      clearInterval(userDbUpdateQueueInterval);
-      clearInterval(quitWaitInterval);
-
-      console.log(chalkAlert("ALL PROCESSES COMPLETE ... QUITTING"
-        + " | SAVE FILE BUSY: " + saveFileBusy
-        + " | SAVE FILE Q: " + saveFileQueue.length
-        + " | RNT BUSY: " + randomNetworkTreeBusyFlag
-        + " | RNT READY: " + randomNetworkTreeReadyFlag
-        + " | RNT AQ: " + randomNetworkTreeActivateQueueSize
-        + " | RNT MQ: " + randomNetworkTreeMessageRxQueue.length
-        + " | LA MQ: " + langAnalyzerMessageRxQueue.length
-        + " | USR DB UDQ: " + userDbUpdateQueue.length
-      ));
-
-      setTimeout(function(){
-        process.exit();      
-      }, 5000);
-    }
-    else {
-      if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) { 
-        randomNetworkTree.send({op: "STATS"}); 
-        randomNetworkTree.send({op: "QUIT"}); 
-        randomNetworkTreeBusyFlag = false;
-        randomNetworkTreeReadyFlag = true;
-      }
-      
-      console.log(chalkAlert("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
-        + " | SAVE FILE BUSY: " + saveFileBusy
-        + " | SAVE FILE Q: " + saveFileQueue.length
-        + " | RNT BUSY: " + randomNetworkTreeBusyFlag
-        + " | RNT READY: " + randomNetworkTreeReadyFlag
-        + " | RNT AQ: " + randomNetworkTreeActivateQueueSize
-        + " | RNT MQ: " + randomNetworkTreeMessageRxQueue.length
-        + " | LA MQ: " + langAnalyzerMessageRxQueue.length
-        + " | USR DB UDQ: " + userDbUpdateQueue.length
-      ));
-    }
-
-  }, 1000);
 }
 
 function processUser(threeceeUser, userIn, callback) {
@@ -4602,7 +4612,7 @@ function initLangAnalyzer(callback){
           + "\n" + m.err
         ));
         languageAnalysisBusyFlag = false;
-        if (configuration.quitOnError) { quit("LANG_TEST_FAIL") };
+        if (configuration.quitOnError) { quit("LANG_TEST_FAIL"); }
       }
     }
     else if (m.op === "LANG_TEST_PASS") {
@@ -4684,47 +4694,61 @@ initialize(configuration, function(err, cnf){
 
   console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
-  initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
 
-  initCategorizedUserHashMap();
+  dbConnectionReadyInterval = setInterval(function(){
 
-  initUserDbUpdateQueueInterval(1);
-  initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
-  initRandomNetworkTree();
+    if (dbConnectionReady) {
 
-  initLangAnalyzerMessageRxQueueInterval(1);
-  initLangAnalyzer();
+      clearInterval(dbConnectionReadyInterval);
 
-  neuralNetworkInitialized = true;
+      initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
+    
+      initCategorizedUserHashMap();
 
-  fsm.fsm_resetEnd();
+      initUserDbUpdateQueueInterval(1);
+      initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
+      initRandomNetworkTree();
 
-  initTwitterUsers(function initTwitterUsersCallback(e){
+      initLangAnalyzerMessageRxQueueInterval(1);
+      initLangAnalyzer();
 
-    if (e) {
-      console.log(chalkError("*** ERROR INIT TWITTER USERS: " + e));
-      return quit({source: "TFE", error: e});
+      neuralNetworkInitialized = true;
+
+      fsm.fsm_resetEnd();
+
+      initTwitterUsers(function initTwitterUsersCallback(e){
+
+        if (e) {
+          console.log(chalkError("*** ERROR INIT TWITTER USERS: " + e));
+          return quit({source: "TFE", error: e});
+        }
+
+        console.log(chalkTwitter("TFE CHILDREN" 
+          + " | " + Object.keys(tfeChildHashMap)
+        ));
+
+        initSocket(cnf, function(){});
+
+        loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function(){
+
+        if (randomNetworkTree && (randomNetworkTree !== undefined)) { 
+            randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function(){
+              console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+
+              setTimeout(function(){
+                fsm.fsm_init();
+                initFsmTickInterval(FSM_TICK_INTERVAL);
+              }, 3000);
+            });
+          }
+        });
+      });
+
+    }
+    else {
+      console.log(chalkAlert("... WAIT DB CONNECTED ..."));
     }
 
-    console.log(chalkTwitter("TFE CHILDREN" 
-      + " | " + Object.keys(tfeChildHashMap)
-    ));
+  }, 1000);
 
-    initSocket(cnf, function(){});
-
-    loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function(){
-
-    if (randomNetworkTree && (randomNetworkTree !== undefined)) { 
-        randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function(){
-          console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
-
-          setTimeout(function(){
-            fsm.fsm_init();
-            initFsmTickInterval(FSM_TICK_INTERVAL);
-          }, 3000);
-        });
-      }
-    });
-
-  });
 });
