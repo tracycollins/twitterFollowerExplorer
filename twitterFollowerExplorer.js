@@ -1917,6 +1917,12 @@ function generateAutoCategory(params, user, callback){
                 enableImageAnalysis = false;
                 startImageQuotaTimeout();
               }
+              else if (err.code === 7) {
+                console.log(chalkAlert("PARSE BANNER IMAGE CLOUD VISION API ERROR"
+                ));
+                enableImageAnalysis = false;
+                startImageQuotaTimeout();
+              }
               else{
                 console.log(chalkError("PARSE BANNER IMAGE ERROR"
                   // + "\nREQ\n" + jsonPrint(results)
