@@ -2121,6 +2121,7 @@ function processUser(threeceeUser, userIn, callback) {
             ));
           }
           else {
+            user.following = true;
             user.threeceeFollowing = threeceeUser;
           }
 
@@ -3428,7 +3429,7 @@ function initTwitterFollowerChild(twitterConfig, callback){
             + " | @" + m.friend.screen_name
           ));
         }
-        processUserQueue.push(m);
+        processUserQueue.unshift(m);
         // tfeChildHashMap[m.threeceeUser].status = "FRIEND_RAW";
       break;
 
