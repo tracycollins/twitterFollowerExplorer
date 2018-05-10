@@ -2905,18 +2905,18 @@ function initProcessUserQueueInterval(interval){
           console.log(chalkLog("<FRND PRCSSD"
             + " [ Q: " + processUserQueue.length + " ]"
             + " | @" + tcUser
-            + " | USR PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
-            + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
-            + " | TOT PRCSSD: " + statsObj.users.totalFriendsProcessed + "/" + statsObj.users.totalFriendsCount
-            + " (" + statsObj.users.totalPercentProcessed.toFixed(2) + "%)"
             + " | S: " + statsObj.user[tcUser].friendsProcessStart.format(compactDateTimeFormat)
             + " | E: " + msToTime(statsObj.user[tcUser].friendsProcessElapsed)
-            + " | FLWg: " + user.following
+            + "\n<FRND PRCSSD | FLWg: " + user.following
             + " | 3CF: " + user.threeceeFollowing
             + " | @" + user.screenName
             + " | Ts: " + user.statusesCount
             + " | FLWRs: " + user.followersCount
             + " | FRNDs: " + user.friendsCount
+            + "\n<FRND PRCSSD | USR PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
+            + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
+            + "\n<FRND PRCSSD | TOT PRCSSD: " + statsObj.users.totalFriendsProcessed + "/" + statsObj.users.totalFriendsCount
+            + " (" + statsObj.users.totalPercentProcessed.toFixed(2) + "%)"
           ));
         }
 
