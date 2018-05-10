@@ -2914,10 +2914,10 @@ function initProcessUserQueueInterval(interval){
             + " | FLWRs: " + user.followersCount
             + " | FRNDs: " + user.friendsCount
             + " | Ts: " + user.statusesCount
-            + "\n<FRND PRCSSD | USR PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
-            + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
             + "\n<FRND PRCSSD | TOT PRCSSD: " + statsObj.users.totalFriendsProcessed + "/" + statsObj.users.totalFriendsCount
             + " (" + statsObj.users.totalPercentProcessed.toFixed(2) + "%)"
+            + " | USR PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
+            + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
           ));
         }
 
