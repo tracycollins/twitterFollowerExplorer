@@ -2908,6 +2908,7 @@ function initProcessUserQueueInterval(interval){
             + " | S: " + statsObj.user[tcUser].friendsProcessStart.format(compactDateTimeFormat)
             + " | E: " + msToTime(statsObj.user[tcUser].friendsProcessElapsed)
             + "\n<FRND PRCSSD | @" + user.screenName
+            + " | NAME: " + user.name
             + " | FLWg: " + user.following
             + " | 3CF: " + user.threeceeFollowing
             + " | FLWRs: " + user.followersCount
