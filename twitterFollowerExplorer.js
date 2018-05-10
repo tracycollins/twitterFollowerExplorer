@@ -2907,12 +2907,12 @@ function initProcessUserQueueInterval(interval){
             + " | @" + tcUser
             + " | S: " + statsObj.user[tcUser].friendsProcessStart.format(compactDateTimeFormat)
             + " | E: " + msToTime(statsObj.user[tcUser].friendsProcessElapsed)
-            + "\n<FRND PRCSSD | FLWg: " + user.following
+            + "\n<FRND PRCSSD | @" + user.screenName
+            + " | FLWg: " + user.following
             + " | 3CF: " + user.threeceeFollowing
-            + " | @" + user.screenName
-            + " | Ts: " + user.statusesCount
             + " | FLWRs: " + user.followersCount
             + " | FRNDs: " + user.friendsCount
+            + " | Ts: " + user.statusesCount
             + "\n<FRND PRCSSD | USR PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
             + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
             + "\n<FRND PRCSSD | TOT PRCSSD: " + statsObj.users.totalFriendsProcessed + "/" + statsObj.users.totalFriendsCount
