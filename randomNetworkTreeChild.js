@@ -982,72 +982,66 @@ function loadNetworks(networksObj, callback){
 
     networkObj.overallMatchRate = networkObj.overallMatchRate || networkObj.matchRate;
 
+    const network = neataptic.Network.fromJSON(networkObj.network);
+
+    networkObj.network = {};
+    networkObj.network = network;
+
+    networkObj.matchRate = networkObj.matchRate || 0 ;
+    networkObj.overallMatchRate = networkObj.overallMatchRate || 0 ;
+
+    networksHashMap.set(nnId, networkObj);
+
+    if (statsObj.loadedNetworks[nnId] === undefined) {
+      statsObj.loadedNetworks[nnId] = {};
+      statsObj.loadedNetworks[nnId].networkId = nnId;
+      statsObj.loadedNetworks[nnId].inputsId = networkObj.inputsId;
+      statsObj.loadedNetworks[nnId].numInputs = networkObj.numInputs;
+      statsObj.loadedNetworks[nnId].output = [];
+      statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
+      statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
+      statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
+      statsObj.loadedNetworks[nnId].total = 0;
+      statsObj.loadedNetworks[nnId].match = 0;
+      statsObj.loadedNetworks[nnId].mismatch = 0;
+      statsObj.loadedNetworks[nnId].matchFlag = false;
+      statsObj.loadedNetworks[nnId].left = 0;
+      statsObj.loadedNetworks[nnId].neutral = 0;
+      statsObj.loadedNetworks[nnId].right = 0;
+      statsObj.loadedNetworks[nnId].positive = 0;
+      statsObj.loadedNetworks[nnId].negative = 0;
+    }
+
+    if (statsObj.allTimeLoadedNetworks[nnId] === undefined) {
+      statsObj.allTimeLoadedNetworks[nnId] = {};
+      statsObj.allTimeLoadedNetworks[nnId].networkId = nnId;
+      statsObj.allTimeLoadedNetworks[nnId].inputsId = networkObj.inputsId;
+      statsObj.allTimeLoadedNetworks[nnId].numInputs = networkObj.numInputs;
+      statsObj.allTimeLoadedNetworks[nnId].output = [];
+      statsObj.allTimeLoadedNetworks[nnId].successRate = networkObj.successRate;
+      statsObj.allTimeLoadedNetworks[nnId].matchRate = networkObj.matchRate;
+      statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
+      statsObj.allTimeLoadedNetworks[nnId].total = 0;
+      statsObj.allTimeLoadedNetworks[nnId].match = 0;
+      statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
+      statsObj.allTimeLoadedNetworks[nnId].matchFlag = false;
+      statsObj.allTimeLoadedNetworks[nnId].left = 0;
+      statsObj.allTimeLoadedNetworks[nnId].neutral = 0;
+      statsObj.allTimeLoadedNetworks[nnId].right = 0;
+      statsObj.allTimeLoadedNetworks[nnId].positive = 0;
+      statsObj.allTimeLoadedNetworks[nnId].negative = 0;
+    }
+
     console.log(chalkLog("RNT | LOAD NETWORK"
+      + " | [ " + networksHashMap.size + " NNs IN HM ]"
       + " | SR: " + networkObj.successRate.toFixed(2) + "%"
       + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
       + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
       + " | " + nnId
     ));
 
-    const network = neataptic.Network.fromJSON(networkObj.network);
 
-    networkObj.network = {};
-    networkObj.network = network;
-
-    // getInputNames(network.nodes, function(err, inputNames){
-
-    //   if (err) {
-    //     return cb(err);
-    //   }
-
-      networkObj.matchRate = networkObj.matchRate || 0 ;
-      networkObj.overallMatchRate = networkObj.overallMatchRate || 0 ;
-
-      networksHashMap.set(nnId, networkObj);
-
-      if (statsObj.loadedNetworks[nnId] === undefined) {
-        statsObj.loadedNetworks[nnId] = {};
-        statsObj.loadedNetworks[nnId].networkId = nnId;
-        statsObj.loadedNetworks[nnId].inputsId = networkObj.inputsId;
-        statsObj.loadedNetworks[nnId].numInputs = networkObj.numInputs;
-        statsObj.loadedNetworks[nnId].output = [];
-        statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
-        statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
-        statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
-        statsObj.loadedNetworks[nnId].total = 0;
-        statsObj.loadedNetworks[nnId].match = 0;
-        statsObj.loadedNetworks[nnId].mismatch = 0;
-        statsObj.loadedNetworks[nnId].matchFlag = false;
-        statsObj.loadedNetworks[nnId].left = 0;
-        statsObj.loadedNetworks[nnId].neutral = 0;
-        statsObj.loadedNetworks[nnId].right = 0;
-        statsObj.loadedNetworks[nnId].positive = 0;
-        statsObj.loadedNetworks[nnId].negative = 0;
-      }
-
-      if (statsObj.allTimeLoadedNetworks[nnId] === undefined) {
-        statsObj.allTimeLoadedNetworks[nnId] = {};
-        statsObj.allTimeLoadedNetworks[nnId].networkId = nnId;
-        statsObj.allTimeLoadedNetworks[nnId].inputsId = networkObj.inputsId;
-        statsObj.allTimeLoadedNetworks[nnId].numInputs = networkObj.numInputs;
-        statsObj.allTimeLoadedNetworks[nnId].output = [];
-        statsObj.allTimeLoadedNetworks[nnId].successRate = networkObj.successRate;
-        statsObj.allTimeLoadedNetworks[nnId].matchRate = networkObj.matchRate;
-        statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
-        statsObj.allTimeLoadedNetworks[nnId].total = 0;
-        statsObj.allTimeLoadedNetworks[nnId].match = 0;
-        statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
-        statsObj.allTimeLoadedNetworks[nnId].matchFlag = false;
-        statsObj.allTimeLoadedNetworks[nnId].left = 0;
-        statsObj.allTimeLoadedNetworks[nnId].neutral = 0;
-        statsObj.allTimeLoadedNetworks[nnId].right = 0;
-        statsObj.allTimeLoadedNetworks[nnId].positive = 0;
-        statsObj.allTimeLoadedNetworks[nnId].negative = 0;
-      }
-
-      cb();
-
-    // });
+    cb();
 
   }, function(err){
 

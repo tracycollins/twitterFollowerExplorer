@@ -11,8 +11,6 @@ let elapsed_time = function(note){
     start = process.hrtime(); // reset the timer
 };
 
-// let maxInputsHashMap = {};
-
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
@@ -21,8 +19,8 @@ const FSM_TICK_INTERVAL = ONE_SECOND;
 const PROCESS_USER_QUEUE_INTERVAL = 1;
 
 // const TEST_MODE_TOTAL_FETCH = 15;  // total twitter user fetch count
-const TEST_MODE_TOTAL_FETCH = 100;
-const TEST_MODE_FETCH_COUNT = 24;  // per request twitter user fetch count
+const TEST_MODE_TOTAL_FETCH = 20;
+const TEST_MODE_FETCH_COUNT = 15;  // per request twitter user fetch count
 const TEST_DROPBOX_NN_LOAD = 25;
 
 const TFC_CHILD_PREFIX = "TFC_";
@@ -464,15 +462,6 @@ const TFE_RUN_ID = hostname
 
 statsObj.runId = TFE_RUN_ID;
 
-
-// let histograms = {};
-// histograms.words = {};
-// histograms.urls = {};
-// histograms.hashtags = {};
-// histograms.mentions = {};
-// histograms.emoji = {};
-// histograms.images = {};
-
 let statsUpdateInterval;
 
 let twitterUserHashMap = {};
@@ -499,8 +488,8 @@ let statsFile = DROPBOX_TFE_STATS_FILE;
 configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
-const bestNetworkFolder = "/config/utility/best/neuralNetworks";
-const localBestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
+let localBestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
+let bestNetworkFolder = (hostname === "google") ? "/config/utility/best/neuralNetworks" : localBestNetworkFolder;
 
 const defaultTrainingSetFolder = dropboxConfigDefaultFolder + "/trainingSets";
 
@@ -1023,6 +1012,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
       }
     }
 
+    statsObj.numNetworksLoaded = 0;
+
     console.log(chalkLog("TFE | DROPBOX NETWORKS"
       + " | " + options.path
       + " | FOUND " + response.entries.length + " FILES"
@@ -1031,7 +1022,8 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
     async.eachSeries(response.entries, function(entry, cb){
 
-      if (configuration.testMode && ((bestNetworkHashMap.count() >= TEST_DROPBOX_NN_LOAD) || (statsObj.numNetworksLoaded >= TEST_DROPBOX_NN_LOAD))) {
+      // if (configuration.testMode && ((bestNetworkHashMap.count() >= TEST_DROPBOX_NN_LOAD) || (statsObj.numNetworksLoaded >= TEST_DROPBOX_NN_LOAD))) {
+      if (configuration.testMode && (statsObj.numNetworksLoaded >= TEST_DROPBOX_NN_LOAD)) {
         console.log(chalkLog("TFE | *** TEST MODE *** LOADED DROPBOX NETWORKS"
           + " | TEST_DROPBOX_NN_LOAD: " + TEST_DROPBOX_NN_LOAD
           + " | FOUND " + response.entries.length + " FILES"
@@ -1103,6 +1095,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
             };
 
             bestNetworkHashMap.set(networkObj.networkId, hmObj);
+            availableNeuralNetHashMap[networkObj.networkId] = true;
 
             if (!currentBestNetwork 
               || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
@@ -1908,7 +1901,7 @@ function generateAutoCategory(params, user, callback){
 
     function userBannerImage(text, cb) {
 
-      if (enableImageAnalysis && user.bannerImageUrl) {
+      if (enableImageAnalysis && !user.bannerImageAnalyzed && user.bannerImageUrl) {
 
         twitterImageParser.parseImage(
           user.bannerImageUrl, 
@@ -1936,7 +1929,7 @@ function generateAutoCategory(params, user, callback){
               cb(null, text, null);
             }
             else {
-              debug(chalkAlert("PARSE BANNER IMAGE"
+              console.log(chalkAlert("PARSE BANNER IMAGE"
                 + " | RESULTS\n" + jsonPrint(results)
               ));
               if (results.text !== undefined) {
@@ -2002,7 +1995,7 @@ function generateAutoCategory(params, user, callback){
         hist.images = histImages;
 
         // userServer.updateHistograms({user: user, histograms: histograms, updateCountHistory: updateCountHistory}, function(err, updatedUser){
-        updateHistograms({user: user, histograms: hist, updateCountHistory: updateCountHistory}, function(err, updatedUser){
+        updateHistograms({user: user, histograms: hist}, function(err, updatedUser){
 
           if (err) {
             console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
@@ -3871,7 +3864,21 @@ function initialize(cnf, callback){
 
 function saveNetworkHashMap(params, callback){
 
-  const folder = (params.folder === undefined) ? localBestNetworkFolder : params.folder;
+  // let folder;
+
+  // if (params.folder !== undefined) {
+  //   folder = params.folder;
+  // }
+  // else {
+  //   if (hostname === "google"){
+  //     folder = bestNetworkFolder;
+  //   }
+  //   else {
+  //     folder = localBestNetworkFolder;
+  //   }
+  // }
+
+  const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
   const nnIds = bestNetworkHashMap.keys();
 
   console.log(chalkNetwork("UPDATING NNs IN FOLDER " + folder));
@@ -3933,16 +3940,16 @@ function updateNetworkStats(params, callback) {
 
   }, function(err){
 
-    let folder;
+    // let folder;
 
-    if (hostname === "google"){
-      folder = configuration.testMode ? "/test" : bestNetworkFolder;
-    }
-    else {
-      folder = configuration.testMode ? "/test" : localBestNetworkFolder;
-    }
+    // if (hostname === "google"){
+    //   folder = bestNetworkFolder;
+    // }
+    // else {
+    //   folder = localBestNetworkFolder;
+    // }
 
-    saveNetworkHashMap({folder: folder, saveImmediate: params.saveImmediate}, function(){
+    saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: params.saveImmediate}, function(){
       updateNetworkStatsReady = true;
       if (callback !== undefined) { callback(err); }
     });
@@ -4089,6 +4096,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
               };
 
               file = bestRuntimeNetworkId + ".json";
+
+              // let folder = configuration.testMode ? "/test" : bestNetworkFolder;
 
               saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork }, function(){});
               saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj }, function(){});
@@ -4694,6 +4703,11 @@ initialize(configuration, function(err, cnf){
 
   if (configuration.testMode) {
     configuration.fetchCount = TEST_MODE_FETCH_COUNT;
+    bestNetworkFolder = "/config/utility/" + hostname + "/test/neuralNetworks/best";
+    localBestNetworkFolder = "/config/utility/" + hostname + "/test/neuralNetworks/local";
+
+    console.log(chalkAlert("GLOBAL BEST NETWORK FOLDER: " + bestNetworkFolder));
+    console.log(chalkAlert("LOCAL BEST NETWORK FOLDER:  " + localBestNetworkFolder));
   }
 
   if (configuration.loadNeuralNetworkID) {
