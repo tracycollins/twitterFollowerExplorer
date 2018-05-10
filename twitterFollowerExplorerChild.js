@@ -312,7 +312,9 @@ function twitterUserUpdate(params, callback){
       }
       else {
 
-        statsObj.threeceeUser.friends = userFriendsIds.ids;
+        process.send({op:"FRIENDS_IDS", threeceeUser: configuration.threeceeUser, friendsIds: userFriendsIds.ids});
+
+        // statsObj.threeceeUser.friends = userFriendsIds.ids;
         statsObj.threeceeUser.nextCursorValid = statsObj.threeceeUser.nextCursorValid || false;
         statsObj.threeceeUser.nextCursor = statsObj.threeceeUser.nextCursor || -1;
         statsObj.threeceeUser.prevCursorValid = statsObj.threeceeUser.prevCursorValid || false;
@@ -844,7 +846,6 @@ process.on("message", function(m) {
         });
 
       });
-
     break;
 
     case "READY":
@@ -853,6 +854,34 @@ process.on("message", function(m) {
 
     case "FETCH_USER_START":
       fsm.fsm_fetchUserStart();
+    break;
+
+    case "UNFOLLOW":
+
+      twitClient.post(
+
+        "friendships/destroy", {user_id: m.userId}, 
+
+        function destroyFriend(err, data, response){
+          if (err) {
+            console.log(chalkError("UNFOLLOW ERROR"
+              + " | @" + configuration.threeceeUser
+              + " | " + err
+            ));
+          }
+          else {
+            debug("data\n" + jsonPrint(data));
+            debug("response\n" + jsonPrint(response));
+
+            console.log(chalkInfo("=X= UNFOLLOW"
+              + " | 3C: @" + configuration.threeceeUser
+              + " | NID: " + m.userId
+              + " | @" + m.screenName.toLowerCase()
+            ));
+          }
+        }
+      );
+
     break;
 
     case "QUIT":

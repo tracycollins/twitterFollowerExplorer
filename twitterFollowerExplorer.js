@@ -2192,7 +2192,8 @@ function processUser(threeceeUser, userIn, callback) {
 
           })
           .catch(function(err){
-            cb(err, user);
+            console.log(chalkError("TFE | findUserInDb ERROR: " + err));
+            // cb(err, user);
           });
 
         }
@@ -2202,40 +2203,39 @@ function processUser(threeceeUser, userIn, callback) {
     function unfollowFriend(user, cb) {
 
       if (
-           ((threeceeUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
+           ((threeceeUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.has(user.nodeId))
         
-        || ((threeceeUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.includes(user.nodeId))
-        || ((threeceeUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.includes(user.nodeId))
+        || ((threeceeUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.has(user.nodeId))
+        || ((threeceeUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.has(user.nodeId))
 
       ) {
 
-        if (twitterUserHashMap.altthreecee00.friends.includes(user.nodeId)) {
+        let unfollowTarget;
 
-          if (twitterUserHashMap.altthreecee01.friends.includes(user.nodeId)) {
-            twitterUserHashMap.altthreecee01.friends.splice(twitterUserHashMap.altthreecee01.friends.indexOf(user.nodeId), 1);
+        if (twitterUserHashMap.altthreecee00.friends.has(user.nodeId)) {
+
+          if (twitterUserHashMap.altthreecee01.friends.has(user.nodeId)) {
+            twitterUserHashMap.altthreecee01.friends.delete(user.nodeId);
+            unfollowTarget = "altthreecee01";
           }
-          if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
-            twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.nodeId), 1);
+          if (twitterUserHashMap.altthreecee02.friends.has(user.nodeId)) {
+            twitterUserHashMap.altthreecee02.friends.delete(user.nodeId);
+            unfollowTarget = "altthreecee02";
           }
           
           user.following = true;
           user.threeceeFollowing = "altthreecee00";
         }
 
-        else if (twitterUserHashMap.altthreecee01.friends.includes(user.nodeId)) {
+        else if (twitterUserHashMap.altthreecee01.friends.has(user.nodeId)) {
 
-          if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
-            twitterUserHashMap.altthreecee02.friends.splice(twitterUserHashMap.altthreecee02.friends.indexOf(user.nodeId), 1);
+          if (twitterUserHashMap.altthreecee02.friends.has(user.nodeId)) {
+            twitterUserHashMap.altthreecee02.friends.delete(user.nodeId);
+            unfollowTarget = "altthreecee02";
           }
           
           user.following = true;
           user.threeceeFollowing = "altthreecee01";
-        }
-
-        else if (twitterUserHashMap.altthreecee02.friends.includes(user.nodeId)) {
-
-          user.following = true;
-          user.threeceeFollowing = "altthreecee02";
         }
 
         console.log(chalkInfo("XXX UNFOLLOW | altthreecee00 OR altthreecee01 FOLLOWING"
@@ -2245,36 +2245,8 @@ function processUser(threeceeUser, userIn, callback) {
           + " | 3CF: " + user.threeceeFollowing
         ));
 
-        twitterUserHashMap[threeceeUser].twit.post(
+        tfeChildHashMap[unfollowTarget].child.send({op: "UNFOLLOW", userId: user.nodeId, screenName: user.screenName});
 
-          "friendships/destroy", {user_id: user.nodeId}, 
-
-          function destroyFriend(err, data, response){
-            if (err) {
-              console.log(chalkError("UNFOLLOW ERROR"
-                + " | @" + threeceeUser
-                + " | " + err
-              ));
-              cb(null, user);
-            }
-            else {
-              debug("data\n" + jsonPrint(data));
-              debug("response\n" + jsonPrint(response));
-
-              console.log(chalkInfo("=X= UNFOLLOW"
-                + " | 3C: @" + threeceeUser
-                + " | NID: " + user.nodeId
-                + " | @" + user.screenName.toLowerCase()
-              ));
-              const slackText = hostname
-                + "\nUNFOLLOW @" + threeceeUser
-                + "\n@" + user.screenName.toLowerCase()
-                + "\n" + user.nodeId;
-              slackPostMessage(slackChannel, slackText);
-              cb(null, user);
-            }
-          }
-        );
       }
       else {
 
@@ -2900,6 +2872,8 @@ function initProcessUserQueueInterval(interval){
 
       tcUser = mObj.threeceeUser;
 
+      twitterUserHashMap[tcUser].friends.add(mObj.friend.id_str);
+
       processUser(tcUser, mObj.friend, function(err, user){
         if (err) {
           console.trace("processUser ERROR");
@@ -2909,7 +2883,7 @@ function initProcessUserQueueInterval(interval){
 
         statsObj.users.grandTotalFriendsProcessed += 1;
         statsObj.users.totalFriendsProcessed += 1;
-        statsObj.user[tcUser].totalPercentProcessed = 100*statsObj.users.totalFriendsProcessed/statsObj.users.totalFriendsCount;
+        statsObj.users.totalPercentProcessed = 100*statsObj.users.totalFriendsProcessed/statsObj.users.totalFriendsCount;
 
         if (statsObj.user[tcUser] === undefined) {
           statsObj.user[tcUser].friendsCount = 1;
@@ -2930,8 +2904,10 @@ function initProcessUserQueueInterval(interval){
           console.log(chalkLog("<FRND PRCSSD"
             + " [ Q: " + processUserQueue.length + " ]"
             + " | @" + tcUser
-            + " | PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
+            + " | USR PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
             + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
+            + " | TOT PRCSSD: " + statsObj.users.totalFriendsProcessed + "/" + statsObj.users.totalFriendsCount
+            + " (" + statsObj.users.totalPercentProcessed.toFixed(2) + "%)"
             + " | S: " + statsObj.user[tcUser].friendsProcessStart.format(compactDateTimeFormat)
             + " | E: " + msToTime(statsObj.user[tcUser].friendsProcessElapsed)
             + " | FLWg: " + user.following
@@ -3426,6 +3402,22 @@ function initTwitterFollowerChild(twitterConfig, callback){
         statsObj.user[m.threeceeUser.screenName.toLowerCase()].statusesCount = m.threeceeUser.statusesCount;
         statsObj.user[m.threeceeUser.screenName.toLowerCase()].friendsCount = m.threeceeUser.friendsCount;
         statsObj.user[m.threeceeUser.screenName.toLowerCase()].followersCount = m.threeceeUser.followersCount;
+        statsObj.users.totalFriendsCount = 0;
+
+        Object.keys(statsObj.user).forEach(function(tcUser){
+          statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;
+        });
+
+      break;
+
+      case "FRIENDS_IDS":
+        twitterUserHashMap[m.threeceeUser].friends = new Set(m.friendsIds);
+        console.log(chalkInfo("TFC | R> FRIENDS_IDS"
+          + " | 3C: @" + m.threeceeUser
+          + " | CHILID ID: " + m.childId
+          + " | " + twitterUserHashMap[m.threeceeUser].friends.size + " FRIENDS"
+        ));
+
       break;
 
       case "FRIEND_RAW":
@@ -3528,7 +3520,7 @@ function initTwitterUsers(callback){
 
       twitterUserHashMap[userScreenName] = {};
       twitterUserHashMap[userScreenName].threeceeUser = userScreenName;
-      twitterUserHashMap[userScreenName].friends = [];
+      twitterUserHashMap[userScreenName].friends = new Set();
 
       // resetTwitterUserState(userScreenName);
 
