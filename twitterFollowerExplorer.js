@@ -34,6 +34,7 @@ const TFE_NUM_RANDOM_NETWORKS = 100;
 
 const IMAGE_QUOTA_TIMEOUT = 60000;
 
+const DEFAULT_FORCE_INIT_RANDOM_NETWORKS = true;
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
 const DEFAULT_MIN_SUCCESS_RATE = 75;
 const DEFAULT_MIN_MATCH_RATE = 80;
@@ -334,6 +335,7 @@ let TFE_USER_DB_CRAWL = false;
 
 let configuration = {};
 
+configuration.forceInitRandomNetworks = true;
 configuration.processUserQueueInterval = 20;
 
 configuration.bestNetworkIncrementalUpdate = false;
@@ -1261,7 +1263,7 @@ function loadBestNetworkDropboxFolder(folder, callback){
 
 function initRandomNetworks(params, callback){
 
-  if (loadedNetworksFlag) {
+  if (loadedNetworksFlag && !configuration.forceInitRandomNetworks) {
     console.log(chalkAlert("SKIP INIT RANDOM NETWORKS: loadedNetworksFlag: " + loadedNetworksFlag));
     return callback(null, randomNetworksObj);
   }
@@ -1356,9 +1358,11 @@ function loadBestNeuralNetworkFile(callback){
           console.log(chalkError("initRandomNetworks ERROR: " + err));
         }
 
-        if (loadedNetworksFlag && !networksSentFlag && (randomNetworkTree && (randomNetworkTree !== undefined)) && (Object.keys(ranNetObj).length > 0)) {
-          // console.log(chalkBlue("SEND RANDOM NETWORKS | " + Object.keys(ranNetObj).length));
-
+        if (loadedNetworksFlag 
+          && (!networksSentFlag || configuration.forceInitRandomNetworks) 
+          && (randomNetworkTree && (randomNetworkTree !== undefined)) 
+          && (Object.keys(ranNetObj).length > 0))
+        {
 
           if (randomNetworkTree && (randomNetworkTree !== undefined)) { 
             networksSentFlag = true;
@@ -3647,6 +3651,8 @@ function initialize(cnf, callback){
   cnf.processName = process.env.TFE_PROCESS_NAME || "twitterFollowerExplorer";
   cnf.targetServer = process.env.TFE_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
 
+  cnf.forceInitRandomNetworks = process.env.TFE_FORCE_INIT_RANDOM_NETWORKS || DEFAULT_FORCE_INIT_RANDOM_NETWORKS ;
+
   cnf.histogramParseDominantMin = process.env.TFE_HISTOGRAM_PARSE_DOMINANT_MIN || DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN ;
   cnf.histogramParseTotalMin = process.env.TFE_HISTOGRAM_PARSE_TOTAL_MIN || DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN;
 
@@ -3693,6 +3699,11 @@ function initialize(cnf, callback){
       if (loadedConfigObj.TFE_UTIL_TARGET_SERVER !== undefined){
         console.log("LOADED TFE_UTIL_TARGET_SERVER: " + loadedConfigObj.TFE_UTIL_TARGET_SERVER);
         cnf.targetServer = loadedConfigObj.TFE_UTIL_TARGET_SERVER;
+      }
+
+      if (loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS !== undefined){
+        console.log("LOADED TFE_FORCE_INIT_RANDOM_NETWORKS: " + loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS);
+        cnf.forceInitRandomNetworks = loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS;
       }
 
       if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined){
@@ -4130,7 +4141,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback){
             + " | " + m.networkId
             + " | IN ID: " + m.inputsId
             + " | " + m.numInputs + " IN"
-            + " | SR: " + m.successRate.toFixed(2) + "%"
+            + "\n*** SR: " + m.successRate.toFixed(2) + "%"
             + " | MR: " + m.matchRate.toFixed(2) + "%"
             + " | OAMR: " + m.overallMatchRate.toFixed(2) + "%"
             + "\n*** PREV: " + m.previousBestNetworkId
