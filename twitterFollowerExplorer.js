@@ -2246,6 +2246,7 @@ function processUser(threeceeUser, userIn, callback) {
         ));
 
         tfeChildHashMap[unfollowTarget].child.send({op: "UNFOLLOW", userId: user.nodeId, screenName: user.screenName});
+        cb(null, user);
 
       }
       else {
@@ -3414,7 +3415,6 @@ function initTwitterFollowerChild(twitterConfig, callback){
         twitterUserHashMap[m.threeceeUser].friends = new Set(m.friendsIds);
         console.log(chalkInfo("TFC | R> FRIENDS_IDS"
           + " | 3C: @" + m.threeceeUser
-          + " | CHILID ID: " + m.childId
           + " | " + twitterUserHashMap[m.threeceeUser].friends.size + " FRIENDS"
         ));
 
