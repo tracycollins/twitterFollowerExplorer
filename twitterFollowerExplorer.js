@@ -1643,6 +1643,9 @@ function updateImageHistograms(params, callback){
     user.histograms = {};
     user.histograms.images = {};
   }
+  else if (user.histograms.images === undefined) {
+    user.histograms.images = {};
+  }
 
   let histograms = {};
   histograms.images = {};
