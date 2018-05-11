@@ -1632,7 +1632,7 @@ function updateUserCategoryStats(user, callback){
 function updateImageHistograms(params, callback){
 
   if (!params.bannerResults || (params.bannerResults.label.images === undefined)) {
-    console.log("image histograms: no banner results: @" + params.user.screenName);
+    debug("image histograms: no banner results: @" + params.user.screenName);
     return callback(null, {});
   }
 
@@ -1652,47 +1652,20 @@ function updateImageHistograms(params, callback){
 
   async.each(imageLabelArray, function(item, cb){
 
-    // if (user.category) {
+    if (user.histograms[type][item] === undefined) {
+      user.histograms[type][item] = histograms[type][item];
+    }
+    else if (params.accumulateFlag) {
+      user.histograms[type][item] += histograms[type][item];
+    }
 
-      // if (histogramsImages[imageLabel] === undefined) {
-      //   histogramsImages[imageLabel] = {};
-      //   histogramsImages[imageLabel].total = 0;
-      //   histogramsImages[imageLabel].left = 0;
-      //   histogramsImages[imageLabel].neutral = 0;
-      //   histogramsImages[imageLabel].right = 0;
-      //   histogramsImages[imageLabel].positive = 0;
-      //   histogramsImages[imageLabel].negative = 0;
-      //   histogramsImages[imageLabel].uncategorized = 0;
-      // }
-
-      // histogramsImages[imageLabel].total += 1;
-      
-      // if (user.category) {
-      //   if (user.category === "left") { histogramsImages[imageLabel].left += 1; }
-      //   if (user.category === "neutral") { histogramsImages[imageLabel].neutral += 1; }
-      //   if (user.category === "right") { histogramsImages[imageLabel].right += 1; }
-      //   if (user.category === "positive") { histogramsImages[imageLabel].positive += 1; }
-      //   if (user.category === "negative") { histogramsImages[imageLabel].negative += 1; }
-      // }
-      // else {
-      //   histogramsImages[imageLabel].uncategorized += 1;
-      // }
-    // }
-
-      if (user.histograms[type][item] === undefined) {
-        user.histograms[type][item] = histograms[type][item];
-      }
-      else if (params.accumulateFlag) {
-        user.histograms[type][item] += histograms[type][item];
-      }
-
-      debug(chalkAlert("user image histograms"
-        + " | @" + user.screenName
-        + " | " + type
-        + " | " + item
-        + " | USER VAL: " + user.histograms[type][item]
-        + " | UPDATE VAL: " + histograms[type][item]
-      ));
+    debug(chalkAlert("user image histograms"
+      + " | @" + user.screenName
+      + " | " + type
+      + " | " + item
+      + " | USER VAL: " + user.histograms[type][item]
+      + " | UPDATE VAL: " + histograms[type][item]
+    ));
 
     debug("image histograms\n" + jsonPrint(histograms));
 
@@ -1948,8 +1921,11 @@ function generateAutoCategory(params, user, callback){
 
     function userBannerImage(text, cb) {
 
-      if ((enableImageAnalysis && !user.bannerImageAnalyzed && user.bannerImageUrl)
-      || (configuration.forceImageAnalysis && user.bannerImageUrl)) {
+      if (
+        (enableImageAnalysis && !user.bannerImageAnalyzed && user.bannerImageUrl)
+        || (enableImageAnalysis && user.bannerImageUrl && (user.bannerImageAnalyzed !== user.bannerImageUrl))
+        || (configuration.forceImageAnalysis && user.bannerImageUrl)
+      ) {
 
         twitterImageParser.parseImage(
           user.bannerImageUrl, 
@@ -1977,10 +1953,35 @@ function generateAutoCategory(params, user, callback){
               cb(null, text, null);
             }
             else {
+
+              if (user.bannerImageAnalyzed && user.bannerImageUrl && (user.bannerImageAnalyzed !== user.bannerImageUrl)) {
+                console.log(chalkAlert("^^^ BANNER IMAGE UPDATED "
+                  + " | @" + user.screenName
+                  + " | bannerImageAnalyzed: " + user.bannerImageAnalyzed
+                  + " | bannerImageUrl: " + user.bannerImageUrl
+                ));
+              }
+              else {
+                console.log(chalkAlert("+++ BANNER IMAGE ANALYZED"
+                  + " | @" + user.screenName
+                  + " | bannerImageAnalyzed: " + user.bannerImageAnalyzed
+                  + " | bannerImageUrl: " + user.bannerImageUrl
+                ));
+                console.log(chalkAlert("+++ PARSE BANNER IMAGE"
+                  + " | @" + user.screenName
+                  + " | RESULTS: " + Object.keys(results.label.images)
+                  // + " | RESULTS\n" + jsonPrint(results)
+                ));
+              }
+
+              user.bannerImageAnalyzed = user.bannerImageUrl;
+              user.markModified("bannerImageAnalyzed");
+
               debug(chalkAlert("PARSE BANNER IMAGE"
                 + " | RESULTS: " + Object.keys(results.label.images)
                 + " | RESULTS\n" + jsonPrint(results)
               ));
+
               if (results.text !== undefined) {
                 debug(chalkInfo("@" + user.screenName + " | " + results.text));
                 text = text + "\n" + results.text;
@@ -2025,11 +2026,6 @@ function generateAutoCategory(params, user, callback){
 
       hist.images = {};
 
-      // const updateCountHistory = params.updateCountHistory 
-      // && (user.followersCount !== undefined) 
-      // && (user.friendsCount !== undefined) 
-      // && (user.statusesCount !== undefined);
-
       // elapsed_time("start updateImageHistograms");
 
       updateImageHistograms({user: user, bannerResults: bannerResults}, function(err, newHist){
@@ -2043,7 +2039,6 @@ function generateAutoCategory(params, user, callback){
 
         hist.images = newHist.images;
 
-        // userServer.updateHistograms({user: user, histograms: histograms, updateCountHistory: updateCountHistory}, function(err, updatedUser){
         updateHistograms({user: user, histograms: hist}, function(err, updatedUser){
 
           if (err) {
@@ -2094,9 +2089,9 @@ function generateAutoCategory(params, user, callback){
             ));
           }
 
-          const u = pick(updatedUser, ["nodeId", "screenName", "following", "threeceeFollowing", "category", "categoryAuto", "histograms", "languageAnalysis"]);
+          // const u = pick(updatedUser, ["nodeId", "screenName", "following", "threeceeFollowing", "category", "categoryAuto", "histograms", "languageAnalysis"]);
 
-          activateNetwork({user: u, normalization: statsObj.normalization});
+          activateNetwork({user: updatedUser, normalization: statsObj.normalization});
 
           callback(null, updatedUser);
         });
@@ -2177,70 +2172,121 @@ function processUser(threeceeUser, userIn, callback) {
             user.threeceeFollowing = threeceeUser;
           }
 
-          user.save()
-          .then(function(updatedUser){
+          let catObj = {};
 
-            updatedUser.following = true;
+          catObj.manual = user.category || false;
+          catObj.auto = user.categoryAuto || false;
 
-            let catObj = {};
-
-            catObj.manual = updatedUser.category || false;
-            catObj.auto = updatedUser.categoryAuto || false;
-
-            categorizedUserHashMap.set(updatedUser.nodeId, catObj);
+          categorizedUserHashMap.set(user.nodeId, catObj);
 
 
-            if (updatedUser.name !== userIn.name) {
-              updatedUser.name = userIn.name;
-            }
+          if (user.name !== userIn.name) {
+            user.name = userIn.name;
+          }
+          
+          if (user.screenName !== userIn.screen_name) {
+            user.screenName = userIn.screen_name;
+            user.screenNameLower = userIn.screen_name.toLowerCase();
+          }
+          
+          if (user.url !== userIn.url) {
+            user.url = userIn.url;
+          }
+          
+          if (user.profileImageUrl !== userIn.profile_image_url) {
+            user.profileImageUrl = userIn.profile_image_url;
+          }
+          
+          if (user.bannerImageUrl !== userIn.profile_banner_url) {
+            user.bannerImageAnalyzed = false;
+            user.bannerImageUrl = userIn.profile_banner_url;
+           }
+          
+          if (user.description !== userIn.description) {
+            user.description = userIn.description;
+          }
+          
+          if ((user.status !== undefined) && (userIn.status !== undefined) && user.status.id_str && userIn.status.id_str && (user.status.id_str !== userIn.status.id_str)) {
+            user.status = userIn.status;
+          }
+          
+          if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)){
+            user.followersCount = userIn.followers_count;
+          }
+
+          if ((userIn.friends_count !== undefined) && (user.friendsCount !== userIn.friends_count)){
+            user.friendsCount = userIn.friends_count;
+          }
+
+          if ((userIn.statuses_count !== undefined) && (user.statusesCount !== userIn.statuses_count)){
+            user.statusesCount = userIn.statuses_count;
+          }
+
+          cb(null, user);
+
+          // user.save()
+          // .then(function(updatedUser){
+
+          //   updatedUser.following = true;
+
+            // let catObj = {};
+
+            // catObj.manual = updatedUser.category || false;
+            // catObj.auto = updatedUser.categoryAuto || false;
+
+            // categorizedUserHashMap.set(updatedUser.nodeId, catObj);
+
+
+            // if (updatedUser.name !== userIn.name) {
+            //   updatedUser.name = userIn.name;
+            // }
             
-            if (updatedUser.screenName !== userIn.screen_name) {
-              updatedUser.screenName = userIn.screen_name;
-              updatedUser.screenNameLower = userIn.screen_name.toLowerCase();
-            }
+            // if (updatedUser.screenName !== userIn.screen_name) {
+            //   updatedUser.screenName = userIn.screen_name;
+            //   updatedUser.screenNameLower = userIn.screen_name.toLowerCase();
+            // }
             
-            if (updatedUser.url !== userIn.url) {
-              updatedUser.url = userIn.url;
-            }
+            // if (updatedUser.url !== userIn.url) {
+            //   updatedUser.url = userIn.url;
+            // }
             
-            if (updatedUser.profileImageUrl !== userIn.profile_image_url) {
-              updatedUser.profileImageUrl = userIn.profile_image_url;
-            }
+            // if (updatedUser.profileImageUrl !== userIn.profile_image_url) {
+            //   updatedUser.profileImageUrl = userIn.profile_image_url;
+            // }
             
-            if (updatedUser.bannerImageUrl !== userIn.profile_banner_url) {
-              updatedUser.bannerImageUrl = userIn.profile_banner_url;
-             }
+            // if (updatedUser.bannerImageUrl !== userIn.profile_banner_url) {
+            //   updatedUser.bannerImageUrl = userIn.profile_banner_url;
+            //  }
             
-            if (updatedUser.description !== userIn.description) {
-              updatedUser.description = userIn.description;
-            }
+            // if (updatedUser.description !== userIn.description) {
+            //   updatedUser.description = userIn.description;
+            // }
             
-            if ((updatedUser.status !== undefined) && (userIn.status !== undefined) && updatedUser.status.id_str && userIn.status.id_str && (updatedUser.status.id_str !== userIn.status.id_str)) {
-              updatedUser.status = userIn.status;
-            }
+            // if ((updatedUser.status !== undefined) && (userIn.status !== undefined) && updatedUser.status.id_str && userIn.status.id_str && (updatedUser.status.id_str !== userIn.status.id_str)) {
+            //   updatedUser.status = userIn.status;
+            // }
             
-            if ((userIn.followers_count !== undefined) && (updatedUser.followersCount !== userIn.followers_count)){
-              updatedUser.followersCount = userIn.followers_count;
-              updateCountHistory = true;
-            }
+            // if ((userIn.followers_count !== undefined) && (updatedUser.followersCount !== userIn.followers_count)){
+            //   updatedUser.followersCount = userIn.followers_count;
+            //   updateCountHistory = true;
+            // }
 
-            if ((userIn.friends_count !== undefined) && (updatedUser.friendsCount !== userIn.friends_count)){
-              updatedUser.friendsCount = userIn.friends_count;
-              updateCountHistory = true;
-            }
+            // if ((userIn.friends_count !== undefined) && (updatedUser.friendsCount !== userIn.friends_count)){
+            //   updatedUser.friendsCount = userIn.friends_count;
+            //   updateCountHistory = true;
+            // }
 
-            if ((userIn.statuses_count !== undefined) && (updatedUser.statusesCount !== userIn.statuses_count)){
-              updatedUser.statusesCount = userIn.statuses_count;
-              updateCountHistory = true;
-            }
+            // if ((userIn.statuses_count !== undefined) && (updatedUser.statusesCount !== userIn.statuses_count)){
+            //   updatedUser.statusesCount = userIn.statuses_count;
+            //   updateCountHistory = true;
+            // }
 
-            cb(null, updatedUser);
-
-          })
-          .catch(function(err){
-            console.log(chalkError("TFE | findUserInDb ERROR: " + err));
-            // cb(err, user);
-          });
+            // cb(null, updatedUser);
+          // })
+          // .catch(function(err){
+          //   console.log(chalkError("TFE | findUserInDb ERROR: " + err));
+          //   // cb(err, user);
+          // });
 
         }
       });
@@ -2967,7 +3013,15 @@ function initProcessUserQueueInterval(interval){
           ));
         }
 
-        processUserQueueReady = true;
+        user.save()
+        .then(function(updatedUser){
+          processUserQueueReady = true;
+        })
+        .catch(function(err){
+          console.log(chalkError("*** ERROR processUser USER SAVE: @" + user.screenName + " | " + err));
+          processUserQueueReady = true;
+        });
+
         // elapsed_time("end processUserQueue");
 
       });
@@ -3032,7 +3086,7 @@ function initKeepalive(interval){
   clearInterval(socketKeepAliveInterval);
 
   console.log(chalkConnect("START KEEPALIVE"
-    // + " | USER ID: " + userId
+    + " | " + getTimeStamp()
     + " | READY ACK: " + statsObj.userAuthenticated
     + " | SERVER CONNECTED: " + statsObj.serverConnected
     + " | INTERVAL: " + interval + " ms"
@@ -3052,7 +3106,8 @@ function initKeepalive(interval){
           + " | " + moment().format(compactDateTimeFormat)
         ));
       }
-    });
+    }); 
+
   }, interval);
 }
 
@@ -3147,7 +3202,7 @@ function initSocket(cnf, callback){
 
     statsObj.userAuthenticated = true ;
 
-    debug(chalkInfo("RX USER_READY_ACK MESSAGE"
+    console.log(chalkInfo("RX USER_READY_ACK MESSAGE"
       + " | " + socket.id
       + " | USER ID: " + userId
       + " | " + moment().format(compactDateTimeFormat)
