@@ -11,6 +11,10 @@ let elapsed_time = function(note){
     start = process.hrtime(); // reset the timer
 };
 
+let statsObj = {};
+
+const compactDateTimeFormat = "YYYYMMDD_HHmmss";
+
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
@@ -32,6 +36,7 @@ const TFE_NUM_RANDOM_NETWORKS = 100;
 
 const IMAGE_QUOTA_TIMEOUT = 60000;
 
+const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
 const DEFAULT_FORCE_INIT_RANDOM_NETWORKS = true;
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
 const DEFAULT_MIN_SUCCESS_RATE = 75;
@@ -73,6 +78,11 @@ const Stately = require("stately.js");
 const padStart = require("lodash.padstart");
 const padEnd = require("lodash.padend");
 
+const twitterTextParser = require("@threeceelabs/twitter-text-parser");
+const twitterImageParser = require("@threeceelabs/twitter-image-parser");
+// const twitterImageParser = require("../twitter-image-parser");
+
+
 let fsm;
 
 const HashMap = require("hashmap").HashMap;
@@ -85,13 +95,49 @@ let bestNetworkFolderLoaded = false;
 
 let maxInputHashMap = {};
 
-const compactDateTimeFormat = "YYYYMMDD_HHmmss";
+let randomNetworkTree;
+let randomNetworkTreeMessageRxQueueInterval;
+let randomNetworkTreeMessageRxQueueReadyFlag = true;
+let randomNetworkTreeReadyFlag = false;
+let randomNetworkTreeBusyFlag = false;
+let randomNetworkTreeActivateQueueSize = 0;
+let randomNetworkTreeMessageRxQueue = [];
+let randomNetworksObj = {};
+
 
 let dbConnectionReadyInterval;
 let dbConnectionReady = false;
 
+let enableImageAnalysis = true;
+
+let langAnalyzer;
+let langAnalyzerMessageRxQueueInterval;
+let langAnalyzerMessageRxQueueReadyFlag = true;
+let languageAnalysisBusyFlag = false;
+let langAnalyzerMessageRxQueue = [];
+
+
+let userDbUpdateQueueInterval;
+let userDbUpdateQueueReadyFlag = true;
+let userDbUpdateQueue = [];
+
 let quitWaitInterval;
 let quitFlag = false;
+
+function msToTime(duration) {
+  let seconds = parseInt((duration / 1000) % 60);
+  let minutes = parseInt((duration / (1000 * 60)) % 60);
+  let hours = parseInt((duration / (1000 * 60 * 60)) % 24);
+  let days = parseInt(duration / (1000 * 60 * 60 * 24));
+
+  days = (days < 10) ? "0" + days : days;
+  hours = (hours < 10) ? "0" + hours : hours;
+  minutes = (minutes < 10) ? "0" + minutes : minutes;
+  seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+  return days + ":" + hours + ":" + minutes + ":" + seconds;
+}
+
 
 const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
 const slackChannel = "#tfe";
@@ -134,6 +180,9 @@ let bestRuntimeNetworkId = false;
 let loadedNetworksFlag = false;
 let networksSentFlag = false;
 let currentBestNetworkId = false;
+let currentBestNetwork = {};
+currentBestNetwork.overallMatchRate = 0;
+
 
 let processUserQueue = [];
 let processUserQueueInterval;
@@ -145,8 +194,30 @@ let socket;
 let socketKeepAliveInterval;
 let saveFileQueueInterval;
 let saveFileBusy = false;
+let saveFileQueue = [];
+
+let statsUpdateInterval;
 
 let prevBestNetworkId = "";
+
+const jsonPrint = function (obj){
+  if (obj) {
+    return JSON.stringify(obj, null, 2);
+  }
+  else {
+    return "UNDEFINED";
+  }
+};
+
+function printCat(c){
+  if (c === "left") { return "L"; }
+  if (c === "neutral") { return "N"; }
+  if (c === "right") { return "R"; }
+  if (c === "positive") { return "+"; }
+  if (c === "negative") { return "-"; }
+  if (c === "none") { return "0"; }
+  return ".";
+}
 
 const quit = function(cause){
 
@@ -279,34 +350,8 @@ wordAssoDb.connect(function(err, dbConnection){
 
 });
 
-const twitterTextParser = require("@threeceelabs/twitter-text-parser");
-const twitterImageParser = require("@threeceelabs/twitter-image-parser");
-
-let enableImageAnalysis = true;
-
-let langAnalyzer;
-let langAnalyzerMessageRxQueueInterval;
-let langAnalyzerMessageRxQueueReadyFlag = true;
-let languageAnalysisBusyFlag = false;
-let langAnalyzerMessageRxQueue = [];
-
-let randomNetworkTree;
-let randomNetworkTreeMessageRxQueueInterval;
-let randomNetworkTreeMessageRxQueueReadyFlag = true;
-let randomNetworkTreeReadyFlag = false;
-let randomNetworkTreeBusyFlag = false;
-let randomNetworkTreeActivateQueueSize = 0;
-let randomNetworkTreeMessageRxQueue = [];
-let randomNetworksObj = {};
-
-let userDbUpdateQueueInterval;
-let userDbUpdateQueueReadyFlag = true;
-let userDbUpdateQueue = [];
 
 const cp = require("child_process");
-
-let currentBestNetwork = {};
-currentBestNetwork.overallMatchRate = 0;
 
 let previousRandomNetworksHashMap = {};
 let availableNeuralNetHashMap = {};
@@ -316,7 +361,6 @@ const RANDOM_NETWORK_TREE_INTERVAL = 1;
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
 
-let saveFileQueue = [];
 
 const inputTypes = ["emoji", "hashtags", "mentions", "urls", "words", "images"];
 inputTypes.sort();
@@ -333,7 +377,11 @@ let TFE_USER_DB_CRAWL = false;
 
 let configuration = {};
 
-configuration.forceInitRandomNetworks = true;
+configuration.forceImageAnalysis = DEFAULT_FORCE_IMAGE_ANALYSIS;
+configuration.forceInitRandomNetworks = DEFAULT_FORCE_INIT_RANDOM_NETWORKS;
+configuration.enableLanguageAnalysis = false;
+configuration.forceLanguageAnalysis = false;
+
 configuration.processUserQueueInterval = 20;
 
 configuration.bestNetworkIncrementalUpdate = false;
@@ -353,11 +401,8 @@ configuration.minMatchRate = DEFAULT_MIN_MATCH_RATE;
 configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEFAULT_FETCH_COUNT;
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
-configuration.enableLanguageAnalysis = false;
-configuration.forceLanguageAnalysis = false;
 configuration.quitOnComplete = true;
 
-let statsObj = {};
 statsObj.childrenFetchBusy = false;
 statsObj.hostname = hostname;
 statsObj.startTimeMoment = moment();
@@ -462,7 +507,6 @@ const TFE_RUN_ID = hostname
 
 statsObj.runId = TFE_RUN_ID;
 
-let statsUpdateInterval;
 
 let twitterUserHashMap = {};
 
@@ -580,38 +624,6 @@ function getTimeStamp(inputTime) {
   }
 }
 
-const jsonPrint = function (obj){
-  if (obj) {
-    return JSON.stringify(obj, null, 2);
-  }
-  else {
-    return "UNDEFINED";
-  }
-};
-
-function msToTime(duration) {
-  let seconds = parseInt((duration / 1000) % 60);
-  let minutes = parseInt((duration / (1000 * 60)) % 60);
-  let hours = parseInt((duration / (1000 * 60 * 60)) % 24);
-  let days = parseInt(duration / (1000 * 60 * 60 * 24));
-
-  days = (days < 10) ? "0" + days : days;
-  hours = (hours < 10) ? "0" + hours : hours;
-  minutes = (minutes < 10) ? "0" + minutes : minutes;
-  seconds = (seconds < 10) ? "0" + seconds : seconds;
-
-  return days + ":" + hours + ":" + minutes + ":" + seconds;
-}
-
-function printCat(c){
-  if (c === "left") { return "L"; }
-  if (c === "neutral") { return "N"; }
-  if (c === "right") { return "R"; }
-  if (c === "positive") { return "+"; }
-  if (c === "negative") { return "-"; }
-  if (c === "none") { return "0"; }
-  return ".";
-}
 
 function resetTwitterUserState(user, callback){
 
@@ -1620,49 +1632,76 @@ function updateUserCategoryStats(user, callback){
 function updateImageHistograms(params, callback){
 
   if (!params.bannerResults || (params.bannerResults.label.images === undefined)) {
+    console.log("image histograms: no banner results: @" + params.user.screenName);
     return callback(null, {});
   }
 
+  const type = "images";
+
   let user = params.user;
-  let imagesObj = params.bannerResults.label.images;
-  let histogramsImages = {};
-  const imageLabelArray = Object.keys(imagesObj);
+  if (!user.histograms || (user.histograms === undefined)) { 
+    user.histograms = {};
+    user.histograms.images = {};
+  }
 
-  async.each(imageLabelArray, function(imageLabel, cb){
+  let histograms = {};
+  histograms.images = {};
+  histograms.images = params.bannerResults.label.images;
+  const imageLabelArray = Object.keys(histograms.images);
 
-    if (user.category) {
 
-      if (histogramsImages[imageLabel] === undefined) {
-        histogramsImages[imageLabel] = {};
-        histogramsImages[imageLabel].total = 0;
-        histogramsImages[imageLabel].left = 0;
-        histogramsImages[imageLabel].neutral = 0;
-        histogramsImages[imageLabel].right = 0;
-        histogramsImages[imageLabel].positive = 0;
-        histogramsImages[imageLabel].negative = 0;
-        histogramsImages[imageLabel].uncategorized = 0;
-      }
+  async.each(imageLabelArray, function(item, cb){
 
-      histogramsImages[imageLabel].total += 1;
+    // if (user.category) {
+
+      // if (histogramsImages[imageLabel] === undefined) {
+      //   histogramsImages[imageLabel] = {};
+      //   histogramsImages[imageLabel].total = 0;
+      //   histogramsImages[imageLabel].left = 0;
+      //   histogramsImages[imageLabel].neutral = 0;
+      //   histogramsImages[imageLabel].right = 0;
+      //   histogramsImages[imageLabel].positive = 0;
+      //   histogramsImages[imageLabel].negative = 0;
+      //   histogramsImages[imageLabel].uncategorized = 0;
+      // }
+
+      // histogramsImages[imageLabel].total += 1;
       
-      if (user.category) {
-        if (user.category === "left") { histogramsImages[imageLabel].left += 1; }
-        if (user.category === "neutral") { histogramsImages[imageLabel].neutral += 1; }
-        if (user.category === "right") { histogramsImages[imageLabel].right += 1; }
-        if (user.category === "positive") { histogramsImages[imageLabel].positive += 1; }
-        if (user.category === "negative") { histogramsImages[imageLabel].negative += 1; }
+      // if (user.category) {
+      //   if (user.category === "left") { histogramsImages[imageLabel].left += 1; }
+      //   if (user.category === "neutral") { histogramsImages[imageLabel].neutral += 1; }
+      //   if (user.category === "right") { histogramsImages[imageLabel].right += 1; }
+      //   if (user.category === "positive") { histogramsImages[imageLabel].positive += 1; }
+      //   if (user.category === "negative") { histogramsImages[imageLabel].negative += 1; }
+      // }
+      // else {
+      //   histogramsImages[imageLabel].uncategorized += 1;
+      // }
+    // }
+
+      if (user.histograms[type][item] === undefined) {
+        user.histograms[type][item] = histograms[type][item];
       }
-      else {
-        histogramsImages[imageLabel].uncategorized += 1;
+      else if (params.accumulateFlag) {
+        user.histograms[type][item] += histograms[type][item];
       }
-    }
+
+      debug(chalkAlert("user image histograms"
+        + " | @" + user.screenName
+        + " | " + type
+        + " | " + item
+        + " | USER VAL: " + user.histograms[type][item]
+        + " | UPDATE VAL: " + histograms[type][item]
+      ));
+
+    debug("image histograms\n" + jsonPrint(histograms));
 
     async.setImmediate(function() {
       cb();
     });
 
   }, function(){
-    callback(null, histogramsImages);
+    callback(null, histograms);
   });
 
 }
@@ -1717,7 +1756,6 @@ function startImageQuotaTimeout(){
 
 function updateHistograms(params, callback) {
 
-  let comboHistogram = {};
   let user = {};
   let histograms = {};
 
@@ -1733,6 +1771,7 @@ function updateHistograms(params, callback) {
   async.each(inputHistogramTypes, function(type, cb0){
 
     if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
+    if (histograms[type] === undefined) { histograms[type] = {}; }
 
     const inputHistogramTypeItems = Object.keys(histograms[type]);
 
@@ -1744,6 +1783,14 @@ function updateHistograms(params, callback) {
       else if (params.accumulateFlag) {
         user.histograms[type][item] += histograms[type][item];
       }
+
+      debug("user histograms"
+        + " | @" + user.screenName
+        + " | " + type
+        + " | " + item
+        + " | USER VAL: " + user.histograms[type][item]
+        + " | UPDATE VAL: " + histograms[type][item]
+      );
 
       async.setImmediate(function() {
         cb1();
@@ -1901,7 +1948,8 @@ function generateAutoCategory(params, user, callback){
 
     function userBannerImage(text, cb) {
 
-      if (enableImageAnalysis && !user.bannerImageAnalyzed && user.bannerImageUrl) {
+      if ((enableImageAnalysis && !user.bannerImageAnalyzed && user.bannerImageUrl)
+      || (configuration.forceImageAnalysis && user.bannerImageUrl)) {
 
         twitterImageParser.parseImage(
           user.bannerImageUrl, 
@@ -1929,7 +1977,8 @@ function generateAutoCategory(params, user, callback){
               cb(null, text, null);
             }
             else {
-              console.log(chalkAlert("PARSE BANNER IMAGE"
+              debug(chalkAlert("PARSE BANNER IMAGE"
+                + " | RESULTS: " + Object.keys(results.label.images)
                 + " | RESULTS\n" + jsonPrint(results)
               ));
               if (results.text !== undefined) {
@@ -1976,14 +2025,14 @@ function generateAutoCategory(params, user, callback){
 
       hist.images = {};
 
-      const updateCountHistory = params.updateCountHistory 
-      && (user.followersCount !== undefined) 
-      && (user.friendsCount !== undefined) 
-      && (user.statusesCount !== undefined);
+      // const updateCountHistory = params.updateCountHistory 
+      // && (user.followersCount !== undefined) 
+      // && (user.friendsCount !== undefined) 
+      // && (user.statusesCount !== undefined);
 
       // elapsed_time("start updateImageHistograms");
 
-      updateImageHistograms({user: user, bannerResults: bannerResults}, function(err, histImages){
+      updateImageHistograms({user: user, bannerResults: bannerResults}, function(err, newHist){
 
         // elapsed_time("end updateImageHistograms");
 
@@ -1992,7 +2041,7 @@ function generateAutoCategory(params, user, callback){
           return callback(new Error(err), null);
         }
 
-        hist.images = histImages;
+        hist.images = newHist.images;
 
         // userServer.updateHistograms({user: user, histograms: histograms, updateCountHistory: updateCountHistory}, function(err, updatedUser){
         updateHistograms({user: user, histograms: hist}, function(err, updatedUser){
@@ -2154,12 +2203,12 @@ function processUser(threeceeUser, userIn, callback) {
               updatedUser.url = userIn.url;
             }
             
-            if (updatedUser.profileImageUrl !== userIn.profileImageUrl) {
-              updatedUser.profileImageUrl = userIn.profileImageUrl;
+            if (updatedUser.profileImageUrl !== userIn.profile_image_url) {
+              updatedUser.profileImageUrl = userIn.profile_image_url;
             }
             
-            if (updatedUser.bannerImageUrl !== userIn.bannerImageUrl) {
-              updatedUser.bannerImageUrl = userIn.bannerImageUrl;
+            if (updatedUser.bannerImageUrl !== userIn.profile_banner_url) {
+              updatedUser.bannerImageUrl = userIn.profile_banner_url;
              }
             
             if (updatedUser.description !== userIn.description) {
