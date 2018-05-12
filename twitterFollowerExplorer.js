@@ -3071,7 +3071,7 @@ function sendKeepAlive(userObj, callback){
       + " | " + userObj.userId
     ));
     socket.emit("SESSION_KEEPALIVE", userObj);
-    callback(null, userObj.userId);
+    callback(null, userObj);
   }
   else {
     console.log(chalkError("!!!! CANNOT TX KEEPALIVE"
