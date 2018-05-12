@@ -3067,11 +3067,11 @@ function sendKeepAlive(userObj, callback){
   
   if (statsObj.userAuthenticated && statsObj.serverConnected){
     debug(chalkLog("TX KEEPALIVE"
-      + " | " + userObj.userId
       + " | " + moment().format(compactDateTimeFormat)
+      + " | " + userObj.userId
     ));
     socket.emit("SESSION_KEEPALIVE", userObj);
-    callback(null, null);
+    callback(null, userObj.userId);
   }
   else {
     console.log(chalkError("!!!! CANNOT TX KEEPALIVE"
