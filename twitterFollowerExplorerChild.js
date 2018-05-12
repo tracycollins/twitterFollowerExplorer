@@ -436,7 +436,7 @@ function fetchFriends(params, callback) {
           friend.following = true;
           friend.threeceeFollowing = threeceeUser;
 
-          process.send({op:"FRIEND_RAW", threeceeUser: configuration.threeceeUser, childId: configuration.childId, friend: friend}, function(){
+          process.send({op:"FRIEND_RAW", follow:false, threeceeUser: configuration.threeceeUser, childId: configuration.childId, friend: friend}, function(){
             cb();
           });
 
@@ -675,13 +675,6 @@ process.on( "SIGINT", function() {
 
 function initTwitter(twitterConfig, callback){
 
-  // twitClient = new Twit({
-  //   consumer_key: process.env.CONSUMER_KEY,
-  //   consumer_secret: process.env.CONSUMER_SECRET,
-  //   access_token: process.env.TOKEN,
-  //   access_token_secret: process.env.TOKEN_SECRET
-  // });
-
   if (!twitClient || (twitClient === undefined)){
 
     twitClient = new Twit(twitterConfig);
@@ -700,6 +693,7 @@ function initTwitter(twitterConfig, callback){
 
       const friendRawObj = {
         op:"FRIEND_RAW", 
+        follow:true, 
         threeceeUser: configuration.threeceeUser,
         childId: configuration.childId, 
         friend: followMessage.target

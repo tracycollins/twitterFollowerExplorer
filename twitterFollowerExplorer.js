@@ -2227,70 +2227,6 @@ function processUser(threeceeUser, userIn, callback) {
 
           cb(null, user);
 
-          // user.save()
-          // .then(function(updatedUser){
-
-          //   updatedUser.following = true;
-
-            // let catObj = {};
-
-            // catObj.manual = updatedUser.category || false;
-            // catObj.auto = updatedUser.categoryAuto || false;
-
-            // categorizedUserHashMap.set(updatedUser.nodeId, catObj);
-
-
-            // if (updatedUser.name !== userIn.name) {
-            //   updatedUser.name = userIn.name;
-            // }
-            
-            // if (updatedUser.screenName !== userIn.screen_name) {
-            //   updatedUser.screenName = userIn.screen_name;
-            //   updatedUser.screenNameLower = userIn.screen_name.toLowerCase();
-            // }
-            
-            // if (updatedUser.url !== userIn.url) {
-            //   updatedUser.url = userIn.url;
-            // }
-            
-            // if (updatedUser.profileImageUrl !== userIn.profile_image_url) {
-            //   updatedUser.profileImageUrl = userIn.profile_image_url;
-            // }
-            
-            // if (updatedUser.bannerImageUrl !== userIn.profile_banner_url) {
-            //   updatedUser.bannerImageUrl = userIn.profile_banner_url;
-            //  }
-            
-            // if (updatedUser.description !== userIn.description) {
-            //   updatedUser.description = userIn.description;
-            // }
-            
-            // if ((updatedUser.status !== undefined) && (userIn.status !== undefined) && updatedUser.status.id_str && userIn.status.id_str && (updatedUser.status.id_str !== userIn.status.id_str)) {
-            //   updatedUser.status = userIn.status;
-            // }
-            
-            // if ((userIn.followers_count !== undefined) && (updatedUser.followersCount !== userIn.followers_count)){
-            //   updatedUser.followersCount = userIn.followers_count;
-            //   updateCountHistory = true;
-            // }
-
-            // if ((userIn.friends_count !== undefined) && (updatedUser.friendsCount !== userIn.friends_count)){
-            //   updatedUser.friendsCount = userIn.friends_count;
-            //   updateCountHistory = true;
-            // }
-
-            // if ((userIn.statuses_count !== undefined) && (updatedUser.statusesCount !== userIn.statuses_count)){
-            //   updatedUser.statusesCount = userIn.statuses_count;
-            //   updateCountHistory = true;
-            // }
-
-            // cb(null, updatedUser);
-          // })
-          // .catch(function(err){
-          //   console.log(chalkError("TFE | findUserInDb ERROR: " + err));
-          //   // cb(err, user);
-          // });
-
         }
       });
     },
@@ -3534,12 +3470,20 @@ function initTwitterFollowerChild(twitterConfig, callback){
       case "FRIEND_RAW":
         if (configuration.testMode){
           console.log(chalkInfo("TFC | R> FRIEND"
+            + " | FOLLOW: " + m.follow
             + " | 3C: @" + m.threeceeUser
             + " | @" + m.friend.screen_name
           ));
         }
         processUserQueue.unshift(m);
-        // tfeChildHashMap[m.threeceeUser].status = "FRIEND_RAW";
+
+        if (m.folow) {
+          let slackText = "\n*FOLLOW | 3C @" + m.threeceeUser + " > @" + m.friend.screen_name + " *"; 
+          
+          console.log("TFE | SLACK TEXT: " + slackText);
+
+          slackPostMessage(slackChannel, slackText);
+        }
       break;
 
       case "STATS":
