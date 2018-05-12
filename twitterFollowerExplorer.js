@@ -3118,8 +3118,6 @@ function reset(cause, callback){
 
   console.log(chalkAlert("\nRESET | CAUSE: " + cause + "\n"));
 
-  clearInterval(socketKeepAliveInterval);
-
   if (callback !== undefined) { callback(); } 
 }
 
