@@ -399,7 +399,7 @@ configuration.testMode = false;
 configuration.minSuccessRate = DEFAULT_MIN_SUCCESS_RATE;
 configuration.minMatchRate = DEFAULT_MIN_MATCH_RATE;
 configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEFAULT_FETCH_COUNT;
-configuration.keepaliveInterval = 1*ONE_MINUTE+1;
+configuration.keepaliveInterval = 1*ONE_MINUTE;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
 configuration.quitOnComplete = true;
 
