@@ -3095,10 +3095,18 @@ function initKeepalive(interval){
     + " | INTERVAL: " + interval + " ms"
   ));
 
-  socketKeepAliveInterval = setInterval(function(){ // TX KEEPALIVE
+  sendKeepAlive(userObj, function(err, results){
+    if (err) {
+      console.log(chalkError("KEEPALIVE ERROR: " + err));
+    }
+    else if (results){
+      console.log(chalkConnect("KEEPALIVE"
+        + " | " + moment().format(compactDateTimeFormat)
+      ));
+    }
+  }); 
 
-    userObj.stats.tweetsPerMinute = statsObj.tweetsPerMinute;
-    userObj.stats.tweetsPerSecond = statsObj.tweetsPerSecond;
+  socketKeepAliveInterval = setInterval(function(){ // TX KEEPALIVE
 
     sendKeepAlive(userObj, function(err, results){
       if (err) {
