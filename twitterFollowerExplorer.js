@@ -3477,7 +3477,7 @@ function initTwitterFollowerChild(twitterConfig, callback){
         }
         processUserQueue.unshift(m);
 
-        if (m.folow) {
+        if (m.follow) {
           let slackText = "\n*FOLLOW | 3C @" + m.threeceeUser + " > @" + m.friend.screen_name + " *"; 
           
           console.log("TFE | SLACK TEXT: " + slackText);
