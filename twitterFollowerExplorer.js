@@ -3153,9 +3153,9 @@ function initSocket(cnf, callback){
       + " | " + moment().format(compactDateTimeFormat)
     ));
 
-    if (userId === userObj.tags.entity) {
-      initKeepalive(cnf.keepaliveInterval);
-    }
+    // if (userId === userObj.tags.entity) {
+    //   initKeepalive(cnf.keepaliveInterval);
+    // }
   });
 
   socket.on("error", function(error){
