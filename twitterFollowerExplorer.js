@@ -2107,8 +2107,6 @@ function generateAutoCategory(params, user, callback){
 
 function processUser(threeceeUser, userIn, callback) {
 
-  // elapsed_time("start processUser");
-
   let updateCountHistory = false;
 
   debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
@@ -2940,6 +2938,7 @@ function initProcessUserQueueInterval(interval){
             + " | E: " + msToTime(statsObj.user[tcUser].friendsProcessElapsed)
             + "\n<FRND PRCSSD | @" + user.screenName
             + " | NAME: " + user.name
+            + " | CR: " + user.createdAt
             + " | FLWg: " + user.following
             + " | 3CF: " + user.threeceeFollowing
             + " | FLWRs: " + user.followersCount
@@ -2960,8 +2959,6 @@ function initProcessUserQueueInterval(interval){
           console.log(chalkError("*** ERROR processUser USER SAVE: @" + user.screenName + " | " + err));
           processUserQueueReady = true;
         });
-
-        // elapsed_time("end processUserQueue");
 
       });
 
