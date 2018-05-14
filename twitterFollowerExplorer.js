@@ -3002,7 +3002,7 @@ function initSaveFileQueue(cnf){
 function sendKeepAlive(userObj, callback){
   
   if (statsObj.userAuthenticated && statsObj.serverConnected){
-    console.lo(chalkAlert("TX KEEPALIVE"
+    console.log(chalkAlert("TX KEEPALIVE"
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + userObj.userId
     ));
