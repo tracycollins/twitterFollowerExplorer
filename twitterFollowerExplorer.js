@@ -2507,7 +2507,7 @@ function initSocket(cnf) {
 
   socket.on("USER_READY_ACK", function(userId) {
 
-    statsObj.userAuthenticated = true ;
+    statsObj.userReadyAck = true ;
     statsObj.serverConnected = true;
 
     console.log(chalkInfo("RX USER_READY_ACK MESSAGE"
