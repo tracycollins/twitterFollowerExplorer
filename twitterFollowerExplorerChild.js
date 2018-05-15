@@ -348,7 +348,6 @@ function twitterUserUpdate(params, callback){
   });
 }
 
-
 function fetchFriends(params, callback) {
 
   if (configuration.testMode) { console.log(chalkInfo("FETCH FRIENDS params\n" + jsonPrint(params))); }
@@ -653,7 +652,6 @@ console.log("=================================");
 process.on("exit", function() {
 });
 
-
 function showStats(options){
 
   console.log(chalkLog("--- STATS --------------------------------------\n"
@@ -769,7 +767,6 @@ function initTwitter(twitterConfig, callback){
 
     });
   });
-
 }
 
 function initialize(callback){

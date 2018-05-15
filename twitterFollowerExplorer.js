@@ -1788,9 +1788,6 @@ function updateHistograms(params, callback) {
 
 function generateAutoCategory(params, user, callback){
 
-  // elapsed_time("start generateAutoCategory");
-
-  // PARSE USER STATUS + DESC, IF EXIST
   async.waterfall([
 
     function userScreenName(cb) {
@@ -2029,11 +2026,7 @@ function generateAutoCategory(params, user, callback){
 
       hist.images = {};
 
-      // elapsed_time("start updateImageHistograms");
-
       updateImageHistograms({user: user, bannerResults: bannerResults}, function(err, newHist){
-
-        // elapsed_time("end updateImageHistograms");
 
         if (err) {
           console.log(chalkError("*** ERROR updateImageHistograms: " + err));
@@ -2172,6 +2165,8 @@ function processUser(threeceeUser, userIn, callback) {
             user.following = true;
             user.threeceeFollowing = threeceeUser;
           }
+
+          if ((user.status !== undefined) && user.status) { user.lastSeen = user.status.created_at; }
 
           let catObj = {};
 
