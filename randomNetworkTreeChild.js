@@ -195,7 +195,11 @@ function showStats(options){
 
 function quit(message) {
   let msg = "";
-  if (message) { msg = message; }
+  let exitCode = 0;
+  if (message) { 
+    msg = message;
+    exitCode = 1;
+  }
   showStats(false);
   console.log(process.argv[1]
     + " | RANDOM NETWORK TREE: **** QUITTING"
@@ -205,7 +209,7 @@ function quit(message) {
   );
   clearInterval(statsUpdateInterval);
   clearInterval(activateNetworkInterval);
-  process.exit();
+  process.exit(exitCode);
 }
 
 function indexOfMax (arr, callback) {

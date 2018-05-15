@@ -2481,7 +2481,7 @@ function initSocket(cnf) {
     });
 
     socket.on("disconnect", function(reason) {
-      
+
       statsObj.userAuthenticated = false ;
       statsObj.serverConnected = false;
       statsObj.userReadyAck = false ;
@@ -3684,6 +3684,7 @@ function initRandomNetworkTree(callback) {
     console.log(chalkError("*** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
     if (!quitFlag) { quit({source: "RNT", error: err }); }
   });
+
   randomNetworkTree.on("exit", function(err) {
     randomNetworkTreeBusyFlag = false;
     randomNetworkTreeReadyFlag = true;
@@ -3692,6 +3693,7 @@ function initRandomNetworkTree(callback) {
     console.log(chalkError("*** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
     if (!quitFlag) { quit({source: "RNT", error: err }); }
   });
+
   randomNetworkTree.on("close", function(code) {
     randomNetworkTreeBusyFlag = false;
     randomNetworkTreeReadyFlag = true;
@@ -3700,6 +3702,7 @@ function initRandomNetworkTree(callback) {
     console.log(chalkError("*** randomNetworkTree CLOSE *** | " + code));
     if (!quitFlag) { quit({source: "RNT", code: code }); }
   });
+  
   randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL }, function() {
     if (callback !== undefined) { callback(); }
   });
