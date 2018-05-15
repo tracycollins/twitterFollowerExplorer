@@ -2484,6 +2484,7 @@ function initSocket(cnf) {
 
       statsObj.userAuthenticated = false ;
       statsObj.serverConnected = false;
+      statsObj.userReadyTransmitted = false;
       statsObj.userReadyAck = false ;
 
       console.log(chalkConnect(moment().format(compactDateTimeFormat)
@@ -2532,6 +2533,7 @@ function initSocket(cnf) {
   socket.on("connect_error", function(err) {
     statsObj.userAuthenticated = false ;
     statsObj.serverConnected = false ;
+    statsObj.userReadyTransmitted = false;
     statsObj.userReadyAck = false ;
     console.log(chalkError("*** CONNECT ERROR "
       + " | " + moment().format(compactDateTimeFormat)
@@ -2546,6 +2548,7 @@ function initSocket(cnf) {
 
     statsObj.userAuthenticated = false ;
     statsObj.serverConnected = false ;
+    statsObj.userReadyTransmitted = false;
     statsObj.userReadyAck = false ;
 
     console.log(chalkError("*** RECONNECT ERROR "
@@ -3702,7 +3705,7 @@ function initRandomNetworkTree(callback) {
     console.log(chalkError("*** randomNetworkTree CLOSE *** | " + code));
     if (!quitFlag) { quit({source: "RNT", code: code }); }
   });
-  
+
   randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL }, function() {
     if (callback !== undefined) { callback(); }
   });
