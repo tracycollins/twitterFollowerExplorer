@@ -2481,8 +2481,10 @@ function initSocket(cnf) {
     });
 
     socket.on("disconnect", function(reason) {
+      
       statsObj.userAuthenticated = false ;
       statsObj.serverConnected = false;
+      statsObj.userReadyAck = false ;
 
       console.log(chalkConnect(moment().format(compactDateTimeFormat)
         + " | SOCKET DISCONNECT: " + socket.id
@@ -2530,6 +2532,7 @@ function initSocket(cnf) {
   socket.on("connect_error", function(err) {
     statsObj.userAuthenticated = false ;
     statsObj.serverConnected = false ;
+    statsObj.userReadyAck = false ;
     console.log(chalkError("*** CONNECT ERROR "
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + err.type
@@ -2540,13 +2543,17 @@ function initSocket(cnf) {
   });
 
   socket.on("reconnect_error", function(err) {
+
     statsObj.userAuthenticated = false ;
     statsObj.serverConnected = false ;
+    statsObj.userReadyAck = false ;
+
     console.log(chalkError("*** RECONNECT ERROR "
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + err.type
       + " | " + err.description
     ));
+
   });
 
   socket.on("SESSION_ABORT", function(sessionId) {
