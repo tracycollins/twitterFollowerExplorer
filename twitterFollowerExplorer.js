@@ -2434,64 +2434,90 @@ function initSocket(cnf) {
   socket = require("socket.io-client")(cnf.targetServer, { reconnection: true });
 
   socket.on("connect", function() {
+
     statsObj.serverConnected = true ;
+
     console.log(chalkConnect("SOCKET CONNECT | " + socket.id + " ... AUTHENTICATE ..."));
+
     socket.on("unauthorized", function(err) {
       console.log(chalkError("*** AUTHENTICATION ERROR: ", err.message));
       statsObj.userAuthenticated = false ;
     });
+
     socket.emit("authentication", { namespace: "util", userId: userObj.userId, password: "0123456789" });
+
     socket.on("authenticated", function() {
+
+      statsObj.serverConnected = true ;
+
       console.log("AUTHENTICATED | " + socket.id);
+
       reset("connect", function() {
+
         statsObj.socketId = socket.id;
+
         console.log(chalkConnect( "CONNECTED TO HOST"
           + " | SERVER: " + cnf.targetServer
           + " | ID: " + socket.id
-          ));
-          userObj.timeStamp = moment().valueOf();
-          console.log(chalkInfo(socket.id
-            + " | TX USER_READY"
-            + " | " + moment().format(compactDateTimeFormat)
-            + " | " + userObj.userId
-            + " | " + userObj.url
-            + " | " + userObj.screenName
-            + " | " + userObj.type
-            + " | " + userObj.mode
-            + "\nTAGS\n" + jsonPrint(userObj.tags)
-          ));
-          statsObj.serverConnected = true ;
-          statsObj.userAuthenticated = true ;
-          initKeepalive(cnf.keepaliveInterval);
-          initUserReadyInterval(5000);
+        ));
+
+        userObj.timeStamp = moment().valueOf();
+
+        console.log(chalkInfo(socket.id
+          + " | TX USER_READY"
+          + " | " + moment().format(compactDateTimeFormat)
+          + " | " + userObj.userId
+          + " | " + userObj.url
+          + " | " + userObj.screenName
+          + " | " + userObj.type
+          + " | " + userObj.mode
+          + "\nTAGS\n" + jsonPrint(userObj.tags)
+        ));
+
+        statsObj.userAuthenticated = true ;
+        initKeepalive(cnf.keepaliveInterval);
+        initUserReadyInterval(5000);
       });
     });
+
     socket.on("disconnect", function(reason) {
       statsObj.userAuthenticated = false ;
       statsObj.serverConnected = false;
+
       console.log(chalkConnect(moment().format(compactDateTimeFormat)
         + " | SOCKET DISCONNECT: " + socket.id
         + " | REASON: " + reason
       ));
+
     });
+
   });
+
   socket.on("reconnect", function(reason) {
-    statsObj.serverConnected = false;
+
+    statsObj.serverConnected = true;
+
     console.log(chalkInfo("RECONNECT"
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + socket.id
       + " | REASON: " + reason
     ));
+
   });
+
   socket.on("USER_READY_ACK", function(userId) {
+
     statsObj.userAuthenticated = true ;
-    statsObj.serverConnected = false;
+    statsObj.serverConnected = true;
+
     console.log(chalkInfo("RX USER_READY_ACK MESSAGE"
       + " | " + socket.id
       + " | USER ID: " + userId
       + " | " + moment().format(compactDateTimeFormat)
     ));
+
   });
+
   socket.on("error", function(error) {
     console.log(chalkError(moment().format(compactDateTimeFormat)
       + " | *** SOCKET ERROR"
@@ -2500,6 +2526,7 @@ function initSocket(cnf) {
     ));
     reset("error");
   });
+
   socket.on("connect_error", function(err) {
     statsObj.userAuthenticated = false ;
     statsObj.serverConnected = false ;
@@ -2511,6 +2538,7 @@ function initSocket(cnf) {
     ));
     reset("connect_error");
   });
+
   socket.on("reconnect_error", function(err) {
     statsObj.userAuthenticated = false ;
     statsObj.serverConnected = false ;
@@ -2520,6 +2548,7 @@ function initSocket(cnf) {
       + " | " + err.description
     ));
   });
+
   socket.on("SESSION_ABORT", function(sessionId) {
     console.log(chalkAlert("@@@@@ RX SESSION_ABORT | " + sessionId));
     if (sessionId === statsObj.socketId) {
@@ -2530,6 +2559,7 @@ function initSocket(cnf) {
     }
     reset("SESSION_ABORT");
   });
+
   socket.on("SESSION_EXPIRED", function(sessionId) {
     console.log(chalkAlert("RX SESSION_EXPIRED | " + sessionId));
     if (sessionId === statsObj.socketId) {
@@ -2540,6 +2570,7 @@ function initSocket(cnf) {
     }
     reset("SESSION_EXPIRED");
   });
+
   socket.on("DROPBOX_CHANGE", function(response) {
     response.entries.forEach(function(entry) {
       debug(chalkInfo(">R DROPBOX_CHANGE"
@@ -2600,14 +2631,17 @@ function initSocket(cnf) {
       });
     });
   });
+
   socket.on("HEARTBEAT", function() {
-    statsObj.serverConnected = false;
+    statsObj.serverConnected = true;
     statsObj.heartbeatsReceived += 1;
   });
+
   socket.on("KEEPALIVE_ACK", function(userId) {
-    statsObj.serverConnected = false;
+    statsObj.serverConnected = true;
     debug(chalkLog("RX KEEPALIVE_ACK | " + userId));
   });
+
 }
 
 function initStatsUpdate(callback) {
