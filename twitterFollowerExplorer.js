@@ -1640,9 +1640,11 @@ function generateAutoCategory(params, user, callback) {
               + " | LA: S: " + score.toFixed(2)
               + " M: " + mag.toFixed(2)
             ));
-            langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function() {
-              statsObj.analyzer.analyzed += 1;
-            });
+            if ((langAnalyzer !== undefined) && langAnalyzer) {
+              langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function() {
+                statsObj.analyzer.analyzed += 1;
+              });
+            }
           }
           else {
             statsObj.analyzer.skipped += 1;
@@ -2182,7 +2184,7 @@ process.on("message", function(msg) {
 });
 function showStats(options) {
   runEnable();
-  if (langAnalyzer !== undefined) {
+  if ((langAnalyzer !== undefined) && langAnalyzer) {
     langAnalyzer.send({op: "STATS", options: options});
   }
   if (options) {
