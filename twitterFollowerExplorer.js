@@ -2,24 +2,27 @@
 "use strict";
 require("isomorphic-fetch");
 let start = process.hrtime();
+
 let elapsed_time = function(note) {
     const precision = 3; // 3 decimal places
     const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
     console.log(process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
     start = process.hrtime(); // reset the timer
 };
-let statsObj = {};
+
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
+
+const FETCH_ALL_INTERVAL = 60*ONE_MINUTE;
+
 const FSM_TICK_INTERVAL = ONE_SECOND;
 const PROCESS_USER_QUEUE_INTERVAL = 1;
-// const TEST_MODE_TOTAL_FETCH = 15;  // total twitter user fetch count
+
 const TEST_MODE_TOTAL_FETCH = 20;
 const TEST_MODE_FETCH_COUNT = 15;  // per request twitter user fetch count
 const TEST_DROPBOX_NN_LOAD = 25;
 const TFC_CHILD_PREFIX = "TFC_";
-let tfeChildHashMap = {};
 const SAVE_CACHE_DEFAULT_TTL = 120; // seconds
 const TFE_NUM_RANDOM_NETWORKS = 100;
 const IMAGE_QUOTA_TIMEOUT = 60000;
@@ -62,9 +65,15 @@ const padStart = require("lodash.padstart");
 const padEnd = require("lodash.padend");
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
-// const twitterImageParser = require("../twitter-image-parser");
-let fsm;
 const HashMap = require("hashmap").HashMap;
+
+let statsObj = {};
+let tfeChildHashMap = {};
+let fsm;
+let fsmTickInterval;
+let fetchAllInterval;
+let fetchAllIntervalReady = false;
+
 let bestNetworkHashMap = new HashMap();
 let trainingSetHashMap = new HashMap();
 let categorizedUserHashMap = new HashMap();
@@ -91,6 +100,7 @@ let userDbUpdateQueueReadyFlag = true;
 let userDbUpdateQueue = [];
 let quitWaitInterval;
 let quitFlag = false;
+
 function msToTime(duration) {
   let seconds = parseInt((duration / 1000) % 60);
   let minutes = parseInt((duration / (1000 * 60)) % 60);
@@ -1892,7 +1902,9 @@ function reporter(event, oldState, newState) {
 const processUserQueueEmpty = function() {
   return (processUserQueue.length === 0);
 };
+
 let waitFileSaveInterval;
+
 const fsmStates = {
   "RESET":{
     onEnter: function(event, oldState, newState) {
@@ -1944,13 +1956,20 @@ const fsmStates = {
       }
     },
     fsm_tick: function() {
+
       checkChildrenState("READY", function(err, acr) {
+
         debug("READY TICK"
           + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
           + " | ALL CHILDREN READY: " + acr
         );
-        if (acr && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_fetchAllStart(); }
+
+        if (fetchAllIntervalReady && acr && processUserQueueReady && processUserQueueEmpty()) {
+          fetchAllIntervalReady = false;
+          fsm.fsm_fetchAllStart();
+        }
+
       });
     },
     "fsm_reset": "RESET",
@@ -2024,14 +2043,24 @@ const fsmStates = {
         slackText = slackText + "\nGTOT:  " + statsObj.users.grandTotalFriendsProcessed;
 
         console.log("TFE | SLACK TEXT: " + slackText);
+
         clearInterval(waitFileSaveInterval);
         slackPostMessage(slackChannel, slackText);
+
         waitFileSaveInterval = setInterval(function() {
+
           if (saveFileQueue.length === 0) {
+
             console.log(chalkAlert("ALL NNs SAVED ..."));
-            if (randomNetworkTree && (randomNetworkTree !== undefined)) { randomNetworkTree.send({op: "RESET_STATS"}); }
+
+            if (randomNetworkTree && (randomNetworkTree !== undefined)) { 
+              randomNetworkTree.send({op: "RESET_STATS"});
+            }
+
             childSendAll("RESET_TWITTER_USER_STATE");
+
             resetAllTwitterUserState(function() {
+
               statsObj.users.totalFriendsCount = 0;
               statsObj.users.totalFriendsProcessed = 0;
               statsObj.users.totalFriendsFetched = 0;
@@ -2039,8 +2068,11 @@ const fsmStates = {
               statsObj.users.totalPercentFetched = 0;
               statsObj.users.classifiedAuto = 0;
               statsObj.users.classified = 0;
+
               clearInterval(waitFileSaveInterval);
+
               fsm.fsm_init();
+
             });
           }
           else {
@@ -2056,8 +2088,27 @@ const fsmStates = {
     "fsm_ready": "READY"
   }
 };
+
 fsm = Stately.machine(fsmStates);
-let fsmTickInterval;
+
+
+function initFetchAllInterval(interval) {
+
+  fetchAllIntervalReady = true;
+
+  console.log(chalkInfo("INIT FETCH ALL INTERVAL | " + msToTime(interval)));
+
+  clearInterval(fetchAllInterval);
+
+  fetchAllInterval = setInterval(function() {
+
+    console.log(chalkInfo("FETCH ALL READY | " + getTimeStamp()));
+    fetchAllIntervalReady = true;
+
+  }, FETCH_ALL_INTERVAL);
+
+}
+
 function initFsmTickInterval(interval) {
   console.log(chalkInfo("INIT FSM TICK INTERVAL | " + msToTime(interval)));
   clearInterval(fsmTickInterval);
@@ -2066,6 +2117,7 @@ function initFsmTickInterval(interval) {
     fsm.fsm_tick();
   }, FSM_TICK_INTERVAL);
 }
+
 reporter("START", "---", fsm.getMachineState());
 inputTypes.forEach(function(type) {
   statsObj.histograms[type] = {};
@@ -2508,14 +2560,14 @@ function initSocket(cnf) {
 
   });
 
-  socket.on("USER_READY_ACK", function(userId) {
+  socket.on("USER_READY_ACK", function(userObj) {
 
     statsObj.userReadyAck = true ;
     statsObj.serverConnected = true;
 
     console.log(chalkInfo("RX USER_READY_ACK MESSAGE"
       + " | " + socket.id
-      + " | USER ID: " + userId
+      + " | USER ID: " + userObj.userId
       + " | " + moment().format(compactDateTimeFormat)
     ));
 
@@ -2855,7 +2907,6 @@ function initTwitterUsers(callback) {
       twitterUserHashMap[userScreenName] = {};
       twitterUserHashMap[userScreenName].threeceeUser = userScreenName;
       twitterUserHashMap[userScreenName].friends = new Set();
-      // resetTwitterUserState(userScreenName);
       initTwitter(userScreenName, function(err, twitObj) {
         if (err) {
           console.log(chalkError("INIT TWITTER ERROR: " + err.message));
@@ -3792,11 +3843,15 @@ initialize(configuration, function(err, cnf) {
       quit();
     }
   }
+
   configuration = deepcopy(cnf);
+
   console.log(chalkTwitter(configuration.processName
     + " STARTED " + getTimeStamp()
   ));
+
   initSaveFileQueue(cnf);
+
   if (configuration.testMode) {
     configuration.fetchCount = TEST_MODE_FETCH_COUNT;
     bestNetworkFolder = "/config/utility/" + hostname + "/test/neuralNetworks/best";
@@ -3810,8 +3865,11 @@ initialize(configuration, function(err, cnf) {
   else {
     configuration.neuralNetworkFile = defaultNeuralNetworkFile;
   }
+
   console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
+
   dbConnectionReadyInterval = setInterval(function() {
+
     if (dbConnectionReady) {
       clearInterval(dbConnectionReadyInterval);
       initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
@@ -3823,19 +3881,26 @@ initialize(configuration, function(err, cnf) {
       initLangAnalyzer();
       neuralNetworkInitialized = true;
       fsm.fsm_resetEnd();
+
       initTwitterUsers(function initTwitterUsersCallback(e) {
         if (e) {
           console.log(chalkError("*** ERROR INIT TWITTER USERS: " + e));
           return quit({source: "TFE", error: e});
         }
+
         console.log(chalkTwitter("TFE CHILDREN"
           + " | " + Object.keys(tfeChildHashMap)
         ));
+
         initSocket(cnf);
+
         loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function() {
-        if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+          if (randomNetworkTree && (randomNetworkTree !== undefined)) {
             randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
               console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+
+              initFetchAllInterval(FETCH_ALL_INTERVAL);
+
               setTimeout(function() {
                 fsm.fsm_init();
                 initFsmTickInterval(FSM_TICK_INTERVAL);
@@ -3843,6 +3908,7 @@ initialize(configuration, function(err, cnf) {
             });
           }
         });
+
       });
     }
     else {
