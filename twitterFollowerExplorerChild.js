@@ -150,7 +150,6 @@ function resetTwitterUserState(){
   statsObj.threeceeUser.friendsProcessStart = moment();
   statsObj.threeceeUser.friendsProcessEnd = moment();
   statsObj.threeceeUser.friendsProcessElapsed = 0;
-
 }
 
 function checkRateLimit(params, callback){

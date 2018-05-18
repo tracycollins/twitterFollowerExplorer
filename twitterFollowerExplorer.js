@@ -782,6 +782,7 @@ function printNetworkObj(title, nnObj) {
     + "\n======================================\n"
   ));
 }
+
 function loadBestNetworkDropboxFolder(folder, callback) {
   let options = {path: folder};
   let newBestNetwork = false;
@@ -863,8 +864,11 @@ function loadBestNetworkDropboxFolder(folder, callback) {
               entry: entry,
               network: networkObj
             };
+
             bestNetworkHashMap.set(networkObj.networkId, hmObj);
+
             availableNeuralNetHashMap[networkObj.networkId] = true;
+
             if (!currentBestNetwork
               || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
               || (networkObj.matchRate > currentBestNetwork.matchRate)
@@ -996,6 +1000,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
     if (callback !== undefined) { callback(err, null); }
   });
 }
+
 function initRandomNetworks(params, callback) {
   if (loadedNetworksFlag && !configuration.forceInitRandomNetworks) {
     console.log(chalkAlert("SKIP INIT RANDOM NETWORKS: loadedNetworksFlag: " + loadedNetworksFlag));
@@ -3176,21 +3181,13 @@ function initialize(cnf, callback) {
   });
 }
 function saveNetworkHashMap(params, callback) {
-  // let folder;
-  // if (params.folder !== undefined) {
-  //   folder = params.folder;
-  // }
-  // else {
-  //   if (hostname === "google") {
-  //     folder = bestNetworkFolder;
-  //   }
-  //   else {
-  //     folder = localBestNetworkFolder;
-  //   }
-  // }
+
   const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
+
   const nnIds = bestNetworkHashMap.keys();
+
   console.log(chalkNetwork("UPDATING NNs IN FOLDER " + folder));
+
   async.eachSeries(nnIds, function(nnId, cb) {
     const networkObj = bestNetworkHashMap.get(nnId);
     console.log(chalkNetwork("SAVING NN"
@@ -3213,6 +3210,7 @@ function saveNetworkHashMap(params, callback) {
     if (callback !== undefined) { callback(err); }
   });
 }
+
 function updateNetworkStats(params, callback) {
   updateNetworkStatsReady = false;
   const nnIds = Object.keys(params.networkStatsObj);
@@ -3235,13 +3233,6 @@ function updateNetworkStats(params, callback) {
       cb();
     }
   }, function(err) {
-    // let folder;
-    // if (hostname === "google") {
-    //   folder = bestNetworkFolder;
-    // }
-    // else {
-    //   folder = localBestNetworkFolder;
-    // }
     saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: params.saveImmediate}, function() {
       updateNetworkStatsReady = true;
       if (callback !== undefined) { callback(err); }
@@ -3323,28 +3314,43 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           quit({source: "RNT", error: "RNT_TEST_FAIL"});
         break;
         case "NETWORK_OUTPUT":
+
           randomNetworkTreeActivateQueueSize = m.queue;
+
           debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
           debug(chalkAlert("RNT NETWORK_OUTPUT | " + m.bestNetwork.networkId));
+
           bestRuntimeNetworkId = m.bestNetwork.networkId;
+
           if (bestNetworkHashMap.has(bestRuntimeNetworkId)) {
+
             hmObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
             hmObj.network.matchRate = m.bestNetwork.matchRate;
             hmObj.network.overallMatchRate = m.bestNetwork.overallMatchRate;
             hmObj.network.successRate = m.bestNetwork.successRate;
+
             currentBestNetwork = deepcopy(hmObj.network);
             currentBestNetwork.matchRate = m.bestNetwork.matchRate;
             currentBestNetwork.overallMatchRate = m.bestNetwork.overallMatchRate;
             currentBestNetwork.successRate = m.bestNetwork.successRate;
+
             updateBestNetworkStats(hmObj.network);
+
             bestNetworkHashMap.set(bestRuntimeNetworkId, hmObj);
-            if ((hostname === "google") && (prevBestNetworkId !== bestRuntimeNetworkId) && configuration.bestNetworkIncrementalUpdate) {
+
+            if ((hostname === "google") 
+              && (prevBestNetworkId !== bestRuntimeNetworkId) 
+              && configuration.bestNetworkIncrementalUpdate) 
+            {
+
               prevBestNetworkId = bestRuntimeNetworkId;
+
               console.log(chalkNetwork("... SAVING NEW BEST NETWORK"
                 + " | " + currentBestNetwork.networkId
                 + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
                 + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
               ));
+
               fileObj = {
                 networkId: bestRuntimeNetworkId,
                 successRate: m.bestNetwork.successRate,
@@ -3352,11 +3358,12 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
                 overallMatchRate:  m.bestNetwork.overallMatchRate,
                 updatedAt: moment()
               };
+
               file = bestRuntimeNetworkId + ".json";
-              // let folder = configuration.testMode ? "/test" : bestNetworkFolder;
               saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
               saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
             }
+
             debug(chalkAlert("NETWORK_OUTPUT"
               + " | " + moment().format(compactDateTimeFormat)
               + " | " + m.bestNetwork.networkId
@@ -3367,6 +3374,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               + " | C: " + m.user.category
               + " | CA: " + m.categoryAuto
             ));
+
             user = {};
             user = deepcopy(m.user);
             user.category = m.category;
