@@ -400,16 +400,26 @@ const DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY ;
 const DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
 const DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
 const DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || "twitterFollowerExplorerStats.json";
+
 let dropboxConfigHostFolder = "/config/utility/" + hostname;
 let dropboxConfigDefaultFolder = "/config/utility/default";
 let dropboxConfigFile = hostname + "_" + DROPBOX_TFE_CONFIG_FILE;
+
 let statsFolder = "/stats/" + hostname + "/followerExplorer";
 let statsFile = DROPBOX_TFE_STATS_FILE;
+
 configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
+
 let localBestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
 let bestNetworkFolder = (hostname === "google") ? "/config/utility/best/neuralNetworks" : localBestNetworkFolder;
+
 const defaultTrainingSetFolder = dropboxConfigDefaultFolder + "/trainingSets";
+
+const localHistogramsFolder = dropboxConfigHostFolder + "/histograms";
+const defaultHistogramsFolder = dropboxConfigDefaultFolder + "/histograms";
+let defaultHistogramsFile = "histograms.json";
+
 console.log("DROPBOX_TFE_CONFIG_FILE: " + DROPBOX_TFE_CONFIG_FILE);
 console.log("DROPBOX_TFE_STATS_FILE : " + DROPBOX_TFE_STATS_FILE);
 console.log("statsFolder : " + statsFolder);
@@ -649,17 +659,19 @@ function loadTrainingSetsDropboxFolder(folder, callback) {
               cb();
             }
             else {
+
               maxInputHashMap = {};
               maxInputHashMap = deepcopy(trainingSetObj.maxInputHashMap);
+
               trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry} );
+
               console.log(chalkInfo("TFE | DROPBOX TRAINING SET"
                 + " [" + trainingSetHashMap.count() + "]"
                 + " | TRAINING SET SIZE: " + trainingSetObj.trainingSet.meta.setSize
-                // + " | " + trainingSetObj.trainingSet.meta.numInputs + " INPUTS"
                 + " | " + entry.name
                 + " | " + trainingSetObj.trainingSetId
-                // + "\n" + jsonPrint(trainingSetObj.entry)
               ));
+
               cb();
             }
           });
@@ -716,8 +728,6 @@ function updateGlobalHistograms(callback) {
     twitterImageParser.getGlobalHistograms(function(imageHists) {
       hists.images = {};
       hists.images = deepcopy(imageHists.images);
-      // globalHistograms = {};
-      // globalHistograms = deepcopy(hists);
       async.each(Object.keys(hists), function(histogramName, cb) {
         const currentHistogram = hists[histogramName];
         const keys = Object.keys(currentHistogram);
@@ -2039,6 +2049,20 @@ const fsmStates = {
         console.log(chalkAlert("===================================================="));
         console.log(chalkAlert("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
 
+        updateGlobalHistograms(function(gHistograms){
+
+
+          let histObj = {};
+          histObj.histogramsId = hostname + "_" + process.pid + "_" + getTimeStamp();
+          histObj.histograms = gHistograms;
+
+          const folder = (hostname === "google") ? defaultHistogramsFolder : localHistogramsFolder;
+
+          console.log(chalkAlert("... SAVING HISTOGRAM FILE | ID: " + histObj.histogramsId));
+          
+          saveFileQueue.push({folder: folder, file: defaultHistogramsFile, obj: histObj });
+        });
+
         loadedNetworksFlag = false;
 
         if (randomNetworkTree && (randomNetworkTree !== undefined)) { randomNetworkTree.send({op: "GET_STATS"}); }
@@ -2715,14 +2739,14 @@ function initSocket(cnf) {
 
 function initStatsUpdate(callback) {
   console.log(chalkTwitter("INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
-  twitterTextParser.getGlobalHistograms(function() {
+  twitterTextParser.getGlobalHistograms(function(hist) {
     saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
   });
   clearInterval(statsUpdateInterval);
   statsUpdateInterval = setInterval(function () {
     statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
-    twitterTextParser.getGlobalHistograms(function() {
+    twitterTextParser.getGlobalHistograms(function(hist) {
       saveFileQueue.push({folder: statsFolder, file: statsFile, obj: statsObj});
     });
     showStats();

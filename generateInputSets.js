@@ -473,9 +473,12 @@ function getTimeStamp(inputTime) {
   }
 }
 
-function saveFile (params, callback){
+function saveFile(params, callback){
+
+    console.log("saveFile: params\n" + jsonPrint(params));
 
   if (OFFLINE_MODE) {
+    console.log("OFFLINE_MODE: " + OFFLINE_MODE);
     if (callback !== undefined) { 
       return(callback(null, null));
     }
@@ -484,9 +487,9 @@ function saveFile (params, callback){
 
   const fullPath = params.folder + "/" + params.file;
 
-  debug(chalkInfo("LOAD FOLDER " + params.folder));
-  debug(chalkInfo("LOAD FILE " + params.file));
-  debug(chalkInfo("FULL PATH " + fullPath));
+  console.log(chalkInfo("LOAD FOLDER " + params.folder));
+  console.log(chalkInfo("LOAD FILE " + params.file));
+  console.log(chalkInfo("FULL PATH " + fullPath));
 
   let options = {};
 
@@ -499,7 +502,7 @@ function saveFile (params, callback){
   const dbFileUpload = function () {
     dropboxClient.filesUpload(options)
     .then(function(){
-      debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
+      console.log(chalkLog("SAVED DROPBOX JSON | " + options.path));
       if (callback !== undefined) { callback(null); }
     })
     .catch(function(error){
@@ -545,7 +548,7 @@ function saveFile (params, callback){
     dropboxClient.filesListFolder({path: params.folder})
     .then(function(response){
 
-      debug(chalkLog("DROPBOX LIST FOLDER"
+      console.log(chalkLog("DROPBOX LIST FOLDER"
         + " | " + options.path
         + " | " + jsonPrint(response)
       ));
@@ -972,13 +975,14 @@ initialize(configuration, function(err, cnf){
       generateInputSets(genInParams, function(err, inputsObj){
         if (err) {
           console.log(chalkError("generateInputSets ERROR: " + err));
+          quit();
         }
         else {
           const inFile = inputsObj.inputsId + ".json"; 
           console.log(chalkInfo("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
           saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
+          quit();
         }
-        quit();
       });
     }
 
