@@ -475,7 +475,7 @@ function getTimeStamp(inputTime) {
 
 function saveFile(params, callback){
 
-    console.log("saveFile: params\n" + jsonPrint(params));
+  // console.log("saveFile: params\n" + jsonPrint(params));
 
   if (OFFLINE_MODE) {
     console.log("OFFLINE_MODE: " + OFFLINE_MODE);
@@ -487,9 +487,9 @@ function saveFile(params, callback){
 
   const fullPath = params.folder + "/" + params.file;
 
-  console.log(chalkInfo("LOAD FOLDER " + params.folder));
-  console.log(chalkInfo("LOAD FILE " + params.file));
-  console.log(chalkInfo("FULL PATH " + fullPath));
+  debug(chalkInfo("LOAD FOLDER " + params.folder));
+  debug(chalkInfo("LOAD FILE " + params.file));
+  debug(chalkInfo("FULL PATH " + fullPath));
 
   let options = {};
 
@@ -502,7 +502,7 @@ function saveFile(params, callback){
   const dbFileUpload = function () {
     dropboxClient.filesUpload(options)
     .then(function(){
-      console.log(chalkLog("SAVED DROPBOX JSON | " + options.path));
+      debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
       if (callback !== undefined) { callback(null); }
     })
     .catch(function(error){
@@ -548,7 +548,7 @@ function saveFile(params, callback){
     dropboxClient.filesListFolder({path: params.folder})
     .then(function(response){
 
-      console.log(chalkLog("DROPBOX LIST FOLDER"
+      debug(chalkLog("DROPBOX LIST FOLDER"
         + " | " + options.path
         + " | " + jsonPrint(response)
       ));
@@ -557,7 +557,7 @@ function saveFile(params, callback){
 
       async.eachSeries(response.entries, function(entry, cb){
 
-        console.log(chalkInfo("DROPBOX FILE"
+        debug(chalkInfo("DROPBOX FILE"
           + " | " + params.folder
           // + " | " + getTimeStamp(entry.client_modified)
           + " | " + entry.name
