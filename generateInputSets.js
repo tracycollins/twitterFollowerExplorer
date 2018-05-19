@@ -311,10 +311,10 @@ function generateInputSets(params, callback) {
       hpParams.histogram = params.histogramsObj.histograms;
 
       hpParams.options = {};
-      // hpParams.options.totalMin = {};
-      // hpParams.options.dominantMin = {};
-      // hpParams.options.totalMin.images = 0.5 * totalMin;
-      // hpParams.options.dominantMin.images = 0.5 * dominantMin;
+      hpParams.options.totalMin = {};
+      hpParams.options.dominantMin = {};
+      hpParams.options.totalMin.images = 0.5 * totalMin;
+      hpParams.options.dominantMin.images = 0.5 * dominantMin;
 
       hpParams.options.globalTotalMin = totalMin;
       hpParams.options.globalDominantMin = dominantMin;
