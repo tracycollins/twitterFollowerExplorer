@@ -846,6 +846,33 @@ process.on("message", function(m) {
       fsm.fsm_fetchUserStart();
     break;
 
+    case "FOLLOW":
+
+      twitClient.post(
+
+        "friendships/create", {screen_name: m.user.screenName}, 
+
+        function createFriend(err, data, response){
+          if (err) {
+            console.log(chalkError("TFC | FOLLOW ERROR"
+              + " | @" + configuration.threeceeUser
+              + " | " + err
+            ));
+          }
+          else {
+            debug("data\n" + jsonPrint(data));
+            debug("response\n" + jsonPrint(response));
+
+            console.log(chalkInfo("TFC | +++ FOLLOW"
+              + " | 3C: @" + configuration.threeceeUser
+              + " | NID: " + m.user.userId
+              + " | @" + m.user.screenName.toLowerCase()
+            ));
+          }
+        }
+      );
+    break;
+
     case "UNFOLLOW":
 
       twitClient.post(
@@ -871,7 +898,6 @@ process.on("message", function(m) {
           }
         }
       );
-
     break;
 
     case "QUIT":

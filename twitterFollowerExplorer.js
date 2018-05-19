@@ -2059,7 +2059,7 @@ const fsmStates = {
           const folder = (hostname === "google") ? defaultHistogramsFolder : localHistogramsFolder;
 
           console.log(chalkAlert("... SAVING HISTOGRAM FILE | ID: " + histObj.histogramsId));
-          
+
           saveFileQueue.push({folder: folder, file: defaultHistogramsFile, obj: histObj });
         });
 
@@ -2574,7 +2574,6 @@ function initSocket(cnf) {
         + " | SOCKET DISCONNECT: " + socket.id
         + " | REASON: " + reason
       ));
-
     });
 
   });
@@ -2588,7 +2587,6 @@ function initSocket(cnf) {
       + " | " + socket.id
       + " | REASON: " + reason
     ));
-
   });
 
   socket.on("USER_READY_ACK", function(userObj) {
@@ -2601,8 +2599,22 @@ function initSocket(cnf) {
       + " | USER ID: " + userObj.userId
       + " | " + moment().format(compactDateTimeFormat)
     ));
-
   });
+
+  socket.on("FOLLOW", function(u) {
+
+    statsObj.serverConnected = true;
+
+    console.log(chalkInfo("TFE | >RX CONTROL PANEL FOLLOW"
+      + " | " + socket.id
+      + " | UID: " + u.userId
+      + " | @" + u.screenName
+      + " | " + moment().format(compactDateTimeFormat)
+    ));
+
+    tfeChildHashMap.altthreecee02.child.send({op: "FOLLOW", user:u});
+
+  });  
 
   socket.on("error", function(error) {
     console.log(chalkError(moment().format(compactDateTimeFormat)
@@ -2622,7 +2634,6 @@ function initSocket(cnf) {
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + err.type
       + " | " + err.description
-      // + "\n" + jsonPrint(err)
     ));
     reset("connect_error");
   });
@@ -2639,7 +2650,6 @@ function initSocket(cnf) {
       + " | " + err.type
       + " | " + err.description
     ));
-
   });
 
   socket.on("SESSION_ABORT", function(sessionId) {
