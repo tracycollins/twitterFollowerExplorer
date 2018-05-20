@@ -1288,13 +1288,18 @@ function updateUserCategoryStats(user, callback) {
     });
   });
 }
+
 function updateImageHistograms(params, callback) {
+
   if (!params.bannerResults || (params.bannerResults.label.images === undefined)) {
     debug("image histograms: no banner results: @" + params.user.screenName);
     return callback(null, {});
   }
+  
   const type = "images";
+  
   let user = params.user;
+  
   if (!user.histograms || (user.histograms === undefined)) {
     user.histograms = {};
     user.histograms.images = {};
@@ -1302,10 +1307,14 @@ function updateImageHistograms(params, callback) {
   else if (user.histograms.images === undefined) {
     user.histograms.images = {};
   }
+  
   let histograms = {};
+  
   histograms.images = {};
   histograms.images = params.bannerResults.label.images;
+  
   const imageLabelArray = Object.keys(histograms.images);
+  
   async.each(imageLabelArray, function(item, cb) {
     if (user.histograms[type][item] === undefined) {
       user.histograms[type][item] = histograms[type][item];
@@ -1328,6 +1337,7 @@ function updateImageHistograms(params, callback) {
     callback(null, histograms);
   });
 }
+
 function enableAnalysis(user, languageAnalysis) {
   if (!configuration.enableLanguageAnalysis) { return false; }
   if (configuration.forceLanguageAnalysis) {
@@ -1359,18 +1369,20 @@ function enableAnalysis(user, languageAnalysis) {
   }
   return false;
 }
+
 function activateNetwork(obj) {
   if ((randomNetworkTree !== undefined) && randomNetworkTree && randomNetworkTreeReadyFlag) {
     randomNetworkTree.send({op: "ACTIVATE", obj: obj});
   }
 }
+
 function startImageQuotaTimeout() {
   setTimeout(function() {
     enableImageAnalysis = true;
     console.log(chalkLog("RE-ENABLE IMAGE ANALYSIS"));
   }, IMAGE_QUOTA_TIMEOUT);
 }
-// {user: user, histograms: histograms, updateCountHistory: updateCountHistory}
+
 function updateHistograms(params, callback) {
   let user = {};
   let histograms = {};
@@ -1410,6 +1422,7 @@ function updateHistograms(params, callback) {
     callback(err, user);
   });
 }
+
 function generateAutoCategory(params, user, callback) {
   async.waterfall([
     function userScreenName(cb) {
@@ -1610,27 +1623,36 @@ function generateAutoCategory(params, user, callback) {
       console.log(chalkError("*** ERROR generateAutoCategory: " + err));
       callback(err, null);
     }
+
     if (!text) { text = " "; }
+
     let parseTextOptions = {};
     parseTextOptions.updateGlobalHistograms = true;
+
     if (user.category) {
       parseTextOptions.category = user.category;
     }
     else {
       parseTextOptions.category = false;
     }
+
     twitterTextParser.parseText(text, parseTextOptions, function(err, hist) {
+
       if (err) {
         console.log(chalkError("*** TWITTER TEXT PARSER ERROR: " + err));
         callback(new Error(err), null);
       }
+
       hist.images = {};
+
       updateImageHistograms({user: user, bannerResults: bannerResults}, function(err, newHist) {
         if (err) {
           console.log(chalkError("*** ERROR updateImageHistograms: " + err));
           return callback(new Error(err), null);
         }
+
         hist.images = newHist.images;
+
         updateHistograms({user: user, histograms: hist}, function(err, updatedUser) {
           if (err) {
             console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
@@ -1681,6 +1703,7 @@ function generateAutoCategory(params, user, callback) {
     });
   });
 }
+
 function processUser(threeceeUser, userIn, callback) {
   let updateCountHistory = false;
   debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
@@ -1847,6 +1870,7 @@ function processUser(threeceeUser, userIn, callback) {
     }
   });
 }
+
 const checkChildrenState = function (checkState, callback) {
   async.every(Object.keys(tfeChildHashMap), function(user, cb) {
     debug("CH ID: " + user + " | " + tfeChildHashMap[user].status);
@@ -1865,6 +1889,7 @@ const checkChildrenState = function (checkState, callback) {
     // return allCheckState;
   });
 };
+
 function childSendAll(op, callback) {
   console.log(chalkAlert(">>> CHILD SEND ALL | OP: " + op));
   async.each(Object.keys(tfeChildHashMap), function(threeceeUser, cb) {
@@ -1903,10 +1928,8 @@ function childSendAll(op, callback) {
     if (callback !== undefined) { callback(err); }
   });
 }
+
 function reporter(event, oldState, newState) {
-  // if (newState === "PAUSE_RATE_LIMIT") {
-  //   // fsmPreviousPauseState = oldState;
-  // }
   fsmPreviousState = oldState;
   console.log(chalkAlert("--------------------------------------------------------\n"
     + "<< FSM >>"
@@ -1916,6 +1939,7 @@ function reporter(event, oldState, newState) {
     + "\n--------------------------------------------------------"
   ));
 }
+
 const processUserQueueEmpty = function() {
   return (processUserQueue.length === 0);
 };
@@ -2137,7 +2161,6 @@ function initFetchAllInterval(interval) {
     fetchAllIntervalReady = true;
 
   }, FETCH_ALL_INTERVAL);
-
 }
 
 function initFsmTickInterval(interval) {
@@ -2150,11 +2173,14 @@ function initFsmTickInterval(interval) {
 }
 
 reporter("START", "---", fsm.getMachineState());
+
 inputTypes.forEach(function(type) {
   statsObj.histograms[type] = {};
 });
+
 const USER_ID = "tfe_" + hostname;
 const SCREEN_NAME = "tfe_" + hostname;
+
 let userObj = {
   name: USER_ID,
   nodeId: USER_ID,
@@ -2168,6 +2194,7 @@ let userObj = {
   tags: {},
   stats: {}
 } ;
+
 const cla = require("command-line-args");
 const numRandomNetworks = { name: "numRandomNetworks", alias: "n", type: Number};
 const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
@@ -2181,13 +2208,16 @@ const optionDefinitions = [enableStdin, numRandomNetworks, targetServer, quitOnE
 const commandLineConfig = cla(optionDefinitions);
 console.log(chalkInfo("COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
 console.log("COMMAND LINE OPTIONS\n" + jsonPrint(commandLineConfig));
+
 if (commandLineConfig.targetServer === "LOCAL") {
   commandLineConfig.targetServer = "http://127.0.0.1:9997/util";
 }
 if (commandLineConfig.targetServer === "REMOTE") {
   commandLineConfig.targetServer = "http://word.threeceelabs.com/util";
 }
+
 process.title = "node_twitterFollowerExplorer";
+
 console.log("\n\n=================================");
 console.log("HOST:          " + hostname);
 console.log("PROCESS TITLE: " + process.title);
@@ -2195,10 +2225,12 @@ console.log("PROCESS ID:    " + process.pid);
 console.log("RUN ID:        " + statsObj.runId);
 console.log("PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, depth: 1}));
 console.log("=================================");
+
 process.on("exit", function() {
   if (langAnalyzer !== undefined) { langAnalyzer.kill("SIGINT"); }
   if (randomNetworkTree && (randomNetworkTree !== undefined)) { randomNetworkTree.kill("SIGINT"); }
 });
+
 process.on("message", function(msg) {
   if ((msg === "SIGINT") || (msg === "shutdown")) {
     debug("\n\n!!!!! RECEIVED PM2 SHUTDOWN !!!!!\n\n***** Closing all connections *****\n\n");
@@ -2211,18 +2243,24 @@ process.on("message", function(msg) {
     }, 300);
   }
 });
+
 function showStats(options) {
+
   runEnable();
+
   if ((langAnalyzer !== undefined) && langAnalyzer) {
     langAnalyzer.send({op: "STATS", options: options});
   }
+
   if (options) {
     updateGlobalHistograms(function() {
       console.log("STATS\n" + jsonPrint(omit(statsObj, ["histograms"])));
     });
   }
   else {
+
     updateGlobalHistograms();
+
     console.log(chalkLog("### FEM S"
       + " | N: " + getTimeStamp()
       + " | E: " + statsObj.elapsed
@@ -2230,22 +2268,26 @@ function showStats(options) {
       + " | PUQ: " + processUserQueue.length
       + " | FSM: " + fsm.getMachineState()
     ));
-// RNT READY:
+
     console.log(chalkLog("... RNT S"
       + " | BUSY: " + randomNetworkTreeBusyFlag
       + " | READY: " + randomNetworkTreeReadyFlag
       + " | RAQ: " + randomNetworkTreeActivateQueueSize
     ));
+
     Object.keys(tfeChildHashMap).forEach(function(user) {
       console.log(chalkLog("... FEC S"
         + " | CHILD " + user + " | FSM: " + tfeChildHashMap[user].status
       ));
     });
+
   }
+
 }
 process.on( "SIGINT", function() {
   quit({source: "SIGINT"});
 });
+
 function saveFile (params, callback) {
   if (OFFLINE_MODE) {
     if (callback !== undefined) {
@@ -2352,6 +2394,7 @@ function saveFile (params, callback) {
     dbFileUpload();
   }
 }
+
 function initProcessUserQueueInterval(interval) {
   let mObj = {};
   let tcUser;
@@ -2413,6 +2456,7 @@ function initProcessUserQueueInterval(interval) {
     }
   }, interval);
 }
+
 function initSaveFileQueue(cnf) {
   console.log(chalkBlue("TFE | INIT DROPBOX SAVE FILE INTERVAL | " + cnf.saveFileQueueInterval + " MS"));
   clearInterval(saveFileQueueInterval);
@@ -2433,6 +2477,7 @@ function initSaveFileQueue(cnf) {
     }
   }, cnf.saveFileQueueInterval);
 }
+
 function sendKeepAlive(userObj, callback) {
   if (statsObj.userAuthenticated && statsObj.serverConnected) {
     console.log(chalkAlert("TX KEEPALIVE"
