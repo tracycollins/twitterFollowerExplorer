@@ -9,15 +9,17 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 
 const DEFAULT_MAX_ITERATIONS = 50;
 
-const DEFAULT_MIN_TOTAL_MIN = 5;
-const DEFAULT_MAX_TOTAL_MIN = 10;
+const DEFAULT_MIN_TOTAL_MIN = 10;
+const DEFAULT_MAX_TOTAL_MIN = 20;
 
-const DEFAULT_MIN_DOMINANT_MIN = 0.33;
-const DEFAULT_MAX_DOMINANT_MIN = 0.6;
+const DEFAULT_MIN_DOMINANT_MIN = 0.5;
+const DEFAULT_MAX_DOMINANT_MIN = 0.75;
 
 const OFFLINE_MODE = false;
 
-const histogramParser = require("@threeceelabs/histogram-parser");
+// const histogramParser = require("@threeceelabs/histogram-parser");
+const histogramParser = require("../histogram-parser");
+
 const os = require("os");
 const util = require("util");
 const deepcopy = require("deep-copy");
@@ -313,8 +315,8 @@ function generateInputSets(params, callback) {
       hpParams.options = {};
       hpParams.options.totalMin = {};
       hpParams.options.dominantMin = {};
-      hpParams.options.totalMin.images = 0.5 * totalMin;
-      hpParams.options.dominantMin.images = 0.5 * dominantMin;
+      hpParams.options.totalMin.images = 1;
+      hpParams.options.dominantMin.images = 0.5;
 
       hpParams.options.globalTotalMin = totalMin;
       hpParams.options.globalDominantMin = dominantMin;
@@ -338,7 +340,7 @@ function generateInputSets(params, callback) {
         // console.log(chalkNetwork("HISTOGRAMS RESULTS\n" + jsonPrint(histResults)));
 
         let inTypyes = Object.keys(histResults.entries);
-        inTypyes.push("sentiment");
+        // inTypyes.push("sentiment");
         inTypyes.sort();
 
         newInputsObj.meta.numInputs = 0;
