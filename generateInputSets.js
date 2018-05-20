@@ -12,7 +12,7 @@ const DEFAULT_MAX_ITERATIONS = 50;
 const DEFAULT_MIN_TOTAL_MIN = 10;
 const DEFAULT_MAX_TOTAL_MIN = 20;
 
-const DEFAULT_MIN_DOMINANT_MIN = 0.5;
+const DEFAULT_MIN_DOMINANT_MIN = 0.4;
 const DEFAULT_MAX_DOMINANT_MIN = 0.75;
 
 const OFFLINE_MODE = false;
@@ -329,7 +329,6 @@ function generateInputSets(params, callback) {
         // + "\nhpParams\n" + jsonPrint(hpParams.options)
       ));
 
-
       histogramParser.parse(hpParams, function(err, histResults){
 
         if (err){
@@ -339,13 +338,12 @@ function generateInputSets(params, callback) {
 
         // console.log(chalkNetwork("HISTOGRAMS RESULTS\n" + jsonPrint(histResults)));
 
-        let inTypyes = Object.keys(histResults.entries);
-        // inTypyes.push("sentiment");
-        inTypyes.sort();
+        let inTypes = Object.keys(histResults.entries);
+        inTypes.sort();
 
         newInputsObj.meta.numInputs = 0;
 
-        async.eachSeries(inTypyes, function(type, cb1){
+        async.eachSeries(inTypes, function(type, cb1){
 
           newInputsObj.inputs[type] = [];
 
