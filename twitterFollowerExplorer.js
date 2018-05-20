@@ -794,37 +794,124 @@ function printNetworkObj(title, nnObj) {
 }
 
 function loadBestNetworkDropboxFolder(folder, callback) {
+
   let options = {path: folder};
   let newBestNetwork = false;
+
   statsObj.numNetworksLoaded = 0;
   statsObj.numNetworksUpdated = 0;
   statsObj.numNetworksSkipped = 0;
+
   dropboxClient.filesListFolder(options)
   .then(function(response) {
     if (response.entries.length === 0) {
       console.log(chalkLog("TFE | NO DROPBOX NETWORKS FOUND"
         + " | " + options.path
       ));
-      if (callback !== undefined) {
-        return callback( null, {best: currentBestNetwork} );
-      }
-      else {
-        return;
-      }
+
+      NeuralNetwork.find({}).sort({'matchRate': -1}).limit(10).exec(function(err, nnArray){
+        if (err){
+          console.log(chalkError("*** NEURAL NETWORK FIND ERROR: " + err));
+          if (callback !== undefined) {
+            return callback( null, {best: currentBestNetwork} );
+          }
+          else {
+            return;
+          }
+        }
+        else if (nnArray === 0){
+          console.log(chalkError("*** NEURAL NETWORKS NOT FOUND IN DB"));
+          if (callback !== undefined) {
+            return callback( null, {best: currentBestNetwork} );
+          }
+          else {
+            return;
+          }
+        }
+        else {
+
+          currentBestNetwork = deepcopy(nnArray[0]);
+
+          if (currentBestNetwork.matchRate === undefined) { currentBestNetwork.matchRate = 0; }
+          if (currentBestNetwork.overallMatchRate === undefined) { currentBestNetwork.overallMatchRate = 0; }
+
+          console.log(chalkAlert("+++ BEST NEURAL NETWORK LOADED FROM DB"
+            + " | " + currentBestNetwork.networkId
+            + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
+            + " | MR: " + currentBestNetwork.matchRate.toFixed(2) + "%"
+            + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+          ));
+
+
+          nnArray.forEach(function(networkObj){
+
+            let entry = {};
+            entry.name = networkObj.networkId + ".json";
+            entry.content_hash = false;
+            entry.client_modified = moment().valueOf();
+
+            const hmObj = {
+              entry: entry,
+              network: networkObj
+            };
+
+            bestNetworkHashMap.set(networkObj.networkId, hmObj);
+            saveFileQueue.push({folder: folder, file: entry.name, obj: hmObj });
+            availableNeuralNetHashMap[networkObj.networkId] = true;
+
+            if (!currentBestNetwork
+              || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
+              || (networkObj.matchRate > currentBestNetwork.matchRate)
+            ) {
+              currentBestNetwork = deepcopy(networkObj);
+
+              prevBestNetworkId = bestRuntimeNetworkId;
+              bestRuntimeNetworkId = networkObj.networkId;
+
+              newBestNetwork = true;
+
+              if (hostname === "google") {
+                updateBestNetworkStats(networkObj);
+                const fileObj = {
+                  networkId: bestRuntimeNetworkId,
+                  successRate: networkObj.successRate,
+                  matchRate:  networkObj.matchRate,
+                  overallMatchRate:  networkObj.overallMatchRate
+                };
+                saveCache.set(
+                  bestRuntimeNetworkFileName,
+                  {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj }
+                );
+              }
+            }
+
+          });
+
+          if (callback !== undefined) { 
+            callback( null, {best: currentBestNetwork} ); 
+          }
+          else {
+            return;
+          }
+
+        }
+      });
+
     }
+
     statsObj.numNetworksLoaded = 0;
+
     console.log(chalkLog("TFE | DROPBOX NETWORKS"
       + " | " + options.path
       + " | FOUND " + response.entries.length + " FILES"
       // + " | " + jsonPrint(response)
     ));
+
     async.eachSeries(response.entries, function(entry, cb) {
-      // if (configuration.testMode && ((bestNetworkHashMap.count() >= TEST_DROPBOX_NN_LOAD) || (statsObj.numNetworksLoaded >= TEST_DROPBOX_NN_LOAD))) {
       if (configuration.testMode && (statsObj.numNetworksLoaded >= TEST_DROPBOX_NN_LOAD)) {
         console.log(chalkLog("TFE | *** TEST MODE *** LOADED DROPBOX NETWORKS"
           + " | TEST_DROPBOX_NN_LOAD: " + TEST_DROPBOX_NN_LOAD
           + " | FOUND " + response.entries.length + " FILES"
-          // + " | " + jsonPrint(response)
         ));
         return(cb("TEST_MODE LOAD DONE"));
       }
@@ -836,6 +923,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
         return(cb());
       }
       const networkId = entry.name.replace(".json", "");
+
       if (bestNetworkHashMap.has(networkId)) {
         const bno = bestNetworkHashMap.get(networkId);
         if (!bno || (bno === undefined)) {
@@ -870,6 +958,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
               + " | IN: " + networkObj.numInputs
               + " | " + networkObj.networkId
             ));
+
             const hmObj = {
               entry: entry,
               network: networkObj
@@ -884,8 +973,10 @@ function loadBestNetworkDropboxFolder(folder, callback) {
               || (networkObj.matchRate > currentBestNetwork.matchRate)
             ) {
               currentBestNetwork = deepcopy(networkObj);
+
               prevBestNetworkId = bestRuntimeNetworkId;
               bestRuntimeNetworkId = networkObj.networkId;
+
               newBestNetwork = true;
               if (hostname === "google") {
                 updateBestNetworkStats(networkObj);
@@ -901,6 +992,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
                 );
               }
             }
+
             async.setImmediate(function() { cb(); });
           });
         }
@@ -2750,11 +2842,14 @@ function initSocket(cnf) {
           + " | IN: " + networkObj.numInputs
           + " | " + networkObj.networkId
         ));
+
         const hmObj = {
           entry: entry,
           network: networkObj
         };
+
         bestNetworkHashMap.set(networkObj.networkId, hmObj);
+
         if (!currentBestNetwork
           || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
           || (networkObj.matchRate > currentBestNetwork.matchRate)) {
