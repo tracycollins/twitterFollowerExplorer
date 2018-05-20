@@ -17,8 +17,8 @@ const DEFAULT_MAX_DOMINANT_MIN = 0.75;
 
 const OFFLINE_MODE = false;
 
-const histogramParser = require("@threeceelabs/histogram-parser");
-// const histogramParser = require("../histogram-parser");
+// const histogramParser = require("@threeceelabs/histogram-parser");
+const histogramParser = require("../histogram-parser");
 
 const os = require("os");
 const util = require("util");
@@ -27,6 +27,7 @@ const randomFloat = require("random-float");
 const randomInt = require("random-int");
 const fs = require("fs");
 const moment = require("moment");
+const table = require("text-table");
 
 const chalk = require("chalk");
 const chalkNetwork = chalk.blue;
@@ -266,6 +267,8 @@ debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
+let resultsArray = [];
+
 function showStats(options){
   if (options) {
   }
@@ -277,6 +280,51 @@ function showStats(options){
   }
 }
 
+function printResultsTable(){
+
+  let tableArray = [];
+
+  tableArray.push([
+    "I",
+    "INPUTS",
+    "DOM MIN",
+    "TOT MIN",
+    "EMOJI",
+    "HASHTAGS",
+    "MENTIONS",
+    "URLS",
+    "IMAGES",
+    "WORDS"
+  ]);
+
+  async.eachOfSeries(resultsArray, function(inputsObj, i, cb){
+
+    tableArray.push([
+      i,
+      inputsObj.meta.numInputs,
+      inputsObj.meta.histogramParseDominantMin.toFixed(3),
+      inputsObj.meta.histogramParseTotalMin.toFixed(3),
+      inputsObj.meta.type.emoji,
+      inputsObj.meta.type.hashtags,
+      inputsObj.meta.type.mentions,
+      inputsObj.meta.type.urls,
+      inputsObj.meta.type.images,
+      inputsObj.meta.type.words
+    ]);
+
+    async.setImmediate(function() { cb(); });
+
+  }, function(){
+    console.log(chalk.blue(
+        "\n-------------------------------------------------------------------------------"
+      + "\nINPUTS" 
+      + "\n-------------------------------------------------------------------------------\n"
+      + table(tableArray, { align: [ "r", "r", "r", "r", "r", "r", "r", "r", "r", "r"] })
+      + "\n-------------------------------------------------------------------------------"
+    ));
+  });
+}
+
 function generateInputSets(params, callback) {
 
   let iterations = 0;
@@ -284,29 +332,48 @@ function generateInputSets(params, callback) {
   let totalMin = randomInt(configuration.minTotalMin, configuration.maxTotalMin);
   let dominantMin = randomFloat(configuration.minDominantMin, configuration.maxDominantMin);
 
-  let newInputsObj = {};
-  newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-  newInputsObj.meta = {};
-  newInputsObj.meta.type = {};
-  newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
-  newInputsObj.meta.numInputs = 0;
-  newInputsObj.meta.histogramParseTotalMin = totalMin;
-  newInputsObj.meta.histogramParseDominantMin = dominantMin;
-  newInputsObj.inputs = {};
+  // let newInputsObj = {};
+  // newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+  // newInputsObj.meta = {};
+  // newInputsObj.meta.type = {};
+  // newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
+  // newInputsObj.meta.numInputs = 0;
+  // newInputsObj.meta.histogramParseTotalMin = totalMin;
+  // newInputsObj.meta.histogramParseDominantMin = dominantMin;
+  // newInputsObj.inputs = {};
+
+  const totalMinStep = (configuration.maxTotalMin - configuration.minTotalMin)/configuration.maxIterations;
+  const dominantMinStep = (configuration.maxDominantMin - configuration.minDominantMin)/configuration.maxIterations;
+
+  let totalMinIterations = 0;
+  let dominantMinIterations = 0;
 
   async.whilst(
 
     function() {
-      return ((iterations <= configuration.maxIterations) 
-            && ((newInputsObj.meta.numInputs < configuration.minInputsGenerated) 
-           || (newInputsObj.meta.numInputs > configuration.maxInputsGenerated))) ;
+      return (iterations < (configuration.maxIterations * configuration.maxIterations));
+      // return ((iterations <= configuration.maxIterations) 
+      //       && ((newInputsObj.meta.numInputs < configuration.minInputsGenerated) 
+      //      || (newInputsObj.meta.numInputs > configuration.maxInputsGenerated))) ;
     },
 
     function(cb0){
 
-      iterations += 1;
-      totalMin = randomInt(configuration.minTotalMin, configuration.maxTotalMin);
-      dominantMin = randomFloat(configuration.minDominantMin, configuration.maxDominantMin);
+      // totalMin = randomInt(configuration.minTotalMin, configuration.maxTotalMin);
+      // dominantMin = randomFloat(configuration.minDominantMin, configuration.maxDominantMin);
+
+      let newInputsObj = {};
+      newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+      newInputsObj.meta = {};
+      newInputsObj.meta.type = {};
+      newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
+      newInputsObj.meta.numInputs = 0;
+      newInputsObj.meta.histogramParseTotalMin = totalMin;
+      newInputsObj.meta.histogramParseDominantMin = dominantMin;
+      newInputsObj.inputs = {};
+
+      totalMin = configuration.minTotalMin + (totalMinStep * totalMinIterations);
+      dominantMin = configuration.minDominantMin + (dominantMinStep * dominantMinIterations);
 
       let hpParams = {};
       hpParams.histogram = {};
@@ -315,15 +382,15 @@ function generateInputSets(params, callback) {
       hpParams.options = {};
       hpParams.options.totalMin = {};
       hpParams.options.dominantMin = {};
-      hpParams.options.totalMin.images = 1;
-      hpParams.options.dominantMin.images = 0.5;
+      hpParams.options.totalMin.images = 0.05*totalMin;
+      hpParams.options.dominantMin.images = 0.05*dominantMin;
 
       hpParams.options.globalTotalMin = totalMin;
       hpParams.options.globalDominantMin = dominantMin;
 
-      console.log(chalkInfo("... GENERATING INPUT SETS"
-        + " | ITERATION: " + iterations
-        + " | HIST ID: " + params.histogramsObj.histogramsId
+      console.log(chalkInfo("GEN"
+        + " [" + iterations + "]"
+        + " | HIST: " + params.histogramsObj.histogramsId
         + " | TOT MIN: " + totalMin
         + " | DOM MIN: " + dominantMin.toFixed(3)
         // + "\nhpParams\n" + jsonPrint(hpParams.options)
@@ -335,8 +402,6 @@ function generateInputSets(params, callback) {
           console.log(chalkError("HISTOGRAM PARSE ERROR: " + err));
           return cb0(err);
         }
-
-        // console.log(chalkNetwork("HISTOGRAMS RESULTS\n" + jsonPrint(histResults)));
 
         let inTypes = Object.keys(histResults.entries);
         inTypes.sort();
@@ -353,15 +418,16 @@ function generateInputSets(params, callback) {
             newInputsObj.meta.type[type] = newInputsObj.inputs[type].length;
             debug(chalkLog("... PARSE | " + type + ": " + newInputsObj.inputs[type].length));
 
-            cb1();
+            async.setImmediate(function() { cb1(); });
           }
           else {
             newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
             newInputsObj.meta.numInputs += newInputsObj.inputs[type].length;
             newInputsObj.meta.type[type] = newInputsObj.inputs[type].length;
+            
             debug(chalkLog("... PARSE | " + type + ": " + newInputsObj.inputs[type].length));
 
-            cb1();
+            async.setImmediate(function() { cb1(); });
           }
 
         }, function(){
@@ -369,35 +435,46 @@ function generateInputSets(params, callback) {
           newInputsObj.meta.histogramParseTotalMin = totalMin;
           newInputsObj.meta.histogramParseDominantMin = dominantMin;
 
+
           debug(chalkNetwork("NEW INPUTS\n" + jsonPrint(newInputsObj)));
 
-          console.log(chalkLog("--- HISTOGRAMS PARSED ------------"
-            + "\nNUM IN:  " + newInputsObj.meta.numInputs
-            + "\nTOT MIN: " + totalMin
-            + "\nDOM MIN: " + dominantMin.toFixed(3)
-            + "\n----------------------------------"
+          console.log(chalkLog("HISTOGRAMS PARSED"
+            + " | NUM IN:  " + newInputsObj.meta.numInputs
+            + " | TOT MIN: " + totalMin
+            + " | DOM MIN: " + dominantMin.toFixed(3)
           ));
 
           Object.keys(newInputsObj.inputs).forEach(function(type){
-            console.log(chalkLog(type.toUpperCase() + ": " + newInputsObj.meta.type[type]
-            ));
+            console.log(chalkLog(type.toUpperCase() + ": " + newInputsObj.meta.type[type]));
           });
 
-          cb0();
+          totalMinIterations += 1;
+
+          if (totalMinIterations > configuration.maxIterations){
+            totalMinIterations = 0;
+            dominantMinIterations += 1;
+          }
+
+          iterations += 1;
+
+          resultsArray.push(newInputsObj);
+
+          async.setImmediate(function() { cb0(); });
 
         });
-
       });
 
   }, function(err){
 
+    printResultsTable();
+
     console.log(chalkAlert("\n===========================================\n"
       + "INPUT SET COMPLETE"
       + "\nITERATION: " + iterations
-      + "\nID:        " + newInputsObj.inputsId
+      // + "\nID:        " + newInputsObj.inputsId
       + "\nTOT MIN:   " + totalMin
       + "\nDOM MIN:   " + dominantMin.toFixed(3)
-      + "\nINPUTS:    " + newInputsObj.meta.numInputs
+      // + "\nINPUTS:    " + newInputsObj.meta.numInputs
       + "\n===========================================\n"
     ));
 
