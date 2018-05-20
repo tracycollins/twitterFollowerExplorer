@@ -17,8 +17,8 @@ const DEFAULT_MAX_DOMINANT_MIN = 0.75;
 
 const OFFLINE_MODE = false;
 
-// const histogramParser = require("@threeceelabs/histogram-parser");
-const histogramParser = require("../histogram-parser");
+const histogramParser = require("@threeceelabs/histogram-parser");
+// const histogramParser = require("../histogram-parser");
 
 const os = require("os");
 const util = require("util");
