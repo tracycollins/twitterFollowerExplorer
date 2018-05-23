@@ -63,8 +63,11 @@ const async = require("async");
 const Stately = require("stately.js");
 const padStart = require("lodash.padstart");
 const padEnd = require("lodash.padend");
+
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
-const twitterImageParser = require("@threeceelabs/twitter-image-parser");
+// const twitterImageParser = require("@threeceelabs/twitter-image-parser");
+const twitterImageParser = require("../twitter-image-parser");
+
 const HashMap = require("hashmap").HashMap;
 
 let statsObj = {};
@@ -1393,7 +1396,7 @@ function updateUserCategoryStats(user, callback) {
 
 function updateImageHistograms(params, callback) {
 
-  if (!params.bannerResults || (params.bannerResults.label.images === undefined)) {
+  if (!params.bannerResults || (params.bannerResults.images === undefined)) {
     debug("image histograms: no banner results: @" + params.user.screenName);
     return callback(null, {});
   }
@@ -1413,17 +1416,19 @@ function updateImageHistograms(params, callback) {
   let histograms = {};
   
   histograms.images = {};
-  histograms.images = params.bannerResults.label.images;
+  histograms.images = params.bannerResults.images;
   
   const imageLabelArray = Object.keys(histograms.images);
   
   async.each(imageLabelArray, function(item, cb) {
+
     if (user.histograms[type][item] === undefined) {
       user.histograms[type][item] = histograms[type][item];
     }
     else if (params.accumulateFlag) {
       user.histograms[type][item] += histograms[type][item];
     }
+
     debug(chalkAlert("user image histograms"
       + " | @" + user.screenName
       + " | " + type
@@ -1431,12 +1436,17 @@ function updateImageHistograms(params, callback) {
       + " | USER VAL: " + user.histograms[type][item]
       + " | UPDATE VAL: " + histograms[type][item]
     ));
+
     debug("image histograms\n" + jsonPrint(histograms));
+
     async.setImmediate(function() {
       cb();
     });
+
   }, function() {
+
     callback(null, histograms);
+
   });
 }
 
@@ -1716,6 +1726,7 @@ function generateAutoCategory(params, user, callback) {
               else{
                 console.log(chalkError("PARSE BANNER IMAGE ERROR"
                   // + "\nREQ\n" + jsonPrint(results)
+                  + " | ERR: " + err
                   + "\nERR\n" + jsonPrint(err)
                 ));
               }
@@ -1725,32 +1736,28 @@ function generateAutoCategory(params, user, callback) {
               if (user.bannerImageAnalyzed && user.bannerImageUrl && (user.bannerImageAnalyzed !== user.bannerImageUrl)) {
                 console.log(chalkAlert("^^^ BANNER IMAGE UPDATED "
                   + " | @" + user.screenName
-                  + " | bannerImageAnalyzed: " + user.bannerImageAnalyzed
-                  + " | bannerImageUrl: " + user.bannerImageUrl
+                  + "\nTFE | bannerImageAnalyzed: " + user.bannerImageAnalyzed
+                  + "\nTFE | bannerImageUrl: " + user.bannerImageUrl
+                  + "\nTFE | RESULTS: " + Object.keys(results.images)
                 ));
               }
               else {
-                console.log(chalkAlert("+++ BANNER IMAGE ANALYZED"
+                console.log(chalkAlert("TFE | +++ BANNER IMAGE ANALYZED"
                   + " | @" + user.screenName
-                  + " | bannerImageAnalyzed: " + user.bannerImageAnalyzed
-                  + " | bannerImageUrl: " + user.bannerImageUrl
-                ));
-                console.log(chalkAlert("+++ PARSE BANNER IMAGE"
-                  + " | @" + user.screenName
-                  + " | RESULTS: " + Object.keys(results.label.images)
-                  // + " | RESULTS\n" + jsonPrint(results)
+                  + "\nTFE | bannerImageAnalyzed: " + user.bannerImageAnalyzed
+                  + "\nTFE | bannerImageUrl: " + user.bannerImageUrl
+                  + "\nTFE | RESULTS: " + Object.keys(results.images)
                 ));
               }
+
               user.bannerImageAnalyzed = user.bannerImageUrl;
               user.markModified("bannerImageAnalyzed");
+
               debug(chalkAlert("PARSE BANNER IMAGE"
-                + " | RESULTS: " + Object.keys(results.label.images)
+                + " | RESULTS: " + Object.keys(results.images)
                 + " | RESULTS\n" + jsonPrint(results)
               ));
-              if (results.text !== undefined) {
-                debug(chalkInfo("@" + user.screenName + " | " + results.text));
-                text = text + "\n" + results.text;
-              }
+
               cb(null, text, results);
             }
           }
@@ -1798,19 +1805,24 @@ function generateAutoCategory(params, user, callback) {
         hist.images = newHist.images;
 
         updateHistograms({user: user, histograms: hist}, function(err, updatedUser) {
+
           if (err) {
             console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
             console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\nUSER\n" + jsonPrint(user)));
             callback(new Error(err), null);
           }
+
           updatedUser.inputHits = 0;
+
           const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
           const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
+
           statsObj.normalization.score.min = Math.min(score, statsObj.normalization.score.min);
           statsObj.normalization.score.max = Math.max(score, statsObj.normalization.score.max);
           statsObj.normalization.magnitude.min = Math.min(mag, statsObj.normalization.magnitude.min);
           statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
           statsObj.analyzer.total += 1;
+
           if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
             debug(chalkLog(">>>> LANG ANALYZE"
               + " [ ANLd: " + statsObj.analyzer.analyzed
@@ -1821,6 +1833,7 @@ function generateAutoCategory(params, user, callback) {
               + " | LA: S: " + score.toFixed(2)
               + " M: " + mag.toFixed(2)
             ));
+
             if ((langAnalyzer !== undefined) && langAnalyzer) {
               langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function() {
                 statsObj.analyzer.analyzed += 1;
