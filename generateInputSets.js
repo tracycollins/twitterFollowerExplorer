@@ -42,8 +42,8 @@ let saveFileQueue = [];
 let saveFileQueueInterval;
 let saveFileBusy = false;
 
-const inputTypes = ["emoji", "hashtags", "mentions", "urls", "words", "images"];
-inputTypes.sort();
+const inputTypes = ["emoji", "hashtags",  "images", "mentions", "urls", "words"];
+// inputTypes.sort();
 
 let stdin;
 
@@ -396,6 +396,9 @@ function generateInputSets3(params, callback) {
   let inTypes = Object.keys(params.histogramsObj.histograms);
   inTypes.sort();
 
+  console.log(chalkAlert("INPUT TYPES: " + inTypes));
+
+
   tableArray.push([
     "TYPE",
     "DOM MIN",
@@ -435,6 +438,10 @@ function generateInputSets3(params, callback) {
 
       const totalTypeInputs = Object.keys(params.histogramsObj.histograms[type]).length;
 
+      if (type === "images"){
+        console.log("IMAGES keys\n" + Object.keys(params.histogramsObj.histograms[type]));
+      }
+
       newInputsObj.meta.type[type] = {};
 
       // start with zero inputs of type if more than MIN_NUM_INPUTS_PER_TYPE
@@ -457,9 +464,11 @@ function generateInputSets3(params, callback) {
 
         function() {
 
-            debug("whilst"
+            console.log("whilst"
+              + " | TYPE: " + type
               + " | MIN_NUM_INPUTS_PER_TYPE: " + MIN_NUM_INPUTS_PER_TYPE
               + " | totalTypeInputs: " + totalTypeInputs
+              + " | Object.keys(params.histogramsObj.histograms[type]).length: " + Object.keys(params.histogramsObj.histograms[type]).length
               + " | newInputsObj.meta.type[type].numInputs: " + newInputsObj.meta.type[type].numInputs
             );
 
@@ -584,7 +593,13 @@ function generateInputSets3(params, callback) {
           prevDomMinChange = 0;
           prevTotMinChange = 0;
 
-          async.setImmediate(function() { cb0(); });
+          if (newInputsObj.meta.type[type].numInputs === 0) {
+            quit();
+          }
+          else{
+            async.setImmediate(function() { cb0(); });
+          }
+
         }
       );
     },
@@ -600,7 +615,7 @@ function generateInputSets3(params, callback) {
           "\n-------------------------------------------------------------------------------"
         + "\nINPUTS" 
         + "\n-------------------------------------------------------------------------------\n"
-        + table(tableArray, { align: [ "r", "r", "r", "r", "r", "r"] })
+        + table(tableArray, { align: [ "l", "r", "r", "r", "r", "r"] })
         + "\n-------------------------------------------------------------------------------"
       ));
 
@@ -1379,19 +1394,29 @@ initialize(configuration, function(err, cnf){
 
 
 
-      const genInParams = {
-        histogramsObj: { 
-          histogramsId: histogramsObj.histogramsId, 
-          histograms: histogramsObj.histograms
-        },
-        histogramParseDominantMin: configuration.histogramParseDominantMin,
-        histogramParseTotalMin: configuration.histogramParseTotalMin,
-        maxTotalMin: {
-          mentions: 100,
-          words: 100,
-          urls: 100
-        }
-      };
+      // const genInParams = {
+      //   histogramsObj: { 
+      //     histogramsId: histogramsObj.histogramsId, 
+      //     histograms: histogramsObj.histograms
+      //   },
+      //   histogramParseDominantMin: configuration.histogramParseDominantMin,
+      //   histogramParseTotalMin: configuration.histogramParseTotalMin,
+      //   maxTotalMin: {
+      //     mentions: 100,
+      //     words: 100,
+      //     urls: 100
+      //   }
+      // };
+
+      let genInParams = {};
+      genInParams.histogramsObj = {};
+      genInParams.histogramsObj.histogramsId = histogramsObj.histogramsId;
+      genInParams.histogramsObj.histograms = {};
+      genInParams.histogramsObj.histograms = histogramsObj.histograms;
+      genInParams.histogramsObj.histogramParseDominantMin = configuration.histogramParseDominantMin;
+      genInParams.histogramsObj.histogramParseTotalMin = configuration.histogramParseTotalMin;
+      genInParams.histogramsObj.maxTotalMin = {};
+
 
       let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
 

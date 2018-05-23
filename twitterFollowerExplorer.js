@@ -19,8 +19,8 @@ const FETCH_ALL_INTERVAL = 60*ONE_MINUTE;
 const FSM_TICK_INTERVAL = ONE_SECOND;
 const PROCESS_USER_QUEUE_INTERVAL = 1;
 
-const TEST_MODE_TOTAL_FETCH = 20;
-const TEST_MODE_FETCH_COUNT = 15;  // per request twitter user fetch count
+const TEST_MODE_TOTAL_FETCH = 100;
+const TEST_MODE_FETCH_COUNT = 50;  // per request twitter user fetch count
 const TEST_DROPBOX_NN_LOAD = 25;
 const TFC_CHILD_PREFIX = "TFC_";
 const SAVE_CACHE_DEFAULT_TTL = 120; // seconds
@@ -139,6 +139,9 @@ hostname = hostname.replace(/.fios-router.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 // will use histograms to determine neural net inputs
 // for emoji, hashtags, mentions, words
+
+let globalHistograms = {};
+
 const MIN_HISTOGRAM_KEYS = 50;
 const MAX_HISTOGRAM_KEYS = 100;
 const bestRuntimeNetworkFileName = "bestRuntimeNetwork.json";
@@ -723,61 +726,68 @@ function loadTrainingSetsDropboxFolder(folder, callback) {
     if (callback !== undefined) { callback(err); }
   });
 }
+
 function updateGlobalHistograms(callback) {
-  twitterTextParser.getGlobalHistograms(function(hists) {
-    twitterImageParser.getGlobalHistograms(function(imageHists) {
-      hists.images = {};
-      hists.images = deepcopy(imageHists.images);
-      async.each(Object.keys(hists), function(histogramName, cb) {
-        const currentHistogram = hists[histogramName];
-        const keys = Object.keys(currentHistogram);
-        let valA;
-        let valB;
-        const sortedKeys = keys.sort(function(a,b) {
-          if ((currentHistogram[a] !== null) && (typeof currentHistogram[a] === "object")) {
-            valA = currentHistogram[a].total;
-            valB = currentHistogram[b].total;
-            return valB - valA;
-          }
-          else {
-            valA = currentHistogram[a];
-            valB = currentHistogram[b];
-            return valB - valA;
-          }
-        });
-        debug(chalkInfo("\nHIST " + histogramName.toUpperCase()
-          + " | " + keys.length + " ----------"
-        ));
-        sortedKeys.forEach(function(k, i) {
-          if ((keys.length < MAX_HISTOGRAM_KEYS) || (currentHistogram[k] >= MIN_HISTOGRAM_KEYS) || (i < MAX_HISTOGRAM_KEYS)) {
-            if (currentHistogram[k] !== null && typeof currentHistogram[k] === "object") {
-              statsObj.histograms[histogramName][k] = {};
-              statsObj.histograms[histogramName][k] = currentHistogram[k];
-              if (i < 10) {
-                debug(currentHistogram[k].total
-                  + " | L: " + currentHistogram[k].left
-                  + " | R: " + currentHistogram[k].right
-                  + " | N: " + currentHistogram[k].neutral
-                  + " | +: " + currentHistogram[k].positive
-                  + " | -: " + currentHistogram[k].negative
-                  + " | U: " + currentHistogram[k].uncategorized
-                  + " || " + k
-                );
-              }
-            }
-            else {
-              statsObj.histograms[histogramName][k] = currentHistogram[k];
-              debug(currentHistogram[k] + " | " + k);
-            }
-          }
-        });
-        cb();
-      }, function() {
-        if (callback !== undefined) { callback(hists); }
-      });
+
+  async.each(Object.keys(globalHistograms), function(histogramName, cb) {
+
+    const currentHistogram = globalHistograms[histogramName];
+    const keys = Object.keys(currentHistogram);
+
+    let valA;
+    let valB;
+
+    const sortedKeys = keys.sort(function(a,b) {
+      if ((currentHistogram[a] !== null) && (typeof currentHistogram[a] === "object")) {
+        valA = currentHistogram[a].total;
+        valB = currentHistogram[b].total;
+        return valB - valA;
+      }
+      else {
+        valA = currentHistogram[a];
+        valB = currentHistogram[b];
+        return valB - valA;
+      }
     });
+
+    debug(chalkInfo("\nHIST " + histogramName.toUpperCase()
+      + " | " + keys.length + " ----------"
+    ));
+
+    sortedKeys.forEach(function(k, i) {
+      if ((keys.length < MAX_HISTOGRAM_KEYS) || (currentHistogram[k] >= MIN_HISTOGRAM_KEYS) || (i < MAX_HISTOGRAM_KEYS)) {
+        if (currentHistogram[k] !== null && typeof currentHistogram[k] === "object") {
+          statsObj.histograms[histogramName][k] = {};
+          statsObj.histograms[histogramName][k] = currentHistogram[k];
+          if (i < 10) {
+            debug(currentHistogram[k].total
+              + " | L: " + currentHistogram[k].left
+              + " | R: " + currentHistogram[k].right
+              + " | N: " + currentHistogram[k].neutral
+              + " | +: " + currentHistogram[k].positive
+              + " | -: " + currentHistogram[k].negative
+              + " | U: " + currentHistogram[k].uncategorized
+              + " || " + k
+            );
+          }
+        }
+        else {
+          statsObj.histograms[histogramName][k] = currentHistogram[k];
+          debug(currentHistogram[k] + " | " + k);
+        }
+      }
+    });
+
+    cb();
+
+  }, function() {
+
+    if (callback !== undefined) { callback(); }
+
   });
+
 }
+
 function printNetworkObj(title, nnObj) {
   console.log(chalkNetwork("======================================"
     + "\n" + title
@@ -1476,42 +1486,84 @@ function startImageQuotaTimeout() {
 }
 
 function updateHistograms(params, callback) {
+
   let user = {};
-  let histograms = {};
+  let histogramsIn = {};
+
   user = params.user;
-  histograms = params.histograms;
+  histogramsIn = params.histograms;
+
   if (!user.histograms || (user.histograms === undefined)) {
     user.histograms = {};
   }
-  const inputHistogramTypes = Object.keys(histograms);
+
+  const inputHistogramTypes = Object.keys(histogramsIn);
+
   async.each(inputHistogramTypes, function(type, cb0) {
+
     if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
-    if (histograms[type] === undefined) { histograms[type] = {}; }
-    const inputHistogramTypeItems = Object.keys(histograms[type]);
+    if (histogramsIn[type] === undefined) { histogramsIn[type] = {}; }
+    if (globalHistograms[type] === undefined) { globalHistograms[type] = {}; }
+
+    const inputHistogramTypeItems = Object.keys(histogramsIn[type]);
+
     async.each(inputHistogramTypeItems, function(item, cb1) {
+
+      if (globalHistograms[type][item] === undefined) {
+        globalHistograms[type][item] = {};
+        globalHistograms[type][item].total = 0;
+        globalHistograms[type][item].left = 0;
+        globalHistograms[type][item].neutral = 0;
+        globalHistograms[type][item].right = 0;
+        globalHistograms[type][item].positive = 0;
+        globalHistograms[type][item].negative = 0;
+        globalHistograms[type][item].uncategorized = 0;
+      }
+
+      globalHistograms[type][item].total += 1;
+
+      if (user.category) {
+        if (user.category === "left") { globalHistograms[type][item].left += 1; }
+        if (user.category === "neutral") { globalHistograms[type][item].neutral += 1; }
+        if (user.category === "right") { globalHistograms[type][item].right += 1; }
+        if (user.category === "positive") { globalHistograms[type][item].positive += 1; }
+        if (user.category === "negative") { globalHistograms[type][item].negative += 1; }
+      }
+      else {
+        globalHistograms[type][item].uncategorized += 1;
+      }
+
+
       if (user.histograms[type][item] === undefined) {
-        user.histograms[type][item] = histograms[type][item];
+        user.histograms[type][item] = histogramsIn[type][item];
       }
       else if (params.accumulateFlag) {
-        user.histograms[type][item] += histograms[type][item];
+        user.histograms[type][item] += histogramsIn[type][item];
       }
+
       debug("user histograms"
         + " | @" + user.screenName
         + " | " + type
         + " | " + item
         + " | USER VAL: " + user.histograms[type][item]
-        + " | UPDATE VAL: " + histograms[type][item]
+        + " | UPDATE VAL: " + histogramsIn[type][item]
       );
+
       async.setImmediate(function() {
         cb1();
       });
+
     }, function (argument) {
+
       async.setImmediate(function() {
         cb0();
       });
+
     });
   }, function(err) {
+
     callback(err, user);
+
   });
 }
 
@@ -2165,12 +2217,11 @@ const fsmStates = {
         console.log(chalkAlert("===================================================="));
         console.log(chalkAlert("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
 
-        updateGlobalHistograms(function(gHistograms){
-
+        updateGlobalHistograms(function(){
 
           let histObj = {};
           histObj.histogramsId = hostname + "_" + process.pid + "_" + getTimeStamp();
-          histObj.histograms = gHistograms;
+          histObj.histograms = globalHistograms;
 
           const folder = (hostname === "google") ? defaultHistogramsFolder : localHistogramsFolder;
 
@@ -2217,6 +2268,8 @@ const fsmStates = {
               statsObj.users.classified = 0;
 
               clearInterval(waitFileSaveInterval);
+
+              globalHistograms = {};
 
               fsm.fsm_init();
 
