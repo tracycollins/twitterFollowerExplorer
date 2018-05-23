@@ -65,8 +65,8 @@ const padStart = require("lodash.padstart");
 const padEnd = require("lodash.padend");
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
-// const twitterImageParser = require("@threeceelabs/twitter-image-parser");
-const twitterImageParser = require("../twitter-image-parser");
+const twitterImageParser = require("@threeceelabs/twitter-image-parser");
+// const twitterImageParser = require("../twitter-image-parser");
 
 const HashMap = require("hashmap").HashMap;
 
