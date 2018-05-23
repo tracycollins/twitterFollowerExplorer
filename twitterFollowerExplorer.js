@@ -183,28 +183,38 @@ function printCat(c) {
   return ".";
 }
 const quit = function(cause) {
+
   clearInterval(dbConnectionReadyInterval);
+
   statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
   statsObj.timeStamp = moment().format(compactDateTimeFormat);
+
   quitFlag = true;
+
   fsm.fsm_reset();
+
   Object.keys(tfeChildHashMap).forEach(function(user) {
     tfeChildHashMap[user].child.send({op: "QUIT"});
   });
+
   if (cause && (cause.source === "RNT")) {
     randomNetworkTreeBusyFlag = false;
     randomNetworkTreeReadyFlag = true;
   }
+
   if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) {
     randomNetworkTree.send({op: "STATS"});
     randomNetworkTree.send({op: "QUIT"});
     randomNetworkTreeBusyFlag = false;
     randomNetworkTreeReadyFlag = true;
   }
+
   console.log( "\nTFE | ... QUITTING ..." );
+
   if (cause) {
     console.log( "CAUSE: " + jsonPrint(cause) );
   }
+
   let slackText = "\n*QUIT*";
   slackText = slackText + "\nHOST:        " + hostname;
   slackText = slackText + "\nBEST:        " + bestRuntimeNetworkId;
@@ -214,9 +224,13 @@ const quit = function(cause) {
   slackText = slackText + "\nFETCH ELPSD: " + msToTime(statsObj.fetchCycleElapsed);
   slackText = slackText + "\nTOT PRCSSD:  " + statsObj.users.totalFriendsProcessed;
   slackText = slackText + "\nGTOT PRCSSD: " + statsObj.users.grandTotalFriendsProcessed;
+
   console.log("TFE | SLACK TEXT: " + slackText);
+
   slackPostMessage(slackChannel, slackText);
+
   quitWaitInterval = setInterval(function () {
+
     if (!saveFileBusy
       && (!randomNetworkTreeBusyFlag || randomNetworkTreeReadyFlag)
       && (saveFileQueue.length === 0)
@@ -725,63 +739,51 @@ function loadTrainingSetsDropboxFolder(folder, callback) {
   })
   .catch(function(err) {
     console.log(chalkError("TFE | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
-    // quit("DROPBOX FILES LIST FOLDER ERROR");
     if (callback !== undefined) { callback(err); }
   });
 }
 
-function updateGlobalHistograms(callback) {
+function updateGlobalHistograms(params, callback) {
 
-  async.each(Object.keys(globalHistograms), function(histogramName, cb) {
+  // params.user
 
-    const currentHistogram = globalHistograms[histogramName];
-    const keys = Object.keys(currentHistogram);
+  async.each(Object.keys(params.user.histograms), function(type, cb0) {
 
-    let valA;
-    let valB;
+    if (globalHistograms[type] === undefined) { globalHistograms[type] = {}; }
 
-    const sortedKeys = keys.sort(function(a,b) {
-      if ((currentHistogram[a] !== null) && (typeof currentHistogram[a] === "object")) {
-        valA = currentHistogram[a].total;
-        valB = currentHistogram[b].total;
-        return valB - valA;
+    async.each(Object.keys(params.user.histograms[type]), function(item, cb1) {
+
+      if (globalHistograms[type][item] === undefined) {
+        globalHistograms[type][item] = {};
+        globalHistograms[type][item].total = 0;
+        globalHistograms[type][item].left = 0;
+        globalHistograms[type][item].neutral = 0;
+        globalHistograms[type][item].right = 0;
+        globalHistograms[type][item].positive = 0;
+        globalHistograms[type][item].negative = 0;
+        globalHistograms[type][item].uncategorized = 0;
+      }
+
+      globalHistograms[type][item].total += 1;
+
+      if (params.user.category) {
+        if (params.user.category === "left") { globalHistograms[type][item].left += 1; }
+        if (params.user.category === "neutral") { globalHistograms[type][item].neutral += 1; }
+        if (params.user.category === "right") { globalHistograms[type][item].right += 1; }
+        if (params.user.category === "positive") { globalHistograms[type][item].positive += 1; }
+        if (params.user.category === "negative") { globalHistograms[type][item].negative += 1; }
       }
       else {
-        valA = currentHistogram[a];
-        valB = currentHistogram[b];
-        return valB - valA;
+        globalHistograms[type][item].uncategorized += 1;
       }
+
+      cb1();
+
+    }, function() {
+
+      cb0();
+
     });
-
-    debug(chalkInfo("\nHIST " + histogramName.toUpperCase()
-      + " | " + keys.length + " ----------"
-    ));
-
-    sortedKeys.forEach(function(k, i) {
-      if ((keys.length < MAX_HISTOGRAM_KEYS) || (currentHistogram[k] >= MIN_HISTOGRAM_KEYS) || (i < MAX_HISTOGRAM_KEYS)) {
-        if (currentHistogram[k] !== null && typeof currentHistogram[k] === "object") {
-          statsObj.histograms[histogramName][k] = {};
-          statsObj.histograms[histogramName][k] = currentHistogram[k];
-          if (i < 10) {
-            debug(currentHistogram[k].total
-              + " | L: " + currentHistogram[k].left
-              + " | R: " + currentHistogram[k].right
-              + " | N: " + currentHistogram[k].neutral
-              + " | +: " + currentHistogram[k].positive
-              + " | -: " + currentHistogram[k].negative
-              + " | U: " + currentHistogram[k].uncategorized
-              + " || " + k
-            );
-          }
-        }
-        else {
-          statsObj.histograms[histogramName][k] = currentHistogram[k];
-          debug(currentHistogram[k] + " | " + k);
-        }
-      }
-    });
-
-    cb();
 
   }, function() {
 
@@ -1513,36 +1515,10 @@ function updateHistograms(params, callback) {
 
     if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
     if (histogramsIn[type] === undefined) { histogramsIn[type] = {}; }
-    if (globalHistograms[type] === undefined) { globalHistograms[type] = {}; }
 
     const inputHistogramTypeItems = Object.keys(histogramsIn[type]);
 
     async.each(inputHistogramTypeItems, function(item, cb1) {
-
-      if (globalHistograms[type][item] === undefined) {
-        globalHistograms[type][item] = {};
-        globalHistograms[type][item].total = 0;
-        globalHistograms[type][item].left = 0;
-        globalHistograms[type][item].neutral = 0;
-        globalHistograms[type][item].right = 0;
-        globalHistograms[type][item].positive = 0;
-        globalHistograms[type][item].negative = 0;
-        globalHistograms[type][item].uncategorized = 0;
-      }
-
-      globalHistograms[type][item].total += 1;
-
-      if (user.category) {
-        if (user.category === "left") { globalHistograms[type][item].left += 1; }
-        if (user.category === "neutral") { globalHistograms[type][item].neutral += 1; }
-        if (user.category === "right") { globalHistograms[type][item].right += 1; }
-        if (user.category === "positive") { globalHistograms[type][item].positive += 1; }
-        if (user.category === "negative") { globalHistograms[type][item].negative += 1; }
-      }
-      else {
-        globalHistograms[type][item].uncategorized += 1;
-      }
-
 
       if (user.histograms[type][item] === undefined) {
         user.histograms[type][item] = histogramsIn[type][item];
@@ -1572,7 +1548,9 @@ function updateHistograms(params, callback) {
     });
   }, function(err) {
 
-    callback(err, user);
+    updateGlobalHistograms({user: user}, function(){
+      callback(err, user);
+    })
 
   });
 }
@@ -1701,11 +1679,22 @@ function generateAutoCategory(params, user, callback) {
       }
     },
     function userBannerImage(text, cb) {
+
+      if (!user.histograms || (user.histograms === undefined)) { 
+        user.markModified("histograms");
+        user.histograms = {}; 
+        user.histograms.images = {}; 
+      }
+      else if (user.histograms.images === undefined) { 
+        user.histograms.images = {}; 
+      }
+
       if (
         (enableImageAnalysis && !user.bannerImageAnalyzed && user.bannerImageUrl)
         || (enableImageAnalysis && user.bannerImageUrl && (user.bannerImageAnalyzed !== user.bannerImageUrl))
         || (configuration.forceImageAnalysis && user.bannerImageUrl)
       ) {
+
         twitterImageParser.parseImage(
           user.bannerImageUrl,
           {screenName: user.screenName, category: user.category, updateGlobalHistograms: true},
@@ -1730,9 +1719,10 @@ function generateAutoCategory(params, user, callback) {
                   + "\nERR\n" + jsonPrint(err)
                 ));
               }
-              cb(null, text, null);
+              cb(null, text);
             }
             else {
+
               if (user.bannerImageAnalyzed && user.bannerImageUrl && (user.bannerImageAnalyzed !== user.bannerImageUrl)) {
                 console.log(chalkAlert("^^^ BANNER IMAGE UPDATED "
                   + " | @" + user.screenName
@@ -1753,19 +1743,45 @@ function generateAutoCategory(params, user, callback) {
               user.bannerImageAnalyzed = user.bannerImageUrl;
               user.markModified("bannerImageAnalyzed");
 
-              debug(chalkAlert("PARSE BANNER IMAGE"
-                + " | RESULTS: " + Object.keys(results.images)
-                + " | RESULTS\n" + jsonPrint(results)
-              ));
+              if (Object.keys(results.images).length > 0) {
 
-              cb(null, text, results);
+                async.each(Object.keys(results.images), function(item, cb0){
+
+                  if (user.histograms.images[item] === undefined) { 
+                    user.histograms.images[item] = results.images[item];
+                    console.log(chalkAlert("+++ USER IMAGE HISTOGRAM ADD"
+                      + " | @" + user.screenName
+                      + " | " + item + ": " + results.images[item]
+                    ));
+                  }
+                  else {
+                    console.log(chalkAlert("... USER IMAGE HISTOGRAM HIT"
+                      + " | @" + user.screenName
+                      + " | " + item
+                      + " | IN HISTOGRAM: " + user.histograms.images[item]
+                      + " | IN BANNER: " + item + ": " + results.images[item]
+                    ));
+                  }
+
+                  cb0();
+
+                }, function(){
+
+                  cb(null, text);
+
+                });
+              }
+              else {
+                cb(null, text);
+              }
+
             }
           }
         );
       }
       else {
         async.setImmediate(function() {
-          cb(null, text, null);
+          cb(null, text);
         });
       }
     }
@@ -1794,80 +1810,75 @@ function generateAutoCategory(params, user, callback) {
         callback(new Error(err), null);
       }
 
-      hist.images = {};
+      updateHistograms({user: user, histograms: hist}, function(err, updatedUser) {
 
-      updateImageHistograms({user: user, bannerResults: bannerResults}, function(err, newHist) {
         if (err) {
-          console.log(chalkError("*** ERROR updateImageHistograms: " + err));
-          return callback(new Error(err), null);
+          console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
+          console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\nUSER\n" + jsonPrint(user)));
+          callback(new Error(err), null);
         }
 
-        hist.images = newHist.images;
+        updatedUser.inputHits = 0;
 
-        updateHistograms({user: user, histograms: hist}, function(err, updatedUser) {
+        const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
+        const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
 
-          if (err) {
-            console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
-            console.trace(chalkError("*** UPDATE USER HISTOGRAMS ERROR\nUSER\n" + jsonPrint(user)));
-            callback(new Error(err), null);
+        statsObj.normalization.score.min = Math.min(score, statsObj.normalization.score.min);
+        statsObj.normalization.score.max = Math.max(score, statsObj.normalization.score.max);
+        statsObj.normalization.magnitude.min = Math.min(mag, statsObj.normalization.magnitude.min);
+        statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
+        statsObj.analyzer.total += 1;
+
+        if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
+          debug(chalkLog(">>>> LANG ANALYZE"
+            + " [ ANLd: " + statsObj.analyzer.analyzed
+            + " [ SKPd: " + statsObj.analyzer.skipped
+            + " | " + updatedUser.nodeId
+            + " | @" + updatedUser.screenName
+            + " | LAd: " + updatedUser.languageAnalyzed
+            + " | LA: S: " + score.toFixed(2)
+            + " M: " + mag.toFixed(2)
+          ));
+
+          if ((langAnalyzer !== undefined) && langAnalyzer) {
+            langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function() {
+              statsObj.analyzer.analyzed += 1;
+            });
           }
-
-          updatedUser.inputHits = 0;
-
-          const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
-          const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
-
-          statsObj.normalization.score.min = Math.min(score, statsObj.normalization.score.min);
-          statsObj.normalization.score.max = Math.max(score, statsObj.normalization.score.max);
-          statsObj.normalization.magnitude.min = Math.min(mag, statsObj.normalization.magnitude.min);
-          statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
-          statsObj.analyzer.total += 1;
-
-          if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
-            debug(chalkLog(">>>> LANG ANALYZE"
-              + " [ ANLd: " + statsObj.analyzer.analyzed
-              + " [ SKPd: " + statsObj.analyzer.skipped
-              + " | " + updatedUser.nodeId
-              + " | @" + updatedUser.screenName
-              + " | LAd: " + updatedUser.languageAnalyzed
-              + " | LA: S: " + score.toFixed(2)
-              + " M: " + mag.toFixed(2)
-            ));
-
-            if ((langAnalyzer !== undefined) && langAnalyzer) {
-              langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function() {
-                statsObj.analyzer.analyzed += 1;
-              });
-            }
-          }
-          else {
-            statsObj.analyzer.skipped += 1;
-            debug(chalkLog("SKIP LANG ANALYZE"
-              + " [ ANLd: " + statsObj.analyzer.analyzed
-              + " [ SKPd: " + statsObj.analyzer.skipped
-              + " | " + updatedUser.nodeId
-              + " | @" + updatedUser.screenName
-              + " | LAd: " + updatedUser.languageAnalyzed
-              + " | LA: S: " + score.toFixed(2)
-              + " M: " + mag.toFixed(2)
-            ));
-          }
-          // const u = pick(updatedUser, ["nodeId", "screenName", "following", "threeceeFollowing", "category", "categoryAuto", "histograms", "languageAnalysis"]);
-          activateNetwork({user: updatedUser, normalization: statsObj.normalization});
-          callback(null, updatedUser);
-        });
+        }
+        else {
+          statsObj.analyzer.skipped += 1;
+          debug(chalkLog("SKIP LANG ANALYZE"
+            + " [ ANLd: " + statsObj.analyzer.analyzed
+            + " [ SKPd: " + statsObj.analyzer.skipped
+            + " | " + updatedUser.nodeId
+            + " | @" + updatedUser.screenName
+            + " | LAd: " + updatedUser.languageAnalyzed
+            + " | LA: S: " + score.toFixed(2)
+            + " M: " + mag.toFixed(2)
+          ));
+        }
+        // const u = pick(updatedUser, ["nodeId", "screenName", "following", "threeceeFollowing", "category", "categoryAuto", "histograms", "languageAnalysis"]);
+        activateNetwork({user: updatedUser, normalization: statsObj.normalization});
+        callback(null, updatedUser);
       });
+
+      // });
     });
   });
 }
 
 function processUser(threeceeUser, userIn, callback) {
+
   let updateCountHistory = false;
+
   debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
+
   if (userServer === undefined) {
     console.log(chalkError("processUser userServer UNDEFINED"));
     quit("processUser userServer UNDEFINED");
   }
+
   async.waterfall(
   [
     function findUserInDb(cb) {
@@ -2088,7 +2099,7 @@ function childSendAll(op, callback) {
 
 function reporter(event, oldState, newState) {
   fsmPreviousState = oldState;
-  console.log(chalkAlert("--------------------------------------------------------\n"
+  console.log(chalkLog("--------------------------------------------------------\n"
     + "<< FSM >>"
     + " | " + event
     + " | " + fsmPreviousState
@@ -2189,7 +2200,6 @@ const fsmStates = {
             if (randomNetworkTree && (randomNetworkTree !== undefined)) {
               randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
                 console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
-                updateGlobalHistograms();
                 childSendAll("FETCH_USER_START");
                 statsObj.fetchCycleStartMoment = moment();
                 statsObj.fetchCycleElapsed = 0;
@@ -2230,18 +2240,18 @@ const fsmStates = {
         console.log(chalkAlert("===================================================="));
         console.log(chalkAlert("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
 
-        updateGlobalHistograms(function(){
+        let histObj = {};
+        histObj.histogramsId = hostname + "_" + process.pid + "_" + getTimeStamp();
+        histObj.histograms = globalHistograms;
 
-          let histObj = {};
-          histObj.histogramsId = hostname + "_" + process.pid + "_" + getTimeStamp();
-          histObj.histograms = globalHistograms;
+        const folder = (hostname === "google") ? defaultHistogramsFolder : localHistogramsFolder;
 
-          const folder = (hostname === "google") ? defaultHistogramsFolder : localHistogramsFolder;
+        console.log(chalkAlert("... SAVING HISTOGRAM"
+          + " | ID: " + histObj.histogramsId
+          + " | PATH: " + folder + "/" + defaultHistogramsFile
+        ));
 
-          console.log(chalkAlert("... SAVING HISTOGRAM FILE | ID: " + histObj.histogramsId));
-
-          saveFileQueue.push({folder: folder, file: defaultHistogramsFile, obj: histObj });
-        });
+        saveFileQueue.push({folder: folder, file: defaultHistogramsFile, obj: histObj });
 
         loadedNetworksFlag = false;
 
@@ -2411,13 +2421,9 @@ function showStats(options) {
   }
 
   if (options) {
-    updateGlobalHistograms(function() {
-      console.log("STATS\n" + jsonPrint(omit(statsObj, ["histograms"])));
-    });
+    console.log("STATS\n" + jsonPrint(statsObj));
   }
   else {
-
-    updateGlobalHistograms();
 
     console.log(chalkLog("### FEM S"
       + " | N: " + getTimeStamp()
@@ -2638,7 +2644,7 @@ function initSaveFileQueue(cnf) {
 
 function sendKeepAlive(userObj, callback) {
   if (statsObj.userAuthenticated && statsObj.serverConnected) {
-    console.log(chalkAlert("TX KEEPALIVE"
+    debug(chalkAlert("TX KEEPALIVE"
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + userObj.userId
     ));
@@ -2668,7 +2674,7 @@ function initKeepalive(interval) {
       console.log(chalkError("KEEPALIVE ERROR: " + err));
     }
     else if (results) {
-      console.log(chalkConnect("KEEPALIVE"
+      debug(chalkConnect("KEEPALIVE"
         + " | " + moment().format(compactDateTimeFormat)
       ));
     }
@@ -2679,7 +2685,7 @@ function initKeepalive(interval) {
         console.log(chalkError("KEEPALIVE ERROR: " + err));
       }
       else if (results) {
-        console.log(chalkConnect("KEEPALIVE"
+        debug(chalkConnect("KEEPALIVE"
           + " | " + moment().format(compactDateTimeFormat)
         ));
       }
