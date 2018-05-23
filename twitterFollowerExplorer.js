@@ -26,7 +26,7 @@ const TFC_CHILD_PREFIX = "TFC_";
 const SAVE_CACHE_DEFAULT_TTL = 120; // seconds
 const TFE_NUM_RANDOM_NETWORKS = 100;
 const IMAGE_QUOTA_TIMEOUT = 60000;
-const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
+const DEFAULT_FORCE_IMAGE_ANALYSIS = true;
 const DEFAULT_FORCE_INIT_RANDOM_NETWORKS = true;
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
 const DEFAULT_MIN_SUCCESS_RATE = 75;
@@ -65,8 +65,8 @@ const padStart = require("lodash.padstart");
 const padEnd = require("lodash.padend");
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
-const twitterImageParser = require("@threeceelabs/twitter-image-parser");
-// const twitterImageParser = require("../twitter-image-parser");
+// const twitterImageParser = require("@threeceelabs/twitter-image-parser");
+const twitterImageParser = require("../twitter-image-parser");
 
 const HashMap = require("hashmap").HashMap;
 
@@ -3272,8 +3272,11 @@ function initialize(cnf, callback) {
   if (process.env.TFE_USER_DB_CRAWL && (process.env.TFE_USER_DB_CRAWL === "true")) {
     cnf.userDbCrawl = true;
   }
+
   cnf.enableLanguageAnalysis = process.env.TFE_ENABLE_LANG_ANALYSIS || false ;
   cnf.forceLanguageAnalysis = process.env.TFE_FORCE_LANG_ANALYSIS || false ;
+  cnf.forceImageAnalysis = process.env.TFE_FORCE_IMAGE_ANALYSIS || false ;
+
   console.log(chalkAlert("FORCE LANG ANALYSIS: " + cnf.forceLanguageAnalysis));
   cnf.twitterDefaultUser = process.env.TFE_TWITTER_DEFAULT_USER || TWITTER_DEFAULT_USER ;
   cnf.twitterUsers = process.env.TFE_TWITTER_USERS || [ "altthreecee02", "altthreecee01", "altthreecee00" ] ;
@@ -3333,6 +3336,10 @@ function initialize(cnf, callback) {
       if (loadedConfigObj.TFE_FORCE_LANG_ANALYSIS !== undefined) {
         console.log("LOADED TFE_FORCE_LANG_ANALYSIS: " + loadedConfigObj.TFE_FORCE_LANG_ANALYSIS);
         cnf.forceLanguageAnalysis = loadedConfigObj.TFE_FORCE_LANG_ANALYSIS;
+      }
+      if (loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS !== undefined) {
+        console.log("LOADED TFE_FORCE_IMAGE_ANALYSIS: " + loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS);
+        cnf.forceImageAnalysis = loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS;
       }
       if (loadedConfigObj.TFE_ENABLE_STDIN !== undefined) {
         console.log("LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_ENABLE_STDIN);
