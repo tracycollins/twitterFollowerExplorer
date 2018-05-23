@@ -2274,8 +2274,7 @@ const fsmStates = {
           : "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms_test";
         }
 
-        let folder = dropboxFolder;
-        let fullPath = folder + "/" + file;
+        let fullPath = dropboxFolder + "/" + file;
 
         console.log(chalkAlert("... SAVING HISTOGRAM"
           + " | ID: " + histObj.histogramsId
