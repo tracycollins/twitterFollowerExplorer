@@ -49,6 +49,9 @@ const chalkAlert = chalk.red;
 const chalkWarn = chalk.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
+
+const writeJsonFile = require("write-json-file");
+
 const moment = require("moment");
 const fs = require("fs");
 const debug = require("debug")("tfe");
@@ -2260,12 +2263,44 @@ const fsmStates = {
 
         const folder = (hostname === "google") ? defaultHistogramsFolder : localHistogramsFolder;
 
+
+        let file = defaultHistogramsFile;
+
+        let dropboxFolder = (hostname === "google") ? "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms" 
+        : "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms";
+
+        if (configuration.testMode) {
+          dropboxFolder = (hostname === "google") ? "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test" 
+          : "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms_test";
+        }
+
+        let folder = dropboxFolder;
+        let fullPath = folder + "/" + file;
+
         console.log(chalkAlert("... SAVING HISTOGRAM"
           + " | ID: " + histObj.histogramsId
-          + " | PATH: " + folder + "/" + defaultHistogramsFile
+          + " | PATH: " + fullPath
         ));
 
-        saveFileQueue.push({folder: folder, file: defaultHistogramsFile, obj: histObj });
+
+        let histogramsSavedFlag = false;
+
+        writeJsonFile(fullPath, histObj)
+        .then(function() {
+          console.log(chalkAlert("NNT | SAVED GLOBAL HISTOGRAM | " + fullPath));
+          histogramsSavedFlag = true;
+        })
+        .catch(function(error){
+          console.log(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+            + " | ERROR: " + error
+            + " | ERROR\n" + jsonPrint(error)
+          ));
+        
+          histogramsSavedFlag = true;
+        });
+
+        // saveFileQueue.push({folder: folder, file: defaultHistogramsFile, obj: histObj });
 
         loadedNetworksFlag = false;
 
@@ -2284,7 +2319,7 @@ const fsmStates = {
 
         waitFileSaveInterval = setInterval(function() {
 
-          if (saveFileQueue.length === 0) {
+          if (histogramsSavedFlag && (saveFileQueue.length === 0)) {
 
             console.log(chalkAlert("ALL NNs SAVED ..."));
 
@@ -2314,10 +2349,12 @@ const fsmStates = {
           }
           else {
             console.log(chalkAlert("... WAITING FOR NNs TO BE SAVED ..."
+              + " | HISTOGRAMS SAVED: " + histogramsSavedFlag
               + " | SAVE Q: " + saveFileQueue.length
             ));
           }
         }, 5000);
+
       }
     },
     "fsm_init": "INIT",

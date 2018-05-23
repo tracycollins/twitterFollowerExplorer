@@ -61,6 +61,7 @@
     "text-table": "^0.2.0",
     "twit": "^2.2.9",
     "url-regex": "^4.1.1",
+    "write-json-file": "^2.3.0",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {},
