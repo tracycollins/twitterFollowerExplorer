@@ -79,7 +79,7 @@ let fetchAllIntervalReady = false;
 
 let bestNetworkHashMap = new HashMap();
 let trainingSetHashMap = new HashMap();
-let categorizedUserHashMap = new HashMap();
+// let categorizedUserHashMap = new HashMap();
 let bestNetworkFolderLoaded = false;
 let maxInputHashMap = {};
 let randomNetworkTree;
@@ -310,7 +310,7 @@ inputTypes.sort();
 let inputArrays = {};
 let stdin;
 let abortCursor = false;
-let categorizedUserHashMapReadyFlag = false;
+// let categorizedUserHashMapReadyFlag = false;
 let neuralNetworkInitialized = false;
 let TFE_USER_DB_CRAWL = false;
 let configuration = {};
@@ -454,15 +454,22 @@ let fsmPreviousState = "IDLE";
 // NN CACHE
 // ==================================================================
 let saveCacheTtl = process.env.SAVE_CACHE_DEFAULT_TTL;
+
 if (saveCacheTtl === undefined) { saveCacheTtl = SAVE_CACHE_DEFAULT_TTL; }
+
 console.log("SAVE CACHE TTL: " + saveCacheTtl + " SECONDS");
+
 let saveCacheCheckPeriod = process.env.SAVE_CACHE_CHECK_PERIOD;
+
 if (saveCacheCheckPeriod === undefined) { saveCacheCheckPeriod = 10; }
+
 console.log("SAVE CACHE CHECK PERIOD: " + saveCacheCheckPeriod + " SECONDS");
+
 const saveCache = new NodeCache({
   stdTTL: saveCacheTtl,
   checkperiod: saveCacheCheckPeriod
 });
+
 function saveCacheExpired(file, fileObj) {
   console.log(chalkLog("XXX $ SAVE"
     + " [" + saveCache.getStats().keys + "]"
@@ -470,7 +477,9 @@ function saveCacheExpired(file, fileObj) {
   ));
   saveFileQueue.push(fileObj);
 }
+
 saveCache.on("expired", saveCacheExpired);
+
 saveCache.on("set", function(file, fileObj) {
   console.log(chalkAlert("$$$ SAVE CACHE"
     + " [" + saveCache.getStats().keys + "]"
@@ -485,6 +494,7 @@ saveCache.on("set", function(file, fileObj) {
     });
   }
 });
+
 function getTimeStamp(inputTime) {
   let currentTimeStamp ;
   if (inputTime === undefined) {
@@ -1282,7 +1292,7 @@ runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
 runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
 runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
 runEnableArgs.langAnalyzerMessageRxQueueReadyFlag = langAnalyzerMessageRxQueueReadyFlag;
-runEnableArgs.categorizedUserHashMapReadyFlag = categorizedUserHashMapReadyFlag;
+// runEnableArgs.categorizedUserHashMapReadyFlag = categorizedUserHashMapReadyFlag;
 function runEnable(displayArgs) {
   if (randomNetworkTree && (randomNetworkTree !== undefined)) {
     randomNetworkTree.send({op: "GET_BUSY"});
@@ -1296,7 +1306,7 @@ function runEnable(displayArgs) {
   runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
   runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
   runEnableArgs.langAnalyzerMessageRxQueueReadyFlag = langAnalyzerMessageRxQueueReadyFlag;
-  runEnableArgs.categorizedUserHashMapReadyFlag = categorizedUserHashMapReadyFlag;
+  // runEnableArgs.categorizedUserHashMapReadyFlag = categorizedUserHashMapReadyFlag;
   const runEnableKeys = Object.keys(runEnableArgs);
   if (displayArgs) { console.log(chalkInfo("------ runEnable ------")); }
   runEnableKeys.forEach(function(key) {
@@ -1927,10 +1937,14 @@ function processUser(threeceeUser, userIn, callback) {
             user.threeceeFollowing = threeceeUser;
           }
           if ((user.status !== undefined) && user.status) { user.lastSeen = user.status.created_at; }
+
           let catObj = {};
+
           catObj.manual = user.category || false;
           catObj.auto = user.categoryAuto || false;
-          categorizedUserHashMap.set(user.nodeId, catObj);
+
+          // categorizedUserHashMap.set(user.nodeId, catObj);
+
           if (user.name !== userIn.name) {
             user.name = userIn.name;
           }
@@ -3193,31 +3207,33 @@ function initTwitterUsers(callback) {
     });
   }
 }
-function initCategorizedUserHashMap(callback) {
-  console.log(chalkTwitter("INIT CATEGORIZED USER HASHMAPS FROM DB"));
-  userServer.findCategorizedUsersCursor({}, function(err, results) {
-    if (err) {
-      console.log(chalkError("ERROR: initCategoryHashmaps: findCategorizedUsersCursor:"
-        + " " + err
-      ));
-      if (callback !== undefined) { callback(err);}
-    }
-    else {
-      console.log(chalkTwitter("LOADED CATEGORIZED USERS FROM DB"
-        + " | " + results.count + " CATEGORIZED"
-        + " | " + results.manual + " MAN"
-        + " | " + results.auto + " AUTO"
-        + " | " + results.matchRate.toFixed(2) + "% MR"
-      ));
-      // categorizedUsersObj[user.nodeId.toString()] = { manual: user.category, auto: user.categoryAuto };
-      Object.keys(results.obj).forEach(function(nodeId) {
-        categorizedUserHashMap.set(nodeId, results.obj[nodeId]);
-      });
-      categorizedUserHashMapReadyFlag = true;
-      if (callback !== undefined) { callback(err);}
-    }
-  });
-}
+
+// function initCategorizedUserHashMap(callback) {
+//   console.log(chalkTwitter("INIT CATEGORIZED USER HASHMAPS FROM DB"));
+//   userServer.findCategorizedUsersCursor({}, function(err, results) {
+//     if (err) {
+//       console.log(chalkError("ERROR: initCategoryHashmaps: findCategorizedUsersCursor:"
+//         + " " + err
+//       ));
+//       if (callback !== undefined) { callback(err);}
+//     }
+//     else {
+//       console.log(chalkTwitter("LOADED CATEGORIZED USERS FROM DB"
+//         + " | " + results.count + " CATEGORIZED"
+//         + " | " + results.manual + " MAN"
+//         + " | " + results.auto + " AUTO"
+//         + " | " + results.matchRate.toFixed(2) + "% MR"
+//       ));
+//       // categorizedUsersObj[user.nodeId.toString()] = { manual: user.category, auto: user.categoryAuto };
+//       Object.keys(results.obj).forEach(function(nodeId) {
+//         categorizedUserHashMap.set(nodeId, results.obj[nodeId]);
+//       });
+//       categorizedUserHashMapReadyFlag = true;
+//       if (callback !== undefined) { callback(err);}
+//     }
+//   });
+// }
+
 function initStdIn() {
   console.log("STDIN ENABLED");
   stdin = process.stdin;
@@ -3441,8 +3457,10 @@ function saveNetworkHashMap(params, callback) {
 
   console.log(chalkNetwork("UPDATING NNs IN FOLDER " + folder));
 
-  async.eachSeries(nnIds, function(nnId, cb) {
+  async.eachSeries(nnIds, function(nnId, cb0) {
+
     const networkObj = bestNetworkHashMap.get(nnId);
+
     console.log(chalkNetwork("SAVING NN"
       + " | " + networkObj.network.numInputs + " IN"
       + " | SR: " + networkObj.network.successRate.toFixed(2) + "%"
@@ -3451,22 +3469,51 @@ function saveNetworkHashMap(params, callback) {
       + " | " + networkObj.network.networkId
       + " | " + networkObj.entry.name
     ));
-    const file = nnId + ".json";
-    if (params.saveImmediate) {
-      saveFileQueue.push({folder: folder, file: file, obj: networkObj.network });
-    }
-    else {
-      saveCache.set(file, {folder: folder, file: file, obj: networkObj.network });
-    }
-    cb();
+
+      async.whilst(
+        function() {
+          return ((params.saveImmediate && (saveFileQueue.length < 10)) || (!params.saveImmediate && (saveCache.getStats().keys < 10))) ;
+        },
+        function(cb1) {
+
+          const file = nnId + ".json";
+
+          setTimeout(function(){
+            if (params.saveImmediate) {
+              saveFileQueue.push({folder: folder, file: file, obj: networkObj.network });
+              console.log(chalkNetwork("SAVING NN (Q)"
+                + " | " + networkObj.network.networkId
+              ));
+              cb1();
+            }
+            else {
+              saveCache.set(file, {folder: folder, file: file, obj: networkObj.network });
+              console.log(chalkNetwork("SAVING NN ($)"
+                + " | " + networkObj.network.networkId
+              ));
+              cb1();
+            }
+          }, 1000);
+
+
+      }, function(err) {
+
+        cb0();
+
+      });
+
+
   }, function(err) {
     if (callback !== undefined) { callback(err); }
   });
 }
 
 function updateNetworkStats(params, callback) {
+
   updateNetworkStatsReady = false;
+
   const nnIds = Object.keys(params.networkStatsObj);
+
   async.eachSeries(nnIds, function(nnId, cb) {
     if (bestNetworkHashMap.has(nnId)) {
       let networkObj = bestNetworkHashMap.get(nnId);
@@ -3486,8 +3533,11 @@ function updateNetworkStats(params, callback) {
       cb();
     }
   }, function(err) {
+
     saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: params.saveImmediate}, function() {
+
       updateNetworkStatsReady = true;
+
       if (callback !== undefined) { callback(err); }
     });
   });
@@ -3632,7 +3682,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             user = deepcopy(m.user);
             user.category = m.category;
             user.categoryAuto = m.categoryAuto;
-            categorizedUserHashMap.set(user.nodeId, {manual: m.category, auto: m.categoryAuto});
+            // categorizedUserHashMap.set(user.nodeId, {manual: m.category, auto: m.categoryAuto});
             userDbUpdateQueue.push(user);
           }
           else {
@@ -4136,7 +4186,7 @@ initialize(configuration, function(err, cnf) {
     if (dbConnectionReady) {
       clearInterval(dbConnectionReadyInterval);
       initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
-      initCategorizedUserHashMap();
+      // initCategorizedUserHashMap();
       initUserDbUpdateQueueInterval(1);
       initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
       initRandomNetworkTree();
