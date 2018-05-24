@@ -28,6 +28,7 @@ const randomInt = require("random-int");
 const fs = require("fs");
 const moment = require("moment");
 const table = require("text-table");
+const ora = require("ora");
 
 const chalk = require("chalk");
 const chalkNetwork = chalk.blue;
@@ -425,12 +426,15 @@ function generateInputSets3(params, callback) {
 
   let prevNumInputs = 0;
 
+  let previousParamsHistory = [];
 
   async.eachSeries(
 
     inTypes, 
 
     function(type, cb0){
+
+      const spinner = ora("... GEN TYPE" + " | " + type.toUpperCase()).start();
 
       dominantMinStep = DOM_MIN_STEP;
 
@@ -458,22 +462,34 @@ function generateInputSets3(params, callback) {
 
         function() {
 
-            debug("whilst"
-              + " | TYPE: " + type
-              + " | MIN_NUM_INPUTS_PER_TYPE: " + MIN_NUM_INPUTS_PER_TYPE
-              + " | totalTypeInputs: " + totalTypeInputs
-              + " | Object.keys(params.histogramsObj.histograms[type]).length: " + Object.keys(params.histogramsObj.histograms[type]).length
-              + " | newInputsObj.meta.type[type].numInputs: " + newInputsObj.meta.type[type].numInputs
-            );
+          debug("whilst"
+            + " | TYPE: " + type
+            + " | MIN_NUM_INPUTS_PER_TYPE: " + MIN_NUM_INPUTS_PER_TYPE
+            + " | totalTypeInputs: " + totalTypeInputs
+            + " | Object.keys(params.histogramsObj.histograms[type]).length: " + Object.keys(params.histogramsObj.histograms[type]).length
+            + " | newInputsObj.meta.type[type].numInputs: " + newInputsObj.meta.type[type].numInputs
+          );
+
+          // prevNumInputs = newInputsObj.meta.type[type].numInputs;
+          // prevDomMinStep = dominantMinStep; 
+          // prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
 
           return (
             ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
               || ((newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE) && (totalTypeInputs > MIN_NUM_INPUTS_PER_TYPE))
             )
+
           );
         },
 
         function(cb1){
+
+          previousParamsHistory.push({
+            inputs: newInputsObj.inputs[type],
+            totalMin: hpParams.options.globalTotalMin,
+            dominantMin: hpParams.options.globalDominantMin,
+            numInputs: newInputsObj.meta.type[type].numInputs
+          });
 
           hpParams.options.globalTotalMin = totalMin;
           hpParams.options.globalDominantMin = dominantMin;
@@ -485,12 +501,12 @@ function generateInputSets3(params, callback) {
             }
 
             newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
-            prevNumInputs = newInputsObj.meta.type[type].numInputs;
             newInputsObj.meta.type[type].numInputs = Object.keys(histResults.entries[type].dominantEntries).length;
             newInputsObj.meta.type[type].dominantMin = dominantMin;
             newInputsObj.meta.type[type].totalMin = totalMin;
 
-            console.log(chalkBlue("... GEN TYPE"
+
+            spinner.text = "... GEN TYPE"
               + " | " + type.toUpperCase()
               + " | DOM MIN: " + dominantMin.toFixed(5)
               + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
@@ -501,50 +517,82 @@ function generateInputSets3(params, callback) {
               + " | PREV NUM INPUTS: " + prevNumInputs
               + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
               + "/" + Object.keys(params.histogramsObj.histograms[type]).length
-              + " | TOT INPUTS: " + newInputsObj.meta.numInputs
-            ));
+              + " | TOT INPUTS: " + newInputsObj.meta.numInputs;
+
+            // console.log(chalkBlue("... GEN TYPE"
+            //   + " | " + type.toUpperCase()
+            //   + " | DOM MIN: " + dominantMin.toFixed(5)
+            //   + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
+            //   + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
+            //   + " | TOT MIN: " + totalMin.toFixed(5)
+            //   + " | PREV TOT MIN: " + prevTotalMin.toFixed(5)
+            //   + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
+            //   + " | PREV NUM INPUTS: " + prevNumInputs
+            //   + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
+            //   + "/" + Object.keys(params.histogramsObj.histograms[type]).length
+            //   + " | TOT INPUTS: " + newInputsObj.meta.numInputs
+            // ));
 
             if ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) && (prevNumInputs < MAX_NUM_INPUTS_PER_TYPE)) {
 
-              console.log(chalkAlert("*** LESS THAN MIN ---> MORE THAN MAX IN ONE STEP"
+              const lastParams = previousParamsHistory.pop();
+              const secondToLastParams = previousParamsHistory.pop();
+
+              newInputsObj.inputs[type] = secondToLastParams.inputs;
+              newInputsObj.meta.type[type].numInputs = secondToLastParams.numInputs;
+              newInputsObj.meta.type[type].dominantMin = secondToLastParams.dominantMin;
+              newInputsObj.meta.type[type].totalMin = secondToLastParams.totalMin;
+
+              dominantMin = secondToLastParams.dominantMin;
+              totalMin = secondToLastParams.totalMin;
+
+              spinner.info("*** GEN TYPE"
+                + " | " + type.toUpperCase()
+                + " | " + "LESS THAN MIN >>> MORE THAN MAX IN ONE STEP"
                 + " | PREV NUM INPUTS: " + prevNumInputs
                 + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
                 + " | MAX NUM INPUTS: " + MAX_NUM_INPUTS_PER_TYPE
-              ));
+              );
 
-              newInputsObj.inputs[type] = prevInputs;
-              newInputsObj.meta.type[type].numInputs = prevNumInputs;
-              newInputsObj.meta.type[type].dominantMin = dominantMin;
-              newInputsObj.meta.type[type].totalMin = totalMin;
+              // console.log(chalkAlert("*** LESS THAN MIN ---> MORE THAN MAX IN ONE STEP"
+              //   + " | PREV NUM INPUTS: " + prevNumInputs
+              //   + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
+              //   + " | MAX NUM INPUTS: " + MAX_NUM_INPUTS_PER_TYPE
+              // ));
+
+
+              // newInputsObj.inputs[type] = prevInputs;
+              // newInputsObj.meta.type[type].numInputs = prevNumInputs;
+              // newInputsObj.meta.type[type].dominantMin = prevDomMin;
+              // newInputsObj.meta.type[type].totalMin = prevTotalMin;
 
               return( async.setImmediate(function() { cb1(true); }))
             }
             else if ((dominantMin - dominantMinStep > configuration.minDominantMin) && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) {
+
               prevDomMin = dominantMin;
-              prevDomMinStep = dominantMinStep; 
-              prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
               dominantMin -= dominantMinStep;
+
             }
             else if (dominantMin - dominantMinStep <= configuration.minDominantMin) {
 
               prevDomMin = dominantMin;
-              prevDomMinStep = dominantMinStep; 
               dominantMin = INIT_DOM_MIN;
 
-              prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
-              prevTotalMin = totalMin; 
-
               if (totalMin > 1){
+                prevTotalMin = totalMin; 
                 totalMin = Math.min(parseInt(totalMinStep * totalMin), parseInt(totalMin-1.0));
               }
               else {
                 console.log(chalkError("QUIT: totalMin: " + totalMin + " | dominantMin:" + dominantMin));
                 quit();
               }
-
             }
 
-            prevInputs = Object.keys(histResults.entries[type].dominantEntries).sort();
+            prevNumInputs = newInputsObj.meta.type[type].numInputs;
+            prevDomMinStep = dominantMinStep; 
+            prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
+
 
             async.setImmediate(function() { cb1(); });
           });
@@ -554,14 +602,19 @@ function generateInputSets3(params, callback) {
 
           newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
 
-          console.log(chalkAlert("+++ END TYPE"
+          spinner.text = "+++ END TYPE"
             + " | " + type.toUpperCase()
             + " | DOM MIN: " + dominantMin.toFixed(5)
             + " | TOT MIN: " + totalMin.toFixed(5)
             + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
             + "/" + Object.keys(params.histogramsObj.histograms[type]).length
-            + " | TOT INPUTS: " + newInputsObj.meta.numInputs
-          ));
+            + " | TOT INPUTS: " + newInputsObj.meta.numInputs;
+
+          spinner.succeed();
+          // spinner.stopAndPersist();
+
+
+          previousParamsHistory = [];
 
           tableArray.push([
             type.toUpperCase(),
@@ -608,224 +661,224 @@ function generateInputSets3(params, callback) {
   );
 }
 
-function generateInputSets2(params, callback) {
+// function generateInputSets2(params, callback) {
 
-  let tableArray = [];
+//   let tableArray = [];
 
-  /*
-  pseudo code
+//   /*
+//   pseudo code
 
-  MIN_NUM_INPUTS_PER_TYPE = 150 (6 types * MIN_NUM_INPUTS_PER_TYPE = MAX_INPUTS: 900)
-  MAX_NUM_INPUTS_PER_TYPE = 250 (6 types * MAX_NUM_INPUTS_PER_TYPE = MAX_INPUTS: 1500)
-  totalMin = 1
-  dominantMin = 0.4 (lower?)
+//   MIN_NUM_INPUTS_PER_TYPE = 150 (6 types * MIN_NUM_INPUTS_PER_TYPE = MAX_INPUTS: 900)
+//   MAX_NUM_INPUTS_PER_TYPE = 250 (6 types * MAX_NUM_INPUTS_PER_TYPE = MAX_INPUTS: 1500)
+//   totalMin = 1
+//   dominantMin = 0.4 (lower?)
 
-  constant dominantMin
+//   constant dominantMin
 
-  for each inputs type
-    while (number of inputs of type > MAX_NUM_INPUTS_PER_TYPE) or (number of inputs of type < MIN_NUM_INPUTS_PER_TYPE)
-      if (number of inputs of type > MAX_NUM_INPUTS_PER_TYPE) and (totalMin < MAX_TOTAL_MIN) totalMin++
-      if (number of inputs of type < MIN_NUM_INPUTS_PER_TYPE) and (totalMin > 1) totalMin--
-  */
+//   for each inputs type
+//     while (number of inputs of type > MAX_NUM_INPUTS_PER_TYPE) or (number of inputs of type < MIN_NUM_INPUTS_PER_TYPE)
+//       if (number of inputs of type > MAX_NUM_INPUTS_PER_TYPE) and (totalMin < MAX_TOTAL_MIN) totalMin++
+//       if (number of inputs of type < MIN_NUM_INPUTS_PER_TYPE) and (totalMin > 1) totalMin--
+//   */
 
-  let totalMin = INIT_TOT_MIN;
-  let maxTotalMin = configuration.maxTotalMin;
-  let dominantMin = INIT_DOM_MIN;
+//   let totalMin = INIT_TOT_MIN;
+//   let maxTotalMin = configuration.maxTotalMin;
+//   let dominantMin = INIT_DOM_MIN;
 
-  let newInputsObj = {};
-  newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-  newInputsObj.meta = {};
-  newInputsObj.meta.type = {};
-  newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
-  newInputsObj.meta.numInputs = 0;
-  newInputsObj.meta.histogramParseTotalMin = totalMin;
-  newInputsObj.meta.histogramParseDominantMin = dominantMin;
-  newInputsObj.inputs = {};
+//   let newInputsObj = {};
+//   newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+//   newInputsObj.meta = {};
+//   newInputsObj.meta.type = {};
+//   newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
+//   newInputsObj.meta.numInputs = 0;
+//   newInputsObj.meta.histogramParseTotalMin = totalMin;
+//   newInputsObj.meta.histogramParseDominantMin = dominantMin;
+//   newInputsObj.inputs = {};
 
-  let inTypes = Object.keys(params.histogramsObj.histograms);
-  inTypes.sort();
+//   let inTypes = Object.keys(params.histogramsObj.histograms);
+//   inTypes.sort();
 
-  tableArray.push([
-    "TYPE",
-    "DOM MIN",
-    "TOT MIN",
-    "TOT TYPE IN",
-    "TYPE IN",
-    "TOT INPUTS"
-  ]);
+//   tableArray.push([
+//     "TYPE",
+//     "DOM MIN",
+//     "TOT MIN",
+//     "TOT TYPE IN",
+//     "TYPE IN",
+//     "TOT INPUTS"
+//   ]);
 
-  let prevTotMinChange = 0;
-  let prevDomMinChange = 0;
+//   let prevTotMinChange = 0;
+//   let prevDomMinChange = 0;
 
-  const DOM_MIN_STEP = 0.001;
+//   const DOM_MIN_STEP = 0.001;
 
-  let dominantMinStep = DOM_MIN_STEP;
+//   let dominantMinStep = DOM_MIN_STEP;
 
-  async.eachSeries(
+//   async.eachSeries(
 
-    inTypes, 
+//     inTypes, 
 
-    function(type, cb0){
+//     function(type, cb0){
 
-      dominantMinStep = DOM_MIN_STEP;
+//       dominantMinStep = DOM_MIN_STEP;
 
-      maxTotalMin = (params.maxTotalMin && params.maxTotalMin[type] !== undefined) ? params.maxTotalMin[type] : configuration.maxTotalMin;
+//       maxTotalMin = (params.maxTotalMin && params.maxTotalMin[type] !== undefined) ? params.maxTotalMin[type] : configuration.maxTotalMin;
 
-      // start with all inputs of type
-      const totalTypeInputs = Object.keys(params.histogramsObj.histograms[type]).length;
+//       // start with all inputs of type
+//       const totalTypeInputs = Object.keys(params.histogramsObj.histograms[type]).length;
 
-      newInputsObj.meta.type[type] = {};
-      newInputsObj.meta.type[type].numInputs = Object.keys(params.histogramsObj.histograms[type]).length;
-      newInputsObj.meta.type[type].dominantMin = dominantMin;
-      newInputsObj.meta.type[type].totalMin = totalMin;
+//       newInputsObj.meta.type[type] = {};
+//       newInputsObj.meta.type[type].numInputs = Object.keys(params.histogramsObj.histograms[type]).length;
+//       newInputsObj.meta.type[type].dominantMin = dominantMin;
+//       newInputsObj.meta.type[type].totalMin = totalMin;
 
-      newInputsObj.inputs[type] = Object.keys(params.histogramsObj.histograms[type]).sort();
+//       newInputsObj.inputs[type] = Object.keys(params.histogramsObj.histograms[type]).sort();
 
-      let hpParams = {};
-      hpParams.histogram = {};
-      hpParams.histogram[type] = {};
-      hpParams.histogram[type] = params.histogramsObj.histograms[type];
+//       let hpParams = {};
+//       hpParams.histogram = {};
+//       hpParams.histogram[type] = {};
+//       hpParams.histogram[type] = params.histogramsObj.histograms[type];
 
-      hpParams.options = {};
-      hpParams.options.globalTotalMin = totalMin;
-      hpParams.options.globalDominantMin = dominantMin;
+//       hpParams.options = {};
+//       hpParams.options.globalTotalMin = totalMin;
+//       hpParams.options.globalDominantMin = dominantMin;
 
-      async.whilst(
+//       async.whilst(
 
-        function() {
-          return (
-            (newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
-            || ((newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE) 
-              && (newInputsObj.meta.type[type].numInputs != totalTypeInputs))
-          );
-        },
+//         function() {
+//           return (
+//             (newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
+//             || ((newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE) 
+//               && (newInputsObj.meta.type[type].numInputs != totalTypeInputs))
+//           );
+//         },
 
-        function(cb1){
+//         function(cb1){
 
-          hpParams.options.globalTotalMin = totalMin;
-          hpParams.options.globalDominantMin = dominantMin;
+//           hpParams.options.globalTotalMin = totalMin;
+//           hpParams.options.globalDominantMin = dominantMin;
 
-          histogramParser.parse(hpParams, function(err, histResults){
-            if (err){
-              console.log(chalkError("HISTOGRAM PARSE ERROR: " + err));
-              return cb1(err);
-            }
+//           histogramParser.parse(hpParams, function(err, histResults){
+//             if (err){
+//               console.log(chalkError("HISTOGRAM PARSE ERROR: " + err));
+//               return cb1(err);
+//             }
 
-            newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
-            newInputsObj.meta.type[type].numInputs = Object.keys(histResults.entries[type].dominantEntries).length;
-            newInputsObj.meta.type[type].dominantMin = dominantMin;
-            newInputsObj.meta.type[type].totalMin = totalMin;
+//             newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
+//             newInputsObj.meta.type[type].numInputs = Object.keys(histResults.entries[type].dominantEntries).length;
+//             newInputsObj.meta.type[type].dominantMin = dominantMin;
+//             newInputsObj.meta.type[type].totalMin = totalMin;
 
-            console.log(chalkBlue("... GEN TYPE"
-              + " | " + type.toUpperCase()
-              + " | DOM MIN: " + dominantMin.toFixed(5)
-              + " | DOM PREV: " + prevDomMinChange
-              + " | TOT MIN: " + totalMin.toFixed(5)
-              + " | TOT PREV: " + prevTotMinChange
-              + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
-              + "/" + Object.keys(params.histogramsObj.histograms[type]).length
-              + " | TOT INPUTS: " + newInputsObj.meta.numInputs
-            ));
+//             console.log(chalkBlue("... GEN TYPE"
+//               + " | " + type.toUpperCase()
+//               + " | DOM MIN: " + dominantMin.toFixed(5)
+//               + " | DOM PREV: " + prevDomMinChange
+//               + " | TOT MIN: " + totalMin.toFixed(5)
+//               + " | TOT PREV: " + prevTotMinChange
+//               + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
+//               + "/" + Object.keys(params.histogramsObj.histograms[type]).length
+//               + " | TOT INPUTS: " + newInputsObj.meta.numInputs
+//             ));
 
-            if (newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) {
-              if (dominantMin >= 1) {
-                maxTotalMin += maxTotalMin;
-                dominantMin = INIT_DOM_MIN;
-                dominantMinStep = 0.5 * dominantMinStep;
-              }
-              if ((prevTotMinChange > 0) && (totalMin > maxTotalMin)) {
-                totalMin = INIT_TOT_MIN;
-                dominantMin += dominantMinStep;
-                prevDomMinChange = 1;
-                prevTotMinChange = 0;
-              }
-              else {
-                totalMin += 1;
-                prevTotMinChange = 1;
-              }
-            }
-            if ((totalMin > 0 ) && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) { 
-              if (dominantMin >= 1) {
-                maxTotalMin += maxTotalMin;
-                dominantMin = INIT_DOM_MIN;
-                dominantMinStep = 0.5 * dominantMinStep;
-              }
-              if (prevTotMinChange > 0) {
-                if (dominantMin <= configuration.maxDominantMin){
-                  totalMin = INIT_TOT_MIN;
-                  dominantMin += dominantMinStep;
-                  prevTotMinChange = 0;
-                  prevDomMinChange = 0;
-                }
-                else {
-                  dominantMin += dominantMinStep;
-                  prevDomMinChange = 1;
-                  prevTotMinChange = 0;
-                }
-              }
-              else {
-                totalMin += 1;
-                prevTotMinChange = 1;
-              }
-            }
+//             if (newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) {
+//               if (dominantMin >= 1) {
+//                 maxTotalMin += maxTotalMin;
+//                 dominantMin = INIT_DOM_MIN;
+//                 dominantMinStep = 0.5 * dominantMinStep;
+//               }
+//               if ((prevTotMinChange > 0) && (totalMin > maxTotalMin)) {
+//                 totalMin = INIT_TOT_MIN;
+//                 dominantMin += dominantMinStep;
+//                 prevDomMinChange = 1;
+//                 prevTotMinChange = 0;
+//               }
+//               else {
+//                 totalMin += 1;
+//                 prevTotMinChange = 1;
+//               }
+//             }
+//             if ((totalMin > 0 ) && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) { 
+//               if (dominantMin >= 1) {
+//                 maxTotalMin += maxTotalMin;
+//                 dominantMin = INIT_DOM_MIN;
+//                 dominantMinStep = 0.5 * dominantMinStep;
+//               }
+//               if (prevTotMinChange > 0) {
+//                 if (dominantMin <= configuration.maxDominantMin){
+//                   totalMin = INIT_TOT_MIN;
+//                   dominantMin += dominantMinStep;
+//                   prevTotMinChange = 0;
+//                   prevDomMinChange = 0;
+//                 }
+//                 else {
+//                   dominantMin += dominantMinStep;
+//                   prevDomMinChange = 1;
+//                   prevTotMinChange = 0;
+//                 }
+//               }
+//               else {
+//                 totalMin += 1;
+//                 prevTotMinChange = 1;
+//               }
+//             }
 
 
-            async.setImmediate(function() { cb1(); });
-          });
-        }, 
+//             async.setImmediate(function() { cb1(); });
+//           });
+//         }, 
 
-        function(err){
+//         function(err){
 
-          newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
+//           newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
 
-          console.log(chalkAlert("+++ END TYPE"
-            + " | " + type.toUpperCase()
-            + " | DOM MIN: " + dominantMin.toFixed(5)
-            + " | TOT MIN: " + totalMin.toFixed(5)
-            + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
-            + "/" + Object.keys(params.histogramsObj.histograms[type]).length
-            + " | TOT INPUTS: " + newInputsObj.meta.numInputs
-          ));
+//           console.log(chalkAlert("+++ END TYPE"
+//             + " | " + type.toUpperCase()
+//             + " | DOM MIN: " + dominantMin.toFixed(5)
+//             + " | TOT MIN: " + totalMin.toFixed(5)
+//             + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
+//             + "/" + Object.keys(params.histogramsObj.histograms[type]).length
+//             + " | TOT INPUTS: " + newInputsObj.meta.numInputs
+//           ));
 
-          tableArray.push([
-            type.toUpperCase(),
-            dominantMin.toFixed(5),
-            totalMin.toFixed(5),
-            Object.keys(params.histogramsObj.histograms[type]).length,
-            newInputsObj.meta.type[type].numInputs,
-            newInputsObj.meta.numInputs
-          ]);
+//           tableArray.push([
+//             type.toUpperCase(),
+//             dominantMin.toFixed(5),
+//             totalMin.toFixed(5),
+//             Object.keys(params.histogramsObj.histograms[type]).length,
+//             newInputsObj.meta.type[type].numInputs,
+//             newInputsObj.meta.numInputs
+//           ]);
 
-          totalMin = INIT_TOT_MIN;
-          dominantMin = INIT_DOM_MIN;
-          prevDomMinChange = 0;
-          prevTotMinChange = 0;
+//           totalMin = INIT_TOT_MIN;
+//           dominantMin = INIT_DOM_MIN;
+//           prevDomMinChange = 0;
+//           prevTotMinChange = 0;
 
-          async.setImmediate(function() { cb0(); });
-        }
-      );
-    },
+//           async.setImmediate(function() { cb0(); });
+//         }
+//       );
+//     },
 
-    function(err){
+//     function(err){
 
-      console.log(chalkAlert("END GEN"
-        + " | " + newInputsObj.inputsId
-        + " | TOT INPUTS: " + newInputsObj.meta.numInputs
-      ));
+//       console.log(chalkAlert("END GEN"
+//         + " | " + newInputsObj.inputsId
+//         + " | TOT INPUTS: " + newInputsObj.meta.numInputs
+//       ));
 
-      console.log(chalk.blue(
-          "\n-------------------------------------------------------------------------------"
-        + "\nINPUTS" 
-        + "\n-------------------------------------------------------------------------------\n"
-        + table(tableArray, { align: [ "r", "r", "r", "r", "r", "r"] })
-        + "\n-------------------------------------------------------------------------------"
-      ));
+//       console.log(chalk.blue(
+//           "\n-------------------------------------------------------------------------------"
+//         + "\nINPUTS" 
+//         + "\n-------------------------------------------------------------------------------\n"
+//         + table(tableArray, { align: [ "r", "r", "r", "r", "r", "r"] })
+//         + "\n-------------------------------------------------------------------------------"
+//       ));
 
-      callback(err, newInputsObj);
-    }
+//       callback(err, newInputsObj);
+//     }
 
-  );
-}
+//   );
+// }
 
 
 let quitWaitInterval;
@@ -1147,7 +1200,7 @@ function initStatsUpdate(callback){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
-    showStats();
+    // showStats();
 
   }, configuration.statsUpdateIntervalTime);
 
@@ -1387,7 +1440,11 @@ initialize(configuration, function(err, cnf){
         cb();
       }
       else {
-        console.log(chalkInfo("histogramsObj: " + histogramsObj.histogramsId));
+        console.log(chalkInfo("+++ LOADED HISTOGRAM"
+          + " | " + type.toUpperCase()
+          + " | " + Object.keys(histogramsObj.histograms[type]).length + " ITEMS"
+          + " | " + histogramsObj.histogramsId
+        ));
 
         genInParams.histogramsObj.histogramsId = histogramsObj.histogramsId;
         genInParams.histogramsObj.histograms[type] = histogramsObj.histograms[type];
