@@ -43,12 +43,10 @@ let saveFileQueueInterval;
 let saveFileBusy = false;
 
 const inputTypes = ["emoji", "hashtags",  "images", "mentions", "urls", "words"];
-// inputTypes.sort();
 
 let stdin;
 
 require("isomorphic-fetch");
-// const Dropbox = require("dropbox").Dropbox;
 const Dropbox = require("./js/dropbox").Dropbox;
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
@@ -464,7 +462,7 @@ function generateInputSets3(params, callback) {
 
         function() {
 
-            console.log("whilst"
+            debug("whilst"
               + " | TYPE: " + type
               + " | MIN_NUM_INPUTS_PER_TYPE: " + MIN_NUM_INPUTS_PER_TYPE
               + " | totalTypeInputs: " + totalTypeInputs
@@ -524,21 +522,11 @@ function generateInputSets3(params, callback) {
               newInputsObj.meta.type[type].totalMin = totalMin;
 
               return( async.setImmediate(function() { cb1(true); }))
-
-              // totalMin = prevTotalMin;
-              // totalMinStep = 1.0;
-              // dominantMin = 1.0;
-              // dominantMinStep = 0.9 * dominantMinStep;
-              // prevDomMin = 1.0;
-              // prevTotalMinStep = 0;
-              // prevTotalMinStep = 1.0;
-
             }
             else if ((dominantMin - dominantMinStep > configuration.minDominantMin) && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) {
               prevDomMin = dominantMin;
               prevDomMinStep = dominantMinStep; 
               prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
-              // prevTotalMin = totalMin; 
               dominantMin -= dominantMinStep;
             }
             else if (dominantMin - dominantMinStep <= configuration.minDominantMin) {
@@ -621,7 +609,6 @@ function generateInputSets3(params, callback) {
 
       callback(err, newInputsObj);
     }
-
   );
 }
 
@@ -1383,61 +1370,56 @@ initialize(configuration, function(err, cnf){
   console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
   // console.log("LOAD " + localHistogramsFolder + "/histograms.json");
-  console.log("LOAD " + defaultHistogramsFolder + "/histograms.json");
+  console.log("LOAD " + defaultHistogramsFolder);
 
-  loadFile(defaultHistogramsFolder, "histograms.json", function(err, histogramsObj){
-    if (err) {
-      console.log(chalkError("LOAD histograms.json ERROR\n" + jsonPrint(err)));
-    }
-    else {
-      console.log(chalkInfo("histogramsObj: " + histogramsObj.histogramsId));
+  let genInParams = {};
+  genInParams.histogramsObj = {};
+  genInParams.histogramsObj.histograms = {};
+  genInParams.histogramsObj.maxTotalMin = {};
+  genInParams.histogramsObj.histogramParseDominantMin = configuration.histogramParseDominantMin;
+  genInParams.histogramsObj.histogramParseTotalMin = configuration.histogramParseTotalMin;
 
+  async.eachSeries(inputTypes, function(type, cb){
 
+    const folder = defaultHistogramsFolder + "/types/" + type;
+    const file = "histograms_" + type + ".json";
 
-      // const genInParams = {
-      //   histogramsObj: { 
-      //     histogramsId: histogramsObj.histogramsId, 
-      //     histograms: histogramsObj.histograms
-      //   },
-      //   histogramParseDominantMin: configuration.histogramParseDominantMin,
-      //   histogramParseTotalMin: configuration.histogramParseTotalMin,
-      //   maxTotalMin: {
-      //     mentions: 100,
-      //     words: 100,
-      //     urls: 100
-      //   }
-      // };
+    loadFile(folder, file, function(err, histogramsObj){
 
-      let genInParams = {};
-      genInParams.histogramsObj = {};
-      genInParams.histogramsObj.histogramsId = histogramsObj.histogramsId;
-      genInParams.histogramsObj.histograms = {};
-      genInParams.histogramsObj.histograms = histogramsObj.histograms;
-      genInParams.histogramsObj.histogramParseDominantMin = configuration.histogramParseDominantMin;
-      genInParams.histogramsObj.histogramParseTotalMin = configuration.histogramParseTotalMin;
-      genInParams.histogramsObj.maxTotalMin = {};
-
-
-      let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
-
-      if (configuration.testMode) { 
-        inFolder = inFolder + "_test";
+      if (err) {
+        console.log(chalkError("LOAD histograms.json ERROR\n" + jsonPrint(err)));
+        cb();
       }
+      else {
+        console.log(chalkInfo("histogramsObj: " + histogramsObj.histogramsId));
 
-      generateInputSets3(genInParams, function(err, inputsObj){
-        if (err) {
-          console.log(chalkError("generateInputSets ERROR: " + err));
-          quit();
-        }
-        else {
-          const inFile = inputsObj.inputsId + ".json"; 
-          console.log(chalkInfo("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
-          saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
-          quit();
-        }
-      });
+        genInParams.histogramsObj.histogramsId = histogramsObj.histogramsId;
+        genInParams.histogramsObj.histograms[type] = histogramsObj.histograms[type];
+
+        cb();
+      }
+    });
+
+  }, function(err){
+
+    let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
+
+    if (configuration.testMode) { 
+      inFolder = inFolder + "_test";
     }
 
+    generateInputSets3(genInParams, function(err, inputsObj){
+      if (err) {
+        console.log(chalkError("generateInputSets ERROR: " + err));
+        quit();
+      }
+      else {
+        const inFile = inputsObj.inputsId + ".json"; 
+        console.log(chalkInfo("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+        saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
+        quit();
+      }
+    });
   });
 
 });

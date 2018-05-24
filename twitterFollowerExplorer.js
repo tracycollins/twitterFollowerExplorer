@@ -14,13 +14,19 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
+const ONE_KILOBYTE = 1024;
+const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
+
+const DROPBOX_LIST_FOLDER_LIMIT = 50;
+const DROPBOX_MAX_FILE_UPLOAD = 140 * ONE_MEGABYTE; // bytes
+
 const FETCH_ALL_INTERVAL = 60*ONE_MINUTE;
 
 const FSM_TICK_INTERVAL = ONE_SECOND;
 const PROCESS_USER_QUEUE_INTERVAL = 1;
 
-const TEST_MODE_TOTAL_FETCH = 100;
-const TEST_MODE_FETCH_COUNT = 50;  // per request twitter user fetch count
+const TEST_MODE_TOTAL_FETCH = 20;
+const TEST_MODE_FETCH_COUNT = 10;  // per request twitter user fetch count
 const TEST_DROPBOX_NN_LOAD = 25;
 const TFC_CHILD_PREFIX = "TFC_";
 const SAVE_CACHE_DEFAULT_TTL = 120; // seconds
@@ -2257,49 +2263,49 @@ const fsmStates = {
         console.log(chalkAlert("===================================================="));
         console.log(chalkAlert("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
 
-        let histObj = {};
-        histObj.histogramsId = hostname + "_" + process.pid + "_" + getTimeStamp();
-        histObj.histograms = globalHistograms;
+        // let dropboxFolder = (hostname === "google") ? "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms" 
+        // : "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms";
 
-        const folder = (hostname === "google") ? defaultHistogramsFolder : localHistogramsFolder;
-
-
-        let file = defaultHistogramsFile;
-
-        let dropboxFolder = (hostname === "google") ? "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms" 
-        : "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms";
-
-        if (configuration.testMode) {
-          dropboxFolder = (hostname === "google") ? "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test" 
-          : "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms_test";
-        }
-
-        let fullPath = dropboxFolder + "/" + file;
-
-        console.log(chalkAlert("... SAVING HISTOGRAM"
-          + " | ID: " + histObj.histogramsId
-          + " | PATH: " + fullPath
-        ));
-
+        // if (configuration.testMode) {
+        //   dropboxFolder = (hostname === "google") ? "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test" 
+        //   : "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms_test";
+        // }
 
         let histogramsSavedFlag = false;
 
-        writeJsonFile(fullPath, histObj)
-        .then(function() {
-          console.log(chalkAlert("NNT | SAVED GLOBAL HISTOGRAM | " + fullPath));
-          histogramsSavedFlag = true;
-        })
-        .catch(function(error){
-          console.log(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
-            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-            + " | ERROR: " + error
-            + " | ERROR\n" + jsonPrint(error)
-          ));
-        
-          histogramsSavedFlag = true;
-        });
+        async.forEach(Object.keys(globalHistograms), function(t, cb){
 
-        // saveFileQueue.push({folder: folder, file: defaultHistogramsFile, obj: histObj });
+          const type = t.toLowerCase();
+
+          let histObj = {};
+
+          histObj.histogramsId = hostname + "_" + process.pid + "_" + getTimeStamp() + "_" + type ;
+          histObj.histograms = {};
+          histObj.histograms[type] = globalHistograms[type];
+
+
+          let folder;
+
+          if (configuration.testMode) {
+            folder = (hostname === "google") ? defaultHistogramsFolder + "_test/types/" + type : localHistogramsFolder + "_test/types/" + type;
+          }
+          else {
+            folder = (hostname === "google") ? defaultHistogramsFolder + "/types/" + type : localHistogramsFolder + "/types/" + type;
+          }
+
+          const file = "histograms_" + type + ".json";
+
+          console.log(chalkAlert("... SAVING HISTOGRAM"
+            + " | TYPE: " + type
+            + " | ID: " + histObj.histogramsId
+            + " | PATH: " + folder + "/" + file
+          ));
+
+          saveFileQueue.push({folder: folder, file: file, obj: histObj });
+
+          cb();
+
+        });
 
         loadedNetworksFlag = false;
 
@@ -2318,7 +2324,7 @@ const fsmStates = {
 
         waitFileSaveInterval = setInterval(function() {
 
-          if (histogramsSavedFlag && (saveFileQueue.length === 0)) {
+          if (saveFileQueue.length === 0) {
 
             console.log(chalkAlert("ALL NNs SAVED ..."));
 
@@ -2502,112 +2508,342 @@ process.on( "SIGINT", function() {
   quit({source: "SIGINT"});
 });
 
-function saveFile (params, callback) {
-  if (OFFLINE_MODE) {
-    if (callback !== undefined) {
-      return(callback(null, null));
-    }
-    return;
-  }
+// function saveFile (params, callback) {
+//   if (OFFLINE_MODE) {
+//     if (callback !== undefined) {
+//       return(callback(null, null));
+//     }
+//     return;
+//   }
+//   const fullPath = params.folder + "/" + params.file;
+//   debug(chalkInfo("LOAD FOLDER " + params.folder));
+//   debug(chalkInfo("LOAD FILE " + params.file));
+//   debug(chalkInfo("FULL PATH " + fullPath));
+//   let options = {};
+//   options.contents = JSON.stringify(params.obj, null, 2);
+//   options.path = fullPath;
+//   options.mode = params.mode || "overwrite";
+//   options.autorename = params.autorename || false;
+//   const dbFileUpload = function () {
+//     dropboxClient.filesUpload(options)
+//     .then(function() {
+//       debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
+//       if (callback !== undefined) { callback(null); }
+//     })
+//     .catch(function(error) {
+//       if (error.status === 413) {
+//         console.log(chalkError(moment().format(compactDateTimeFormat)
+//           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
+//           + " | ERROR: 413"
+//           // + " ERROR\n" + jsonPrint(error.error)
+//         ));
+//         if (callback !== undefined) { callback(error); }
+//       }
+//       else if (error.status === 429) {
+//         console.log(chalkError(moment().format(compactDateTimeFormat)
+//           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
+//           + " | ERROR: TOO MANY WRITES"
+//           // + " ERROR\n" + jsonPrint(error.error)
+//         ));
+//         if (callback !== undefined) { callback(error); }
+//       }
+//       else if (error.status === 500) {
+//         console.log(chalkError(moment().format(compactDateTimeFormat)
+//           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
+//           + " | ERROR: DROPBOX SERVER ERROR"
+//           // + " ERROR\n" + jsonPrint(error.error)
+//         ));
+//         if (callback !== undefined) { callback(error); }
+//       }
+//       else {
+//         // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
+//         console.log(chalkError(moment().format(compactDateTimeFormat)
+//           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
+//           // + " | ERROR\n" + jsonPrint(error)
+//           + " | ERROR: " + error
+//           // + " ERROR\n" + jsonPrint(error.error)
+//         ));
+//         if (callback !== undefined) { callback(error); }
+//       }
+//     });
+//   };
+//   if (options.mode === "add") {
+//     dropboxClient.filesListFolder({path: params.folder})
+//     .then(function(response) {
+//       debug(chalkLog("DROPBOX LIST FOLDER"
+//         + " | " + options.path
+//         + " | " + jsonPrint(response)
+//       ));
+//       let fileExits = false;
+//       async.eachSeries(response.entries, function(entry, cb) {
+//         console.log(chalkInfo("DROPBOX FILE"
+//           + " | " + params.folder
+//           // + " | " + getTimeStamp(entry.client_modified)
+//           + " | " + entry.name
+//           // + " | " + entry.content_hash
+//           // + "\n" + jsonPrint(entry)
+//         ));
+//         if (entry.name === params.file) {
+//           fileExits = true;
+//         }
+//         cb();
+//       }, function(err) {
+//         if (err) {
+//           console.log(chalkError("*** ERROR DROPBOX SAVE FILE: " + err));
+//           if (callback !== undefined) {
+//             return(callback(err, null));
+//           }
+//           return;
+//         }
+//         if (fileExits) {
+//           console.log(chalkAlert("... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
+//           if (callback !== undefined) { callback(err, null); }
+//         }
+//         else {
+//           console.log(chalkAlert("... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
+//           dbFileUpload();
+//         }
+//       });
+//     })
+//     .catch(function(err) {
+//       console.log(chalkError("saveFile *** DROPBOX FILES LIST FOLDER ERROR ", err));
+//       if (callback !== undefined) { callback(err, null); }
+//     });
+//   }
+//   else {
+//     dbFileUpload();
+//   }
+// }
+
+function saveFile (params, callback){
+
   const fullPath = params.folder + "/" + params.file;
+
   debug(chalkInfo("LOAD FOLDER " + params.folder));
   debug(chalkInfo("LOAD FILE " + params.file));
   debug(chalkInfo("FULL PATH " + fullPath));
+
   let options = {};
-  options.contents = JSON.stringify(params.obj, null, 2);
-  options.path = fullPath;
-  options.mode = params.mode || "overwrite";
-  options.autorename = params.autorename || false;
-  const dbFileUpload = function () {
-    dropboxClient.filesUpload(options)
+
+  if (params.localFlag) {
+
+    // const jsonfileOptions = {};
+
+    options.access_token = configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
+    options.file_size = sizeof(params.obj);
+    options.destination = params.dropboxFolder + "/" + params.file;
+    options.autorename = true;
+    options.mode = params.mode || "overwrite";
+    options.mode = "overwrite";
+
+    const objSizeMBytes = options.file_size/ONE_MEGABYTE;
+
+    showStats();
+    console.log(chalkAlert("NNT | ... SAVING LOCALLY | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath));
+
+    writeJsonFile(fullPath, params.obj)
     .then(function() {
-      debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
-      if (callback !== undefined) { callback(null); }
-    })
-    .catch(function(error) {
-      if (error.status === 413) {
-        console.log(chalkError(moment().format(compactDateTimeFormat)
-          + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
-          + " | ERROR: 413"
-          // + " ERROR\n" + jsonPrint(error.error)
+
+      console.log(chalkAlert("NNT | SAVED LOCALLY | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath));
+      console.log(chalkAlert("NNT | ... PAUSE 5 SEC TO FINISH FILE SAVE | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath));
+
+      setTimeout(function(){
+
+        console.log(chalkAlert("NNT | ... DROPBOX UPLOADING | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath + " > " + options.destination));
+
+        // const source = fs.createReadStream(fullPath);
+
+        const stats = fs.statSync(fullPath);
+        const fileSizeInBytes = stats.size;
+        const savedSize = fileSizeInBytes/ONE_MEGABYTE;
+
+        console.log(chalkLog("NNT | ... SAVING DROPBOX JSON"
+          + " | " + getTimeStamp()
+          + " | " + savedSize.toFixed(2) + " MBYTES"
+          + "\n SRC: " + fullPath
+          + "\n DST: " + options.destination
+          // + " successMetadata\n" + jsonPrint(successMetadata)
+          // + " successMetadata\n" + jsonPrint(successMetadata)
         ));
-        if (callback !== undefined) { callback(error); }
-      }
-      else if (error.status === 429) {
-        console.log(chalkError(moment().format(compactDateTimeFormat)
-          + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
-          + " | ERROR: TOO MANY WRITES"
-          // + " ERROR\n" + jsonPrint(error.error)
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-      else if (error.status === 500) {
-        console.log(chalkError(moment().format(compactDateTimeFormat)
-          + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
-          + " | ERROR: DROPBOX SERVER ERROR"
-          // + " ERROR\n" + jsonPrint(error.error)
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-      else {
-        // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
-        console.log(chalkError(moment().format(compactDateTimeFormat)
-          + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
-          // + " | ERROR\n" + jsonPrint(error)
-          + " | ERROR: " + error
-          // + " ERROR\n" + jsonPrint(error.error)
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-    });
-  };
-  if (options.mode === "add") {
-    dropboxClient.filesListFolder({path: params.folder})
-    .then(function(response) {
-      debug(chalkLog("DROPBOX LIST FOLDER"
-        + " | " + options.path
-        + " | " + jsonPrint(response)
-      ));
-      let fileExits = false;
-      async.eachSeries(response.entries, function(entry, cb) {
-        console.log(chalkInfo("DROPBOX FILE"
-          + " | " + params.folder
-          // + " | " + getTimeStamp(entry.client_modified)
-          + " | " + entry.name
-          // + " | " + entry.content_hash
-          // + "\n" + jsonPrint(entry)
-        ));
-        if (entry.name === params.file) {
-          fileExits = true;
-        }
-        cb();
-      }, function(err) {
-        if (err) {
-          console.log(chalkError("*** ERROR DROPBOX SAVE FILE: " + err));
-          if (callback !== undefined) {
-            return(callback(err, null));
+
+        const drbx = require("@davvo/drbx")({
+          token: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN
+        });
+
+        let localReadStream = fs.createReadStream(fullPath);
+        let remoteWriteStream = drbx.file(options.destination).createWriteStream();
+
+
+        let bytesRead = 0;
+        let chunksRead = 0;
+        let mbytesRead = 0;
+        let percentRead = 0;
+
+        localReadStream.pipe(remoteWriteStream);
+
+        localReadStream.on("data", function(chunk){
+          bytesRead += chunk.length;
+          mbytesRead = bytesRead/ONE_MEGABYTE;
+          percentRead = 100 * bytesRead/fileSizeInBytes;
+          chunksRead += 1;
+          if (chunksRead % 100 === 0){
+            console.log(chalkInfo("NNT | LOCAL READ"
+              + " | " + mbytesRead.toFixed(2) + " / " + savedSize.toFixed(2) + " MB"
+              + " (" + percentRead.toFixed(2) + "%)"
+            ));
           }
-          return;
-        }
-        if (fileExits) {
-          console.log(chalkAlert("... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
-          if (callback !== undefined) { callback(err, null); }
-        }
-        else {
-          console.log(chalkAlert("... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
-          dbFileUpload();
-        }
-      });
+        });
+
+        localReadStream.on("close", function(){
+          console.log(chalkAlert("NNT | LOCAL STREAM READ CLOSED | SOURCE: " + fullPath));
+        });
+
+        remoteWriteStream.on("close", function(){
+          console.log(chalkAlert("NNT | REMOTE STREAM WRITE CLOSED | DEST: " + options.destination));
+        });
+
+        localReadStream.on("end", function(){
+          console.log(chalkInfo("NNT | LOCAL READ COMPLETE"
+            + " | SOURCE: " + fullPath
+            + " | " + mbytesRead.toFixed(2) + " / " + savedSize.toFixed(2) + " MB"
+            + " (" + percentRead.toFixed(2) + "%)"
+          ));
+          localReadStream.close();
+        });
+
+        localReadStream.on("error", function(err){
+          console.error("NNT | *** LOCAL STREAM READ ERROR | " + err);
+          if (callback !== undefined) { return callback(err); }
+        });
+
+        remoteWriteStream.on("end", function(){
+          console.log(chalkAlert("NNT | REMOTE STREAM WRITE END | DEST: " + options.destination));
+          if (callback !== undefined) { return callback(null); }
+        });
+
+        remoteWriteStream.on("error", function(err){
+          console.error("NNT | *** REMOTE STREAM WRITE ERROR | DEST: " + options.destination + "\n" + err);
+          if (callback !== undefined) { return callback(err); }
+        });
+
+      }, 5000);
+
     })
-    .catch(function(err) {
-      console.log(chalkError("saveFile *** DROPBOX FILES LIST FOLDER ERROR ", err));
-      if (callback !== undefined) { callback(err, null); }
+    .catch(function(error){
+      console.trace(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+        + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+        + " | ERROR: " + error
+        + " | ERROR\n" + jsonPrint(error)
+        // + " ERROR\n" + jsonPrint(params)
+      ));
+      if (callback !== undefined) { return callback(error); }
     });
   }
   else {
-    dbFileUpload();
+
+    options.contents = JSON.stringify(params.obj, null, 2);
+    options.autorename = params.autorename || false;
+    options.mode = params.mode || "overwrite";
+    options.path = fullPath;
+
+    const dbFileUpload = function () {
+
+      dropboxClient.filesUpload(options)
+      .then(function(){
+        debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
+        if (callback !== undefined) { return callback(null); }
+      })
+      .catch(function(error){
+        if (error.status === 413){
+          console.error(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+            + " | ERROR: 413"
+          ));
+          if (callback !== undefined) { return callback(error.error_summary); }
+        }
+        else if (error.status === 429){
+          console.error(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+            + " | ERROR: TOO MANY WRITES"
+          ));
+          if (callback !== undefined) { return callback(error.error_summary); }
+        }
+        else if (error.status === 500){
+          console.error(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+            + " | ERROR: DROPBOX SERVER ERROR"
+          ));
+          if (callback !== undefined) { return callback(error.error_summary); }
+        }
+        else {
+          console.trace(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+            + " | ERROR: " + error
+            + " | ERROR\n" + jsonPrint(error)
+          ));
+          if (callback !== undefined) { return callback(error); }
+        }
+      });
+    };
+
+    if (options.mode === "add") {
+
+      dropboxClient.filesListFolder({path: params.folder, limit: DROPBOX_LIST_FOLDER_LIMIT})
+      .then(function(response){
+
+        debug(chalkLog("DROPBOX LIST FOLDER"
+          + " | ENTRIES: " + response.entries.length
+          + " | CURSOR (trunc): " + response.cursor.substr(-10)
+          + " | MORE: " + response.has_more
+          + " | PATH:" + options.path
+        ));
+
+        let fileExits = false;
+
+        async.each(response.entries, function(entry, cb){
+
+          console.log(chalkInfo("NNT | DROPBOX FILE"
+            + " | " + params.folder
+            + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
+            + " | " + entry.name
+          ));
+
+          if (entry.name === params.file) {
+            fileExits = true;
+          }
+
+          cb();
+
+        }, function(err){
+          if (err) {
+            console.log(chalkError("NNT | *** ERROR DROPBOX SAVE FILE: " + err));
+            if (callback !== undefined) { 
+              return(callback(err, null));
+            }
+            return;
+          }
+          if (fileExits) {
+            console.log(chalkAlert("NNT | ... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
+            if (callback !== undefined) { callback(err, null); }
+          }
+          else {
+            console.log(chalkAlert("NNT | ... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
+            dbFileUpload();
+          }
+        });
+      })
+      .catch(function(err){
+        console.log(chalkError("NNT | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
+        console.log(chalkError("NNT | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
+        if (callback !== undefined) { callback(err, null); }
+      });
+    }
+    else {
+      dbFileUpload();
+    }
   }
 }
+
 
 function initProcessUserQueueInterval(interval) {
   let mObj = {};
