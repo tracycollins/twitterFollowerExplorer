@@ -503,7 +503,7 @@ function generateInputSets3(params, callback) {
             newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
             newInputsObj.meta.type[type].numInputs = Object.keys(histResults.entries[type].dominantEntries).length;
             newInputsObj.meta.type[type].dominantMin = dominantMin;
-            newInputsObj.meta.type[type].totalMin = totalMin;
+            newInputsObj.meta.type[type].totalMin = parseInt(totalMin);
 
 
             spinner.text = "... GEN TYPE"
@@ -511,8 +511,8 @@ function generateInputSets3(params, callback) {
               + " | DOM MIN: " + dominantMin.toFixed(5)
               + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
               + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
-              + " | TOT MIN: " + totalMin.toFixed(5)
-              + " | PREV TOT MIN: " + prevTotalMin.toFixed(5)
+              + " | TOT MIN: " + parseInt(totalMin)
+              + " | PREV TOT MIN: " + parseInt(prevTotalMin)
               + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
               + " | PREV NUM INPUTS: " + prevNumInputs
               + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
@@ -544,7 +544,7 @@ function generateInputSets3(params, callback) {
               newInputsObj.meta.type[type].totalMin = secondToLastParams.totalMin;
 
               dominantMin = secondToLastParams.dominantMin;
-              totalMin = secondToLastParams.totalMin;
+              totalMin = parseInt(secondToLastParams.totalMin);
 
               spinner.info("*** GEN TYPE"
                 + " | " + type.toUpperCase()
@@ -605,7 +605,7 @@ function generateInputSets3(params, callback) {
           spinner.text = "+++ END TYPE"
             + " | " + type.toUpperCase()
             + " | DOM MIN: " + dominantMin.toFixed(5)
-            + " | TOT MIN: " + totalMin.toFixed(5)
+            + " | TOT MIN: " + parseInt(totalMin)
             + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
             + "/" + Object.keys(params.histogramsObj.histograms[type]).length
             + " | TOT INPUTS: " + newInputsObj.meta.numInputs;
@@ -619,13 +619,13 @@ function generateInputSets3(params, callback) {
           tableArray.push([
             type.toUpperCase(),
             dominantMin.toFixed(5),
-            totalMin.toFixed(5),
+            parseInt(totalMin),
             Object.keys(params.histogramsObj.histograms[type]).length,
             newInputsObj.meta.type[type].numInputs,
             newInputsObj.meta.numInputs
           ]);
 
-          totalMin = INIT_TOT_MIN;
+          totalMin = parseInt(INIT_TOT_MIN);
           dominantMin = INIT_DOM_MIN;
           prevDomMinChange = 0;
           prevTotMinChange = 0;
