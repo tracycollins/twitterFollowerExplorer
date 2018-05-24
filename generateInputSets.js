@@ -981,7 +981,6 @@ function saveFile(params, callback){
         console.error(chalkError(moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: 413"
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
@@ -989,7 +988,6 @@ function saveFile(params, callback){
         console.error(chalkError(moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: TOO MANY WRITES"
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
@@ -997,17 +995,13 @@ function saveFile(params, callback){
         console.error(chalkError(moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: DROPBOX SERVER ERROR"
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
       else {
-        // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
         console.error(chalkError(moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          // + " | ERROR\n" + jsonPrint(error)
           + " | ERROR: " + error
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
@@ -1030,10 +1024,7 @@ function saveFile(params, callback){
 
         debug(chalkInfo("DROPBOX FILE"
           + " | " + params.folder
-          // + " | " + getTimeStamp(entry.client_modified)
           + " | " + entry.name
-          // + " | " + entry.content_hash
-          // + "\n" + jsonPrint(entry)
         ));
 
         if (entry.name === params.file) {
