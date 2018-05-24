@@ -436,10 +436,6 @@ function generateInputSets3(params, callback) {
 
       const totalTypeInputs = Object.keys(params.histogramsObj.histograms[type]).length;
 
-      if (type === "images"){
-        console.log("IMAGES keys\n" + Object.keys(params.histogramsObj.histograms[type]));
-      }
-
       newInputsObj.meta.type[type] = {};
 
       // start with zero inputs of type if more than MIN_NUM_INPUTS_PER_TYPE
