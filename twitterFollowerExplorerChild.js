@@ -649,6 +649,8 @@ console.log("PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, d
 console.log("=================================");
 
 process.on("exit", function() {
+  console.log(chalkAlert("TFC | " + configuration.threeceeUser() + " | *** EXIT ***"));
+  quit({source: "EXIT"});
 });
 
 function showStats(options){
@@ -666,9 +668,21 @@ function showStats(options){
   ));
 }
 
+process.on( "SIGHUP", function() {
+  console.log(chalkAlert("TFC | " + configuration.threeceeUser() + " | *** SIGHUP ***"));
+  quit({source: "SIGHUP"});
+});
+
 process.on( "SIGINT", function() {
+  console.log(chalkAlert("TFC | " + configuration.threeceeUser() + " | *** SIGINT ***"));
   quit({source: "SIGINT"});
 });
+
+process.on("disconnect", function() {
+  console.log(chalkAlert("TFC | " + configuration.threeceeUser() + " | *** DISCONNECT ***"));
+  quit("DISCONNECT");
+});
+
 
 function initTwitter(twitterConfig, callback){
 

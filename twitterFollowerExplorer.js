@@ -387,7 +387,15 @@ statsObj.analyzer.errors = 0;
 statsObj.twitterErrors = 0;
 statsObj.fetchUsersComplete = false;
 statsObj.elapsed = 0;
+
 statsObj.bestNetworks = {};
+
+statsObj.bestNetwork = {};
+statsObj.bestNetwork.networkId = false;
+statsObj.bestNetwork.successRate = 0;
+statsObj.bestNetwork.matchRate = 0;
+statsObj.bestNetwork.overallMatchRate = 0;
+
 statsObj.totalInputs = 0;
 statsObj.numNetworksLoaded = 0;
 statsObj.numNetworksUpdated = 0;
@@ -559,15 +567,17 @@ function updateBestNetworkStats(networkObj) {
   statsObj.bestRuntimeNetworkId = networkObj.networkId;
   statsObj.currentBestNetworkId = networkObj.networkId;
   if (statsObj.network === undefined) { statsObj.network = {}; }
-  statsObj.network.networkId = networkObj.networkId;
-  statsObj.network.networkType = networkObj.networkType;
-  statsObj.network.successRate = networkObj.successRate;
-  statsObj.network.input = networkObj.network.input;
-  statsObj.network.output = networkObj.network.output;
-  statsObj.network.evolve = {};
+  statsObj.bestNetwork.networkId = networkObj.networkId;
+  statsObj.bestNetwork.networkType = networkObj.networkType;
+  statsObj.bestNetwork.successRate = networkObj.successRate;
+  statsObj.bestNetwork.matchRate = networkObj.matchRate;
+  statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate;
+  statsObj.bestNetwork.input = networkObj.network.input;
+  statsObj.bestNetwork.output = networkObj.network.output;
+  statsObj.bestNetwork.evolve = {};
   if (networkObj.evolve !== undefined) {
-    statsObj.network.evolve = networkObj.evolve;
-    if (statsObj.network.evolve.options !== undefined) { statsObj.network.evolve.options.networkObj = null; }
+    statsObj.bestNetwork.evolve = networkObj.evolve;
+    if (statsObj.bestNetwork.evolve.options !== undefined) { statsObj.bestNetwork.evolve.options.networkObj = null; }
   }
 }
 function loadFile(path, file, callback) {
@@ -2260,6 +2270,12 @@ const fsmStates = {
         console.log(chalkAlert("FETCH CYCLE ELAPSED:   " + msToTime(statsObj.fetchCycleElapsed)));
         console.log(chalkAlert("TOTAL USERS FETCHED:   " + statsObj.users.totalFriendsFetched));
         console.log(chalkAlert("TOTAL USERS PROCESSED: " + statsObj.users.totalFriendsProcessed));
+        console.log(chalkAlert("BEST NETWORK:          " 
+          + " | SR: " + statsObj.bestNetwork.successRate.toFixed(3) + "%"
+          + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(3) + "%"
+          + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(3) + "%"
+          + " | " + statsObj.bestNetwork.networkId
+        ));
         console.log(chalkAlert("===================================================="));
         console.log(chalkAlert("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
 
