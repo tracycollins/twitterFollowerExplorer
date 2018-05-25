@@ -302,7 +302,7 @@ wordAssoDb.connect(function(err, dbConnection) {
   else {
     dbConnection.on("error", console.error.bind(console, "*** TFE | MONGO DB CONNECTION ERROR ***\n"));
     dbConnectionReady = true;
-    console.log(chalkAlert("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
+    console.log(chalkLog("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
     User = mongoose.model("User", userModel.UserSchema);
     userServer = require("@threeceelabs/user-server-controller");
     userServerReady = true;
@@ -498,14 +498,14 @@ function saveCacheExpired(file, fileObj) {
 saveCache.on("expired", saveCacheExpired);
 
 saveCache.on("set", function(file, fileObj) {
-  console.log(chalkAlert("$$$ SAVE CACHE"
+  debug(chalkLog("TFE | $$$ SAVE CACHE"
     + " [" + saveCache.getStats().keys + "]"
     + " | " + fileObj.folder + "/" + file
   ));
   if (file === bestRuntimeNetworkFileName) {
     saveCache.ttl(bestRuntimeNetworkFileName, 30, function( err, changed ) {
       if( !err ) {
-        console.log("SAVE CACHE TTL bestRuntimeNetworkFileName: 30 | CHANGED: " + changed ); // true
+        debug("SAVE CACHE TTL bestRuntimeNetworkFileName: 30 | CHANGED: " + changed ); // true
         // ... do something ...
       }
     });
@@ -879,7 +879,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
           if (currentBestNetwork.matchRate === undefined) { currentBestNetwork.matchRate = 0; }
           if (currentBestNetwork.overallMatchRate === undefined) { currentBestNetwork.overallMatchRate = 0; }
 
-          console.log(chalkAlert("+++ BEST NEURAL NETWORK LOADED FROM DB"
+          console.log(chalk.bold.blue("+++ BEST NEURAL NETWORK LOADED FROM DB"
             + " | " + currentBestNetwork.networkId
             + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
             + " | MR: " + currentBestNetwork.matchRate.toFixed(2) + "%"
@@ -1123,7 +1123,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
         newBestNetwork = false;
         printNetworkObj("BEST NETWORK", currentBestNetwork);
       }
-      console.log(chalkAlert("\n===================================\n"
+      console.log(chalkLog("\n===================================\n"
         + "LOADED DROPBOX NETWORKS"
         + "\nFOLDER:        " + options.path
         + "\nFILES FOUND:   " + response.entries.length + " FILES"
@@ -1149,7 +1149,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
 function initRandomNetworks(params, callback) {
   if (loadedNetworksFlag && !configuration.forceInitRandomNetworks) {
-    console.log(chalkAlert("SKIP INIT RANDOM NETWORKS: loadedNetworksFlag: " + loadedNetworksFlag));
+    console.log(chalkLog("SKIP INIT RANDOM NETWORKS: loadedNetworksFlag: " + loadedNetworksFlag));
     return callback(null, randomNetworksObj);
   }
   async.each(Object.keys(randomNetworksObj), function(nnId, cb) {
@@ -1753,7 +1753,7 @@ function generateAutoCategory(params, user, callback) {
             else {
 
               if (user.bannerImageAnalyzed && user.bannerImageUrl && (user.bannerImageAnalyzed !== user.bannerImageUrl)) {
-                console.log(chalkAlert("^^^ BANNER IMAGE UPDATED "
+                console.log(chalk.bold.blue("^^^ BANNER IMAGE UPDATED "
                   + " | @" + user.screenName
                   + "\nTFE | bannerImageAnalyzed: " + user.bannerImageAnalyzed
                   + "\nTFE | bannerImageUrl: " + user.bannerImageUrl
@@ -1761,7 +1761,7 @@ function generateAutoCategory(params, user, callback) {
                 ));
               }
               else {
-                console.log(chalkAlert("TFE | +++ BANNER IMAGE ANALYZED"
+                console.log(chalk.bold.blue("TFE | +++ BANNER IMAGE ANALYZED"
                   + " | @" + user.screenName
                   + "\nTFE | bannerImageAnalyzed: " + user.bannerImageAnalyzed
                   + "\nTFE | bannerImageUrl: " + user.bannerImageUrl
@@ -1778,13 +1778,13 @@ function generateAutoCategory(params, user, callback) {
 
                   if (user.histograms.images[item] === undefined) { 
                     user.histograms.images[item] = results.images[item];
-                    console.log(chalkAlert("+++ USER IMAGE HISTOGRAM ADD"
+                    console.log(chalk.bold.blue("+++ USER IMAGE HISTOGRAM ADD"
                       + " | @" + user.screenName
                       + " | " + item + ": " + results.images[item]
                     ));
                   }
                   else {
-                    console.log(chalkAlert("... USER IMAGE HISTOGRAM HIT"
+                    console.log(chalk.bold.blue("... USER IMAGE HISTOGRAM HIT"
                       + " | @" + user.screenName
                       + " | " + item
                       + " | IN HISTOGRAM: " + user.histograms.images[item]
@@ -2262,22 +2262,22 @@ const fsmStates = {
         reporter(event, oldState, newState);
         statsObj.fetchCycleEndMoment = moment();
         statsObj.fetchCycleElapsed = moment().diff(statsObj.fetchCycleStartMoment);
-        console.log(chalkAlert("===================================================="));
-        console.log(chalkAlert("================= END FETCH ALL ===================="));
-        console.log(chalkAlert("===================================================="));
-        console.log(chalkAlert("FETCH CYCLE START:     " + statsObj.fetchCycleStartMoment.format(compactDateTimeFormat)));
-        console.log(chalkAlert("FETCH CYCLE END:       " + statsObj.fetchCycleEndMoment.format(compactDateTimeFormat)));
-        console.log(chalkAlert("FETCH CYCLE ELAPSED:   " + msToTime(statsObj.fetchCycleElapsed)));
-        console.log(chalkAlert("TOTAL USERS FETCHED:   " + statsObj.users.totalFriendsFetched));
-        console.log(chalkAlert("TOTAL USERS PROCESSED: " + statsObj.users.totalFriendsProcessed));
-        console.log(chalkAlert("BEST NETWORK:          " 
+        console.log(chalk.bold.blue("===================================================="));
+        console.log(chalk.bold.blue("================= END FETCH ALL ===================="));
+        console.log(chalk.bold.blue("===================================================="));
+        console.log(chalk.bold.blue("FETCH CYCLE START:     " + statsObj.fetchCycleStartMoment.format(compactDateTimeFormat)));
+        console.log(chalk.bold.blue("FETCH CYCLE END:       " + statsObj.fetchCycleEndMoment.format(compactDateTimeFormat)));
+        console.log(chalk.bold.blue("FETCH CYCLE ELAPSED:   " + msToTime(statsObj.fetchCycleElapsed)));
+        console.log(chalk.bold.blue("TOTAL USERS FETCHED:   " + statsObj.users.totalFriendsFetched));
+        console.log(chalk.bold.blue("TOTAL USERS PROCESSED: " + statsObj.users.totalFriendsProcessed));
+        console.log(chalk.bold.blue("BEST NETWORK:          " 
           + " | SR: " + statsObj.bestNetwork.successRate.toFixed(3) + "%"
           + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(3) + "%"
           + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(3) + "%"
           + " | " + statsObj.bestNetwork.networkId
         ));
-        console.log(chalkAlert("===================================================="));
-        console.log(chalkAlert("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
+        console.log(chalk.bold.blue("===================================================="));
+        console.log(chalk.bold.blue("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
 
         // let dropboxFolder = (hostname === "google") ? "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms" 
         // : "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms";
@@ -2311,7 +2311,7 @@ const fsmStates = {
 
           const file = "histograms_" + type + ".json";
 
-          console.log(chalkAlert("... SAVING HISTOGRAM"
+          console.log(chalk.bold.blue("... SAVING HISTOGRAM"
             + " | TYPE: " + type
             + " | ID: " + histObj.histogramsId
             + " | PATH: " + folder + "/" + file
@@ -2342,7 +2342,7 @@ const fsmStates = {
 
           if (saveFileQueue.length === 0) {
 
-            console.log(chalkAlert("ALL NNs SAVED ..."));
+            console.log(chalk.bold.blue("ALL NNs SAVED ..."));
 
             if (randomNetworkTree && (randomNetworkTree !== undefined)) { 
               randomNetworkTree.send({op: "RESET_STATS"});
@@ -2369,7 +2369,7 @@ const fsmStates = {
             });
           }
           else {
-            console.log(chalkAlert("... WAITING FOR NNs TO BE SAVED ..."
+            console.log(chalk.bold.blue("... WAITING FOR NNs TO BE SAVED ..."
               + " | HISTOGRAMS SAVED: " + histogramsSavedFlag
               + " | SAVE Q: " + saveFileQueue.length
             ));
@@ -2524,113 +2524,6 @@ process.on( "SIGINT", function() {
   quit({source: "SIGINT"});
 });
 
-// function saveFile (params, callback) {
-//   if (OFFLINE_MODE) {
-//     if (callback !== undefined) {
-//       return(callback(null, null));
-//     }
-//     return;
-//   }
-//   const fullPath = params.folder + "/" + params.file;
-//   debug(chalkInfo("LOAD FOLDER " + params.folder));
-//   debug(chalkInfo("LOAD FILE " + params.file));
-//   debug(chalkInfo("FULL PATH " + fullPath));
-//   let options = {};
-//   options.contents = JSON.stringify(params.obj, null, 2);
-//   options.path = fullPath;
-//   options.mode = params.mode || "overwrite";
-//   options.autorename = params.autorename || false;
-//   const dbFileUpload = function () {
-//     dropboxClient.filesUpload(options)
-//     .then(function() {
-//       debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
-//       if (callback !== undefined) { callback(null); }
-//     })
-//     .catch(function(error) {
-//       if (error.status === 413) {
-//         console.log(chalkError(moment().format(compactDateTimeFormat)
-//           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
-//           + " | ERROR: 413"
-//           // + " ERROR\n" + jsonPrint(error.error)
-//         ));
-//         if (callback !== undefined) { callback(error); }
-//       }
-//       else if (error.status === 429) {
-//         console.log(chalkError(moment().format(compactDateTimeFormat)
-//           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
-//           + " | ERROR: TOO MANY WRITES"
-//           // + " ERROR\n" + jsonPrint(error.error)
-//         ));
-//         if (callback !== undefined) { callback(error); }
-//       }
-//       else if (error.status === 500) {
-//         console.log(chalkError(moment().format(compactDateTimeFormat)
-//           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
-//           + " | ERROR: DROPBOX SERVER ERROR"
-//           // + " ERROR\n" + jsonPrint(error.error)
-//         ));
-//         if (callback !== undefined) { callback(error); }
-//       }
-//       else {
-//         // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
-//         console.log(chalkError(moment().format(compactDateTimeFormat)
-//           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath
-//           // + " | ERROR\n" + jsonPrint(error)
-//           + " | ERROR: " + error
-//           // + " ERROR\n" + jsonPrint(error.error)
-//         ));
-//         if (callback !== undefined) { callback(error); }
-//       }
-//     });
-//   };
-//   if (options.mode === "add") {
-//     dropboxClient.filesListFolder({path: params.folder})
-//     .then(function(response) {
-//       debug(chalkLog("DROPBOX LIST FOLDER"
-//         + " | " + options.path
-//         + " | " + jsonPrint(response)
-//       ));
-//       let fileExits = false;
-//       async.eachSeries(response.entries, function(entry, cb) {
-//         console.log(chalkInfo("DROPBOX FILE"
-//           + " | " + params.folder
-//           // + " | " + getTimeStamp(entry.client_modified)
-//           + " | " + entry.name
-//           // + " | " + entry.content_hash
-//           // + "\n" + jsonPrint(entry)
-//         ));
-//         if (entry.name === params.file) {
-//           fileExits = true;
-//         }
-//         cb();
-//       }, function(err) {
-//         if (err) {
-//           console.log(chalkError("*** ERROR DROPBOX SAVE FILE: " + err));
-//           if (callback !== undefined) {
-//             return(callback(err, null));
-//           }
-//           return;
-//         }
-//         if (fileExits) {
-//           console.log(chalkAlert("... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
-//           if (callback !== undefined) { callback(err, null); }
-//         }
-//         else {
-//           console.log(chalkAlert("... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
-//           dbFileUpload();
-//         }
-//       });
-//     })
-//     .catch(function(err) {
-//       console.log(chalkError("saveFile *** DROPBOX FILES LIST FOLDER ERROR ", err));
-//       if (callback !== undefined) { callback(err, null); }
-//     });
-//   }
-//   else {
-//     dbFileUpload();
-//   }
-// }
-
 function saveFile (params, callback){
 
   const fullPath = params.folder + "/" + params.file;
@@ -2642,8 +2535,6 @@ function saveFile (params, callback){
   let options = {};
 
   if (params.localFlag) {
-
-    // const jsonfileOptions = {};
 
     options.access_token = configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
     options.file_size = sizeof(params.obj);
@@ -2667,8 +2558,6 @@ function saveFile (params, callback){
 
         console.log(chalkAlert("NNT | ... DROPBOX UPLOADING | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath + " > " + options.destination));
 
-        // const source = fs.createReadStream(fullPath);
-
         const stats = fs.statSync(fullPath);
         const fileSizeInBytes = stats.size;
         const savedSize = fileSizeInBytes/ONE_MEGABYTE;
@@ -2678,8 +2567,6 @@ function saveFile (params, callback){
           + " | " + savedSize.toFixed(2) + " MBYTES"
           + "\n SRC: " + fullPath
           + "\n DST: " + options.destination
-          // + " successMetadata\n" + jsonPrint(successMetadata)
-          // + " successMetadata\n" + jsonPrint(successMetadata)
         ));
 
         const drbx = require("@davvo/drbx")({
@@ -2750,7 +2637,6 @@ function saveFile (params, callback){
         + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
         + " | ERROR: " + error
         + " | ERROR\n" + jsonPrint(error)
-        // + " ERROR\n" + jsonPrint(params)
       ));
       if (callback !== undefined) { return callback(error); }
     });
@@ -2891,7 +2777,7 @@ function initProcessUserQueueInterval(interval) {
         debug("PROCESSED USER\n" + jsonPrint(user));
         if (configuration.testMode || (statsObj.user[tcUser].friendsProcessed % 50 === 0)) {
           statsObj.user[tcUser].friendsProcessElapsed = moment().diff(statsObj.user[tcUser].friendsProcessStart);
-          console.log(chalkLog("<FRND PRCSSD"
+          console.log(chalkInf("<FRND PRCSSD"
             + " [ Q: " + processUserQueue.length + " ]"
             + " | @" + tcUser
             + " | S: " + statsObj.user[tcUser].friendsProcessStart.format(compactDateTimeFormat)
@@ -3282,7 +3168,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
   const user = twitterConfig.threeceeUser;
   const childId = TFC_CHILD_PREFIX + twitterConfig.threeceeUser;
-  console.log(chalkAlert("+++ NEW TFE CHILD | TFC ID: " + childId));
+  console.log(chalkLog("+++ NEW TFE CHILD | TFC ID: " + childId));
 
   let childEnv = {};
   childEnv.env = {};
@@ -3303,8 +3189,8 @@ function initTwitterFollowerChild(twitterConfig, callback) {
   tfeChildHashMap[user].twitterConfig.access_token = twitterConfig.TOKEN;
   tfeChildHashMap[user].twitterConfig.access_token_secret = twitterConfig.TOKEN_SECRET;
 
-  console.log(chalkAlert("+++ NEW TFE CHILD | childEnv\n" + jsonPrint(childEnv)));
-  console.log(chalkAlert("+++ NEW TFE CHILD | twitterConfig\n" + jsonPrint(tfeChildHashMap[user].twitterConfig)));
+  console.log(chalkLog("+++ NEW TFE CHILD | childEnv\n" + jsonPrint(childEnv)));
+  console.log(chalkLog("+++ NEW TFE CHILD | twitterConfig\n" + jsonPrint(tfeChildHashMap[user].twitterConfig)));
   const tfeChild = cp.fork(`twitterFollowerExplorerChild.js`, childEnv );
 
   let slackText = "";
@@ -3991,7 +3877,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           runEnable();
         break;
         case "BEST_MATCH_RATE":
-          console.log(chalkAlert("\n================================================================================================\n"
+          debug(chalkAlert("\n================================================================================================\n"
             + "*** RNT_BEST_MATCH_RATE"
             + " | " + m.networkId
             + " | IN ID: " + m.inputsId
@@ -4457,8 +4343,8 @@ initialize(configuration, function(err, cnf) {
     configuration.fetchCount = TEST_MODE_FETCH_COUNT;
     bestNetworkFolder = "/config/utility/" + hostname + "/test/neuralNetworks/best";
     localBestNetworkFolder = "/config/utility/" + hostname + "/test/neuralNetworks/local";
-    console.log(chalkAlert("GLOBAL BEST NETWORK FOLDER: " + bestNetworkFolder));
-    console.log(chalkAlert("LOCAL BEST NETWORK FOLDER:  " + localBestNetworkFolder));
+    console.log(chalkLog("GLOBAL BEST NETWORK FOLDER: " + bestNetworkFolder));
+    console.log(chalkLog("LOCAL BEST NETWORK FOLDER:  " + localBestNetworkFolder));
   }
   if (configuration.loadNeuralNetworkID) {
     configuration.neuralNetworkFile = "neuralNetwork_" + configuration.loadNeuralNetworkID + ".json";

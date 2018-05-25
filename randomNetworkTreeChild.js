@@ -572,7 +572,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
       if (previousBestNetworkId !== currentBestNetworkId) {
 
-        console.log(chalkAlert("\n==================================================================\n"
+        console.log(chalk.bold.blue("\n==================================================================\n"
           + "*** NEW BEST NETWORK ***"
           + "\nNETWORK ID:   " + statsObj.bestNetwork.networkId
           + "\nINPUTS ID:    " + statsObj.bestNetwork.inputsId
@@ -811,9 +811,10 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.match += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                    console.log(chalk.blue("+++ MATCH"
+                    console.log(chalkLog("+++ MATCH"
                       + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                       + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
+                      + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
                       + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                       + " | " + statsObj.bestNetwork.networkId
                       + " | " + statsObj.bestNetwork.numInputs + " IN"
@@ -828,9 +829,10 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.mismatch += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                    console.log(chalk.black("000 MISS "
+                    console.log(chalk.bold.black("000 MISS "
                       + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                       + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
+                      + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
                       + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                       + " | " + statsObj.bestNetwork.networkId
                       + " | " + statsObj.bestNetwork.numInputs + " IN"
@@ -846,6 +848,7 @@ function initActivateNetworkInterval(interval){
                   console.log(chalk.gray("___ignore"
                     + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                     + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
+                    + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
                     + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                     + " | " + statsObj.bestNetwork.networkId
                     + " | " + statsObj.bestNetwork.numInputs + " IN"
@@ -860,6 +863,7 @@ function initActivateNetworkInterval(interval){
                 console.log(chalk.gray("--- uncat"
                   + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                   + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
+                  + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
                   + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
                   + " | " + statsObj.bestNetwork.networkId
                   + " | " + statsObj.bestNetwork.numInputs + " IN"
@@ -1003,9 +1007,9 @@ function loadNetworks(networksObj, callback){
 }
 
 function printCategorizeHistory(){
-  console.log(chalkAlert("RNT CATGORIZE HISTORY ==========================================="));
+  console.log(chalkInfo("RNT CATGORIZE HISTORY ==========================================="));
   statsObj.categorizeHistory.forEach(function(catStats){
-    console.log(chalkAlert("RNT CATGORIZE HISTORY"
+    console.log(chalkInfo("RNT CATGORIZE HISTORY"
       + " | S: " + moment(catStats.startTime).format(compactDateTimeFormat)
       + " E: " + moment(catStats.endTime).format(compactDateTimeFormat)
       + " R: " + msToTime(catStats.endTime - catStats.startTime)

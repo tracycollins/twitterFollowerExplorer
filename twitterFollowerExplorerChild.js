@@ -69,7 +69,7 @@ if (process.env.TEST_MODE > 0) {
 configuration.fetchCount = configuration.testMode ? process.env.TEST_MODE_FETCH_COUNT :  process.env.DEFAULT_FETCH_COUNT;
 configuration.fetchUserTimeout = process.env.DEFAULT_FETCH_USER_TIMEOUT || ONE_MINUTE;
 
-console.log(chalkAlert("CONFIGURATION\n" + jsonPrint(configuration)));
+console.log(chalkLog("CONFIGURATION\n" + jsonPrint(configuration)));
 
 let statsObj = {};
 
@@ -319,7 +319,7 @@ function twitterUserUpdate(params, callback){
         statsObj.threeceeUser.prevCursorValid = statsObj.threeceeUser.prevCursorValid || false;
         statsObj.threeceeUser.prevCursor = statsObj.threeceeUser.prevCursor || -1;
 
-        console.log(chalkAlert("friends/ids"
+        console.log(chalkLog("friends/ids"
           + " | @" + configuration.threeceeUser 
           + " | IDs: " + userFriendsIds.ids.length
           + " | PREV CURSOR: " + userFriendsIds.previous_cursor_str
@@ -488,7 +488,7 @@ function reporter(event, oldState, newState) {
     fsmPreviousPauseState = oldState;
   }
   fsmPreviousState = oldState;
-  console.log(chalkAlert("--------------------------------------------------------\n"
+  console.log(chalkLog("--------------------------------------------------------\n"
     + "<< FSM >>"
     + " @" + configuration.threeceeUser
     + " | " + event
