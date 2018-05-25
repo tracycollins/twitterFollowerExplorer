@@ -488,7 +488,7 @@ const saveCache = new NodeCache({
 });
 
 function saveCacheExpired(file, fileObj) {
-  console.log(chalkLog("XXX $ SAVE"
+  debug(chalkLog("XXX $ SAVE"
     + " [" + saveCache.getStats().keys + "]"
     + " | " + file
   ));
@@ -2777,7 +2777,7 @@ function initProcessUserQueueInterval(interval) {
         debug("PROCESSED USER\n" + jsonPrint(user));
         if (configuration.testMode || (statsObj.user[tcUser].friendsProcessed % 50 === 0)) {
           statsObj.user[tcUser].friendsProcessElapsed = moment().diff(statsObj.user[tcUser].friendsProcessStart);
-          console.log(chalkInfo("<FRND PRCSSD"
+          console.log(chalkBlue("<FRND PRCSSD"
             + " [ Q: " + processUserQueue.length + " ]"
             + " | @" + tcUser
             + " | S: " + statsObj.user[tcUser].friendsProcessStart.format(compactDateTimeFormat)

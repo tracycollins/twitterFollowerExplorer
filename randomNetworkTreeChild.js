@@ -64,6 +64,7 @@ const chalkWarn = chalk.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 const chalkConnect = chalk.blue;
+const chalkMiss = chalk.keyword("orange");
 
 
 const jsonPrint = function (obj){
@@ -829,7 +830,7 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.mismatch += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                    console.log(chalk.bold.black("000 MISS "
+                    console.log(chalkMiss("000 MISS "
                       + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                       + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
                       + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
