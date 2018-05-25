@@ -2777,7 +2777,7 @@ function initProcessUserQueueInterval(interval) {
         debug("PROCESSED USER\n" + jsonPrint(user));
         if (configuration.testMode || (statsObj.user[tcUser].friendsProcessed % 50 === 0)) {
           statsObj.user[tcUser].friendsProcessElapsed = moment().diff(statsObj.user[tcUser].friendsProcessStart);
-          console.log(chalkInf("<FRND PRCSSD"
+          console.log(chalkInfo("<FRND PRCSSD"
             + " [ Q: " + processUserQueue.length + " ]"
             + " | @" + tcUser
             + " | S: " + statsObj.user[tcUser].friendsProcessStart.format(compactDateTimeFormat)

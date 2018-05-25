@@ -649,14 +649,14 @@ console.log("PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, d
 console.log("=================================");
 
 process.on("exit", function() {
-  console.log(chalkAlert("TFC | " + configuration.threeceeUser() + " | *** EXIT ***"));
+  console.log(chalkAlert("TFC | " + configuration.threeceeUser + " | *** EXIT ***"));
   quit({source: "EXIT"});
 });
 
 function showStats(options){
 
   console.log(chalkLog("--- STATS --------------------------------------\n"
-    + "CUR USR: @" + configuration.threeceeUser()
+    + "CUR USR: @" + configuration.threeceeUser
     + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
     + "\nELAPSED: " + statsObj.elapsed
     + "\nFSM:     " + fsm.getMachineState()
@@ -669,17 +669,17 @@ function showStats(options){
 }
 
 process.on( "SIGHUP", function() {
-  console.log(chalkAlert("TFC | " + configuration.threeceeUser() + " | *** SIGHUP ***"));
+  console.log(chalkAlert("TFC | " + configuration.threeceeUser + " | *** SIGHUP ***"));
   quit({source: "SIGHUP"});
 });
 
 process.on( "SIGINT", function() {
-  console.log(chalkAlert("TFC | " + configuration.threeceeUser() + " | *** SIGINT ***"));
+  console.log(chalkAlert("TFC | " + configuration.threeceeUser + " | *** SIGINT ***"));
   quit({source: "SIGINT"});
 });
 
 process.on("disconnect", function() {
-  console.log(chalkAlert("TFC | " + configuration.threeceeUser() + " | *** DISCONNECT ***"));
+  console.log(chalkAlert("TFC | " + configuration.threeceeUser + " | *** DISCONNECT ***"));
   quit("DISCONNECT");
 });
 
