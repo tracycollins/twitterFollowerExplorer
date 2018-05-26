@@ -846,7 +846,7 @@ function initActivateNetworkInterval(interval){
                 }
                 else {
 
-                  console.log(chalk.gray("___ignore"
+                  console.log(chalk.gray("___ ignore"
                     + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                     + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
                     + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
@@ -861,7 +861,7 @@ function initActivateNetworkInterval(interval){
                 }
               }
               else {
-                console.log(chalk.gray("--- uncat"
+                console.log(chalk.gray("    uncat"
                   + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
                   + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
                   + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"

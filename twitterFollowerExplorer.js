@@ -3746,6 +3746,8 @@ function updateNetworkStats(params, callback) {
 
   updateNetworkStatsReady = false;
 
+  const updateOverallMatchRate = (params.updateOverallMatchRate !== undefined) ? params.updateOverallMatchRate : false;
+
   const nnIds = Object.keys(params.networkStatsObj);
 
   async.eachSeries(nnIds, function(nnId, cb) {
@@ -3755,7 +3757,7 @@ function updateNetworkStats(params, callback) {
       let networkObj = bestNetworkHashMap.get(nnId);
 
       networkObj.network.matchRate = params.networkStatsObj[nnId].matchRate;
-      networkObj.network.overallMatchRate = params.networkStatsObj[nnId].overallMatchRate;
+      networkObj.network.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
 
       bestNetworkHashMap.set(nnId, networkObj);
 
@@ -3808,7 +3810,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           console.log(chalkInfo(getTimeStamp() + " | RNT_STATS"
             + "\n" + jsonPrint(Object.keys(m.statsObj))
           ));
-          updateNetworkStats({networkStatsObj: m.statsObj.loadedNetworks, saveImmediate: true}, function() {
+          updateNetworkStats({networkStatsObj: m.statsObj.loadedNetworks, saveImmediate: true, updateOverallMatchRate: true}, function() {
             randomNetworkTreeMessageRxQueueReadyFlag = true;
             updateNetworkStatsReady = true;
           });
