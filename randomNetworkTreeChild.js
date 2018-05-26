@@ -935,13 +935,14 @@ function loadNetworks(networksObj, callback){
 
     let networkObj = deepcopy(networksObj[nnId].network);
 
-    networkObj.overallMatchRate = networkObj.overallMatchRate || networkObj.matchRate;
+    // networkObj.overallMatchRate = networkObj.overallMatchRate || networkObj.matchRate;
 
     const network = neataptic.Network.fromJSON(networkObj.network);
 
     networkObj.network = {};
     networkObj.network = network;
 
+    networkObj.successRate = networkObj.successRate || 0 ;
     networkObj.matchRate = networkObj.matchRate || 0 ;
     networkObj.overallMatchRate = networkObj.overallMatchRate || 0 ;
 
