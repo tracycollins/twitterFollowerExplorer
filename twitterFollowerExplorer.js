@@ -325,8 +325,11 @@ let availableNeuralNetHashMap = {};
 const LANGUAGE_ANALYZE_INTERVAL = 100;
 const RANDOM_NETWORK_TREE_INTERVAL = 1;
 const TWITTER_DEFAULT_USER = "altthreecee00";
-const inputTypes = ["emoji", "hashtags", "mentions", "urls", "words", "images"];
+
+const inputTypes = ["emoji", "hashtags", "images", "mentions", "urls", "words"];
+
 inputTypes.sort();
+
 let inputArrays = {};
 let stdin;
 let abortCursor = false;
@@ -1612,10 +1615,10 @@ function updateHistograms(params, callback) {
   if (!user.histograms || (user.histograms === undefined)) {
     user.histograms = {};
   }
+  
+  // const inputHistogramTypes = Object.keys(histogramsIn);
 
-  const inputHistogramTypes = Object.keys(histogramsIn);
-
-  async.each(inputHistogramTypes, function(type, cb0) {
+  async.each(inputTypes, function(type, cb0) {
 
     if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
     if (histogramsIn[type] === undefined) { histogramsIn[type] = {}; }
