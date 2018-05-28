@@ -1,6 +1,7 @@
  /*jslint node: true */
 "use strict";
 require("isomorphic-fetch");
+
 let start = process.hrtime();
 
 let elapsed_time = function(note) {
@@ -9,6 +10,33 @@ let elapsed_time = function(note) {
     console.log(process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
     start = process.hrtime(); // reset the timer
 };
+
+const os = require("os");
+const moment = require("moment");
+
+let hostname = os.hostname();
+hostname = hostname.replace(/.local/g, "");
+hostname = hostname.replace(/.home/g, "");
+hostname = hostname.replace(/.at.net/g, "");
+hostname = hostname.replace(/.fios-router.home/g, "");
+hostname = hostname.replace(/word0-instance-1/g, "google");
+
+const USER_ID = "tfe_" + hostname;
+const SCREEN_NAME = "tfe_" + hostname;
+
+let userObj = {
+  name: USER_ID,
+  nodeId: USER_ID,
+  userId: USER_ID,
+  url: "https://www.twitter.com",
+  screenName: SCREEN_NAME,
+  namespace: "util",
+  type: "TFE",
+  mode: "muxstream",
+  timeStamp: moment().valueOf(),
+  tags: {},
+  stats: {}
+} ;
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const ONE_SECOND = 1000 ;
@@ -58,11 +86,9 @@ const chalkInfo = chalk.black;
 
 const writeJsonFile = require("write-json-file");
 
-const moment = require("moment");
 const fs = require("fs");
 const debug = require("debug")("tfe");
 const NodeCache = require("node-cache");
-const os = require("os");
 const util = require("util");
 const pick = require("object.pick");
 const omit = require("object.omit");
@@ -145,12 +171,6 @@ function slackPostMessage(channel, text, callback) {
     if (callback !== undefined) { callback(err, response); }
   });
 }
-let hostname = os.hostname();
-hostname = hostname.replace(/.local/g, "");
-hostname = hostname.replace(/.home/g, "");
-hostname = hostname.replace(/.at.net/g, "");
-hostname = hostname.replace(/.fios-router.home/g, "");
-hostname = hostname.replace(/word0-instance-1/g, "google");
 // will use histograms to determine neural net inputs
 // for emoji, hashtags, mentions, words
 
@@ -354,7 +374,7 @@ configuration.testMode = false;
 configuration.minSuccessRate = DEFAULT_MIN_SUCCESS_RATE;
 configuration.minMatchRate = DEFAULT_MIN_MATCH_RATE;
 configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEFAULT_FETCH_COUNT;
-configuration.keepaliveInterval = 1*ONE_MINUTE;
+configuration.keepaliveInterval = 5*ONE_SECOND;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
 configuration.quitOnComplete = true;
 statsObj.childrenFetchBusy = false;
@@ -2299,22 +2319,29 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) {
       // console.log("FETCH_ALL | onEnter");
       if (event !== "fsm_tick") {
+
         reporter(event, oldState, newState);
+
         console.log("FETCH_ALL | onEnter | " + event);
+
         loadBestNeuralNetworkFile(function(err, nnObj) {
           if (err) {
             console.log(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
           }
           // debug("loadBestNeuralNetworkFile nnObj\n" + jsonPrint(nnObj));
           console.log("FETCH_ALL | loadBestNeuralNetworkFile DONE");
+
           loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function() {
+
             if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+
               randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
                 console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
                 childSendAll("FETCH_USER_START");
                 statsObj.fetchCycleStartMoment = moment();
                 statsObj.fetchCycleElapsed = 0;
               });
+
             }
           });
         });
@@ -2503,23 +2530,6 @@ inputTypes.forEach(function(type) {
   statsObj.histograms[type] = {};
 });
 
-const USER_ID = "tfe_" + hostname;
-const SCREEN_NAME = "tfe_" + hostname;
-
-let userObj = {
-  name: USER_ID,
-  nodeId: USER_ID,
-  userId: USER_ID,
-  url: "https://www.twitter.com",
-  screenName: SCREEN_NAME,
-  namespace: "util",
-  type: "util",
-  mode: "muxstream",
-  timeStamp: moment().valueOf(),
-  tags: {},
-  stats: {}
-} ;
-
 const cla = require("command-line-args");
 const numRandomNetworks = { name: "numRandomNetworks", alias: "n", type: Number};
 const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
@@ -2582,8 +2592,15 @@ function showStats(options) {
   }
   else {
 
+    statsObj.userReadyTransmitted = false;
+    statsObj.userReadyAck = false ;
+
     console.log(chalkLog("### FEM S"
       + " | N: " + getTimeStamp()
+      + " | SERVER CONNECTED: " + statsObj.serverConnected
+      + " | AUTHENTICATED: " + statsObj.userAuthenticated
+      + " | READY TXD: " + statsObj.userReadyTransmitted
+      + " | READY ACK: " + statsObj.userReadyAck
       + " | E: " + statsObj.elapsed
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
       + " | PUQ: " + processUserQueue.length
@@ -2934,14 +2951,18 @@ function sendKeepAlive(userObj, callback) {
     callback("ERROR", null);
   }
 }
+
 function initKeepalive(interval) {
+
   clearInterval(socketKeepAliveInterval);
+
   console.log(chalkConnect("START KEEPALIVE"
     + " | " + getTimeStamp()
     + " | READY ACK: " + statsObj.userAuthenticated
     + " | SERVER CONNECTED: " + statsObj.serverConnected
     + " | INTERVAL: " + interval + " ms"
   ));
+
   sendKeepAlive(userObj, function(err, results) {
     if (err) {
       console.log(chalkError("KEEPALIVE ERROR: " + err));
@@ -2952,7 +2973,9 @@ function initKeepalive(interval) {
       ));
     }
   });
+
   socketKeepAliveInterval = setInterval(function() { // TX KEEPALIVE
+
     sendKeepAlive(userObj, function(err, results) {
       if (err) {
         console.log(chalkError("KEEPALIVE ERROR: " + err));
@@ -2963,12 +2986,19 @@ function initKeepalive(interval) {
         ));
       }
     });
+
   }, interval);
+
 }
+
 let userReadyInterval;
+
 function initUserReadyInterval(interval) {
+
   console.log(chalkInfo("INIT USER READY INTERVAL"));
+
   clearInterval(userReadyInterval);
+
   userReadyInterval = setInterval(function() {
     if (statsObj.serverConnected && !statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
       statsObj.userReadyTransmitted = true;
@@ -2981,6 +3011,7 @@ function initUserReadyInterval(interval) {
     }
   }, interval);
 }
+
 function reset(cause, callback) {
   console.log(chalkAlert("\nRESET | CAUSE: " + cause + "\n"));
   if (callback !== undefined) { callback(); }
@@ -3040,7 +3071,9 @@ function initSocket(cnf) {
         ));
 
         statsObj.userAuthenticated = true ;
+
         initKeepalive(cnf.keepaliveInterval);
+
         initUserReadyInterval(5000);
       });
     });
@@ -4466,7 +4499,9 @@ initialize(configuration, function(err, cnf) {
         initSocket(cnf);
 
         loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function() {
+
           if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+
             randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
               console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
 
@@ -4478,6 +4513,7 @@ initialize(configuration, function(err, cnf) {
               }, 3000);
             });
           }
+
         });
 
       });
