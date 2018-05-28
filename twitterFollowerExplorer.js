@@ -361,6 +361,7 @@ statsObj.childrenFetchBusy = false;
 
 statsObj.hostname = hostname;
 statsObj.startTimeMoment = moment();
+statsObj.elapsed = 0;
 statsObj.fetchCycleStartMoment = moment();
 statsObj.fetchCycleEndMoment = moment();
 statsObj.fetchCycleElapsed = 0;
@@ -402,7 +403,6 @@ statsObj.analyzer.skipped = 0;
 statsObj.analyzer.errors = 0;
 statsObj.twitterErrors = 0;
 statsObj.fetchUsersComplete = false;
-statsObj.elapsed = 0;
 
 statsObj.bestNetworks = {};
 
@@ -2405,17 +2405,20 @@ const fsmStates = {
 
         if (randomNetworkTree && (randomNetworkTree !== undefined)) { randomNetworkTree.send({op: "GET_STATS"}); }
 
-        let slackText = "\n*FETCH END ALL*";
+        let slackText = "\n*END FETCH ALL*";
         slackText = slackText + " | " + hostname;
+        slackText = slackText + "\nSTART: " + statsObj.startTimeMoment.format(compactDateTimeFormat);
+        slackText = slackText + " | RUN: " + msToTime(statsObj.elapsed);
         slackText = slackText + "\nCYC: " + statsObj.fetchCycle;
         slackText = slackText + " | ELPSD: " + msToTime(statsObj.fetchCycleElapsed);
-        slackText = slackText + "\nTOT:   " + statsObj.users.totalFriendsProcessed;
-        slackText = slackText + " | GTOT:  " + statsObj.users.grandTotalFriendsProcessed;
-        slackText = slackText + "\nOAMR:  " + statsObj.bestNetwork.overallMatchRate.toFixed(3);
-        slackText = slackText + " | MR:    " + statsObj.bestNetwork.matchRate.toFixed(3);
-        slackText = slackText + " | SR:    " + statsObj.bestNetwork.successRate.toFixed(3);
-
-        // console.log("TFE | SLACK TEXT: " + slackText);
+        slackText = slackText + "\nTOT: " + statsObj.users.totalFriendsProcessed;
+        slackText = slackText + " | GTOT: " + statsObj.users.grandTotalFriendsProcessed;
+        slackText = slackText + "\nIN: " + statsObj.bestNetwork.numInputs;
+        slackText = slackText + " | INPUTS ID: " + statsObj.bestNetwork.inputsId;
+        slackText = slackText + "\nNN: " + statsObj.bestNetwork.networkId;
+        slackText = slackText + "\nOAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(3);
+        slackText = slackText + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(3);
+        slackText = slackText + " | SR: " + statsObj.bestNetwork.successRate.toFixed(3);
 
         clearInterval(waitFileSaveInterval);
         slackPostMessage(slackChannel, slackText);
