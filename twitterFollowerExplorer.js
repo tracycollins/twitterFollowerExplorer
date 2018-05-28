@@ -2,6 +2,15 @@
 "use strict";
 require("isomorphic-fetch");
 
+const ONE_SECOND = 1000 ;
+const ONE_MINUTE = ONE_SECOND*60 ;
+
+const ONE_KILOBYTE = 1024;
+const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
+
+
+const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
+
 let start = process.hrtime();
 
 let elapsed_time = function(note) {
@@ -39,12 +48,6 @@ let userObj = {
 } ;
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
-const ONE_SECOND = 1000 ;
-const ONE_MINUTE = ONE_SECOND*60 ;
-
-const ONE_KILOBYTE = 1024;
-const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
-
 const DROPBOX_LIST_FOLDER_LIMIT = 50;
 const DROPBOX_MAX_FILE_UPLOAD = 140 * ONE_MEGABYTE; // bytes
 
@@ -2402,6 +2405,10 @@ const fsmStates = {
           let histObj = {};
 
           histObj.histogramsId = hostname + "_" + process.pid + "_" + getTimeStamp() + "_" + type ;
+          histObj.meta = {};
+          histObj.meta.timeStamp = moment().valueOf();
+          histObj.meta.type = type;
+          histObj.meta.numEntries = Object.keys(globalHistograms[type]).length;
           histObj.histograms = {};
           histObj.histograms[type] = globalHistograms[type];
 
@@ -2419,10 +2426,24 @@ const fsmStates = {
           console.log(chalk.bold.blue("... SAVING HISTOGRAM"
             + " | TYPE: " + type
             + " | ID: " + histObj.histogramsId
+            + " | ENTRIES: " + Object.keys(histObj.histograms[type]).length
+            + " | SIZE: " + (sizeof(globalHistograms[type])/ONE_MEGABYTE).toFixed(3) + " MB"
             + " | PATH: " + folder + "/" + file
           ));
 
-          saveFileQueue.push({folder: folder, file: file, obj: histObj });
+          if (sizeof(globalHistograms[type]) > MAX_SAVE_DROPBOX_NORMAL) {
+            console.log(chalkAlert("... SAVING LOCAL HISTOGRAM | TOO LARGE"
+              + " | TYPE: " + type
+              + " | ID: " + histObj.histogramsId
+              + " | ENTRIES: " + Object.keys(histObj.histograms[type]).length
+              + " | SIZE: " + (sizeof(globalHistograms[type])/ONE_MEGABYTE).toFixed(3) + " MB"
+              + " | PATH: " + folder + "/" + file
+            ));
+            saveFileQueue.push({folder: folder, file: file, obj: histObj, localFlag: true });
+          }
+          else {
+            saveFileQueue.push({folder: folder, file: file, obj: histObj });
+          }
 
           cb();
 
@@ -2762,6 +2783,7 @@ function saveFile (params, callback){
           console.error(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: 413"
+            + " | ERROR: FILE TOO LARGE"
           ));
           if (callback !== undefined) { return callback(error.error_summary); }
         }
