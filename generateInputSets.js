@@ -1206,7 +1206,7 @@ initialize(configuration, function(err, cnf){
     loadFile(folder, file, function(err, histogramsObj){
 
       if (err) {
-        console.log(chalkError("LOAD histograms.json ERROR\n" + jsonPrint(err)));
+        console.log(chalkError("LOAD histograms.json ERROR"));
         cb();
       }
       else {
