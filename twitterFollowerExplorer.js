@@ -2459,14 +2459,14 @@ const fsmStates = {
             }
 
 
-            console.log(chalkAlert("... SAVING LOCAL HISTOGRAM | TOO LARGE (OR TEST MODE)"
-              + " | TEST MODE: " + configuration.testMode
-              + " | TYPE: " + type
-              + " | ID: " + histObj.histogramsId
-              + " | ENTRIES: " + Object.keys(histObj.histograms[type]).length
-              + " | SIZE: " + (sizeof(globalHistograms[type])/ONE_MEGABYTE).toFixed(3) + " MB"
-              + " | DROPBOX PATH: " + folder + "/" + file
-            ));
+            // console.log(chalkAlert("... SAVING LOCAL HISTOGRAM | TOO LARGE (OR TEST MODE)"
+            //   + " | TEST MODE: " + configuration.testMode
+            //   + " | TYPE: " + type
+            //   + " | ID: " + histObj.histogramsId
+            //   + " | ENTRIES: " + Object.keys(histObj.histograms[type]).length
+            //   + " | SIZE: " + (sizeof(globalHistograms[type])/ONE_MEGABYTE).toFixed(3) + " MB"
+            //   + " | DROPBOX PATH: " + folder + "/" + file
+            // ));
 
             saveFileQueue.push({folder: folder, file: file, obj: histObj, localFlag: true });
 
