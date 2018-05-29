@@ -88,6 +88,7 @@ const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 
 const writeJsonFile = require("write-json-file");
+const sizeof = require("object-sizeof");
 
 const fs = require("fs");
 const debug = require("debug")("tfe");
