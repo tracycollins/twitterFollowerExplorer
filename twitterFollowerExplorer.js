@@ -958,7 +958,9 @@ function loadBestNetworkDropboxFolder(folder, callback) {
             };
 
             bestNetworkHashMap.set(networkObj.networkId, hmObj);
+
             saveFileQueue.push({folder: folder, file: entry.name, obj: hmObj });
+
             availableNeuralNetHashMap[networkObj.networkId] = true;
 
             if (!currentBestNetwork
@@ -1029,25 +1031,33 @@ function loadBestNetworkDropboxFolder(folder, callback) {
       const networkId = entry.name.replace(".json", "");
 
       if (bestNetworkHashMap.has(networkId)) {
+
         const bno = bestNetworkHashMap.get(networkId);
+
         if (!bno || (bno === undefined)) {
           console.log(chalkError("bestNetworkHashMap ENTRY UNDEFINED??? | " + networkId));
           return(cb());
         }
+
         if (bno.entry === undefined) {
           console.log(chalkError("bestNetworkHashMap ENTRY PROP UNDEFINED??? | " + networkId + "\n" + jsonPrint(bno)));
           return(cb());
         }
+
         if (bno.entry.content_hash !== entry.content_hash) {
+
           console.log(chalkInfo("DROPBOX NETWORK CONTENT CHANGE"
             + " | " + getTimeStamp(entry.client_modified)
             + " | " + entry.name
           ));
+
           loadFile(folder, entry.name, function(err, networkObj) {
+
             if (err) {
               console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR: " + err));
               return(cb());
             }
+
             if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
             if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
 
@@ -1117,6 +1127,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
       }
       else {
         loadFile(folder, entry.name, function(err, networkObj) {
+
           if (err) {
             console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR: " + err));
             return(cb());
@@ -1148,6 +1159,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
             ));
 
             bestNetworkHashMap.set(networkObj.networkId, { entry: entry, network: networkObj});
+            
             availableNeuralNetHashMap[networkObj.networkId] = true;
 
             if (!currentBestNetwork
@@ -2402,7 +2414,7 @@ const fsmStates = {
         console.log(chalk.bold.blue("================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("===================================================="));
 
-        console.log(chalkInfo("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
+        // console.log(chalkInfo("... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
 
         let histogramsSavedFlag = false;
 
@@ -2457,19 +2469,7 @@ const fsmStates = {
                 folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms/types/" + type;
               }
             }
-
-
-            // console.log(chalkAlert("... SAVING LOCAL HISTOGRAM | TOO LARGE (OR TEST MODE)"
-            //   + " | TEST MODE: " + configuration.testMode
-            //   + " | TYPE: " + type
-            //   + " | ID: " + histObj.histogramsId
-            //   + " | ENTRIES: " + Object.keys(histObj.histograms[type]).length
-            //   + " | SIZE: " + (sizeof(globalHistograms[type])/ONE_MEGABYTE).toFixed(3) + " MB"
-            //   + " | DROPBOX PATH: " + folder + "/" + file
-            // ));
-
             saveFileQueue.push({folder: folder, file: file, obj: histObj, localFlag: true });
-
           }
           else {
             saveFileQueue.push({folder: folder, file: file, obj: histObj });
@@ -2880,12 +2880,19 @@ function initProcessUserQueueInterval(interval) {
 }
 
 function initSaveFileQueue(cnf) {
+
   console.log(chalkBlue("TFE | INIT DROPBOX SAVE FILE INTERVAL | " + cnf.saveFileQueueInterval + " MS"));
+
   clearInterval(saveFileQueueInterval);
+
   saveFileQueueInterval = setInterval(function () {
+
     if (!saveFileBusy && saveFileQueue.length > 0) {
+
       saveFileBusy = true;
+
       const saveFileObj = saveFileQueue.shift();
+
       saveFile(saveFileObj, function(err) {
         if (err) {
           console.log(chalkError("TFE | *** SAVE FILE ERROR ... RETRY | " + saveFileObj.folder + "/" + saveFileObj.file));
@@ -2896,7 +2903,9 @@ function initSaveFileQueue(cnf) {
         }
         saveFileBusy = false;
       });
+
     }
+
   }, cnf.saveFileQueueInterval);
 }
 
@@ -3709,9 +3718,11 @@ function saveNetworkHashMap(params, callback) {
     ));
 
       async.whilst(
+
         function() {
           return ((params.saveImmediate && (saveFileQueue.length < 10)) || (!params.saveImmediate && (saveCache.getStats().keys < 10))) ;
         },
+
         function(cb1) {
 
           const file = nnId + ".json";
