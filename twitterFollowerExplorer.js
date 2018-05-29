@@ -2692,12 +2692,12 @@ function saveFile (params, callback){
     const objSizeMBytes = (sizeof(params.obj)/ONE_MEGABYTE).toFixed(3)
 
     showStats();
-    console.log(chalkAlert("NNT | ... SAVING DROPBOX LOCALLY | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath));
+    console.log(chalkAlert("NNT | ... SAVING DROPBOX LOCALLY | " + objSizeMBytes + " MB | " + fullPath));
 
     writeJsonFile(fullPath, params.obj)
     .then(function() {
 
-      console.log(chalkAlert("NNT | SAVED DROPBOX LOCALLY | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath));
+      console.log(chalkAlert("NNT | SAVED DROPBOX LOCALLY | " + objSizeMBytes + " MB | " + fullPath));
       if (callback !== undefined) { return callback(null); }
 
     })
