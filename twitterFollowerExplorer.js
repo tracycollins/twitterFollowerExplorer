@@ -362,6 +362,13 @@ let neuralNetworkInitialized = false;
 let TFE_USER_DB_CRAWL = false;
 
 let configuration = {};
+configuration.DROPBOX = {};
+configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
+configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY ;
+configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
+configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
+configuration.DROPBOX.DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || "twitterFollowerExplorerStats.json";
+
 configuration.forceImageAnalysis = DEFAULT_FORCE_IMAGE_ANALYSIS;
 configuration.forceInitRandomNetworks = DEFAULT_FORCE_INIT_RANDOM_NETWORKS;
 configuration.enableLanguageAnalysis = false;
@@ -2432,15 +2439,37 @@ const fsmStates = {
             + " | PATH: " + folder + "/" + file
           ));
 
-          if (sizeof(globalHistograms[type]) > MAX_SAVE_DROPBOX_NORMAL) {
-            console.log(chalkAlert("... SAVING LOCAL HISTOGRAM | TOO LARGE"
+          if ((sizeof(globalHistograms[type]) > MAX_SAVE_DROPBOX_NORMAL) || configuration.testMode) {
+
+            if (configuration.testMode) {
+              if (hostname === "google") {
+                folder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test/types/" + type;
+              }
+              else {
+                folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms_test/types/" + type;
+              }
+            }
+            else {
+              if (hostname === "google") {
+                folder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms/types/" + type;
+              }
+              else {
+                folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms/types/" + type;
+              }
+            }
+
+
+            console.log(chalkAlert("... SAVING LOCAL HISTOGRAM | TOO LARGE (OR TEST MODE)"
+              + " | TEST MODE: " + configuration.testMode
               + " | TYPE: " + type
               + " | ID: " + histObj.histogramsId
               + " | ENTRIES: " + Object.keys(histObj.histograms[type]).length
               + " | SIZE: " + (sizeof(globalHistograms[type])/ONE_MEGABYTE).toFixed(3) + " MB"
-              + " | PATH: " + folder + "/" + file
+              + " | DROPBOX PATH: " + folder + "/" + file
             ));
+
             saveFileQueue.push({folder: folder, file: file, obj: histObj, localFlag: true });
+
           }
           else {
             saveFileQueue.push({folder: folder, file: file, obj: histObj });
@@ -2650,7 +2679,7 @@ process.on( "SIGINT", function() {
 
 function saveFile (params, callback){
 
-  const fullPath = params.folder + "/" + params.file;
+  let fullPath = params.folder + "/" + params.file;
 
   debug(chalkInfo("LOAD FOLDER " + params.folder));
   debug(chalkInfo("LOAD FILE " + params.file));
@@ -2660,105 +2689,21 @@ function saveFile (params, callback){
 
   if (params.localFlag) {
 
-    options.access_token = configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
-    options.file_size = sizeof(params.obj);
-    options.destination = params.dropboxFolder + "/" + params.file;
-    options.autorename = true;
-    options.mode = params.mode || "overwrite";
-    options.mode = "overwrite";
-
-    const objSizeMBytes = options.file_size/ONE_MEGABYTE;
+    const objSizeMBytes = (sizeof(params.obj)/ONE_MEGABYTE).toFixed(3)
 
     showStats();
-    console.log(chalkAlert("NNT | ... SAVING LOCALLY | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath));
+    console.log(chalkAlert("NNT | ... SAVING DROPBOX LOCALLY | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath));
 
     writeJsonFile(fullPath, params.obj)
     .then(function() {
 
-      console.log(chalkAlert("NNT | SAVED LOCALLY | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath));
-      console.log(chalkAlert("NNT | ... PAUSE 5 SEC TO FINISH FILE SAVE | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath));
-
-      setTimeout(function(){
-
-        console.log(chalkAlert("NNT | ... DROPBOX UPLOADING | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath + " > " + options.destination));
-
-        const stats = fs.statSync(fullPath);
-        const fileSizeInBytes = stats.size;
-        const savedSize = fileSizeInBytes/ONE_MEGABYTE;
-
-        console.log(chalkLog("NNT | ... SAVING DROPBOX JSON"
-          + " | " + getTimeStamp()
-          + " | " + savedSize.toFixed(2) + " MBYTES"
-          + "\n SRC: " + fullPath
-          + "\n DST: " + options.destination
-        ));
-
-        const drbx = require("@davvo/drbx")({
-          token: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN
-        });
-
-        let localReadStream = fs.createReadStream(fullPath);
-        let remoteWriteStream = drbx.file(options.destination).createWriteStream();
-
-
-        let bytesRead = 0;
-        let chunksRead = 0;
-        let mbytesRead = 0;
-        let percentRead = 0;
-
-        localReadStream.pipe(remoteWriteStream);
-
-        localReadStream.on("data", function(chunk){
-          bytesRead += chunk.length;
-          mbytesRead = bytesRead/ONE_MEGABYTE;
-          percentRead = 100 * bytesRead/fileSizeInBytes;
-          chunksRead += 1;
-          if (chunksRead % 100 === 0){
-            console.log(chalkInfo("NNT | LOCAL READ"
-              + " | " + mbytesRead.toFixed(2) + " / " + savedSize.toFixed(2) + " MB"
-              + " (" + percentRead.toFixed(2) + "%)"
-            ));
-          }
-        });
-
-        localReadStream.on("close", function(){
-          console.log(chalkAlert("NNT | LOCAL STREAM READ CLOSED | SOURCE: " + fullPath));
-        });
-
-        remoteWriteStream.on("close", function(){
-          console.log(chalkAlert("NNT | REMOTE STREAM WRITE CLOSED | DEST: " + options.destination));
-        });
-
-        localReadStream.on("end", function(){
-          console.log(chalkInfo("NNT | LOCAL READ COMPLETE"
-            + " | SOURCE: " + fullPath
-            + " | " + mbytesRead.toFixed(2) + " / " + savedSize.toFixed(2) + " MB"
-            + " (" + percentRead.toFixed(2) + "%)"
-          ));
-          localReadStream.close();
-        });
-
-        localReadStream.on("error", function(err){
-          console.error("NNT | *** LOCAL STREAM READ ERROR | " + err);
-          if (callback !== undefined) { return callback(err); }
-        });
-
-        remoteWriteStream.on("end", function(){
-          console.log(chalkAlert("NNT | REMOTE STREAM WRITE END | DEST: " + options.destination));
-          if (callback !== undefined) { return callback(null); }
-        });
-
-        remoteWriteStream.on("error", function(err){
-          console.error("NNT | *** REMOTE STREAM WRITE ERROR | DEST: " + options.destination + "\n" + err);
-          if (callback !== undefined) { return callback(err); }
-        });
-
-      }, 5000);
+      console.log(chalkAlert("NNT | SAVED DROPBOX LOCALLY | " + objSizeMBytes.toFixed(2) + " MB | " + fullPath));
+      if (callback !== undefined) { return callback(null); }
 
     })
     .catch(function(error){
       console.trace(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
-        + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+        + " | !!! ERROR DROBOX LOCAL JSON WRITE | FILE: " + fullPath 
         + " | ERROR: " + error
         + " | ERROR\n" + jsonPrint(error)
       ));
