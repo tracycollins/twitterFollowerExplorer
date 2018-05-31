@@ -552,18 +552,6 @@ function generateInputSets3(params, callback) {
                 + " | MAX NUM INPUTS: " + MAX_NUM_INPUTS_PER_TYPE
               );
 
-              // console.log(chalkAlert("*** LESS THAN MIN ---> MORE THAN MAX IN ONE STEP"
-              //   + " | PREV NUM INPUTS: " + prevNumInputs
-              //   + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
-              //   + " | MAX NUM INPUTS: " + MAX_NUM_INPUTS_PER_TYPE
-              // ));
-
-
-              // newInputsObj.inputs[type] = prevInputs;
-              // newInputsObj.meta.type[type].numInputs = prevNumInputs;
-              // newInputsObj.meta.type[type].dominantMin = prevDomMin;
-              // newInputsObj.meta.type[type].totalMin = prevTotalMin;
-
               return( async.setImmediate(function() { cb1(true); }))
             }
             else if ((dominantMin - dominantMinStep > configuration.minDominantMin) && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) {
