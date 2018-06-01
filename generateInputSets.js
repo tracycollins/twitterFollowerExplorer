@@ -414,7 +414,6 @@ function generateInputSets3(params, callback) {
   let prevTotMinChange = 0;
   let prevDomMinChange = 0;
 
-
   let prevDomMin = dominantMin;
   let prevTotalMin = totalMin;
   let prevDomMinStep = dominantMinStep;
@@ -468,13 +467,10 @@ function generateInputSets3(params, callback) {
             + " | newInputsObj.meta.type[type].numInputs: " + newInputsObj.meta.type[type].numInputs
           );
 
-          // prevNumInputs = newInputsObj.meta.type[type].numInputs;
-          // prevDomMinStep = dominantMinStep; 
-          // prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
-
           return (
             ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
-              || ((newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE) && (totalTypeInputs > MIN_NUM_INPUTS_PER_TYPE))
+              || ((newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE) 
+                && (totalTypeInputs > MIN_NUM_INPUTS_PER_TYPE))
             )
 
           );
@@ -503,7 +499,6 @@ function generateInputSets3(params, callback) {
             newInputsObj.meta.type[type].dominantMin = dominantMin;
             newInputsObj.meta.type[type].totalMin = parseInt(totalMin);
 
-
             spinner.text = "... GEN TYPE"
               + " | " + type.toUpperCase()
               + " | DOM MIN: " + dominantMin.toFixed(5)
@@ -517,21 +512,8 @@ function generateInputSets3(params, callback) {
               + "/" + Object.keys(params.histogramsObj.histograms[type]).length
               + " | TOT INPUTS: " + newInputsObj.meta.numInputs;
 
-            // console.log(chalkBlue("... GEN TYPE"
-            //   + " | " + type.toUpperCase()
-            //   + " | DOM MIN: " + dominantMin.toFixed(5)
-            //   + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
-            //   + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
-            //   + " | TOT MIN: " + totalMin.toFixed(5)
-            //   + " | PREV TOT MIN: " + prevTotalMin.toFixed(5)
-            //   + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
-            //   + " | PREV NUM INPUTS: " + prevNumInputs
-            //   + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
-            //   + "/" + Object.keys(params.histogramsObj.histograms[type]).length
-            //   + " | TOT INPUTS: " + newInputsObj.meta.numInputs
-            // ));
-
-            if ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) && (prevNumInputs < MAX_NUM_INPUTS_PER_TYPE)) {
+            if ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
+              && (prevNumInputs < MAX_NUM_INPUTS_PER_TYPE)) {
 
               const lastParams = previousParamsHistory.pop();
               const secondToLastParams = previousParamsHistory.pop();
@@ -554,10 +536,17 @@ function generateInputSets3(params, callback) {
 
               return( async.setImmediate(function() { cb1(true); }))
             }
-            else if ((dominantMin - dominantMinStep > configuration.minDominantMin) && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) {
+            else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
+              && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) {
 
               prevDomMin = dominantMin;
-              dominantMin -= dominantMinStep;
+
+              if (newInputsObj.meta.type[type].numInputs < 0.1*MIN_NUM_INPUTS_PER_TYPE) {
+                dominantMin -= 2.0*dominantMinStep;
+              }
+              else {
+                dominantMin -= dominantMinStep;
+              }
 
             }
             else if (dominantMin - dominantMinStep <= configuration.minDominantMin) {
@@ -566,8 +555,15 @@ function generateInputSets3(params, callback) {
               dominantMin = INIT_DOM_MIN;
 
               if (totalMin > 1){
+
                 prevTotalMin = totalMin; 
-                totalMin = Math.min(parseInt(totalMinStep * totalMin), parseInt(totalMin-1.0));
+
+                if (newInputsObj.meta.type[type].numInputs < 0.1*MIN_NUM_INPUTS_PER_TYPE) {
+                  totalMin = Math.min(parseInt(0.5 * totalMinStep * totalMin), parseInt(totalMin-1.0));
+                }
+                else {
+                  totalMin = Math.min(parseInt(totalMinStep * totalMin), parseInt(totalMin-1.0));
+                }
               }
               else {
                 console.log(chalkError("QUIT: totalMin: " + totalMin + " | dominantMin:" + dominantMin));
@@ -597,8 +593,6 @@ function generateInputSets3(params, callback) {
             + " | TOT INPUTS: " + newInputsObj.meta.numInputs;
 
           spinner.succeed();
-          // spinner.stopAndPersist();
-
 
           previousParamsHistory = [];
 
