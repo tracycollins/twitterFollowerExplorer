@@ -12,7 +12,7 @@ let enableMinNumInputsPerTypeMultiplier = true;
 const MAX_NUM_INPUTS_PER_TYPE = 300;
 const MIN_NUM_INPUTS_PER_TYPE = 220;
 
-const INIT_DOM_MIN = 0.9999;
+const INIT_DOM_MIN = 0.99999;
 const INIT_TOT_MIN = 1000;
 
 const DEFAULT_MIN_DOMINANT_MIN = 0.350;
@@ -379,6 +379,7 @@ const sortedObjectValues = function(params) {
 function generateInputSets3(params, callback) {
 
   let tableArray = [];
+  let iteration = 0;
 
   /*
   pseudo code
@@ -440,13 +441,21 @@ function generateInputSets3(params, callback) {
 
   let prevNumInputs = 0;
 
-  let previousParamsHistory = [];
+  // let previousParamsHistory = [];
+  let inputsHistory = [];
+
+  let overMaxNumInputs = Infinity;
+  let underMinNumInputs = 0;
+  let lastParams;
+  let secondToLastParams;
 
   async.eachSeries(
 
     inTypes, 
 
     function(type, cb0){
+
+      iteration = 0;
 
       const spinner = ora("... GEN TYPE" + " | " + type.toUpperCase()).start();
 
@@ -495,12 +504,14 @@ function generateInputSets3(params, callback) {
 
         function(cb1){
 
-          previousParamsHistory.push({
-            inputs: newInputsObj.inputs[type],
-            totalMin: hpParams.options.globalTotalMin,
-            dominantMin: hpParams.options.globalDominantMin,
-            numInputs: newInputsObj.meta.type[type].numInputs
-          });
+          // previousParamsHistory.push({
+          //   inputs: newInputsObj.inputs[type],
+          //   totalMin: hpParams.options.globalTotalMin,
+          //   dominantMin: hpParams.options.globalDominantMin,
+          //   numInputs: newInputsObj.meta.type[type].numInputs,
+          //   overMaxNumInputs: overMaxNumInputs,
+          //   underMinNumInputs: underMinNumInputs
+          // });
 
           hpParams.options.globalTotalMin = totalMin;
           hpParams.options.globalDominantMin = dominantMin;
@@ -511,13 +522,28 @@ function generateInputSets3(params, callback) {
               return cb1(err);
             }
 
+            iteration += 1;
+
             newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
             newInputsObj.meta.type[type].numInputs = Object.keys(histResults.entries[type].dominantEntries).length;
             newInputsObj.meta.type[type].dominantMin = dominantMin;
             newInputsObj.meta.type[type].totalMin = parseInt(totalMin);
+            newInputsObj.meta.type[type].totalMinStep = totalMinStep;
+            newInputsObj.meta.type[type].dominantMinStep = dominantMinStep;
+
+            inputsHistory.push(newInputsObj.meta.type[type]);
+
+            if (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE) {
+              newInputsObj.meta.type[type].underMinNumInputs = newInputsObj.meta.type[type].numInputs;
+            }
+
+            if (newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) {
+              newInputsObj.meta.type[type].overMaxNumInputs = newInputsObj.meta.type[type].numInputs;
+            }
 
             spinner.text = "... GEN TYPE"
-              + " | " + type.toUpperCase()
+              + " [" + iteration + "]"
+              + " " + type.toUpperCase()
               + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
               + "/" + Object.keys(params.histogramsObj.histograms[type]).length
               + " | TOT INPUTS: " + newInputsObj.meta.numInputs
@@ -532,49 +558,51 @@ function generateInputSets3(params, callback) {
             if ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
               && (prevNumInputs < MAX_NUM_INPUTS_PER_TYPE)) {
 
-              const overMaxNumInputs = newInputsObj.meta.type[type].numInputs;
-              const lastParams = previousParamsHistory.pop();
-              const secondToLastParams = previousParamsHistory.pop();
+              // overMaxNumInputs = newInputsObj.meta.type[type].numInputs;
+              // underMinNumInputs = prevNumInputs;
+              // lastParams = previousParamsHistory.pop();
+              // secondToLastParams = previousParamsHistory.pop();
 
-              newInputsObj.inputs[type] = secondToLastParams.inputs;
-              newInputsObj.meta.type[type].numInputs = secondToLastParams.numInputs;
-              newInputsObj.meta.type[type].dominantMin = secondToLastParams.dominantMin;
-              newInputsObj.meta.type[type].totalMin = secondToLastParams.totalMin;
+              // newInputsObj.inputs[type] = secondToLastParams.inputs;
+              // newInputsObj.meta.type[type].numInputs = secondToLastParams.numInputs;
+              // newInputsObj.meta.type[type].dominantMin = secondToLastParams.dominantMin;
+              // newInputsObj.meta.type[type].totalMin = secondToLastParams.totalMin;
 
-              dominantMin = secondToLastParams.dominantMin;
-              totalMin = parseInt(secondToLastParams.totalMin);
+              // dominantMin = secondToLastParams.dominantMin;
+              // totalMin = parseInt(secondToLastParams.totalMin);
 
               spinner.info("*** GEN TYPE"
-                + " | " + type.toUpperCase()
+                + " [" + iteration + "]"
+                + " " + type.toUpperCase()
                 + " | " + "LESS THAN MIN >>> MORE THAN MAX IN ONE STEP"
-                + " | PREV NUM INPUTS: " + prevNumInputs
+                + "\nPREV NUM INPUTS: " + prevNumInputs
                 + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
                 + "/" + Object.keys(params.histogramsObj.histograms[type]).length
                 + " | OVER MAX INPUTS: " + overMaxNumInputs
                 + " | MAX NUM INPUTS: " + MAX_NUM_INPUTS_PER_TYPE
                 + " | TOT INPUTS: " + newInputsObj.meta.numInputs
-                + " | DOM MIN: " + dominantMin.toFixed(5)
+                + "\nDOM MIN: " + dominantMin.toFixed(5)
                 + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
                 + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
-                + " | TOT MIN: " + parseInt(totalMin)
+                + "\nTOT MIN: " + parseInt(totalMin)
                 + " | PREV TOT MIN: " + parseInt(prevTotalMin)
                 + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
               );
 
               if (newInputsObj.meta.type[type].numInputs === 0){
-                enableMinNumInputsPerTypeMultiplier = false;
-                previousParamsHistory.push(lastParams);
-                previousParamsHistory.push(lastParams);
+                // enableMinNumInputsPerTypeMultiplier = false;
+                // previousParamsHistory.push(lastParams);
+                // previousParamsHistory.push(lastParams);
               }
               else {
-                return( async.setImmediate(function() { cb1(true); }))
+                return cb1(true);
               }
 
             }
             else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
               && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) {
 
-              prevDomMin = dominantMin;
+              // prevDomMin = dominantMin;
 
               if (enableMinNumInputsPerTypeMultiplier 
                 && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * MIN_NUM_INPUTS_PER_TYPE)) { // 0.1
@@ -587,7 +615,7 @@ function generateInputSets3(params, callback) {
             }
             else if (dominantMin - dominantMinStep <= configuration.minDominantMin) {
 
-              prevDomMin = dominantMin;
+              // prevDomMin = dominantMin;
               dominantMin = INIT_DOM_MIN;
 
               if (totalMin > 1){
@@ -612,7 +640,7 @@ function generateInputSets3(params, callback) {
             }
 
             prevNumInputs = newInputsObj.meta.type[type].numInputs;
-            prevDomMinStep = dominantMinStep; 
+            // prevDomMinStep = dominantMinStep; 
             prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
 
             async.setImmediate(function() { cb1(); });
@@ -636,7 +664,7 @@ function generateInputSets3(params, callback) {
 
           spinner.succeed();
 
-          previousParamsHistory = [];
+          // previousParamsHistory = [];
 
           tableArray.push([
             type.toUpperCase(),
@@ -677,6 +705,8 @@ function generateInputSets3(params, callback) {
         + table(tableArray, { align: [ "l", "r", "r", "r", "r", "r"] })
         + "\n-------------------------------------------------------------------------------"
       ));
+
+      showStats();
 
       callback(err, newInputsObj);
     }
