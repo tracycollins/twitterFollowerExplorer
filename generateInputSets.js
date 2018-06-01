@@ -1,5 +1,7 @@
  /*jslint node: true */
 "use strict";
+const DEFAULT_DOMINANT_MIN_STEP = 0.05;
+const DEFAULT_TOTAL_MIN_STEP = 0.95;
 
 const DEFAULT_MIN_INPUTS_PER_TYPE_MULTIPLIER = 0.3;
 const DEFAULT_DOMINANT_MIN_STEP_MULTIPLIER = 3.0;
@@ -420,8 +422,8 @@ function generateInputSets3(params, callback) {
     "TOT INPUTS"
   ]);
 
-  const DOM_MIN_STEP = 0.1;
-  const TOT_MIN_STEP = 0.9;
+  const DOM_MIN_STEP = DEFAULT_DOMINANT_MIN_STEP; // 0.1
+  const TOT_MIN_STEP = DEFAULT_TOTAL_MIN_STEP; // 0.9;
 
   let dominantMinStep = DOM_MIN_STEP;
   let totalMinStep = TOT_MIN_STEP;
