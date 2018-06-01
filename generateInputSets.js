@@ -655,7 +655,8 @@ function generateInputSets3(params, callback) {
           newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
 
           spinner.text = "+++ END TYPE"
-            + " | " + type.toUpperCase()
+            + " [" + iteration + "]"
+            + " " + type.toUpperCase()
             + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
             + "/" + Object.keys(params.histogramsObj.histograms[type]).length
             + " | TOT INPUTS: " + newInputsObj.meta.numInputs
