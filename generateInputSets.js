@@ -1,11 +1,23 @@
  /*jslint node: true */
 "use strict";
 
+const DEFAULT_MIN_INPUTS_PER_TYPE_MULTIPLIER = 0.2;
+const DEFAULT_DOMINANT_MIN_STEP_MULTIPLIER = 5.0;
+const DEFAULT_TOTAL_MIN_STEP_MULTIPLIER = 0.33;
+
+let enableMinNumInputsPerTypeMultiplier = true;
+
 const MAX_NUM_INPUTS_PER_TYPE = 300;
-const MIN_NUM_INPUTS_PER_TYPE = 200;
+const MIN_NUM_INPUTS_PER_TYPE = 220;
 
 const INIT_DOM_MIN = 0.9999;
-const INIT_TOT_MIN = 500;
+const INIT_TOT_MIN = 1000;
+
+const DEFAULT_MIN_DOMINANT_MIN = 0.350;
+const DEFAULT_MAX_DOMINANT_MIN = 0.999999;
+
+const DEFAULT_MIN_TOTAL_MIN = 10;
+const DEFAULT_MAX_TOTAL_MIN = 1000;
 
 const DEFAULT_MIN_INPUTS_GENERATED = 1000 ;
 const DEFAULT_MAX_INPUTS_GENERATED = 1600 ;
@@ -14,12 +26,6 @@ const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
 const DEFAULT_MAX_ITERATIONS = 50;
-
-const DEFAULT_MIN_TOTAL_MIN = 10;
-const DEFAULT_MAX_TOTAL_MIN = 1000;
-
-const DEFAULT_MIN_DOMINANT_MIN = 0.4;
-const DEFAULT_MAX_DOMINANT_MIN = 0.99;
 
 const OFFLINE_MODE = false;
 
@@ -123,6 +129,10 @@ let configuration = {};
 configuration.maxIterations = DEFAULT_MAX_ITERATIONS;
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
 configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
+
+configuration.minNumInputsPerTypeMultiplier = DEFAULT_MIN_INPUTS_PER_TYPE_MULTIPLIER;
+configuration.dominantMinStepMultiplier = DEFAULT_DOMINANT_MIN_STEP_MULTIPLIER;
+configuration.totalMinStepMultiplier = DEFAULT_TOTAL_MIN_STEP_MULTIPLIER;
 
 configuration.minDominantMin = DEFAULT_MIN_DOMINANT_MIN;
 configuration.maxDominantMin = DEFAULT_MAX_DOMINANT_MIN;
@@ -232,6 +242,7 @@ process.on("message", function(msg) {
     clearInterval(statsUpdateInterval);
 
     setTimeout(function() {
+      showStats();
       console.log("QUITTING generateInputSets");
       process.exit(0);
     }, 300);
@@ -275,10 +286,14 @@ const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN 
 let resultsArray = [];
 
 function showStats(options){
+
+  statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
+  statsObj.timeStamp = moment().format(compactDateTimeFormat);
+
   if (options) {
   }
   else {
-    console.log(chalkLog("- FE S"
+    console.log(chalkLog("- GIS STATS"
       + " | E: " + statsObj.elapsed
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
     ));
@@ -501,20 +516,21 @@ function generateInputSets3(params, callback) {
 
             spinner.text = "... GEN TYPE"
               + " | " + type.toUpperCase()
+              + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
+              + "/" + Object.keys(params.histogramsObj.histograms[type]).length
+              + " | TOT INPUTS: " + newInputsObj.meta.numInputs
+              + " | PREV NUM INPUTS: " + prevNumInputs
               + " | DOM MIN: " + dominantMin.toFixed(5)
               + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
               + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
               + " | TOT MIN: " + parseInt(totalMin)
               + " | PREV TOT MIN: " + parseInt(prevTotalMin)
-              + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
-              + " | PREV NUM INPUTS: " + prevNumInputs
-              + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
-              + "/" + Object.keys(params.histogramsObj.histograms[type]).length
-              + " | TOT INPUTS: " + newInputsObj.meta.numInputs;
+              + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5);
 
             if ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
               && (prevNumInputs < MAX_NUM_INPUTS_PER_TYPE)) {
 
+              const overMaxNumInputs = newInputsObj.meta.type[type].numInputs;
               const lastParams = previousParamsHistory.pop();
               const secondToLastParams = previousParamsHistory.pop();
 
@@ -531,18 +547,36 @@ function generateInputSets3(params, callback) {
                 + " | " + "LESS THAN MIN >>> MORE THAN MAX IN ONE STEP"
                 + " | PREV NUM INPUTS: " + prevNumInputs
                 + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
+                + "/" + Object.keys(params.histogramsObj.histograms[type]).length
+                + " | OVER MAX INPUTS: " + overMaxNumInputs
                 + " | MAX NUM INPUTS: " + MAX_NUM_INPUTS_PER_TYPE
+                + " | TOT INPUTS: " + newInputsObj.meta.numInputs
+                + " | DOM MIN: " + dominantMin.toFixed(5)
+                + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
+                + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
+                + " | TOT MIN: " + parseInt(totalMin)
+                + " | PREV TOT MIN: " + parseInt(prevTotalMin)
+                + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
               );
 
-              return( async.setImmediate(function() { cb1(true); }))
+              if (newInputsObj.meta.type[type].numInputs === 0){
+                enableMinNumInputsPerTypeMultiplier = false;
+                previousParamsHistory.push(lastParams);
+                previousParamsHistory.push(lastParams);
+              }
+              else {
+                return( async.setImmediate(function() { cb1(true); }))
+              }
+
             }
             else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
               && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) {
 
               prevDomMin = dominantMin;
 
-              if (newInputsObj.meta.type[type].numInputs < 0.1*MIN_NUM_INPUTS_PER_TYPE) {
-                dominantMin -= 2.0*dominantMinStep;
+              if (enableMinNumInputsPerTypeMultiplier 
+                && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * MIN_NUM_INPUTS_PER_TYPE)) { // 0.1
+                dominantMin -= (configuration.dominantMinStepMultiplier * dominantMinStep);
               }
               else {
                 dominantMin -= dominantMinStep;
@@ -558,8 +592,12 @@ function generateInputSets3(params, callback) {
 
                 prevTotalMin = totalMin; 
 
-                if (newInputsObj.meta.type[type].numInputs < 0.1*MIN_NUM_INPUTS_PER_TYPE) {
-                  totalMin = Math.min(parseInt(0.5 * totalMinStep * totalMin), parseInt(totalMin-1.0));
+                if (enableMinNumInputsPerTypeMultiplier 
+                  && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * MIN_NUM_INPUTS_PER_TYPE)) {
+                  totalMin = Math.min(
+                    parseInt(configuration.totalMinStepMultiplier * totalMinStep * totalMin), 
+                    parseInt(totalMin-1.0)
+                  );
                 }
                 else {
                   totalMin = Math.min(parseInt(totalMinStep * totalMin), parseInt(totalMin-1.0));
@@ -575,22 +613,24 @@ function generateInputSets3(params, callback) {
             prevDomMinStep = dominantMinStep; 
             prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
 
-
             async.setImmediate(function() { cb1(); });
+
           });
         }, 
 
         function(err){
 
+          enableMinNumInputsPerTypeMultiplier = true;
+
           newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
 
           spinner.text = "+++ END TYPE"
             + " | " + type.toUpperCase()
-            + " | DOM MIN: " + dominantMin.toFixed(5)
-            + " | TOT MIN: " + parseInt(totalMin)
             + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
             + "/" + Object.keys(params.histogramsObj.histograms[type]).length
-            + " | TOT INPUTS: " + newInputsObj.meta.numInputs;
+            + " | TOT INPUTS: " + newInputsObj.meta.numInputs
+            + " | DOM MIN: " + dominantMin.toFixed(5)
+            + " | TOT MIN: " + parseInt(totalMin);
 
           spinner.succeed();
 
@@ -611,7 +651,7 @@ function generateInputSets3(params, callback) {
           prevTotMinChange = 0;
 
           if (newInputsObj.meta.type[type].numInputs === 0) {
-            quit();
+            quit("ZERO INPUTS");
           }
           else{
             async.setImmediate(function() { cb0(); });
@@ -1020,7 +1060,7 @@ function initialize(cnf, callback){
   }
   cnf.enableStdin = process.env.GIS_ENABLE_STDIN || true ;
 
-  cnf.statsUpdateIntervalTime = process.env.GIS_STATS_UPDATE_INTERVAL || ONE_MINUTE;
+  cnf.statsUpdateIntervalTime = process.env.GIS_STATS_UPDATE_INTERVAL || 10*ONE_SECOND;
 
   loadFile(dropboxConfigHostFolder, dropboxConfigFile, function(err, loadedConfigObj){
 

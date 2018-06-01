@@ -1,10 +1,10 @@
 {
   "apps": [
   {
-    "name": "tfe",
+    "name": "gis",
     "script": "generateInputSets.js",
     "cwd": "/home/tc/twitterFollowerExplorer",
-    "node_args": "--max-old-space-size=2048",
+    "node_args": "--max-old-space-size=4096",
     "autorestart": false,
     "restart_delay": 300000,
     "env": {
