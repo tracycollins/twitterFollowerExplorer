@@ -933,7 +933,7 @@ function loadNetworks(networksObj, callback){
 
   async.eachSeries(nnIds, function(nnId, cb){
 
-    let networkObj = deepcopy(networksObj[nnId].network);
+    let networkObj = deepcopy(networksObj[nnId]);
 
     // networkObj.overallMatchRate = networkObj.overallMatchRate || networkObj.matchRate;
 
