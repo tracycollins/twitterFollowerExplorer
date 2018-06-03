@@ -295,7 +295,7 @@ function showStats(options){
   if (options) {
   }
   else {
-    console.log(chalkLog("- GIS STATS"
+    console.log(chalkLog("GIS | STATS"
       + " | E: " + statsObj.elapsed
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
     ));
@@ -664,7 +664,7 @@ function generateInputSets3(params, callback) {
             + " | TOT MIN: " + parseInt(totalMin);
 
           spinner.succeed();
-
+          showStats();
           // previousParamsHistory = [];
 
           tableArray.push([
