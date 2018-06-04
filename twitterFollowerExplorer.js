@@ -2551,7 +2551,7 @@ const cla = require("command-line-args");
 const numRandomNetworks = { name: "numRandomNetworks", alias: "n", type: Number};
 const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
 const quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
-const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean, defaultValue: false};
+const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean, defaultValue: true};
 const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean};
 const testMode = { name: "testMode", alias: "X", type: Boolean, defaultValue: false};
 const loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
@@ -3496,7 +3496,7 @@ function initialize(cnf, callback) {
   if (process.env.TFE_QUIT_ON_COMPLETE === "false") {
     cnf.quitOnComplete = false;
   }
-  if (process.env.TFE_QUIT_ON_COMPLETE === "true") {
+  if ((process.env.TFE_QUIT_ON_COMPLETE === true) || (process.env.TFE_QUIT_ON_COMPLETE === "true")) {
     cnf.quitOnComplete = true;
   }
   cnf.enableStdin = process.env.TFE_ENABLE_STDIN || true ;
@@ -3538,7 +3538,12 @@ function initialize(cnf, callback) {
       }
       if (loadedConfigObj.TFE_QUIT_ON_COMPLETE !== undefined) {
         console.log("LOADED TFE_QUIT_ON_COMPLETE: " + loadedConfigObj.TFE_QUIT_ON_COMPLETE);
-        cnf.quitOnComplete = loadedConfigObj.TFE_QUIT_ON_COMPLETE;
+        if ((loadedConfigObj.TFE_QUIT_ON_COMPLETE === true) || (loadedConfigObj.TFE_QUIT_ON_COMPLETE === "true")) {
+          cnf.quitOnComplete = true;
+        }
+        if ((loadedConfigObj.TFE_QUIT_ON_COMPLETE === false) || (loadedConfigObj.TFE_QUIT_ON_COMPLETE === "false")) {
+          cnf.quitOnComplete = false;
+        }
       }
       if (loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined) {
         console.log("LOADED TFE_HISTOGRAM_PARSE_DOMINANT_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN);
