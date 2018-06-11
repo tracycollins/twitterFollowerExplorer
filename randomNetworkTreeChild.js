@@ -935,16 +935,14 @@ function loadNetworks(networksObj, callback){
 
     let networkObj = deepcopy(networksObj[nnId]);
 
-    // networkObj.overallMatchRate = networkObj.overallMatchRate || networkObj.matchRate;
-
     const network = neataptic.Network.fromJSON(networkObj.network);
 
     networkObj.network = {};
     networkObj.network = network;
 
-    networkObj.successRate = networkObj.successRate || 0 ;
-    networkObj.matchRate = networkObj.matchRate || 0 ;
-    networkObj.overallMatchRate = networkObj.overallMatchRate || 0 ;
+    networkObj.successRate = (networkObj.successRate !== undefined) ? networkObj.successRate : 0 ;
+    networkObj.matchRate = (networkObj.matchRate !== undefined) ? networkObj.matchRate : 0 ;
+    networkObj.overallMatchRate = (networkObj.overallMatchRate !== undefined) ? networkObj.overallMatchRate : 0 ;
 
     networksHashMap.set(nnId, networkObj);
 
@@ -968,6 +966,8 @@ function loadNetworks(networksObj, callback){
       statsObj.loadedNetworks[nnId].negative = 0;
     }
 
+    statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
+
     if (statsObj.allTimeLoadedNetworks[nnId] === undefined) {
       statsObj.allTimeLoadedNetworks[nnId] = {};
       statsObj.allTimeLoadedNetworks[nnId].networkId = nnId;
@@ -987,6 +987,8 @@ function loadNetworks(networksObj, callback){
       statsObj.allTimeLoadedNetworks[nnId].positive = 0;
       statsObj.allTimeLoadedNetworks[nnId].negative = 0;
     }
+
+    statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
 
     console.log(chalkLog("RNT | LOAD NETWORK"
       + " | [ " + networksHashMap.size + " NNs IN HM ]"

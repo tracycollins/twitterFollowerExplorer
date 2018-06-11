@@ -14,15 +14,6 @@ const TWITTER_DEFAULT_USER = "altthreecee00";
 
 const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
 
-// let start = process.hrtime();
-
-// let elapsed_time = function(note) {
-//   const precision = 3; // 3 decimal places
-//   const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
-//   console.log(process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
-//   start = process.hrtime(); // reset the timer
-// };
-
 const os = require("os");
 const moment = require("moment");
 
@@ -188,8 +179,6 @@ function slackPostMessage(channel, text, callback) {
 
 let globalHistograms = {};
 
-// const MIN_HISTOGRAM_KEYS = 50;
-// const MAX_HISTOGRAM_KEYS = 100;
 const bestRuntimeNetworkFileName = "bestRuntimeNetwork.json";
 let bestRuntimeNetworkId = false;
 let loadedNetworksFlag = false;
@@ -3167,7 +3156,6 @@ function initSocket(cnf) {
         bestNetworkHashMap.set(networkObj.networkId, bnhmObj);
 
         if (!currentBestNetwork
-          // || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
           || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)) {
 
           currentBestNetwork = deepcopy(networkObj);
