@@ -195,7 +195,8 @@ function checkRateLimit(params, callback){
 
         console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
           + " | @" + configuration.threeceeUser
-          + " | LIM " + statsObj.threeceeUser.twitterRateLimit
+          + " | CONTEXT: " + data.rate_limit_context.access_token
+          + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
           + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
           + " | EXP: " + statsObj.threeceeUser.twitterRateLimitException.format(compactDateTimeFormat)
           + " | NOW: " + moment().format(compactDateTimeFormat)
@@ -213,7 +214,8 @@ function checkRateLimit(params, callback){
 
         console.log(chalkLog("--- TWITTER RATE LIMIT"
           + " | @" + configuration.threeceeUser
-          + " | LIM " + statsObj.threeceeUser.twitterRateLimit
+          + " | CONTEXT: " + data.rate_limit_context.access_token
+          + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
           + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
           + " | EXP: " + statsObj.threeceeUser.twitterRateLimitException.format(compactDateTimeFormat)
           + " | RST: " + statsObj.threeceeUser.twitterRateLimitResetAt.format(compactDateTimeFormat)
@@ -230,7 +232,8 @@ function checkRateLimit(params, callback){
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
         debug(chalkInfo("... NO TWITTER RATE LIMIT"
-          + " | LIM " + statsObj.threeceeUser.twitterRateLimit
+          + " | CONTEXT: " + data.rate_limit_context.access_token
+          + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
           + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
           + " | RST: " + statsObj.threeceeUser.twitterRateLimitResetAt.format(compactDateTimeFormat)
           + " | NOW: " + moment().format(compactDateTimeFormat)
