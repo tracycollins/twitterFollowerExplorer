@@ -3720,42 +3720,58 @@ function saveNetworkHashMap(params, callback) {
       + " | DST: " + folder + "/" + networkObj.networkId + ".json"
     ));
 
-      async.whilst(
+    const file = nnId + ".json";
 
-        function() {
-          return (
-            (params.saveImmediate && (saveFileQueue.length < 10)) 
-            || (!params.saveImmediate && (saveCache.getStats().keys < 10))
-          );
-        },
+    if (params.saveImmediate) {
+      saveFileQueue.push({folder: folder, file: file, obj: networkObj });
+      console.log(chalkNetwork("SAVING NN (Q)"
+        + " | " + networkObj.networkId
+      ));
+      cb0();
+    }
+    else {
+      saveCache.set(file, {folder: folder, file: file, obj: networkObj });
+      console.log(chalkNetwork("SAVING NN ($)"
+        + " | " + networkObj.networkId
+      ));
+      cb0();
+    }
 
-        function(cb1) {
+    // async.whilst(
 
-          const file = nnId + ".json";
+    //   function() {
+    //     return (
+    //       (params.saveImmediate && (saveFileQueue.length < 10)) 
+    //       || (!params.saveImmediate && (saveCache.getStats().keys < 10))
+    //     );
+    //   },
 
-          setTimeout(function(){
-            if (params.saveImmediate) {
-              saveFileQueue.push({folder: folder, file: file, obj: networkObj });
-              console.log(chalkNetwork("SAVING NN (Q)"
-                + " | " + networkObj.networkId
-              ));
-              cb1();
-            }
-            else {
-              saveCache.set(file, {folder: folder, file: file, obj: networkObj });
-              console.log(chalkNetwork("SAVING NN ($)"
-                + " | " + networkObj.networkId
-              ));
-              cb1();
-            }
-          }, 1000);
+    //   function(cb1) {
 
+    //     const file = nnId + ".json";
 
-      }, function(err) {
+    //     setTimeout(function(){
 
-        cb0();
+    //       if (params.saveImmediate) {
+    //         saveFileQueue.push({folder: folder, file: file, obj: networkObj });
+    //         console.log(chalkNetwork("SAVING NN (Q)"
+    //           + " | " + networkObj.networkId
+    //         ));
+    //         cb1();
+    //       }
+    //       else {
+    //         saveCache.set(file, {folder: folder, file: file, obj: networkObj });
+    //         console.log(chalkNetwork("SAVING NN ($)"
+    //           + " | " + networkObj.networkId
+    //         ));
+    //         cb1();
+    //       }
 
-      });
+    //     }, 1000);
+
+    // }, function(err) {
+    //   cb0();
+    // });
 
 
   }, function(err) {
