@@ -189,8 +189,7 @@ function checkRateLimit(params, callback){
         statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
         statsObj.threeceeUser.twitterRateLimitRemaining = data.resources.users["/users/show/:id"].remaining;
         // statsObj.threeceeUser.twitterRateLimitResetAt = moment(1000*data.resources.users["/users/show/:id"].reset);
-        statsObj.threeceeUser.twitterRateLimitResetAt = moment();
-        statsObj.threeceeUser.twitterRateLimitResetAt.add(data.resources.users["/users/show/:id"].reset, "ms");
+        statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
 
@@ -209,8 +208,7 @@ function checkRateLimit(params, callback){
         statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
         statsObj.threeceeUser.twitterRateLimitRemaining = data.resources.users["/users/show/:id"].remaining;
         // statsObj.threeceeUser.twitterRateLimitResetAt = moment(1000*data.resources.users["/users/show/:id"].reset);
-        statsObj.threeceeUser.twitterRateLimitResetAt = moment();
-        statsObj.threeceeUser.twitterRateLimitResetAt.add(data.resources.users["/users/show/:id"].reset, "ms");
+        statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
         console.log(chalkLog("--- TWITTER RATE LIMIT"
@@ -228,8 +226,7 @@ function checkRateLimit(params, callback){
         statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
         statsObj.threeceeUser.twitterRateLimitRemaining = data.resources.users["/users/show/:id"].remaining;
         // statsObj.threeceeUser.twitterRateLimitResetAt = moment(1000*data.resources.users["/users/show/:id"].reset);
-        statsObj.threeceeUser.twitterRateLimitResetAt = moment();
-        statsObj.threeceeUser.twitterRateLimitResetAt.add(data.resources.users["/users/show/:id"].reset, "ms");
+        statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
         debug(chalkInfo("... NO TWITTER RATE LIMIT"
