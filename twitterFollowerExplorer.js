@@ -2624,6 +2624,7 @@ function showStats(options) {
       + "\nFETCH_ALL NEXT:     " + statsObj.fetchAllIntervalNext.format(compactDateTimeFormat)
       + "\nFETCH_ALL ELAPSED:  " + msToTime(statsObj.fetchAllIntervalTimeElapsed)
       + "\nFETCH_ALL REMAIN:   " + msToTime(statsObj.fetchAllIntervalRemain)
+      + "\nFETCH_ALL CYCLES:   " + statsObj.fetchCycle
     ));
 
     console.log(chalkLog("... RNT S"
