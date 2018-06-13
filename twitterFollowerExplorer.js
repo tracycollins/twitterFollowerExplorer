@@ -45,7 +45,7 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const DROPBOX_LIST_FOLDER_LIMIT = 50;
 // const DROPBOX_MAX_FILE_UPLOAD = 140 * ONE_MEGABYTE; // bytes
 
-const FETCH_ALL_INTERVAL = 120*ONE_MINUTE;
+const DEFAULT_FETCH_ALL_INTERVAL = 120*ONE_MINUTE;
 
 const FSM_TICK_INTERVAL = ONE_SECOND;
 const PROCESS_USER_QUEUE_INTERVAL = 1;
@@ -106,6 +106,7 @@ const HashMap = require("hashmap").HashMap;
 let statsObj = {};
 statsObj.fetchCycle = 0;
 statsObj.newBestNetwork = false;
+statsObj.fetchAllIntervalStartMoment = moment();
 
 let tfeChildHashMap = {};
 let fsm;
@@ -2517,8 +2518,9 @@ function initFetchAllInterval(interval) {
 
     console.log(chalkInfo("FETCH ALL READY | " + getTimeStamp()));
     fetchAllIntervalReady = true;
+    statsObj.fetchAllIntervalStartMoment = moment();
 
-  }, FETCH_ALL_INTERVAL);
+  }, interval);
 }
 
 function initFsmTickInterval(interval) {
@@ -2602,6 +2604,11 @@ function showStats(options) {
     statsObj.userReadyTransmitted = false;
     statsObj.userReadyAck = false ;
 
+    statsObj.fetchAllIntervalTimeElapsed = moment().diff(statsObj.fetchAllIntervalStartMoment);
+    statsObj.fetchAllIntervalRemain = configuration.fetchAllIntervalTime - statsObj.fetchAllIntervalTimeElapsed;
+    statsObj.fetchAllIntervalNext = moment(statsObj.fetchAllIntervalStartMoment);
+    statsObj.fetchAllIntervalNext.add(configuration.fetchAllIntervalTime, "ms");
+
     console.log(chalkLog("### FEM S"
       + " | N: " + getTimeStamp()
       + " | SERVER CONNECTED: " + statsObj.serverConnected
@@ -2612,6 +2619,11 @@ function showStats(options) {
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
       + " | PUQ: " + processUserQueue.length
       + " | FSM: " + fsm.getMachineState()
+      + "\nFETCH_ALL START:    " + statsObj.fetchAllIntervalStartMoment.format(compactDateTimeFormat)
+      + "\nFETCH_ALL INTERVAL: " + msToTime(configuration.fetchAllIntervalTime)
+      + "\nFETCH_ALL NEXT:     " + statsObj.fetchAllIntervalNext.format(compactDateTimeFormat)
+      + "\nFETCH_ALL ELAPSED:  " + msToTime(statsObj.fetchAllIntervalTimeElapsed)
+      + "\nFETCH_ALL REMAIN:   " + msToTime(statsObj.fetchAllIntervalRemain)
     ));
 
     console.log(chalkLog("... RNT S"
@@ -3471,6 +3483,7 @@ function initialize(cnf, callback) {
   if (debug.enabled) {
     console.log("\n%%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
   }
+
   cnf.processName = process.env.TFE_PROCESS_NAME || "twitterFollowerExplorer";
   cnf.targetServer = process.env.TFE_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
   cnf.forceInitRandomNetworks = process.env.TFE_FORCE_INIT_RANDOM_NETWORKS || DEFAULT_FORCE_INIT_RANDOM_NETWORKS ;
@@ -3480,6 +3493,9 @@ function initialize(cnf, callback) {
   cnf.minMatchRate = process.env.TFE_MIN_MATCH_RATE || DEFAULT_MIN_MATCH_RATE ;
   cnf.numRandomNetworks = process.env.TFE_NUM_RANDOM_NETWORKS || TFE_NUM_RANDOM_NETWORKS ;
   cnf.testMode = (process.env.TFE_TEST_MODE === "true") ? true : cnf.testMode;
+
+  cnf.fetchAllIntervalTime = process.env.TFE_FETCH_ALL_INTERVAL || DEFAULT_FETCH_ALL_INTERVAL;
+
   cnf.quitOnError = process.env.TFE_QUIT_ON_ERROR || false ;
   if (process.env.TFE_QUIT_ON_COMPLETE === "false") {
     cnf.quitOnComplete = false;
@@ -3497,33 +3513,48 @@ function initialize(cnf, callback) {
   cnf.forceImageAnalysis = process.env.TFE_FORCE_IMAGE_ANALYSIS || false ;
 
   console.log(chalkAlert("FORCE LANG ANALYSIS: " + cnf.forceLanguageAnalysis));
+
   cnf.twitterDefaultUser = process.env.TFE_TWITTER_DEFAULT_USER || TWITTER_DEFAULT_USER ;
   cnf.twitterUsers = process.env.TFE_TWITTER_USERS || [ "altthreecee02", "altthreecee01", "altthreecee00" ] ;
   cnf.statsUpdateIntervalTime = process.env.TFE_STATS_UPDATE_INTERVAL || ONE_MINUTE;
   cnf.twitterConfigFolder = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER || "/config/twitter";
   cnf.twitterConfigFile = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE || cnf.twitterDefaultUser + ".json";
   cnf.neuralNetworkFile = defaultNeuralNetworkFile;
+
   loadFile(dropboxConfigHostFolder, dropboxConfigFile, function(err, loadedConfigObj) {
+
     let commandLineArgs;
     let configArgs;
+
     if (!err) {
+
       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
+
       if (loadedConfigObj.TFE_UTIL_TARGET_SERVER !== undefined) {
         console.log("LOADED TFE_UTIL_TARGET_SERVER: " + loadedConfigObj.TFE_UTIL_TARGET_SERVER);
         cnf.targetServer = loadedConfigObj.TFE_UTIL_TARGET_SERVER;
       }
+
       if (loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS !== undefined) {
         console.log("LOADED TFE_FORCE_INIT_RANDOM_NETWORKS: " + loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS);
         cnf.forceInitRandomNetworks = loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS;
       }
+
+      if (loadedConfigObj.TFE_FETCH_ALL_INTERVAL !== undefined) {
+        console.log("LOADED TFE_FETCH_ALL_INTERVAL: " + loadedConfigObj.TFE_FETCH_ALL_INTERVAL);
+        cnf.fetchAllIntervalTime = loadedConfigObj.TFE_FETCH_ALL_INTERVAL;
+      }
+
       if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined) {
         console.log("LOADED TFE_BEST_NN_INCREMENTAL_UPDATE: " + loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE);
         cnf.bestNetworkIncrementalUpdate = loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE;
       }
+
       if (loadedConfigObj.TFE_TEST_MODE !== undefined) {
         console.log("LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
         cnf.testMode = loadedConfigObj.TFE_TEST_MODE;
       }
+
       if (loadedConfigObj.TFE_QUIT_ON_COMPLETE !== undefined) {
         console.log("LOADED TFE_QUIT_ON_COMPLETE: " + loadedConfigObj.TFE_QUIT_ON_COMPLETE);
         if ((loadedConfigObj.TFE_QUIT_ON_COMPLETE === true) || (loadedConfigObj.TFE_QUIT_ON_COMPLETE === "true")) {
@@ -3533,68 +3564,84 @@ function initialize(cnf, callback) {
           cnf.quitOnComplete = false;
         }
       }
+
       if (loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined) {
         console.log("LOADED TFE_HISTOGRAM_PARSE_DOMINANT_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN);
         cnf.histogramParseDominantMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN;
       }
+
       if (loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN !== undefined) {
         console.log("LOADED TFE_HISTOGRAM_PARSE_TOTAL_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN);
         cnf.histogramParseTotalMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN;
       }
+
       if (loadedConfigObj.TFE_MIN_SUCCESS_RATE !== undefined) {
         console.log("LOADED TFE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_MIN_SUCCESS_RATE);
         cnf.minSuccessRate = loadedConfigObj.TFE_MIN_SUCCESS_RATE;
       }
+
       if (loadedConfigObj.TFE_MIN_MATCH_RATE !== undefined) {
         console.log("LOADED TFE_MIN_MATCH_RATE: " + loadedConfigObj.TFE_MIN_MATCH_RATE);
         cnf.minMatchRate = loadedConfigObj.TFE_MIN_MATCH_RATE;
       }
+
       if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined) {
         console.log("LOADED TFE_NUM_RANDOM_NETWORKS: " + loadedConfigObj.TFE_NUM_RANDOM_NETWORKS);
         cnf.numRandomNetworks = loadedConfigObj.TFE_NUM_RANDOM_NETWORKS;
       }
+
       if (loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS !== undefined) {
         console.log("LOADED TFE_ENABLE_LANG_ANALYSIS: " + loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS);
         cnf.enableLanguageAnalysis = loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS;
       }
+
       if (loadedConfigObj.TFE_FORCE_LANG_ANALYSIS !== undefined) {
         console.log("LOADED TFE_FORCE_LANG_ANALYSIS: " + loadedConfigObj.TFE_FORCE_LANG_ANALYSIS);
         cnf.forceLanguageAnalysis = loadedConfigObj.TFE_FORCE_LANG_ANALYSIS;
       }
+
       if (loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS !== undefined) {
         console.log("LOADED TFE_FORCE_IMAGE_ANALYSIS: " + loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS);
         cnf.forceImageAnalysis = loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS;
       }
+
       if (loadedConfigObj.TFE_ENABLE_STDIN !== undefined) {
         console.log("LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_ENABLE_STDIN);
         cnf.enableStdin = loadedConfigObj.TFE_ENABLE_STDIN;
       }
+
       if (loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID  !== undefined) {
         console.log("LOADED TFE_NEURAL_NETWORK_FILE_PID: " + loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID);
         cnf.loadNeuralNetworkID = loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID;
       }
+
       if (loadedConfigObj.TFE_USER_DB_CRAWL !== undefined) {
         console.log("LOADED TFE_USER_DB_CRAWL: " + loadedConfigObj.TFE_USER_DB_CRAWL);
         cnf.userDbCrawl = loadedConfigObj.TFE_USER_DB_CRAWL;
       }
+
       if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER !== undefined) {
         console.log("LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER: "
           + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER));
         cnf.twitterConfigFolder = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER;
       }
+
       if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE !== undefined) {
         console.log("LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE: "
           + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE));
         cnf.twitterConfigFile = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE;
       }
+
       if (loadedConfigObj.TFE_TWITTER_USERS !== undefined) {
         console.log("LOADED TFE_TWITTER_USERS: " + jsonPrint(loadedConfigObj.TFE_TWITTER_USERS));
         cnf.twitterUsers = loadedConfigObj.TFE_TWITTER_USERS;
       }
+
       if (loadedConfigObj.TFE_TWITTER_DEFAULT_USER !== undefined) {
         console.log("LOADED TFE_TWITTER_DEFAULT_USER: " + jsonPrint(loadedConfigObj.TFE_TWITTER_DEFAULT_USER));
         cnf.twitterDefaultUser = loadedConfigObj.TFE_TWITTER_DEFAULT_USER;
       }
+
       if (loadedConfigObj.TFE_KEEPALIVE_INTERVAL !== undefined) {
         console.log("LOADED TFE_KEEPALIVE_INTERVAL: " + loadedConfigObj.TFE_KEEPALIVE_INTERVAL);
         cnf.keepaliveInterval = loadedConfigObj.TFE_KEEPALIVE_INTERVAL;
@@ -4451,7 +4498,7 @@ initialize(configuration, function(err, cnf) {
             randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
               console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
 
-              initFetchAllInterval(FETCH_ALL_INTERVAL);
+              initFetchAllInterval(configuration.fetchAllIntervalTime);
 
               setTimeout(function() {
                 fsm.fsm_init();
