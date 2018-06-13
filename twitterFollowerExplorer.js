@@ -2434,6 +2434,8 @@ const fsmStates = {
 
           cb();
 
+        }, function(){
+          histogramsSavedFlag = true;
         });
 
         loadedNetworksFlag = false;
