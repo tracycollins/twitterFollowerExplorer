@@ -454,7 +454,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     arrayOfArrays[index] = networkOutputObj[nnId].output;
 
     const nnOutput = networkOutputObj[nnId].output;
-    const nn = networksHashMap.get(nnId);
+    let nn = networksHashMap.get(nnId);
 
     if (statsObj.loadedNetworks[nnId] === undefined) {
       debug(chalkAlert("INIT statsObj.loadNetworks " + nnId));
@@ -522,10 +522,15 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
       statsObj.loadedNetworks[nnId].matchRate = 100.0 * statsObj.loadedNetworks[nnId].match / statsObj.loadedNetworks[nnId].total;
       statsObj.allTimeLoadedNetworks[nnId].matchRate = 100.0 * statsObj.allTimeLoadedNetworks[nnId].match / statsObj.allTimeLoadedNetworks[nnId].total;
+
+      nn.matchRate = statsObj.loadedNetworks[nnId].matchRate;
+      
     }
     else {
       statsObj.loadedNetworks[nnId].matchFlag = "---";
     }
+
+    networksHashMap.set(nnId, nn);
 
     statsTextObj[nnId] = {};
     statsTextObj[nnId] = [
