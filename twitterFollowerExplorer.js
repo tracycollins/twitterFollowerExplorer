@@ -3824,6 +3824,7 @@ function updateNetworkStats(params, callback) {
         else if (nnDb) {
           nnDb.matchRate = bnhmObj.networkObj.matchRate;
           nnDb.overallMatchRate = bnhmObj.networkObj.overallMatchRate;
+          nnDb.markModified("overallMatchRate");
           nnDb.save()
           .catch(function(err){
             console.log(chalkError("NNT | *** ERROR SAVE NN TO DB" 
@@ -3833,8 +3834,9 @@ function updateNetworkStats(params, callback) {
           });
         }
         else {
-          new NeuralNetwork(bnhmObj.networkObj)
-          .save()
+          let newNnDb = new NeuralNetwork(bnhmObj.networkObj);
+          newNnDb.markModified("overallMatchRate");
+          newNnDb.save()
           .catch(function(err){
             console.log(chalkError("NNT | *** ERROR SAVE NN TO DB" 
               + " | NID: " + bnhmObj.networkObj.networkId
