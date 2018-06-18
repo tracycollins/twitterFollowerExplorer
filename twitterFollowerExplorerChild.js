@@ -873,56 +873,61 @@ process.on("message", function(m) {
 
     case "FOLLOW":
 
-      twitClient.post(
+      if (twitClient) {
 
-        "friendships/create", {screen_name: m.user.screenName}, 
+        twitClient.post(
 
-        function createFriend(err, data, response){
-          if (err) {
-            console.log(chalkError("TFC | FOLLOW ERROR"
-              + " | @" + configuration.threeceeUser
-              + " | " + err
-            ));
+          "friendships/create", {screen_name: m.user.screenName}, 
+
+          function createFriend(err, data, response){
+            if (err) {
+              console.log(chalkError("TFC | FOLLOW ERROR"
+                + " | @" + configuration.threeceeUser
+                + " | " + err
+              ));
+            }
+            else {
+              debug("data\n" + jsonPrint(data));
+              debug("response\n" + jsonPrint(response));
+
+              console.log(chalkInfo("TFC | +++ FOLLOW"
+                + " | 3C: @" + configuration.threeceeUser
+                + " | NID: " + m.user.userId
+                + " | @" + m.user.screenName.toLowerCase()
+              ));
+            }
           }
-          else {
-            debug("data\n" + jsonPrint(data));
-            debug("response\n" + jsonPrint(response));
-
-            console.log(chalkInfo("TFC | +++ FOLLOW"
-              + " | 3C: @" + configuration.threeceeUser
-              + " | NID: " + m.user.userId
-              + " | @" + m.user.screenName.toLowerCase()
-            ));
-          }
-        }
-      );
+        );
+      }
     break;
 
     case "UNFOLLOW":
 
-      twitClient.post(
+      if (twitClient) {
+        twitClient.post(
 
-        "friendships/destroy", {user_id: m.userId}, 
+          "friendships/destroy", {user_id: m.userId}, 
 
-        function destroyFriend(err, data, response){
-          if (err) {
-            console.log(chalkError("UNFOLLOW ERROR"
-              + " | @" + configuration.threeceeUser
-              + " | " + err
-            ));
+          function destroyFriend(err, data, response){
+            if (err) {
+              console.log(chalkError("UNFOLLOW ERROR"
+                + " | @" + configuration.threeceeUser
+                + " | " + err
+              ));
+            }
+            else {
+              debug("data\n" + jsonPrint(data));
+              debug("response\n" + jsonPrint(response));
+
+              console.log(chalkInfo("=X= UNFOLLOW"
+                + " | 3C: @" + configuration.threeceeUser
+                + " | NID: " + m.userId
+                + " | @" + m.screenName.toLowerCase()
+              ));
+            }
           }
-          else {
-            debug("data\n" + jsonPrint(data));
-            debug("response\n" + jsonPrint(response));
-
-            console.log(chalkInfo("=X= UNFOLLOW"
-              + " | 3C: @" + configuration.threeceeUser
-              + " | NID: " + m.userId
-              + " | @" + m.screenName.toLowerCase()
-            ));
-          }
-        }
-      );
+        );
+      }
     break;
 
     case "QUIT":
