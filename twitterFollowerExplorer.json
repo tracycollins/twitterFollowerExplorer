@@ -14,7 +14,7 @@
       "GCLOUD_PROJECT": "graphic-tangent-627",
       "GOOGLE_PROJECT": "graphic-tangent-627",
       "GOOGLE_PROJECT_ID": "graphic-tangent-627",
-      "GOOGLE_APPLICATION_CREDENTIALS": "/home/tc/Dropbox/Apps/wordAssociation/config/googleCloud/wordAssociation-a160a8a849e7.json",
+      "GOOGLE_APPLICATION_CREDENTIALS": "/home/tc/Dropbox/Apps/wordAssociation/config/googleCloud/threeceeTwitterStream-cd581ff76075.json",
       "TFE_UTIL_TARGET_SERVER": "http://word.threeceelabs.com/util",
       "TFE_TWITTER_DEFAULT_USER": "altthreecee00",
       "TFE_FETCH_ALL_INTERVAL": 6000000,
