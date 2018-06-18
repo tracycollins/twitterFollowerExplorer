@@ -2486,7 +2486,12 @@ const fsmStates = {
 
               globalHistograms = {};
 
-              fsm.fsm_init();
+              if (configuration.quitOnComplete) {
+                quit({source: "QUIT_ON_COMPLETE"});
+              }
+              else {
+                fsm.fsm_init();
+              }
 
             });
           }
