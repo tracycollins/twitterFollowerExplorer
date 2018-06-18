@@ -10,7 +10,6 @@
     "env": {
       "FORCE_COLOR": 1,
       "NODE_ENV": "production",
-      "TFE_QUIT_ON_COMPLETE": true,
       "GCLOUD_PROJECT": "graphic-tangent-627",
       "GOOGLE_PROJECT": "graphic-tangent-627",
       "GOOGLE_PROJECT_ID": "graphic-tangent-627",
