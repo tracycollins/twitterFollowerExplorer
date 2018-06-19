@@ -88,14 +88,10 @@ const fs = require("fs");
 const debug = require("debug")("tfe");
 const NodeCache = require("node-cache");
 const util = require("util");
-// const pick = require("object.pick");
-// const omit = require("object.omit");
 const deepcopy = require("deep-copy");
 const randomItem = require("random-item");
 const async = require("async");
 const Stately = require("stately.js");
-// const padStart = require("lodash.padstart");
-// const padEnd = require("lodash.padend");
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
@@ -115,7 +111,7 @@ let fetchAllInterval;
 let fetchAllIntervalReady = false;
 
 let bestNetworkHashMap = new HashMap();
-let trainingSetHashMap = new HashMap();
+// let trainingSetHashMap = new HashMap();
 
 let maxInputHashMap = {};
 
@@ -475,7 +471,9 @@ const TFE_RUN_ID = hostname
 statsObj.runId = TFE_RUN_ID;
 
 let twitterUserHashMap = {};
+
 let defaultNeuralNetworkFile = "neuralNetwork.json";
+
 configuration.neuralNetworkFile = defaultNeuralNetworkFile;
 
 // ==================================================================
@@ -501,6 +499,7 @@ let localBestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/be
 let bestNetworkFolder = (hostname === "google") ? "/config/utility/best/neuralNetworks" : localBestNetworkFolder;
 
 const defaultTrainingSetFolder = dropboxConfigDefaultFolder + "/trainingSets";
+const defaultMaxInputHashmapFile = "maxInputHashMap.json";
 
 const localHistogramsFolder = dropboxConfigHostFolder + "/histograms";
 const defaultHistogramsFolder = dropboxConfigDefaultFolder + "/histograms";
@@ -726,131 +725,33 @@ function loadFile(path, file, callback) {
   }
 }
 
-function loadTrainingSetsDropboxFolder(folder, callback) {
+function loadMaxInputDropbox(folder, file, callback) {
 
-  console.log(chalkNetwork("TFE | ... LOADING DROPBOX TRAINING SETS FOLDER | " + folder));
+  console.log(chalkNetwork("TFE | ... LOADING DROPBOX MAX INPUT HASHMAP | " + folder + "/" + file));
 
   let options = {path: folder};
 
-  dropboxClient.filesListFolder(options)
-  .then(function(response) {
-
-    debug(chalkLog("TFE | DROPBOX LIST FOLDER"
-      + " | " + options.path
-      + " | NUM ENTRIES: " + response.entries.length
-    ));
-
-    async.eachSeries(response.entries, function(entry, cb) {
-
-      console.log(chalkLog("TFE | DROPBOX TRAINING SET FOUND"
-        + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
-        + " | " + entry.name
-      ));
-
-      if (!entry.name.startsWith("globalTrainingSet")) {
-        console.log("TFE | ... IGNORE DROPBOX TRAINING SETS FOLDER FILE: " + entry.name);
-        return(cb());
-      }
-
-      if (!entry.name.endsWith(".json")) {
-        console.log("TFE | ... IGNORE DROPBOX TRAINING SETS FOLDER FILE: " + entry.name);
-        return(cb());
-      }
-
-      const entryNameArray = entry.name.split(".");
-      const trainingSetId = entryNameArray[0].replace("trainingSet_", "");
-
-      if (trainingSetHashMap.has(trainingSetId)) {
-
-        let curTrainingSetObj = trainingSetHashMap.get(trainingSetId);
-        let oldContentHash = false;
-
-        if ((curTrainingSetObj.entry !== undefined) && (curTrainingSetObj.entry.content_hash !== undefined)) {
-          oldContentHash = curTrainingSetObj.entry.content_hash;
-        }
-
-        if (oldContentHash !== entry.content_hash) {
-          
-          console.log(chalkInfo("TFE | DROPBOX TRAINING SET CONTENT CHANGE"
-            + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
-            + " | TRAINING SET ID: " + trainingSetId
-            + " | " + entry.name
-            // + "\nCUR HASH: " + entry.content_hash
-            // + "\nOLD HASH: " + oldContentHash
-          ));
-
-          loadFile(folder, entry.name, function(err, trainingSetObj) {
-            if (err) {
-              console.log(chalkError("TFE | DROPBOX TRAINING SET LOAD FILE ERROR: " + err));
-              cb();
-            }
-            else if ((trainingSetObj === undefined) || !trainingSetObj) {
-              console.log(chalkError("TFE | DROPBOX TRAINING SET LOAD FILE ERROR | JSON UNDEFINED ??? "));
-              cb();
-            }
-            else {
-
-              maxInputHashMap = {};
-              maxInputHashMap = deepcopy(trainingSetObj.maxInputHashMap);
-
-              trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry} );
-
-              console.log(chalkInfo("TFE | DROPBOX TRAINING SET"
-                + " [" + trainingSetHashMap.count() + "]"
-                + " | TRAINING SET SIZE: " + trainingSetObj.trainingSet.meta.setSize
-                + " | " + entry.name
-                + " | " + trainingSetObj.trainingSetId
-              ));
-
-              cb();
-            }
-          });
-        }
-        else{
-          console.log(chalkLog("TFE | DROPBOX TRAINING SET CONTENT SAME  "
-            + " | " + entry.name
-            + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
-          ));
-          cb();
-        }
-      }
-      else {
-        loadFile(folder, entry.name, function(err, trainingSetObj) {
-          if (err) {
-            console.log(chalkError("TFE | DROPBOX TRAINING SET LOAD FILE ERROR: " + err));
-            cb();
-          }
-          else if ((trainingSetObj === undefined) || !trainingSetObj) {
-            console.log(chalkError("TFE | DROPBOX TRAINING SET LOAD FILE ERROR | JSON UNDEFINED ??? "));
-            cb();
-          }
-          else {
-            maxInputHashMap = {};
-            maxInputHashMap = deepcopy(trainingSetObj.maxInputHashMap);
-            trainingSetHashMap.set(trainingSetObj.trainingSetId, {entry: entry} );
-            console.log(chalkNetwork("TFE | LOADED DROPBOX TRAINING SET"
-              + " [" + trainingSetHashMap.count() + "]"
-              + " | TRAINING SET SIZE: " + trainingSetObj.trainingSet.meta.setSize
-              + " | " + folder + "/" + entry.name
-              + " | " + trainingSetObj.trainingSetId
-              // + "\n" + jsonPrint(trainingSetObj.entry)
-              // + " | META\n" + jsonPrint(trainingSetObj.trainingSet.meta)
-            ));
-            cb();
-          }
-        });
-      }
-    }, function() {
-      console.log(chalkNetwork("TFE | =*=*= END LOAD DROPBOX TRAINING SETS"
-        + " | " + trainingSetHashMap.count() + " TRAINING SETS IN HASHMAP"
-      ));
+  loadFile(folder, file, function(err, maxInputHashMapObj) {
+    if (err) {
+      console.log(chalkError("TFE | DROPBOX MAX INPUT HASHMAP FILE ERROR: " + err));
+      if (callback !== undefined) { callback(err); }
+    }
+    else if ((maxInputHashMapObj === undefined) || !maxInputHashMapObj) {
+      console.log(chalkError("TFE | DROPBOX MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED ??? "));
       if (callback !== undefined) { callback(null); }
-    });
-  })
-  .catch(function(err) {
-    console.log(chalkError("TFE | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
-    if (callback !== undefined) { callback(err); }
+    }
+    else {
+
+      maxInputHashMap = {};
+      maxInputHashMap = deepcopy(maxInputHashMapObj);
+
+      console.log(chalkInfo("TFE | LOADED DROPBOX MAX INPUT HASHMAP"
+      ));
+
+      if (callback !== undefined) { callback(null); }
+    }
   });
+
 }
 
 function updateGlobalHistograms(params, callback) {
@@ -2319,7 +2220,7 @@ const fsmStates = {
           // debug("loadBestNeuralNetworkFile networkObj\n" + jsonPrint(networkObj));
           console.log("FETCH_ALL | loadBestNeuralNetworkFile DONE");
 
-          loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function() {
+          loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function() {
 
             if (randomNetworkTree && (randomNetworkTree !== undefined)) {
 
@@ -2500,6 +2401,10 @@ const fsmStates = {
               clearInterval(waitFileSaveInterval);
 
               globalHistograms = {};
+              bestNetworkHashMap.clear();
+              availableNeuralNetHashMap = {};
+              // trainingSetHashMap.clear();
+              maxInputHashMap = {};
 
               if (configuration.quitOnComplete) {
                 quit({source: "QUIT_ON_COMPLETE"});
@@ -4580,7 +4485,13 @@ initialize(configuration, function(err, cnf) {
 
         initSocket(cnf);
 
-        loadTrainingSetsDropboxFolder(defaultTrainingSetFolder, function() {
+        loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
+
+          if (err) {
+            console.log("LOAD MAX INPUTS HASHMAP FILE ERROR: " + err);
+            quit("LOAD MAX INPUTS HASHMAP FILE ERROR");
+            return;
+          }
 
           if (randomNetworkTree && (randomNetworkTree !== undefined)) {
 

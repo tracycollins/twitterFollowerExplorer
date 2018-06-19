@@ -14,6 +14,7 @@ const TEST_MODE_FETCH_COUNT = process.env.TEST_MODE_FETCH_COUNT;
 const TEST_MODE_TOTAL_FETCH = process.env.TEST_MODE_TOTAL_FETCH;  // total twitter user fetch count
 
 const chalk = require("chalk");
+
 const chalkTwitter = chalk.blue;
 const chalkTwitterBold = chalk.bold.blue;
 const chalkError = chalk.bold.red;
