@@ -626,6 +626,7 @@ function updateBestNetworkStats(networkObj) {
 
 
   statsObj.bestNetwork.networkId = networkObj.networkId;
+  statsObj.bestNetwork.network = networkObj.network;
   statsObj.bestNetwork.networkType = networkObj.networkType;
   statsObj.bestNetwork.successRate = networkObj.successRate;
   statsObj.bestNetwork.matchRate = networkObj.matchRate;
@@ -2406,6 +2407,7 @@ const fsmStates = {
 
               globalHistograms = {};
               bestNetworkHashMap.clear();
+              bestNetworkHashMap.set(statsObj.bestNetwork.networkId, statsObj.bestNetwork);
               availableNeuralNetHashMap = {};
               // trainingSetHashMap.clear();
               maxInputHashMap = {};
