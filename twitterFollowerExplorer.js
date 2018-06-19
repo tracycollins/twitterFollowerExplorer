@@ -3425,12 +3425,14 @@ function initialize(cnf, callback) {
   cnf.fetchAllIntervalTime = process.env.TFE_FETCH_ALL_INTERVAL || DEFAULT_FETCH_ALL_INTERVAL;
 
   cnf.quitOnError = process.env.TFE_QUIT_ON_ERROR || false ;
+
   if (process.env.TFE_QUIT_ON_COMPLETE === "false") {
     cnf.quitOnComplete = false;
   }
-  if ((process.env.TFE_QUIT_ON_COMPLETE === true) || (process.env.TFE_QUIT_ON_COMPLETE === "true")) {
+  else if ((process.env.TFE_QUIT_ON_COMPLETE === true) || (process.env.TFE_QUIT_ON_COMPLETE === "true")) {
     cnf.quitOnComplete = true;
   }
+  
   cnf.enableStdin = process.env.TFE_ENABLE_STDIN || true ;
   if (process.env.TFE_USER_DB_CRAWL && (process.env.TFE_USER_DB_CRAWL === "true")) {
     cnf.userDbCrawl = true;
