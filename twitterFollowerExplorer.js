@@ -2406,11 +2406,11 @@ const fsmStates = {
               clearInterval(waitFileSaveInterval);
 
               globalHistograms = {};
+              availableNeuralNetHashMap = {};
+              maxInputHashMap = {};
+
               bestNetworkHashMap.clear();
               bestNetworkHashMap.set(statsObj.bestNetwork.networkId, statsObj.bestNetwork);
-              availableNeuralNetHashMap = {};
-              // trainingSetHashMap.clear();
-              maxInputHashMap = {};
 
               if (configuration.quitOnComplete) {
                 quit({source: "QUIT_ON_COMPLETE"});
