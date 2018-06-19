@@ -1378,10 +1378,14 @@ function runEnable(displayArgs) {
 }
 
 function updateUserCategoryStats(user, callback) {
+
   return new Promise(function() {
+
     let catObj = {};
+
     catObj.manual = false;
     catObj.auto = false;
+
     async.parallel({
       category: function(cb) {
         if (user.category) {
@@ -2719,35 +2723,50 @@ function saveFile (params, callback){
 }
 
 function initProcessUserQueueInterval(interval) {
+
   let mObj = {};
   let tcUser;
+
   console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + PROCESS_USER_QUEUE_INTERVAL + " MS"));
+
   clearInterval(processUserQueueInterval);
+
   processUserQueueInterval = setInterval(function () {
+
     if (processUserQueueReady && processUserQueue.length > 0) {
+
       processUserQueueReady = false;
       mObj = processUserQueue.shift();
       tcUser = mObj.threeceeUser;
       twitterUserHashMap[tcUser].friends.add(mObj.friend.id_str);
+
       processUser(tcUser, mObj.friend, function(err, user) {
+
         if (err) {
           console.trace("processUser ERROR");
           processUserQueueReady = true;
           return;
         }
+
         statsObj.users.grandTotalFriendsProcessed += 1;
         statsObj.users.totalFriendsProcessed += 1;
         statsObj.users.totalPercentProcessed = 100*statsObj.users.totalFriendsProcessed/statsObj.users.totalFriendsCount;
+
         if (statsObj.user[tcUser] === undefined) {
           statsObj.user[tcUser].friendsCount = 1;
           statsObj.user[tcUser].friendsProcessed = 0;
           statsObj.user[tcUser].percentProcessed = 0;
         }
+
         statsObj.user[tcUser].friendsProcessed += 1;
         statsObj.user[tcUser].percentProcessed = 100*statsObj.user[tcUser].friendsProcessed/statsObj.user[tcUser].friendsCount;
+
         debug("PROCESSED USER\n" + jsonPrint(user));
+
         if (configuration.testMode || (statsObj.user[tcUser].friendsProcessed % 50 === 0)) {
+
           statsObj.user[tcUser].friendsProcessElapsed = moment().diff(statsObj.user[tcUser].friendsProcessStart);
+
           console.log(chalkBlue("<FRND PRCSSD"
             + " [ Q: " + processUserQueue.length + " ]"
             + " | @" + tcUser
@@ -2766,7 +2785,9 @@ function initProcessUserQueueInterval(interval) {
             + " | USR PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
             + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
           ));
+
         }
+
         user.save()
         .then(function(updatedUser) {
           processUserQueueReady = true;
@@ -3432,7 +3453,7 @@ function initialize(cnf, callback) {
   else if ((process.env.TFE_QUIT_ON_COMPLETE === true) || (process.env.TFE_QUIT_ON_COMPLETE === "true")) {
     cnf.quitOnComplete = true;
   }
-  
+
   cnf.enableStdin = process.env.TFE_ENABLE_STDIN || true ;
   if (process.env.TFE_USER_DB_CRAWL && (process.env.TFE_USER_DB_CRAWL === "true")) {
     cnf.userDbCrawl = true;
