@@ -743,7 +743,7 @@ function loadMaxInputDropbox(folder, file, callback) {
     else {
 
       maxInputHashMap = {};
-      maxInputHashMap = deepcopy(maxInputHashMapObj);
+      maxInputHashMap = deepcopy(maxInputHashMapObj.maxInputHashMap);
 
       console.log(chalkInfo("TFE | LOADED DROPBOX MAX INPUT HASHMAP"
       ));
