@@ -727,36 +727,50 @@ function loadFile(path, file, callback) {
 }
 
 function loadTrainingSetsDropboxFolder(folder, callback) {
+
   console.log(chalkNetwork("TFE | ... LOADING DROPBOX TRAINING SETS FOLDER | " + folder));
+
   let options = {path: folder};
+
   dropboxClient.filesListFolder(options)
   .then(function(response) {
+
     debug(chalkLog("TFE | DROPBOX LIST FOLDER"
       + " | " + options.path
       + " | NUM ENTRIES: " + response.entries.length
     ));
+
     async.eachSeries(response.entries, function(entry, cb) {
+
       console.log(chalkLog("TFE | DROPBOX TRAINING SET FOUND"
         + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
         + " | " + entry.name
       ));
+
       if (!entry.name.startsWith("globalTrainingSet")) {
         console.log("TFE | ... IGNORE DROPBOX TRAINING SETS FOLDER FILE: " + entry.name);
         return(cb());
       }
+
       if (!entry.name.endsWith(".json")) {
         console.log("TFE | ... IGNORE DROPBOX TRAINING SETS FOLDER FILE: " + entry.name);
         return(cb());
       }
+
       const entryNameArray = entry.name.split(".");
       const trainingSetId = entryNameArray[0].replace("trainingSet_", "");
+
       if (trainingSetHashMap.has(trainingSetId)) {
+
         let curTrainingSetObj = trainingSetHashMap.get(trainingSetId);
         let oldContentHash = false;
+
         if ((curTrainingSetObj.entry !== undefined) && (curTrainingSetObj.entry.content_hash !== undefined)) {
           oldContentHash = curTrainingSetObj.entry.content_hash;
         }
+
         if (oldContentHash !== entry.content_hash) {
+          
           console.log(chalkInfo("TFE | DROPBOX TRAINING SET CONTENT CHANGE"
             + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
             + " | TRAINING SET ID: " + trainingSetId
@@ -764,6 +778,7 @@ function loadTrainingSetsDropboxFolder(folder, callback) {
             // + "\nCUR HASH: " + entry.content_hash
             // + "\nOLD HASH: " + oldContentHash
           ));
+
           loadFile(folder, entry.name, function(err, trainingSetObj) {
             if (err) {
               console.log(chalkError("TFE | DROPBOX TRAINING SET LOAD FILE ERROR: " + err));
