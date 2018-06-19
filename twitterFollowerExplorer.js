@@ -2409,8 +2409,10 @@ const fsmStates = {
               availableNeuralNetHashMap = {};
               maxInputHashMap = {};
 
+              const bnwObj = bestNetworkHashMap.get(statsObj.bestNetwork.networkId);
+              
               bestNetworkHashMap.clear();
-              bestNetworkHashMap.set(statsObj.bestNetwork.networkId, statsObj.bestNetwork);
+              bestNetworkHashMap.set(statsObj.bestNetwork.networkId, bnwObj);
 
               if (configuration.quitOnComplete) {
                 quit({source: "QUIT_ON_COMPLETE"});
