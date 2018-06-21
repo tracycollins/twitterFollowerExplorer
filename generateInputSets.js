@@ -36,6 +36,16 @@ const histogramParser = require("@threeceelabs/histogram-parser");
 
 const os = require("os");
 const util = require("util");
+
+// const Parser = require("stream-json/Parser");
+// const stream = new Parser({packValues: true});
+// const StreamObject = require("stream-json/streamers/StreamObject");
+
+const JSONStream = require("JSONStream");
+const stream = JSONStream.parse("$*.$*.$*"); //rows, ANYTHING, doc
+// const stream = JSONStream.parse([true, {emitKey: true}]) //rows, ANYTHING, doc
+const es = require("event-stream");
+
 const deepcopy = require("deep-copy");
 const randomFloat = require("random-float");
 const randomInt = require("random-int");
@@ -52,6 +62,29 @@ const chalkError = chalk.bold.red;
 const chalkAlert = chalk.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
+
+
+const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
+const slackChannel = "#gis";
+const Slack = require("slack-node");
+
+let slack = new Slack(slackOAuthAccessToken);
+
+function slackPostMessage(channel, text, callback) {
+  debug(chalkInfo("SLACK POST: " + text));
+  slack.api("chat.postMessage", {
+    text: text,
+    channel: channel
+  }, function(err, response) {
+    if (err) {
+      console.log(chalkError("*** SLACK POST MESSAGE ERROR\n" + err));
+    }
+    else {
+      debug(response);
+    }
+    if (callback !== undefined) { callback(err, response); }
+  });
+}
 
 let saveFileQueue = [];
 let saveFileQueueInterval;
@@ -127,6 +160,8 @@ inputTypes.forEach(function(type){
 });
 
 let configuration = {};
+
+configuration.testMode = false;
 
 configuration.maxIterations = DEFAULT_MAX_ITERATIONS;
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
@@ -302,50 +337,50 @@ function showStats(options){
   }
 }
 
-function printResultsTable(){
+// function printResultsTable(){
 
-  let tableArray = [];
+//   let tableArray = [];
 
-  tableArray.push([
-    "I",
-    "INPUTS",
-    "DOM MIN",
-    "TOT MIN",
-    "EMOJI",
-    "HASHTAGS",
-    "MENTIONS",
-    "URLS",
-    "IMAGES",
-    "WORDS"
-  ]);
+//   tableArray.push([
+//     "I",
+//     "INPUTS",
+//     "DOM MIN",
+//     "TOT MIN",
+//     "EMOJI",
+//     "HASHTAGS",
+//     "MENTIONS",
+//     "URLS",
+//     "IMAGES",
+//     "WORDS"
+//   ]);
 
-  async.eachOfSeries(resultsArray, function(inputsObj, i, cb){
+//   async.eachOfSeries(resultsArray, function(inputsObj, i, cb){
 
-    tableArray.push([
-      i,
-      inputsObj.meta.numInputs,
-      inputsObj.meta.histogramParseDominantMin.toFixed(5),
-      inputsObj.meta.histogramParseTotalMin.toFixed(5),
-      inputsObj.meta.type.emoji,
-      inputsObj.meta.type.hashtags,
-      inputsObj.meta.type.mentions,
-      inputsObj.meta.type.urls,
-      inputsObj.meta.type.images,
-      inputsObj.meta.type.words
-    ]);
+//     tableArray.push([
+//       i,
+//       inputsObj.meta.numInputs,
+//       inputsObj.meta.histogramParseDominantMin.toFixed(5),
+//       inputsObj.meta.histogramParseTotalMin.toFixed(5),
+//       inputsObj.meta.type.emoji,
+//       inputsObj.meta.type.hashtags,
+//       inputsObj.meta.type.mentions,
+//       inputsObj.meta.type.urls,
+//       inputsObj.meta.type.images,
+//       inputsObj.meta.type.words
+//     ]);
 
-    async.setImmediate(function() { cb(); });
+//     async.setImmediate(function() { cb(); });
 
-  }, function(){
-    console.log(chalk.blue(
-        "\n-------------------------------------------------------------------------------"
-      + "\nINPUTS" 
-      + "\n-------------------------------------------------------------------------------\n"
-      + table(tableArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r", "r", "r"] })
-      + "\n-------------------------------------------------------------------------------"
-    ));
-  });
-}
+//   }, function(){
+//     console.log(chalk.blue(
+//         "\n-------------------------------------------------------------------------------"
+//       + "\nINPUTS" 
+//       + "\n-------------------------------------------------------------------------------\n"
+//       + table(tableArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r", "r", "r"] })
+//       + "\n-------------------------------------------------------------------------------"
+//     ));
+//   });
+// }
 
 const sortedObjectValues = function(params) {
 
@@ -378,6 +413,8 @@ const sortedObjectValues = function(params) {
 
 function generateInputSets3(params, callback) {
 
+  // console.log("generateInputSets3 | params\n" + jsonPrint(params));
+
   let tableArray = [];
   let iteration = 0;
 
@@ -402,7 +439,7 @@ function generateInputSets3(params, callback) {
   newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
   newInputsObj.meta = {};
   newInputsObj.meta.type = {};
-  newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
+  // newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
   newInputsObj.meta.numInputs = 0;
   newInputsObj.meta.histogramParseTotalMin = totalMin;
   newInputsObj.meta.histogramParseDominantMin = dominantMin;
@@ -412,7 +449,6 @@ function generateInputSets3(params, callback) {
   inTypes.sort();
 
   console.log(chalkAlert("INPUT TYPES: " + inTypes));
-
 
   tableArray.push([
     "TYPE",
@@ -438,10 +474,7 @@ function generateInputSets3(params, callback) {
   let prevTotalMinStep = totalMinStep;
 
   let prevInputs = [];
-
   let prevNumInputs = 0;
-
-  // let previousParamsHistory = [];
   let inputsHistory = [];
 
   let overMaxNumInputs = Infinity;
@@ -504,15 +537,6 @@ function generateInputSets3(params, callback) {
 
         function(cb1){
 
-          // previousParamsHistory.push({
-          //   inputs: newInputsObj.inputs[type],
-          //   totalMin: hpParams.options.globalTotalMin,
-          //   dominantMin: hpParams.options.globalDominantMin,
-          //   numInputs: newInputsObj.meta.type[type].numInputs,
-          //   overMaxNumInputs: overMaxNumInputs,
-          //   underMinNumInputs: underMinNumInputs
-          // });
-
           hpParams.options.globalTotalMin = totalMin;
           hpParams.options.globalDominantMin = dominantMin;
 
@@ -557,19 +581,6 @@ function generateInputSets3(params, callback) {
 
             if ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
               && (prevNumInputs < MAX_NUM_INPUTS_PER_TYPE)) {
-
-              // overMaxNumInputs = newInputsObj.meta.type[type].numInputs;
-              // underMinNumInputs = prevNumInputs;
-              // lastParams = previousParamsHistory.pop();
-              // secondToLastParams = previousParamsHistory.pop();
-
-              // newInputsObj.inputs[type] = secondToLastParams.inputs;
-              // newInputsObj.meta.type[type].numInputs = secondToLastParams.numInputs;
-              // newInputsObj.meta.type[type].dominantMin = secondToLastParams.dominantMin;
-              // newInputsObj.meta.type[type].totalMin = secondToLastParams.totalMin;
-
-              // dominantMin = secondToLastParams.dominantMin;
-              // totalMin = parseInt(secondToLastParams.totalMin);
 
               spinner.info("*** GEN TYPE"
                 + " [" + iteration + "]"
@@ -706,6 +717,12 @@ function generateInputSets3(params, callback) {
         + table(tableArray, { align: [ "l", "r", "r", "r", "r", "r"] })
         + "\n-------------------------------------------------------------------------------"
       ));
+
+
+      const slackText = table(tableArray, { align: [ "l", "r", "r", "r", "r", "r"] });
+
+      console.log("GIS | SLACK MESSAGE SENT");
+      slackPostMessage(slackChannel, slackText);
 
       showStats();
 
@@ -924,17 +941,21 @@ function initSaveFileQueue(cnf){
   }, cnf.saveFileQueueInterval);
 }
 
-function loadFile(path, file, callback) {
+function loadFile(params, callback) {
 
-  debug(chalkInfo("LOAD FOLDER " + path));
+  const folder = params.folder;
+  const file = params.file;
+  const streamMode = params.streamMode || false;
+
+  debug(chalkInfo("LOAD FOLDER " + folder));
   debug(chalkInfo("LOAD FILE " + file));
-  debug(chalkInfo("FULL PATH " + path + "/" + file));
+  debug(chalkInfo("FULL folder " + folder + "/" + file));
 
-  let fullPath = path + "/" + file;
+  let fullPath = folder + "/" + file;
 
   if (OFFLINE_MODE) {
     if (hostname === "mbp2") {
-      fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + path + "/" + file;
+      fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + folder + "/" + file;
       debug(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
     }
     fs.readFile(fullPath, "utf8", function(err, data) {
@@ -963,6 +984,49 @@ function loadFile(path, file, callback) {
       }
     });
    }
+  else if (streamMode) {
+    fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + folder + "/" + file;
+
+    console.log(chalkInfo("STREAM MODE: FULL PATH " + fullPath));
+
+    let objectCounter = 0;
+    let fileObj = {};
+
+    // const pipeline = fs.createReadStream(fullPath).pipe(StreamObject.withParser());
+    let pipeline = fs.createReadStream(fullPath).pipe(JSONStream.parse("$*.$*.$*"));
+
+    pipeline.on("data", function(obj){
+      objectCounter += 1;
+      fileObj[obj.key] = obj.value;
+      // console.log(obj.key + ": " + jsonPrint(obj.value));
+      // console.log(obj.key);
+      debug("data: " + jsonPrint(obj));
+    });
+
+    pipeline.on("header", function(header){
+      console.log("HEADER: " + jsonPrint(header));
+    });
+
+    pipeline.on("footer", function(footer){
+      console.log("FOOTER: " + jsonPrint(footer));
+    });
+
+    pipeline.on("end", function(){
+      console.log("END: OBJECTS LOADED: " + objectCounter);
+      callback(null, fileObj);
+    });
+
+    pipeline.on("finish", function(){
+      console.log("FINISHED: OBJECTS LOADED: " + objectCounter);
+      callback(null, fileObj);
+    });
+
+    pipeline.on("error", function(err){
+      console.log(chalkError("LOAD FILE ERROR PARSE: " + err));
+      callback(err, null);
+    });
+    // parser.on('end', console.log(`Found ${objectCounter} objects.`));
+  }
   else {
     dropboxClient.filesDownload({path: fullPath})
     .then(function(data) {
@@ -990,22 +1054,26 @@ function loadFile(path, file, callback) {
     })
     .catch(function(error) {
 
-      if (error.response.status === 404) {
-        console.error(chalkError("GIS | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND" + " ... SKIPPING ..."));
-        return(callback(error, null));
-      }
-      if (error.response.status === 409) {
-        console.error(chalkError("GIS | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND" + " ... SKIPPING ..."));
-        return(callback(error, null));
-      }
-      if (error.response.status === 0) {
-        console.error(chalkError("GIS | !!! DROPBOX NO RESPONSE"
-          + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
-        return(callback(error, null));
+      if (error.response !== undefined) {
+
+        if (error.response.status === 404) {
+          console.error(chalkError("GIS | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND" + " ... SKIPPING ..."));
+          return(callback(error, null));
+        }
+        if (error.response.status === 409) {
+          console.error(chalkError("GIS | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND" + " ... SKIPPING ..."));
+          return(callback(error, null));
+        }
+        if (error.response.status === 0) {
+          console.error(chalkError("GIS | !!! DROPBOX NO RESPONSE"
+            + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
+          return(callback(error, null));
+        }
       }
 
-      console.log(chalkError("GIS | DROPBOX LOAD FILE ERROR: " + fullPath + " | " + error.response.statusText));
+      // console.log(chalkError("GIS | DROPBOX LOAD FILE ERROR: " + fullPath + " | " + error.response.statusText));
       console.log(chalkError("GIS | !!! DROPBOX READ " + fullPath + " ERROR"));
+      console.log(chalkError("GIS | " + error));
       console.log(chalkError("GIS | " + jsonPrint(error)));
 
       callback(error, null);
@@ -1095,7 +1163,7 @@ function initialize(cnf, callback){
 
   cnf.statsUpdateIntervalTime = process.env.GIS_STATS_UPDATE_INTERVAL || 10*ONE_SECOND;
 
-  loadFile(dropboxConfigHostFolder, dropboxConfigFile, function(err, loadedConfigObj){
+  loadFile({folder: dropboxConfigHostFolder, file: dropboxConfigFile}, function(err, loadedConfigObj){
 
     let commandLineArgs;
     let configArgs;
@@ -1221,7 +1289,7 @@ function initialize(cnf, callback){
 initialize(configuration, function(err, cnf){
 
   if (err) {
-    if ((err.response.status !== 404) && (err.response.status !== 409)){
+    if (err.response && (err.response.status !== 404) && (err.response.status !== 409)){
       console.error(chalkError("***** INIT ERROR *** QUITING: ERROR: " + jsonPrint(err)));
       quit();
     }
@@ -1258,7 +1326,7 @@ initialize(configuration, function(err, cnf){
     const folder = defaultHistogramsFolder + "/types/" + type;
     const file = "histograms_" + type + ".json";
 
-    loadFile(folder, file, function(err, histogramsObj){
+    loadFile({folder: folder, file: file, streamMode: true}, function(err, histogramObj){
 
       if (err) {
         console.log(chalkError("LOAD histograms.json ERROR"));
@@ -1267,12 +1335,13 @@ initialize(configuration, function(err, cnf){
       else {
         console.log(chalkInfo("+++ LOADED HISTOGRAM"
           + " | " + type.toUpperCase()
-          + " | " + Object.keys(histogramsObj.histograms[type]).length + " ITEMS"
-          + " | " + histogramsObj.histogramsId
+          + " | " + Object.keys(histogramObj).length + " ITEMS"
+          // + " | " + histogramsObj.histogramsId
         ));
 
-        genInParams.histogramsObj.histogramsId = histogramsObj.histogramsId;
-        genInParams.histogramsObj.histograms[type] = histogramsObj.histograms[type];
+        // genInParams.histogramsObj.histogramsId = histogramsObj.histogramsId;
+        genInParams.histogramsObj.histograms[type] = {};
+        genInParams.histogramsObj.histograms[type] = histogramObj;
 
         cb();
       }

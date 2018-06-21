@@ -152,10 +152,13 @@ function msToTime(duration) {
   seconds = (seconds < 10) ? "0" + seconds : seconds;
   return days + ":" + hours + ":" + minutes + ":" + seconds;
 }
+
 const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
 const slackChannel = "#tfe";
 const Slack = require("slack-node");
+
 let slack = new Slack(slackOAuthAccessToken);
+
 function slackPostMessage(channel, text, callback) {
   debug(chalkInfo("SLACK POST: " + text));
   slack.api("chat.postMessage", {
