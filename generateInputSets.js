@@ -37,13 +37,8 @@ const histogramParser = require("@threeceelabs/histogram-parser");
 const os = require("os");
 const util = require("util");
 
-// const Parser = require("stream-json/Parser");
-// const stream = new Parser({packValues: true});
-// const StreamObject = require("stream-json/streamers/StreamObject");
-
 const JSONStream = require("JSONStream");
 const stream = JSONStream.parse("$*.$*.$*"); //rows, ANYTHING, doc
-// const stream = JSONStream.parse([true, {emitKey: true}]) //rows, ANYTHING, doc
 const es = require("event-stream");
 
 const deepcopy = require("deep-copy");
