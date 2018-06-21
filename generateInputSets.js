@@ -985,7 +985,7 @@ function loadFile(params, callback) {
     });
    }
   else if (streamMode) {
-    fullPath = "/home/tc/Dropbox/Apps/wordAssociation" + folder + "/" + file;
+    fullPath = folder + "/" + file;
 
     console.log(chalkInfo("STREAM MODE: FULL PATH " + fullPath));
 
