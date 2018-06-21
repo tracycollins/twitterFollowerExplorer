@@ -303,7 +303,7 @@ let dropboxConfigFile = hostname + "_" + DROPBOX_GIS_CONFIG_FILE;
 let statsFolder = "/stats/" + hostname + "/generateInputSets";
 let statsFile = DROPBOX_GIS_STATS_FILE;
 
-const defaultHistogramsFolder = "/config/utility/default/histograms";
+const defaultHistogramsFolder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
 // const localHistogramsFolder = "/config/utility/" + hostname + "/histograms";
 
 const localInputsFolder = dropboxConfigHostFolder + "/inputs";
@@ -985,7 +985,7 @@ function loadFile(params, callback) {
     });
    }
   else if (streamMode) {
-    fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + folder + "/" + file;
+    fullPath = "/home/tc/Dropbox/Apps/wordAssociation" + folder + "/" + file;
 
     console.log(chalkInfo("STREAM MODE: FULL PATH " + fullPath));
 
