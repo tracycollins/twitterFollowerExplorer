@@ -742,20 +742,29 @@ function initActivateNetworkInterval(interval){
 
       if (maxQueueFlag && (rxActivateNetworkQueue.length < MAX_Q_SIZE)) {
         process.send({op: "QUEUE_READY", queue: rxActivateNetworkQueue.length}, function(err){
-          if (err) { quit("SEND QUEUE_READY ERROR"); }
+          if (err) { 
+            console.trace(chalkError("SEND ERROR | QUEUE_READY | " + err));
+            quit("SEND QUEUE_READY ERROR");
+          }
         });
         maxQueueFlag = false;
       }
       else if (rxActivateNetworkQueue.length === 0){
         process.send({op: "QUEUE_EMPTY", queue: rxActivateNetworkQueue.length}, function(err){
-          if (err) { quit("SEND QUEUE_EMPTY ERROR"); }
+          if (err) { 
+            console.trace(chalkError("SEND ERROR | QUEUE_EMPTY | " + err));
+            quit("SEND QUEUE_EMPTY ERROR");
+          }
         });
         maxQueueFlag = false;
       }
 
       if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
         process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
-          if (err) { quit("SEND QUEUE_FULL ERROR"); }
+          if (err) { 
+            console.trace(chalkError("SEND ERROR | QUEUE_FULL | " + err));
+            quit("SEND QUEUE_FULL ERROR");
+          }
         });
         maxQueueFlag = true;
       }
@@ -1117,12 +1126,12 @@ function resetStats(callback){
 }
 
 process.on("SIGHUP", function() {
-  console.log(chalkAlert("RNT | " + configuration.processName + " | *** SIGHUP ***"));
+  console.trace(chalkAlert("RNT | " + configuration.processName + " | *** SIGHUP ***"));
   quit("SIGHUP");
 });
 
 process.on("SIGINT", function() {
-  console.log(chalkAlert("RNT | " + configuration.processName + " | *** SIGINT ***"));
+  console.trace(chalkAlert("RNT | " + configuration.processName + " | *** SIGINT ***"));
   quit("SIGINT");
 });
 
@@ -1142,7 +1151,12 @@ process.on("message", function(m) {
         + " | INTERVAL: " + m.interval
       ));
       initActivateNetworkInterval(m.interval);
-      process.send({ op: "IDLE" });
+      process.send({ op: "IDLE" }, function(err){
+        if (err) { 
+          console.trace(chalkError("SEND ERROR | IDLE | " + err));
+          quit("STATS PROCESS SEND ERRROR");
+        }
+      });
     break;
 
     case "LOAD_MAX_INPUTS_HASHMAP":
@@ -1156,26 +1170,49 @@ process.on("message", function(m) {
     case "GET_BUSY":
       cause = busy();
       if (cause) {
-        process.send({ op: "BUSY", cause: cause });
+        process.send({ op: "BUSY", cause: cause }, function(err){
+        if (err) { 
+          console.trace(chalkError("SEND ERROR | BUSY | " + err));
+          quit("STATS PROCESS SEND ERRROR");
+        }
+      });
       }
       else {
-        process.send({ op: "IDLE" });
+        process.send({ op: "IDLE" }, function(err){
+        if (err) { 
+          console.trace(chalkError("SEND ERROR | IDLE | " + err));
+          quit("STATS PROCESS SEND ERRROR");
+        }
+      });
       }
     break;
 
     case "STATS":
       showStats(m.options);
       if (busy()) {
-        process.send({ op: "BUSY", cause: busy() });
+        process.send({ op: "BUSY", cause: busy() }, function(err){
+        if (err) { 
+          console.trace(chalkError("SEND ERROR | BUSY | " + err));
+          quit("STATS PROCESS SEND ERRROR");
+        }
+      });
       }
       else {
-        process.send({ op: "IDLE" });
+        process.send({ op: "IDLE" }, function(err){
+        if (err) { 
+          console.trace(chalkError("SEND ERROR | IDLE | " + err));
+          quit("STATS PROCESS SEND ERRROR");
+        }
+      });
       }
     break;
 
     case "GET_STATS":
       process.send({ op: "STATS", statsObj: statsObj }, function(err){
-        if (err) { quit("STATS PROCESS SEND ERRROR"); }
+        if (err) { 
+          console.trace(chalkError("SEND ERROR | GET_STATS | " + err));
+          quit("STATS PROCESS SEND ERRROR");
+        }
       });
     break;
 
@@ -1184,7 +1221,12 @@ process.on("message", function(m) {
     break;
 
     case "QUIT":
-      process.send({ op: "IDLE" });
+      process.send({ op: "IDLE" }, function(err){
+        if (err) { 
+          console.trace(chalkError("SEND ERROR | IDLE | " + err));
+          quit("STATS PROCESS SEND ERRROR");
+        }
+      });
       quit("QUIT OP");
     break;
 
@@ -1195,7 +1237,10 @@ process.on("message", function(m) {
       loadNetworks(m.networksObj, function(){
         statsObj.networksLoaded = true;
         process.send({op: "NETWORK_READY"}, function(err){
-          if (err) { quit("NETWORK_READY PROCESS SEND ERRROR"); }
+          if (err) { 
+            console.trace(chalkError("SEND ERROR | NETWORK_READY | " + err));
+            quit("NETWORK_READY PROCESS SEND ERRROR");
+          }
         });
       });
     break;
@@ -1213,12 +1258,16 @@ process.on("message", function(m) {
       ));
 
       process.send({op: "NETWORK_BUSY"}, function(err){
-        if (err) { quit("NETWORK_BUSY PROCESS SEND ERRROR"); }
+        if (err) { 
+          quit("NETWORK_BUSY PROCESS SEND ERRROR");
+        }
       });
 
       if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
         process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
-          if (err) { quit("SEND QUEUE_FULL ERROR"); }
+          if (err) { 
+            quit("SEND QUEUE_FULL ERROR");
+          }
         });
         maxQueueFlag = true;
       }
