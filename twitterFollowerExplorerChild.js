@@ -914,14 +914,14 @@ process.on("message", function(m) {
       if (twitClient) {
         twitClient.post(
 
-          "friendships/destroy", {screen_name: m.screenName}, 
+          "friendships/destroy", {screen_name: m.user.screenName}, 
 
           function destroyFriend(err, data, response){
             if (err) {
               console.log(chalkError("=X= UNFOLLOW ERROR"
-                + " | 3C @" + configuration.threeceeUser
-                + " | @" + m.screenName
-                + " | " + err
+                + " | 3C: @" + configuration.threeceeUser
+                + " | NID: " + m.user.userId
+                + " | @" + m.user.screenName.toLowerCase()
               ));
             }
             else {
@@ -930,7 +930,8 @@ process.on("message", function(m) {
 
               console.log(chalkInfo("=X= UNFOLLOW"
                 + " | 3C: @" + configuration.threeceeUser
-                + " | @" + m.screenName.toLowerCase()
+                + " | NID: " + m.user.userId
+                + " | @" + m.user.screenName.toLowerCase()
               ));
             }
           }
