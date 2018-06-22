@@ -446,9 +446,16 @@ function fetchFriends(params, callback) {
           friend.following = true;
           friend.threeceeFollowing = threeceeUser;
 
-          process.send({op:"FRIEND_RAW", follow:false, threeceeUser: configuration.threeceeUser, childId: configuration.childId, friend: friend}, function(){
-            cb();
-          });
+          process.send(
+            {
+              op: "FRIEND_RAW", 
+              follow: false, 
+              threeceeUser: configuration.threeceeUser, 
+              childId: configuration.childId, 
+              friend: friend
+            }, 
+            function(){ cb(); }
+          );
 
         }, function subFriendsProcess(err){
           if (err) {
@@ -716,7 +723,7 @@ function initTwitter(twitterConfig, callback){
 
       const friendRawObj = {
         op:"FRIEND_RAW", 
-        follow:true, 
+        follow: true, 
         threeceeUser: configuration.threeceeUser,
         childId: configuration.childId, 
         friend: followMessage.target

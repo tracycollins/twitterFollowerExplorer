@@ -174,7 +174,7 @@ function showStats(options){
     console.log("= NT STATS\n" + jsonPrint(statsObj));
   }
   else {
-    console.log(chalk.gray("= NT S"
+    console.log(chalk.gray("== * == RNT S"
       + " | E: " + statsObj.elapsed
       + " | S: " + moment(parseInt(statsObj.startTime)).format(compactDateTimeFormat)
     ));
@@ -197,7 +197,9 @@ function quit(message) {
   );
   clearInterval(statsUpdateInterval);
   clearInterval(activateNetworkInterval);
-  process.exit(exitCode);
+  setTimeout(function(){
+    process.exit(exitCode);
+  }, 3000);
 }
 
 function indexOfMax (arr, callback) {

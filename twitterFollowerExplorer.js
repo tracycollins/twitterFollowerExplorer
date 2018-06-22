@@ -3027,6 +3027,21 @@ function initSocket(cnf) {
 
   });  
 
+  socket.on("UNFOLLOW", function(u) {
+
+    statsObj.serverConnected = true;
+
+    console.log(chalkInfo("TFE | >RX CONTROL PANEL UNFOLLOW"
+      + " | " + socket.id
+      + " | UID: " + u.userId
+      + " | @" + u.screenName
+      + " | " + moment().format(compactDateTimeFormat)
+    ));
+
+    tfeChildHashMap.altthreecee02.child.send({op: "UNFOLLOW", user:u});
+
+  });  
+
   socket.on("error", function(error) {
     console.log(chalkError(moment().format(compactDateTimeFormat)
       + " | *** SOCKET ERROR"
