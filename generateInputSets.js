@@ -1,5 +1,17 @@
  /*jslint node: true */
 "use strict";
+
+const os = require("os");
+
+let hostname = os.hostname();
+hostname = hostname.replace(/.local/g, "");
+hostname = hostname.replace(/.home/g, "");
+hostname = hostname.replace(/.at.net/g, "");
+hostname = hostname.replace(/.fios-router.home/g, "");
+hostname = hostname.replace(/word0-instance-1/g, "google");
+
+const compactDateTimeFormat = "YYYYMMDD_HHmmss";
+
 const DEFAULT_DOMINANT_MIN_STEP = 0.05;
 const DEFAULT_TOTAL_MIN_STEP = 0.95;
 
@@ -18,7 +30,7 @@ const INIT_TOT_MIN = 1500;
 const DEFAULT_MIN_DOMINANT_MIN = 0.350;
 const DEFAULT_MAX_DOMINANT_MIN = 0.999999;
 
-const DEFAULT_MIN_TOTAL_MIN = 10;
+const DEFAULT_MIN_TOTAL_MIN = 5;
 const DEFAULT_MAX_TOTAL_MIN = 1500;
 
 const DEFAULT_MIN_INPUTS_GENERATED = 1000 ;
@@ -33,13 +45,13 @@ const OFFLINE_MODE = false;
 
 const histogramParser = require("@threeceelabs/histogram-parser");
 // const histogramParser = require("../histogram-parser");
-
-const os = require("os");
 const util = require("util");
 
 const JSONStream = require("JSONStream");
 const stream = JSONStream.parse("$*.$*.$*"); //rows, ANYTHING, doc
 const es = require("event-stream");
+const async = require("async");
+const debug = require("debug")("gis");
 
 const deepcopy = require("deep-copy");
 const randomFloat = require("random-float");
@@ -87,19 +99,21 @@ let saveFileBusy = false;
 
 const inputTypes = ["emoji", "hashtags",  "images", "mentions", "urls", "words"];
 
+let globalInputsObj = {};
+globalInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+globalInputsObj.meta = {};
+globalInputsObj.meta.type = {};
+// newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
+globalInputsObj.meta.numInputs = 0;
+globalInputsObj.meta.histogramParseTotalMin = INIT_TOT_MIN;
+globalInputsObj.meta.histogramParseDominantMin = INIT_DOM_MIN;
+globalInputsObj.inputs = {};
+
+
 let stdin;
 
 require("isomorphic-fetch");
 const Dropbox = require("./js/dropbox").Dropbox;
-
-const compactDateTimeFormat = "YYYYMMDD_HHmmss";
-
-let hostname = os.hostname();
-hostname = hostname.replace(/.local/g, "");
-hostname = hostname.replace(/.home/g, "");
-hostname = hostname.replace(/.at.net/g, "");
-hostname = hostname.replace(/.fios-router.home/g, "");
-hostname = hostname.replace(/word0-instance-1/g, "google");
 
 function msToTime(duration) {
   let seconds = parseInt((duration / 1000) % 60);
@@ -122,6 +136,8 @@ statsObj.pid = process.pid;
 statsObj.userAuthenticated = false;
 statsObj.serverConnected = false;
 statsObj.heartbeatsReceived = 0;
+statsObj.lessThanMin = 0;
+statsObj.moreThanMin = 0;
 
 const GIS_RUN_ID = hostname 
   + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat)
@@ -185,10 +201,6 @@ histograms.hashtags = {};
 histograms.mentions = {};
 histograms.emoji = {};
 histograms.images = {};
-
-const async = require("async");
-
-const debug = require("debug")("gis");
 
 let statsUpdateInterval;
 
@@ -298,7 +310,14 @@ let dropboxConfigFile = hostname + "_" + DROPBOX_GIS_CONFIG_FILE;
 let statsFolder = "/stats/" + hostname + "/generateInputSets";
 let statsFile = DROPBOX_GIS_STATS_FILE;
 
-const defaultHistogramsFolder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
+let defaultHistogramsFolder;
+
+if (hostname === "google"){ 
+ defaultHistogramsFolder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
+}
+else {
+ defaultHistogramsFolder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
+}
 // const localHistogramsFolder = "/config/utility/" + hostname + "/histograms";
 
 const localInputsFolder = dropboxConfigHostFolder + "/inputs";
@@ -332,51 +351,6 @@ function showStats(options){
   }
 }
 
-// function printResultsTable(){
-
-//   let tableArray = [];
-
-//   tableArray.push([
-//     "I",
-//     "INPUTS",
-//     "DOM MIN",
-//     "TOT MIN",
-//     "EMOJI",
-//     "HASHTAGS",
-//     "MENTIONS",
-//     "URLS",
-//     "IMAGES",
-//     "WORDS"
-//   ]);
-
-//   async.eachOfSeries(resultsArray, function(inputsObj, i, cb){
-
-//     tableArray.push([
-//       i,
-//       inputsObj.meta.numInputs,
-//       inputsObj.meta.histogramParseDominantMin.toFixed(5),
-//       inputsObj.meta.histogramParseTotalMin.toFixed(5),
-//       inputsObj.meta.type.emoji,
-//       inputsObj.meta.type.hashtags,
-//       inputsObj.meta.type.mentions,
-//       inputsObj.meta.type.urls,
-//       inputsObj.meta.type.images,
-//       inputsObj.meta.type.words
-//     ]);
-
-//     async.setImmediate(function() { cb(); });
-
-//   }, function(){
-//     console.log(chalk.blue(
-//         "\n-------------------------------------------------------------------------------"
-//       + "\nINPUTS" 
-//       + "\n-------------------------------------------------------------------------------\n"
-//       + table(tableArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r", "r", "r"] })
-//       + "\n-------------------------------------------------------------------------------"
-//     ));
-//   });
-// }
-
 const sortedObjectValues = function(params) {
 
   return new Promise(function(resolve, reject) {
@@ -408,9 +382,6 @@ const sortedObjectValues = function(params) {
 
 function generateInputSets3(params, callback) {
 
-  // console.log("generateInputSets3 | params\n" + jsonPrint(params));
-
-  let tableArray = [];
   let iteration = 0;
 
   /*
@@ -434,7 +405,6 @@ function generateInputSets3(params, callback) {
   newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
   newInputsObj.meta = {};
   newInputsObj.meta.type = {};
-  // newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
   newInputsObj.meta.numInputs = 0;
   newInputsObj.meta.histogramParseTotalMin = totalMin;
   newInputsObj.meta.histogramParseDominantMin = dominantMin;
@@ -442,17 +412,6 @@ function generateInputSets3(params, callback) {
 
   let inTypes = Object.keys(params.histogramsObj.histograms);
   inTypes.sort();
-
-  console.log(chalkAlert("INPUT TYPES: " + inTypes));
-
-  tableArray.push([
-    "TYPE",
-    "DOM MIN",
-    "TOT MIN",
-    "TOT TYPE IN",
-    "TYPE IN",
-    "TOT INPUTS"
-  ]);
 
   const DOM_MIN_STEP = DEFAULT_DOMINANT_MIN_STEP; // 0.1
   const TOT_MIN_STEP = DEFAULT_TOTAL_MIN_STEP; // 0.9;
@@ -563,9 +522,8 @@ function generateInputSets3(params, callback) {
             spinner.text = "... GEN TYPE"
               + " [" + iteration + "]"
               + " " + type.toUpperCase()
-              + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
-              + "/" + Object.keys(params.histogramsObj.histograms[type]).length
-              + " | TOT INPUTS: " + newInputsObj.meta.numInputs
+              + " | " + newInputsObj.meta.type[type].numInputs
+              + " / " + Object.keys(params.histogramsObj.histograms[type]).length + " INPUTS"
               + " | PREV NUM INPUTS: " + prevNumInputs
               + " | DOM MIN: " + dominantMin.toFixed(5)
               + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
@@ -580,25 +538,18 @@ function generateInputSets3(params, callback) {
               spinner.info("*** GEN TYPE"
                 + " [" + iteration + "]"
                 + " " + type.toUpperCase()
-                + " | " + "LESS THAN MIN >>> MORE THAN MAX IN ONE STEP"
-                + "\nPREV NUM INPUTS: " + prevNumInputs
-                + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
-                + "/" + Object.keys(params.histogramsObj.histograms[type]).length
-                + " | OVER MAX INPUTS: " + overMaxNumInputs
-                + " | MAX NUM INPUTS: " + MAX_NUM_INPUTS_PER_TYPE
-                + " | TOT INPUTS: " + newInputsObj.meta.numInputs
-                + "\nDOM MIN: " + dominantMin.toFixed(5)
+                + " | " + newInputsObj.meta.type[type].numInputs
+                + " / " + Object.keys(params.histogramsObj.histograms[type]).length + " INPUTS"
+                + " | PREV NUM INPUTS: " + prevNumInputs
+                + " | DOM MIN: " + dominantMin.toFixed(5)
                 + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
                 + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
-                + "\nTOT MIN: " + parseInt(totalMin)
+                + " | TOT MIN: " + parseInt(totalMin)
                 + " | PREV TOT MIN: " + parseInt(prevTotalMin)
                 + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
               );
 
               if (newInputsObj.meta.type[type].numInputs === 0){
-                // enableMinNumInputsPerTypeMultiplier = false;
-                // previousParamsHistory.push(lastParams);
-                // previousParamsHistory.push(lastParams);
               }
               else {
                 return cb1(true);
@@ -607,8 +558,6 @@ function generateInputSets3(params, callback) {
             }
             else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
               && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) {
-
-              // prevDomMin = dominantMin;
 
               if (enableMinNumInputsPerTypeMultiplier 
                 && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * MIN_NUM_INPUTS_PER_TYPE)) { // 0.1
@@ -621,7 +570,6 @@ function generateInputSets3(params, callback) {
             }
             else if (dominantMin - dominantMinStep <= configuration.minDominantMin) {
 
-              // prevDomMin = dominantMin;
               dominantMin = INIT_DOM_MIN;
 
               if (totalMin > 1){
@@ -640,13 +588,12 @@ function generateInputSets3(params, callback) {
                 }
               }
               else {
-                console.log(chalkError("QUIT: totalMin: " + totalMin + " | dominantMin:" + dominantMin));
-                quit();
+                // console.log(chalkError("QUIT: totalMin: " + totalMin + " | dominantMin:" + dominantMin));
+                // quit();
               }
             }
 
             prevNumInputs = newInputsObj.meta.type[type].numInputs;
-            // prevDomMinStep = dominantMinStep; 
             prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
 
             async.setImmediate(function() { cb1(); });
@@ -663,24 +610,17 @@ function generateInputSets3(params, callback) {
           spinner.text = "+++ END TYPE"
             + " [" + iteration + "]"
             + " " + type.toUpperCase()
-            + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs
-            + "/" + Object.keys(params.histogramsObj.histograms[type]).length
-            + " | TOT INPUTS: " + newInputsObj.meta.numInputs
+            + " | " + newInputsObj.meta.type[type].numInputs
+            + " / " + Object.keys(params.histogramsObj.histograms[type]).length + " INPUTS"
+            + " | PREV NUM INPUTS: " + prevNumInputs
             + " | DOM MIN: " + dominantMin.toFixed(5)
-            + " | TOT MIN: " + parseInt(totalMin);
+            + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
+            + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
+            + " | TOT MIN: " + parseInt(totalMin)
+            + " | PREV TOT MIN: " + parseInt(prevTotalMin)
+            + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5);
 
           spinner.succeed();
-          showStats();
-          // previousParamsHistory = [];
-
-          tableArray.push([
-            type.toUpperCase(),
-            dominantMin.toFixed(5),
-            parseInt(totalMin),
-            Object.keys(params.histogramsObj.histograms[type]).length,
-            newInputsObj.meta.type[type].numInputs,
-            newInputsObj.meta.numInputs
-          ]);
 
           totalMin = parseInt(INIT_TOT_MIN);
           dominantMin = INIT_DOM_MIN;
@@ -691,36 +631,14 @@ function generateInputSets3(params, callback) {
             quit("ZERO INPUTS");
           }
           else{
-            async.setImmediate(function() { cb0(); });
+            cb0();
           }
-
         }
       );
     },
 
     function(err){
-
-      console.log(chalkAlert("END GEN"
-        + " | " + newInputsObj.inputsId
-        + " | TOT INPUTS: " + newInputsObj.meta.numInputs
-      ));
-
-      console.log(chalk.blue(
-          "\n-------------------------------------------------------------------------------"
-        + "\nINPUTS" 
-        + "\n-------------------------------------------------------------------------------\n"
-        + table(tableArray, { align: [ "l", "r", "r", "r", "r", "r"] })
-        + "\n-------------------------------------------------------------------------------"
-      ));
-
-
-      const slackText = table(tableArray, { align: [ "l", "r", "r", "r", "r", "r"] });
-
-      console.log("GIS | SLACK MESSAGE SENT");
-      slackPostMessage(slackChannel, slackText);
-
       showStats();
-
       callback(err, newInputsObj);
     }
   );
@@ -746,14 +664,17 @@ function quit(cause){
       clearInterval(statsUpdateInterval);
       clearInterval(quitWaitInterval);
 
-      console.log(chalkAlert("ALL PROCESSES COMPLETE ... QUITTING"
+      console.log(chalkAlert("\nALL PROCESSES COMPLETE ... QUITTING"
        + " | SAVE FILE BUSY: " + saveFileBusy
        + " | SAVE FILE Q: " + saveFileQueue.length
       ));
 
+      showStats();
+
       setTimeout(function(){
         process.exit();      
       }, 1000);
+
     }
     else {
       console.log(chalkInfo("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
@@ -791,8 +712,6 @@ function getTimeStamp(inputTime) {
 }
 
 function saveFile(params, callback){
-
-  // console.log("saveFile: params\n" + jsonPrint(params));
 
   if (OFFLINE_MODE) {
     console.log("OFFLINE_MODE: " + OFFLINE_MODE);
@@ -961,7 +880,6 @@ function loadFile(params, callback) {
       debug(chalkLog(getTimeStamp()
         + " | LOADING FILE FROM DROPBOX FILE"
         + " | " + fullPath
-        // + "\n" + jsonPrint(data)
       ));
 
       if (file.match(/\.json$/gi)) {
@@ -984,17 +902,25 @@ function loadFile(params, callback) {
 
     console.log(chalkInfo("STREAM MODE: FULL PATH " + fullPath));
 
-    let objectCounter = 0;
     let fileObj = {};
 
-    // const pipeline = fs.createReadStream(fullPath).pipe(StreamObject.withParser());
+    let totalInputs = 0;
+    let lessThanMin = 0;
+    let moreThanMin = 0;
+
     let pipeline = fs.createReadStream(fullPath).pipe(JSONStream.parse("$*.$*.$*"));
 
     pipeline.on("data", function(obj){
-      objectCounter += 1;
-      fileObj[obj.key] = obj.value;
-      // console.log(obj.key + ": " + jsonPrint(obj.value));
-      // console.log(obj.key);
+
+      totalInputs += 1;
+
+      if (obj.value.total >= configuration.minTotalMin) {
+        moreThanMin += 1;
+        fileObj[obj.key] = obj.value;
+      }
+      else {
+        lessThanMin += 1;
+      }
       debug("data: " + jsonPrint(obj));
     });
 
@@ -1007,20 +933,17 @@ function loadFile(params, callback) {
     });
 
     pipeline.on("end", function(){
-      console.log("END: OBJECTS LOADED: " + objectCounter);
-      callback(null, fileObj);
+      callback(null, { obj: fileObj, totalInputs: totalInputs, lessThanMin: lessThanMin, moreThanMin: moreThanMin });
     });
 
     pipeline.on("finish", function(){
-      console.log("FINISHED: OBJECTS LOADED: " + objectCounter);
-      callback(null, fileObj);
+      callback(null, { obj: fileObj, totalInputs: totalInputs, lessThanMin: lessThanMin, moreThanMin: moreThanMin });
     });
 
     pipeline.on("error", function(err){
       console.log(chalkError("LOAD FILE ERROR PARSE: " + err));
       callback(err, null);
     });
-    // parser.on('end', console.log(`Found ${objectCounter} objects.`));
   }
   else {
     dropboxClient.filesDownload({path: fullPath})
@@ -1038,7 +961,6 @@ function loadFile(params, callback) {
           callback(null, fileObj);
         }
         catch(e){
-          // console.trace(chalkError("GIS | JSON PARSE ERROR: " + jsonPrint(e)));
           console.trace(chalkError("GIS | JSON PARSE ERROR: " + e));
           callback("JSON PARSE ERROR", null);
         }
@@ -1087,8 +1009,6 @@ function initStatsUpdate(callback){
 
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
-
-    // showStats();
 
   }, configuration.statsUpdateIntervalTime);
 
@@ -1306,39 +1226,58 @@ initialize(configuration, function(err, cnf){
 
   console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
-  // console.log("LOAD " + localHistogramsFolder + "/histograms.json");
   console.log("LOAD " + defaultHistogramsFolder);
 
-  let genInParams = {};
-  genInParams.histogramsObj = {};
-  genInParams.histogramsObj.histograms = {};
-  genInParams.histogramsObj.maxTotalMin = {};
-  genInParams.histogramsObj.histogramParseDominantMin = configuration.histogramParseDominantMin;
-  genInParams.histogramsObj.histogramParseTotalMin = configuration.histogramParseTotalMin;
+  async.each(inputTypes, function(type, cb){
 
-  async.eachSeries(inputTypes, function(type, cb){
+    let genInParams = {};
+    genInParams.histogramsObj = {};
+    genInParams.histogramsObj.histograms = {};
+    genInParams.histogramsObj.maxTotalMin = {};
+    genInParams.histogramsObj.histogramParseDominantMin = configuration.histogramParseDominantMin;
+    genInParams.histogramsObj.histogramParseTotalMin = configuration.histogramParseTotalMin;
 
     const folder = defaultHistogramsFolder + "/types/" + type;
     const file = "histograms_" + type + ".json";
 
-    loadFile({folder: folder, file: file, streamMode: true}, function(err, histogramObj){
+    loadFile({folder: folder, file: file, streamMode: true}, function(err, results){
 
       if (err) {
         console.log(chalkError("LOAD histograms.json ERROR"));
         cb();
       }
       else {
-        console.log(chalkInfo("+++ LOADED HISTOGRAM"
+        console.log(chalkInfo("\n+++ LOADED HISTOGRAM"
           + " | " + type.toUpperCase()
-          + " | " + Object.keys(histogramObj).length + " ITEMS"
-          // + " | " + histogramsObj.histogramsId
+          + " | " + results.totalInputs + " TOTAL ITEMS"
+          + " | " + results.moreThanMin
+          + " (" + (100*results.moreThanMin/results.totalInputs).toFixed(2) + "%) MORE THAN MIN"
+          + " | " + results.lessThanMin
+          + " (" + (100*results.lessThanMin/results.totalInputs).toFixed(2) + "%) LESS THAN MIN"
         ));
 
-        // genInParams.histogramsObj.histogramsId = histogramsObj.histogramsId;
         genInParams.histogramsObj.histograms[type] = {};
-        genInParams.histogramsObj.histograms[type] = histogramObj;
+        genInParams.histogramsObj.histograms[type] = results.obj;
 
-        cb();
+        generateInputSets3(genInParams, function(err, inputsObj){
+          if (err) {
+            console.log(chalkError("generateInputSets ERROR: " + err));
+            quit();
+          }
+          else {
+
+            globalInputsObj.inputs[type] = {};
+            globalInputsObj.inputs[type] = inputsObj.inputs[type];
+            globalInputsObj.meta.type[type] = {};
+            globalInputsObj.meta.type[type] = inputsObj.meta.type[type];
+            globalInputsObj.meta.type[type].totalInputs = results.totalInputs;
+            globalInputsObj.meta.type[type].lessThanMin = results.lessThanMin;
+            globalInputsObj.meta.type[type].moreThanMin = results.moreThanMin;
+
+            cb();
+          }
+        });
+
       }
     });
 
@@ -1350,18 +1289,61 @@ initialize(configuration, function(err, cnf){
       inFolder = inFolder + "_test";
     }
 
-    generateInputSets3(genInParams, function(err, inputsObj){
-      if (err) {
-        console.log(chalkError("generateInputSets ERROR: " + err));
-        quit();
-      }
-      else {
-        const inFile = inputsObj.inputsId + ".json"; 
-        console.log(chalkInfo("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
-        saveFileQueue.push({folder: inFolder, file: inFile, obj: inputsObj});
-        quit();
-      }
-    });
+    let tableArray = [];
+
+    tableArray.push([
+      "TYPE",
+      "DOM MIN",
+      "TOT MIN",
+      "TYPE TOT IN",
+      "TYPE IN",
+      "TYPE MTM",
+      "TYPE LTM",
+      "TOT IN"
+    ]);
+
+    globalInputsObj.meta.numInputs = 0;
+
+    async.eachSeries(inputTypes, function(type, cb){
+
+      globalInputsObj.meta.numInputs += globalInputsObj.meta.type[type].numInputs;
+
+      tableArray.push([
+        type.toUpperCase(),
+        globalInputsObj.meta.type[type].dominantMin.toFixed(5),
+        parseInt(globalInputsObj.meta.type[type].totalMin),
+        globalInputsObj.meta.type[type].totalInputs,
+        globalInputsObj.meta.type[type].numInputs,
+        globalInputsObj.meta.type[type].moreThanMin,
+        globalInputsObj.meta.type[type].lessThanMin,
+        globalInputsObj.meta.numInputs
+      ]);
+
+      cb();
+
+    }, function(){
+
+      console.log(chalk.blue(
+          "\n-------------------------------------------------------------------------------"
+        + "\nINPUTS" 
+        + "\n-------------------------------------------------------------------------------\n"
+        + table(tableArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r"] })
+        + "\n-------------------------------------------------------------------------------"
+      ));
+
+
+      const slackText = table(tableArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r"] });
+
+      console.log("GIS | SLACK MESSAGE SENT");
+      slackPostMessage(slackChannel, slackText);
+
+      const inFile = globalInputsObj.inputsId + ".json"; 
+      console.log(chalkInfo("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+      saveFileQueue.push({folder: inFolder, file: inFile, obj: globalInputsObj});
+
+      quit();
+    });  
+
   });
 
 });
