@@ -61,7 +61,7 @@
     "socket.io-client": "^2.1.1",
     "sort-on": "^3.0.0",
     "stately.js": "^2.0.0",
-    "stream-json": "^1.0.1",
+    "stream-json": "^1.0.2",
     "string": "^3.3.3",
     "text-table": "^0.2.0",
     "twit": "^2.2.10",
