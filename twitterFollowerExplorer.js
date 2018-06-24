@@ -339,7 +339,7 @@ let userServerReady = false;
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
-wordAssoDb.connect(function(err, dbCon) {
+wordAssoDb.connect(process.title, function(err, dbCon) {
   if (err) {
     console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR: " + err));
     quit("MONGO DB CONNECTION ERROR");
