@@ -1092,48 +1092,15 @@ function resetStats(callback){
 
   if (callback) { callback(err); }
 
-  // async.each(networksHashMap.keys(), function(nnId, cb){
-
-  //   console.log(chalkLog("RNT | RESET NETWORK STATS"
-  //     + " | " + nnId
-  //   ));
-
-  //   const networkObj = networksHashMap.get(nnId);
-
-  //   networkObj.matchRate = 0 ;
-
-  //   networksHashMap.set(nnId, networkObj);
-
-  //   statsObj.loadedNetworks[nnId] = {};
-  //   statsObj.loadedNetworks[nnId].networkId = nnId;
-  //   statsObj.loadedNetworks[nnId].inputsId = networkObj.inputsId;
-  //   statsObj.loadedNetworks[nnId].numInputs = networkObj.numInputs;
-  //   statsObj.loadedNetworks[nnId].total = 0;
-  //   statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
-  //   statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
-  //   statsObj.loadedNetworks[nnId].matchRate = 0;
-  //   statsObj.loadedNetworks[nnId].match = 0;
-  //   statsObj.loadedNetworks[nnId].mismatch = 0;
-  //   statsObj.loadedNetworks[nnId].matchFlag = false;
-  //   statsObj.loadedNetworks[nnId].left = 0;
-  //   statsObj.loadedNetworks[nnId].right = 0;
-  //   statsObj.loadedNetworks[nnId].neutral = 0;
-  //   statsObj.loadedNetworks[nnId].positive = 0;
-  //   statsObj.loadedNetworks[nnId].negative = 0;
-
-  //   async.setImmediate(function() { cb(); });
-  // }, function(err){
-  //   if (callback) { callback(err); }
-  // });
 }
 
 process.on("SIGHUP", function() {
-  console.trace(chalkAlert("RNT | " + configuration.processName + " | *** SIGHUP ***"));
+  console.log(chalkAlert("RNT | " + configuration.processName + " | *** SIGHUP ***"));
   quit("SIGHUP");
 });
 
 process.on("SIGINT", function() {
-  console.trace(chalkAlert("RNT | " + configuration.processName + " | *** SIGINT ***"));
+  console.log(chalkAlert("RNT | " + configuration.processName + " | *** SIGINT ***"));
   quit("SIGINT");
 });
 

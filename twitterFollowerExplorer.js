@@ -124,8 +124,11 @@ let randomNetworkTreeActivateQueueSize = 0;
 let randomNetworkTreeMessageRxQueue = [];
 
 let randomNetworksObj = {};
+
+let dbConnection;
 let dbConnectionReadyInterval;
 let dbConnectionReady = false;
+
 let enableImageAnalysis = true;
 
 let langAnalyzer;
@@ -274,9 +277,11 @@ const quit = function(cause) {
       && !languageAnalysisBusyFlag
       && userDbUpdateQueueReadyFlag
       ) {
+
       clearInterval(statsUpdateInterval);
       clearInterval(userDbUpdateQueueInterval);
       clearInterval(quitWaitInterval);
+
       console.log(chalkAlert("ALL PROCESSES COMPLETE ... QUITTING"
         + " | SAVE FILE BUSY: " + saveFileBusy
         + " | SAVE FILE Q: " + saveFileQueue.length
@@ -287,9 +292,17 @@ const quit = function(cause) {
         + " | LA MQ: " + langAnalyzerMessageRxQueue.length
         + " | USR DB UDQ: " + userDbUpdateQueue.length
       ));
-      setTimeout(function() {
-        process.exit();
-      }, 5000);
+
+        setTimeout(function() {
+
+          dbConnection.close(function () {
+            console.log(chalkAlert("\n==========================\nMONGO DB CONNECTION CLOSED\n==========================\n"));
+            process.exit();
+          });
+
+        }, 5000);
+
+
     }
     else {
       if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) {
@@ -323,20 +336,39 @@ let User;
 let userServer;
 let userServerReady = false;
 
+
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
-wordAssoDb.connect(function(err, dbConnection) {
+wordAssoDb.connect(function(err, dbCon) {
   if (err) {
     console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR: " + err));
     quit("MONGO DB CONNECTION ERROR");
   }
   else {
-    dbConnection.on("error", console.error.bind(console, "*** TFE | MONGO DB CONNECTION ERROR ***\n"));
+
+    dbConnection = dbCon;
+
     dbConnectionReady = true;
+
+    dbConnection.on("error", function(){
+      console.error.bind(console, "*** TFE | MONGO DB CONNECTION ERROR ***\n");
+      console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR ***\n"));
+      dbConnectionReady = false;
+    });
+
+    dbConnection.on("disconnected", function(){
+      console.error.bind(console, "*** TFE | MONGO DB CONNECTION DISCONNECTED ***\n");
+      console.log(chalkAlert("*** TFE | MONGO DB CONNECTION DISCONNECTED ***\n"));
+      dbConnectionReady = false;
+    });
+
     console.log(chalkLog("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
+
     NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
     User = mongoose.model("User", userModel.UserSchema);
+
     userServer = require("@threeceelabs/user-server-controller");
+
     userServerReady = true;
   }
 });
