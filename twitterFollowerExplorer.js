@@ -415,7 +415,7 @@ configuration.minMatchRate = DEFAULT_MIN_MATCH_RATE;
 configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEFAULT_FETCH_COUNT;
 configuration.keepaliveInterval = 5*ONE_SECOND;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
-configuration.quitOnComplete = false;
+configuration.quitOnComplete = true;
 statsObj.childrenFetchBusy = false;
 
 statsObj.hostname = hostname;
@@ -2524,7 +2524,7 @@ const cla = require("command-line-args");
 const numRandomNetworks = { name: "numRandomNetworks", alias: "n", type: Number};
 const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
 const quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
-const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean, defaultValue: false};
+const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean};
 const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean};
 const testMode = { name: "testMode", alias: "X", type: Boolean, defaultValue: false};
 const loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
