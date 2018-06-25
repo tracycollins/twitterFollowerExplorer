@@ -3808,6 +3808,8 @@ function updateNetworkStats(params, callback) {
 
   const nnIds = Object.keys(params.networkStatsObj);
 
+  let newNnDb;
+
   async.eachSeries(nnIds, function(nnId, cb) {
 
     if (bestNetworkHashMap.has(nnId)) {
@@ -3835,28 +3837,37 @@ function updateNetworkStats(params, callback) {
             + " | " + bnhmObj.networkObj.networkId 
             + " | " + err
           ));
+          cb();
         }
         else if (nnDb) {
           nnDb.matchRate = bnhmObj.networkObj.matchRate;
           nnDb.overallMatchRate = bnhmObj.networkObj.overallMatchRate;
           nnDb.markModified("overallMatchRate");
           nnDb.save()
+          .then(function(){
+            cb();
+          })
           .catch(function(err){
             console.log(chalkError("NNT | *** ERROR SAVE NN TO DB" 
               + " | NID: " + nnDb.networkId
               + " | " + err.message
             ));
+            cb();
           });
         }
         else {
-          let newNnDb = new NeuralNetwork(bnhmObj.networkObj);
+          newNnDb = new NeuralNetwork(bnhmObj.networkObj);
           newNnDb.markModified("overallMatchRate");
           newNnDb.save()
+          .then(function(){
+            cb();
+          })
           .catch(function(err){
             console.log(chalkError("NNT | *** ERROR SAVE NN TO DB" 
               + " | NID: " + bnhmObj.networkObj.networkId
               + " | " + err.message
             ));
+            cb();
           });
         }
       });
@@ -3868,7 +3879,7 @@ function updateNetworkStats(params, callback) {
         + " | " + bnhmObj.networkObj.networkId
       ));
 
-      cb();
+      // cb();
     }
     else {
       console.log(chalkAlert("??? NETWORK NOT IN BEST NETWORK HASHMAP ???"
