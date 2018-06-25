@@ -1964,6 +1964,10 @@ function processUser(threeceeUser, userIn, callback) {
               cb(err, null);
             }
             else {
+              if ((user.status !== undefined) && user.status) { 
+                user.lastSeen = user.status.created_at;
+                user.updateLastSeen = true;
+              }
               cb(null, user);
             }
           });
@@ -1993,7 +1997,10 @@ function processUser(threeceeUser, userIn, callback) {
             user.threeceeFollowing = threeceeUser;
           }
 
-          if ((user.status !== undefined) && user.status) { user.lastSeen = user.status.created_at; }
+          if ((user.status !== undefined) && user.status) { 
+            user.lastSeen = user.status.created_at;
+            user.updateLastSeen = true;
+          }
 
           let catObj = {};
 
