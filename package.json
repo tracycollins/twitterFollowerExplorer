@@ -10,7 +10,7 @@
     "@threeceelabs/twitter-image-parser": "^1.0.54",
     "@threeceelabs/twitter-text-parser": "^1.0.49",
     "@threeceelabs/user-server-controller": "^1.0.300",
-    "@threeceelabs/word-server-controller": "^1.0.27",
+    "@threeceelabs/word-server-controller": "^1.0.28",
     "JSONStream": "^1.3.3",
     "array-normalize": "^1.1.3",
     "array-unique": "^0.3.2",
