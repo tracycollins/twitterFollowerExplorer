@@ -745,18 +745,20 @@ function loadFile(path, file, callback) {
         console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
           + " ... SKIPPING ...")
         );
-        return(callback(null, null));
+        callback(null, null);
       }
-      if (error.status === 409) {
+      else if (error.status === 409) {
         console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"));
-        return(callback(error, null));
+        callback(error, null);
       }
-      if (error.status === 0) {
+      else if (error.status === 0) {
         console.log(chalkError("TFE | !!! DROPBOX NO RESPONSE"
           + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
-        return(callback(null, null));
+        callback(null, null);
       }
-      callback(error, null);
+      else {
+        callback(error, null);
+      }
     });
   }
 }
