@@ -333,13 +333,13 @@ const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.mod
 let NeuralNetwork;
 let User;
 
-let userServer;
-let userServerReady = false;
+let userServerController;
+let userServerControllerReady = false;
 
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
-wordAssoDb.connect(process.title, function(err, dbCon) {
+wordAssoDb.connect("TFE_" + process.pid, function(err, dbCon) {
   if (err) {
     console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR: " + err));
     quit("MONGO DB CONNECTION ERROR");
@@ -367,9 +367,9 @@ wordAssoDb.connect(process.title, function(err, dbCon) {
     NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
     User = mongoose.model("User", userModel.UserSchema);
 
-    userServer = require("@threeceelabs/user-server-controller");
+    userServerController = require("@threeceelabs/user-server-controller");
 
-    userServerReady = true;
+    userServerControllerReady = true;
   }
 });
 
@@ -1381,7 +1381,7 @@ function loadBestNeuralNetworkFile(callback) {
 }
 
 const runEnableArgs = {};
-runEnableArgs.userServerReady = userServerReady;
+runEnableArgs.userServerControllerReady = userServerControllerReady;
 runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
 runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
 runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
@@ -1396,7 +1396,7 @@ function runEnable(displayArgs) {
     randomNetworkTreeReadyFlag = true;
     randomNetworkTreeMessageRxQueueReadyFlag = true;
   }
-  runEnableArgs.userServerReady = userServerReady;
+  runEnableArgs.userServerControllerReady = userServerControllerReady;
   runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
   runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
   runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
@@ -1927,9 +1927,9 @@ function processUser(threeceeUser, userIn, callback) {
 
   debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
 
-  if (userServer === undefined) {
-    console.log(chalkError("processUser userServer UNDEFINED"));
-    quit("processUser userServer UNDEFINED");
+  if (userServerController === undefined) {
+    console.log(chalkError("processUser userServerController UNDEFINED"));
+    quit("processUser userServerController UNDEFINED");
   }
 
   async.waterfall(
@@ -1952,7 +1952,7 @@ function processUser(threeceeUser, userIn, callback) {
             + " | @" + userIn.screen_name
           ));
 
-          userServer.convertRawUser({user:userIn}, function(err, user) {
+          userServerController.convertRawUser({user:userIn}, function(err, user) {
             if (err) {
               console.log(chalkError("TFE | CONVERT USER ERROR"
                 + " | " + err
@@ -4193,7 +4193,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback) {
                 langAnalyzerMessageRxQueueReadyFlag = true;
               }, 1000);
             }
-            userServer.findOneUser(m.obj, {noInc: true, updateCountHistory: true }, function(err, updatedUserObj) {
+            userServerController.findOneUser(m.obj, {noInc: true, updateCountHistory: true }, function(err, updatedUserObj) {
               if (err) {
                 console.log(chalkError("ERROR DB UPDATE USER languageAnalysis0"
                   + "\n" + err
@@ -4250,7 +4250,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback) {
               statsObj.normalization.score.max = Math.max(m.results.sentiment.score, statsObj.normalization.score.max);
               statsObj.normalization.magnitude.min = Math.min(m.results.sentiment.magnitude, statsObj.normalization.magnitude.min);
               statsObj.normalization.magnitude.max = Math.max(m.results.sentiment.magnitude, statsObj.normalization.magnitude.max);
-              userServer.findOneUser(m.obj, {noInc: true, updateCountHistory: true}, function(err, updatedUserObj) {
+              userServerController.findOneUser(m.obj, {noInc: true, updateCountHistory: true}, function(err, updatedUserObj) {
                 if (err) {
                   console.log(chalkError("ERROR DB UPDATE USER languageAnalysis1"
                     + "\n" + err
@@ -4289,7 +4289,7 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback) {
             statsObj.normalization.score.max = Math.max(m.results.sentiment.score, statsObj.normalization.score.max);
             statsObj.normalization.magnitude.min = Math.min(m.results.sentiment.magnitude, statsObj.normalization.magnitude.min);
             statsObj.normalization.magnitude.max = Math.max(m.results.sentiment.magnitude, statsObj.normalization.magnitude.max);
-            userServer.findOneUser(m.obj, {noInc: true, updateCountHistory: true}, function(err, updatedUserObj) {
+            userServerController.findOneUser(m.obj, {noInc: true, updateCountHistory: true}, function(err, updatedUserObj) {
               if (err) {
                 console.log(chalkError("ERROR DB UPDATE USER languageAnalysis2"
                   + "\n" + err
@@ -4353,7 +4353,7 @@ function initUserDbUpdateQueueInterval(interval) {
     if (userDbUpdateQueueReadyFlag && (userDbUpdateQueue.length > 0)) {
       userDbUpdateQueueReadyFlag = false;
       let user = userDbUpdateQueue.shift();
-      userServer.findOneUser(user, {noInc: true, updateCountHistory: true}, function updateUserComplete(err, updatedUserObj) {
+      userServerController.findOneUser(user, {noInc: true, updateCountHistory: true}, function updateUserComplete(err, updatedUserObj) {
         userDbUpdateQueueReadyFlag = true;
         if (err) {
           console.trace(chalkError("ERROR DB UPDATE USER - updateUserDb"
