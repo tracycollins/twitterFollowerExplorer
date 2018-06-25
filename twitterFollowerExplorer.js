@@ -2,6 +2,8 @@
 "use strict";
 require("isomorphic-fetch");
 
+const DEFAULT_QUIT_ON_COMPLETE = false;
+
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
@@ -45,10 +47,12 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const DROPBOX_LIST_FOLDER_LIMIT = 50;
 // const DROPBOX_MAX_FILE_UPLOAD = 140 * ONE_MEGABYTE; // bytes
 
+
 const DEFAULT_FETCH_ALL_INTERVAL = 120*ONE_MINUTE;
 
 const FSM_TICK_INTERVAL = ONE_SECOND;
 const PROCESS_USER_QUEUE_INTERVAL = 1;
+
 
 const TEST_MODE_TOTAL_FETCH = 20;
 const TEST_MODE_FETCH_COUNT = 10;  // per request twitter user fetch count
@@ -415,7 +419,7 @@ configuration.minMatchRate = DEFAULT_MIN_MATCH_RATE;
 configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEFAULT_FETCH_COUNT;
 configuration.keepaliveInterval = 5*ONE_SECOND;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
-configuration.quitOnComplete = true;
+configuration.quitOnComplete = DEFAULT_QUIT_ON_COMPLETE;
 statsObj.childrenFetchBusy = false;
 
 statsObj.hostname = hostname;
