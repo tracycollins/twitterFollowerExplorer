@@ -1941,14 +1941,17 @@ function processUser(threeceeUser, userIn, callback) {
           return(cb(err, user));
         }
         if (!user) {
+
           userIn.modified = moment();
           userIn.following = true;
           userIn.threeceeFollowing = threeceeUser;
+
           console.log(chalkInfo("USER DB MISS"
             + " | 3C @" + threeceeUser
             + " | " + userIn.id_str
             + " | @" + userIn.screen_name
           ));
+
           userServer.convertRawUser({user:userIn}, function(err, user) {
             if (err) {
               console.log(chalkError("TFE | CONVERT USER ERROR"
@@ -1960,16 +1963,22 @@ function processUser(threeceeUser, userIn, callback) {
               cb(null, user);
             }
           });
+
         }
         else {
+
           if ((typeof user.threeceeFollowing === "object") || (typeof user.threeceeFollowing === "boolean")) {
             console.log(chalkAlert(">>> CONVERT TO STRING | USER @" + user.screenName
               + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
               + " | threeceeFollowing: " + user.threeceeFollowing
             ));
+
             let newUser = new User(user);
+
             newUser.threeceeFollowing = threeceeUser;
+
             user = new User(newUser);
+
             console.log(chalkAlert("... CONVERTED STRING | USER @" + user.screenName
               + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
               + " | threeceeFollowing: " + user.threeceeFollowing
@@ -1979,6 +1988,7 @@ function processUser(threeceeUser, userIn, callback) {
             user.following = true;
             user.threeceeFollowing = threeceeUser;
           }
+
           if ((user.status !== undefined) && user.status) { user.lastSeen = user.status.created_at; }
 
           let catObj = {};
@@ -2816,6 +2826,7 @@ function initProcessUserQueueInterval(interval) {
             + "\n<FRND PRCSSD | @" + user.screenName
             + " | NAME: " + user.name
             + " | CR: " + user.createdAt
+            + " | LS: " + user.lastSeen
             + " | FLWg: " + user.following
             + " | 3CF: " + user.threeceeFollowing
             + " | FLWRs: " + user.followersCount
