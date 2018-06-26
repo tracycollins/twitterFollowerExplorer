@@ -1090,7 +1090,7 @@ function resetStats(callback){
   statsObj.categorize.positive = 0;
   statsObj.categorize.negative = 0;
 
-  if (callback) { callback(err); }
+  if (callback) { callback(); }
 
 }
 
@@ -1122,8 +1122,9 @@ process.on("message", function(m) {
       initActivateNetworkInterval(m.interval);
       process.send({ op: "IDLE" }, function(err){
         if (err) { 
-          console.trace(chalkError("SEND ERROR | IDLE | " + err));
-          quit("STATS PROCESS SEND ERRROR");
+          console.trace(chalkError("RNT SEND ERROR | IDLE | " + err));
+          console.error.bind(console, "RNT SEND ERROR | IDLE | " + err);
+          // quit("RNT IDLE PROCESS SEND ERRROR");
         }
       });
     break;
@@ -1142,7 +1143,8 @@ process.on("message", function(m) {
         process.send({ op: "BUSY", cause: cause }, function(err){
         if (err) { 
           console.trace(chalkError("SEND ERROR | BUSY | " + err));
-          quit("STATS PROCESS SEND ERRROR");
+          console.error.bind(console, "RNT SEND ERROR | BUSY | " + err);
+          // quit("STATS PROCESS SEND ERRROR");
         }
       });
       }
@@ -1150,7 +1152,7 @@ process.on("message", function(m) {
         process.send({ op: "IDLE" }, function(err){
         if (err) { 
           console.trace(chalkError("SEND ERROR | IDLE | " + err));
-          quit("STATS PROCESS SEND ERRROR");
+          console.error.bind(console, "RNT SEND ERROR | IDLE | " + err);
         }
       });
       }
@@ -1162,7 +1164,7 @@ process.on("message", function(m) {
         process.send({ op: "BUSY", cause: busy() }, function(err){
         if (err) { 
           console.trace(chalkError("SEND ERROR | BUSY | " + err));
-          quit("STATS PROCESS SEND ERRROR");
+          console.error.bind(console, "RNT SEND ERROR | BUSY | " + err);
         }
       });
       }
@@ -1170,7 +1172,7 @@ process.on("message", function(m) {
         process.send({ op: "IDLE" }, function(err){
         if (err) { 
           console.trace(chalkError("SEND ERROR | IDLE | " + err));
-          quit("STATS PROCESS SEND ERRROR");
+          console.error.bind(console, "RNT SEND ERROR | IDLE | " + err);
         }
       });
       }
@@ -1180,7 +1182,7 @@ process.on("message", function(m) {
       process.send({ op: "STATS", statsObj: statsObj }, function(err){
         if (err) { 
           console.trace(chalkError("SEND ERROR | GET_STATS | " + err));
-          quit("STATS PROCESS SEND ERRROR");
+          console.error.bind(console, "RNT SEND ERROR | STATS | " + err);
         }
       });
     break;
@@ -1193,6 +1195,7 @@ process.on("message", function(m) {
       process.send({ op: "IDLE" }, function(err){
         if (err) { 
           console.trace(chalkError("SEND ERROR | IDLE | " + err));
+          console.error.bind(console, "RNT SEND ERROR | IDLE | " + err);
           quit("STATS PROCESS SEND ERRROR");
         }
       });
@@ -1208,7 +1211,7 @@ process.on("message", function(m) {
         process.send({op: "NETWORK_READY"}, function(err){
           if (err) { 
             console.trace(chalkError("SEND ERROR | NETWORK_READY | " + err));
-            quit("NETWORK_READY PROCESS SEND ERRROR");
+            console.error.bind(console, "RNT SEND ERROR | NETWORK_READY | " + err);
           }
         });
       });
@@ -1228,14 +1231,14 @@ process.on("message", function(m) {
 
       process.send({op: "NETWORK_BUSY"}, function(err){
         if (err) { 
-          quit("NETWORK_BUSY PROCESS SEND ERRROR");
+          console.error.bind(console, "RNT SEND ERROR | NETWORK_BUSY | " + err);
         }
       });
 
       if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
         process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
           if (err) { 
-            quit("SEND QUEUE_FULL ERROR");
+            console.error.bind(console, "RNT SEND ERROR | QUEUE_FULL | " + err);
           }
         });
         maxQueueFlag = true;
@@ -1248,6 +1251,7 @@ process.on("message", function(m) {
         + " | " + m.op
         + "\n" + jsonPrint(m)
       ));
+      console.error.bind(console, "RNT UNKNOWN OP ERROR | " + m.op + "\n" + jsonPrint(m));
   }
 });
 
@@ -1392,6 +1396,7 @@ setTimeout(function(){
 
     if (err && (err.status !== 404)) {
       console.log(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
+      console.error.bind(console, "RNT INIT ERROR: " + err);
       quit(err);
     }
     console.log(chalkInfo(cnf.processName + " STARTED " + getTimeStamp() + "\n" + jsonPrint(cnf)));
