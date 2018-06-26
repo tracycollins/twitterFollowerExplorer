@@ -3094,6 +3094,8 @@ function initSocket(cnf) {
       + " | " + moment().format(compactDateTimeFormat)
     ));
 
+    tfeChildHashMap.altthreecee00.child.send({op: "UNFOLLOW", user:u});
+    tfeChildHashMap.altthreecee01.child.send({op: "UNFOLLOW", user:u});
     tfeChildHashMap.altthreecee02.child.send({op: "UNFOLLOW", user:u});
 
   });  
