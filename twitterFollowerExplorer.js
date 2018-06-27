@@ -1,4 +1,5 @@
  /*jslint node: true */
+/*jshint sub:true*/
 "use strict";
 require("isomorphic-fetch");
 
@@ -337,8 +338,16 @@ const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.mod
 let NeuralNetwork;
 let User;
 
-let userServerController;
+const UserServerController = require("@threeceelabs/user-server-controller");
+const userServerController = new UserServerController("TFE_USC");
+
 let userServerControllerReady = false;
+
+userServerController.on("ready", function(appname){
+  userServerControllerReady = true;
+  console.log(chalkAlert("USC READY | " + appname));
+});
+
 
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
@@ -371,9 +380,6 @@ wordAssoDb.connect("TFE_" + process.pid, function(err, dbCon) {
     NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
     User = mongoose.model("User", userModel.UserSchema);
 
-    userServerController = require("@threeceelabs/user-server-controller");
-
-    userServerControllerReady = true;
   }
 });
 
