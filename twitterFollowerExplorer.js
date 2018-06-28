@@ -703,25 +703,36 @@ function loadFile(path, file, callback) {
       debug(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
     }
     fs.readFile(fullPath, "utf8", function(err, data) {
+
       if (err) {
         console.log(chalkError("fs readFile ERROR: " + err));
       }
+
       debug(chalkLog(getTimeStamp()
         + " | LOADING FILE FROM DROPBOX FILE"
         + " | " + fullPath
       ));
+
       if (file.match(/\.json$/gi)) {
+
+        let fileObj;
+
         try {
-          let fileObj = JSON.parse(data);
-          callback(null, fileObj);
+          fileObj = JSON.parse(data);
+          // callback(null, fileObj);
         }
         catch(e) {
           console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
-          callback("JSON PARSE ERROR", null);
+          return callback("JSON PARSE ERROR", null);
         }
+
+        callback(null, fileObj);
+
       }
       else {
+
         callback(null, null);
+
       }
     });
    }
