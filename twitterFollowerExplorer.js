@@ -19,6 +19,8 @@ const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
 
 const os = require("os");
 const moment = require("moment");
+const defaults = require("object.defaults");
+
 
 let hostname = os.hostname();
 hostname = hostname.replace(/.local/g, "");
@@ -726,22 +728,33 @@ function loadFile(path, file, callback) {
   else {
     dropboxClient.filesDownload({path: fullPath})
     .then(function(data) {
+
       debug(chalkLog(getTimeStamp()
         + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
       ));
+
       if (file.match(/\.json$/gi)) {
+
         let payload = data.fileBinary;
+        let fileObj;
+
         debug(payload);
+
         try {
-          let fileObj = JSON.parse(payload);
-          callback(null, fileObj);
+
+          fileObj = JSON.parse(payload);
+          // callback(null, fileObj);
         }
         catch(e) {
+
           console.trace(chalkError("TFE | JSON PARSE ERROR | PATH: " + fullPath));
           console.trace(chalkError("TFE | JSON PARSE ERROR: " + fullPath + " | " + jsonPrint(e)));
           console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
-          callback("JSON PARSE ERROR", null);
+
+          return callback(new Error("JSON PARSE ERROR"), null);
         }
+
+        callback(null, fileObj);
       }
       else {
         callback(null, null);
@@ -2147,40 +2160,50 @@ const checkChildrenState = function (checkState, callback) {
   });
 };
 
-function childSendAll(op, callback) {
-  console.log(chalkAlert(">>> CHILD SEND ALL | OP: " + op));
+function childSendAll(params, callback) {
+
+  console.log(chalkAlert(">>> CHILD SEND ALL | OP: " + params.op));
+
   async.each(Object.keys(tfeChildHashMap), function(threeceeUser, cb) {
+
     const curChild = tfeChildHashMap[threeceeUser].child;
-    if (op === "INIT") {
+
+    if (params.op === "INIT") {
+
       const initObj = {
-        op: op,
+        op: params.op,
         childId: tfeChildHashMap[threeceeUser].childId,
         threeceeUser: tfeChildHashMap[threeceeUser].threeceeUser,
-        twitterConfig: tfeChildHashMap[threeceeUser].twitterConfig
+        twitterConfig: tfeChildHashMap[threeceeUser].twitterConfig,
+        verbose: configuration.verbose
       };
+
       curChild.send(initObj, function(err) {
         if (err) {
           console.log(chalkError("*** CHILD SEND ALL INIT ERROR"
             + " | @" + threeceeUser
-            + " | OP: " + op
+            + " | OP: " + params.op
             + " | ERR: " + err
           ));
         }
         cb(err);
       });
+
     }
     else {
-      curChild.send({op: op}, function(err) {
+
+      curChild.send(params, function(err) {
         if (err) {
           console.log(chalkError("*** CHILD SEND ALL ERROR"
             + " | @" + threeceeUser
-            + " | OP: " + op
+            + " | OP: " + params.op
             + " | ERR: " + err
           ));
         }
         cb(err);
       });
     }
+
   }, function(err) {
     if (callback !== undefined) { callback(err); }
   });
@@ -2226,7 +2249,7 @@ const fsmStates = {
         reporter(event, oldState, newState);
         checkChildrenState("INIT", function(err, aci) {
           console.log("ALL CHILDREN INIT: " + aci);
-          if (!aci && (event !== "fsm_tick")) { childSendAll("INIT"); }
+          if (!aci && (event !== "fsm_tick")) { childSendAll({op: "INIT"}); }
         });
       }
     },
@@ -2249,7 +2272,7 @@ const fsmStates = {
         reporter(event, oldState, newState);
         checkChildrenState("READY", function(err, aci) {
           console.log("ALL CHILDREN READY: " + aci);
-          if (!aci && (event !== "fsm_tick")) { childSendAll("READY"); }
+          if (!aci && (event !== "fsm_tick")) { childSendAll({op: "READY"}); }
         });
       }
     },
@@ -2295,7 +2318,7 @@ const fsmStates = {
 
               randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
                 console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
-                childSendAll("FETCH_USER_START");
+                childSendAll({op: "FETCH_USER_START"});
                 statsObj.fetchCycleStartMoment = moment();
                 statsObj.fetchCycleElapsed = 0;
               });
@@ -2455,7 +2478,7 @@ const fsmStates = {
               randomNetworkTree.send({op: "RESET_STATS"});
             }
 
-            childSendAll("RESET_TWITTER_USER_STATE");
+            childSendAll({op: "RESET_TWITTER_USER_STATE"});
 
             resetAllTwitterUserState(function() {
 
@@ -3477,6 +3500,15 @@ function initTwitterUsers(callback) {
   }
 }
 
+function toggleVerbose(){
+
+  configuration.verbose = !configuration.verbose;
+
+  console.log(chalkAlert("VERBOSE: " + configuration.verbose));
+
+  childSendAll({op: "VERBOSE", verbose: configuration.verbose});
+}
+
 function initStdIn() {
   console.log("STDIN ENABLED");
   stdin = process.stdin;
@@ -3494,22 +3526,30 @@ function initStdIn() {
         abortCursor = true;
         console.log(chalkAlert("ABORT: " + abortCursor));
       break;
+
       case "q":
       case "Q":
         quit({source: "STDIN"});
       break;
+
       case "s":
         showStats();
       break;
+
       case "S":
         showStats(true);
       break;
+
+      case "V":
+        toggleVerbose();
+      break;
+
       default:
-        console.log(
+        console.log(chalkInfo(
           "\n" + "q/Q: quit"
           + "\n" + "s: showStats"
           + "\n" + "S: showStats verbose"
-          );
+        ));
     }
   });
 }

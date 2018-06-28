@@ -57,7 +57,7 @@ const jsonPrint = function (obj){
 
 
 let configuration = {};
-
+configuration.verbose = false;
 configuration.childId = process.env.CHILD_ID;
 configuration.threeceeUser = process.env.THREECEE_USER;
 configuration.twitterConfig = {};
@@ -173,14 +173,16 @@ function checkRateLimit(params, callback){
     }
     else {
 
-      debug(chalkLog("TWITTER RATE LIMIT STATUS"
-        + " | @" + configuration.threeceeUser
-        + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
-        + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
-        + " | RST: " + getTimeStamp(statsObj.threeceeUser.twitterRateLimitResetAt)
-        + " | NOW: " + moment().format(compactDateTimeFormat)
-        + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
-      ));
+      if (configuration.verbose) {
+        console.log(chalkLog("TWITTER RATE LIMIT STATUS"
+          + " | @" + configuration.threeceeUser
+          + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
+          + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
+          + " | RST: " + getTimeStamp(statsObj.threeceeUser.twitterRateLimitResetAt)
+          + " | NOW: " + moment().format(compactDateTimeFormat)
+          + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
+        ));
+      }
 
       if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
         && statsObj.threeceeUser.twitterRateLimitResetAt.isBefore(moment())){
@@ -232,14 +234,16 @@ function checkRateLimit(params, callback){
         statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
-        debug(chalkInfo("... NO TWITTER RATE LIMIT"
-          + " | CONTEXT: " + data.rate_limit_context.access_token
-          + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
-          + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
-          + " | RST: " + statsObj.threeceeUser.twitterRateLimitResetAt.format(compactDateTimeFormat)
-          + " | NOW: " + moment().format(compactDateTimeFormat)
-          + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
-        ));
+        if (configuration.verbose) {
+          console.log(chalkInfo("... NO TWITTER RATE LIMIT"
+            + " | @" + configuration.threeceeUser
+            + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
+            + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
+            + " | RST: " + getTimeStamp(statsObj.threeceeUser.twitterRateLimitResetAt)
+            + " | NOW: " + moment().format(compactDateTimeFormat)
+            + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
+          ));
+        }
       }
 
       if (callback !== undefined) { callback(); }
@@ -925,14 +929,22 @@ process.on("message", function(m) {
               ));
             }
             else {
+
               debug("data\n" + jsonPrint(data));
-              debug("response\n" + jsonPrint(response));
+
+              if (configuration.verbose) { 
+                console.log(chalkInfo("UNFOLLOW"
+                  + " | 3C: @" + configuration.threeceeUser
+                  + "\nresponse\n" + jsonPrint(response)
+                ));
+              }
 
               console.log(chalkInfo("=X= UNFOLLOW"
                 + " | 3C: @" + configuration.threeceeUser
                 + " | NID: " + m.user.userId
                 + " | @" + m.user.screenName.toLowerCase()
               ));
+
             }
           }
         );
@@ -956,6 +968,11 @@ process.on("message", function(m) {
     case "STATS":
       showStats();
       process.send({op:"STATS", threeceeUser: configuration.threeceeUser, statsObj: statsObj});
+    break;
+
+    case "VERBOSE":
+      console.log(chalkAlert("TFC @" + configuration.threeceeUser + " | SET VERBOSE: " + m.verbose));
+      configuration.verbose = m.verbose;
     break;
 
     default:
