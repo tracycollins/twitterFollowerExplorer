@@ -2459,7 +2459,10 @@ const fsmStates = {
 
         loadedNetworksFlag = false;
 
-        if (randomNetworkTree && (randomNetworkTree !== undefined)) { randomNetworkTree.send({op: "GET_STATS"}); }
+        if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+          // RNT will return "STATS", and then all nn's will be updated in DB
+          randomNetworkTree.send({op: "GET_STATS"});
+        }
 
         let slackText = "\n*END FETCH ALL*";
         slackText = slackText + " | " + hostname;
@@ -3869,12 +3872,9 @@ function saveNetworkHashMap(params, callback) {
 
 function updateNetworkStats(params, callback) {
 
-  // updateNetworkStatsReady = false;
-
-  const updateOverallMatchRate = 
-    (params.updateOverallMatchRate !== undefined) ? params.updateOverallMatchRate : false;
-
+  const updateOverallMatchRate = (params.updateOverallMatchRate !== undefined) ? params.updateOverallMatchRate : false;
   const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
+  const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
 
   const nnIds = Object.keys(params.networkStatsObj);
 
@@ -3886,20 +3886,11 @@ function updateNetworkStats(params, callback) {
 
       const bnhmObj = bestNetworkHashMap.get(nnId);
 
+      bnhmObj.networkObj.incrementTestCycles = incrementTestCycles;
       bnhmObj.networkObj.matchRate = params.networkStatsObj[nnId].matchRate;
-      bnhmObj.networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate 
-      : params.networkStatsObj[nnId].overallMatchRate;
+      bnhmObj.networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
 
       bestNetworkHashMap.set(nnId, bnhmObj);
-
-      // const newNeuralNetwork = new NeuralNetwork(bnhmObj.networkObj)
-      // .save()
-      // .catch(function(err){
-      //   console.log(chalkError("NNT | *** ERROR SAVE NN TO DB" 
-      //     + " | NID: " + bnhmObj.networkObj.networkId
-      //     + " | " + err.message
-      //   ));
-      // });
 
       NeuralNetwork.findOne({ networkId: bnhmObj.networkObj.networkId }, function(err, nnDb){
         if (err) {
@@ -3910,13 +3901,20 @@ function updateNetworkStats(params, callback) {
           cb();
         }
         else if (nnDb) {
+
+          if (nnDb.testCycles === undefined) {
+            nnDb.testCycles = 0;
+            nnDb.markModified("testCycles");
+          }
+
+          if (bnhmObj.networkObj.incrementTestCycles) { nnDb.testCycles += 1; }
+
           nnDb.matchRate = bnhmObj.networkObj.matchRate;
           nnDb.overallMatchRate = bnhmObj.networkObj.overallMatchRate;
           nnDb.markModified("overallMatchRate");
+
           nnDb.save()
-          .then(function(){
-            cb();
-          })
+          .then(function(){ cb(); })
           .catch(function(err){
             console.log(chalkError("NNT | *** ERROR SAVE NN TO DB" 
               + " | NID: " + nnDb.networkId
@@ -3927,11 +3925,12 @@ function updateNetworkStats(params, callback) {
         }
         else {
           newNnDb = new NeuralNetwork(bnhmObj.networkObj);
+          nnDb.testCycles = 0;
+          if (bnhmObj.networkObj.incrementTestCycles) { nnDb.testCycles = 1; }
+          nnDb.markModified("testCycles");
           newNnDb.markModified("overallMatchRate");
           newNnDb.save()
-          .then(function(){
-            cb();
-          })
+          .then(function(){ cb(); })
           .catch(function(err){
             console.log(chalkError("NNT | *** ERROR SAVE NN TO DB" 
               + " | NID: " + bnhmObj.networkObj.networkId
@@ -3949,7 +3948,6 @@ function updateNetworkStats(params, callback) {
         + " | " + bnhmObj.networkObj.networkId
       ));
 
-      // cb();
     }
     else {
       console.log(chalkAlert("??? NETWORK NOT IN BEST NETWORK HASHMAP ???"
@@ -3960,26 +3958,31 @@ function updateNetworkStats(params, callback) {
   }, function(err) {
 
     saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: params.saveImmediate, updateDb: params.updateDb}, function() {
-
-      // updateNetworkStatsReady = true;
-
       if (callback !== undefined) { callback(err); }
     });
   });
 }
 
 function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
+
   randomNetworkTreeMessageRxQueueReadyFlag = true;
+
   console.log(chalkInfo("INIT RANDOM NETWORK TREE QUEUE INTERVAL: " + interval + " ms"));
+
   randomNetworkTreeMessageRxQueueInterval = setInterval(function () {
+
     if (randomNetworkTreeMessageRxQueueReadyFlag && (randomNetworkTreeMessageRxQueue.length > 0)) {
+
       randomNetworkTreeMessageRxQueueReadyFlag = false;
+
       let m = randomNetworkTreeMessageRxQueue.shift();
+
       let user = {};
       let bnhmObj = {};
       let prevHmObj = {};
       let fileObj = {};
       let file;
+
       switch (m.op) {
         case "IDLE":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
@@ -3988,34 +3991,44 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           runEnable();
           console.log(chalkInfo("... RNT IDLE ..."));
         break;
+
         case "STATS":
+
           console.log(chalkInfo(getTimeStamp() + " | RNT_STATS"
             + "\n" + jsonPrint(Object.keys(m.statsObj))
           ));
+
+          console.log(chalkAlert("RNT | UPDATING ALL NNs STATS IN DB..."));
+
           updateNetworkStats(
             {
               networkStatsObj: m.statsObj.loadedNetworks, 
               saveImmediate: true, 
               updateDb: true, 
-              updateOverallMatchRate: true
+              updateOverallMatchRate: true,
+              incrementTestCycles: true
             }, 
             function() {
               randomNetworkTreeMessageRxQueueReadyFlag = true;
             }
           );
+
         break;
+
         case "NETWORK_READY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
           debug(chalkInfo("... RNT NETWORK_READY ..."));
           runEnable();
         break;
+
         case "NETWORK_BUSY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
           randomNetworkTreeBusyFlag = "NETWORK_BUSY";
           debug(chalkInfo("... RNT NETWORK_BUSY ..."));
         break;
+
         case "QUEUE_READY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeActivateQueueSize = m.queue;
@@ -4023,6 +4036,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           debug(chalkInfo("RNT Q READY"));
           runEnable();
         break;
+
         case "QUEUE_EMPTY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeActivateQueueSize = m.queue;
@@ -4030,6 +4044,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           debug(chalkInfo("RNT Q EMPTY"));
           runEnable();
         break;
+
         case "QUEUE_FULL":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeActivateQueueSize = m.queue;
@@ -4037,18 +4052,21 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeBusyFlag = "QUEUE_FULL";
           console.log(chalkError("!!! RNT Q FULL"));
         break;
+
         case "RNT_TEST_PASS":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
           console.log(chalkTwitter(getTimeStamp() + " | RNT_TEST_PASS | RNT READY: " + randomNetworkTreeReadyFlag));
           runEnable();
         break;
+
         case "RNT_TEST_FAIL":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
           console.log(chalkAlert(getTimeStamp() + " | RNT_TEST_FAIL"));
           quit({source: "RNT", error: "RNT_TEST_FAIL"});
         break;
+
         case "NETWORK_OUTPUT":
 
           randomNetworkTreeActivateQueueSize = m.queue;
