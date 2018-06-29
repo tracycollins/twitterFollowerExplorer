@@ -3585,6 +3585,10 @@ function initialize(cnf, callback) {
 
   cnf.fetchAllIntervalTime = process.env.TFE_FETCH_ALL_INTERVAL || DEFAULT_FETCH_ALL_INTERVAL;
 
+  if (cnf.testMode) {
+    cnf.fetchAllIntervalTime = 5*ONE_MINUTE;
+  }
+
   cnf.quitOnError = process.env.TFE_QUIT_ON_ERROR || false ;
 
   if (process.env.TFE_QUIT_ON_COMPLETE === "false") {
@@ -3634,6 +3638,10 @@ function initialize(cnf, callback) {
       if (loadedConfigObj.TFE_FETCH_ALL_INTERVAL !== undefined) {
         console.log("LOADED TFE_FETCH_ALL_INTERVAL: " + loadedConfigObj.TFE_FETCH_ALL_INTERVAL);
         cnf.fetchAllIntervalTime = loadedConfigObj.TFE_FETCH_ALL_INTERVAL;
+      }
+
+      if (cnf.testMode) {
+        cnf.fetchAllIntervalTime = 5*ONE_MINUTE;
       }
 
       if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined) {
