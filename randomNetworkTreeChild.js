@@ -131,6 +131,7 @@ statsObj.bestNetwork.networkId = false;
 statsObj.bestNetwork.successRate = 0;
 statsObj.bestNetwork.matchRate = 0;
 statsObj.bestNetwork.overallMatchRate = 0;
+statsObj.bestNetwork.testCycles = 0;
 statsObj.bestNetwork.total = 0;
 statsObj.bestNetwork.match = 0;
 statsObj.bestNetwork.mismatch = 0;
@@ -567,6 +568,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
       statsObj.bestNetwork.matchRate = (statsObj.bestNetwork.matchRate === undefined) ? 0 : statsObj.bestNetwork.matchRate;
       statsObj.bestNetwork.overallMatchRate = (statsObj.bestNetwork.overallMatchRate === undefined) ? 0 : statsObj.bestNetwork.overallMatchRate;
+      statsObj.bestNetwork.testCycles = (statsObj.bestNetwork.testCycles === undefined) ? 0 : statsObj.bestNetwork.testCycles;
 
       debug(chalkLog("BEST NETWORK"
         + " | " + statsObj.bestNetwork.networkId
@@ -589,6 +591,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           + "\nSR:           " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
           + "\nMR:           " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
           + "\nOAMR:         " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
+          + "\nTCYCs:         " + statsObj.bestNetwork.testCycles
           + "\nPREV BEST:    " + previousBestNetworkMatchRate.toFixed(2) + "%" + " | ID: " + previousBestNetworkId
           + "\n==================================================================\n"
         ));
@@ -724,6 +727,21 @@ function categoryToString(c) {
   return cs;
 }
 
+function printActivateResult(prefix, nn, category, categoryAuto, screenName){
+  console.log(chalkLog(prefix
+    + " | TCYCs: " + nn.testCycles
+    + " | OAMR: " + nn.overallMatchRate.toFixed(2) + "%"
+    + " | MR: " + nn.matchRate.toFixed(2) + "%"
+    + " | SR: " + nn.successRate.toFixed(2) + "%"
+    + " | " + nn.match + " / " + nn.total
+    + " | " + nn.networkId
+    + " | " + nn.numInputs + " IN"
+    + " | C: " + categoryToString(category)
+    + " | CA: " + categoryToString(categoryAuto)
+    + " | @" + screenName
+  ));
+}
+
 function initActivateNetworkInterval(interval){
 
   clearInterval(activateNetworkInterval);
@@ -826,70 +844,22 @@ function initActivateNetworkInterval(interval){
                   statsObj.categorize.total += 1;
 
                   if (category === results.categoryAuto) {
-
                     statsObj.categorize.match += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
-
-                    console.log(chalkLog("+++ MATCH"
-                      + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-                      + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
-                      + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
-                      + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
-                      + " | " + statsObj.bestNetwork.networkId
-                      + " | " + statsObj.bestNetwork.numInputs + " IN"
-                      + " | C: " + categoryToString(category)
-                      + " | CA: " + categoryToString(results.categoryAuto)
-                      + " | @" + obj.user.screenName
-                    ));
-
+                    printActivateResult("+++ MATCH", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
                   }
                   else {
-
                     statsObj.categorize.mismatch += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
-
-                    console.log(chalkMiss("000 MISS "
-                      + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-                      + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
-                      + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
-                      + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
-                      + " | " + statsObj.bestNetwork.networkId
-                      + " | " + statsObj.bestNetwork.numInputs + " IN"
-                      + " | C: " + categoryToString(category)
-                      + " | CA: " + categoryToString(results.categoryAuto)
-                      + " | @" + obj.user.screenName
-                    ));
-
+                    printActivateResult("000 MISS ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
                   }
                 }
                 else {
-
-                  console.log(chalk.gray("___ ignore"
-                    + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-                    + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
-                    + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
-                    + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
-                    + " | " + statsObj.bestNetwork.networkId
-                    + " | " + statsObj.bestNetwork.numInputs + " IN"
-                    + " | C: " + categoryToString(category)
-                    + " | CA: " + categoryToString(results.categoryAuto)
-                    + " | @" + obj.user.screenName
-                  ));
-
+                  printActivateResult("___ ignore", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
                 }
               }
               else {
-                console.log(chalk.gray("    uncat"
-                  + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-                  + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
-                  + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
-                  + " | " + statsObj.bestNetwork.match + " / " + statsObj.bestNetwork.total
-                  + " | " + statsObj.bestNetwork.networkId
-                  + " | " + statsObj.bestNetwork.numInputs + " IN"
-                  + " | C: " + categoryToString(category)
-                  + " | CA: " + categoryToString(results.categoryAuto)
-                  + " | @" + obj.user.screenName
-                ));
+                printActivateResult("___ ignore", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
               }
             }
 
