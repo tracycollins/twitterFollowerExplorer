@@ -67,7 +67,7 @@ const IMAGE_QUOTA_TIMEOUT = 60000;
 const DEFAULT_FORCE_IMAGE_ANALYSIS = true;
 const DEFAULT_FORCE_INIT_RANDOM_NETWORKS = true;
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
-const DEFAULT_MIN_SUCCESS_RATE = 75;
+const DEFAULT_MIN_SUCCESS_RATE = 80;
 const DEFAULT_MIN_MATCH_RATE = 80;
 const DEFAULT_MIN_INPUTS_GENERATED = 400 ;
 const DEFAULT_MAX_INPUTS_GENERATED = 750 ;
@@ -1127,14 +1127,13 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
             if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
             if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
+            if (networkObj.testCycles === undefined) { networkObj.testCycles = 0; }
 
             if (
               (networkObj.overallMatchRate === 0)
               || (networkObj.overallMatchRate >= configuration.minMatchRate)
               || (networkObj.successRate >= configuration.minSuccessRate)
-              || (configuration.testMode 
-                && (networkObj.successRate >= 0.5*configuration.minSuccessRate) 
-                && (networkObj.overallMatchRate === 0))
+              || (configuration.testMode && (networkObj.successRate >= 0.5*configuration.minSuccessRate) && (networkObj.overallMatchRate === 0))
               || (configuration.testMode && (networkObj.overallMatchRate >= 0.5*configuration.minMatchRate))
             ) {
 
