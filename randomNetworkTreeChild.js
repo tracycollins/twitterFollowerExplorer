@@ -542,6 +542,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       statsObj.allTimeLoadedNetworks[nnId].match,
       statsObj.allTimeLoadedNetworks[nnId].mismatch,
       statsObj.allTimeLoadedNetworks[nnId].matchRate.toFixed(2),
+      statsObj.allTimeLoadedNetworks[nnId].testCycles,
       statsObj.loadedNetworks[nnId].matchFlag,
       nnOutput,
       statsObj.loadedNetworks[nnId].total,
@@ -608,6 +609,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
             "AM",
             "AMM",
             "AMR",
+            "TCYCs",
             "MFLAG",
             "OUTPUT",
             "TOT",
@@ -956,6 +958,7 @@ function loadNetworks(networksObj, callback){
     networkObj.network = {};
     networkObj.network = network;
 
+    networkObj.testCycles = (networkObj.testCycles !== undefined) ? networkObj.testCycles : 0 ;
     networkObj.successRate = (networkObj.successRate !== undefined) ? networkObj.successRate : 0 ;
     networkObj.matchRate = (networkObj.matchRate !== undefined) ? networkObj.matchRate : 0 ;
     networkObj.overallMatchRate = (networkObj.overallMatchRate !== undefined) ? networkObj.overallMatchRate : 0 ;
@@ -971,6 +974,7 @@ function loadNetworks(networksObj, callback){
       statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
       statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
       statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
+      statsObj.loadedNetworks[nnId].testCycles = networkObj.testCycles;
       statsObj.loadedNetworks[nnId].total = 0;
       statsObj.loadedNetworks[nnId].match = 0;
       statsObj.loadedNetworks[nnId].mismatch = 0;
@@ -983,6 +987,7 @@ function loadNetworks(networksObj, callback){
     }
 
     statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
+    statsObj.loadedNetworks[nnId].testCycles = networkObj.testCycles;
 
     if (statsObj.allTimeLoadedNetworks[nnId] === undefined) {
       statsObj.allTimeLoadedNetworks[nnId] = {};
@@ -993,6 +998,7 @@ function loadNetworks(networksObj, callback){
       statsObj.allTimeLoadedNetworks[nnId].successRate = networkObj.successRate;
       statsObj.allTimeLoadedNetworks[nnId].matchRate = networkObj.matchRate;
       statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
+      statsObj.allTimeLoadedNetworks[nnId].testCycles = networkObj.testCycles;
       statsObj.allTimeLoadedNetworks[nnId].total = 0;
       statsObj.allTimeLoadedNetworks[nnId].match = 0;
       statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
@@ -1005,12 +1011,14 @@ function loadNetworks(networksObj, callback){
     }
 
     statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
+    statsObj.allTimeLoadedNetworks[nnId].testCycles = networkObj.testCycles;
 
     console.log(chalkLog("RNT | LOAD NETWORK"
       + " | [ " + networksHashMap.size + " NNs IN HM ]"
       + " | SR: " + networkObj.successRate.toFixed(2) + "%"
       + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
       + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+      + " | TCYCs: " + networkObj.testCycles
       + " | " + nnId
     ));
 
