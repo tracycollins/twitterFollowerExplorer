@@ -476,6 +476,7 @@ statsObj.fetchUsersComplete = false;
 statsObj.bestNetworks = {};
 
 statsObj.bestNetwork = {};
+statsObj.bestNetwork.testCycles = 0;
 statsObj.bestNetwork.networkId = false;
 statsObj.bestNetwork.successRate = 0;
 statsObj.bestNetwork.matchRate = 0;
@@ -678,6 +679,7 @@ function updateBestNetworkStats(networkObj) {
   statsObj.bestNetwork.networkType = networkObj.networkType;
   statsObj.bestNetwork.successRate = networkObj.successRate;
   statsObj.bestNetwork.matchRate = networkObj.matchRate;
+  statsObj.bestNetwork.testCycles = networkObj.testCycles;
   statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate;
   statsObj.bestNetwork.input = networkObj.network.input;
   statsObj.bestNetwork.numInputs = networkObj.numInputs;
