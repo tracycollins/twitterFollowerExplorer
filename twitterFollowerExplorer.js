@@ -697,10 +697,13 @@ function updateBestNetworkStats(networkObj) {
 }
 
 function loadFile(path, file, callback) {
+
   debug(chalkInfo("LOAD FOLDER " + path));
   debug(chalkInfo("LOAD FILE " + file));
   debug(chalkInfo("FULL PATH " + path + "/" + file));
+
   let fullPath = path + "/" + file;
+
   if (OFFLINE_MODE) {
     if (hostname === "mbp2") {
       fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + path + "/" + file;
@@ -741,6 +744,7 @@ function loadFile(path, file, callback) {
     });
    }
   else {
+
     dropboxClient.filesDownload({path: fullPath})
     .then(function(data) {
 
@@ -1251,7 +1255,22 @@ function initRandomNetworks(params, callback) {
 
         delete availableNeuralNetHashMap[nnId];
 
-        const networkObj = bestNetworkHashMap.get(nnId).networkObj;
+        let networkObj = bestNetworkHashMap.get(nnId).networkObj;
+
+        if (networkObj.successRate === undefined) {
+          console.log(chalkError("initRandomNetworks | SUCCESS RATE UNDEFINED ??? | SKIPPING | " + nnId));
+          return cb();
+        }
+
+        if (networkObj.matchRate === undefined) {
+          console.log(chalkAlert("initRandomNetworks | MATCH RATE UNDEFINED ??? | SETTING TO ZERO | " + nnId));
+          networkObj.matchRate = 0;
+        }
+
+        if (networkObj.overallMatchRate === undefined) {
+          console.log(chalkAlert("initRandomNetworks | OVERALL MATCH RATE UNDEFINED ??? | SETTING TO ZERO | " + nnId));
+          networkObj.overallMatchRate = 0;
+        }
 
         randomNetworksObj[nnId] = {};
         randomNetworksObj[nnId] = networkObj;
