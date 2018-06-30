@@ -69,7 +69,10 @@ const chalkError = chalk.bold.red;
 const chalkAlert = chalk.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
+const chalkConnect = chalk.green;
 
+let socket;
+let socketKeepAliveInterval;
 
 const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
 const slackChannel = "#gis";
@@ -242,6 +245,7 @@ const minTotalMin = { name: "minTotalMin", type: Number};
 const maxTotalMin = { name: "maxTotalMin", type: Number};
 
 const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
+const targetServer = { name: "targetServer", alias: "t", type: String};
 const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean, defaultValue: false};
 const quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
 const testMode = { name: "testMode", alias: "X", type: Boolean, defaultValue: false};
@@ -264,6 +268,16 @@ const commandLineConfig = cla(optionDefinitions);
 console.log(chalkInfo("COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
 
 console.log("COMMAND LINE OPTIONS\n" + jsonPrint(commandLineConfig));
+
+
+if (commandLineConfig.targetServer === "LOCAL") {
+  commandLineConfig.targetServer = "http://127.0.0.1:9997/util";
+}
+
+if (commandLineConfig.targetServer === "REMOTE") {
+  commandLineConfig.targetServer = "http://word.threeceelabs.com/util";
+}
+
 
 process.title = "node_generateInputSets";
 console.log("\n\n=================================");
@@ -377,8 +391,6 @@ const sortedObjectValues = function(params) {
 
   });
 };
-
-
 
 function generateInputSets3(params, callback) {
 
@@ -644,8 +656,8 @@ function generateInputSets3(params, callback) {
   );
 }
 
-
 let quitWaitInterval;
+let userReadyInterval;
 
 function quit(cause){
 
@@ -999,6 +1011,252 @@ function loadFile(params, callback) {
   }
 }
 
+function sendKeepAlive(userObj, callback) {
+  if (statsObj.userAuthenticated && statsObj.serverConnected) {
+    debug(chalkAlert("TX KEEPALIVE"
+      + " | " + moment().format(compactDateTimeFormat)
+      + " | " + userObj.userId
+    ));
+    socket.emit("SESSION_KEEPALIVE", userObj);
+    callback(null, userObj);
+  }
+  else {
+    console.log(chalkError("!!!! CANNOT TX KEEPALIVE"
+      + " | " + userObj.userId
+      + " | CONNECTED: " + statsObj.serverConnected
+      + " | READY ACK: " + statsObj.userAuthenticated
+      + " | " + moment().format(compactDateTimeFormat)
+    ));
+    callback("ERROR", null);
+  }
+}
+
+function initKeepalive(interval) {
+
+  clearInterval(socketKeepAliveInterval);
+
+  console.log(chalkConnect("START KEEPALIVE"
+    + " | " + getTimeStamp()
+    + " | READY ACK: " + statsObj.userAuthenticated
+    + " | SERVER CONNECTED: " + statsObj.serverConnected
+    + " | INTERVAL: " + interval + " ms"
+  ));
+
+  userObj.stats = statsObj;
+
+  sendKeepAlive(userObj, function(err, results) {
+    if (err) {
+      console.log(chalkError("KEEPALIVE ERROR: " + err));
+    }
+    else if (results) {
+      debug(chalkConnect("KEEPALIVE"
+        + " | " + moment().format(compactDateTimeFormat)
+      ));
+    }
+  });
+
+  socketKeepAliveInterval = setInterval(function() { // TX KEEPALIVE
+
+    userObj.stats = statsObj;
+
+    sendKeepAlive(userObj, function(err, results) {
+      if (err) {
+        console.log(chalkError("KEEPALIVE ERROR: " + err));
+      }
+      else if (results) {
+        debug(chalkConnect("KEEPALIVE"
+          + " | " + moment().format(compactDateTimeFormat)
+        ));
+      }
+    });
+
+  }, interval);
+}
+
+function initUserReadyInterval(interval) {
+
+  console.log(chalkInfo("INIT USER READY INTERVAL"));
+
+  clearInterval(userReadyInterval);
+
+  userReadyInterval = setInterval(function() {
+
+    if (statsObj.serverConnected && !statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
+
+      statsObj.userReadyTransmitted = true;
+      userObj.timeStamp = moment().valueOf();
+
+      socket.emit("USER_READY", {userId: userObj.userId, timeStamp: moment().valueOf()});
+    }
+    else if (statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
+      statsObj.userReadyAckWait += 1;
+      console.log(chalkAlert("... WAITING FOR USER_READY_ACK ..."));
+    }
+  }, interval);
+}
+
+function initSocket(cnf) {
+  if (OFFLINE_MODE) {
+    console.log(chalkError("*** OFFLINE MODE *** "));
+    return;
+  }
+
+  console.log(chalkLog("INIT SOCKET"
+    + " | " + cnf.targetServer
+    + " | " + jsonPrint(userObj)
+  ));
+
+  socket = require("socket.io-client")(cnf.targetServer, { reconnection: true });
+
+  socket.on("connect", function() {
+
+    statsObj.serverConnected = true ;
+
+    console.log(chalkConnect("SOCKET CONNECT | " + socket.id + " ... AUTHENTICATE ..."));
+
+    socket.on("unauthorized", function(err) {
+      console.log(chalkError("*** AUTHENTICATION ERROR: ", err.message));
+      statsObj.userAuthenticated = false ;
+    });
+
+    socket.emit("authentication", { namespace: "util", userId: userObj.userId, password: "0123456789" });
+
+    socket.on("authenticated", function() {
+
+      statsObj.serverConnected = true ;
+
+      console.log("AUTHENTICATED | " + socket.id);
+
+      statsObj.socketId = socket.id;
+
+      console.log(chalkConnect( "CONNECTED TO HOST"
+        + " | SERVER: " + cnf.targetServer
+        + " | ID: " + socket.id
+      ));
+
+      userObj.timeStamp = moment().valueOf();
+
+      console.log(chalkInfo(socket.id
+        + " | TX USER_READY"
+        + " | " + moment().format(compactDateTimeFormat)
+        + " | " + userObj.userId
+        + " | " + userObj.url
+        + " | " + userObj.screenName
+        + " | " + userObj.type
+        + " | " + userObj.mode
+        + "\nTAGS\n" + jsonPrint(userObj.tags)
+      ));
+
+      statsObj.userAuthenticated = true ;
+
+      initKeepalive(cnf.keepaliveInterval);
+
+      initUserReadyInterval(5000);
+    });
+
+    socket.on("disconnect", function(reason) {
+
+      statsObj.userAuthenticated = false ;
+      statsObj.serverConnected = false;
+      statsObj.userReadyTransmitted = false;
+      statsObj.userReadyAck = false ;
+
+      console.log(chalkConnect(moment().format(compactDateTimeFormat)
+        + " | SOCKET DISCONNECT: " + socket.id
+        + " | REASON: " + reason
+      ));
+    });
+
+  });
+
+  socket.on("reconnect", function(reason) {
+
+    statsObj.serverConnected = true;
+
+    console.log(chalkInfo("RECONNECT"
+      + " | " + moment().format(compactDateTimeFormat)
+      + " | " + socket.id
+      + " | REASON: " + reason
+    ));
+  });
+
+  socket.on("USER_READY_ACK", function(userObj) {
+
+    statsObj.userReadyAck = true ;
+    statsObj.serverConnected = true;
+
+    console.log(chalkInfo("RX USER_READY_ACK MESSAGE"
+      + " | " + socket.id
+      + " | USER ID: " + userObj.userId
+      + " | " + moment().format(compactDateTimeFormat)
+    ));
+  });
+
+  socket.on("error", function(error) {
+    console.log(chalkError(moment().format(compactDateTimeFormat)
+      + " | *** SOCKET ERROR"
+      + " | " + socket.id
+      + " | " + error
+    ));
+  });
+
+  socket.on("connect_error", function(err) {
+    statsObj.userAuthenticated = false ;
+    statsObj.serverConnected = false ;
+    statsObj.userReadyTransmitted = false;
+    statsObj.userReadyAck = false ;
+    console.log(chalkError("*** CONNECT ERROR "
+      + " | " + moment().format(compactDateTimeFormat)
+      + " | " + err.type
+      + " | " + err.description
+    ));
+  });
+
+  socket.on("reconnect_error", function(err) {
+
+    statsObj.userAuthenticated = false ;
+    statsObj.serverConnected = false ;
+    statsObj.userReadyTransmitted = false;
+    statsObj.userReadyAck = false ;
+
+    console.log(chalkError("*** RECONNECT ERROR "
+      + " | " + moment().format(compactDateTimeFormat)
+      + " | " + err.type
+      + " | " + err.description
+    ));
+  });
+
+  socket.on("SESSION_ABORT", function(sessionId) {
+    console.log(chalkAlert("@@@@@ RX SESSION_ABORT | " + sessionId));
+    if (sessionId === statsObj.socketId) {
+      console.log(chalkAlert("***** RX SESSION_ABORT HIT | " + sessionId));
+      socket.disconnect();
+      statsObj.userAuthenticated = false ;
+      statsObj.serverConnected = false;
+    }
+  });
+
+  socket.on("SESSION_EXPIRED", function(sessionId) {
+    console.log(chalkAlert("RX SESSION_EXPIRED | " + sessionId));
+    if (sessionId === statsObj.socketId) {
+      console.log(chalkAlert("***** RX SESSION_EXPIRED HIT | " + sessionId));
+      socket.disconnect();
+      statsObj.userAuthenticated = false ;
+      statsObj.serverConnected = false;
+    }
+  });
+
+  socket.on("HEARTBEAT", function() {
+    statsObj.serverConnected = true;
+    statsObj.heartbeatsReceived += 1;
+  });
+
+  socket.on("KEEPALIVE_ACK", function(userId) {
+    statsObj.serverConnected = true;
+    debug(chalkLog("RX KEEPALIVE_ACK | " + userId));
+  });
+}
+
 function initStatsUpdate(callback){
 
   console.log(chalkTwitter("INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
@@ -1058,6 +1316,7 @@ function initialize(cnf, callback){
   }
 
   cnf.processName = process.env.GIS_PROCESS_NAME || "generateInputSets";
+  cnf.targetServer = process.env.GIS_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
 
   cnf.minDominantMin = process.env.GIS_MIN_DOMINANT_MIN || DEFAULT_MIN_DOMINANT_MIN ;
   cnf.maxDominantMin = process.env.GIS_MAX_DOMINANT_MIN || DEFAULT_MAX_DOMINANT_MIN ;
@@ -1226,6 +1485,8 @@ initialize(configuration, function(err, cnf){
 
   console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
+  initSocket(configuration);
+
   console.log("LOAD " + defaultHistogramsFolder);
 
   async.each(inputTypes, function(type, cb){
@@ -1345,5 +1606,4 @@ initialize(configuration, function(err, cnf){
     });  
 
   });
-
 });
