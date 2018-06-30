@@ -3311,18 +3311,26 @@ function initSocket(cnf) {
 }
 
 function initStatsUpdate(callback) {
+
   console.log(chalkTwitter("INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
+
   twitterTextParser.getGlobalHistograms(function(hist) {
     saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
   });
+
   clearInterval(statsUpdateInterval);
+
   statsUpdateInterval = setInterval(function () {
+
     statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
+
     twitterTextParser.getGlobalHistograms(function(hist) {
       saveFileQueue.push({folder: statsFolder, file: statsFile, obj: statsObj});
     });
+
     showStats();
+    
   }, configuration.statsUpdateIntervalTime);
   callback(null);
 }
