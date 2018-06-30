@@ -149,7 +149,7 @@ const GIS_RUN_ID = hostname
 statsObj.fetchUsersComplete = false;
 statsObj.runId = GIS_RUN_ID;
 
-statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
+statsObj.elapsed = 0;
 
 statsObj.bestNetworks = {};
 statsObj.totalInputs = 0;
@@ -352,7 +352,7 @@ let resultsArray = [];
 
 function showStats(options){
 
-  statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
+  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
   statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
   if (options) {
@@ -672,6 +672,8 @@ function quit(cause){
     if (!saveFileBusy 
       && (saveFileQueue.length === 0)
       ){
+
+      statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
 
       clearInterval(statsUpdateInterval);
       clearInterval(quitWaitInterval);
@@ -1265,7 +1267,7 @@ function initStatsUpdate(callback){
 
   statsUpdateInterval = setInterval(function () {
 
-    statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTimeMoment.valueOf());
+    statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
   }, configuration.statsUpdateIntervalTime);
