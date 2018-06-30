@@ -726,7 +726,7 @@ function loadFile(path, file, callback) {
         }
         catch(e) {
           console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
-          return callback("JSON PARSE ERROR", null);
+          return callback(new Error("JSON PARSE ERROR"), null);
         }
 
         callback(null, fileObj);
@@ -778,15 +778,11 @@ function loadFile(path, file, callback) {
       console.log(chalkError("TFE | DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
       console.log(chalkError("TFE | !!! DROPBOX READ " + fullPath + " ERROR"));
       console.log(chalkError("TFE | " + jsonPrint(error.error)));
-      if (error.status === 404) {
+      if ((error.status === 409) || (error.status === 404)) {
         console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
           + " ... SKIPPING ...")
         );
         callback(null, null);
-      }
-      else if (error.status === 409) {
-        console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"));
-        callback(error, null);
       }
       else if (error.status === 0) {
         console.log(chalkError("TFE | !!! DROPBOX NO RESPONSE"
