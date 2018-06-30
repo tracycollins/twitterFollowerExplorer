@@ -199,6 +199,7 @@ let currentBestNetwork = {};
 currentBestNetwork.successRate = 0;
 currentBestNetwork.matchRate = 0;
 currentBestNetwork.overallMatchRate = 0;
+currentBestNetwork.testCycles = 0;
 
 let processUserQueue = [];
 let processUserQueueInterval;
@@ -2669,7 +2670,10 @@ function showStats(options) {
       + "\nFETCH_ALL ELAPSED:  " + msToTime(statsObj.fetchAllIntervalTimeElapsed)
       + "\nFETCH_ALL REMAIN:   " + msToTime(statsObj.fetchAllIntervalRemain)
       + "\nFETCH_ALL CYCLES:   " + statsObj.fetchCycle
+      + "\nBEST NN:   " + statsObj.fetchCycle
     ));
+
+    printNetworkObj("BEST NETWORK", currentBestNetwork);
 
     console.log(chalkLog("... RNT S"
       + " | BUSY: " + randomNetworkTreeBusyFlag
