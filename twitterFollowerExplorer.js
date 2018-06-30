@@ -3931,19 +3931,14 @@ function updateNetworkStats(params, callback) {
 
           newNnDb = new NeuralNetwork(bnhmObj.networkObj);
 
-          nnDb.testCycles = 0;
+          if (bnhmObj.networkObj.incrementTestCycles) { newNnDb.testCycles = 1; }
 
-          if (bnhmObj.networkObj.incrementTestCycles) { nnDb.testCycles = 1; }
-
-          nnDb.markModified("testCycles");
-          newNnDb.markModified("overallMatchRate");
-
-          bnhmObj.networkObj.testCycles = nnDb.testCycles;
+          bnhmObj.networkObj.testCycles = newNnDb.testCycles;
           bestNetworkHashMap.set(nnId, bnhmObj);
 
           newNnDb.save()
           .then(function(){ 
-            printNn(nnDb);
+            printNn(newNnDb);
             cb();
           })
           .catch(function(err){
