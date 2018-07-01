@@ -92,6 +92,7 @@ const writeJsonFile = require("write-json-file");
 const sizeof = require("object-sizeof");
 
 const fs = require("fs");
+const JSONParse = require("json-parse-safe");
 const debug = require("debug")("tfe");
 const NodeCache = require("node-cache");
 const util = require("util");
@@ -722,22 +723,19 @@ function loadFile(path, file, callback) {
 
       if (file.match(/\.json$/gi)) {
 
-        let fileObj;
+        const fileObj = JSONParse(data);
 
-        try {
-          fileObj = JSON.parse(data);
-          // callback(null, fileObj);
+        if (fileObj.value) {
+          callback(null, fileObj.value);
         }
-        catch(e) {
-          console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
-          return callback(e, null);
+        else {
+          callback(fileObj.error, null);
         }
-
-        return callback(null, fileObj);
 
       }
-
-      return callback(null, null);
+      else {
+        callback(null, null);
+      }
 
     });
    }
@@ -758,33 +756,24 @@ function loadFile(path, file, callback) {
           return callback(new Error("TFE LOAD FILE PAYLOAD UNDEFINED"), null);
         }
 
-        let fileObj;
+        const fileObj = JSONParse(payload);
 
-        debug(payload);
-
-        try {
-
-          fileObj = JSON.parse(payload);
-          // callback(null, fileObj);
+        if (fileObj.value) {
+          callback(null, fileObj.value);
         }
-        catch(e) {
-
-          console.trace(chalkError("TFE | JSON PARSE ERROR | PATH: " + fullPath));
-          console.trace(chalkError("TFE | JSON PARSE ERROR: " + fullPath + " | " + jsonPrint(e)));
-          console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
-
-          return callback(new Error("JSON PARSE ERROR"), null);
+        else {
+          callback(fileObj.error, null);
         }
-
-        callback(null, fileObj);
       }
       else {
         callback(null, null);
       }
     })
     .catch(function(error) {
+
       console.trace(chalkError("TFE | DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
       console.log(chalkError("TFE | " + jsonPrint(error.error)));
+      
       if ((error.status === 409) || (error.status === 404)) {
         console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
           + " ... SKIPPING ...")

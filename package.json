@@ -33,6 +33,7 @@
     "hashtag-regex": "^2.0.0",
     "intervalometer": "^1.0.4",
     "isomorphic-fetch": "^2.2.1",
+    "json-parse-safe": "^1.0.5",
     "keypress": "^0.2.1",
     "keyword-extractor": "0.0.15",
     "lodash.padend": "^4.6.1",
