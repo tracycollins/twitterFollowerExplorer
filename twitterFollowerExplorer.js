@@ -730,17 +730,15 @@ function loadFile(path, file, callback) {
         }
         catch(e) {
           console.trace(chalkError("TFE | JSON PARSE ERROR: " + e));
-          return callback(new Error("JSON PARSE ERROR"), null);
+          return callback(e, null);
         }
 
-        callback(null, fileObj);
+        return callback(null, fileObj);
 
       }
-      else {
 
-        callback(null, null);
+      return callback(null, null);
 
-      }
     });
    }
   else {
@@ -755,6 +753,11 @@ function loadFile(path, file, callback) {
       if (file.match(/\.json$/gi)) {
 
         let payload = data.fileBinary;
+
+        if (!payload || (payload === undefined)) {
+          return callback(new Error("TFE LOAD FILE PAYLOAD UNDEFINED"), null);
+        }
+
         let fileObj;
 
         debug(payload);
@@ -780,8 +783,7 @@ function loadFile(path, file, callback) {
       }
     })
     .catch(function(error) {
-      console.log(chalkError("TFE | DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
-      console.log(chalkError("TFE | !!! DROPBOX READ " + fullPath + " ERROR"));
+      console.trace(chalkError("TFE | DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
       console.log(chalkError("TFE | " + jsonPrint(error.error)));
       if ((error.status === 409) || (error.status === 404)) {
         console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
@@ -1043,7 +1045,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
             + " | FOUND " + response.entries.length + " FILES"
           ));
 
-          return(cb("TEST_MODE LOAD DONE"));
+          return cb("TEST_MODE LOAD DONE");
         }
 
         debug(chalkLog("DROPBOX NETWORK FOUND"
@@ -1052,7 +1054,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
         ));
 
         if (entry.name === bestRuntimeNetworkFileName) {
-          return(cb());
+          return cb();
         }
 
         const networkId = entry.name.replace(".json", "");
@@ -1063,13 +1065,13 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
           if (!bnhmObj || (bnhmObj === undefined)) {
             console.log(chalkError("bestNetworkHashMap ENTRY UNDEFINED??? | " + networkId));
-            return(cb());
+            return cb();
           }
 
           if (bnhmObj.entry === undefined) {
             console.log(chalkError("bestNetworkHashMap ENTRY PROP UNDEFINED???"
               + " | " + networkId + "\n" + jsonPrint(bnhmObj)));
-            return(cb());
+            return cb();
           }
 
           if (bnhmObj.entry.content_hash !== entry.content_hash) {
@@ -1083,7 +1085,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
               if (err) {
                 console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR: " + err));
-                return(cb());
+                return cb();
               }
 
               if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
@@ -1125,7 +1127,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
           loadFile(folder, entry.name, function(err, networkObj) {
             if (err) {
               console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR: " + err));
-              return(cb());
+              return cb();
             }
 
             if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
@@ -1998,7 +2000,7 @@ function processUser(threeceeUser, userIn, callback) {
       User.findOne({ nodeId: userIn.id_str }).exec(function(err, user) {
         if (err) {
           console.log(chalkError("ERROR DB FIND ONE USER | " + err));
-          return(cb(err, user));
+          return cb(err, user) ;
         }
         if (!user) {
 
@@ -2162,7 +2164,7 @@ function processUser(threeceeUser, userIn, callback) {
       });
     },
     function genAutoCat(user, cb) {
-      if (!neuralNetworkInitialized) { return(cb(null, user)); }
+      if (!neuralNetworkInitialized) { return cb(null, user); }
       generateAutoCategory(user, function (err, uObj) {
         cb(err, uObj);
       });
@@ -2187,7 +2189,6 @@ const checkChildrenState = function (checkState, callback) {
     if (err) {
       console.log(chalkError("*** ERROR: checkChildrenState: " + err));
       if (callback !== undefined) { return callback(err, allCheckState); }
-      // return(callback(err, allCheckState));
     }
     debug(chalkAlert("MAIN: " + fsm.getMachineState()
       + " | ALL CHILDREN: CHECKSTATE: " + checkState + " | " + allCheckState
@@ -2665,9 +2666,6 @@ function showStats(options) {
   }
   else {
 
-    statsObj.userReadyTransmitted = false;
-    statsObj.userReadyAck = false ;
-
     statsObj.fetchAllIntervalTimeElapsed = moment().diff(statsObj.fetchAllIntervalStartMoment);
     statsObj.fetchAllIntervalRemain = configuration.fetchAllIntervalTime - statsObj.fetchAllIntervalTimeElapsed;
     statsObj.fetchAllIntervalNext = moment(statsObj.fetchAllIntervalStartMoment);
@@ -2832,7 +2830,7 @@ function saveFile (params, callback){
           if (err) {
             console.log(chalkError("NNT | *** ERROR DROPBOX SAVE FILE: " + err));
             if (callback !== undefined) { 
-              return(callback(err, null));
+              return callback(err, null);
             }
             return;
           }
@@ -3183,15 +3181,18 @@ function initSocket(cnf) {
   });
 
   socket.on("connect_error", function(err) {
+
     statsObj.userAuthenticated = false ;
     statsObj.serverConnected = false ;
     statsObj.userReadyTransmitted = false;
     statsObj.userReadyAck = false ;
+
     console.log(chalkError("*** CONNECT ERROR "
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + err.type
       + " | " + err.description
     ));
+
   });
 
   socket.on("reconnect_error", function(err) {
@@ -3206,6 +3207,7 @@ function initSocket(cnf) {
       + " | " + err.type
       + " | " + err.description
     ));
+
   });
 
   socket.on("SESSION_ABORT", function(sessionId) {
@@ -3373,7 +3375,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
     if (m.error) {
       console.log(chalkError("TFC | tfeChild RX ERROR\n" + jsonPrint(m)));
       if (callback !== undefined) {
-        return(callback(m.error, null));
+        return callback(m.error, null);
       }
       return;
     }
@@ -3528,9 +3530,9 @@ function initTwitterUsers(callback) {
         if (err) {
           console.log(chalkError("INIT TWITTER ERROR: " + err.message));
           if (err.code === 88) {
-            return(cb());
+            return cb();
           }
-          return(cb(err));
+          return cb(err);
         }
         debug("INIT TWITTER twitObj\n" + jsonPrint(twitObj));
         resetTwitterUserState(userScreenName, function() {
@@ -3815,7 +3817,7 @@ function initialize(cnf, callback) {
             + cnf.twitterConfigFolder
             + cnf.twitterConfigFile
           ));
-          return(callback(err, cnf));
+          return callback(err, cnf) ;
         });
       });
     }
@@ -3834,7 +3836,7 @@ function initialize(cnf, callback) {
       });
       if (cnf.enableStdin) { initStdIn(); }
       initStatsUpdate(function() {
-        return(callback(err, cnf));
+        return callback(err, cnf) ;
       });
      }
   });

@@ -15,7 +15,7 @@
       "GOOGLE_PROJECT_ID": "graphic-tangent-627",
       "GOOGLE_APPLICATION_CREDENTIALS": "/Users/tc/Dropbox/Apps/wordAssociation/config/googleCloud/wordAssociation-a160a8a849e7.json",
       "GIS_UTIL_TARGET_SERVER": "http://localhost:9997/util",
-      "GIS_STATS_UPDATE_INTERVAL": 60000,
+      "GIS_STATS_UPDATE_INTERVAL": 10000,
       "DROPBOX_WORD_ASSO_ACCESS_TOKEN": "nknEWsIkD5UAAAAAAARLkd3g-3LFUKQNPp0LjToZmFgCE_ER4fsEeSXzM-kE78-z",
       "DROPBOX_WORD_ASSO_APP_KEY": "qlb9k4dp01t9iqk",
       "DROPBOX_WORD_ASSO_APP_SECRET": "wqslhe2t95zfn19"
