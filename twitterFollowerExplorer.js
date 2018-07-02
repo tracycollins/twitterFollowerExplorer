@@ -197,6 +197,11 @@ let networksSentFlag = false;
 let currentBestNetworkId = false;
 
 let currentBestNetwork = {};
+currentBestNetwork.networkId = "";
+currentBestNetwork.inputsId = "";
+currentBestNetwork.numInputs = 0;
+currentBestNetwork.createdAt = moment().valueOf();
+currentBestNetwork.isValid = false;
 currentBestNetwork.successRate = 0;
 currentBestNetwork.matchRate = 0;
 currentBestNetwork.overallMatchRate = 0;
@@ -773,7 +778,7 @@ function loadFile(path, file, callback) {
 
       console.trace(chalkError("TFE | DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
       console.log(chalkError("TFE | " + jsonPrint(error.error)));
-      
+
       if ((error.status === 409) || (error.status === 404)) {
         console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
           + " ... SKIPPING ...")
@@ -880,7 +885,7 @@ function printNetworkObj(title, networkObj) {
     + "\nOAMR:       " + networkObj.overallMatchRate.toFixed(2) + "%"
     + "\nTEST CYCs:  " + networkObj.testCycles
     + "\nINPUTS ID:  " + networkObj.inputsId
-    + "\nINPUTS:     " + Object.keys(networkObj.inputsObj.inputs)
+    // + "\nINPUTS:     " + Object.keys(networkObj.inputsObj.inputs)
     + "\nNUM INPUTS: " + networkObj.numInputs
     + "\n======================================\n"
   ));
@@ -911,11 +916,12 @@ function processBestNetwork(params, callback){
   availableNeuralNetHashMap[networkObj.networkId] = true;
 
   if (
-      !currentBestNetwork
+      !currentBestNetwork.isValid
       || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
     ) 
   {
     currentBestNetwork = deepcopy(networkObj);
+    currentBestNetwork.isValid = true;
 
     prevBestNetworkId = bestRuntimeNetworkId;
     bestRuntimeNetworkId = networkObj.networkId;
@@ -984,7 +990,9 @@ function loadBestNetworkDropboxFolder(folder, callback) {
         }
 
         currentBestNetwork = deepcopy(nnArray[0]);
+        currentBestNetwork.isValid = true;
 
+        if (currentBestNetwork.testCycles === undefined) { currentBestNetwork.testCycles = 0; }
         if (currentBestNetwork.successRate === undefined) { currentBestNetwork.successRate = 0; }
         if (currentBestNetwork.matchRate === undefined) { currentBestNetwork.matchRate = 0; }
         if (currentBestNetwork.overallMatchRate === undefined) { currentBestNetwork.overallMatchRate = 0; }
@@ -2676,7 +2684,7 @@ function showStats(options) {
       + "\nFETCH_ALL ELAPSED:  " + msToTime(statsObj.fetchAllIntervalTimeElapsed)
       + "\nFETCH_ALL REMAIN:   " + msToTime(statsObj.fetchAllIntervalRemain)
       + "\nFETCH_ALL CYCLES:   " + statsObj.fetchCycle
-      + "\nBEST NN:   " + statsObj.fetchCycle
+      + "\nBEST NN:   " + currentBestNetwork.networkId
     ));
 
     printNetworkObj("BEST NETWORK", currentBestNetwork);
