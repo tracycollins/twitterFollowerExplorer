@@ -1354,6 +1354,23 @@ function loadBestNeuralNetworkFile(callback) {
 
             bnhmObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
             bnwObj = deepcopy(bnhmObj.networkObj);
+
+            if (bnwObj.successRate === undefined) {
+              console.trace(chalkAlert("NN SUCCESS RATE UNDEFINED??? | " + bnwObj.networkId));
+              quit();
+            }
+            
+            if (bnwObj.matchRate === undefined) {
+              console.trace(chalkAlert("NN MATCH RATE UNDEFINED??? | " + bnwObj.networkId));
+              quit();
+            }
+            
+            if (bnwObj.overallMatchRate === undefined) {
+              console.trace(chalkAlert("NN OVERALL MATCH RATE UNDEFINED??? | " + bnwObj.networkId));
+              quit();
+            }
+            
+            bnwObj.successRate = (bnwObj.successRate !== undefined) ? bnwObj.successRate : 0;
             bnwObj.matchRate = (bnwObj.matchRate !== undefined) ? bnwObj.matchRate : 0;
             bnwObj.overallMatchRate = (bnwObj.overallMatchRate !== undefined) ? bnwObj.overallMatchRate : 0;
 
@@ -1382,6 +1399,23 @@ function loadBestNeuralNetworkFile(callback) {
 
             bnhmObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
             bnwObj = deepcopy(bnhmObj.network);
+
+            if (bnwObj.successRate === undefined) {
+              console.trace(chalkAlert("NN SUCCESS RATE UNDEFINED??? | " + bnwObj.networkId));
+              quit();
+            }
+            
+            if (bnwObj.matchRate === undefined) {
+              console.trace(chalkAlert("NN MATCH RATE UNDEFINED??? | " + bnwObj.networkId));
+              quit();
+            }
+            
+            if (bnwObj.overallMatchRate === undefined) {
+              console.trace(chalkAlert("NN OVERALL MATCH RATE UNDEFINED??? | " + bnwObj.networkId));
+              quit();
+            }
+            
+            bnwObj.successRate = (bnwObj.successRate !== undefined) ? bnwObj.successRate : 0;
             bnwObj.matchRate = (bnwObj.matchRate !== undefined) ? bnwObj.matchRate : 0;
             bnwObj.overallMatchRate = (bnwObj.overallMatchRate !== undefined) ? bnwObj.overallMatchRate : 0;
 
@@ -1409,6 +1443,23 @@ function loadBestNeuralNetworkFile(callback) {
           bnhmObj = bestNetworkHashMap.get(currentBestNetworkId);
 
           bnwObj = deepcopy(bnhmObj.networkObj);
+          
+          if (bnwObj.successRate === undefined) {
+            console.trace(chalkAlert("NN SUCCESS RATE UNDEFINED??? | " + bnwObj.networkId));
+            quit();
+          }
+          
+          if (bnwObj.matchRate === undefined) {
+            console.trace(chalkAlert("NN MATCH RATE UNDEFINED??? | " + bnwObj.networkId));
+            quit();
+          }
+          
+          if (bnwObj.overallMatchRate === undefined) {
+            console.trace(chalkAlert("NN OVERALL MATCH RATE UNDEFINED??? | " + bnwObj.networkId));
+            quit();
+          }
+          
+          bnwObj.successRate = (bnwObj.successRate !== undefined) ? bnwObj.successRate : 0;
           bnwObj.matchRate = (bnwObj.matchRate !== undefined) ? bnwObj.matchRate : 0;
           bnwObj.overallMatchRate = (bnwObj.overallMatchRate !== undefined) ? bnwObj.overallMatchRate : 0;
 
