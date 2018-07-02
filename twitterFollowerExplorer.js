@@ -405,7 +405,6 @@ inputTypes.sort();
 let inputArrays = {};
 let stdin;
 let abortCursor = false;
-// let categorizedUserHashMapReadyFlag = false;
 let neuralNetworkInitialized = false;
 let TFE_USER_DB_CRAWL = false;
 
@@ -1504,7 +1503,6 @@ runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
 runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
 runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
 runEnableArgs.langAnalyzerMessageRxQueueReadyFlag = langAnalyzerMessageRxQueueReadyFlag;
-// runEnableArgs.categorizedUserHashMapReadyFlag = categorizedUserHashMapReadyFlag;
 
 function runEnable(displayArgs) {
   if (randomNetworkTree && (randomNetworkTree !== undefined)) {
@@ -1519,7 +1517,7 @@ function runEnable(displayArgs) {
   runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
   runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
   runEnableArgs.langAnalyzerMessageRxQueueReadyFlag = langAnalyzerMessageRxQueueReadyFlag;
-  // runEnableArgs.categorizedUserHashMapReadyFlag = categorizedUserHashMapReadyFlag;
+
   const runEnableKeys = Object.keys(runEnableArgs);
   if (displayArgs) { console.log(chalkInfo("------ runEnable ------")); }
   runEnableKeys.forEach(function(key) {
@@ -2120,8 +2118,6 @@ function processUser(threeceeUser, userIn, callback) {
 
           catObj.manual = user.category || false;
           catObj.auto = user.categoryAuto || false;
-
-          // categorizedUserHashMap.set(user.nodeId, catObj);
 
           if (user.name !== userIn.name) {
             user.name = userIn.name;
@@ -3221,6 +3217,10 @@ function initSocket(cnf) {
       + " | @" + u.screenName
       + " | " + moment().format(compactDateTimeFormat)
     ));
+
+    twitterUserHashMap.altthreecee00.friends.delete(u.nodeId);
+    twitterUserHashMap.altthreecee01.friends.delete(u.nodeId);
+    twitterUserHashMap.altthreecee02.friends.delete(u.nodeId);
 
     tfeChildHashMap.altthreecee00.child.send({op: "UNFOLLOW", user:u});
     tfeChildHashMap.altthreecee01.child.send({op: "UNFOLLOW", user:u});
@@ -4749,7 +4749,6 @@ initialize(configuration, function(err, cnf) {
     if (dbConnectionReady) {
       clearInterval(dbConnectionReadyInterval);
       initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
-      // initCategorizedUserHashMap();
       initUserDbUpdateQueueInterval(1);
       initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
       initRandomNetworkTree();
