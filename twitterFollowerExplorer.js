@@ -1406,7 +1406,7 @@ function loadBestNeuralNetworkFile(callback) {
           else {
 
             bnhmObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
-            bnwObj = deepcopy(bnhmObj.network);
+            bnwObj = deepcopy(bnhmObj.networkObj);
 
             if (bnwObj.successRate === undefined) {
               console.trace(chalkAlert("NN SUCCESS RATE UNDEFINED??? | " + bnwObj.networkId));
