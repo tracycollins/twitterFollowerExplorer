@@ -574,6 +574,15 @@ const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN 
 
 let fsmPreviousState = "IDLE";
 
+
+
+process.on("unhandledRejection", function(err, promise) {
+  console.error("Unhandled rejection (promise: ", promise, ", reason: ", err, ").");
+});
+
+
+
+
 // ==================================================================
 // NN CACHE
 // ==================================================================
@@ -1443,7 +1452,7 @@ function loadBestNeuralNetworkFile(callback) {
           bnhmObj = bestNetworkHashMap.get(currentBestNetworkId);
 
           bnwObj = deepcopy(bnhmObj.networkObj);
-          
+
           if (bnwObj.successRate === undefined) {
             console.trace(chalkAlert("NN SUCCESS RATE UNDEFINED??? | " + bnwObj.networkId));
             quit();
