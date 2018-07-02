@@ -694,10 +694,10 @@ function updateBestNetworkStats(networkObj) {
   statsObj.bestNetwork.networkId = networkObj.networkId;
   statsObj.bestNetwork.network = networkObj.network;
   statsObj.bestNetwork.networkType = networkObj.networkType;
-  statsObj.bestNetwork.successRate = networkObj.successRate;
-  statsObj.bestNetwork.matchRate = networkObj.matchRate;
-  statsObj.bestNetwork.testCycles = networkObj.testCycles;
-  statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate;
+  statsObj.bestNetwork.successRate = networkObj.successRate || 0;
+  statsObj.bestNetwork.matchRate = networkObj.matchRate || 0;
+  statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate || 0;
+  statsObj.bestNetwork.testCycles = networkObj.testCycles || 0;
   statsObj.bestNetwork.input = networkObj.network.input;
   statsObj.bestNetwork.numInputs = networkObj.numInputs;
   statsObj.bestNetwork.inputsId = networkObj.inputsId;
@@ -1146,8 +1146,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
               || (networkObj.overallMatchRate >= configuration.minMatchRate)
               || (networkObj.successRate >= configuration.minSuccessRate)
               || (configuration.testMode && (networkObj.successRate >= 0.5*configuration.minSuccessRate) && (networkObj.overallMatchRate === 0))
-              || (configuration.testMode && (networkObj.overallMatchRate >= 0.5*configuration.minMatchRate))
-            ) {
+              || (configuration.testMode && (networkObj.overallMatchRate >= 0.5*configuration.minMatchRate))) {
 
               statsObj.numNetworksLoaded += 1;
 
@@ -1172,7 +1171,6 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
                 cb();
               });
-
             }
             else {
               statsObj.numNetworksSkipped += 1;
