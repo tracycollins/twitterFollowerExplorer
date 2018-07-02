@@ -577,7 +577,8 @@ let fsmPreviousState = "IDLE";
 
 
 process.on("unhandledRejection", function(err, promise) {
-  console.error("Unhandled rejection (promise: ", promise, ", reason: ", err, ").");
+  console.trace("Unhandled rejection (promise: ", promise, ", reason: ", err, ").");
+  process.exit();
 });
 
 
