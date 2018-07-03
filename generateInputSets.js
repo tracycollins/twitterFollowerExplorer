@@ -1019,7 +1019,15 @@ function sendKeepAlive(userObj, callback) {
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + userObj.userId
     ));
-    socket.emit("SESSION_KEEPALIVE", userObj);
+    // socket.emit("SESSION_KEEPALIVE", userObj);
+    socket.emit(
+      "SESSION_KEEPALIVE", 
+      {
+        user: userObj, 
+        stats: statsObj, 
+        results: {}
+      }
+    );
     callback(null, userObj);
   }
   else {
