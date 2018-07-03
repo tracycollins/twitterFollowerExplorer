@@ -3,7 +3,6 @@
 "use strict";
 require("isomorphic-fetch");
 
-const DEFAULT_QUIT_ON_COMPLETE = false;
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -11,11 +10,6 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 const ONE_KILOBYTE = 1024;
 const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 
-const LANGUAGE_ANALYZE_INTERVAL = 100;
-const RANDOM_NETWORK_TREE_INTERVAL = 1;
-const TWITTER_DEFAULT_USER = "altthreecee00";
-
-const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
 
 const os = require("os");
 const moment = require("moment");
@@ -46,16 +40,16 @@ let userObj = {
   stats: {}
 } ;
 
+const DEFAULT_QUIT_ON_COMPLETE = false;
+const LANGUAGE_ANALYZE_INTERVAL = 100;
+const RANDOM_NETWORK_TREE_INTERVAL = 1;
+const TWITTER_DEFAULT_USER = "altthreecee00";
+const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const DROPBOX_LIST_FOLDER_LIMIT = 50;
-// const DROPBOX_MAX_FILE_UPLOAD = 140 * ONE_MEGABYTE; // bytes
-
-
 const DEFAULT_FETCH_ALL_INTERVAL = 120*ONE_MINUTE;
-
 const FSM_TICK_INTERVAL = ONE_SECOND;
 const PROCESS_USER_QUEUE_INTERVAL = 1;
-
 const TEST_MODE_FETCH_ALL_INTERVAL = 5*ONE_MINUTE;
 const TEST_MODE_TOTAL_FETCH = 20;
 const TEST_MODE_FETCH_COUNT = 10;  // per request twitter user fetch count
@@ -119,7 +113,6 @@ let fetchAllInterval;
 let fetchAllIntervalReady = false;
 
 let bestNetworkHashMap = new HashMap();
-// let trainingSetHashMap = new HashMap();
 
 let maxInputHashMap = {};
 
