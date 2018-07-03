@@ -94,6 +94,7 @@ const deepcopy = require("deep-copy");
 const randomItem = require("random-item");
 const async = require("async");
 const Stately = require("stately.js");
+const omit = require("object.omit");
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
@@ -105,6 +106,8 @@ let statsObj = {};
 statsObj.fetchCycle = 0;
 statsObj.newBestNetwork = false;
 statsObj.fetchAllIntervalStartMoment = moment();
+
+let statsObjSmall = {};
 
 let tfeChildHashMap = {};
 let fsm;
@@ -3003,12 +3006,25 @@ function initSaveFileQueue(cnf) {
 }
 
 function sendKeepAlive(userObj, callback) {
+
   if (statsObj.userAuthenticated && statsObj.serverConnected) {
+
     debug(chalkAlert("TX KEEPALIVE"
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + userObj.userId
     ));
-    socket.emit("SESSION_KEEPALIVE", userObj);
+
+    statsObjSmall = omit(statsObj, ["bestNetworks"]);
+
+    socket.emit(
+      "SESSION_KEEPALIVE", 
+      {
+        user: userObj, 
+        stats: statsObjSmall, 
+        results: {}
+      }
+    );
+
     callback(null, userObj);
   }
   else {
