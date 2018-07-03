@@ -6,7 +6,7 @@
     "cwd": "/home/tc/twitterFollowerExplorer",
     "node_args": "--max-old-space-size=4096",
     "autorestart": true,
-    "restart_delay": 3600000,
+    "restart_delay": 14400000,
     "env": {
       "FORCE_COLOR": 1,
       "NODE_ENV": "production",
