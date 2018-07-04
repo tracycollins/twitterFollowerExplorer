@@ -2229,20 +2229,27 @@ function processUser(threeceeUser, userIn, callback) {
 }
 
 const checkChildrenState = function (checkState, callback) {
+
   async.every(Object.keys(tfeChildHashMap), function(user, cb) {
+
     debug("CH ID: " + user + " | " + tfeChildHashMap[user].status);
+
     const cs = (tfeChildHashMap[user].status === checkState);
+
     cb(null, cs);
+
   }, function(err, allCheckState) {
+
     if (err) {
       console.log(chalkError("*** ERROR: checkChildrenState: " + err));
       if (callback !== undefined) { return callback(err, allCheckState); }
     }
+
     debug(chalkAlert("MAIN: " + fsm.getMachineState()
       + " | ALL CHILDREN: CHECKSTATE: " + checkState + " | " + allCheckState
     ));
+
     if (callback !== undefined) { return callback(null, allCheckState); }
-    // return allCheckState;
   });
 };
 
@@ -2321,7 +2328,8 @@ const fsmStates = {
   },
   "IDLE":{
     onEnter: reporter,
-    "fsm_init": "INIT"
+    "fsm_init": "INIT",
+    "fsm_error": "ERROR"
   },
   "ERROR":{
     onEnter: function(event, oldState, newState) {
@@ -2349,6 +2357,7 @@ const fsmStates = {
         if (aci && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_ready(); }
       });
     },
+    "fsm_error": "ERROR",
     "fsm_ready": "READY",
     "fsm_reset": "RESET"
   },
@@ -2379,6 +2388,7 @@ const fsmStates = {
 
       });
     },
+    "fsm_error": "ERROR",
     "fsm_reset": "RESET",
     "fsm_fetchAllStart": "FETCH_ALL"
   },
@@ -2425,6 +2435,7 @@ const fsmStates = {
         if (acfe && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_fetchAllEnd(); }
       });
     },
+    "fsm_error": "ERROR",
     "fsm_reset": "RESET",
     "fsm_fetchAllEnd": "FETCH_END_ALL"
   },
@@ -2613,6 +2624,7 @@ const fsmStates = {
     },
     "fsm_init": "INIT",
     "fsm_reset": "RESET",
+    "fsm_error": "ERROR",
     "fsm_ready": "READY"
   }
 };
@@ -3445,6 +3457,11 @@ function initTwitterFollowerChild(twitterConfig, callback) {
       return;
     }
     switch(m.op) {
+      case "ERROR":
+        console.log(chalkError("TFC | CHILD ERROR | " + m.threeceeUser));
+        tfeChildHashMap[m.threeceeUser].status = "ERROR";
+        checkChildrenState(m.op);
+      break;
       case "INIT":
       case "INIT_COMPLETE":
         console.log(chalkInfo("TFC | CHILD INIT COMPLETE | " + m.threeceeUser));
@@ -3534,6 +3551,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
   tfeChild.on("error", function(err) {
     if (tfeChildHashMap[user]) {
       tfeChildHashMap[user].status = "ERROR";
+      fsm.fsm_error();
     }
     console.log(chalkError("*** tfeChildHashMap " + user + " ERROR *** : " + err));
   });
