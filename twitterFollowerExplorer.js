@@ -781,8 +781,8 @@ function loadFile(path, file, callback) {
     })
     .catch(function(error) {
 
-      console.trace(chalkError("TFE | DROPBOX loadFile ERROR: " + fullPath + "\n" + error));
-      console.log(chalkError("TFE | " + jsonPrint(error.error)));
+      console.trace(chalkError("TFE | DROPBOX loadFile ERROR: ", fullPath, error));
+      console.log(chalkError("TFE | DROPBOX loadFile ERROR: " + error.error));
 
       if ((error.status === 409) || (error.status === 404)) {
         console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
