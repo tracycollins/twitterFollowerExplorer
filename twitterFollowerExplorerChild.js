@@ -534,6 +534,7 @@ const fsmStates = {
       // fsm.fsm_init();
       return this.RESET;
     },
+    "fsm_fetchUserEnd": "FETCH_END",
     "fsm_reset": "RESET",
     "fsm_init": "INIT",
     "fsm_error": "ERROR"
@@ -544,6 +545,7 @@ const fsmStates = {
       process.send({op:"INIT", threeceeUser: configuration.threeceeUser});
       return this.INIT;
     },
+    "fsm_fetchUserEnd": "FETCH_END",
     "fsm_ready": "READY",
     "fsm_reset": "RESET",
     "fsm_error": "ERROR"
@@ -554,6 +556,7 @@ const fsmStates = {
       process.send({op:"IDLE", threeceeUser: configuration.threeceeUser});
       return this.IDLE;
     },
+    "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_reset": "RESET",
     "fsm_error": "ERROR"
@@ -564,6 +567,7 @@ const fsmStates = {
       process.send({op:"READY", threeceeUser: configuration.threeceeUser});
       return this.READY;
     },
+    "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_reset": "RESET",
     "fsm_error": "ERROR",
@@ -627,6 +631,7 @@ const fsmStates = {
       console.log("FETCH_END | PREV STATE: " + oldState);
     },
     // "fsm_rateLimitEnd": "INIT",
+    "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET"
@@ -658,6 +663,7 @@ const fsmStates = {
       process.send({op:"ERROR", threeceeUser: configuration.threeceeUser});
       return this.ERROR;
     },
+    "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET"
@@ -882,6 +888,10 @@ process.on("message", function(m) {
 
     case "READY":
       fsm.fsm_ready();
+    break;
+
+    case "FETCH_END":
+      fsm.fsm_fetchUserEnd();
     break;
 
     case "FETCH_USER_START":

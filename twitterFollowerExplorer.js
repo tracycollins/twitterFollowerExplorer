@@ -2237,7 +2237,7 @@ const checkChildrenState = function (params, callback) {
 
     const cs = (tfeChildHashMap[user].status === params.checkState);
 
-    if (!cs && (params.checkState === "INIT") && (params.checkState === "RESET")){
+    if (!cs && (params.checkState === "INIT") && (tfeChildHashMap[user].status === "RESET")){
 
       const initObj = {
         op: "INIT",
@@ -2250,6 +2250,20 @@ const checkChildrenState = function (params, callback) {
       tfeChildHashMap[user].child.send(initObj, function(err) {
         if (err) {
           console.log(chalkError("*** CHILD SEND INIT ERROR"
+            + " | @" + user
+            + " | ERR: " + err
+          ));
+        }
+      });
+
+    }
+
+    if (!cs && (params.checkState === "FETCH_END") 
+      && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
+
+      tfeChildHashMap[user].child.send({op: "FETCH_END", verbose: configuration.verbose}, function(err) {
+        if (err) {
+          console.log(chalkError("*** CHILD SEND FETCH_END ERROR"
             + " | @" + user
             + " | ERR: " + err
           ));
