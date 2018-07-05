@@ -22,6 +22,7 @@ hostname = hostname.replace(/.home/g, "");
 hostname = hostname.replace(/.at.net/g, "");
 hostname = hostname.replace(/.fios-router.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
+hostname = hostname.replace(/word/g, "google");
 
 const USER_ID = "tfe_" + hostname;
 const SCREEN_NAME = "tfe_" + hostname;

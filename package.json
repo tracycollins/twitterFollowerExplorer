@@ -22,6 +22,7 @@
     "columnify": "^1.5.4",
     "command-line-args": "^5.0.2",
     "deep-copy": "^1.4.2",
+    "deepmerge": "^2.1.1",
     "dropbox": "^4.0.7",
     "emoji-regex": "^7.0.0",
     "event-stream": "^3.3.4",
