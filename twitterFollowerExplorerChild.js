@@ -591,7 +591,7 @@ const fsmStates = {
       fetchFriends(params, function(err, results){
         if (err) {
           console.log(chalkError("fetchFriends ERROR: " + err));
-
+          process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "FETCH_USER", params: params, error: err });
         }
         else {
           if (statsObj.threeceeUser.nextCursorValid && !statsObj.threeceeUser.endFetch) {
@@ -898,6 +898,8 @@ process.on("message", function(m) {
                 + " | @" + configuration.threeceeUser
                 + " | " + err
               ));
+
+              process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
             }
             else {
               debug("data\n" + jsonPrint(data));
@@ -928,6 +930,8 @@ process.on("message", function(m) {
                 + " | NID: " + m.user.userId
                 + " | @" + m.user.screenName.toLowerCase()
               ));
+
+              process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "UNFOLLOW", params: {screen_name: m.user.screenName}, error: err });
             }
             else {
 
