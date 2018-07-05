@@ -3450,18 +3450,20 @@ function initTwitterFollowerChild(twitterConfig, callback) {
     debug(chalkAlert("tfeChild RX"
       + " | " + m.op
     ));
-    if (m.error) {
-      console.log(chalkError("TFC | tfeChild RX ERROR\n" + jsonPrint(m)));
-      if (callback !== undefined) {
-        return callback(m.error, null);
-      }
-      return;
-    }
+    // if (m.error) {
+    //   console.log(chalkError("TFC | tfeChild RX ERROR\n" + jsonPrint(m)));
+    //   if (callback !== undefined) {
+    //     return callback(m.error, null);
+    //   }
+    //   return;
+    // }
     switch(m.op) {
       case "ERROR":
         console.log(chalkError("TFC | CHILD ERROR | " + m.threeceeUser));
+        if (m.error) { console.log(chalkError("TFC | CHILD ERROR | " + m.error)); }
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
         checkChildrenState(m.op);
+        fsm.fsm_error();
       break;
       case "INIT":
       case "INIT_COMPLETE":
@@ -3547,6 +3549,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
       break;
       default:
       console.log(chalkError("TFC | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
+      quit("UNKNOWN OP" + m.op);
     }
   });
   tfeChild.on("error", function(err) {
