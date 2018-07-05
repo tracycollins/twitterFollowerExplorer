@@ -2335,7 +2335,7 @@ const fsmStates = {
   "ERROR":{
     onEnter: function(event, oldState, newState) {
       reporter(event, oldState, newState);
-      fsm.reset();
+      fsm.fsm_reset();
     },
     "fsm_reset": "RESET"
   },
@@ -3430,6 +3430,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
   childEnv.env.TEST_MODE_TOTAL_FETCH = TEST_MODE_TOTAL_FETCH;
   childEnv.env.TEST_MODE_FETCH_COUNT = TEST_MODE_FETCH_COUNT;
   childEnv.env.TEST_MODE = (configuration.testMode) ? 1 : 0;
+
   tfeChildHashMap[user] = {};
   tfeChildHashMap[user].childId = childId;
   tfeChildHashMap[user].threeceeUser = user;
@@ -3443,6 +3444,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
   console.log(chalkLog("+++ NEW TFE CHILD | childEnv\n" + jsonPrint(childEnv)));
   console.log(chalkLog("+++ NEW TFE CHILD | twitterConfig\n" + jsonPrint(tfeChildHashMap[user].twitterConfig)));
+  
   const tfeChild = cp.fork(`twitterFollowerExplorerChild.js`, childEnv );
 
   let slackText = "";
@@ -3574,7 +3576,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
           console.log(chalkTwitterBold("+++ RE-INITIALIZED ON ERROR @" + user));
 
-          resetTwitterUserState(user, function() {});
+          // resetTwitterUserState(user, function() {});
 
         });
       }
@@ -3589,6 +3591,24 @@ function initTwitterFollowerChild(twitterConfig, callback) {
   tfeChild.on("close", function(code) {
     if (tfeChildHashMap[user]) {
       tfeChildHashMap[user].status = "CLOSE";
+ 
+       if (!quitFlag) {
+
+        console.log(chalkTwitterBold(">>> RE-INIT ON CLOSE | @" + user + " ..."));
+
+        initTwitter(user, function(err, twitObj) {
+          if (err) {
+            console.log(chalkError("INIT TWITTER ERROR: " + err.message));
+            quit("INIT TWITTER ON CHILD ERROR @" + user);
+            return;
+          }
+
+          console.log(chalkTwitterBold("+++ RE-INITIALIZED ON CLOSE @" + user));
+
+          // resetTwitterUserState(user, function() {});
+
+        });
+      }
     }
     console.log(chalkError("*** tfeChildHashMap " + user + " CLOSE *** : " + code));
   });
