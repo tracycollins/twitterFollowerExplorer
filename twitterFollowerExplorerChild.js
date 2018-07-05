@@ -393,6 +393,9 @@ function fetchFriends(params, callback) {
             + " | RESPONSE: " + jsonPrint(response)
           ));
 
+
+          process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "FRIENDS_LIST", params: params, error: err });
+
           fsm.fsm_error();
 
           callback(err, null);

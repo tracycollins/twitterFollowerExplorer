@@ -2335,6 +2335,7 @@ const fsmStates = {
   "ERROR":{
     onEnter: function(event, oldState, newState) {
       reporter(event, oldState, newState);
+      fsm.reset();
     },
     "fsm_reset": "RESET"
   },
