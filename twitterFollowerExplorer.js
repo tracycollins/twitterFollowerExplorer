@@ -3554,11 +3554,31 @@ function initTwitterFollowerChild(twitterConfig, callback) {
     }
   });
   tfeChild.on("error", function(err) {
+
     if (tfeChildHashMap[user]) {
+
+      console.log(chalkError("*** CHILD ERROR | @" + user + " ERROR *** : " + err));
+
       tfeChildHashMap[user].status = "ERROR";
-      fsm.fsm_error();
+
+      if (!quitFlag) {
+
+        console.log(chalkTwitterBold(">>> RE-INIT ON ERROR | @" + user + " ..."));
+
+        initTwitter(user, function(err, twitObj) {
+          if (err) {
+            console.log(chalkError("INIT TWITTER ERROR: " + err.message));
+            quit("INIT TWITTER ON CHILD ERROR @" + user);
+            return;
+          }
+
+          console.log(chalkTwitterBold("+++ RE-INITIALIZED ON ERROR @" + user));
+
+          resetTwitterUserState(user, function() {});
+
+        });
+      }
     }
-    console.log(chalkError("*** tfeChildHashMap " + user + " ERROR *** : " + err));
   });
   tfeChild.on("exit", function(err) {
     if (tfeChildHashMap[user]) {
@@ -3605,9 +3625,11 @@ function initTwitterUsers(callback) {
     if (callback !== undefined) {callback(null, null);}
   }
   else {
+
     console.log(chalkTwitter("TFE | INIT TWITTER USERS"
       + " | FOUND " + configuration.twitterUsers.length + " USERS"
     ));
+
     async.each(configuration.twitterUsers, function(userScreenName, cb) {
       userScreenName = userScreenName.toLowerCase();
       console.log(chalkTwitter("TFE | INIT TWITTER USER @" + userScreenName));
@@ -3641,6 +3663,7 @@ function initTwitterUsers(callback) {
       ));
       if (callback !== undefined) { callback(err); }
     });
+
   }
 }
 
