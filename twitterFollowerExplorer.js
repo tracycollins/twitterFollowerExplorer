@@ -2237,26 +2237,26 @@ const checkChildrenState = function (params, callback) {
 
     const cs = (tfeChildHashMap[user].status === params.checkState);
 
-    if (!cs && (params.checkState === "INIT") && (tfeChildHashMap[user].status === "RESET")){
+    // if (!cs && (params.checkState === "INIT") && (tfeChildHashMap[user].status === "RESET")){
 
-      const initObj = {
-        op: "INIT",
-        childId: tfeChildHashMap[user].childId,
-        threeceeUser: tfeChildHashMap[user].threeceeUser,
-        twitterConfig: tfeChildHashMap[user].twitterConfig,
-        verbose: configuration.verbose
-      };
+    //   const initObj = {
+    //     op: "INIT",
+    //     childId: tfeChildHashMap[user].childId,
+    //     threeceeUser: tfeChildHashMap[user].threeceeUser,
+    //     twitterConfig: tfeChildHashMap[user].twitterConfig,
+    //     verbose: configuration.verbose
+    //   };
 
-      tfeChildHashMap[user].child.send(initObj, function(err) {
-        if (err) {
-          console.log(chalkError("*** CHILD SEND INIT ERROR"
-            + " | @" + user
-            + " | ERR: " + err
-          ));
-        }
-      });
+    //   tfeChildHashMap[user].child.send(initObj, function(err) {
+    //     if (err) {
+    //       console.log(chalkError("*** CHILD SEND INIT ERROR"
+    //         + " | @" + user
+    //         + " | ERR: " + err
+    //       ));
+    //     }
+    //   });
 
-    }
+    // }
 
     if (!cs && (params.checkState === "FETCH_END") 
       && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
