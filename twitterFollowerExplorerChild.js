@@ -531,6 +531,7 @@ const fsmStates = {
       reporter(event, oldState, newState);
       resetTwitterUserState();
       process.send({op:"RESET", threeceeUser: configuration.threeceeUser});
+      // fsm.fsm_init();
       return this.RESET;
     },
     "fsm_reset": "RESET",

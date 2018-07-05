@@ -2229,13 +2229,34 @@ function processUser(threeceeUser, userIn, callback) {
   });
 }
 
-const checkChildrenState = function (checkState, callback) {
+const checkChildrenState = function (params, callback) {
 
   async.every(Object.keys(tfeChildHashMap), function(user, cb) {
 
     debug("CH ID: " + user + " | " + tfeChildHashMap[user].status);
 
-    const cs = (tfeChildHashMap[user].status === checkState);
+    const cs = (tfeChildHashMap[user].status === params.checkState);
+
+    if (!cs && (params.checkState === "INIT") && (params.checkState === "RESET")){
+
+      const initObj = {
+        op: "INIT",
+        childId: tfeChildHashMap[user].childId,
+        threeceeUser: tfeChildHashMap[user].threeceeUser,
+        twitterConfig: tfeChildHashMap[user].twitterConfig,
+        verbose: configuration.verbose
+      };
+
+      tfeChildHashMap[user].child.send(initObj, function(err) {
+        if (err) {
+          console.log(chalkError("*** CHILD SEND INIT ERROR"
+            + " | @" + user
+            + " | ERR: " + err
+          ));
+        }
+      });
+
+    }
 
     cb(null, cs);
 
@@ -2247,7 +2268,7 @@ const checkChildrenState = function (checkState, callback) {
     }
 
     debug(chalkAlert("MAIN: " + fsm.getMachineState()
-      + " | ALL CHILDREN: CHECKSTATE: " + checkState + " | " + allCheckState
+      + " | ALL CHILDREN: CHECKSTATE: " + params.checkState + " | " + allCheckState
     ));
 
     if (callback !== undefined) { return callback(null, allCheckState); }
@@ -3444,7 +3465,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
   console.log(chalkLog("+++ NEW TFE CHILD | childEnv\n" + jsonPrint(childEnv)));
   console.log(chalkLog("+++ NEW TFE CHILD | twitterConfig\n" + jsonPrint(tfeChildHashMap[user].twitterConfig)));
-  
+
   const tfeChild = cp.fork(`twitterFollowerExplorerChild.js`, childEnv );
 
   let slackText = "";
@@ -3565,7 +3586,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
       if (!quitFlag) {
 
-        console.log(chalkTwitterBold(">>> RE-INIT ON ERROR | @" + user + " ..."));
+        console.log(chalkAlert(">>> RE-INIT ON ERROR | @" + user + " ..."));
 
         initTwitter(user, function(err, twitObj) {
           if (err) {
@@ -3574,7 +3595,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
             return;
           }
 
-          console.log(chalkTwitterBold("+++ RE-INITIALIZED ON ERROR @" + user));
+          console.log(chalkAlert("+++ RE-INITIALIZED ON ERROR @" + user));
 
           // resetTwitterUserState(user, function() {});
 
@@ -3594,7 +3615,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
  
        if (!quitFlag) {
 
-        console.log(chalkTwitterBold(">>> RE-INIT ON CLOSE | @" + user + " ..."));
+        console.log(chalkAlert(">>> RE-INIT ON CLOSE | @" + user + " ..."));
 
         initTwitter(user, function(err, twitObj) {
           if (err) {
@@ -3603,7 +3624,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
             return;
           }
 
-          console.log(chalkTwitterBold("+++ RE-INITIALIZED ON CLOSE @" + user));
+          console.log(chalkAlert("+++ RE-INITIALIZED ON CLOSE @" + user));
 
           // resetTwitterUserState(user, function() {});
 
@@ -3617,9 +3638,13 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 }
 
 function initTwitter(threeceeUser, callback) {
+
   let twitterConfigFile =  threeceeUser + ".json";
+
   debug(chalkInfo("INIT TWITTER USER @" + threeceeUser + " | " + twitterConfigFile));
+
   loadFile(configuration.twitterConfigFolder, twitterConfigFile, function(err, twitterConfig) {
+
     if (err) {
       console.log(chalkError("*** LOADED TWITTER CONFIG ERROR: FILE:  " 
         + configuration.twitterConfigFolder + "/" + twitterConfigFile
@@ -3627,15 +3652,19 @@ function initTwitter(threeceeUser, callback) {
       console.log(chalkError("*** LOADED TWITTER CONFIG ERROR: ERROR: " + err));
       return callback(err);
     }
+
     twitterConfig.threeceeUser = threeceeUser;
+
     console.log(chalkTwitter("LOADED TWITTER CONFIG"
       + " | @" + threeceeUser
       + " | CONFIG FILE: " + configuration.twitterConfigFolder + "/" + twitterConfigFile
       + "\n" + jsonPrint(twitterConfig)
     ));
+
     initTwitterFollowerChild(twitterConfig, function(err0, childId) {
       callback(err0, twitterConfig);
     });
+
   });
 }
 
@@ -4822,14 +4851,18 @@ initialize(configuration, function(err, cnf) {
   dbConnectionReadyInterval = setInterval(function() {
 
     if (dbConnectionReady) {
+
       clearInterval(dbConnectionReadyInterval);
+
       initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
       initUserDbUpdateQueueInterval(1);
       initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
       initRandomNetworkTree();
       initLangAnalyzerMessageRxQueueInterval(1);
       initLangAnalyzer();
+
       neuralNetworkInitialized = true;
+
       fsm.fsm_resetEnd();
 
       initTwitterUsers(function initTwitterUsersCallback(e) {
