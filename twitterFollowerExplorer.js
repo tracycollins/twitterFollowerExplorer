@@ -2229,13 +2229,13 @@ function processUser(threeceeUser, userIn, callback) {
   });
 }
 
-const checkChildrenState = function (params, callback) {
+const checkChildrenState = function (checkState, callback) {
 
   async.every(Object.keys(tfeChildHashMap), function(user, cb) {
 
     debug("CH ID: " + user + " | " + tfeChildHashMap[user].status);
 
-    const cs = (tfeChildHashMap[user].status === params.checkState);
+    const cs = (tfeChildHashMap[user].status === checkState);
 
     // if (!cs && (params.checkState === "INIT") && (tfeChildHashMap[user].status === "RESET")){
 
@@ -2258,7 +2258,7 @@ const checkChildrenState = function (params, callback) {
 
     // }
 
-    if (!cs && (params.checkState === "FETCH_END") 
+    if (!cs && (checkState === "FETCH_END") 
       && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
 
       tfeChildHashMap[user].child.send({op: "FETCH_END", verbose: configuration.verbose}, function(err) {
@@ -2282,7 +2282,7 @@ const checkChildrenState = function (params, callback) {
     }
 
     debug(chalkAlert("MAIN: " + fsm.getMachineState()
-      + " | ALL CHILDREN: CHECKSTATE: " + params.checkState + " | " + allCheckState
+      + " | ALL CHILDREN: CHECKSTATE: " + checkState + " | " + allCheckState
     ));
 
     if (callback !== undefined) { return callback(null, allCheckState); }
