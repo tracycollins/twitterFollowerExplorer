@@ -30,7 +30,11 @@ configuration.rxQueueInterval = 1*ONE_SECOND;
 const os = require("os");
 const util = require("util");
 const moment = require("moment");
+const treeify = require("treeify");
+
 require("isomorphic-fetch");
+
+
 // const Dropbox = require('dropbox').Dropbox;
 const Dropbox = require("./js/dropbox").Dropbox;
 const NodeCache = require("node-cache");
@@ -57,7 +61,7 @@ const chalkConnect = chalk.blue;
 
 const jsonPrint = function (obj){
   if (obj) {
-    return JSON.stringify(obj, null, 2);
+    return treeify.asTree(obj, true, true);
   }
   else {
     return "UNDEFINED";

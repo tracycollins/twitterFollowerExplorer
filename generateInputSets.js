@@ -47,6 +47,7 @@ const OFFLINE_MODE = false;
 const histogramParser = require("@threeceelabs/histogram-parser");
 // const histogramParser = require("../histogram-parser");
 const util = require("util");
+const treeify = require("treeify");
 
 const JSONStream = require("JSONStream");
 const stream = JSONStream.parse("$*.$*.$*"); //rows, ANYTHING, doc
@@ -210,7 +211,7 @@ let statsUpdateInterval;
 
 const jsonPrint = function (obj){
   if (obj) {
-    return JSON.stringify(obj, null, 2);
+    return treeify.asTree(obj, true, true);
   }
   else {
     return "UNDEFINED";

@@ -32,6 +32,7 @@ const async = require("async");
 const sortOn = require("sort-on");
 const Stately = require("stately.js");
 const omit = require("object.omit");
+const treeify = require("treeify");
 
 let twitClient;
 let twitStream;
@@ -49,7 +50,7 @@ hostname = hostname.replace(/word/g, "google");
 
 const jsonPrint = function (obj){
   if (obj) {
-    return JSON.stringify(obj, null, 2);
+    return treeify.asTree(obj, true, true);
   }
   else {
     return "UNDEFINED";
