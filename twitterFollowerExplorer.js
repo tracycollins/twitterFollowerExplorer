@@ -10,6 +10,7 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 const ONE_KILOBYTE = 1024;
 const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 
+const USER_READY_ACK_TIMEOUT = ONE_MINUTE;
 
 const os = require("os");
 const moment = require("moment");
@@ -3141,14 +3142,38 @@ function initUserReadyInterval(interval) {
 
     if (statsObj.serverConnected && !statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
 
-      statsObj.userReadyTransmitted = true;
+      statsObj.userReadyTransmitted = moment().valueOf();
       userObj.timeStamp = moment().valueOf();
 
       socket.emit("USER_READY", {userId: userObj.userId, timeStamp: moment().valueOf()});
     }
     else if (statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
-      statsObj.userReadyAckWait += 1;
-      console.log(chalkAlert("... WAITING FOR USER_READY_ACK ..."));
+
+      statsObj.userReadyTransmittedElapsed = moment().valueOf() - statsObj.userReadyTransmitted;
+
+      if (statsObj.userReadyTransmittedElapsed > USER_READY_ACK_TIMEOUT) {
+
+        console.log(chalkAlert("USER_READY_ACK_TIMEOUT | RETRANSMIT USER_READY"
+          + " | NOW: " + moment().format(compactDateTimeFormat) 
+          + " | TXD: " + moment(statsObj.userReadyTransmitted).format(compactDateTimeFormat) 
+          + " | AGO: " + msToTime(moment().valueOf() - statsObj.userReadyTransmitted)
+          + " | TIMEOUT: " + msToTime(USER_READY_ACK_TIMEOUT)
+        ));
+
+        statsObj.userReadyTransmitted = moment().valueOf();
+        userObj.timeStamp = moment().valueOf();
+
+        socket.emit("USER_READY", {userId: userObj.userId, timeStamp: moment().valueOf()});
+      }
+      else {
+        console.log(chalkAlert("WAITING FOR USER_READY_ACK ..."
+          + " | NOW: " + moment().format(compactDateTimeFormat) 
+          + " | TXD: " + moment(statsObj.userReadyTransmitted).format(compactDateTimeFormat) 
+          + " | AGO: " + msToTime(moment().valueOf() - statsObj.userReadyTransmitted)
+          + " | TIMEOUT: " + msToTime(USER_READY_ACK_TIMEOUT)
+        ));
+      }
+
     }
   }, interval);
 }
@@ -3168,6 +3193,7 @@ function initSocket(cnf) {
 
   socket.on("connect", function() {
 
+    statsObj.socketId = socket.id ;
     statsObj.serverConnected = true ;
 
     console.log(chalkConnect("SOCKET CONNECT | " + socket.id + " ... AUTHENTICATE ..."));
@@ -3219,8 +3245,8 @@ function initSocket(cnf) {
       statsObj.userReadyTransmitted = false;
       statsObj.userReadyAck = false ;
 
-      console.log(chalkConnect(moment().format(compactDateTimeFormat)
-        + " | SOCKET DISCONNECT: " + socket.id
+      console.log(chalkAlert(moment().format(compactDateTimeFormat)
+        + " | SOCKET DISCONNECT: " + statsObj.socketId
         + " | REASON: " + reason
       ));
     });
