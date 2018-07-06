@@ -3524,8 +3524,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
       case "ERROR":
         console.log(chalkError("TFC | CHILD ERROR | " + m.threeceeUser));
         if (m.error) { 
-          console.log(chalkError("TFC | CHILD ERROR | " + m.error)); 
-          console.log(chalkError("TFC | CHILD ERROR | " + jsonPrint(m.error))); 
+          console.log(chalkError("TFC | CHILD ERROR\n" + jsonPrint(m.error))); 
         }
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
         checkChildrenState(m.op);
