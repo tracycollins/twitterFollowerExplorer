@@ -159,7 +159,7 @@ function checkRateLimit(params, callback){
 
   twitClient.get("application/rate_limit_status", function(err, data, response) {
 
-    debug("application/rate_limit_status response: " + jsonPrint(response));
+    // debug("application/rate_limit_status response: " + jsonPrint(response));
     
     if (err){
       console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
@@ -270,7 +270,7 @@ function quit(cause){
 
 function twitterUserUpdate(params, callback){
 
-  debug("TWITTER USER UPDATE | params " + jsonPrint(params));
+  // debug("TWITTER USER UPDATE | params " + jsonPrint(params));
 
   twitClient.get("users/show", {screen_name: configuration.threeceeUser}, function(err, userShowData, response) {
   
@@ -280,8 +280,8 @@ function twitterUserUpdate(params, callback){
       return(callback(err));
     }
 
-    debug(chalkTwitter("TWITTER USER DATA\n" + jsonPrint(userShowData)));
-    debug(chalkTwitter("TWITTER USER RESPONSE\n" + jsonPrint(response)));
+    // debug(chalkTwitter("TWITTER USER DATA\n" + jsonPrint(userShowData)));
+    // debug(chalkTwitter("TWITTER USER RESPONSE\n" + jsonPrint(response)));
 
     statsObj.threeceeUser.id = userShowData.id_str;
     statsObj.threeceeUser.name = (userShowData.name !== undefined) ? userShowData.name : "";
@@ -777,13 +777,13 @@ function initTwitter(twitterConfig, callback){
       return(callback(err, null));
     }
 
-    debug(chalkTwitter("TWITTER ACCOUNT SETTINGS RESPONSE\n" + jsonPrint(response)));
+    // debug(chalkTwitter("TWITTER ACCOUNT SETTINGS RESPONSE\n" + jsonPrint(response)));
 
     const userScreenName = accountSettings.screen_name.toLowerCase();
 
     debug(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: @" + userScreenName));
 
-    debug(chalkTwitter("TWITTER ACCOUNT SETTINGS\n" + jsonPrint(accountSettings)));
+    // debug(chalkTwitter("TWITTER ACCOUNT SETTINGS\n" + jsonPrint(accountSettings)));
 
     twitterUserUpdate({userScreenName: userScreenName}, function(err){
       if (err){
@@ -917,8 +917,8 @@ process.on("message", function(m) {
               process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
             }
             else {
-              debug("data\n" + jsonPrint(data));
-              debug("response\n" + jsonPrint(response));
+              // debug("data\n" + jsonPrint(data));
+              // debug("response\n" + jsonPrint(response));
 
               console.log(chalkInfo("TFC | +++ FOLLOW"
                 + " | 3C: @" + configuration.threeceeUser
@@ -950,12 +950,12 @@ process.on("message", function(m) {
             }
             else {
 
-              debug("data\n" + jsonPrint(data));
+              // debug("data\n" + jsonPrint(data));
 
               if (configuration.verbose) { 
                 console.log(chalkInfo("UNFOLLOW"
                   + " | 3C: @" + configuration.threeceeUser
-                  + "\nresponse\n" + jsonPrint(response)
+                  // + "\nresponse\n" + jsonPrint(response)
                 ));
               }
 
