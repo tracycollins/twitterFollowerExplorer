@@ -66,6 +66,7 @@
     "stream-json": "^1.1.0",
     "string": "^3.3.3",
     "text-table": "^0.2.0",
+    "treeify": "^1.1.0",
     "twit": "^2.2.11",
     "url-regex": "^4.1.1",
     "write-json-file": "^2.3.0",
