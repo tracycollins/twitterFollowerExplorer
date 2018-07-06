@@ -2341,7 +2341,7 @@ function childSendAll(params, callback) {
 function reporter(event, oldState, newState) {
   fsmPreviousState = oldState;
   console.log(chalkLog("--------------------------------------------------------\n"
-    + "<< FSM >>"
+    + "<< FSM >> MAIN"
     + " | " + event
     + " | " + fsmPreviousState
     + " -> " + newState
