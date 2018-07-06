@@ -3529,7 +3529,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         }
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
         checkChildrenState(m.op);
-        fsm.fsm_error();
+        // fsm.fsm_error();
       break;
       case "INIT":
       case "INIT_COMPLETE":
