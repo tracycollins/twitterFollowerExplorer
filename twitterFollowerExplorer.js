@@ -3,7 +3,6 @@
 "use strict";
 require("isomorphic-fetch");
 
-
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 
@@ -15,7 +14,7 @@ const USER_READY_ACK_TIMEOUT = ONE_MINUTE;
 const os = require("os");
 const moment = require("moment");
 const defaults = require("object.defaults");
-
+const treeify = require("treeify");
 
 let hostname = os.hostname();
 hostname = hostname.replace(/.local/g, "");
@@ -220,7 +219,7 @@ let prevBestNetworkId = "";
 
 const jsonPrint = function (obj) {
   if (obj) {
-    return JSON.stringify(obj, null, 2);
+    return treeify.asTree(obj, true, true);
   }
   else {
     return "UNDEFINED";
@@ -3524,7 +3523,10 @@ function initTwitterFollowerChild(twitterConfig, callback) {
     switch(m.op) {
       case "ERROR":
         console.log(chalkError("TFC | CHILD ERROR | " + m.threeceeUser));
-        if (m.error) { console.log(chalkError("TFC | CHILD ERROR | " + m.error)); }
+        if (m.error) { 
+          console.log(chalkError("TFC | CHILD ERROR | " + m.error)); 
+          console.log(chalkError("TFC | CHILD ERROR | " + jsonPrint(m.error))); 
+        }
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
         checkChildrenState(m.op);
         fsm.fsm_error();
