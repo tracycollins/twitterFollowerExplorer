@@ -10,8 +10,17 @@ const ONE_MINUTE = ONE_SECOND*60 ;
 let checkRateLimitInterval;
 let checkRateLimitIntervalTime = ONE_MINUTE;
 
+let unfollowQueueInterval;
+let unfollowQueueReady = false;
+let unfollowQueueIntervalTime = process.env.DEFAULT_UNFOLLOW_QUEUE_INTERVAL || 5*ONE_SECOND;
+let unfollowQueue = [];
+
 const TEST_MODE_FETCH_COUNT = process.env.TEST_MODE_FETCH_COUNT;
 const TEST_MODE_TOTAL_FETCH = process.env.TEST_MODE_TOTAL_FETCH;  // total twitter user fetch count
+
+const DEFAULT_MIN_FOLLOWERS_COUNT = process.env.DEFAULT_MIN_FOLLOWERS_COUNT || 100;
+const DEFAULT_MIN_FRIENDS_COUNT = process.env.DEFAULT_MIN_FRIENDS_COUNT || 100;
+const DEFAULT_MIN_STATUSES_COUNT = process.env.DEFAULT_MIN_STATUSES_COUNT || 100;
 
 const chalk = require("chalk");
 
@@ -39,7 +48,6 @@ let twitStream;
 
 let fsm;
 
-
 let hostname = os.hostname();
 hostname = hostname.replace(/.local/g, "");
 hostname = hostname.replace(/.home/g, "");
@@ -64,6 +72,12 @@ configuration.childId = process.env.CHILD_ID;
 configuration.threeceeUser = process.env.THREECEE_USER;
 configuration.twitterConfig = {};
 configuration.twitterConfig = process.env.TWITTER_CONFIG;
+
+configuration.minFollowersCount = DEFAULT_MIN_FOLLOWERS_COUNT;
+configuration.minFriendsCount = DEFAULT_MIN_FRIENDS_COUNT;
+configuration.minStatusesCount = DEFAULT_MIN_STATUSES_COUNT;
+
+
 configuration.testMode = false;
 if (process.env.TEST_MODE > 0) {
   configuration.testMode = true;
@@ -360,6 +374,34 @@ function twitterUserUpdate(params, callback){
   });
 }
 
+let friendMinProps = {
+  followers_count: configuration.minFollowersCount,
+  friends_count: configuration.minFriendsCount,
+  statuses_count: configuration.minStatusesCount
+};
+
+function checkFriendMinimumProperties(friend, callback){
+
+  const unfollowFlag = (
+    friend.followers_count < configuration.minFollowersCount
+    && friend.friends_count < configuration.minFriendsCount
+    && friend.statuses_count < configuration.minStatusesCount
+  );
+
+  console.log(chalkAlert("checkFriendMinimumProperties"
+    + " | UNFOLLOW: " + unfollowFlag
+    + " | @" + friend.screen_name
+    + " | FLWRs: " + friend.followers_count
+    + " | MIN FLWRs: " + configuration.minFollowersCount
+    + " | FRNDs: " + friend.friends_count
+    + " | MIN FRNDs: " + configuration.minFriendsCount
+    + " | Ts: " + friend.statuses_count
+    + " | MIN Ts: " + configuration.minStatusesCount
+  ));
+
+  return unfollowFlag;
+}
+
 function fetchFriends(params, callback) {
 
   if (configuration.testMode) { console.log(chalkInfo("FETCH FRIENDS params\n" + jsonPrint(params))); }
@@ -452,19 +494,57 @@ function fetchFriends(params, callback) {
 
         async.eachSeries(subFriendsSortedArray, function (friend, cb){
 
-          friend.following = true;
-          friend.threeceeFollowing = threeceeUser;
+          checkFriendMinimumProperties(friend, function(err, unfollowFlag){
 
-          process.send(
-            {
-              op: "FRIEND_RAW", 
-              follow: false, 
-              threeceeUser: configuration.threeceeUser, 
-              childId: configuration.childId, 
-              friend: friend
-            }, 
-            function(){ cb(); }
-          );
+            if (err) {
+              console.log(chalkError("TFC CHECK FRIEND ERROR | " + err));
+              return cb();
+            }
+
+            if (unfollowFlag) {
+
+              unfollowQueue.push(friend);
+
+              console.log(chalkError("TFC CHECK FRIEND | XXX UNFOLLOW"
+                + " [ UFQ: " + unfollowQueue.length + "]"
+                + " | UNFOLLOW: " + unfollowFlag
+                + " | ID: " + friend.id_str
+                + " | @" + friend.screen_name
+                + " | FLWRs: " + friend.followers_count
+                + " | FRNDs: " + friend.friends_count
+                + " | Ts: " + friend.statuses_count
+              ));
+
+              return cb();
+            }
+
+            friend.following = true;
+            friend.threeceeFollowing = threeceeUser;
+
+            console.log(chalkError("TFC CHECK FRIEND | --- UNFOLLOW"
+              + " [ UFQ: " + unfollowQueue.length + "]"
+              + " | UNFOLLOW: " + unfollowFlag
+              + " | ID: " + friend.id_str
+              + " | @" + friend.screen_name
+              + " | FLWRs: " + friend.followers_count
+              + " | FRNDs: " + friend.friends_count
+              + " | Ts: " + friend.statuses_count
+            ));
+
+            process.send(
+              {
+                op: "FRIEND_RAW", 
+                follow: false, 
+                threeceeUser: configuration.threeceeUser, 
+                childId: configuration.childId, 
+                friend: friend
+              }, 
+
+              function(){ cb(); }
+            );
+
+          });
+
 
         }, function subFriendsProcess(err){
           if (err) {
@@ -822,6 +902,81 @@ function initialize(callback){
   callback();
 }
 
+function initUnfollowQueueInterval(interval){
+
+  clearInterval(unfollowQueueInterval);
+
+  console.log(chalkInfo("TFC"
+    + " | CH @" + configuration.threeceeUser
+    + " | INIT UNFOLLOW QUEUE INTERVAL | " + interval
+  ));
+
+  unfollowQueueInterval = setInterval(function(){
+
+    debug(chalkInfo("UNFOLLOW QUEUE INTERVAL"
+      + " | INTERVAL: " + msToTime(interval)
+      + " | @" + configuration.threeceeUser
+    ));
+
+    if (unfollowQueueReady) {
+
+      unfollowQueueReady = false;
+
+
+      unfollowQueueReady = true;
+
+    }
+
+  }, interval);
+}
+
+function unfollowFriend(params, callback){
+
+  if (!twitClient) {
+    console.log(chalkAlert("TFC | UNFOLLOW FRIEND | TWIT CLIENT UNDEFINED | SKIPPING"
+      + " | " + jsonPrint(params)
+    ));
+    return callback(null, null);
+  }
+
+  twitClient.post(
+
+    "friendships/destroy", params, 
+
+    function destroyFriend(err, data, response){
+
+      if (err) {
+
+        console.log(chalkError("TFC | =X= UNFOLLOW FRIEND ERROR"
+          + "\nERROR\n" + err
+          + "\nPARAMS\n" + jsonPrint(params)
+        ));
+
+        return callback(err, params);
+
+      }
+
+      if (response.user === undefined) {
+        console.log(chalkError("TFC | =X= UNFOLLOW FAIL"
+          + " | 3C: @" + configuration.threeceeUser
+          + "RESPONSE: " + response
+        ));
+
+        return callback(err, response);
+      }
+
+      console.log(chalkAlert("=X= UNFOLLOW"
+        + " | 3C: @" + configuration.threeceeUser
+        + " | " + response.user.user_id
+        + " | @" + response.user.screen_name
+      ));
+
+      callback(null, response);
+
+    }
+  );
+}
+
 function initCheckRateLimitInterval(interval){
 
   clearInterval(checkRateLimitInterval);
@@ -933,42 +1088,97 @@ process.on("message", function(m) {
 
     case "UNFOLLOW":
 
-      if (twitClient) {
-        twitClient.post(
+      unfollowFriend({screenName: m.user.screenName}, function(err, response){
 
-          "friendships/destroy", {screen_name: m.user.screenName}, 
+        if (err) {
 
-          function destroyFriend(err, data, response){
-            if (err) {
-              console.log(chalkError("=X= UNFOLLOW ERROR"
-                + " | 3C: @" + configuration.threeceeUser
-                + " | NID: " + m.user.userId
-                + " | @" + m.user.screenName.toLowerCase()
-              ));
+          console.log(chalkError("=X= UNFOLLOW ERROR"
+            + " | 3C: @" + configuration.threeceeUser
+            + " | NID: " + m.user.userId
+            + " | @" + m.user.screenName.toLowerCase()
+          ));
 
-              process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "UNFOLLOW", params: {screen_name: m.user.screenName}, error: err });
+          process.send(
+            {
+              op:"ERROR", 
+              threeceeUser: configuration.threeceeUser, 
+              state: "UNFOLLOW_ERR", 
+              params: {screen_name: m.user.screenName}, 
+              error: err
             }
-            else {
+          );
 
-              // debug("data\n" + jsonPrint(data));
+        }
 
-              if (configuration.verbose) { 
-                console.log(chalkInfo("UNFOLLOW"
-                  + " | 3C: @" + configuration.threeceeUser
-                  // + "\nresponse\n" + jsonPrint(response)
-                ));
-              }
+        if (response.user === undefined) {
 
-              console.log(chalkInfo("=X= UNFOLLOW"
-                + " | 3C: @" + configuration.threeceeUser
-                + " | NID: " + m.user.userId
-                + " | @" + m.user.screenName.toLowerCase()
-              ));
+          console.log(chalkInfo("TFC | UNFOLLOW FAIL"
+            + " | 3C: @" + configuration.threeceeUser
+            + " | @" + m.user.screenName.toLowerCase()
+            + " | RESPONSE"  + response
+          ));
 
+          process.send(
+            {
+              op:"ERROR", 
+              threeceeUser: configuration.threeceeUser, 
+              state: "UNFOLLOW_FAIL", 
+              params: {screen_name: m.user.screenName}, 
+              error: response
             }
-          }
-        );
-      }
+          );
+
+        }
+
+        console.log(chalkInfo("TFC | UNFOLLOW"
+          + " | 3C: @" + configuration.threeceeUser
+          + " | " + response.user_id
+          + " | @" + response.screen_name
+          + " | FLWRs: " + response.followers_count
+          + " | FRNDs: " + response.friends_count
+          + " | Ts: " + response.statuses_count
+        ));
+
+
+      });
+
+      // if (twitClient) {
+      //   twitClient.post(
+
+      //     "friendships/destroy", {screen_name: m.user.screenName}, 
+
+      //     function destroyFriend(err, data, response){
+      //       if (err) {
+      //         console.log(chalkError("=X= UNFOLLOW ERROR"
+      //           + " | 3C: @" + configuration.threeceeUser
+      //           + " | NID: " + m.user.userId
+      //           + " | @" + m.user.screenName.toLowerCase()
+      //         ));
+
+      //         process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "UNFOLLOW", params: {screen_name: m.user.screenName}, error: err });
+      //       }
+      //       else {
+
+      //         // debug("data\n" + jsonPrint(data));
+
+      //         if (configuration.verbose) { 
+      //           console.log(chalkInfo("UNFOLLOW"
+      //             + " | 3C: @" + configuration.threeceeUser
+      //             // + "\nresponse\n" + jsonPrint(response)
+      //           ));
+      //         }
+
+      //         console.log(chalkInfo("=X= UNFOLLOW"
+      //           + " | 3C: @" + configuration.threeceeUser
+      //           + " | NID: " + m.user.userId
+      //           + " | @" + m.user.screenName.toLowerCase()
+      //         ));
+
+      //       }
+      //     }
+      //   );
+      // }
+
     break;
 
     case "QUIT":
