@@ -2433,7 +2433,7 @@ function childSendAll(params, callback) {
 
 function reporter(event, oldState, newState) {
 
-  statsObj.status = newState;
+  // statsObj.status = newState;
   statsObj.fsmState = newState;
 
   fsmPreviousState = oldState;
@@ -2518,6 +2518,9 @@ const fsmStates = {
 
         if (fetchAllIntervalReady && acr && processUserQueueReady && processUserQueueEmpty()) {
           fetchAllIntervalReady = false;
+
+          statsObj.status = "FETCH ALL";
+
           fsm.fsm_fetchAllStart();
         }
 
@@ -2577,6 +2580,8 @@ const fsmStates = {
   "FETCH_END_ALL":{
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
+
+        statsObj.status = "END FETCH ALL";
 
         reporter(event, oldState, newState);
 
@@ -3847,6 +3852,9 @@ function initTwitter(threeceeUser, callback) {
 }
 
 function initTwitterUsers(callback) {
+
+  statsObj.status = "INIT TWITTER USERS";
+
   if (!configuration.twitterUsers) {
     console.log(chalkWarn("??? NO FEEDS"));
     if (callback !== undefined) {callback(null, null);}
@@ -3949,6 +3957,9 @@ function initStdIn() {
 }
 
 function initialize(cnf, callback) {
+
+  statsObj.status = "INITIALIZE";
+
   if (debug.enabled) {
     console.log("\n%%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
   }
@@ -4188,6 +4199,8 @@ function initialize(cnf, callback) {
 
 function saveNetworkHashMap(params, callback) {
 
+  statsObj.status = "SAVE NN HASHMAP";
+
   const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
 
   const nnIds = bestNetworkHashMap.keys();
@@ -4231,6 +4244,8 @@ function saveNetworkHashMap(params, callback) {
 }
 
 function updateNetworkStats(params, callback) {
+
+  statsObj.status = "UPDATE NN STATS";
 
   const updateOverallMatchRate = (params.updateOverallMatchRate !== undefined) ? params.updateOverallMatchRate : false;
   const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
@@ -4859,6 +4874,9 @@ function initUserDbUpdateQueueInterval(interval) {
 }
 
 function initRandomNetworkTree(callback) {
+
+  statsObj.status = "INIT RAN NNs";
+
   console.log(chalkBlue("INIT RANDOM NETWORK TREE CHILD PROCESS"));
   randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`);
   randomNetworkTree.on("message", function(m) {
