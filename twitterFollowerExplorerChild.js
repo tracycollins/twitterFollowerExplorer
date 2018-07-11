@@ -964,17 +964,20 @@ function initUnfollowQueueInterval(interval){
       + " | @" + configuration.threeceeUser
     ));
 
-    if (unfollowQueueReady) {
+    if (unfollowQueueReady && (unfollowQueue.length > 0)) {
 
       unfollowQueueReady = false;
 
-      unfollowFriend({screenName: m.user.screenName}, function(err, response){
+      const friend = unfollowQueue.shift();
+
+      unfollowFriend({screenName: friend.screen_name}, function(err, response){
         if (err) {
 
           console.log(chalkError("*** UNFOLLOW ERROR"
+            + " [ UFQ: " + unfollowQueue.length + "]"
             + " | 3C: @" + configuration.threeceeUser
-            + " | NID: " + m.user.userId
-            + " | @" + m.user.screenName.toLowerCase()
+            + " | NID: " + friend.user_id
+            + " | @" + friend.screen_name
           ));
 
           process.send(
@@ -982,7 +985,7 @@ function initUnfollowQueueInterval(interval){
               op:"ERROR", 
               threeceeUser: configuration.threeceeUser, 
               state: "UNFOLLOW_ERR", 
-              params: {screen_name: m.user.screenName}, 
+              params: {screen_name: friend.screen_name}, 
               error: err
             }
           );
@@ -994,8 +997,10 @@ function initUnfollowQueueInterval(interval){
         if (response.user === undefined) {
 
           console.log(chalkAlert("TFC | *** UNFOLLOW FAIL"
+            + " [ UFQ: " + unfollowQueue.length + "]"
             + " | 3C: @" + configuration.threeceeUser
-            + " | @" + m.user.screenName.toLowerCase()
+            + " | UID: " + friend.user_id
+            + " | @" + friend.screen_name
             + " | RESPONSE"  + response
           ));
 
@@ -1004,7 +1009,7 @@ function initUnfollowQueueInterval(interval){
               op:"ERROR", 
               threeceeUser: configuration.threeceeUser, 
               state: "UNFOLLOW_FAIL", 
-              params: {screen_name: m.user.screenName}, 
+              params: {screen_name: friend.screen_name}, 
               error: response
             }
           );
@@ -1014,6 +1019,7 @@ function initUnfollowQueueInterval(interval){
         }
 
         console.log(chalkAlert("TFC | XXX UNFOLLOW"
+          + " [ UFQ: " + unfollowQueue.length + "]"
           + " | 3C: @" + configuration.threeceeUser
           + " | " + response.user_id
           + " | @" + response.screen_name
@@ -1021,6 +1027,8 @@ function initUnfollowQueueInterval(interval){
           + " | FRNDs: " + response.friends_count
           + " | Ts: " + response.statuses_count
         ));
+
+        unfollowQueueReady = true;
 
       });
 
