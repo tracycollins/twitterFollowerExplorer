@@ -925,8 +925,6 @@ function loadMaxInputDropbox(folder, file, callback) {
 
 function updateGlobalHistograms(params, callback) {
 
-  // params.user
-
   async.each(Object.keys(params.user.histograms), function(type, cb0) {
 
     if (globalHistograms[type] === undefined) { globalHistograms[type] = {}; }
@@ -1050,6 +1048,8 @@ function processBestNetwork(params, callback){
 }
 
 function loadBestNetworkDropboxFolder(folder, callback) {
+
+  statsObj.status = "LOAD NNs";
 
   let options = {path: folder};
   
@@ -1757,6 +1757,8 @@ function startImageQuotaTimeout() {
 
 function updateHistograms(params, callback) {
 
+  statsObj.status = "UPDATE HISTOGRAMS";
+
   let user = {};
   let histogramsIn = {};
 
@@ -2443,7 +2445,6 @@ function reporter(event, oldState, newState) {
     + " -> " + newState
     + "\n--------------------------------------------------------"
   ));
-
 }
 
 const processUserQueueEmpty = function() {
