@@ -2243,8 +2243,8 @@ function processUser(threeceeUser, userIn, callback) {
         tfeChildHashMap[unfollowTarget].child.send(
           { 
             op: "UNFOLLOW",
-            userId: user.nodeId,
-            screenName: user.screenName
+            user_id: user.nodeId,
+            screen_name: user.screenName
           }
         );
 
