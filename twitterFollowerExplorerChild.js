@@ -942,6 +942,14 @@ function unfollowFriend(params, callback){
         + " | @" + response.user.screen_name
       ));
 
+      process.send(
+        {
+          op:"UNFOLLOWED", 
+          threeceeUser: configuration.threeceeUser, 
+          user: response.user
+        }
+      );
+
       callback(null, response);
 
     }
@@ -1027,6 +1035,17 @@ function initUnfollowQueueInterval(interval){
           + " | FRNDs: " + response.friends_count
           + " | Ts: " + response.statuses_count
         ));
+
+          process.send(
+            {
+              op:"ERROR", 
+              threeceeUser: configuration.threeceeUser, 
+              state: "UNFOLLOW_FAIL", 
+              params: {screen_name: friend.screen_name}, 
+              error: response
+            }
+          );
+
 
         unfollowQueueReady = true;
 

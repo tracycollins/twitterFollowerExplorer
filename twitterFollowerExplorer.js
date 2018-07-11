@@ -3792,16 +3792,27 @@ function initTwitterFollowerChild(twitterConfig, callback) {
           console.log("TFE | SLACK TEXT: " + slackText);
           slackPostMessage(slackChannel, slackText);
         }
-        
+
       break;
-      case "STATS":
-        console.log("TFC | CHILD STATS | "
+
+      case "UNFOLLOWED":
+        console.log(chalkAlert("TFC | CHILD UNFOLLOWED"
           + " | " + m.threeceeUser
-          + getTimeStamp() + " ___________________________\n"
-          + jsonPrint(statsObj, "TFC | STATS "
+          + " | UID: " + m.user.user_id
+          + " | @" + m.user.screen_name
         ));
         console.log("TFC | CHILD STATS___________________________\n");
       break;
+
+      case "STATS":
+        console.log(chalkInfo("TFC | CHILD STATS"
+          + " | " + m.threeceeUser
+          + getTimeStamp() + " ___________________________\n"
+          + jsonPrint(statsObj, "TFC | STATS ")
+        ));
+        console.log("TFC | CHILD STATS___________________________\n");
+      break;
+      
       default:
       console.log(chalkError("TFC | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
       quit("UNKNOWN OP" + m.op);
