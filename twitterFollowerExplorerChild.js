@@ -920,8 +920,9 @@ function unfollowFriend(params, callback){
     unfollowFriendParams.screen_name = params.screen_name;
   }
   else {
-    console.log(chalkAlert("TFC | UNFOLLOW FRIEND | INVALID PARAMS"
-      + " | " + jsonPrint(params)
+    console.log(chalkAlert("TFC | UNFOLLOW FRIEND"
+      + "\nINVALID PARAMS"
+      + "\n" + jsonPrint(params)
     ));
     quit("UNFOLLOW FRIEND | INVALID PARAMS");
     return callback(null, null);
@@ -1195,7 +1196,7 @@ process.on("message", function(m) {
 
       console.log("UNFOLLOW MESSAGE\n" + jsonPrint(m));
 
-      unfollowFriend({user_id: m.userId, screen_name: m.screenName}, function(err, response){
+      unfollowFriend({user_id: m.user_id, screen_name: m.screen_name}, function(err, response){
 
         if (err) {
 
