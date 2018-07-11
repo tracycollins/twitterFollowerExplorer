@@ -1178,6 +1178,14 @@ process.on("message", function(m) {
             + " | @" + m.user.screenName.toLowerCase()
           ));
 
+          if (err.code === 34){
+            console.log(chalkError("=X= UNFOLLOW ERROR | NON-EXISTENT USER"
+              + " | 3C: @" + configuration.threeceeUser
+              + " | @" + m.user.screenName.toLowerCase()
+            ));
+            return;
+          }
+
           process.send(
             {
               op:"ERROR", 
@@ -1187,6 +1195,8 @@ process.on("message", function(m) {
               error: err
             }
           );
+
+          return;
         }
 
         if (response.user === undefined) {
@@ -1197,15 +1207,17 @@ process.on("message", function(m) {
             + " | RESPONSE"  + response
           ));
 
-          process.send(
-            {
-              op:"ERROR", 
-              threeceeUser: configuration.threeceeUser, 
-              state: "UNFOLLOW_FAIL", 
-              params: {screen_name: m.user.screenName}, 
-              error: response
-            }
-          );
+          return;
+
+          // process.send(
+          //   {
+          //     op:"ERROR", 
+          //     threeceeUser: configuration.threeceeUser, 
+          //     state: "UNFOLLOW_FAIL", 
+          //     params: {screen_name: m.user.screenName}, 
+          //     error: response
+          //   }
+          // );
         }
 
         console.log(chalkInfo("TFC | UNFOLLOW"
@@ -1255,7 +1267,6 @@ process.on("message", function(m) {
       //     }
       //   );
       // }
-
     break;
 
     case "QUIT":
