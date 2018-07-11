@@ -1177,7 +1177,7 @@ process.on("message", function(m) {
 
     case "UNFOLLOW":
 
-      unfollowFriend({user_id: m.user.user_id, screen_name: m.user.screen_name}, function(err, response){
+      unfollowFriend({user_id: m.user.userId, screen_name: m.user.screenName}, function(err, response){
 
         if (err) {
 

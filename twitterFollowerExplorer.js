@@ -2308,8 +2308,8 @@ function processUser(threeceeUser, userIn, callback) {
         tfeChildHashMap[unfollowTarget].child.send(
           { 
             op: "UNFOLLOW",
-            userId: user.nodeId,
-            screenName: user.screenName
+            user_id: user.nodeId,
+            screen_name: user.screenName
           }
         );
 
@@ -3489,9 +3489,9 @@ function initSocket(cnf) {
     twitterUserHashMap.altthreecee01.friends.delete(u.nodeId);
     twitterUserHashMap.altthreecee02.friends.delete(u.nodeId);
 
-    tfeChildHashMap.altthreecee00.child.send({op: "UNFOLLOW", user:u});
-    tfeChildHashMap.altthreecee01.child.send({op: "UNFOLLOW", user:u});
-    tfeChildHashMap.altthreecee02.child.send({op: "UNFOLLOW", user:u});
+    tfeChildHashMap.altthreecee00.child.send({op: "UNFOLLOW", u});
+    tfeChildHashMap.altthreecee01.child.send({op: "UNFOLLOW", u});
+    tfeChildHashMap.altthreecee02.child.send({op: "UNFOLLOW", u});
 
   });  
 
