@@ -23,6 +23,7 @@ const DEFAULT_MIN_FRIENDS_COUNT = process.env.DEFAULT_MIN_FRIENDS_COUNT || 100;
 const DEFAULT_MIN_STATUSES_COUNT = process.env.DEFAULT_MIN_STATUSES_COUNT || 100;
 
 const moment = require("moment");
+const _ = require("lodash");
 const debug = require("debug")("tfec");
 const os = require("os");
 const util = require("util");
@@ -931,8 +932,8 @@ function unfollowFriend(params, callback){
 
         console.log(chalkError("TFC | *** UNFOLLOW FAIL"
           + " | 3C: @" + configuration.threeceeUser
+          + " | RESPONSE CODE: " + response.statusCode
           + "\nPARAMS\n" + jsonPrint(params)
-          + "\nRESPONSE\n" + jsonPrint(response)
         ));
 
         return callback(null, response);
@@ -942,8 +943,8 @@ function unfollowFriend(params, callback){
         + " | 3C: @" + configuration.threeceeUser
         + " | UID: " + params.user_id
         + " | @" + params.screen_name
+        + " | RESPONSE CODE: " + response.statusCode
         + "\nPARAMS\n" + jsonPrint(params)
-        + "\nRESPONSE\n" + jsonPrint(response)
       ));
 
       process.send(
