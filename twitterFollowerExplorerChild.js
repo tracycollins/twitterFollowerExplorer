@@ -927,7 +927,8 @@ function unfollowFriend(params, callback){
 
       }
 
-      if (response.statusCode !== 200) {
+      if ((response.statusCode !== undefined) && (response.statusCode !== 200)) {
+
         console.log(chalkError("TFC | *** UNFOLLOW FAIL"
           + " | 3C: @" + configuration.threeceeUser
           + "\nPARAMS\n" + jsonPrint(params)
@@ -941,13 +942,15 @@ function unfollowFriend(params, callback){
         + " | 3C: @" + configuration.threeceeUser
         + " | UID: " + params.user_id
         + " | @" + params.screen_name
+        + "\nPARAMS\n" + jsonPrint(params)
+        + "\nRESPONSE\n" + jsonPrint(response)
       ));
 
       process.send(
         {
           op:"UNFOLLOWED", 
           threeceeUser: configuration.threeceeUser, 
-          user: response.user
+          user: { screen_name: params.screen_name, user_id: params.user_id }
         }
       );
 
@@ -996,10 +999,12 @@ function initUnfollowQueueInterval(interval){
 
 
           if (err.code === 34){
+
             console.log(chalkError("=X= UNFOLLOW ERROR | NON-EXISTENT USER"
               + " | 3C: @" + configuration.threeceeUser
               + " | @" + friend.screen_name
             ));
+
             return;
           }
 
@@ -1016,7 +1021,7 @@ function initUnfollowQueueInterval(interval){
           return;
         }
 
-        if (response.user === undefined) {
+        if (!response) {
 
           console.log(chalkAlert("TFC | *** UNFOLLOW FAIL"
             + " [ UFQ: " + unfollowQueue.length + "]"
@@ -1198,12 +1203,12 @@ process.on("message", function(m) {
           return;
         }
 
-        if (response.user === undefined) {
+        if (response.statusCode !== 200) {
 
           console.log(chalkInfo("TFC | UNFOLLOW FAIL"
             + " | 3C: @" + configuration.threeceeUser
             + " | @" + m.user.screenName.toLowerCase()
-            + " | RESPONSE"  + response
+            + "\nRESPONSE\n"  + (jsonPrint)
           ));
 
           return;
