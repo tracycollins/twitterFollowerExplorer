@@ -920,7 +920,7 @@ function unfollowFriend(params, callback){
       if (err) {
 
         console.log(chalkError("TFC | *** UNFOLLOW FRIEND ERROR"
-          + "\nERROR\n" + err
+          + " | ERROR: " + err
           + "\nPARAMS\n" + jsonPrint(params)
         ));
 
@@ -1176,6 +1176,8 @@ process.on("message", function(m) {
     break;
 
     case "UNFOLLOW":
+
+      console.log("UNFOLLOW MESSAGE\n" + jsonPrint(m));
 
       unfollowFriend({user_id: m.userId, screen_name: m.screenName}, function(err, response){
 
