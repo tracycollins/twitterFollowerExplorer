@@ -127,11 +127,6 @@ const twitterImageParser = require("@threeceelabs/twitter-image-parser");
 const HashMap = require("hashmap").HashMap;
 
 let statsObj = {};
-statsObj.fetchCycle = 0;
-statsObj.newBestNetwork = false;
-statsObj.fetchAllIntervalStartMoment = moment();
-statsObj.status = "START";
-
 let statsObjSmall = {};
 
 let tfeChildHashMap = {};
@@ -349,16 +344,6 @@ const quit = function(cause) {
 
         }, 5000);
 
-        // setTimeout(function() {
-
-        //   dbConnection.close(function () {
-        //     console.log(chalkAlert("\n==========================\nMONGO DB CONNECTION CLOSED\n==========================\n"));
-        //     process.exit();
-        //   });
-
-        // }, 5000);
-
-
     }
     else {
       if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) {
@@ -381,58 +366,6 @@ const quit = function(cause) {
   }, 1000);
 };
 
-// const mongoose = require("mongoose");
-
-// const neuralNetworkModel = require("@threeceelabs/mongoose-twitter/models/neuralNetwork.server.model");
-// const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.model");
-
-// let NeuralNetwork;
-// let User;
-
-// const UserServerController = require("@threeceelabs/user-server-controller");
-// const userServerController = new UserServerController("TFE_USC");
-
-// let userServerControllerReady = false;
-
-// userServerController.on("ready", function(appname){
-//   userServerControllerReady = true;
-//   console.log(chalkAlert("USC READY | " + appname));
-// });
-
-
-
-// const wordAssoDb = require("@threeceelabs/mongoose-twitter");
-
-// wordAssoDb.connect("TFE_" + process.pid, function(err, dbCon) {
-//   if (err) {
-//     console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR: " + err));
-//     quit("MONGO DB CONNECTION ERROR");
-//   }
-//   else {
-
-//     dbConnection = dbCon;
-
-//     dbConnectionReady = true;
-
-//     dbConnection.on("error", function(){
-//       console.error.bind(console, "*** TFE | MONGO DB CONNECTION ERROR ***\n");
-//       console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR ***\n"));
-//       dbConnectionReady = false;
-//     });
-
-//     dbConnection.on("disconnected", function(){
-//       console.error.bind(console, "*** TFE | MONGO DB CONNECTION DISCONNECTED ***\n");
-//       console.log(chalkAlert("*** TFE | MONGO DB CONNECTION DISCONNECTED ***\n"));
-//       dbConnectionReady = false;
-//     });
-
-//     console.log(chalkLog("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
-
-//     NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
-//     User = mongoose.model("User", userModel.UserSchema);
-
-//   }
-// });
 
 const cp = require("child_process");
 
@@ -486,6 +419,9 @@ statsObj.elapsed = 0;
 
 statsObj.status = "START";
 statsObj.fsmState = "---";
+statsObj.fetchCycle = 0;
+statsObj.newBestNetwork = false;
+statsObj.fetchAllIntervalStartMoment = moment();
 
 statsObj.fetchCycleStartMoment = moment();
 statsObj.fetchCycleEndMoment = moment();
