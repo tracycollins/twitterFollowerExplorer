@@ -22,17 +22,7 @@ const DEFAULT_MIN_FOLLOWERS_COUNT = process.env.DEFAULT_MIN_FOLLOWERS_COUNT || 1
 const DEFAULT_MIN_FRIENDS_COUNT = process.env.DEFAULT_MIN_FRIENDS_COUNT || 100;
 const DEFAULT_MIN_STATUSES_COUNT = process.env.DEFAULT_MIN_STATUSES_COUNT || 100;
 
-const chalk = require("chalk");
-
-const chalkTwitter = chalk.blue;
-const chalkTwitterBold = chalk.bold.blue;
-const chalkError = chalk.bold.red;
-const chalkAlert = chalk.red;
-const chalkLog = chalk.gray;
-const chalkInfo = chalk.black;
-
 const moment = require("moment");
-
 const debug = require("debug")("tfec");
 const os = require("os");
 const util = require("util");
@@ -42,6 +32,14 @@ const sortOn = require("sort-on");
 const Stately = require("stately.js");
 const omit = require("object.omit");
 const treeify = require("treeify");
+const chalk = require("chalk");
+
+const chalkTwitter = chalk.blue;
+const chalkTwitterBold = chalk.bold.blue;
+const chalkError = chalk.bold.red;
+const chalkAlert = chalk.red;
+const chalkLog = chalk.gray;
+const chalkInfo = chalk.black;
 
 let twitClient;
 let twitStream;
@@ -271,10 +269,10 @@ function quit(cause){
 
   fsm.fsm_reset();
 
-  console.log( "\n" + configuration.childId + " | ... QUITTING ..." );
+  console.log(chalkAlert( "\n" + configuration.childId + " | ... QUITTING ..."));
 
   if (cause) {
-    console.log( "CAUSE: " + jsonPrint(cause) );
+    console.log(chalkAlert("TFC | QUIT\nCAUSE\n" + jsonPrint(cause) ));
   }
 
   setTimeout(function(){
@@ -388,7 +386,7 @@ function checkFriendMinimumProperties(friend, callback){
     && friend.statuses_count < configuration.minStatusesCount
   );
 
-  console.log(chalkAlert("checkFriendMinimumProperties"
+  debug(chalkAlert("checkFriendMinimumProperties"
     + " | UNFOLLOW: " + unfollowFlag
     + " | @" + friend.screen_name
     + " | FLWRs: " + friend.followers_count
@@ -399,7 +397,7 @@ function checkFriendMinimumProperties(friend, callback){
     + " | MIN Ts: " + configuration.minStatusesCount
   ));
 
-  return unfollowFlag;
+  callback(null, unfollowFlag);
 }
 
 function fetchFriends(params, callback) {
@@ -521,7 +519,7 @@ function fetchFriends(params, callback) {
             friend.following = true;
             friend.threeceeFollowing = threeceeUser;
 
-            console.log(chalkError("TFC CHECK FRIEND | --- UNFOLLOW"
+            debug(chalkError("TFC CHECK FRIEND | --- UNFOLLOW"
               + " [ UFQ: " + unfollowQueue.length + "]"
               + " | UNFOLLOW: " + unfollowFlag
               + " | ID: " + friend.id_str
@@ -898,36 +896,9 @@ function initTwitter(twitterConfig, callback){
 }
 
 function initialize(callback){
+  initUnfollowQueueInterval(1000);
   fsm.fsm_reset();
   callback();
-}
-
-function initUnfollowQueueInterval(interval){
-
-  clearInterval(unfollowQueueInterval);
-
-  console.log(chalkInfo("TFC"
-    + " | CH @" + configuration.threeceeUser
-    + " | INIT UNFOLLOW QUEUE INTERVAL | " + interval
-  ));
-
-  unfollowQueueInterval = setInterval(function(){
-
-    debug(chalkInfo("UNFOLLOW QUEUE INTERVAL"
-      + " | INTERVAL: " + msToTime(interval)
-      + " | @" + configuration.threeceeUser
-    ));
-
-    if (unfollowQueueReady) {
-
-      unfollowQueueReady = false;
-
-
-      unfollowQueueReady = true;
-
-    }
-
-  }, interval);
 }
 
 function unfollowFriend(params, callback){
@@ -975,6 +946,88 @@ function unfollowFriend(params, callback){
 
     }
   );
+}
+
+function initUnfollowQueueInterval(interval){
+
+  clearInterval(unfollowQueueInterval);
+
+  console.log(chalkInfo("TFC"
+    + " | CH @" + configuration.threeceeUser
+    + " | INIT UNFOLLOW QUEUE INTERVAL | " + interval
+  ));
+
+  unfollowQueueInterval = setInterval(function(){
+
+    debug(chalkInfo("UNFOLLOW QUEUE INTERVAL"
+      + " | INTERVAL: " + msToTime(interval)
+      + " | @" + configuration.threeceeUser
+    ));
+
+    if (unfollowQueueReady) {
+
+      unfollowQueueReady = false;
+
+      unfollowFriend({screenName: m.user.screenName}, function(err, response){
+        if (err) {
+
+          console.log(chalkError("*** UNFOLLOW ERROR"
+            + " | 3C: @" + configuration.threeceeUser
+            + " | NID: " + m.user.userId
+            + " | @" + m.user.screenName.toLowerCase()
+          ));
+
+          process.send(
+            {
+              op:"ERROR", 
+              threeceeUser: configuration.threeceeUser, 
+              state: "UNFOLLOW_ERR", 
+              params: {screen_name: m.user.screenName}, 
+              error: err
+            }
+          );
+
+          unfollowQueueReady = true;
+          return;
+        }
+
+        if (response.user === undefined) {
+
+          console.log(chalkAlert("TFC | *** UNFOLLOW FAIL"
+            + " | 3C: @" + configuration.threeceeUser
+            + " | @" + m.user.screenName.toLowerCase()
+            + " | RESPONSE"  + response
+          ));
+
+          process.send(
+            {
+              op:"ERROR", 
+              threeceeUser: configuration.threeceeUser, 
+              state: "UNFOLLOW_FAIL", 
+              params: {screen_name: m.user.screenName}, 
+              error: response
+            }
+          );
+
+          unfollowQueueReady = true;
+          return;
+        }
+
+        console.log(chalkAlert("TFC | XXX UNFOLLOW"
+          + " | 3C: @" + configuration.threeceeUser
+          + " | " + response.user_id
+          + " | @" + response.screen_name
+          + " | FLWRs: " + response.followers_count
+          + " | FRNDs: " + response.friends_count
+          + " | Ts: " + response.statuses_count
+        ));
+
+      });
+
+
+    }
+
+  }, interval);
 }
 
 function initCheckRateLimitInterval(interval){
@@ -1107,7 +1160,6 @@ process.on("message", function(m) {
               error: err
             }
           );
-
         }
 
         if (response.user === undefined) {
@@ -1127,7 +1179,6 @@ process.on("message", function(m) {
               error: response
             }
           );
-
         }
 
         console.log(chalkInfo("TFC | UNFOLLOW"
@@ -1138,7 +1189,6 @@ process.on("message", function(m) {
           + " | FRNDs: " + response.friends_count
           + " | Ts: " + response.statuses_count
         ));
-
 
       });
 

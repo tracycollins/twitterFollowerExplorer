@@ -860,11 +860,11 @@ function initActivateNetworkInterval(interval){
                   }
                 }
                 else {
-                  printActivateResult("___ ignore", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+                  printActivateResult("___ skip ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
                 }
               }
               else {
-                printActivateResult("___ ignore", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+                printActivateResult("___ skip ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
               }
             }
 
