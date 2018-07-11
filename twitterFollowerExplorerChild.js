@@ -1200,7 +1200,7 @@ process.on("message", function(m) {
 
     case "UNFOLLOW":
 
-      console.log("UNFOLLOW MESSAGE\n" + jsonPrint(m.user));
+      // console.log("UNFOLLOW MESSAGE\n" + jsonPrint(m.user));
 
       unfollowFriend({ user: m.user }, function(err, response){
 
