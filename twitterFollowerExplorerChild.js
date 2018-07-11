@@ -913,11 +913,17 @@ function unfollowFriend(params, callback){
 
   let unfollowFriendParams = {};
 
-  if (params.user_id !== undefined) { 
-    unfollowFriendParams.user_id = params.user_id;
+  if (params.user.user_id !== undefined) { 
+    unfollowFriendParams.user_id = params.user.user_id;
   }
-  else if (params.screen_name !== undefined) { 
-    unfollowFriendParams.screen_name = params.screen_name;
+  else if (params.user.userId !== undefined) { 
+    unfollowFriendParams.user_id = params.user.userId;
+  }
+  else if (params.user.screen_name !== undefined) { 
+    unfollowFriendParams.screen_name = params.user.screen_name;
+  }
+  else if (params.user.screenName !== undefined) { 
+    unfollowFriendParams.screen_name = params.user.screenName;
   }
   else {
     console.log(chalkAlert("TFC | UNFOLLOW FRIEND"
@@ -1006,7 +1012,7 @@ function initUnfollowQueueInterval(interval){
 
       const friend = unfollowQueue.shift();
 
-      unfollowFriend({user_id: friend.user_id, screen_name: friend.screen_name}, function(err, response){
+      unfollowFriend({ user: friend }, function(err, response){
 
         unfollowQueueReady = true;
 
@@ -1194,9 +1200,9 @@ process.on("message", function(m) {
 
     case "UNFOLLOW":
 
-      console.log("UNFOLLOW MESSAGE\n" + jsonPrint(m));
+      console.log("UNFOLLOW MESSAGE\n" + jsonPrint(m.user));
 
-      unfollowFriend({user_id: m.user_id, screen_name: m.screen_name}, function(err, response){
+      unfollowFriend({ user: m.user }, function(err, response){
 
         if (err) {
 
