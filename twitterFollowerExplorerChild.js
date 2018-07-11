@@ -960,6 +960,8 @@ function initUnfollowQueueInterval(interval){
 
   clearInterval(unfollowQueueInterval);
 
+  unfollowQueueReady = true;
+
   console.log(chalkInfo("TFC"
     + " | CH @" + configuration.threeceeUser
     + " | INIT UNFOLLOW QUEUE INTERVAL | " + interval
