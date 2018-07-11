@@ -557,7 +557,8 @@ statsObj.categorized.total = 0;
 statsObj.categorized.totalManual = 0;
 statsObj.categorized.totalAuto = 0;
 
-Object.keys(statsObj.categorized).forEach(function(cat) {
+// Object.keys(statsObj.categorized).forEach(function(cat) {
+["manual", "auto"].forEach(function(cat) {
   statsObj.categorized[cat].left = 0;
   statsObj.categorized[cat].right = 0;
   statsObj.categorized[cat].neutral = 0;
