@@ -928,12 +928,16 @@ function unfollowFriend(params, callback){
 
       }
 
-      if ((response.statusCode !== undefined) && (response.statusCode !== 200)) {
+      if (_.isObject(response) 
+        && (response.statusCode !== undefined) 
+        && (response.statusCode !== 200)) 
+      {
 
         console.log(chalkError("TFC | *** UNFOLLOW FAIL"
           + " | 3C: @" + configuration.threeceeUser
           + " | RESPONSE CODE: " + response.statusCode
           + "\nPARAMS\n" + jsonPrint(params)
+          + "\nRESPONSE\n" + jsonPrint(response)
         ));
 
         return callback(null, response);
