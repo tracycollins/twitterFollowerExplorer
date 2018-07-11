@@ -130,6 +130,7 @@ let statsObj = {};
 statsObj.fetchCycle = 0;
 statsObj.newBestNetwork = false;
 statsObj.fetchAllIntervalStartMoment = moment();
+statsObj.status = "START";
 
 let statsObjSmall = {};
 
@@ -258,6 +259,7 @@ const quit = function(cause) {
 
   statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
   statsObj.timeStamp = moment().format(compactDateTimeFormat);
+  statsObj.status = "QUIT";
 
   quitFlag = true;
 
@@ -474,15 +476,21 @@ configuration.fetchCount = configuration.testMode ? TEST_MODE_FETCH_COUNT :  DEF
 configuration.keepaliveInterval = 5*ONE_SECOND;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
 configuration.quitOnComplete = DEFAULT_QUIT_ON_COMPLETE;
+
+statsObj.pid = process.pid;
 statsObj.childrenFetchBusy = false;
 
 statsObj.hostname = hostname;
 statsObj.startTimeMoment = moment();
 statsObj.elapsed = 0;
+
+statsObj.status = "START";
+statsObj.fsmState = "---";
+
 statsObj.fetchCycleStartMoment = moment();
 statsObj.fetchCycleEndMoment = moment();
 statsObj.fetchCycleElapsed = 0;
-statsObj.pid = process.pid;
+
 statsObj.userAuthenticated = false;
 statsObj.serverConnected = false;
 statsObj.userReadyTransmitted = false;
@@ -545,6 +553,10 @@ statsObj.numLangAnalyzed = 0;
 statsObj.categorized = {};
 statsObj.categorized.manual = {};
 statsObj.categorized.auto = {};
+statsObj.categorized.total = 0;
+statsObj.categorized.totalManual = 0;
+statsObj.categorized.totalAuto = 0;
+
 Object.keys(statsObj.categorized).forEach(function(cat) {
   statsObj.categorized[cat].left = 0;
   statsObj.categorized[cat].right = 0;
@@ -554,9 +566,7 @@ Object.keys(statsObj.categorized).forEach(function(cat) {
   statsObj.categorized[cat].none = 0;
   statsObj.categorized[cat].other = 0;
 });
-statsObj.categorized.total = 0;
-statsObj.categorized.totalManual = 0;
-statsObj.categorized.totalAuto = 0;
+
 
 const TFE_RUN_ID = hostname 
 + "_" + statsObj.startTimeMoment.format(compactDateTimeFormat) 
@@ -2419,7 +2429,12 @@ function childSendAll(params, callback) {
 }
 
 function reporter(event, oldState, newState) {
+
+  statsObj.status = newState;
+  statsObj.fsmState = newState;
+
   fsmPreviousState = oldState;
+
   console.log(chalkLog("--------------------------------------------------------\n"
     + "<< FSM >> MAIN"
     + " | " + event
@@ -2427,6 +2442,7 @@ function reporter(event, oldState, newState) {
     + " -> " + newState
     + "\n--------------------------------------------------------"
   ));
+
 }
 
 const processUserQueueEmpty = function() {
@@ -3135,6 +3151,9 @@ function initSaveFileQueue(cnf) {
 }
 
 function updateStatsObjSmall(){
+
+  userObj.stats.elapsed = statsObj.elapsed;
+
   statsObjSmall = pick(
     statsObj,
     [
@@ -3170,6 +3189,7 @@ function sendKeepAlive(callback) {
       "SESSION_KEEPALIVE", 
       {
         user: userObj, 
+        status: statsObj.status,
         stats: statsObjSmall
       }
     );
