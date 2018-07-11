@@ -944,10 +944,10 @@ function unfollowFriend(params, callback){
 
         console.log(chalkError("TFC | *** UNFOLLOW FRIEND ERROR"
           + " | ERROR: " + err
-          + "\nPARAMS\n" + jsonPrint(params)
+          + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
         ));
 
-        return callback(err, params);
+        return callback(err, unfollowFriendParams);
 
       }
 
@@ -959,7 +959,7 @@ function unfollowFriend(params, callback){
         console.log(chalkError("TFC | *** UNFOLLOW FAIL"
           + " | 3C: @" + configuration.threeceeUser
           + " | RESPONSE CODE: " + response.statusCode
-          + "\nPARAMS\n" + jsonPrint(params)
+          + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
           + "\nRESPONSE\n" + jsonPrint(response)
         ));
 
@@ -968,17 +968,17 @@ function unfollowFriend(params, callback){
 
       console.log(chalkAlert("TFC | XXX UNFOLLOW"
         + " | 3C: @" + configuration.threeceeUser
-        + " | UID: " + params.user_id
-        + " | @" + params.screen_name
+        + " | UID: " + unfollowFriendParams.user_id
+        + " | @" + unfollowFriendParams.screen_name
         + " | RESPONSE CODE: " + response.statusCode
-        + "\nPARAMS\n" + jsonPrint(params)
+        + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
       ));
 
       process.send(
         {
           op:"UNFOLLOWED", 
           threeceeUser: configuration.threeceeUser, 
-          user: { screen_name: params.screen_name, user_id: params.user_id }
+          user: { screen_name: unfollowFriendParams.screen_name, user_id: unfollowFriendParams.user_id }
         }
       );
 
