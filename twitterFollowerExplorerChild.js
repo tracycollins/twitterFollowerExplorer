@@ -1177,20 +1177,20 @@ process.on("message", function(m) {
 
     case "UNFOLLOW":
 
-      unfollowFriend({user_id: m.user.userId, screen_name: m.user.screenName}, function(err, response){
+      unfollowFriend({user_id: m.userId, screen_name: m.screenName}, function(err, response){
 
         if (err) {
 
           console.log(chalkError("=X= UNFOLLOW ERROR"
             + " | 3C: @" + configuration.threeceeUser
-            + " | NID: " + m.user.userId
-            + " | @" + m.user.screenName.toLowerCase()
+            + " | NID: " + m.userId
+            + " | @" + m.screenName.toLowerCase()
           ));
 
           if (err.code === 34){
             console.log(chalkError("=X= UNFOLLOW ERROR | NON-EXISTENT USER"
               + " | 3C: @" + configuration.threeceeUser
-              + " | @" + m.user.screenName.toLowerCase()
+              + " | @" + m.screenName.toLowerCase()
             ));
             return;
           }
@@ -1200,7 +1200,7 @@ process.on("message", function(m) {
               op:"ERROR", 
               threeceeUser: configuration.threeceeUser, 
               state: "UNFOLLOW_ERR", 
-              params: {screen_name: m.user.screenName}, 
+              params: { user_id: m.userId, screen_name: m.screenName }, 
               error: err
             }
           );
@@ -1212,7 +1212,7 @@ process.on("message", function(m) {
 
           console.log(chalkInfo("TFC | UNFOLLOW FAIL"
             + " | 3C: @" + configuration.threeceeUser
-            + " | @" + m.user.screenName.toLowerCase()
+            + " | @" + m.screenName.toLowerCase()
             + "\nRESPONSE\n"  + (jsonPrint)
           ));
 
