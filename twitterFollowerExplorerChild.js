@@ -911,9 +911,25 @@ function unfollowFriend(params, callback){
     return callback(null, null);
   }
 
+  let unfollowFriendParams = {};
+
+  if (params.user_id !== undefined) { 
+    unfollowFriendParams.user_id = params.user_id;
+  }
+  else if (params.screen_name !== undefined) { 
+    unfollowFriendParams.screen_name = params.screen_name;
+  }
+  else {
+    console.log(chalkAlert("TFC | UNFOLLOW FRIEND | INVALID PARAMS"
+      + " | " + jsonPrint(params)
+    ));
+    quit("UNFOLLOW FRIEND | INVALID PARAMS");
+    return callback(null, null);
+  }
+
   twitClient.post(
 
-    "friendships/destroy", params, 
+    "friendships/destroy", unfollowFriendParams, 
 
     function destroyFriend(err, data, response){
 
