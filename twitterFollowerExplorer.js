@@ -1769,8 +1769,6 @@ function updateHistograms(params, callback) {
     user.histograms = {};
   }
   
-  // const inputHistogramTypes = Object.keys(histogramsIn);
-
   async.each(inputTypes, function(type, cb0) {
 
     if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
@@ -2433,7 +2431,6 @@ function childSendAll(params, callback) {
 
 function reporter(event, oldState, newState) {
 
-  // statsObj.status = newState;
   statsObj.fsmState = newState;
 
   fsmPreviousState = oldState;
@@ -3159,6 +3156,9 @@ function initSaveFileQueue(cnf) {
 
 function updateStatsObjSmall(){
 
+  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+  statsObj.timeStamp = moment().format(compactDateTimeFormat);
+
   userObj.stats.elapsed = statsObj.elapsed;
 
   statsObjSmall = pick(
@@ -3183,14 +3183,13 @@ function updateStatsObjSmall(){
 }
 
 function sendKeepAlive(callback) {
+
   if (statsObj.userAuthenticated && statsObj.serverConnected) {
 
     debug(chalkAlert("TX KEEPALIVE"
       + " | " + moment().format(compactDateTimeFormat)
       + " | " + userObj.userId
     ));
-
-    statsObjSmall = omit(statsObj, ["bestNetworks"]);
 
     socket.emit(
       "SESSION_KEEPALIVE", 
@@ -3596,6 +3595,9 @@ function initSocket(cnf) {
 function initStatsUpdate(callback) {
 
   console.log(chalkTwitter("INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
+
+  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+  statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
   twitterTextParser.getGlobalHistograms(function(hist) {
     saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
