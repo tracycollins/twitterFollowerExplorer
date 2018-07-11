@@ -980,7 +980,7 @@ function initUnfollowQueueInterval(interval){
 
       const friend = unfollowQueue.shift();
 
-      unfollowFriend({screenName: friend.screen_name}, function(err, response){
+      unfollowFriend({user_id: friend.user_id, screen_name: friend.screen_name}, function(err, response){
 
         unfollowQueueReady = true;
 
@@ -1166,7 +1166,7 @@ process.on("message", function(m) {
 
     case "UNFOLLOW":
 
-      unfollowFriend({screenName: m.user.screenName}, function(err, response){
+      unfollowFriend({user_id: m.user.user_id, screen_name: m.user.screen_name}, function(err, response){
 
         if (err) {
 
