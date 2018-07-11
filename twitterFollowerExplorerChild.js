@@ -997,7 +997,7 @@ function initUnfollowQueueInterval(interval){
           if (err.code === 34){
             console.log(chalkError("=X= UNFOLLOW ERROR | NON-EXISTENT USER"
               + " | 3C: @" + configuration.threeceeUser
-              + " | @" + m.user.screenName.toLowerCase()
+              + " | @" + friend.screen_name
             ));
             return;
           }
