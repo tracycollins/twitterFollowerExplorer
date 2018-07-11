@@ -1,6 +1,27 @@
  /*jslint node: true */
 /*jshint sub:true*/
 "use strict";
+
+global.dbConnection = false;
+const mongoose = require("mongoose");
+mongoose.Promise = global.Promise;
+
+const wordAssoDb = require("@threeceelabs/mongoose-twitter");
+
+const neuralNetworkModel = require("@threeceelabs/mongoose-twitter/models/neuralNetwork.server.model");
+const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.model");
+
+let NeuralNetwork;
+let User;
+
+let dbConnectionReady = false;
+let dbConnectionReadyInterval;
+
+let UserServerController;
+let userServerController;
+
+let userServerControllerReady = false;
+
 require("isomorphic-fetch");
 
 const ONE_SECOND = 1000 ;
@@ -14,6 +35,8 @@ const USER_READY_ACK_TIMEOUT = ONE_MINUTE;
 const os = require("os");
 const moment = require("moment");
 const defaults = require("object.defaults");
+const pick = require("object.pick");
+const callerId = require("caller-id");
 const treeify = require("treeify");
 
 let hostname = os.hostname();
@@ -130,9 +153,6 @@ let randomNetworkTreeMessageRxQueue = [];
 
 let randomNetworksObj = {};
 
-let dbConnection;
-let dbConnectionReadyInterval;
-let dbConnectionReady = false;
 
 let enableImageAnalysis = true;
 
@@ -228,6 +248,12 @@ const jsonPrint = function (obj) {
 
 const quit = function(cause) {
 
+  const caller = callerId.getData();
+
+  console.log(chalkAlert("*** QUIT ***"
+    + " | " + jsonPrint(caller)
+  ));
+
   clearInterval(dbConnectionReadyInterval);
 
   statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
@@ -305,14 +331,30 @@ const quit = function(cause) {
         + " | USR DB UDQ: " + userDbUpdateQueue.length
       ));
 
+
         setTimeout(function() {
 
-          dbConnection.close(function () {
-            console.log(chalkAlert("\n==========================\nMONGO DB CONNECTION CLOSED\n==========================\n"));
+          global.dbConnection.close(function () {
+            console.log(chalkAlert(
+              "\n==========================\n"
+              + "MONGO DB CONNECTION CLOSED"
+              + "\n==========================\n"
+            ));
+
+            if (socket) { socket.disconnect(); }
             process.exit();
           });
 
         }, 5000);
+
+        // setTimeout(function() {
+
+        //   dbConnection.close(function () {
+        //     console.log(chalkAlert("\n==========================\nMONGO DB CONNECTION CLOSED\n==========================\n"));
+        //     process.exit();
+        //   });
+
+        // }, 5000);
 
 
     }
@@ -337,58 +379,58 @@ const quit = function(cause) {
   }, 1000);
 };
 
-const mongoose = require("mongoose");
+// const mongoose = require("mongoose");
 
-const neuralNetworkModel = require("@threeceelabs/mongoose-twitter/models/neuralNetwork.server.model");
-const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.model");
+// const neuralNetworkModel = require("@threeceelabs/mongoose-twitter/models/neuralNetwork.server.model");
+// const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.model");
 
-let NeuralNetwork;
-let User;
+// let NeuralNetwork;
+// let User;
 
-const UserServerController = require("@threeceelabs/user-server-controller");
-const userServerController = new UserServerController("TFE_USC");
+// const UserServerController = require("@threeceelabs/user-server-controller");
+// const userServerController = new UserServerController("TFE_USC");
 
-let userServerControllerReady = false;
+// let userServerControllerReady = false;
 
-userServerController.on("ready", function(appname){
-  userServerControllerReady = true;
-  console.log(chalkAlert("USC READY | " + appname));
-});
+// userServerController.on("ready", function(appname){
+//   userServerControllerReady = true;
+//   console.log(chalkAlert("USC READY | " + appname));
+// });
 
 
 
-const wordAssoDb = require("@threeceelabs/mongoose-twitter");
+// const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
-wordAssoDb.connect("TFE_" + process.pid, function(err, dbCon) {
-  if (err) {
-    console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR: " + err));
-    quit("MONGO DB CONNECTION ERROR");
-  }
-  else {
+// wordAssoDb.connect("TFE_" + process.pid, function(err, dbCon) {
+//   if (err) {
+//     console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR: " + err));
+//     quit("MONGO DB CONNECTION ERROR");
+//   }
+//   else {
 
-    dbConnection = dbCon;
+//     dbConnection = dbCon;
 
-    dbConnectionReady = true;
+//     dbConnectionReady = true;
 
-    dbConnection.on("error", function(){
-      console.error.bind(console, "*** TFE | MONGO DB CONNECTION ERROR ***\n");
-      console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR ***\n"));
-      dbConnectionReady = false;
-    });
+//     dbConnection.on("error", function(){
+//       console.error.bind(console, "*** TFE | MONGO DB CONNECTION ERROR ***\n");
+//       console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR ***\n"));
+//       dbConnectionReady = false;
+//     });
 
-    dbConnection.on("disconnected", function(){
-      console.error.bind(console, "*** TFE | MONGO DB CONNECTION DISCONNECTED ***\n");
-      console.log(chalkAlert("*** TFE | MONGO DB CONNECTION DISCONNECTED ***\n"));
-      dbConnectionReady = false;
-    });
+//     dbConnection.on("disconnected", function(){
+//       console.error.bind(console, "*** TFE | MONGO DB CONNECTION DISCONNECTED ***\n");
+//       console.log(chalkAlert("*** TFE | MONGO DB CONNECTION DISCONNECTED ***\n"));
+//       dbConnectionReady = false;
+//     });
 
-    console.log(chalkLog("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
+//     console.log(chalkLog("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
 
-    NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
-    User = mongoose.model("User", userModel.UserSchema);
+//     NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
+//     User = mongoose.model("User", userModel.UserSchema);
 
-  }
-});
+//   }
+// });
 
 const cp = require("child_process");
 
@@ -801,6 +843,44 @@ function loadFile(path, file, callback) {
       }
     });
   }
+}
+
+function connectDb(callback){
+
+  statsObj.status = "CONNECT DB";
+
+  wordAssoDb.connect("TFE_" + process.pid, function(err, db){
+    if (err) {
+      console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR: " + err));
+      callback(err, null);
+      dbConnectionReady = false;
+    }
+    else {
+
+      db.on("error", function(){
+        console.error.bind(console, "*** TFE | MONGO DB CONNECTION ERROR ***\n");
+        console.log(chalkError("*** TFE | MONGO DB CONNECTION ERROR ***\n"));
+        db.close();
+        dbConnectionReady = false;
+      });
+
+      db.on("disconnected", function(){
+        console.error.bind(console, "*** TFE | MONGO DB DISCONNECTED ***\n");
+        console.log(chalkAlert("*** TFE | MONGO DB DISCONNECTED ***\n"));
+        dbConnectionReady = false;
+      });
+
+
+      console.log(chalk.green("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
+
+      dbConnectionReady = true;
+
+      User = mongoose.model("User", userModel.UserSchema);
+      NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
+
+      callback(null, db);
+    }
+  });
 }
 
 function loadMaxInputDropbox(folder, file, callback) {
@@ -3054,8 +3134,29 @@ function initSaveFileQueue(cnf) {
   }, cnf.saveFileQueueInterval);
 }
 
-function sendKeepAlive(userObj, callback) {
+function updateStatsObjSmall(){
+  statsObjSmall = pick(
+    statsObj,
+    [
+      "serverConnected",
+      "socketId",
+      "timeStamp",
+      "elapsed",
+      "user",
+      "users",
+      "userReadyTransmitted",
+      "userReadyAckWait",
+      "userReadyTransmitted",
+      "userReadyAck",
+      "userAuthenticated",
+      "fetchCycle", 
+      "newBestNetwork", 
+      "fetchAllIntervalStartMoment"
+    ]
+  );
+}
 
+function sendKeepAlive(callback) {
   if (statsObj.userAuthenticated && statsObj.serverConnected) {
 
     debug(chalkAlert("TX KEEPALIVE"
@@ -3069,8 +3170,7 @@ function sendKeepAlive(userObj, callback) {
       "SESSION_KEEPALIVE", 
       {
         user: userObj, 
-        stats: statsObjSmall, 
-        results: {}
+        stats: statsObjSmall
       }
     );
 
@@ -3098,9 +3198,24 @@ function initKeepalive(interval) {
     + " | INTERVAL: " + interval + " ms"
   ));
 
-  userObj.stats = statsObj;
+// statsObj.fetchCycle = 0;
+// statsObj.newBestNetwork = false;
+// statsObj.fetchAllIntervalStartMoment = moment();
+//   statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+//   statsObj.timeStamp = moment().format(compactDateTimeFormat);
+//     if (statsObj.serverConnected && !statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
 
-  sendKeepAlive(userObj, function(err, results) {
+//       statsObj.userReadyTransmitted = true;
+//       userObj.timeStamp = moment().valueOf();
+
+//       socket.emit("USER_READY", {userId: userObj.userId, timeStamp: moment().valueOf()});
+//     }
+//     else if (statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
+//       statsObj.userReadyAckWait += 1;
+//       console.log(chalkAlert("... WAITING FOR USER_READY_ACK ..."));
+
+
+  sendKeepAlive(function(err, results) {
     if (err) {
       console.log(chalkError("KEEPALIVE ERROR: " + err));
     }
@@ -3113,9 +3228,9 @@ function initKeepalive(interval) {
 
   socketKeepAliveInterval = setInterval(function() { // TX KEEPALIVE
 
-    userObj.stats = statsObj;
+    updateStatsObjSmall();
 
-    sendKeepAlive(userObj, function(err, results) {
+    sendKeepAlive(function(err, results) {
       if (err) {
         console.log(chalkError("KEEPALIVE ERROR: " + err));
       }
@@ -4024,21 +4139,27 @@ function initialize(cnf, callback) {
     }
     else {
       console.log("dropboxConfigFile: " + dropboxConfigFile + "\n" + jsonPrint(err));
+
       // OVERIDE CONFIG WITH COMMAND LINE ARGS
       commandLineArgs = Object.keys(commandLineConfig);
       commandLineArgs.forEach(function(arg) {
         cnf[arg] = commandLineConfig[arg];
         console.log("--> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
       });
+
       console.log(chalkLog("USER\n" + jsonPrint(userObj)));
+
       configArgs = Object.keys(cnf);
       configArgs.forEach(function(arg) {
         console.log("INITIALIZE FINAL CONFIG | " + arg + ": " + cnf[arg]);
       });
+
       if (cnf.enableStdin) { initStdIn(); }
+
       initStatsUpdate(function() {
         return callback(err, cnf) ;
       });
+
      }
   });
 }
@@ -4854,6 +4975,7 @@ function initLangAnalyzer(callback) {
 }
 
 initialize(configuration, function(err, cnf) {
+
   if (err) {
     console.log(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
     if (err.code !== 404) {
@@ -4867,6 +4989,7 @@ initialize(configuration, function(err, cnf) {
   console.log(chalkTwitter(configuration.processName
     + " STARTED " + getTimeStamp()
   ));
+
 
   initSaveFileQueue(cnf);
 
@@ -4888,6 +5011,34 @@ initialize(configuration, function(err, cnf) {
   }
 
   console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(configuration)));
+
+
+  connectDb(function(err, db){
+
+    if (err) {
+      dbConnectionReady = false;
+      console.log(chalkError("*** MONGO DB CONNECT ERROR: " + err + " | QUITTING ***"));
+      quit("MONGO DB CONNECT ERROR");
+    }
+
+    global.dbConnection = db;
+
+    UserServerController = require("@threeceelabs/user-server-controller");
+    userServerController = new UserServerController("TFE_USC");
+
+    userServerControllerReady = false;
+
+    userServerController.on("ready", function(appname){
+      userServerControllerReady = true;
+      console.log(chalkAlert("USC READY | " + appname));
+    });
+
+    NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
+    User = mongoose.model("User", userModel.UserSchema);
+
+    dbConnectionReady = true;
+
+  });
 
   dbConnectionReadyInterval = setInterval(function() {
 
