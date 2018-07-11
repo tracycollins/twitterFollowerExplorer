@@ -981,6 +981,9 @@ function initUnfollowQueueInterval(interval){
       const friend = unfollowQueue.shift();
 
       unfollowFriend({screenName: friend.screen_name}, function(err, response){
+
+        unfollowQueueReady = true;
+
         if (err) {
 
           console.log(chalkError("*** UNFOLLOW ERROR"
@@ -990,17 +993,25 @@ function initUnfollowQueueInterval(interval){
             + " | @" + friend.screen_name
           ));
 
+
+          if (err.code === 34){
+            console.log(chalkError("=X= UNFOLLOW ERROR | NON-EXISTENT USER"
+              + " | 3C: @" + configuration.threeceeUser
+              + " | @" + m.user.screenName.toLowerCase()
+            ));
+            return;
+          }
+
           process.send(
             {
               op:"ERROR", 
               threeceeUser: configuration.threeceeUser, 
-              state: "UNFOLLOW_ERR", 
+              state: "UNFOLLOW_ERROR", 
               params: {screen_name: friend.screen_name}, 
               error: err
             }
           );
 
-          unfollowQueueReady = true;
           return;
         }
 
@@ -1024,7 +1035,6 @@ function initUnfollowQueueInterval(interval){
             }
           );
 
-          unfollowQueueReady = true;
           return;
         }
 
@@ -1037,20 +1047,6 @@ function initUnfollowQueueInterval(interval){
           + " | FRNDs: " + response.friends_count
           + " | Ts: " + response.statuses_count
         ));
-
-          process.send(
-            {
-              op:"ERROR", 
-              threeceeUser: configuration.threeceeUser, 
-              state: "UNFOLLOW_FAIL", 
-              params: {screen_name: friend.screen_name}, 
-              error: response
-            }
-          );
-
-
-        unfollowQueueReady = true;
-
       });
 
 
@@ -1210,16 +1206,6 @@ process.on("message", function(m) {
           ));
 
           return;
-
-          // process.send(
-          //   {
-          //     op:"ERROR", 
-          //     threeceeUser: configuration.threeceeUser, 
-          //     state: "UNFOLLOW_FAIL", 
-          //     params: {screen_name: m.user.screenName}, 
-          //     error: response
-          //   }
-          // );
         }
 
         console.log(chalkInfo("TFC | UNFOLLOW"
@@ -1233,42 +1219,6 @@ process.on("message", function(m) {
 
       });
 
-      // if (twitClient) {
-      //   twitClient.post(
-
-      //     "friendships/destroy", {screen_name: m.user.screenName}, 
-
-      //     function destroyFriend(err, data, response){
-      //       if (err) {
-      //         console.log(chalkError("=X= UNFOLLOW ERROR"
-      //           + " | 3C: @" + configuration.threeceeUser
-      //           + " | NID: " + m.user.userId
-      //           + " | @" + m.user.screenName.toLowerCase()
-      //         ));
-
-      //         process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "UNFOLLOW", params: {screen_name: m.user.screenName}, error: err });
-      //       }
-      //       else {
-
-      //         // debug("data\n" + jsonPrint(data));
-
-      //         if (configuration.verbose) { 
-      //           console.log(chalkInfo("UNFOLLOW"
-      //             + " | 3C: @" + configuration.threeceeUser
-      //             // + "\nresponse\n" + jsonPrint(response)
-      //           ));
-      //         }
-
-      //         console.log(chalkInfo("=X= UNFOLLOW"
-      //           + " | 3C: @" + configuration.threeceeUser
-      //           + " | NID: " + m.user.userId
-      //           + " | @" + m.user.screenName.toLowerCase()
-      //         ));
-
-      //       }
-      //     }
-      //   );
-      // }
     break;
 
     case "QUIT":
