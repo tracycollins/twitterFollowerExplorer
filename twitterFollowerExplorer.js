@@ -3803,8 +3803,8 @@ function initTwitterFollowerChild(twitterConfig, callback) {
           + " | @" + m.user.screen_name
         ));
 
-        slackText = "\n*UNFOLLOW | 3C @" + m.threeceeUser + "\n<http://twitter.com/" + m.user.screen_name 
-        + "\n" + " @" + m.user.screen_name + ">*";
+        slackText = "\n*UNFOLLOW | 3C @" + m.threeceeUser + " > <http://twitter.com/" + m.user.screen_name 
+        + "|" + " @" + m.user.screen_name + ">*";
         console.log("TFE | SLACK TEXT: " + slackText);
         slackPostMessage(slackChannel, slackText);
 
