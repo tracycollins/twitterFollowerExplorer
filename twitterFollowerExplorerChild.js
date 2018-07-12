@@ -1079,7 +1079,7 @@ function initUnfollowQueueInterval(interval){
             + " | UID: " + friend.user_id
             + " | @" + friend.screen_name
           ));
-          
+
           return;
         }
 
@@ -1216,18 +1216,22 @@ process.on("message", function(m) {
 
       unfollowFriend({ user: m.user }, function(err, results){
 
+        const userId = m.user_id || m.userId || m.id_str;
+        const screenName = m.screen_name || m.screenName;
+
         if (err) {
 
           console.log(chalkError("=X= UNFOLLOW ERROR"
             + " | 3C: @" + configuration.threeceeUser
-            + " | NID: " + m.userId
-            + " | @" + m.screenName.toLowerCase()
+            + " | UID: " + userId
+            + " | @" + screenName
           ));
 
           if (err.code === 34){
             console.log(chalkError("=X= UNFOLLOW ERROR | NON-EXISTENT USER"
               + " | 3C: @" + configuration.threeceeUser
-              + " | @" + m.screenName.toLowerCase()
+              + " | UID: " + userId
+              + " | @" + screenName
             ));
             return;
           }
@@ -1237,7 +1241,7 @@ process.on("message", function(m) {
               op:"ERROR", 
               threeceeUser: configuration.threeceeUser, 
               state: "UNFOLLOW_ERR", 
-              params: { user_id: m.userId, screen_name: m.screenName }, 
+              params: { user_id: userId, screen_name: screenName }, 
               error: err
             }
           );
@@ -1247,15 +1251,16 @@ process.on("message", function(m) {
 
         if (!results) {
 
-          console.log(chalkInfo("TFC | UNFOLLOW FAIL"
+          console.log(chalkInfo("TFC | UNFOLLOW MISS"
             + " | 3C: @" + configuration.threeceeUser
-            + " | @" + m.screenName.toLowerCase()
+            + " | UID: " + userId
+            + " | @" + screenName
           ));
 
           return;
         }
 
-        console.log(chalkInfo("TFC | UNFOLLOW"
+        console.log(chalkInfo("TFC | XXX UNFOLLOW"
           + " | 3C: @" + configuration.threeceeUser
           + " | " + results.id_str
           + " | @" + results.screen_name

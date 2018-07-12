@@ -2240,13 +2240,7 @@ function processUser(threeceeUser, userIn, callback) {
           + " | 3CF: " + user.threeceeFollowing
         ));
 
-        tfeChildHashMap[unfollowTarget].child.send(
-          { 
-            op: "UNFOLLOW",
-            user_id: user.nodeId,
-            screen_name: user.screenName
-          }
-        );
+        tfeChildHashMap[unfollowTarget].child.send({ op: "UNFOLLOW", user: user });
 
         cb(null, user);
       }
@@ -2305,13 +2299,7 @@ function processUser(threeceeUser, userIn, callback) {
           + " | 3CF: " + user.threeceeFollowing
         ));
 
-        tfeChildHashMap[unfollowTarget].child.send(
-          { 
-            op: "UNFOLLOW",
-            user_id: user.nodeId,
-            screen_name: user.screenName
-          }
-        );
+        tfeChildHashMap[unfollowTarget].child.send({ op: "UNFOLLOW", user: user });
 
         cb(null, user);
       }
