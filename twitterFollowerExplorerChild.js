@@ -919,13 +919,18 @@ function unfollowFriend(params, callback){
   else if (params.user.userId !== undefined) { 
     unfollowFriendParams.user_id = params.user.userId;
   }
-  else if (params.user.screen_name !== undefined) { 
+
+  if (params.user.screen_name !== undefined) { 
     unfollowFriendParams.screen_name = params.user.screen_name;
   }
   else if (params.user.screenName !== undefined) { 
     unfollowFriendParams.screen_name = params.user.screenName;
   }
-  else {
+
+  if ((unfollowFriendParams.user_id === undefined)
+    && (unfollowFriendParams.screen_name === undefined)
+  ){
+
     console.log(chalkAlert("TFC | UNFOLLOW FRIEND"
       + "\nINVALID PARAMS"
       + "\n" + jsonPrint(params)
