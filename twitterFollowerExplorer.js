@@ -3789,6 +3789,9 @@ function initTwitterFollowerChild(twitterConfig, callback) {
           + " | " + m.threeceeUser
           + " | UID: " + m.user.id_str
           + " | @" + m.user.screen_name
+          + " | FLWRs: " + m.user.followers_count
+          + " | FRNDs: " + m.user.friends_count
+          + " | Ts: " + m.user.statuses_count
         ));
 
         slackText = "\n*UNFOLLOW | 3C @" + m.threeceeUser + " > <http://twitter.com/" + m.user.screen_name 
