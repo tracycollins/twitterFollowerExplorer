@@ -968,12 +968,12 @@ function unfollowFriend(params, callback){
           + "\nRESPONSE\n" + jsonPrint(response)
         ));
 
-        return callback(null, response);
+        return callback(err, response);
       }
 
       console.log(chalkAlert("TFC | XXX UNFOLLOW"
         + " | 3C: @" + configuration.threeceeUser
-        + " | UID: " + data.user_id
+        + " | UID: " + data.id_str
         + " | @" + data.screen_name
         + " | FLWRs: " + data.followers_count
         + " | FRNDs: " + data.friends_count
@@ -992,7 +992,7 @@ function unfollowFriend(params, callback){
         }
       );
 
-      callback(null, response);
+      callback(null, data);
 
     }
   );
@@ -1022,7 +1022,7 @@ function initUnfollowQueueInterval(interval){
 
       const friend = unfollowQueue.shift();
 
-      unfollowFriend({ user: friend }, function(err, response){
+      unfollowFriend({ user: friend }, function(err, results){  // if no error, results = unfollowed user
 
         unfollowQueueReady = true;
 
@@ -1059,14 +1059,13 @@ function initUnfollowQueueInterval(interval){
           return;
         }
 
-        if (!response) {
+        if (!results) {
 
           console.log(chalkAlert("TFC | *** UNFOLLOW FAIL"
             + " [ UFQ: " + unfollowQueue.length + "]"
             + " | 3C: @" + configuration.threeceeUser
             + " | UID: " + friend.user_id
             + " | @" + friend.screen_name
-            + " | RESPONSE"  + response
           ));
 
           process.send(
@@ -1075,7 +1074,7 @@ function initUnfollowQueueInterval(interval){
               threeceeUser: configuration.threeceeUser, 
               state: "UNFOLLOW_FAIL", 
               params: {screen_name: friend.screen_name}, 
-              error: response
+              error: "UNFOLLOW_FAIL"
             }
           );
 
@@ -1085,12 +1084,13 @@ function initUnfollowQueueInterval(interval){
         console.log(chalkAlert("TFC | XXX UNFOLLOW"
           + " [ UFQ: " + unfollowQueue.length + "]"
           + " | 3C: @" + configuration.threeceeUser
-          + " | " + response.user_id
-          + " | @" + response.screen_name
-          + " | FLWRs: " + response.followers_count
-          + " | FRNDs: " + response.friends_count
-          + " | Ts: " + response.statuses_count
+          + " | " + results.user_id
+          + " | @" + results.screen_name
+          + " | FLWRs: " + results.followers_count
+          + " | FRNDs: " + results.friends_count
+          + " | Ts: " + results.statuses_count
         ));
+
       });
 
 
@@ -1212,7 +1212,7 @@ process.on("message", function(m) {
 
       // console.log("UNFOLLOW MESSAGE\n" + jsonPrint(m.user));
 
-      unfollowFriend({ user: m.user }, function(err, response){
+      unfollowFriend({ user: m.user }, function(err, results){
 
         if (err) {
 
@@ -1243,12 +1243,11 @@ process.on("message", function(m) {
           return;
         }
 
-        if (response.statusCode !== 200) {
+        if (!results) {
 
           console.log(chalkInfo("TFC | UNFOLLOW FAIL"
             + " | 3C: @" + configuration.threeceeUser
             + " | @" + m.screenName.toLowerCase()
-            + "\nRESPONSE\n"  + (jsonPrint)
           ));
 
           return;
@@ -1256,11 +1255,11 @@ process.on("message", function(m) {
 
         console.log(chalkInfo("TFC | UNFOLLOW"
           + " | 3C: @" + configuration.threeceeUser
-          + " | " + response.user_id
-          + " | @" + response.screen_name
-          + " | FLWRs: " + response.followers_count
-          + " | FRNDs: " + response.friends_count
-          + " | Ts: " + response.statuses_count
+          + " | " + results.id_str
+          + " | @" + results.screen_name
+          + " | FLWRs: " + results.followers_count
+          + " | FRNDs: " + results.friends_count
+          + " | Ts: " + results.statuses_count
         ));
 
       });
