@@ -23,6 +23,7 @@ const DEFAULT_MIN_FRIENDS_COUNT = process.env.DEFAULT_MIN_FRIENDS_COUNT || 10;
 const DEFAULT_MIN_STATUSES_COUNT = process.env.DEFAULT_MIN_STATUSES_COUNT || 10;
 
 const moment = require("moment");
+const pick = require("object.pick");
 const _ = require("lodash");
 const debug = require("debug")("tfec");
 const os = require("os");
@@ -107,6 +108,9 @@ statsObj.fetchUsersComplete = false;
 statsObj.runId = TFE_RUN_ID;
 
 statsObj.elapsed = 0;
+
+statsObj.users = {};
+statsObj.users.unfollowed = [];
 
 let fsmPreviousState = "IDLE";
 let fsmPreviousPauseState;
@@ -984,6 +988,13 @@ function unfollowFriend(params, callback){
           // + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
           // + "\nDATA\n" + jsonPrint(data)
         ));
+
+        const userSmall = pick(
+          data, 
+          [ "id_str", "screen_name", "followers_count", "friends_count", "statuses_count"]
+        );
+
+        statsObj.users.unfollowed.push(userSmall);
 
         process.send(
           {
