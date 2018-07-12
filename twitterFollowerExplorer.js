@@ -771,8 +771,8 @@ function loadFile(path, file, callback) {
     })
     .catch(function(error) {
 
-      console.trace(chalkError("TFE | DROPBOX loadFile ERROR: ", fullPath, error));
-      console.log(chalkError("TFE | DROPBOX loadFile ERROR: " + error.error));
+      // console.trace(chalkError("TFE | DROPBOX loadFile ERROR: ", fullPath, error));
+      console.log(chalkError("TFE | DROPBOX loadFile ERROR: " + error));
 
       if ((error.status === 409) || (error.status === 404)) {
         console.log(chalkError("TFE | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND"
@@ -1118,6 +1118,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
                 return cb();
               }
 
+              if (networkObj.successRate === undefined) { networkObj.successRate = 0; }
               if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
               if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
 
@@ -1160,6 +1161,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
               return cb();
             }
 
+            if (networkObj.successRate === undefined) { networkObj.successRate = 0; }
             if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
             if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
             if (networkObj.testCycles === undefined) { networkObj.testCycles = 0; }
@@ -1284,6 +1286,11 @@ function initRandomNetworks(params, callback) {
         const nnId = randomItem(Object.keys(availableNeuralNetHashMap));
 
         delete availableNeuralNetHashMap[nnId];
+
+        if (!bestNetworkHashMap.has(nnId)) {
+          console.log(chalkError("initRandomNetworks | NN NOT IN BEST NN HASHMAP ??? | SKIPPING | " + nnId));
+          return cb();
+        }
 
         let networkObj = bestNetworkHashMap.get(nnId).networkObj;
 
@@ -2479,17 +2486,20 @@ const processUserQueueEmpty = function() {
 let waitFileSaveInterval;
 
 const fsmStates = {
+
   "RESET":{
     onEnter: function(event, oldState, newState) {
       reporter(event, oldState, newState);
     },
     "fsm_resetEnd": "IDLE"
   },
+
   "IDLE":{
     onEnter: reporter,
     "fsm_init": "INIT",
     "fsm_error": "ERROR"
   },
+
   "ERROR":{
     onEnter: function(event, oldState, newState) {
       reporter(event, oldState, newState);
@@ -2497,6 +2507,7 @@ const fsmStates = {
     },
     "fsm_reset": "RESET"
   },
+
   "INIT":{
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
@@ -2521,6 +2532,7 @@ const fsmStates = {
     "fsm_ready": "READY",
     "fsm_reset": "RESET"
   },
+
   "READY":{
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
@@ -2555,6 +2567,7 @@ const fsmStates = {
     "fsm_reset": "RESET",
     "fsm_fetchAllStart": "FETCH_ALL"
   },
+
   "FETCH_ALL":{
     onEnter: function(event, oldState, newState) {
       // console.log("FETCH_ALL | onEnter");
@@ -2602,6 +2615,7 @@ const fsmStates = {
     "fsm_reset": "RESET",
     "fsm_fetchAllEnd": "FETCH_END_ALL"
   },
+
   "FETCH_END_ALL":{
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
@@ -2617,12 +2631,14 @@ const fsmStates = {
         console.log(chalk.bold.blue("===================================================="));
         console.log(chalk.bold.blue("================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("===================================================="));
+
         console.log(chalk.bold.blue("FETCH CYCLE:           " + statsObj.fetchCycle));
         console.log(chalk.bold.blue("FETCH CYCLE START:     " + statsObj.fetchCycleStartMoment.format(compactDateTimeFormat)));
         console.log(chalk.bold.blue("FETCH CYCLE END:       " + statsObj.fetchCycleEndMoment.format(compactDateTimeFormat)));
         console.log(chalk.bold.blue("FETCH CYCLE ELAPSED:   " + msToTime(statsObj.fetchCycleElapsed)));
         console.log(chalk.bold.blue("TOTAL USERS FETCHED:   " + statsObj.users.totalFriendsFetched));
         console.log(chalk.bold.blue("TOTAL USERS PROCESSED: " + statsObj.users.totalFriendsProcessed));
+
         console.log(chalk.bold.blue("BEST NETWORK------------          " 
           + "\n            " + statsObj.bestNetwork.networkId
           + "\n INPUTS:    " + statsObj.bestNetwork.numInputs + " | " + statsObj.bestNetwork.inputsId
@@ -2631,6 +2647,7 @@ const fsmStates = {
           + "\n OAMR:      " + statsObj.bestNetwork.overallMatchRate.toFixed(3) + "%"
           + "\n TEST CYCs: " + statsObj.bestNetwork.testCycles
         ));
+
         console.log(chalk.bold.blue("===================================================="));
         console.log(chalk.bold.blue("================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("===================================================="));
@@ -4322,11 +4339,13 @@ function updateNetworkStats(params, callback) {
 
       const bnhmObj = bestNetworkHashMap.get(nnId);
 
+      if (bnhmObj.networkObj.testCycleHistory === undefined) {
+        bnhmObj.networkObj.testCycleHistory = [];
+      }
+
       bnhmObj.networkObj.incrementTestCycles = incrementTestCycles;
       bnhmObj.networkObj.matchRate = params.networkStatsObj[nnId].matchRate;
       bnhmObj.networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
-
-      // bestNetworkHashMap.set(nnId, bnhmObj);
 
       NeuralNetwork.findOne({ networkId: bnhmObj.networkObj.networkId }, function(err, nnDb){
         if (err) {
@@ -4343,13 +4362,33 @@ function updateNetworkStats(params, callback) {
             nnDb.markModified("testCycles");
           }
 
-          if (bnhmObj.networkObj.incrementTestCycles) { nnDb.testCycles += 1; }
+          if (nnDb.testCycleHistory === undefined) {
+            nnDb.testCycleHistory = [];
+          }
+
+          if (bnhmObj.networkObj.incrementTestCycles) { 
+
+            nnDb.testCycles += 1;
+
+            nnDb.testCycleHistory.push({
+              testCycle: nnDb.testCycles,
+              match: params.networkStatsObj[nnId].match,
+              mismatch: params.networkStatsObj[nnId].mismatch,
+              total: params.networkStatsObj[nnId].total,
+              matchRate: params.networkStatsObj[nnId].matchRate,
+              timeStamp: moment().valueOf()
+            });
+
+          }
+
+          nnDb.markModified("testCycleHistory");
 
           nnDb.matchRate = bnhmObj.networkObj.matchRate;
           nnDb.overallMatchRate = bnhmObj.networkObj.overallMatchRate;
           nnDb.markModified("overallMatchRate");
 
           bnhmObj.networkObj.testCycles = nnDb.testCycles;
+          bnhmObj.networkObj.testCycleHistory = nnDb.testCycleHistory;
 
           bestNetworkHashMap.set(nnId, bnhmObj);
 
@@ -4370,9 +4409,24 @@ function updateNetworkStats(params, callback) {
 
           newNnDb = new NeuralNetwork(bnhmObj.networkObj);
 
-          if (bnhmObj.networkObj.incrementTestCycles) { newNnDb.testCycles = 1; }
+          if (bnhmObj.networkObj.incrementTestCycles) { 
+
+            newNnDb.testCycles = 1;
+
+            newNnDb.testCycleHistory.push({
+              testCycle: newNnDb.testCycles,
+              match: params.networkStatsObj[nnId].match,
+              mismatch: params.networkStatsObj[nnId].mismatch,
+              total: params.networkStatsObj[nnId].total,
+              matchRate: params.networkStatsObj[nnId].matchRate,
+              timeStamp: moment().valueOf()
+            });
+
+          }
 
           bnhmObj.networkObj.testCycles = newNnDb.testCycles;
+          bnhmObj.networkObj.testCycleHistory = newNnDb.testCycleHistory;
+
           bestNetworkHashMap.set(nnId, bnhmObj);
 
           newNnDb.save()
@@ -4597,6 +4651,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           runEnable();
         break;
+
         case "BEST_MATCH_RATE":
           debug(chalkAlert("\n================================================================================================\n"
             + "*** RNT_BEST_MATCH_RATE"
@@ -4673,6 +4728,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           runEnable();
         break;
+
         default:
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           console.log(chalkError("*** UNKNOWN RNT OP | " + m.op));

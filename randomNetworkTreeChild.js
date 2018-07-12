@@ -806,6 +806,7 @@ function initActivateNetworkInterval(interval){
           ));
           activateNetworkIntervalBusy = false;
         }
+
         else {
 
           const category = obj.user.category;
@@ -849,14 +850,20 @@ function initActivateNetworkInterval(interval){
                   statsObj.categorize.total += 1;
 
                   if (category === results.categoryAuto) {
+
                     statsObj.categorize.match += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
+
                     printActivateResult("+++ MATCH", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+
                   }
                   else {
+
                     statsObj.categorize.mismatch += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
+
                     printActivateResult("000 MISS ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+
                   }
                 }
                 else {
@@ -950,6 +957,8 @@ function loadNetworks(networksObj, callback){
       statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
       statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
       statsObj.loadedNetworks[nnId].testCycles = networkObj.testCycles;
+      statsObj.loadedNetworks[nnId].testCycleHistory = [];
+      statsObj.loadedNetworks[nnId].testCycleHistory = networkObj.testCycleHistory;
       statsObj.loadedNetworks[nnId].total = 0;
       statsObj.loadedNetworks[nnId].match = 0;
       statsObj.loadedNetworks[nnId].mismatch = 0;
@@ -963,6 +972,7 @@ function loadNetworks(networksObj, callback){
 
     statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
     statsObj.loadedNetworks[nnId].testCycles = networkObj.testCycles;
+    statsObj.loadedNetworks[nnId].testCycleHistory = networkObj.testCycleHistory;
 
     if (statsObj.allTimeLoadedNetworks[nnId] === undefined) {
       statsObj.allTimeLoadedNetworks[nnId] = {};
@@ -974,6 +984,8 @@ function loadNetworks(networksObj, callback){
       statsObj.allTimeLoadedNetworks[nnId].matchRate = networkObj.matchRate;
       statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
       statsObj.allTimeLoadedNetworks[nnId].testCycles = networkObj.testCycles;
+      statsObj.allTimeLoadedNetworks[nnId].testCycleHistory = [];
+      statsObj.allTimeLoadedNetworks[nnId].testCycleHistory = networkObj.testCycleHistory;
       statsObj.allTimeLoadedNetworks[nnId].total = 0;
       statsObj.allTimeLoadedNetworks[nnId].match = 0;
       statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
@@ -987,6 +999,7 @@ function loadNetworks(networksObj, callback){
 
     statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
     statsObj.allTimeLoadedNetworks[nnId].testCycles = networkObj.testCycles;
+    statsObj.allTimeLoadedNetworks[nnId].testCycleHistory = networkObj.testCycleHistory;
 
     console.log(chalkLog("RNT | LOAD NETWORK"
       + " | [ " + networksHashMap.size + " NNs IN HM ]"
