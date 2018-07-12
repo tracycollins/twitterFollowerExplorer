@@ -981,7 +981,7 @@ function unfollowFriend(params, callback){
         + " | FOLLOWING: " + data.following
         // + " | RESPONSE CODE: " + response.statusCode
         // + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
-        // + "\nDATA\n" + jsonPrint(data)
+        + "\nDATA\n" + jsonPrint(data)
       ));
 
       process.send(
