@@ -1216,32 +1216,27 @@ process.on("message", function(m) {
 
       unfollowFriend({ user: m.user }, function(err, results){
 
-        const userId = m.user_id || m.userId || m.id_str;
-        const screenName = m.screen_name || m.screenName;
-
         if (err) {
-
-          console.log(chalkError("=X= UNFOLLOW ERROR"
-            + " | 3C: @" + configuration.threeceeUser
-            + " | UID: " + userId
-            + " | @" + screenName
-          ));
 
           if (err.code === 34){
             console.log(chalkError("=X= UNFOLLOW ERROR | NON-EXISTENT USER"
               + " | 3C: @" + configuration.threeceeUser
-              + " | UID: " + userId
-              + " | @" + screenName
+              + "\n" + jsonPrint(m.user)
             ));
             return;
           }
+
+          console.log(chalkError("=X= UNFOLLOW ERROR"
+            + " | 3C: @" + configuration.threeceeUser
+            + "\n" + jsonPrint(m.user)
+          ));
 
           process.send(
             {
               op:"ERROR", 
               threeceeUser: configuration.threeceeUser, 
               state: "UNFOLLOW_ERR", 
-              params: { user_id: userId, screen_name: screenName }, 
+              params: { user: m.user }, 
               error: err
             }
           );
@@ -1251,10 +1246,9 @@ process.on("message", function(m) {
 
         if (!results) {
 
-          console.log(chalkInfo("TFC | UNFOLLOW MISS"
+          debug(chalkInfo("TFC | UNFOLLOW MISS"
             + " | 3C: @" + configuration.threeceeUser
-            + " | UID: " + userId
-            + " | @" + screenName
+            + "\n" + jsonPrint(m.user)
           ));
 
           return;
