@@ -382,9 +382,8 @@ let friendMinProps = {
 function checkFriendMinimumProperties(friend, callback){
 
   const unfollowFlag = (
-    friend.followers_count < configuration.minFollowersCount
-    && friend.friends_count < configuration.minFriendsCount
-    && friend.statuses_count < configuration.minStatusesCount
+    (friend.followers_count < configuration.minFollowersCount)
+    || (friend.statuses_count < configuration.minStatusesCount)
   );
 
   debug(chalkAlert("checkFriendMinimumProperties"
@@ -392,8 +391,8 @@ function checkFriendMinimumProperties(friend, callback){
     + " | @" + friend.screen_name
     + " | FLWRs: " + friend.followers_count
     + " | MIN FLWRs: " + configuration.minFollowersCount
-    + " | FRNDs: " + friend.friends_count
-    + " | MIN FRNDs: " + configuration.minFriendsCount
+    // + " | FRNDs: " + friend.friends_count
+    // + " | MIN FRNDs: " + configuration.minFriendsCount
     + " | Ts: " + friend.statuses_count
     + " | MIN Ts: " + configuration.minStatusesCount
   ));
