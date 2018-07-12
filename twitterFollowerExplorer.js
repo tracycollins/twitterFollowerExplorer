@@ -3685,16 +3685,11 @@ function initTwitterFollowerChild(twitterConfig, callback) {
   let slackText = "";
 
   tfeChild.on("message", function(m) {
+
     debug(chalkAlert("tfeChild RX"
       + " | " + m.op
     ));
-    // if (m.error) {
-    //   console.log(chalkError("TFC | tfeChild RX ERROR\n" + jsonPrint(m)));
-    //   if (callback !== undefined) {
-    //     return callback(m.error, null);
-    //   }
-    //   return;
-    // }
+
     switch(m.op) {
       case "ERROR":
         console.log(chalkError("TFC | CHILD ERROR | " + m.threeceeUser));

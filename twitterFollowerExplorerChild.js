@@ -19,8 +19,8 @@ const TEST_MODE_FETCH_COUNT = process.env.TEST_MODE_FETCH_COUNT;
 const TEST_MODE_TOTAL_FETCH = process.env.TEST_MODE_TOTAL_FETCH;  // total twitter user fetch count
 
 const DEFAULT_MIN_FOLLOWERS_COUNT = process.env.DEFAULT_MIN_FOLLOWERS_COUNT || 100;
-const DEFAULT_MIN_FRIENDS_COUNT = process.env.DEFAULT_MIN_FRIENDS_COUNT || 100;
-const DEFAULT_MIN_STATUSES_COUNT = process.env.DEFAULT_MIN_STATUSES_COUNT || 100;
+const DEFAULT_MIN_FRIENDS_COUNT = process.env.DEFAULT_MIN_FRIENDS_COUNT || 10;
+const DEFAULT_MIN_STATUSES_COUNT = process.env.DEFAULT_MIN_STATUSES_COUNT || 10;
 
 const moment = require("moment");
 const _ = require("lodash");
