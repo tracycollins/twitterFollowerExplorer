@@ -971,28 +971,40 @@ function unfollowFriend(params, callback){
         return callback(err, response);
       }
 
-      console.log(chalkAlert("TFC | XXX UNFOLLOW"
+      if (data.following) {
+
+        console.log(chalkAlert("TFC | XXX UNFOLLOW"
+          + " | 3C: @" + configuration.threeceeUser
+          + " | UID: " + data.id_str
+          + " | @" + data.screen_name
+          + " | FLWRs: " + data.followers_count
+          + " | FRNDs: " + data.friends_count
+          + " | Ts: " + data.statuses_count
+          + " | FOLLOWING: " + data.following
+          // + " | RESPONSE CODE: " + response.statusCode
+          // + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
+          // + "\nDATA\n" + jsonPrint(data)
+        ));
+
+        process.send(
+          {
+            op:"UNFOLLOWED", 
+            threeceeUser: configuration.threeceeUser, 
+            user: data
+          }
+        );
+
+        return callback(null, data);
+
+      }
+
+      console.log(chalkInfo("TFC | miss UNFOLLOW"
         + " | 3C: @" + configuration.threeceeUser
-        + " | UID: " + data.id_str
-        + " | @" + data.screen_name
-        + " | FLWRs: " + data.followers_count
-        + " | FRNDs: " + data.friends_count
-        + " | Ts: " + data.statuses_count
-        + " | FOLLOWING: " + data.following
-        // + " | RESPONSE CODE: " + response.statusCode
-        // + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
-        + "\nDATA\n" + jsonPrint(data)
+        + " | UID: " + unfollowFriendParams.user_id
+        + " | @" + unfollowFriendParams.screen_name
       ));
 
-      process.send(
-        {
-          op:"UNFOLLOWED", 
-          threeceeUser: configuration.threeceeUser, 
-          user: data
-        }
-      );
-
-      callback(null, data);
+      callback(null, null);
 
     }
   );
@@ -1061,23 +1073,13 @@ function initUnfollowQueueInterval(interval){
 
         if (!results) {
 
-          console.log(chalkAlert("TFC | *** UNFOLLOW FAIL"
+          console.log(chalkAlert("TFC | ... UNFOLLOW MISS"
             + " [ UFQ: " + unfollowQueue.length + "]"
             + " | 3C: @" + configuration.threeceeUser
             + " | UID: " + friend.user_id
             + " | @" + friend.screen_name
           ));
-
-          process.send(
-            {
-              op:"ERROR", 
-              threeceeUser: configuration.threeceeUser, 
-              state: "UNFOLLOW_FAIL", 
-              params: {screen_name: friend.screen_name}, 
-              error: "UNFOLLOW_FAIL"
-            }
-          );
-
+          
           return;
         }
 
