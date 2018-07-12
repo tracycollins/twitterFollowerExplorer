@@ -3799,7 +3799,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
         console.log(chalkAlert("TFC | CHILD UNFOLLOWED"
           + " | " + m.threeceeUser
-          + " | UID: " + m.user.user_id
+          + " | UID: " + m.user.id_str
           + " | @" + m.user.screen_name
         ));
 
