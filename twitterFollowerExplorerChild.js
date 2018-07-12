@@ -943,7 +943,7 @@ function unfollowFriend(params, callback){
 
     "friendships/destroy", unfollowFriendParams, 
 
-    function destroyFriend(err, data, response){
+    function destroyFriend(err, data, response){  // if success, data = user
 
       if (err) {
 
@@ -973,18 +973,22 @@ function unfollowFriend(params, callback){
 
       console.log(chalkAlert("TFC | XXX UNFOLLOW"
         + " | 3C: @" + configuration.threeceeUser
-        + " | UID: " + unfollowFriendParams.user_id
-        + " | @" + unfollowFriendParams.screen_name
-        + " | RESPONSE CODE: " + response.statusCode
-        + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
-        + "\nDATA\n" + jsonPrint(data)
+        + " | UID: " + data.user_id
+        + " | @" + data.screen_name
+        + " | FLWRs: " + data.followers_count
+        + " | FRNDs: " + data.friends_count
+        + " | Ts: " + data.statuses_count
+        + " | FOLLOWING: " + data.following
+        // + " | RESPONSE CODE: " + response.statusCode
+        // + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
+        // + "\nDATA\n" + jsonPrint(data)
       ));
 
       process.send(
         {
           op:"UNFOLLOWED", 
           threeceeUser: configuration.threeceeUser, 
-          user: { screen_name: unfollowFriendParams.screen_name, user_id: unfollowFriendParams.user_id }
+          user: data
         }
       );
 
