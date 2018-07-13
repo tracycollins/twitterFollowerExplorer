@@ -2982,7 +2982,7 @@ function saveFile (params, callback){
           console.trace(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: " + error
-            + " | ERROR\n" + jsonPrint(error)
+            // + " | ERROR\n" + jsonPrint(error)
           ));
           if (callback !== undefined) { return callback(error); }
         }
