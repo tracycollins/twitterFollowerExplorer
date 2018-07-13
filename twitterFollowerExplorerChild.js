@@ -882,6 +882,7 @@ function initTwitter(twitterConfig, callback){
           statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
           statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
           fsm.fsm_rateLimitStart();
+          return(callback(null, null));
         }
         else {
           console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
@@ -889,8 +890,8 @@ function initTwitter(twitterConfig, callback){
             + " | @" + userScreenName 
             + "\n" + jsonPrint(err)
           ));
+          return(callback(err, null));
         }
-        return(callback(err, null));
       }
 
       callback(null, null);

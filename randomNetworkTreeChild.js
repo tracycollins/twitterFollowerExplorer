@@ -609,7 +609,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
         }, function(){
 
-          statsTextArray.length = Math.min(10, statsTextArray.length);
+          // statsTextArray.length = Math.min(10, statsTextArray.length);
           statsTextArray.unshift([
             "NNID",
             "SR",
@@ -933,7 +933,8 @@ function loadNetworks(networksObj, callback){
 
   async.eachSeries(nnIds, function(nnId, cb){
 
-    let networkObj = deepcopy(networksObj[nnId]);
+    // let networkObj = deepcopy(networksObj[nnId]);
+    let networkObj = networksObj[nnId];
 
     const network = neataptic.Network.fromJSON(networkObj.network);
 
@@ -1127,7 +1128,8 @@ process.on("message", function(m) {
 
     case "LOAD_MAX_INPUTS_HASHMAP":
       maxInputHashMap = {};
-      maxInputHashMap = deepcopy(m.maxInputHashMap);
+      // maxInputHashMap = deepcopy(m.maxInputHashMap);
+      maxInputHashMap = m.maxInputHashMap;
       console.log(chalkAlert("RNT LOAD_MAX_INPUTS_HASHMAP"
         + " | " + Object.keys(maxInputHashMap)
       ));
