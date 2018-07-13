@@ -2269,65 +2269,6 @@ function processUser(threeceeUser, userIn, callback) {
       }
     },
 
-    function unfollowFriend(user, cb) {
-      
-      if (
-           ((threeceeUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.has(user.nodeId))
-        || ((threeceeUser === "altthreecee02") && twitterUserHashMap.altthreecee00.friends.has(user.nodeId))
-        || ((threeceeUser === "altthreecee02") && twitterUserHashMap.altthreecee01.friends.has(user.nodeId))
-      ) {
-
-        let unfollowTarget;
-
-        if (twitterUserHashMap.altthreecee00.friends.has(user.nodeId)) {
-
-          if (twitterUserHashMap.altthreecee01.friends.has(user.nodeId)) {
-            twitterUserHashMap.altthreecee01.friends.delete(user.nodeId);
-            unfollowTarget = "altthreecee01";
-          }
-
-          if (twitterUserHashMap.altthreecee02.friends.has(user.nodeId)) {
-            twitterUserHashMap.altthreecee02.friends.delete(user.nodeId);
-            unfollowTarget = "altthreecee02";
-          }
-
-          user.following = true;
-          user.threeceeFollowing = "altthreecee00";
-
-        }
-        else if (twitterUserHashMap.altthreecee01.friends.has(user.nodeId)) {
-
-          if (twitterUserHashMap.altthreecee02.friends.has(user.nodeId)) {
-            twitterUserHashMap.altthreecee02.friends.delete(user.nodeId);
-            unfollowTarget = "altthreecee02";
-          }
-
-          user.following = true;
-          user.threeceeFollowing = "altthreecee01";
-
-        }
-
-        console.log(chalkInfo("XXX UNFOLLOW | altthreecee00 OR altthreecee01 FOLLOWING"
-          + " | " + user.nodeId
-          + " | " + user.screenName.toLowerCase()
-          + " | FLWg: " + user.following
-          + " | 3CF: " + user.threeceeFollowing
-        ));
-
-        tfeChildHashMap[unfollowTarget].child.send({ op: "UNFOLLOW", user: user });
-
-        cb(null, user);
-      }
-      else {
-
-        user.following = true;
-        user.threeceeFollowing = threeceeUser;
-
-        cb(null, user);
-
-      }
-    },
-
     function updateUserCategory(user, cb) {
       updateUserCategoryStats(user, function(err, u) {
         if (err) {
