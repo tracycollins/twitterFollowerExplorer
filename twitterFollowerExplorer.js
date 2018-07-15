@@ -4339,7 +4339,7 @@ function updateNetworkStats(params, callback) {
       bnhmObj.networkObj.matchRate = params.networkStatsObj[nnId].matchRate;
       bnhmObj.networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
 
-      const query = { networkId: bnhmObj.networkObj.networkId };
+      const query = { networkId: nnId };
 
       const update = {
         "$inc": { testCycles: 1 },
