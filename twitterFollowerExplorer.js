@@ -1186,6 +1186,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
                 + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
                 + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
                 + " | TEST CYCs: " + networkObj.testCycles
+                + " | TCs HISTORY: " + networkObj.testCycleHistory.length
                 + " | CR: " + getTimeStamp(networkObj.createdAt)
                 + " | IN: " + networkObj.numInputs
                 + " | " + networkObj.networkId
