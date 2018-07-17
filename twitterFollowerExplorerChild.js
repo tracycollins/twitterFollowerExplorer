@@ -291,10 +291,43 @@ function twitterUserUpdate(params, callback){
 
   twitClient.get("users/show", {screen_name: configuration.threeceeUser}, function(err, userShowData, response) {
   
+    // if (err){
+    //   if (err.code === 88) {
+    //     console.log(chalkAlert("*** TWITTER SHOW USER RATE LIMIT ERROR"
+    //       + " | @" + configuration.threeceeUser
+    //       + " | " + getTimeStamp()
+    //     ));
+    //     fsm.fsm_rateLimitStart();
+    //     return callback(err);
+    //   }
+    //   console.log("!!!!! TWITTER SHOW USER ERROR | @" + configuration.threeceeUser + " | " + getTimeStamp() 
+    //     + "\n" + jsonPrint(err));
+    //   return(callback(err));
+    // }
+
     if (err){
-      console.log("!!!!! TWITTER SHOW USER ERROR | @" + configuration.threeceeUser + " | " + getTimeStamp() 
-        + "\n" + jsonPrint(err));
-      return(callback(err));
+
+      console.log(chalkError("*** TWITTER SHOW USER ERROR"
+        + " | @" + configuration.threeceeUser 
+        + " | " + getTimeStamp() 
+        + " | ERR CODE: " + err.code
+        + " | " + err.message
+      ));
+
+      if (err.code === 88){
+        console.log(chalkAlert("*** TWITTER SHOW USER ERROR | RATE LIMIT EXCEEDED" 
+          + " | " + getTimeStamp() 
+          + " | @" + configuration.threeceeUser 
+        ));
+        statsObj.threeceeUser.twitterRateLimitException = moment();
+        statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
+        statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+        checkRateLimit({user: configuration.threeceeUser});
+        fsm.fsm_rateLimitStart();
+      }
+
+      return callback(err);
+
     }
 
     // debug(chalkTwitter("TWITTER USER DATA\n" + jsonPrint(userShowData)));
