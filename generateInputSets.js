@@ -361,7 +361,7 @@ function showStats(options){
   }
   else {
     console.log(chalkLog("\nGIS | STATS"
-      + " | E: " + statsObj.elapsed
+      + " | E: " + msToTime(statsObj.elapsed)
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
     ));
   }
