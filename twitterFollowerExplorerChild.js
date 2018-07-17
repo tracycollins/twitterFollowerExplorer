@@ -172,7 +172,7 @@ function resetTwitterUserState(){
   statsObj.threeceeUser.friendsProcessElapsed = 0;
 }
 
-function checkRateLimit(params, callback){
+function checkRateLimit(callback){
 
   twitClient.get("application/rate_limit_status", function(err, data, response) {
 
@@ -322,7 +322,7 @@ function twitterUserUpdate(params, callback){
         statsObj.threeceeUser.twitterRateLimitException = moment();
         statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
         statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
-        checkRateLimit({user: configuration.threeceeUser});
+        checkRateLimit();
         fsm.fsm_rateLimitStart();
       }
 
@@ -365,7 +365,7 @@ function twitterUserUpdate(params, callback){
           statsObj.threeceeUser.twitterRateLimitException = moment();
           statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
           statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
-          checkRateLimit({user: configuration.threeceeUser});
+          checkRateLimit();
           fsm.fsm_rateLimitStart();
         }
 
@@ -456,7 +456,7 @@ function fetchFriends(params, callback) {
           statsObj.threeceeUser.twitterRateLimitException = moment();
           statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
           statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
-          checkRateLimit({user: threeceeUser});
+          checkRateLimit();
 
           fsm.fsm_rateLimitStart();
 
@@ -1163,7 +1163,7 @@ function initCheckRateLimitInterval(interval){
     ));
 
     if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
-      checkRateLimit(function(){});
+      checkRateLimit();
     }
 
   }, interval);
