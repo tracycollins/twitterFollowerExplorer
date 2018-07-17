@@ -360,7 +360,7 @@ function showStats(options){
   if (options) {
   }
   else {
-    console.log(chalkLog("GIS | STATS"
+    console.log(chalkLog("\nGIS | STATS"
       + " | E: " + statsObj.elapsed
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
     ));
