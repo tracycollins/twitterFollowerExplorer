@@ -1520,13 +1520,11 @@ initialize(configuration, function(err, cnf){
         cb();
       }
       else {
-        console.log(chalkInfo("\n+++ LOADED HISTOGRAM"
-          + " | " + type.toUpperCase()
-          + " | " + results.totalInputs + " TOTAL ITEMS"
-          + " | " + results.moreThanMin
-          + " (" + (100*results.moreThanMin/results.totalInputs).toFixed(2) + "%) MORE THAN MIN"
-          + " | " + results.lessThanMin
-          + " (" + (100*results.lessThanMin/results.totalInputs).toFixed(2) + "%) LESS THAN MIN"
+        console.log(chalkInfo("\n+++ LOADED HISTOGRAM | " + type.toUpperCase()
+          + "\nTOTAL ITEMS:         " + results.totalInputs
+          + "\nMIN TOTAL MIN:       " + configuration.minTotalMin
+          + "\nMORE THAN TOTAL MIN: " + results.moreThanMin + " (" + (100*results.moreThanMin/results.totalInputs).toFixed(2) + "%)"
+          + "\nLESS THAN TOTAL MIN: " + results.lessThanMin + " (" + (100*results.lessThanMin/results.totalInputs).toFixed(2) + "%)"
         ));
 
         genInParams.histogramsObj.histograms[type] = {};
