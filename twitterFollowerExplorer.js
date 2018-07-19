@@ -773,6 +773,7 @@ function loadFile(path, file, callback) {
     .catch(function(error) {
 
       // console.trace(chalkError("TFE | DROPBOX loadFile ERROR: ", fullPath, error));
+      console.log(chalkError("TFE | DROPBOX loadFile ERROR: " + fullPath));
       console.log(chalkError("TFE | DROPBOX loadFile ERROR: " + error));
 
       if ((error.status === 409) || (error.status === 404)) {
@@ -1117,7 +1118,10 @@ function loadBestNetworkDropboxFolder(folder, callback) {
             loadFile(folder, entry.name, function(err, networkObj) {
 
               if (err) {
-                console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR: " + err));
+                console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR"
+                  + " | " + folder + "/" + entry.name
+                  + " | " + err
+                ));
                 return cb();
               }
 
@@ -1160,7 +1164,10 @@ function loadBestNetworkDropboxFolder(folder, callback) {
         else {
           loadFile(folder, entry.name, function(err, networkObj) {
             if (err) {
-              console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR: " + err));
+              console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR"
+                + " | " + folder + "/" + entry.name
+                + " | " + err
+              ));
               return cb();
             }
 
