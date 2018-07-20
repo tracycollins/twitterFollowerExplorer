@@ -549,6 +549,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       statsObj.allTimeLoadedNetworks[nnId].mismatch,
       statsObj.allTimeLoadedNetworks[nnId].matchRate.toFixed(2),
       statsObj.allTimeLoadedNetworks[nnId].testCycles,
+      statsObj.allTimeLoadedNetworks[nnId].testCycleHistory.length,
       statsObj.loadedNetworks[nnId].matchFlag,
       nnOutput,
       statsObj.loadedNetworks[nnId].total,
@@ -618,6 +619,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
             "AMM",
             "AMR",
             "TCYCs",
+            "TCH",
             "MFLAG",
             "OUTPUT",
             "TOT",
@@ -630,7 +632,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
               "\n-------------------------------------------------------------------------------"
             + "\n" + title 
             + "\n-------------------------------------------------------------------------------\n"
-            + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+            + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
             + "\n-------------------------------------------------------------------------------"
           ));
 
