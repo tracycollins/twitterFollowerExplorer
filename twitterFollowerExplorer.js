@@ -1006,7 +1006,8 @@ function loadBestNetworkDropboxFolder(folder, callback) {
       console.log(chalkLog("TFE | NO DROPBOX NETWORKS FOUND" + " | " + options.path ));
       console.log(chalkLog("TFE | ... LOADING NNs FROM DB ..."));
 
-      NeuralNetwork.find({}).sort({"overallMatchRate": -1}).limit(10).exec(function(err, nnArray){
+      // NeuralNetwork.find({}).sort({"overallMatchRate": -1}).limit(10).exec(function(err, nnArray){
+      NeuralNetwork.find({}).sort({"overallMatchRate": -1}).exec(function(err, nnArray){
         if (err){
           console.log(chalkError("*** NEURAL NETWORK FIND ERROR: " + err));
           if (callback !== undefined) {
