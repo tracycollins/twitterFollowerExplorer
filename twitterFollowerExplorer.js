@@ -220,6 +220,7 @@ currentBestNetwork.successRate = 0;
 currentBestNetwork.matchRate = 0;
 currentBestNetwork.overallMatchRate = 0;
 currentBestNetwork.testCycles = 0;
+currentBestNetwork.testCycleHistory = [];
 
 let processUserQueue = [];
 let processUserQueueInterval;
@@ -4335,7 +4336,7 @@ function printTestCycleHistory(nn){
     ]);
 
     async.setImmediate(function() { cb1(); });
-    
+
   }, function(){
 
     const t = table(tableArray, { align: ["r", "r", "r", "r", "r", "l"] });
