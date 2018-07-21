@@ -1010,6 +1010,7 @@ function loadNetworks(networksObj, callback){
       + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
       + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
       + " | TCYCs: " + networkObj.testCycles
+      + " | TC HISTORY: " + networkObj.testCycleHistory.length
       + " | " + nnId
     ));
 
