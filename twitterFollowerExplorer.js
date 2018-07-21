@@ -1129,6 +1129,8 @@ function loadBestNetworkDropboxFolder(folder, callback) {
               if (networkObj.successRate === undefined) { networkObj.successRate = 0; }
               if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
               if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
+              if (networkObj.testCycles === undefined) { networkObj.testCycles = 0; }
+              if (networkObj.testCycleHistory === undefined) { networkObj.testCycleHistory = []; }
 
               statsObj.numNetworksUpdated += 1;
 
@@ -1140,6 +1142,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
                 + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
                 + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
                 + " | TEST CYCs: " + networkObj.testCycles
+                + " | TCs HISTORY: " + networkObj.testCycleHistory.length
                 + " | CR: " + getTimeStamp(networkObj.createdAt)
                 + " | IN: " + networkObj.numInputs
                 + " | " + networkObj.networkId
@@ -1176,6 +1179,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
             if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
             if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
             if (networkObj.testCycles === undefined) { networkObj.testCycles = 0; }
+            if (networkObj.testCycleHistory === undefined) { networkObj.testCycleHistory = []; }
 
             if (
               (networkObj.overallMatchRate === 0)
@@ -3540,6 +3544,8 @@ function initSocket(cnf) {
         if (networkObj.successRate === undefined) { networkObj.successRate = 0; }
         if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
         if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
+        if (networkObj.testCycles === undefined) { networkObj.testCycles = 0; }
+        if (networkObj.testCycleHistory === undefined) { networkObj.testCycleHistory = []; }
         if (networkObj.numInputs === undefined) { networkObj.numInputs = networkObj.network.input; }
 
         console.log(chalkInfo("+0+ UPDATED NN"
@@ -3547,6 +3553,7 @@ function initSocket(cnf) {
           + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
           + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
           + " | TEST CYCs: " + networkObj.testCycles
+          + " | TCs HISTORY: " + networkObj.testCycleHistory.length
           + " | CR: " + getTimeStamp(networkObj.createdAt)
           + " | IN: " + networkObj.numInputs
           + " | " + networkObj.networkId
