@@ -929,14 +929,19 @@ function loadNetworks(networksObj, callback){
 
   loadNetworksBusy = true;
 
-  debug("networksObj\n" + Object.keys(networksObj));
 
   const nnIds = Object.keys(networksObj);
 
   async.eachSeries(nnIds, function(nnId, cb){
 
-    // let networkObj = deepcopy(networksObj[nnId]);
     let networkObj = networksObj[nnId];
+
+    if (networkObj.network.input === undefined) {
+      console.log(chalkError("*** LOAD NETWORK INPUT UNDEFINED: " + networkObj.networkId));
+      return cb();
+    }
+
+    console.log(chalkLog("RNT | LOAD NETWORK | " + networkObj.network);
 
     const network = neataptic.Network.fromJSON(networkObj.network);
 
@@ -1204,9 +1209,11 @@ process.on("message", function(m) {
     break;
 
     case "LOAD_NETWORKS":
+
       console.log(chalkAlert("RNT | LOAD_NETWORKS"
         + " | " + Object.keys(m.networksObj).length + " NNs"
       ));
+
       loadNetworks(m.networksObj, function(){
         statsObj.networksLoaded = true;
         process.send({op: "NETWORK_READY"}, function(err){
@@ -1216,6 +1223,7 @@ process.on("message", function(m) {
           }
         });
       });
+
     break;
     
     case "ACTIVATE":
