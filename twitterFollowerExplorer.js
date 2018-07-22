@@ -3132,6 +3132,7 @@ function initProcessUserQueueInterval(interval) {
 
         statsObj.users.grandTotalFriendsProcessed += 1;
         statsObj.users.totalFriendsProcessed += 1;
+
         statsObj.users.totalPercentProcessed = 100*statsObj.users.totalFriendsProcessed/statsObj.users.totalFriendsCount;
 
         if (statsObj.user[tcUser] === undefined) {
@@ -3763,19 +3764,26 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         checkChildrenState(m.op);
       break;
       case "THREECEE_USER":
+
         console.log(chalkInfo("TFC | R> THREECEE_USER"
           + " | @" + m.threeceeUser.screenName
           + " | Ts: " + m.threeceeUser.statusesCount
           + " | FRNDs: " + m.threeceeUser.friendsCount
           + " | FLWRs: " + m.threeceeUser.followersCount
         ));
+
         statsObj.user[m.threeceeUser.screenName.toLowerCase()].statusesCount = m.threeceeUser.statusesCount;
         statsObj.user[m.threeceeUser.screenName.toLowerCase()].friendsCount = m.threeceeUser.friendsCount;
         statsObj.user[m.threeceeUser.screenName.toLowerCase()].followersCount = m.threeceeUser.followersCount;
+
         statsObj.users.totalFriendsCount = 0;
+
         Object.keys(statsObj.user).forEach(function(tcUser) {
-          statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;
+
+          if (statsObj.user[tcUser] !== undefined) { statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;}
+
         });
+        
       break;
       case "FRIENDS_IDS":
         twitterUserHashMap[m.threeceeUser].friends = new Set(m.friendsIds);
@@ -3962,14 +3970,24 @@ function initTwitterUsers(callback) {
         });
       });
     }, function(err) {
+
       statsObj.users.totalFriendsCount = 0;
       statsObj.users.totalFriendsFetched = 0;
+
       configuration.twitterUsers.forEach(function(tUserScreenName) {
-        statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
-        statsObj.users.totalFriendsCount += statsObj.user[tUserScreenName].friendsCount;
-        statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalFriendsCount;
+
+        if (statsObj.user[tUserScreenName] !== undefined) {
+
+          statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
+          statsObj.users.totalFriendsCount += statsObj.user[tUserScreenName].friendsCount;
+          statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalFriendsCount;
+
+        }
+
       });
+
       statsObj.users.grandTotalFriendsFetched += statsObj.users.totalFriendsFetched;
+
       console.log(chalkTwitterBold("====================================================================="
         + "\n====================================================================="
       ));
