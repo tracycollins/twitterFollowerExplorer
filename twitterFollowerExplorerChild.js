@@ -649,9 +649,16 @@ function getPreviousPauseState() {
 }
 
 function reporter(event, oldState, newState) {
+
   if (newState === "PAUSE_RATE_LIMIT") {
-    fsmPreviousPauseState = oldState;
+    if (oldState === "PAUSE_RATE_LIMIT") {
+      fsmPreviousPauseState = "FETCH_USER";
+    }
+    else {
+      fsmPreviousPauseState = oldState;
+    }
   }
+
   fsmPreviousState = oldState;
   console.log(chalkLog("--------------------------------------------------------\n"
     + "<< FSM >>"
@@ -768,7 +775,6 @@ const fsmStates = {
       process.send({op:"FETCH_END", threeceeUser: configuration.threeceeUser});
       console.log("FETCH_END | PREV STATE: " + oldState);
     },
-    // "fsm_rateLimitEnd": "INIT",
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_error": "ERROR",
