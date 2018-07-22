@@ -230,7 +230,6 @@ function checkRateLimit(callback){
 
         statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
         statsObj.threeceeUser.twitterRateLimitRemaining = data.resources.users["/users/show/:id"].remaining;
-        // statsObj.threeceeUser.twitterRateLimitResetAt = moment(1000*data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
@@ -249,7 +248,6 @@ function checkRateLimit(callback){
 
         statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
         statsObj.threeceeUser.twitterRateLimitRemaining = data.resources.users["/users/show/:id"].remaining;
-        // statsObj.threeceeUser.twitterRateLimitResetAt = moment(1000*data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
