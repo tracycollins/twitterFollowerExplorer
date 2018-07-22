@@ -248,7 +248,6 @@ function checkRateLimit(callback){
         statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
-
         console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
           + " | @" + configuration.threeceeUser
           + " | CONTEXT: " + data.rate_limit_context.access_token
@@ -792,7 +791,10 @@ const fsmStates = {
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
     "fsm_rateLimitEnd": function(){
-      return getPreviousPauseState();
+
+      twitterUserUpdate({userScreenName: statsObj.threeceeUser.screenName}, function(err){
+        return getPreviousPauseState();
+      });
     },
     "fsm_fetchUserEnd": "FETCH_END"
   },

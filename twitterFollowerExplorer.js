@@ -3150,6 +3150,10 @@ function initProcessUserQueueInterval(interval) {
 
           statsObj.user[tcUser].friendsProcessElapsed = moment().diff(statsObj.user[tcUser].friendsProcessStart);
 
+          if (statsObj.user[tcUser].friendsCount < statsObj.user[tcUser].friendsProcessed) {
+            statsObj.user[tcUser].friendsCount = statsObj.user[tcUser].friendsProcessed;
+          }
+
           console.log(chalkBlue("<FRND PRCSSD"
             + " [ Q: " + processUserQueue.length + " ]"
             + " | @" + tcUser
@@ -3977,7 +3981,7 @@ function initTwitterUsers(callback) {
         });
 
       });
-      
+
     }, function(err) {
 
       statsObj.users.totalFriendsCount = 0;
