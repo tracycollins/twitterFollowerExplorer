@@ -936,12 +936,12 @@ function loadNetworks(networksObj, callback){
 
     let networkObj = networksObj[nnId];
 
-    if (networkObj.network.input === undefined) {
+    if (networkObj.network === undefined) {
       console.log(chalkError("*** LOAD NETWORK INPUT UNDEFINED: " + networkObj.networkId));
       return cb();
     }
 
-    console.log(chalkLog("RNT | LOAD NETWORK | " + jsonPrint(networkObj.network)));
+    console.log(chalkLog("RNT | LOAD NETWORK\nKEYS: " + Object.keys(networkObj.network)));
 
     const network = neataptic.Network.fromJSON(networkObj.network);
 
