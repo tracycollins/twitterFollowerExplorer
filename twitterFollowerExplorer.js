@@ -3783,7 +3783,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
           if (statsObj.user[tcUser] !== undefined) { statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;}
 
         });
-        
+
       break;
       case "FRIENDS_IDS":
         twitterUserHashMap[m.threeceeUser].friends = new Set(m.friendsIds);
@@ -3951,12 +3951,17 @@ function initTwitterUsers(callback) {
     ));
 
     async.each(configuration.twitterUsers, function(userScreenName, cb) {
+
       userScreenName = userScreenName.toLowerCase();
+
       console.log(chalkTwitter("TFE | INIT TWITTER USER @" + userScreenName));
+
       twitterUserHashMap[userScreenName] = {};
       twitterUserHashMap[userScreenName].threeceeUser = userScreenName;
       twitterUserHashMap[userScreenName].friends = new Set();
+
       initTwitter(userScreenName, function(err, twitObj) {
+
         if (err) {
           console.log(chalkError("INIT TWITTER ERROR: " + err.message));
           if (err.code === 88) {
@@ -3964,11 +3969,15 @@ function initTwitterUsers(callback) {
           }
           return cb(err);
         }
+
         debug("INIT TWITTER twitObj\n" + jsonPrint(twitObj));
+
         resetTwitterUserState(userScreenName, function() {
           cb();
         });
+
       });
+      
     }, function(err) {
 
       statsObj.users.totalFriendsCount = 0;
