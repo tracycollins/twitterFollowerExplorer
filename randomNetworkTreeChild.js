@@ -941,7 +941,7 @@ function loadNetworks(networksObj, callback){
       return cb();
     }
 
-    console.log(chalkLog("RNT | LOAD NETWORK | " + networkObj.network);
+    console.log(chalkLog("RNT | LOAD NETWORK | " + networkObj.network));
 
     const network = neataptic.Network.fromJSON(networkObj.network);
 
