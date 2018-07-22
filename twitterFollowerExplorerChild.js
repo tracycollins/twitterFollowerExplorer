@@ -203,8 +203,14 @@ function checkRateLimit(callback){
         ));
       }
 
+      // if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
+      //   && statsObj.threeceeUser.twitterRateLimitResetAt.isBefore(moment())){
       if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
-        && statsObj.threeceeUser.twitterRateLimitResetAt.isBefore(moment())){
+        && (
+          (statsObj.threeceeUser.twitterRateLimitRemaining > 0) 
+          || statsObj.threeceeUser.twitterRateLimitResetAt.isBefore(moment()))
+        )
+      {
 
         statsObj.threeceeUser.twitterRateLimitExceptionFlag = false;
 
