@@ -234,10 +234,17 @@ function checkRateLimit(callback){
 
       // if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
       //   && statsObj.threeceeUser.twitterRateLimitResetAt.isBefore(moment())){
+      // if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
+      //   && (
+      //     (statsObj.threeceeUser.twitterRateLimitRemaining > 0) 
+      //     || statsObj.threeceeUser.twitterRateLimitResetAt.isBefore(moment()))
+      //   )
+      // {
+
       if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
         && (
-          (statsObj.threeceeUser.twitterRateLimitRemaining > 0) 
-          || statsObj.threeceeUser.twitterRateLimitResetAt.isBefore(moment()))
+          (data.resources.users["/users/show/:id"].remaining > 0) 
+          || moment.unix(data.resources.users["/users/show/:id"].reset).isBefore(moment()))
         )
       {
 
