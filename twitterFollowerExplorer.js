@@ -2358,33 +2358,47 @@ const checkChildrenState = function (checkState, callback) {
 
     const cs = (tfeChildHashMap[user].status === checkState);
 
-    // if (!cs && (params.checkState === "INIT") && (tfeChildHashMap[user].status === "RESET")){
-
-    //   const initObj = {
-    //     op: "INIT",
-    //     childId: tfeChildHashMap[user].childId,
-    //     threeceeUser: tfeChildHashMap[user].threeceeUser,
-    //     twitterConfig: tfeChildHashMap[user].twitterConfig,
-    //     verbose: configuration.verbose
-    //   };
-
-    //   tfeChildHashMap[user].child.send(initObj, function(err) {
-    //     if (err) {
-    //       console.log(chalkError("*** CHILD SEND INIT ERROR"
-    //         + " | @" + user
-    //         + " | ERR: " + err
-    //       ));
-    //     }
-    //   });
-
-    // }
-
     if (!cs && (checkState === "FETCH_END") 
       && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
 
       tfeChildHashMap[user].child.send({op: "FETCH_END", verbose: configuration.verbose}, function(err) {
         if (err) {
           console.log(chalkError("*** CHILD SEND FETCH_END ERROR"
+            + " | @" + user
+            + " | ERR: " + err
+          ));
+        }
+      });
+
+    }
+
+    if (!cs && (checkState === "READY") && (tfeChildHashMap[user].status === "INIT")){
+
+      tfeChildHashMap[user].child.send({op: "READY", verbose: configuration.verbose}, function(err) {
+        if (err) {
+          console.log(chalkError("*** CHILD SEND READY ERROR"
+            + " | @" + user
+            + " | ERR: " + err
+          ));
+        }
+      });
+
+    }
+
+    if (!cs && (checkState === "INIT") 
+      && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
+
+      const initObj = {
+        op: "INIT",
+        childId: tfeChildHashMap[user].childId,
+        threeceeUser: tfeChildHashMap[user].threeceeUser,
+        twitterConfig: tfeChildHashMap[user].twitterConfig,
+        verbose: configuration.verbose
+      };
+
+      tfeChildHashMap[user].child.send(initObj, function(err) {
+        if (err) {
+          console.log(chalkError("*** CHILD SEND INIT ERROR"
             + " | @" + user
             + " | ERR: " + err
           ));
@@ -3715,9 +3729,11 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
   const tfeChild = cp.fork(`twitterFollowerExplorerChild.js`, childEnv );
 
+  tfeChildHashMap[user].child = tfeChild;
+
   let slackText = "";
 
-  tfeChild.on("message", function(m) {
+  tfeChildHashMap[user].child.on("message", function(m) {
 
     debug(chalkAlert("tfeChild RX"
       + " | " + m.op
@@ -3859,7 +3875,8 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         quit("UNKNOWN OP" + m.op);
     }
   });
-  tfeChild.on("error", function(err) {
+
+  tfeChildHashMap[user].child.on("error", function(err) {
 
     if (tfeChildHashMap[user]) {
 
@@ -3886,13 +3903,15 @@ function initTwitterFollowerChild(twitterConfig, callback) {
       }
     }
   });
-  tfeChild.on("exit", function(err) {
+
+  tfeChildHashMap[user].child.on("exit", function(err) {
     if (tfeChildHashMap[user]) {
       tfeChildHashMap[user].status = "EXIT";
     }
     console.log(chalkError("*** tfeChildHashMap " + user + " EXIT *** : " + err));
   });
-  tfeChild.on("close", function(code) {
+
+  tfeChildHashMap[user].child.on("close", function(code) {
     if (tfeChildHashMap[user]) {
       tfeChildHashMap[user].status = "CLOSE";
  
@@ -3916,7 +3935,9 @@ function initTwitterFollowerChild(twitterConfig, callback) {
     }
     console.log(chalkError("*** tfeChildHashMap " + user + " CLOSE *** : " + code));
   });
-  tfeChildHashMap[user].child = tfeChild;
+
+  // tfeChildHashMap[user].child = tfeChild;
+
   if (callback !== undefined) { callback(null, user); }
 }
 

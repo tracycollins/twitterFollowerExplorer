@@ -103,7 +103,6 @@ threeceeUserDefaults.count = configuration.fetchCount;
 threeceeUserDefaults.endFetch = false;
 threeceeUserDefaults.nextCursor = false;
 threeceeUserDefaults.nextCursorValid = false;
-threeceeUserDefaults.totalFriends = 0;
 threeceeUserDefaults.friendsFetched = 0;
 threeceeUserDefaults.totalPercentFetched = 0;
 
@@ -194,7 +193,6 @@ function resetTwitterUserState(){
   statsObj.threeceeUser.endFetch = false;
   statsObj.threeceeUser.nextCursor = false;
   statsObj.threeceeUser.nextCursorValid = false;
-  statsObj.threeceeUser.totalFriends = 0;
   statsObj.threeceeUser.friendsFetched = 0;
   statsObj.threeceeUser.twitterRateLimit = 0;
   statsObj.threeceeUser.twitterRateLimitException = moment();
