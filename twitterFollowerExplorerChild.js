@@ -130,6 +130,12 @@ statsObj.threeceeUser.prevCursorValid = false;
 statsObj.threeceeUser.prevCursor = -1;
 statsObj.threeceeUser.totalPercentFetched = 0;
 
+statsObj.threeceeUser.twitterRateLimit = 0;
+statsObj.threeceeUser.twitterRateLimitException = moment();
+statsObj.threeceeUser.twitterRateLimitExceptionFlag = false;
+statsObj.threeceeUser.twitterRateLimitRemaining = 0;
+statsObj.threeceeUser.twitterRateLimitRemainingTime = 0;
+statsObj.threeceeUser.twitterRateLimitResetAt = moment();
 
 statsObj.hostname = hostname;
 statsObj.startTimeMoment = moment();
@@ -191,6 +197,7 @@ function resetTwitterUserState(){
   statsObj.threeceeUser.totalFriends = 0;
   statsObj.threeceeUser.friendsFetched = 0;
   statsObj.threeceeUser.twitterRateLimit = 0;
+  statsObj.threeceeUser.twitterRateLimitException = moment();
   statsObj.threeceeUser.twitterRateLimitExceptionFlag = false;
   statsObj.threeceeUser.twitterRateLimitRemaining = 0;
   statsObj.threeceeUser.twitterRateLimitRemainingTime = 0;
@@ -240,8 +247,8 @@ function checkRateLimit(callback){
       //   )
       // {
 
-      if ((data.resources.users["/users/show/:id"].remaining > 0) 
-        || moment.unix(data.resources.users["/users/show/:id"].reset).isBefore(moment())){
+      // if ((data.resources.users["/users/show/:id"].remaining > 0) && moment.unix(data.resources.users["/users/show/:id"].reset).isBefore(moment())){
+      if (data.resources.users["/users/show/:id"].remaining > 0){
 
         statsObj.threeceeUser.twitterRateLimitExceptionFlag = false;
 
@@ -259,9 +266,9 @@ function checkRateLimit(callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
         ));
 
-        if (statsObj.fsmState === "PAUSE_RATE_LIMIT"){
-          fsm.fsm_rateLimitEnd();
-        }
+        // if (statsObj.fsmState === "PAUSE_RATE_LIMIT"){
+        fsm.fsm_rateLimitEnd();
+        // }
 
       }
       else if (data.resources.users["/users/show/:id"].remaining === 0){
@@ -270,8 +277,8 @@ function checkRateLimit(callback){
           statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
         }
 
-        if (statsObj.fsmState !== "PAUSE_RATE_LIMIT"){
-          fsm.fsm_rateLimitStart();
+        if (!statsObj.threeceeUser.twitterRateLimitException) {
+          statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
         }
 
         statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
@@ -279,16 +286,29 @@ function checkRateLimit(callback){
         statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
-        console.log(chalkLog("--- TWITTER RATE LIMIT"
-          + " | @" + configuration.threeceeUser
-          + " | CONTEXT: " + data.rate_limit_context.access_token
-          + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
-          + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
-          + " | EXP: " + statsObj.threeceeUser.twitterRateLimitException.format(compactDateTimeFormat)
-          + " | RST: " + statsObj.threeceeUser.twitterRateLimitResetAt.format(compactDateTimeFormat)
-          + " | NOW: " + moment().format(compactDateTimeFormat)
-          + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
-        ));
+        if (statsObj.fsmState !== "PAUSE_RATE_LIMIT"){
+          console.log(chalkAlert("*** TWITTER SHOW USER ERROR | RATE LIMIT EXCEEDED" 
+            + " | @" + configuration.threeceeUser
+            + " | CONTEXT: " + data.rate_limit_context.access_token
+            + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
+            + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
+            + " | EXP: " + statsObj.threeceeUser.twitterRateLimitException.format(compactDateTimeFormat)
+            + " | NOW: " + moment().format(compactDateTimeFormat)
+          ));
+          fsm.fsm_rateLimitStart();
+        }
+        else {
+          console.log(chalkLog("--- TWITTER RATE LIMIT"
+            + " | @" + configuration.threeceeUser
+            + " | CONTEXT: " + data.rate_limit_context.access_token
+            + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
+            + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
+            + " | EXP: " + statsObj.threeceeUser.twitterRateLimitException.format(compactDateTimeFormat)
+            + " | RST: " + statsObj.threeceeUser.twitterRateLimitResetAt.format(compactDateTimeFormat)
+            + " | NOW: " + moment().format(compactDateTimeFormat)
+            + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
+          ));
+        }
       }
       else if (statsObj.threeceeUser.twitterRateLimitExceptionFlag){
 
@@ -494,118 +514,6 @@ function twitterUserUpdate(params, callback){
 
   });
 
-  // twitClient.get("users/show", {screen_name: configuration.threeceeUser}, function(err, userShowData, response) {
-  
-  //   if (err){
-
-  //     console.log(chalkError("*** TWITTER SHOW USER ERROR"
-  //       + " | @" + configuration.threeceeUser 
-  //       + " | " + getTimeStamp() 
-  //       + " | ERR CODE: " + err.code
-  //       + " | " + err.message
-  //     ));
-
-  //     if (err.code === 88){
-
-  //       console.log(chalkAlert("*** TWITTER SHOW USER ERROR | RATE LIMIT EXCEEDED" 
-  //         + " | " + getTimeStamp() 
-  //         + " | @" + configuration.threeceeUser 
-  //       ));
-
-
-  //       statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
-
-  //       statsObj.threeceeUser.twitterRateLimitException = moment();
-  //       statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
-  //       statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
-
-  //       checkRateLimit();
-
-  //       fsm.fsm_rateLimitStart();
-
-  //       process.send({op:"THREECEE_USER", threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
-
-  //     }
-
-  //     return callback(err);
-
-  //   }
-
-  //   statsObj.threeceeUser.id = userShowData.id_str;
-  //   statsObj.threeceeUser.name = (userShowData.name !== undefined) ? userShowData.name : "";
-  //   statsObj.threeceeUser.screenName = (userShowData.screen_name !== undefined) ? userShowData.screen_name.toLowerCase() : "";
-  //   statsObj.threeceeUser.description = userShowData.description;
-  //   statsObj.threeceeUser.url = userShowData.url;
-  //   statsObj.threeceeUser.statusesCount = userShowData.statuses_count;
-  //   statsObj.threeceeUser.friendsCount = userShowData.friends_count;
-  //   statsObj.threeceeUser.followersCount = userShowData.followers_count;
-  //   statsObj.threeceeUser.count = configuration.fetchCount;
-
-
-  //   process.send({op:"THREECEE_USER", threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
-
-    // twitClient.get("friends/ids", {screen_name: configuration.threeceeUser}, function(err, userFriendsIds, response) {
-
-    //   if (err){
-
-    //     console.log(chalkError("*** TWITTER USER FRIENDS IDS ERROR"
-    //       + " | @" + configuration.threeceeUser 
-    //       + " | " + getTimeStamp() 
-    //       + " | ERR CODE: " + err.code
-    //       + " | " + err.message
-    //     ));
-
-    //     if (err.code === 88){
-    //       console.log(chalkAlert("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
-    //         + " | " + getTimeStamp() 
-    //         + " | @" + configuration.threeceeUser 
-    //       ));
-    //       statsObj.threeceeUser.twitterRateLimitException = moment();
-    //       statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
-    //       statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
-    //       checkRateLimit();
-    //       fsm.fsm_rateLimitStart();
-    //     }
-
-    //     callback(err);
-
-    //   }
-    //   else {
-
-    //     process.send({op:"FRIENDS_IDS", threeceeUser: configuration.threeceeUser, friendsIds: userFriendsIds.ids});
-
-    //     // statsObj.threeceeUser.friends = userFriendsIds.ids;
-    //     statsObj.threeceeUser.nextCursorValid = statsObj.threeceeUser.nextCursorValid || false;
-    //     statsObj.threeceeUser.nextCursor = statsObj.threeceeUser.nextCursor || -1;
-    //     statsObj.threeceeUser.prevCursorValid = statsObj.threeceeUser.prevCursorValid || false;
-    //     statsObj.threeceeUser.prevCursor = statsObj.threeceeUser.prevCursor || -1;
-
-    //     console.log(chalkLog("friends/ids"
-    //       + " | @" + configuration.threeceeUser 
-    //       + " | IDs: " + userFriendsIds.ids.length
-    //       + " | PREV CURSOR: " + userFriendsIds.previous_cursor_str
-    //       + " | NEXT CURSOR: " + userFriendsIds.next_cursor_str
-    //     ));
-
-    //     console.log(chalkTwitterBold("====================================================================="
-    //       + "\nTWITTER USER"
-    //       + " | @" + statsObj.threeceeUser.screenName 
-    //       + " | " + statsObj.threeceeUser.name 
-    //       + "\nNEXT CURSOR VALID: " + statsObj.threeceeUser.nextCursorValid 
-    //       + " | NEXT CURSOR: " + statsObj.threeceeUser.nextCursor 
-    //       + "\nTs: " + statsObj.threeceeUser.statusesCount 
-    //       + " | FLWRs: " + statsObj.threeceeUser.followersCount
-    //       + " | FRNDS: " + statsObj.threeceeUser.friendsCount 
-    //       + " | FRNDS IDs: " + userFriendsIds.ids.length 
-    //       + "\n====================================================================="
-    //     ));
-
-    //     callback(null);
-    //   }
-
-
-    // });
-  // });
 }
 
 let friendMinProps = {
@@ -1030,10 +938,10 @@ const fsmStates = {
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       process.send({op:"PAUSE_RATE_LIMIT", threeceeUser: configuration.threeceeUser});
-      console.log("PAUSE_RATE_LIMIT | PREV STATE: " + oldState);
+      // console.log("PAUSE_RATE_LIMIT | PREV STATE: " + oldState);
     },
 
-    "fsm_init": "INIT",
+    // "fsm_init": "INIT",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
 
