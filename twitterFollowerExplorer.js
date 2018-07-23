@@ -2372,11 +2372,20 @@ const checkChildrenState = function (checkState, callback) {
 
     }
 
-    // if (!cs && (checkState === "READY") && (tfeChildHashMap[user].status === "INIT")){
+    // if (!cs && (checkState === "INIT") 
+    //   && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
 
-    //   tfeChildHashMap[user].child.send({op: "READY", verbose: configuration.verbose}, function(err) {
+    //   const initObj = {
+    //     op: "INIT",
+    //     childId: tfeChildHashMap[user].childId,
+    //     threeceeUser: tfeChildHashMap[user].threeceeUser,
+    //     twitterConfig: tfeChildHashMap[user].twitterConfig,
+    //     verbose: configuration.verbose
+    //   };
+
+    //   tfeChildHashMap[user].child.send(initObj, function(err) {
     //     if (err) {
-    //       console.log(chalkError("*** CHILD SEND READY ERROR"
+    //       console.log(chalkError("*** CHILD SEND INIT ERROR"
     //         + " | @" + user
     //         + " | ERR: " + err
     //       ));
@@ -2384,28 +2393,6 @@ const checkChildrenState = function (checkState, callback) {
     //   });
 
     // }
-
-    if (!cs && (checkState === "INIT") 
-      && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
-
-      const initObj = {
-        op: "INIT",
-        childId: tfeChildHashMap[user].childId,
-        threeceeUser: tfeChildHashMap[user].threeceeUser,
-        twitterConfig: tfeChildHashMap[user].twitterConfig,
-        verbose: configuration.verbose
-      };
-
-      tfeChildHashMap[user].child.send(initObj, function(err) {
-        if (err) {
-          console.log(chalkError("*** CHILD SEND INIT ERROR"
-            + " | @" + user
-            + " | ERR: " + err
-          ));
-        }
-      });
-
-    }
 
     cb(null, cs);
 
