@@ -229,15 +229,6 @@ function checkRateLimit(callback){
         ));
       }
 
-      // if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
-      //   && statsObj.threeceeUser.twitterRateLimitResetAt.isBefore(moment())){
-      // if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
-      //   && (
-      //     (statsObj.threeceeUser.twitterRateLimitRemaining > 0) 
-      //     || statsObj.threeceeUser.twitterRateLimitResetAt.isBefore(moment()))
-      //   )
-      // {
-
       if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
         && (
           (data.resources.users["/users/show/:id"].remaining > 0) 
