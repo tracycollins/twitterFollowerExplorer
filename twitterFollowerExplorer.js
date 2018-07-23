@@ -2372,18 +2372,18 @@ const checkChildrenState = function (checkState, callback) {
 
     }
 
-    if (!cs && (checkState === "READY") && (tfeChildHashMap[user].status === "INIT")){
+    // if (!cs && (checkState === "READY") && (tfeChildHashMap[user].status === "INIT")){
 
-      tfeChildHashMap[user].child.send({op: "READY", verbose: configuration.verbose}, function(err) {
-        if (err) {
-          console.log(chalkError("*** CHILD SEND READY ERROR"
-            + " | @" + user
-            + " | ERR: " + err
-          ));
-        }
-      });
+    //   tfeChildHashMap[user].child.send({op: "READY", verbose: configuration.verbose}, function(err) {
+    //     if (err) {
+    //       console.log(chalkError("*** CHILD SEND READY ERROR"
+    //         + " | @" + user
+    //         + " | ERR: " + err
+    //       ));
+    //     }
+    //   });
 
-    }
+    // }
 
     if (!cs && (checkState === "INIT") 
       && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
