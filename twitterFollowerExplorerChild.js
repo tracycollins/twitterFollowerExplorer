@@ -851,6 +851,11 @@ const fsmStates = {
       return this.RESET;
     },
 
+    "fsm_rateLimitStart": function(){
+      fsmPreviousPauseState = "RESET";
+      return this.PAUSE_RATE_LIMIT;
+    },
+
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_reset": "RESET",
     "fsm_init": "INIT",
@@ -864,6 +869,11 @@ const fsmStates = {
       reporter(event, oldState, newState);
       process.send({op:"INIT", threeceeUser: configuration.threeceeUser});
       return this.INIT;
+    },
+
+    "fsm_rateLimitStart": function(){
+      fsmPreviousPauseState = "INIT";
+      return this.PAUSE_RATE_LIMIT;
     },
 
     "fsm_fetchUserEnd": "FETCH_END",
