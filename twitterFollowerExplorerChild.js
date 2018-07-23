@@ -642,7 +642,8 @@ function fetchFriends(params, callback) {
 
 function getPreviousPauseState() {
   if (fsmPreviousPauseState === "PAUSE_RATE_LIMIT") {
-    return "FETCH_USER";
+    fsmPreviousPauseState = "FETCH_USER";
+    // return "FETCH_USER";
   }
   return fsmPreviousPauseState;
 }
@@ -653,6 +654,7 @@ function reporter(event, oldState, newState) {
 
   if (newState === "PAUSE_RATE_LIMIT") {
     if (oldState === "PAUSE_RATE_LIMIT") {
+      oldState = "FETCH_USER";
       fsmPreviousPauseState = "FETCH_USER";
     }
     else {
