@@ -103,13 +103,9 @@ threeceeUserDefaults.count = configuration.fetchCount;
 threeceeUserDefaults.endFetch = false;
 threeceeUserDefaults.nextCursor = false;
 threeceeUserDefaults.nextCursorValid = false;
-threeceeUserDefaults.totalFriendsFetched = 0;
-
-threeceeUserDefaults.friendsProcessed = 0;
-threeceeUserDefaults.percentProcessed = 0;
-threeceeUserDefaults.friendsProcessStart = moment();
-threeceeUserDefaults.friendsProcessEnd = moment();
-threeceeUserDefaults.friendsProcessElapsed = 0;
+threeceeUserDefaults.totalFriends = 0;
+threeceeUserDefaults.friendsFetched = 0;
+threeceeUserDefaults.totalPercentFetched = 0;
 
 threeceeUserDefaults.twitterRateLimit = 0;
 threeceeUserDefaults.twitterRateLimitExceptionFlag = false;
@@ -190,7 +186,8 @@ function resetTwitterUserState(){
   statsObj.threeceeUser.endFetch = false;
   statsObj.threeceeUser.nextCursor = false;
   statsObj.threeceeUser.nextCursorValid = false;
-  statsObj.threeceeUser.totalFriendsFetched = 0;
+  statsObj.threeceeUser.totalFriends = 0;
+  statsObj.threeceeUser.friendsFetched = 0;
   statsObj.threeceeUser.twitterRateLimit = 0;
   statsObj.threeceeUser.twitterRateLimitExceptionFlag = false;
   statsObj.threeceeUser.twitterRateLimitRemaining = 0;
@@ -199,11 +196,6 @@ function resetTwitterUserState(){
   statsObj.threeceeUser.friendsCount = 0;
   statsObj.threeceeUser.followersCount = 0;
   statsObj.threeceeUser.statusesCount = 0;
-  statsObj.threeceeUser.friendsProcessed = 0;
-  statsObj.threeceeUser.percentProcessed = 0;
-  statsObj.threeceeUser.friendsProcessStart = moment();
-  statsObj.threeceeUser.friendsProcessEnd = moment();
-  statsObj.threeceeUser.friendsProcessElapsed = 0;
 }
 
 function checkRateLimit(callback){
@@ -505,6 +497,7 @@ function fetchFriends(params, callback) {
             + " | RESPONSE: " + jsonPrint(response)
           ));
 
+          statsObj.threeceeUser.error = err;
 
           process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "FRIENDS_LIST", params: params, error: err });
 
@@ -515,13 +508,12 @@ function fetchFriends(params, callback) {
       }
       else {
 
-        statsObj.threeceeUser.totalFriendsFetched += data.users.length;
-        statsObj.threeceeUser.totalPercentFetched = 100*(statsObj.threeceeUser.totalFriendsFetched/statsObj.threeceeUser.friendsCount); 
+        statsObj.threeceeUser.friendsFetched += data.users.length;
         statsObj.threeceeUser.nextCursor = data.next_cursor_str;
-        statsObj.threeceeUser.percentFetched = 100*(statsObj.threeceeUser.totalFriendsFetched/statsObj.threeceeUser.friendsCount); 
+        statsObj.threeceeUser.percentFetched = 100*(statsObj.threeceeUser.friendsFetched/statsObj.threeceeUser.friendsCount); 
 
         if (configuration.testMode 
-          && (statsObj.threeceeUser.totalFriendsFetched >= TEST_MODE_TOTAL_FETCH)) {
+          && (statsObj.threeceeUser.friendsFetched >= TEST_MODE_TOTAL_FETCH)) {
 
           statsObj.threeceeUser.nextCursorValid = false;
           statsObj.threeceeUser.endFetch = true;
@@ -531,7 +523,7 @@ function fetchFriends(params, callback) {
             + "\n@" + configuration.threeceeUser
             + "\nTEST_MODE_FETCH_COUNT: " + TEST_MODE_FETCH_COUNT
             + "\nTEST_MODE_TOTAL_FETCH: " + TEST_MODE_TOTAL_FETCH
-            + "\nTOTAL FRIENDS FETCHED: " + statsObj.threeceeUser.totalFriendsFetched
+            + "\nFRIENDS FETCHED: " + statsObj.threeceeUser.friendsFetched
             + "\n=====================================\n"
           ));
 
@@ -550,7 +542,7 @@ function fetchFriends(params, callback) {
           + " | " + getTimeStamp()
           + " | @" + statsObj.threeceeUser.screenName
           + "\nFRIENDS:      " + statsObj.threeceeUser.friendsCount
-          + "\nTOT FETCHED:  " + statsObj.threeceeUser.totalFriendsFetched
+          + "\nFRNDs FETCHED:  " + statsObj.threeceeUser.friendsFetched
           + " (" + statsObj.threeceeUser.percentFetched.toFixed(1) + "%)"
           + "\nCOUNT:        " + configuration.fetchCount
           + "\nFETCHED:      " + data.users.length
@@ -892,9 +884,9 @@ function showStats(options){
     + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
     + "\nELAPSED: " + statsObj.elapsed
     + "\nFSM:     " + fsm.getMachineState()
-    + "\nU PRCSD: " + statsObj.threeceeUser.friendsProcessed + " / " + statsObj.threeceeUser.friendsCount
-    + " (" + statsObj.threeceeUser.percentProcessed.toFixed(2) + "%)"
-    + "\nT FTCHD: " + statsObj.threeceeUser.totalFriendsFetched + " / " + statsObj.threeceeUser.totalTwitterFriends
+    // + "\nU PRCSD: " + statsObj.threeceeUser.friendsProcessed + " / " + statsObj.threeceeUser.friendsCount
+    // + " (" + statsObj.threeceeUser.percentProcessed.toFixed(2) + "%)"
+    + "\nT FTCHD: " + statsObj.threeceeUser.friendsFetched + " / " + statsObj.threeceeUser.friendsCount
     + " (" + statsObj.threeceeUser.totalPercentFetched.toFixed(2) + "%)"
     + "\n------------------------------------------------\n"
   ));
