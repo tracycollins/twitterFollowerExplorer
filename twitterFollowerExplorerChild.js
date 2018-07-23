@@ -1427,9 +1427,9 @@ function initCheckRateLimitInterval(interval){
       + " | EXCEPTION: " + statsObj.threeceeUser.twitterRateLimitExceptionFlag
     ));
 
-    if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
-      checkRateLimit();
-    }
+    // if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
+    checkRateLimit();
+    // }
 
   }, interval);
 }
