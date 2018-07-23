@@ -532,13 +532,13 @@ function fetchFriends(params, callback) {
           + "---- END FETCH ----"
           + " | " + getTimeStamp()
           + " | @" + statsObj.threeceeUser.screenName
-          + "\nFRIENDS:      " + statsObj.threeceeUser.friendsCount
-          + "\nFRNDs FETCHED:  " + statsObj.threeceeUser.friendsFetched
+          + "\nFRIENDS:       " + statsObj.threeceeUser.friendsCount
+          + "\nFRNDs FETCHED: " + statsObj.threeceeUser.friendsFetched
           + " (" + statsObj.threeceeUser.percentFetched.toFixed(1) + "%)"
-          + "\nCOUNT:        " + configuration.fetchCount
-          + "\nFETCHED:      " + data.users.length
-          + "\nEND FETCH:    " + statsObj.threeceeUser.endFetch
-          + "\nMORE:         " + statsObj.threeceeUser.nextCursorValid
+          + "\nCOUNT:         " + configuration.fetchCount
+          + "\nFETCHED:       " + data.users.length
+          + "\nEND FETCH:     " + statsObj.threeceeUser.endFetch
+          + "\nMORE:          " + statsObj.threeceeUser.nextCursorValid
           + "\n==========================================================="
         ));
 

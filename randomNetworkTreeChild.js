@@ -597,7 +597,8 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           + "\nSR:           " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
           + "\nMR:           " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
           + "\nOAMR:         " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
-          + "\nTCYCs:         " + statsObj.bestNetwork.testCycles
+          + "\nTCs:          " + statsObj.bestNetwork.testCycles
+          + "\nTCH:          " + statsObj.bestNetwork.testCycleHistory.length
           + "\nPREV BEST:    " + previousBestNetworkMatchRate.toFixed(2) + "%" + " | ID: " + previousBestNetworkId
           + "\n==================================================================\n"
         ));
@@ -618,7 +619,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
             "AM",
             "AMM",
             "AMR",
-            "TCYCs",
+            "TCs",
             "TCH",
             "MFLAG",
             "OUTPUT",
