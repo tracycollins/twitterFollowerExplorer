@@ -114,7 +114,7 @@ threeceeUserDefaults.twitterRateLimitRemainingTime = 0;
 threeceeUserDefaults.twitterRateLimitResetAt = moment();
 
 let fsmPreviousState = "IDLE";
-let fsmPreviousPauseState;
+// let fsmPreviousPauseState;
 
 
 let statsObj = {};
@@ -819,27 +819,27 @@ function fetchFriends(params, callback) {
   }
 }
 
-function getPreviousPauseState() {
-  if (fsmPreviousPauseState === "PAUSE_RATE_LIMIT") {
-    fsmPreviousPauseState = "FETCH_USER";
-    // return "FETCH_USER";
-  }
-  return fsmPreviousPauseState;
-}
+// function getPreviousPauseState() {
+//   if (fsmPreviousPauseState === "PAUSE_RATE_LIMIT") {
+//     fsmPreviousPauseState = "FETCH_USER";
+//     // return "FETCH_USER";
+//   }
+//   return fsmPreviousPauseState;
+// }
 
 function reporter(event, oldState, newState) {
 
   statsObj.fsmState = newState;
 
-  if (newState === "PAUSE_RATE_LIMIT") {
-    if (oldState === "PAUSE_RATE_LIMIT") {
-      oldState = "FETCH_USER";
-      fsmPreviousPauseState = "FETCH_USER";
-    }
-    else {
-      fsmPreviousPauseState = oldState;
-    }
-  }
+  // if (newState === "PAUSE_RATE_LIMIT") {
+  //   if (oldState === "PAUSE_RATE_LIMIT") {
+  //     oldState = "FETCH_USER";
+  //     fsmPreviousPauseState = "FETCH_USER";
+  //   }
+  //   else {
+  //     fsmPreviousPauseState = oldState;
+  //   }
+  // }
 
   fsmPreviousState = oldState;
 
@@ -1021,13 +1021,14 @@ const fsmStates = {
     "fsm_init": "INIT",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
+    "fsm_rateLimitEnd": "FETCH_USER",
 
-    "fsm_rateLimitEnd": function(){
+    // "fsm_rateLimitEnd": function(){
 
-      twitterUserUpdate({userScreenName: statsObj.threeceeUser.screenName}, function(err){
-        return getPreviousPauseState();
-      });
-    },
+    //   twitterUserUpdate({userScreenName: statsObj.threeceeUser.screenName}, function(err){
+    //     return getPreviousPauseState();
+    //   });
+    // },
 
     "fsm_fetchUserEnd": "FETCH_END"
 
