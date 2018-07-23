@@ -621,6 +621,7 @@ function fetchFriends(params, callback) {
       statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
       console.log(chalkAlert("SKIP FETCH FRIENDS --- TWITTER RATE LIMIT"
+        + " | @" + threeceeUser
         + " | LIM " + statsObj.threeceeUser.twitterRateLimit
         + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
         + " | EXP @: " + statsObj.threeceeUser.twitterRateLimitException.format(compactDateTimeFormat)
@@ -647,6 +648,8 @@ function getPreviousPauseState() {
 }
 
 function reporter(event, oldState, newState) {
+
+  statsObj.fsmState = newState;
 
   if (newState === "PAUSE_RATE_LIMIT") {
     if (oldState === "PAUSE_RATE_LIMIT") {
