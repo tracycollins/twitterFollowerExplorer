@@ -338,7 +338,7 @@ function quit(cause){
   }, 1000);
 }
 
-function twitterUsersShow(params, callback){
+function twitterUsersShow(callback){
 
   twitClient.get("users/show", {screen_name: configuration.threeceeUser}, function(err, userShowData, response) {
 
@@ -397,7 +397,7 @@ function twitterUsersShow(params, callback){
 
 function twitterUserUpdate(params, callback){
 
-  twitterUsersShow(params, function(err){
+  twitterUsersShow(function(err){
 
     if (err){
 
@@ -898,6 +898,11 @@ const fsmStates = {
   "READY":{
 
     onEnter: function(event, oldState, newState){
+
+      if (statsObj.threeceeUser.friendsCount === 0){
+        twitterUsersShow(function(){});
+      }
+
       reporter(event, oldState, newState);
       process.send({op:"READY", threeceeUser: configuration.threeceeUser});
       return this.READY;
@@ -914,6 +919,11 @@ const fsmStates = {
   "FETCH_USER_START":{
 
     onEnter: function(event, oldState, newState){
+
+      if (statsObj.threeceeUser.friendsCount === 0){
+        twitterUsersShow(function(){});
+      }
+
       reporter(event, oldState, newState);
       fsm.fsm_fetchUser();
       process.send({op:"FETCH", threeceeUser: configuration.threeceeUser});
@@ -942,6 +952,10 @@ const fsmStates = {
       params.count = statsObj.threeceeUser.count;
       params.screen_name = configuration.threeceeUser;
       params.cursor = (statsObj.threeceeUser.nextCursorValid) ? statsObj.threeceeUser.nextCursor : -1;
+
+      if (statsObj.threeceeUser.friendsCount === 0){
+        twitterUsersShow(function(){});
+      }
 
       fetchFriends(params, function(err, results){
         if (err) {
