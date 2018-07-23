@@ -124,6 +124,8 @@ statsObj.threeceeUser.nextCursorValid = false;
 statsObj.threeceeUser.nextCursor = -1;
 statsObj.threeceeUser.prevCursorValid = false;
 statsObj.threeceeUser.prevCursor = -1;
+statsObj.threeceeUser.totalPercentFetched = 0;
+
 
 statsObj.hostname = hostname;
 statsObj.startTimeMoment = moment();

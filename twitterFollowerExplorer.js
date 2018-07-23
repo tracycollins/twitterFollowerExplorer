@@ -2906,6 +2906,8 @@ function showStats(options) {
     langAnalyzer.send({op: "STATS", options: options});
   }
 
+  childSendAll({op: "STATS"});
+
   if (options) {
     console.log("STATS\n" + jsonPrint(statsObj));
   }
@@ -3835,10 +3837,14 @@ function initTwitterFollowerChild(twitterConfig, callback) {
       break;
 
       case "STATS":
+
+        m.statsObj.startTimeMoment = getTimeStamp(m.statsObj.startTimeMoment);
+        m.statsObj.fetchAllIntervalStartMoment = getTimeStamp(m.statsObj.fetchAllIntervalStartMoment);
+
         console.log(chalkInfo("TFC | CHILD STATS"
           + " | " + m.threeceeUser
-          + getTimeStamp() + " ___________________________\n"
-          + jsonPrint(statsObj, "TFC | STATS ")
+          + " | " + getTimeStamp() + " ___________________________\n"
+          + jsonPrint(m.statsObj, "TFC | STATS ")
         ));
         console.log("TFC | CHILD STATS___________________________\n");
       break;
