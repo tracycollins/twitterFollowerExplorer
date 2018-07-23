@@ -219,6 +219,7 @@ function checkRateLimit(callback){
     else {
 
       if (configuration.verbose) {
+
         console.log(chalkLog("TWITTER RATE LIMIT STATUS"
           + " | @" + configuration.threeceeUser
           + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
@@ -227,14 +228,18 @@ function checkRateLimit(callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
           + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
         ));
+
       }
 
-      if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
-        && (
-          (data.resources.users["/users/show/:id"].remaining > 0) 
-          || moment.unix(data.resources.users["/users/show/:id"].reset).isBefore(moment()))
-        )
-      {
+      // if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
+      //   && (
+      //     (data.resources.users["/users/show/:id"].remaining > 0) 
+      //     || moment.unix(data.resources.users["/users/show/:id"].reset).isBefore(moment()))
+      //   )
+      // {
+
+      if ((data.resources.users["/users/show/:id"].remaining > 0) 
+        || moment.unix(data.resources.users["/users/show/:id"].reset).isBefore(moment())){
 
         statsObj.threeceeUser.twitterRateLimitExceptionFlag = false;
 
@@ -252,17 +257,19 @@ function checkRateLimit(callback){
           + " | NOW: " + moment().format(compactDateTimeFormat)
         ));
 
-        fsm.fsm_rateLimitEnd();
+        if (statsObj.fsmState === "PAUSE_RATE_LIMIT"){
+          fsm.fsm_rateLimitEnd();
+        }
+
       }
       else if (data.resources.users["/users/show/:id"].remaining === 0){
 
         if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
           statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
+        }
 
-          if (statsObj.fsmState !== "PAUSE_RATE_LIMIT"){
-            fsm.fsm_rateLimitStart();
-          }
-
+        if (statsObj.fsmState !== "PAUSE_RATE_LIMIT"){
+          fsm.fsm_rateLimitStart();
         }
 
         statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
@@ -1170,7 +1177,9 @@ function initTwitter(twitterConfig, callback){
           statsObj.threeceeUser.twitterRateLimitException = moment();
           statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
           statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+
           fsm.fsm_rateLimitStart();
+
           return(callback(null, null));
         }
         else {
