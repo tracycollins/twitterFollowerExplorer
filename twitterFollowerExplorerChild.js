@@ -240,35 +240,31 @@ function checkRateLimit(callback){
 
       }
 
-      // if (statsObj.threeceeUser.twitterRateLimitExceptionFlag 
-      //   && (
-      //     (data.resources.users["/users/show/:id"].remaining > 0) 
-      //     || moment.unix(data.resources.users["/users/show/:id"].reset).isBefore(moment()))
-      //   )
-      // {
-
-      // if ((data.resources.users["/users/show/:id"].remaining > 0) && moment.unix(data.resources.users["/users/show/:id"].reset).isBefore(moment())){
       if (data.resources.users["/users/show/:id"].remaining > 0){
-
-        statsObj.threeceeUser.twitterRateLimitExceptionFlag = false;
 
         statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
         statsObj.threeceeUser.twitterRateLimitRemaining = data.resources.users["/users/show/:id"].remaining;
         statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
-        console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
-          + " | @" + configuration.threeceeUser
-          + " | CONTEXT: " + data.rate_limit_context.access_token
-          + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
-          + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
-          + " | EXP: " + statsObj.threeceeUser.twitterRateLimitException.format(compactDateTimeFormat)
-          + " | NOW: " + moment().format(compactDateTimeFormat)
-        ));
+        if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
 
-        // if (statsObj.fsmState === "PAUSE_RATE_LIMIT"){
-        fsm.fsm_rateLimitEnd();
-        // }
+          statsObj.threeceeUser.twitterRateLimitExceptionFlag = false;
+
+          console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
+            + " | @" + configuration.threeceeUser
+            + " | CONTEXT: " + data.rate_limit_context.access_token
+            + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
+            + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
+            + " | EXP: " + statsObj.threeceeUser.twitterRateLimitException.format(compactDateTimeFormat)
+            + " | NOW: " + moment().format(compactDateTimeFormat)
+          ));
+
+        }
+
+        if (statsObj.fsmState === "PAUSE_RATE_LIMIT"){
+          fsm.fsm_rateLimitEnd();
+        }
 
       }
       else if (data.resources.users["/users/show/:id"].remaining === 0){
