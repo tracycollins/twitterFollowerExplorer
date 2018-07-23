@@ -3841,17 +3841,22 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         m.statsObj.startTimeMoment = getTimeStamp(m.statsObj.startTimeMoment);
         m.statsObj.fetchAllIntervalStartMoment = getTimeStamp(m.statsObj.fetchAllIntervalStartMoment);
 
+        tfeChildHashMap[m.threeceeUser].status = m.statsObj.fsmState;
+
         console.log(chalkInfo("TFC | CHILD STATS"
           + " | " + m.threeceeUser
           + " | " + getTimeStamp() + " ___________________________\n"
           + jsonPrint(m.statsObj, "TFC | STATS ")
         ));
+
         console.log("TFC | CHILD STATS___________________________\n");
+
+
       break;
 
       default:
-      console.log(chalkError("TFC | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
-      quit("UNKNOWN OP" + m.op);
+        console.log(chalkError("TFC | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
+        quit("UNKNOWN OP" + m.op);
     }
   });
   tfeChild.on("error", function(err) {
