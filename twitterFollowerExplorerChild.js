@@ -117,7 +117,13 @@ threeceeUserDefaults.twitterRateLimitRemaining = 0;
 threeceeUserDefaults.twitterRateLimitRemainingTime = 0;
 threeceeUserDefaults.twitterRateLimitResetAt = moment();
 
+let fsmPreviousState = "IDLE";
+let fsmPreviousPauseState;
+
+
 let statsObj = {};
+
+statsObj.fsmState = "IDLE";
 
 statsObj.threeceeUser = {};
 statsObj.threeceeUser.nextCursorValid = false;
@@ -142,9 +148,6 @@ statsObj.elapsed = 0;
 
 statsObj.users = {};
 statsObj.users.unfollowed = [];
-
-let fsmPreviousState = "IDLE";
-let fsmPreviousPauseState;
 
 
 function getTimeStamp(inputTime) {
@@ -654,6 +657,9 @@ function fetchFriends(params, callback) {
 }
 
 function getPreviousPauseState() {
+  if (fsmPreviousPauseState === "PAUSE_RATE_LIMIT") {
+    return "FETCH_USER";
+  }
   return fsmPreviousPauseState;
 }
 
@@ -669,6 +675,7 @@ function reporter(event, oldState, newState) {
   }
 
   fsmPreviousState = oldState;
+
   console.log(chalkLog("--------------------------------------------------------\n"
     + "<< FSM >>"
     + " @" + configuration.threeceeUser
@@ -677,10 +684,13 @@ function reporter(event, oldState, newState) {
     + " -> " + newState
     + "\n--------------------------------------------------------"
   ));
+
 }
 
 const fsmStates = {
+
   "RESET":{
+
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       resetTwitterUserState();
@@ -688,64 +698,87 @@ const fsmStates = {
       // fsm.fsm_init();
       return this.RESET;
     },
+
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_reset": "RESET",
     "fsm_init": "INIT",
     "fsm_error": "ERROR"
+
   },
+
   "INIT":{
+
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       process.send({op:"INIT", threeceeUser: configuration.threeceeUser});
       return this.INIT;
     },
+
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_ready": "READY",
     "fsm_reset": "RESET",
     "fsm_error": "ERROR"
+
   },
+
   "IDLE":{
+
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       process.send({op:"IDLE", threeceeUser: configuration.threeceeUser});
       return this.IDLE;
     },
+
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_reset": "RESET",
     "fsm_error": "ERROR"
   },
+
   "READY":{
+
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       process.send({op:"READY", threeceeUser: configuration.threeceeUser});
       return this.READY;
     },
+
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_reset": "RESET",
     "fsm_error": "ERROR",
     "fsm_fetchUserStart": "FETCH_USER_START"
+
   },
+
   "FETCH_USER_START":{
+
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       fsm.fsm_fetchUser();
       process.send({op:"FETCH", threeceeUser: configuration.threeceeUser});
       return this.FETCH_USER_START;
     },
+
     "fsm_init": "INIT",
     "fsm_reset": "RESET",
     "fsm_error": "ERROR",
     "fsm_fetchUser": "FETCH_USER",
     "fsm_fetchUserStart": "FETCH_USER_START",
     "fsm_fetchUserEnd": "FETCH_END"
+
   },
+
   "FETCH_USER":{
+
     onEnter: function(event, oldState, newState){
+
       reporter(event, oldState, newState);
+
       process.send({op:"FETCH", threeceeUser: configuration.threeceeUser});
+
       let params = {};
+
       params.count = statsObj.threeceeUser.count;
       params.screen_name = configuration.threeceeUser;
       params.cursor = (statsObj.threeceeUser.nextCursorValid) ? statsObj.threeceeUser.nextCursor : -1;
@@ -768,62 +801,71 @@ const fsmStates = {
       });
       return this.FETCH_USER;
     },
+
     "fsm_init": "INIT",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
     "fsm_fetchUserContinue": "FETCH_USER",
     "fsm_fetchUserEnd": "FETCH_END",
+
     "fsm_rateLimitStart": function(){
       fsmPreviousState = "FETCH_USER";
       return this.PAUSE_RATE_LIMIT;
     }
+
   },
   "FETCH_END":{
+
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       process.send({op:"FETCH_END", threeceeUser: configuration.threeceeUser});
       console.log("FETCH_END | PREV STATE: " + oldState);
     },
+
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET"
+
   },
-  "PAUSE_FETCH_USER":{
-    onEnter: reporter,
-    "fsm_init": "INIT",
-    "fsm_error": "ERROR",
-    "fsm_reset": "RESET",
-    "fsm_fetchUserEnd": "FETCH_END"
-  },
+
   "PAUSE_RATE_LIMIT":{
+
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       process.send({op:"PAUSE_RATE_LIMIT", threeceeUser: configuration.threeceeUser});
       console.log("PAUSE_RATE_LIMIT | PREV STATE: " + oldState);
     },
+
     "fsm_init": "INIT",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
+
     "fsm_rateLimitEnd": function(){
 
       twitterUserUpdate({userScreenName: statsObj.threeceeUser.screenName}, function(err){
         return getPreviousPauseState();
       });
     },
+
     "fsm_fetchUserEnd": "FETCH_END"
+
   },
   "ERROR":{
+
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       process.send({op:"ERROR", threeceeUser: configuration.threeceeUser});
       return this.ERROR;
     },
+
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET"
+
   }
+
 };
 
 fsm = Stately.machine(fsmStates);
