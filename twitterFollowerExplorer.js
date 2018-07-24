@@ -1985,7 +1985,7 @@ function generateAutoCategory(user, callback) {
                   + " | @" + user.screenName
                   + "\nTFE | bannerImageAnalyzed: " + user.bannerImageAnalyzed
                   + "\nTFE | bannerImageUrl: " + user.bannerImageUrl
-                  + "\nTFE | RESULTS: " + Object.keys(results.images)
+                  // + "\nTFE | RESULTS: " + Object.keys(results.images)
                 ));
               }
               else {
@@ -1993,7 +1993,7 @@ function generateAutoCategory(user, callback) {
                   + " | @" + user.screenName
                   + "\nTFE | bannerImageAnalyzed: " + user.bannerImageAnalyzed
                   + "\nTFE | bannerImageUrl: " + user.bannerImageUrl
-                  + "\nTFE | RESULTS: " + Object.keys(results.images)
+                  // + "\nTFE | RESULTS: " + Object.keys(results.images)
                 ));
               }
 
@@ -2372,28 +2372,6 @@ const checkChildrenState = function (checkState, callback) {
 
     }
 
-    // if (!cs && (checkState === "INIT") 
-    //   && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
-
-    //   const initObj = {
-    //     op: "INIT",
-    //     childId: tfeChildHashMap[user].childId,
-    //     threeceeUser: tfeChildHashMap[user].threeceeUser,
-    //     twitterConfig: tfeChildHashMap[user].twitterConfig,
-    //     verbose: configuration.verbose
-    //   };
-
-    //   tfeChildHashMap[user].child.send(initObj, function(err) {
-    //     if (err) {
-    //       console.log(chalkError("*** CHILD SEND INIT ERROR"
-    //         + " | @" + user
-    //         + " | ERR: " + err
-    //       ));
-    //     }
-    //   });
-
-    // }
-
     cb(null, cs);
 
   }, function(err, allCheckState) {
@@ -2413,7 +2391,7 @@ const checkChildrenState = function (checkState, callback) {
 
 function childSendAll(params, callback) {
 
-  console.log(chalkAlert(">>> CHILD SEND ALL | OP: " + params.op));
+  console.log(chalkLog(">>> CHILD SEND ALL | OP: " + params.op));
 
   async.each(Object.keys(tfeChildHashMap), function(threeceeUser, cb) {
 
@@ -2635,14 +2613,14 @@ const fsmStates = {
         console.log(chalk.bold.blue("TOTAL USERS FETCHED:   " + statsObj.users.totalFriendsFetched));
         console.log(chalk.bold.blue("TOTAL USERS PROCESSED: " + statsObj.users.totalFriendsProcessed));
 
-        console.log(chalk.bold.blue("BEST NETWORK------------          " 
-          + "\n             " + statsObj.bestNetwork.networkId
-          + "\n INPUTS:     " + statsObj.bestNetwork.numInputs + " | " + statsObj.bestNetwork.inputsId
-          + "\n SR:         " + statsObj.bestNetwork.successRate.toFixed(3) + "%"
-          + "\n MR:         " + statsObj.bestNetwork.matchRate.toFixed(3) + "%"
-          + "\n OAMR:       " + statsObj.bestNetwork.overallMatchRate.toFixed(3) + "%"
-          + "\n TEST CYCs:  " + statsObj.bestNetwork.testCycles
-          + "\n TC HISTORY: " + statsObj.bestNetwork.testCycleHistory.length
+        console.log(chalk.bold.blue("\n----------------------------------------------------"
+          + "\nBEST NETWORK: " + statsObj.bestNetwork.networkId
+          + "\n INPUTS:      " + statsObj.bestNetwork.numInputs + " | " + statsObj.bestNetwork.inputsId
+          + "\n SR:          " + statsObj.bestNetwork.successRate.toFixed(3) + "%"
+          + "\n MR:          " + statsObj.bestNetwork.matchRate.toFixed(3) + "%"
+          + "\n OAMR:        " + statsObj.bestNetwork.overallMatchRate.toFixed(3) + "%"
+          + "\n TEST CYCs:   " + statsObj.bestNetwork.testCycles
+          + "\n TC HISTORY:  " + statsObj.bestNetwork.testCycleHistory.length
         ));
 
         console.log(chalk.bold.blue("===================================================="));
@@ -3705,6 +3683,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
   tfeChildHashMap[user].threeceeUser = user;
   tfeChildHashMap[user].child = {};
   tfeChildHashMap[user].status = "IDLE";
+  tfeChildHashMap[user].statsObj = {};
   tfeChildHashMap[user].twitterConfig = {};
   tfeChildHashMap[user].twitterConfig.consumer_key = twitterConfig.CONSUMER_KEY;
   tfeChildHashMap[user].twitterConfig.consumer_secret = twitterConfig.CONSUMER_SECRET;
@@ -3845,15 +3824,16 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         m.statsObj.fetchAllIntervalStartMoment = getTimeStamp(m.statsObj.fetchAllIntervalStartMoment);
 
         tfeChildHashMap[m.threeceeUser].status = m.statsObj.fsmState;
+        tfeChildHashMap[m.threeceeUser].statsObj = m.statsObj;
 
-        console.log(chalkInfo("TFC | CHILD STATS"
-          + " | " + m.threeceeUser
-          + " | " + getTimeStamp() + " ___________________________\n"
-          + jsonPrint(m.statsObj, "TFC | STATS ")
-        ));
-
-        console.log("TFC | CHILD STATS___________________________\n");
-
+        if (configuration.verbose) {
+          console.log(chalkInfo("TFC | CHILD STATS"
+            + " | " + m.threeceeUser
+            + " | " + getTimeStamp() + " ___________________________\n"
+            + jsonPrint(m.statsObj, "TFC | STATS ")
+            + "\nTFC | CHILD STATS___________________________"
+          ));
+        }
 
       break;
 

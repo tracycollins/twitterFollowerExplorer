@@ -40,6 +40,7 @@ const chalkTwitter = chalk.blue;
 const chalkTwitterBold = chalk.bold.blue;
 const chalkError = chalk.bold.red;
 const chalkAlert = chalk.red;
+const chalkStats = chalk.blue;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 
@@ -104,17 +105,13 @@ threeceeUserDefaults.endFetch = false;
 threeceeUserDefaults.nextCursor = false;
 threeceeUserDefaults.nextCursorValid = false;
 threeceeUserDefaults.friendsFetched = 0;
-threeceeUserDefaults.totalPercentFetched = 0;
+threeceeUserDefaults.percentFetched = 0;
 
 threeceeUserDefaults.twitterRateLimit = 0;
 threeceeUserDefaults.twitterRateLimitExceptionFlag = false;
 threeceeUserDefaults.twitterRateLimitRemaining = 0;
 threeceeUserDefaults.twitterRateLimitRemainingTime = 0;
 threeceeUserDefaults.twitterRateLimitResetAt = moment();
-
-// let fsmPreviousState = "IDLE";
-// let fsmPreviousPauseState = "IDLE";
-
 
 let statsObj = {};
 
@@ -127,7 +124,7 @@ statsObj.threeceeUser.nextCursorValid = false;
 statsObj.threeceeUser.nextCursor = -1;
 statsObj.threeceeUser.prevCursorValid = false;
 statsObj.threeceeUser.prevCursor = -1;
-statsObj.threeceeUser.totalPercentFetched = 0;
+statsObj.threeceeUser.percentFetched = 0;
 
 statsObj.threeceeUser.twitterRateLimit = 0;
 statsObj.threeceeUser.twitterRateLimitException = moment();
@@ -704,7 +701,7 @@ function reporter(event, oldState, newState) {
 
   // fsmPreviousState = oldState;
 
-  console.log(chalkLog("--------------------------------------------------------\n"
+  console.log(chalkStats("--------------------------------------------------------\n"
     + "<< FSM >>"
     + " | @" + configuration.threeceeUser
     + " | " + statsObj.fsmStateTimeStamp
@@ -950,15 +947,17 @@ process.on("exit", function() {
 
 function showStats(options){
 
+  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+
+  statsObj.threeceeUser.percentFetched = (statsObj.threeceeUser.friendsCount > 0) ? 100*(statsObj.threeceeUser.friendsFetched/statsObj.threeceeUser.friendsCount) : 0;
+
   console.log(chalkLog("--- STATS --------------------------------------\n"
     + "CUR USR: @" + configuration.threeceeUser
     + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
-    + "\nELAPSED: " + statsObj.elapsed
+    + "\nELAPSED: " + getTimeStamp(statsObj.elapsed)
     + "\nFSM:     " + fsm.getMachineState()
-    // + "\nU PRCSD: " + statsObj.threeceeUser.friendsProcessed + " / " + statsObj.threeceeUser.friendsCount
-    // + " (" + statsObj.threeceeUser.percentProcessed.toFixed(2) + "%)"
     + "\nT FTCHD: " + statsObj.threeceeUser.friendsFetched + " / " + statsObj.threeceeUser.friendsCount
-    + " (" + statsObj.threeceeUser.totalPercentFetched.toFixed(2) + "%)"
+    + " (" + statsObj.threeceeUser.percentFetched.toFixed(2) + "%)"
     + "\n------------------------------------------------\n"
   ));
 }
@@ -1321,15 +1320,15 @@ function initCheckRateLimitInterval(interval){
 
   checkRateLimitInterval = setInterval(function(){
 
+    statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+
     debug(chalkInfo("CHECK RATE INTERVAL"
       + " | INTERVAL: " + msToTime(interval)
       + " | CURRENT USER: @" + configuration.threeceeUser
       + " | EXCEPTION: " + statsObj.threeceeUser.twitterRateLimitExceptionFlag
     ));
 
-    // if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
     checkRateLimit();
-    // }
 
   }, interval);
 }

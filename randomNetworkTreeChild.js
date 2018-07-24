@@ -291,10 +291,6 @@ function generateNetworkInputIndexed(params, callback){
         if ((params.maxInputHashMap === undefined) 
           || (params.maxInputHashMap[inputType] === undefined)) {
 
-          // console.log(chalkAlert("??? UNDEFINED??? params.maxInputHashMap." + inputType + " | " + inputName
-          //   + "\n" + Object.keys(params.maxInputHashMap)
-          // ));
-
           networkInput[indexOffset + index] = 1;
 
           console.log(chalkLog("RNT | ??? UNDEFINED MAX INPUT"
@@ -543,6 +539,8 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     statsTextObj[nnId] = {};
     statsTextObj[nnId] = [
       nnId,
+      statsObj.allTimeLoadedNetworks[nnId].inputsId,
+      statsObj.allTimeLoadedNetworks[nnId].numInputs,
       statsObj.allTimeLoadedNetworks[nnId].successRate.toFixed(2),
       statsObj.allTimeLoadedNetworks[nnId].total,
       statsObj.allTimeLoadedNetworks[nnId].match,
@@ -611,9 +609,10 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
         }, function(){
 
-          // statsTextArray.length = Math.min(10, statsTextArray.length);
           statsTextArray.unshift([
             "NNID",
+            "INPUTSID",
+            "INPUTS",
             "SR",
             "ATOT",
             "AM",
@@ -630,11 +629,11 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           ]);
 
           console.log(chalk.blue(
-              "\n-------------------------------------------------------------------------------"
+              "\n------------------------------------------------------------------------------------------------------------------"
             + "\n" + title 
-            + "\n-------------------------------------------------------------------------------\n"
-            + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
-            + "\n-------------------------------------------------------------------------------"
+            + "\n------------------------------------------------------------------------------------------------------------------\n"
+            + table(statsTextArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+            + "\n------------------------------------------------------------------------------------------------------------------"
           ));
 
         });
@@ -1080,8 +1079,7 @@ function resetStats(callback){
 
   printCategorizeHistory();
 
-  console.log(chalkAlert("RNT | *** RESET_STATS ***"
-  ));
+  console.log(chalkAlert("RNT | *** RESET_STATS ***"));
 
   statsObj.categorize = {};
   statsObj.categorize.startTime = moment().valueOf();
@@ -1122,24 +1120,24 @@ process.on("message", function(m) {
   switch (m.op) {
 
     case "INIT":
-      console.log(chalkAlert("RNT INIT"
-        + " | INTERVAL: " + m.interval
-      ));
+
+      console.log(chalkLog("RNT INIT | INTERVAL: " + m.interval));
+
       initActivateNetworkInterval(m.interval);
+
       process.send({ op: "IDLE" }, function(err){
         if (err) { 
           console.trace(chalkError("RNT SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT SEND ERROR | IDLE | " + err);
-          // quit("RNT IDLE PROCESS SEND ERRROR");
         }
       });
+
     break;
 
     case "LOAD_MAX_INPUTS_HASHMAP":
       maxInputHashMap = {};
-      // maxInputHashMap = deepcopy(m.maxInputHashMap);
       maxInputHashMap = m.maxInputHashMap;
-      console.log(chalkAlert("RNT LOAD_MAX_INPUTS_HASHMAP"
+      console.log(chalkLog("RNT LOAD_MAX_INPUTS_HASHMAP"
         + " | " + Object.keys(maxInputHashMap)
       ));
     break;
@@ -1151,7 +1149,6 @@ process.on("message", function(m) {
         if (err) { 
           console.trace(chalkError("SEND ERROR | BUSY | " + err));
           console.error.bind(console, "RNT SEND ERROR | BUSY | " + err);
-          // quit("STATS PROCESS SEND ERRROR");
         }
       });
       }
@@ -1211,7 +1208,7 @@ process.on("message", function(m) {
 
     case "LOAD_NETWORKS":
 
-      console.log(chalkAlert("RNT | LOAD_NETWORKS"
+      console.log(chalkLog("RNT | LOAD_NETWORKS"
         + " | " + Object.keys(m.networksObj).length + " NNs"
       ));
 
