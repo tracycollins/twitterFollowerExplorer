@@ -3706,6 +3706,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
     ));
 
     switch(m.op) {
+
       case "ERROR":
         console.log(chalkError("TFC | CHILD ERROR | " + m.threeceeUser));
         if (m.error) { 
@@ -3713,44 +3714,51 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         }
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
         checkChildrenState(m.op);
-        // fsm.fsm_error();
       break;
+
       case "INIT":
       case "INIT_COMPLETE":
         console.log(chalkInfo("TFC | CHILD INIT COMPLETE | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "INIT";
         checkChildrenState(m.op);
       break;
+ 
       case "IDLE":
         console.log(chalkInfo("TFC | CHILD IDLE | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "IDLE";
         checkChildrenState(m.op);
       break;
+
       case "RESET":
         console.log(chalkInfo("TFC | CHILD RESET | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "RESET";
         checkChildrenState(m.op);
       break;
+
       case "READY":
         console.log(chalkInfo("TFC | CHILD READY | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "READY";
         checkChildrenState(m.op);
       break;
+
       case "FETCH":
         console.log(chalkInfo("TFC | CHILD FETCH | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "FETCH";
         checkChildrenState(m.op);
       break;
+
       case "FETCH_END":
         console.log(chalkInfo("TFC | CHILD FETCH_END | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "FETCH_END";
         checkChildrenState(m.op);
       break;
+
       case "PAUSE_RATE_LIMIT":
         console.log(chalkInfo("TFC | CHILD PAUSE_RATE_LIMIT | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "PAUSE_RATE_LIMIT";
         checkChildrenState(m.op);
       break;
+
       case "THREECEE_USER":
 
         console.log(chalkInfo("TFC | R> THREECEE_USER"
@@ -3773,6 +3781,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         });
 
       break;
+
       case "FRIENDS_IDS":
         twitterUserHashMap[m.threeceeUser].friends = new Set(m.friendsIds);
         console.log(chalkInfo("TFC | R> FRIENDS_IDS"
@@ -3780,6 +3789,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
           + " | " + twitterUserHashMap[m.threeceeUser].friends.size + " FRIENDS"
         ));
       break;
+
       case "FRIEND_RAW":
         if (configuration.testMode) {
           console.log(chalkInfo("TFC | R> FRIEND"

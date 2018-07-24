@@ -844,7 +844,14 @@ const fsmStates = {
       fetchFriends(params, function(err, results){
         if (err) {
           console.log(chalkError("fetchFriends ERROR: " + err));
-          process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "FETCH_USER", params: params, error: err });
+
+          if (err.code === 88){
+            process.send({op:"PAUSE_RATE_LIMIT", threeceeUser: configuration.threeceeUser, state: "PAUSE_RATE_LIMIT", params: params, error: err });
+          }
+          else {
+            process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "FETCH_USER", params: params, error: err });
+          }
+
         }
         else {
           if (statsObj.threeceeUser.nextCursorValid && !statsObj.threeceeUser.endFetch) {
