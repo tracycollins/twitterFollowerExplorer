@@ -736,11 +736,12 @@ function categoryToString(c) {
 
 function printActivateResult(prefix, nn, category, categoryAuto, screenName){
   console.log(chalkLog(prefix
-    + " | TCYCs: " + nn.testCycles
     + " | OAMR: " + nn.overallMatchRate.toFixed(2) + "%"
     + " | MR: " + nn.matchRate.toFixed(2) + "%"
     + " | SR: " + nn.successRate.toFixed(2) + "%"
     + " | " + nn.match + " / " + nn.total
+    + " | TC: " + nn.testCycles
+    + " | TCH: " + nn.testCycleHistory.length
     + " | " + nn.networkId
     + " | " + nn.numInputs + " IN"
     + " | C: " + categoryToString(category)
