@@ -961,7 +961,7 @@ function showStats(options){
   console.log(chalkLog("--- STATS --------------------------------------\n"
     + "CUR USR: @" + configuration.threeceeUser
     + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
-    + "\nELAPSED: " + getTimeStamp(statsObj.elapsed)
+    + "\nELAPSED: " + msToTime(statsObj.elapsed)
     + "\nFSM:     " + fsm.getMachineState()
     + "\nT FTCHD: " + statsObj.threeceeUser.friendsFetched + " / " + statsObj.threeceeUser.friendsCount
     + " (" + statsObj.threeceeUser.percentFetched.toFixed(2) + "%)"

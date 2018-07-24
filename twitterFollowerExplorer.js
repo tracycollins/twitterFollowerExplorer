@@ -3446,7 +3446,7 @@ function initSocket(cnf) {
     statsObj.userReadyAck = true ;
     statsObj.serverConnected = true;
 
-    console.log(chalkInfo("RX USER_READY_ACK MESSAGE"
+    console.log(chalkBlue("RX USER_READY_ACK MESSAGE"
       + " | " + socket.id
       + " | USER ID: " + userObj.userId
       + " | " + moment().format(compactDateTimeFormat)
