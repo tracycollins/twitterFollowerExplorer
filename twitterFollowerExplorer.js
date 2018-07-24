@@ -984,7 +984,7 @@ function updateDbNetwork(params, callback) {
       nnDb.save()
       .then(function(nnDbUpdated){
         if (verbose) {
-          printNetworkObj("NNT | +++ NN DB HIT  | UPDATED", nnDbUpdated);
+          printNetworkObj("TFE | +++ NN DB HIT  | UPDATED", nnDbUpdated);
         }
         callback(null, nnDbUpdated);
       })
@@ -1001,7 +1001,7 @@ function updateDbNetwork(params, callback) {
       newNnDb.save()
       .then(function(nnDbUpdated){
         if (verbose) {
-          printNetworkObj("NNT | --- NN DB MISS | SAVED  ", nnDbUpdated);
+          printNetworkObj("TFE | --- NN DB MISS | SAVED  ", nnDbUpdated);
         }
         callback(null, nnDbUpdated);
       })
@@ -3045,7 +3045,7 @@ function saveFile (params, callback){
     const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
 
     showStats();
-    console.log(chalkAlert("NNT | ... SAVING DROPBOX LOCALLY"
+    console.log(chalkAlert("TFE | ... SAVING DROPBOX LOCALLY"
       + " | " + objSizeMBytes.toFixed(3) + " MB"
       + " | " + fullPath
     ));
@@ -3053,7 +3053,7 @@ function saveFile (params, callback){
     writeJsonFile(fullPath, params.obj)
     .then(function() {
 
-      console.log(chalkAlert("NNT | SAVED DROPBOX LOCALLY"
+      console.log(chalkAlert("TFE | SAVED DROPBOX LOCALLY"
         + " | " + objSizeMBytes.toFixed(3) + " MB"
         + " | " + fullPath
       ));
@@ -3061,7 +3061,7 @@ function saveFile (params, callback){
 
     })
     .catch(function(error){
-      console.trace(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+      console.trace(chalkError("TFE | " + moment().format(compactDateTimeFormat) 
         + " | !!! ERROR DROBOX LOCAL JSON WRITE | FILE: " + fullPath 
         + " | ERROR: " + error
         + " | ERROR\n" + jsonPrint(error)
@@ -3085,7 +3085,7 @@ function saveFile (params, callback){
       })
       .catch(function(error){
         if (error.status === 413){
-          console.error(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+          console.error(chalkError("TFE | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: 413"
             + " | ERROR: FILE TOO LARGE"
@@ -3093,21 +3093,21 @@ function saveFile (params, callback){
           if (callback !== undefined) { return callback(error.error_summary); }
         }
         else if (error.status === 429){
-          console.error(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+          console.error(chalkError("TFE | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: TOO MANY WRITES"
           ));
           if (callback !== undefined) { return callback(error.error_summary); }
         }
         else if (error.status === 500){
-          console.error(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+          console.error(chalkError("TFE | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: DROPBOX SERVER ERROR"
           ));
           if (callback !== undefined) { return callback(error.error_summary); }
         }
         else {
-          console.trace(chalkError("NNT | " + moment().format(compactDateTimeFormat) 
+          console.trace(chalkError("TFE | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: " + error
             // + " | ERROR\n" + jsonPrint(error)
@@ -3133,7 +3133,7 @@ function saveFile (params, callback){
 
         async.each(response.entries, function(entry, cb){
 
-          console.log(chalkInfo("NNT | DROPBOX FILE"
+          console.log(chalkInfo("TFE | DROPBOX FILE"
             + " | " + params.folder
             + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
             + " | " + entry.name
@@ -3147,25 +3147,25 @@ function saveFile (params, callback){
 
         }, function(err){
           if (err) {
-            console.log(chalkError("NNT | *** ERROR DROPBOX SAVE FILE: " + err));
+            console.log(chalkError("TFE | *** ERROR DROPBOX SAVE FILE: " + err));
             if (callback !== undefined) { 
               return callback(err, null);
             }
             return;
           }
           if (fileExits) {
-            console.log(chalkAlert("NNT | ... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
+            console.log(chalkAlert("TFE | ... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
             if (callback !== undefined) { callback(err, null); }
           }
           else {
-            console.log(chalkAlert("NNT | ... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
+            console.log(chalkAlert("TFE | ... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
             dbFileUpload();
           }
         });
       })
       .catch(function(err){
-        console.log(chalkError("NNT | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
-        console.log(chalkError("NNT | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
+        console.log(chalkError("TFE | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
+        console.log(chalkError("TFE | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
         if (callback !== undefined) { callback(err, null); }
       });
     }
