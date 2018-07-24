@@ -958,6 +958,7 @@ function updateGlobalHistograms(params, callback) {
 function updateDbNetwork(params, callback) {
 
   const networkObj = params.networkObj;
+  const verbose = params.verbose || false;
 
   NeuralNetwork.findOne({"networkId": networkObj.networkId}, function(err, nnDb){
     if (err) {
@@ -982,7 +983,7 @@ function updateDbNetwork(params, callback) {
 
       nnDb.save()
       .then(function(nnDbUpdated){
-        if (configuration.verbose) {
+        if (verbose) {
           printNetworkObj("NNT | +++ NN DB HIT  | UPDATED", nnDbUpdated);
         }
         callback(null, nnDbUpdated);
@@ -999,7 +1000,7 @@ function updateDbNetwork(params, callback) {
 
       newNnDb.save()
       .then(function(nnDbUpdated){
-        if (configuration.verbose) {
+        if (verbose) {
           printNetworkObj("NNT | --- NN DB MISS | SAVED  ", nnDbUpdated);
         }
         callback(null, nnDbUpdated);
@@ -1016,7 +1017,7 @@ function processBestNetwork(params, callback){
 
   let nnObj = params.networkObj;
 
-  updateDbNetwork({networkObj: nnObj}, function(err, networkObj){
+  updateDbNetwork({networkObj: nnObj, verbose: true}, function(err, networkObj){
 
     if (err) {
       console.log(chalkError("processBestNetwork *** SAVE DB ERROR: " + err));
