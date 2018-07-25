@@ -955,22 +955,6 @@ function updateGlobalHistograms(params, callback) {
   });
 }
 
-// function printNetworkObj(title, networkObj) {
-//   console.log(chalkNetwork("======================================"
-//     + "\n" + title
-//     + "\nID:         " + networkObj.networkId
-//     + "\nCREATED:    " + getTimeStamp(networkObj.createdAt)
-//     + "\nSR:         " + networkObj.successRate.toFixed(2) + "%"
-//     + "\nMR:         " + networkObj.matchRate.toFixed(2) + "%"
-//     + "\nOAMR:       " + networkObj.overallMatchRate.toFixed(2) + "%"
-//     + "\nTEST CYCs:  " + networkObj.testCycles
-//     + "\nTC HISTORY: " + networkObj.testCycleHistory.length
-//     + "\nINPUTS ID:  " + networkObj.inputsId
-//     + "\nNUM INPUTS: " + networkObj.numInputs
-//     + "\n======================================\n"
-//   ));
-// }
-
 function updateDbNetwork(params, callback) {
 
   const networkObj = params.networkObj;
@@ -978,81 +962,32 @@ function updateDbNetwork(params, callback) {
   const testHistoryItem = params.testHistoryItem || false;
   const verbose = params.verbose || false;
 
-  NeuralNetwork.findOne({"networkId": networkObj.networkId}).exec(function(err, nnDb){
+  const query = { networkId: networkObj.networkId };
+
+  let update = {};
+
+  update["$set"] = { matchRate: networkObj.matchRate, overallMatchRate: networkObj.overallMatchRate };
+
+  if (incrementTestCycles) { update["$inc"] = { testCycles: 1 }; }
+  if (testHistoryItem) { update["$push"] = { testCycleHistory: testHistoryItem }; }
+
+  const options = {
+    new: true,
+    upsert: true,
+    setDefaultsOnInsert: true,
+  };
+
+  NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
+
     if (err) {
       console.log(chalkError("*** updateDbNetwork | NETWORK FIND ONE ERROR: " + err));
       return callback(err, null);
     }
 
-    if (nnDb) {
+    if (verbose) { printNetworkObj("TFE | +++ NN DB UPDATED", nnDbUpdated); }
 
-      nnDb = networkDefaults(nnDb);
+    callback(null, nnDbUpdated);
 
-      nnDb.successRate = networkObj.successRate;
-      nnDb.matchRate = networkObj.matchRate;
-      nnDb.overallMatchRate = networkObj.overallMatchRate;
-
-      if (networkObj.testCycles > nnDb.testCycles) { nnDb.testCycles = networkObj.testCycles; }
-      if (incrementTestCycles) { nnDb.testCycles += 1; }
-
-      if (nnDb.testCycleHistory.length < networkObj.testCycleHistory.length) { nnDb.testCycleHistory = networkObj.testCycleHistory; }
-
-      if (testHistoryItem) { 
-        nnDb.testCycleHistory.push(testHistoryItem); 
-      }
-
-      nnDb.markModified("successRate");
-      nnDb.markModified("matchRate");
-      nnDb.markModified("overallMatchRate");
-      nnDb.markModified("testCycles");
-      nnDb.markModified("testCycleHistory");
-
-      nnDb.save()
-      .then(function(nnDbUpdated){
-
-        if (!nnDbUpdated) {
-          console.log(chalkError("*** NN DB SAVE | UPDATED NN NOT RETURNED?"));
-          quit("NN DB SAVE ERROR");
-        }
-
-        const nnObjReturnJson = nnDbUpdated.toObject();
-
-        if (verbose) {
-
-          const nnDbUpdatedJson = omit(nnObjReturnJson, ["__v", "_id", "network", "evolve", "inputs", "outputs", "inputsObj"]);
-
-          // console.log(chalkAlert("nnDbUpdated UPDATED\n", jsonPrint(nnDbUpdatedJson)));
-          printNetworkObj("TFE | +++ NN DB HIT  | UPDATED", nnDbUpdatedJson);
-        }
-        callback(null, nnObjReturnJson);
-      })
-      .catch(function(err) {
-        console.log(chalkError("updateDbNetwork | *** SAVE UPDATED NN DB ERROR: " + err));
-        callback(err, null);
-      });
-
-    }
-    else {
-
-      const newNnDb = new NeuralNetwork(networkObj);
-
-      if (testHistoryItem) { 
-        newNnDb.testCycleHistory.push(networkObj.testHistoryItem); 
-      }
-
-      newNnDb.save()
-      .then(function(nnDbUpdated){
-        if (verbose) {
-          // console.log(chalkAlert("nnDbUpdated NEW\n", jsonPrint(nnDbUpdated.toObject())));
-          printNetworkObj("TFE | --- NN DB MISS | SAVED  ", nnDbUpdated.toObject());
-        }
-        callback(null, nnDbUpdated.toObject());
-      })
-      .catch(function(err) {
-        console.log(chalkError("updateDbNetwork | *** SAVE NEW NN DB ERROR: " + err));
-        callback(err, null);
-      });
-    }
   });
 }
 
@@ -4592,15 +4527,6 @@ function updateNetworkStats(params, callback) {
       bnhmObj = bestNetworkHashMap.get(nnId);
       bnwObj = bnhmObj.networkObj;
 
-      // const networkObj = params.networkObj;
-      // const testHistoryItem = params.testHistoryItem || false;
-      // const verbose = params.verbose || false;
-
-      // if (bnwObj.testCycleHistory === undefined) {
-      //   bnwObj.testCycleHistory = [];
-      // }
-
-
       bnwObj.incrementTestCycles = incrementTestCycles;
       bnwObj.matchRate = params.networkStatsObj[nnId].matchRate;
       bnwObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
@@ -4614,7 +4540,7 @@ function updateNetworkStats(params, callback) {
         total: params.networkStatsObj[nnId].total,
         matchRate: params.networkStatsObj[nnId].matchRate,
         timeStampString: moment().format(compactDateTimeFormat),
-        timeStamp: moment().valueOf()
+        timeStamp: moment()
       };
 
       const updateDbNetworkParams = {
@@ -4637,50 +4563,6 @@ function updateNetworkStats(params, callback) {
 
         cb();
       });
-
-
-      // const query = { networkId: nnId };
-
-      // const update = {
-      //   "$inc": { testCycles: 1 },
-      //   "$set": { 
-      //     matchRate: bnhmObj.networkObj.matchRate,
-      //     overallMatchRate: bnhmObj.networkObj.overallMatchRate,
-      //   },
-      //   "$push": {
-      //     testCycleHistory: {
-      //       testCycle: bnhmObj.networkObj.testCycles,
-      //       match: params.networkStatsObj[nnId].match,
-      //       mismatch: params.networkStatsObj[nnId].mismatch,
-      //       total: params.networkStatsObj[nnId].total,
-      //       matchRate: params.networkStatsObj[nnId].matchRate,
-      //       timeStampString: moment().format(compactDateTimeFormat),
-      //       timeStamp: moment().valueOf()
-      //     }
-      //   }
-      // };
-
-      // const options = {
-      //   new: true,
-      //   upsert: true,
-      //   setDefaultsOnInsert: true,
-      // };
-
-      // NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
-      //   if (err) {
-      //     console.log(chalkError("NN DB UPDATE ERROR: " + err));
-      //     return cb();
-      //   }
-
-      //   bnhmObj.networkObj = nnDbUpdated;
-      //   bestNetworkHashMap.set(nnDbUpdated.networkId, bnhmObj);
-
-      //   printNn(nnDbUpdated);
-
-      //   cb();
-
-      // });
-
 
     }
     else {
@@ -4728,8 +4610,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
         case "STATS":
 
-          console.log(chalkInfo(getTimeStamp() + " | RNT_STATS"
-            + "\n" + jsonPrint(Object.keys(m.statsObj))
+          console.log(chalkInfo("R< RNT_STATS"
+            // + "\n" + jsonPrint(Object.keys(m.statsObj))
           ));
 
           console.log(chalkBlue("RNT | UPDATING ALL NNs STATS IN DB..."));
