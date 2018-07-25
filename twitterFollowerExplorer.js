@@ -973,7 +973,7 @@ function updateDbNetwork(params, callback) {
       nnDb = networkDefaults(nnDb);
 
       if (incrementTestCycles) { nnDb.testCycles += 1; }
-      
+
       nnDb.successRate = networkObj.successRate;
       nnDb.matchRate = networkObj.matchRate;
       nnDb.overallMatchRate = networkObj.overallMatchRate;
@@ -983,7 +983,7 @@ function updateDbNetwork(params, callback) {
       // if (networkObj.testCycleHistory.length > nnDb.testCycleHistory.length) { nnDb.testCycleHistory = networkObj.testCycleHistory; }
 
       if (testHistoryItem) { 
-        nnDb.testCycleHistory.push(networkObj.testHistoryItem); 
+        nnDb.testCycleHistory.push(testHistoryItem); 
       }
 
       nnDb.markModified("overallMatchRate");
