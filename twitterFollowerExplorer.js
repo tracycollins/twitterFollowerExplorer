@@ -980,7 +980,7 @@ function updateDbNetwork(params, callback) {
 
       if (networkObj.testCycles > nnDb.testCycles) { nnDb.testCycles = networkObj.testCycles; }
 
-      // if (networkObj.testCycleHistory.length > nnDb.testCycleHistory.length) { nnDb.testCycleHistory = networkObj.testCycleHistory; }
+      if (networkObj.testCycleHistory.length > nnDb.testCycleHistory.length) { nnDb.testCycleHistory = networkObj.testCycleHistory; }
 
       if (testHistoryItem) { 
         nnDb.testCycleHistory.push(testHistoryItem); 
@@ -1554,12 +1554,8 @@ function loadBestNeuralNetworkFile(callback) {
               console.trace(chalkAlert("NN OVERALL MATCH RATE UNDEFINED??? | " + bnwObj.networkId));
               quit();
             }
-            
-            if (bnwObj.successRate === undefined) { bnwObj.successRate = 0; }
-            if (bnwObj.matchRate === undefined) { bnwObj.matchRate = 0; }
-            if (bnwObj.overallMatchRate === undefined) { bnwObj.overallMatchRate = 0; }
-            if (bnwObj.testCycles === undefined) { bnwObj.testCycles = 0; }
-            if (bnwObj.testCycleHistory === undefined) { bnwObj.testCycleHistory = []; }
+
+            bnwObj = networkDefaults(bnwObj);
 
             updateBestNetworkStats(bnwObj);
 
@@ -1604,11 +1600,7 @@ function loadBestNeuralNetworkFile(callback) {
               quit();
             }
             
-            if (bnwObj.successRate === undefined) { bnwObj.successRate = 0; }
-            if (bnwObj.matchRate === undefined) { bnwObj.matchRate = 0; }
-            if (bnwObj.overallMatchRate === undefined) { bnwObj.overallMatchRate = 0; }
-            if (bnwObj.testCycles === undefined) { bnwObj.testCycles = 0; }
-            if (bnwObj.testCycleHistory === undefined) { bnwObj.testCycleHistory = []; }
+            bnwObj = networkDefaults(bnwObj);
 
             console.log(chalkBlue("... UPDATED BEST RUNTIME NETWORK"
               + " | " + bnwObj.networkId
@@ -1651,11 +1643,7 @@ function loadBestNeuralNetworkFile(callback) {
             quit();
           }
           
-          if (bnwObj.successRate === undefined) { bnwObj.successRate = 0; }
-          if (bnwObj.matchRate === undefined) { bnwObj.matchRate = 0; }
-          if (bnwObj.overallMatchRate === undefined) { bnwObj.overallMatchRate = 0; }
-          if (bnwObj.testCycles === undefined) { bnwObj.testCycles = 0; }
-          if (bnwObj.testCycleHistory === undefined) { bnwObj.testCycleHistory = []; }
+          bnwObj = networkDefaults(bnwObj);
 
           console.log(chalkBlue("... UPDATED BEST RUNTIME NETWORK"
             + " | " + bnwObj.networkId
@@ -2858,16 +2846,12 @@ const fsmStates = {
               availableNeuralNetHashMap = {};
               maxInputHashMap = {};
 
-              let bnwObj = bestNetworkHashMap.get(statsObj.bestNetwork.networkId);
+              let bnhmObj = bestNetworkHashMap.get(statsObj.bestNetwork.networkId);
 
-              if (bnwObj.successRate === undefined) { bnwObj.successRate = 0; }
-              if (bnwObj.matchRate === undefined) { bnwObj.matchRate = 0; }
-              if (bnwObj.overallMatchRate === undefined) { bnwObj.overallMatchRate = 0; }
-              if (bnwObj.testCycles === undefined) { bnwObj.testCycles = 0; }
-              if (bnwObj.testCycleHistory === undefined) { bnwObj.testCycleHistory = []; }
+              bnhmObj.networkObj = networkDefaults(bnhmObj.networkObj);
 
               bestNetworkHashMap.clear();
-              bestNetworkHashMap.set(statsObj.bestNetwork.networkId, bnwObj);
+              bestNetworkHashMap.set(statsObj.bestNetwork.networkId, bnhmObj);
 
               if (configuration.quitOnComplete) {
                 quit({source: "QUIT_ON_COMPLETE"});
@@ -4541,18 +4525,18 @@ function updateNetworkStats(params, callback) {
 
   let newNnDb;
 
-  function printNn(nn){
-    console.log(chalkNetwork("NN UPDATED"
-      + " | TEST CYCs: " + nn.testCycles
-      + " | TC HISTORY: " + nn.testCycleHistory.length
-      + " | OAMR: " + nn.overallMatchRate.toFixed(2) + "%"
-      + " | MR: " + nn.matchRate.toFixed(2) + "%"
-      + " | SR: " + nn.successRate.toFixed(2) + "%"
-      + " | " + nn.networkId
-    ));
+  // function printNn(nn){
+  //   console.log(chalkNetwork("NN UPDATED"
+  //     + " | TEST CYCs: " + nn.testCycles
+  //     + " | TC HISTORY: " + nn.testCycleHistory.length
+  //     + " | OAMR: " + nn.overallMatchRate.toFixed(2) + "%"
+  //     + " | MR: " + nn.matchRate.toFixed(2) + "%"
+  //     + " | SR: " + nn.successRate.toFixed(2) + "%"
+  //     + " | " + nn.networkId
+  //   ));
 
-    printTestCycleHistory(nn);
-  }
+  //   printTestCycleHistory(nn);
+  // }
 
   async.eachSeries(nnIds, function(nnId, cb) {
 
@@ -4599,7 +4583,7 @@ function updateNetworkStats(params, callback) {
         bnhmObj.networkObj = nnDbUpdated;
         bestNetworkHashMap.set(nnDbUpdated.networkId, bnhmObj);
 
-        printNn(nnDbUpdated);
+        printNetworkObj(nnDbUpdated);
 
         cb();
       });
