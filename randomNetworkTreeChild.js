@@ -563,6 +563,12 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: 250})
     .then(function(sortedNetworkResults){
 
+      if (!sortedNetworkResults) { 
+        console.log(chalkAlert("NO sortedNetworkResults??"));
+        callback("NO RESULTS", {});
+        quit();
+      }
+
       let currentBestNetworkId = sortedNetworkResults.sortedKeys[0];
       
       statsObj.bestNetwork = {};

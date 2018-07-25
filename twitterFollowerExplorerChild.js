@@ -343,15 +343,16 @@ function checkRateLimit(callback){
   });
 }
 
-function quit(cause){
+function quit(c){
+
+  const cause = c || "NONE";
 
   fsm.fsm_reset();
 
-  console.log(chalkAlert( "\n" + configuration.childId + " | ... QUITTING ..."));
-
-  if (cause) {
-    console.log(chalkAlert("TFC | QUIT\nCAUSE\n" + jsonPrint(cause) ));
-  }
+  console.log(chalkAlert("TFC | QUIT"
+    + " | " + configuration.childId
+    + " | CAUSE: " + cause
+  ));
 
   setTimeout(function(){
     process.exit();      

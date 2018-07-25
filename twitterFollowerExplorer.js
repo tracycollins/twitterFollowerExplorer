@@ -247,7 +247,9 @@ const jsonPrint = function (obj) {
   }
 };
 
-const quit = function(cause) {
+const quit = function(options) {
+
+  const forceQuitFlag = options.force || false;
 
   const caller = callerId.getData();
 
@@ -269,12 +271,12 @@ const quit = function(cause) {
     tfeChildHashMap[user].child.send({op: "QUIT"});
   });
 
-  if (cause && (cause.source === "RNT")) {
+  if (options && (options.source === "RNT")) {
     randomNetworkTreeBusyFlag = false;
     randomNetworkTreeReadyFlag = true;
   }
 
-  if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) {
+  if (options && (options.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) {
     randomNetworkTree.send({op: "STATS"});
     randomNetworkTree.send({op: "QUIT"});
     randomNetworkTreeBusyFlag = false;
@@ -283,11 +285,12 @@ const quit = function(cause) {
 
   console.log( "\nTFE | ... QUITTING ..." );
 
-  if (cause) {
-    console.log( "CAUSE: " + jsonPrint(cause) );
+  if (options) {
+    console.log( "options: " + jsonPrint(options) );
   }
 
   let slackText = "\n*QUIT*";
+  slackText = slackText + "\nFORCE QUIT:  " + forceQuitFlag;
   slackText = slackText + "\nHOST:        " + hostname;
   slackText = slackText + "\nBEST:        " + bestRuntimeNetworkId;
   slackText = slackText + "\nTEST CYCs:   " + currentBestNetwork.testCycles;
@@ -308,7 +311,8 @@ const quit = function(cause) {
 
   quitWaitInterval = setInterval(function () {
 
-    if (!saveFileBusy
+    if (forceQuitFlag 
+      || (!saveFileBusy
       && (!randomNetworkTreeBusyFlag || randomNetworkTreeReadyFlag)
       && (saveFileQueue.length === 0)
       && (langAnalyzerMessageRxQueue.length === 0)
@@ -316,25 +320,37 @@ const quit = function(cause) {
       && (userDbUpdateQueue.length === 0)
       && randomNetworkTreeMessageRxQueueReadyFlag
       && !languageAnalysisBusyFlag
-      && userDbUpdateQueueReadyFlag
+      && userDbUpdateQueueReadyFlag)
       ) {
 
       clearInterval(statsUpdateInterval);
       clearInterval(userDbUpdateQueueInterval);
       clearInterval(quitWaitInterval);
 
-      console.log(chalkAlert("ALL PROCESSES COMPLETE ... QUITTING"
-        + " | SAVE FILE BUSY: " + saveFileBusy
-        + " | SAVE FILE Q: " + saveFileQueue.length
-        + " | RNT BUSY: " + randomNetworkTreeBusyFlag
-        + " | RNT READY: " + randomNetworkTreeReadyFlag
-        + " | RNT AQ: " + randomNetworkTreeActivateQueueSize
-        + " | RNT MQ: " + randomNetworkTreeMessageRxQueue.length
-        + " | LA MQ: " + langAnalyzerMessageRxQueue.length
-        + " | USR DB UDQ: " + userDbUpdateQueue.length
-      ));
-
-
+      if (forceQuitFlag) {
+        console.log(chalkAlert("*** FORCE QUIT"
+          + " | SAVE FILE BUSY: " + saveFileBusy
+          + " | SAVE FILE Q: " + saveFileQueue.length
+          + " | RNT BUSY: " + randomNetworkTreeBusyFlag
+          + " | RNT READY: " + randomNetworkTreeReadyFlag
+          + " | RNT AQ: " + randomNetworkTreeActivateQueueSize
+          + " | RNT MQ: " + randomNetworkTreeMessageRxQueue.length
+          + " | LA MQ: " + langAnalyzerMessageRxQueue.length
+          + " | USR DB UDQ: " + userDbUpdateQueue.length
+        ));
+      }
+      else {
+        console.log(chalkAlert("ALL PROCESSES COMPLETE ... QUITTING"
+          + " | SAVE FILE BUSY: " + saveFileBusy
+          + " | SAVE FILE Q: " + saveFileQueue.length
+          + " | RNT BUSY: " + randomNetworkTreeBusyFlag
+          + " | RNT READY: " + randomNetworkTreeReadyFlag
+          + " | RNT AQ: " + randomNetworkTreeActivateQueueSize
+          + " | RNT MQ: " + randomNetworkTreeMessageRxQueue.length
+          + " | LA MQ: " + langAnalyzerMessageRxQueue.length
+          + " | USR DB UDQ: " + userDbUpdateQueue.length
+        ));
+      }
         setTimeout(function() {
 
           global.dbConnection.close(function () {
@@ -352,7 +368,7 @@ const quit = function(cause) {
 
     }
     else {
-      if (cause && (cause.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) {
+      if (options && (options.source !== "RNT") && (randomNetworkTree && (randomNetworkTree !== undefined))) {
         randomNetworkTree.send({op: "STATS"});
         randomNetworkTree.send({op: "QUIT"});
         randomNetworkTreeBusyFlag = false;
@@ -985,17 +1001,30 @@ function updateDbNetwork(params, callback) {
         nnDb.testCycleHistory.push(testHistoryItem); 
       }
 
-      // nnDb.markModified("overallMatchRate");
-      // nnDb.markModified("testCycles");
-      // nnDb.markModified("testCycleHistory");
+      nnDb.markModified("successRate");
+      nnDb.markModified("matchRate");
+      nnDb.markModified("overallMatchRate");
+      nnDb.markModified("testCycles");
+      nnDb.markModified("testCycleHistory");
 
       nnDb.save()
       .then(function(nnDbUpdated){
-        if (verbose) {
-          // console.log(chalkAlert("nnDbUpdated UPDATED\n", jsonPrint(nnDbUpdated.toObject())));
-          printNetworkObj("TFE | +++ NN DB HIT  | UPDATED", nnDbUpdated.toObject());
+
+        if (!nnDbUpdated) {
+          console.log(chalkError("*** NN DB SAVE | UPDATED NN NOT RETURNED?"));
+          quit("NN DB SAVE ERROR");
         }
-        callback(null, nnDbUpdated.toObject());
+
+        const nnObjReturnJson = nnDbUpdated.toObject();
+
+        if (verbose) {
+
+          const nnDbUpdatedJson = omit(nnObjReturnJson, ["__v", "_id", "network", "evolve", "inputs", "outputs", "inputsObj"]);
+
+          // console.log(chalkAlert("nnDbUpdated UPDATED\n", jsonPrint(nnDbUpdatedJson)));
+          printNetworkObj("TFE | +++ NN DB HIT  | UPDATED", nnDbUpdatedJson);
+        }
+        callback(null, nnObjReturnJson);
       })
       .catch(function(err) {
         console.log(chalkError("updateDbNetwork | *** SAVE UPDATED NN DB ERROR: " + err));
@@ -2915,13 +2944,25 @@ inputTypes.forEach(function(type) {
 const cla = require("command-line-args");
 const numRandomNetworks = { name: "numRandomNetworks", alias: "n", type: Number};
 const enableStdin = { name: "enableStdin", alias: "i", type: Boolean, defaultValue: true};
+const quitNow = { name: "quitOnError", alias: "K", type: Boolean, defaultValue: true};
 const quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
 const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean};
 const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean};
 const testMode = { name: "testMode", alias: "X", type: Boolean, defaultValue: false};
 const loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
 const targetServer = { name: "targetServer", alias: "t", type: String};
-const optionDefinitions = [enableStdin, numRandomNetworks, targetServer, quitOnError, quitOnComplete, loadNeuralNetworkID, userDbCrawl, testMode];
+
+const optionDefinitions = [
+  enableStdin, 
+  numRandomNetworks, 
+  targetServer, 
+  quitOnError, 
+  quitOnComplete, 
+  loadNeuralNetworkID, 
+  userDbCrawl, 
+  testMode
+];
+
 const commandLineConfig = cla(optionDefinitions);
 console.log(chalkInfo("COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
 console.log("COMMAND LINE OPTIONS\n" + jsonPrint(commandLineConfig));
@@ -3037,7 +3078,7 @@ function saveFile (params, callback){
     const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
 
     showStats();
-    console.log(chalkAlert("TFE | ... SAVING DROPBOX LOCALLY"
+    console.log(chalkBlue("TFE | ... SAVING DROPBOX LOCALLY"
       + " | " + objSizeMBytes.toFixed(3) + " MB"
       + " | " + fullPath
     ));
@@ -3045,7 +3086,7 @@ function saveFile (params, callback){
     writeJsonFile(fullPath, params.obj, { mode: 0o777 })
     .then(function() {
 
-      console.log(chalkAlert("TFE | SAVED DROPBOX LOCALLY"
+      console.log(chalkBlue("TFE | SAVED DROPBOX LOCALLY"
         + " | " + objSizeMBytes.toFixed(3) + " MB"
         + " | " + fullPath
       ));
@@ -4157,6 +4198,10 @@ function initStdIn() {
         console.log(chalkAlert("ABORT: " + abortCursor));
       break;
 
+      case "K":
+        quit({force: true});
+      break;
+
       case "q":
       case "Q":
         quit({source: "STDIN"});
@@ -4588,7 +4633,7 @@ function updateNetworkStats(params, callback) {
         bnhmObj.networkObj = nnDbUpdated;
         bestNetworkHashMap.set(nnDbUpdated.networkId, bnhmObj);
 
-        printNetworkObj(nnDbUpdated);
+        printNetworkObj("NNT | UPDATE NN STATS", nnDbUpdated);
 
         cb();
       });
@@ -4687,7 +4732,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             + "\n" + jsonPrint(Object.keys(m.statsObj))
           ));
 
-          console.log(chalkAlert("RNT | UPDATING ALL NNs STATS IN DB..."));
+          console.log(chalkBlue("RNT | UPDATING ALL NNs STATS IN DB..."));
 
           updateNetworkStats(
             {
