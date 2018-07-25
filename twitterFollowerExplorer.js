@@ -962,7 +962,7 @@ function updateDbNetwork(params, callback) {
   const testHistoryItem = params.testHistoryItem || false;
   const verbose = params.verbose || false;
 
-  NeuralNetwork.findOne({"networkId": networkObj.networkId}, function(err, nnDb){
+  NeuralNetwork.findOne({"networkId": networkObj.networkId}).exec(function(err, nnDb){
     if (err) {
       console.log(chalkError("*** updateDbNetwork | NETWORK FIND ONE ERROR: " + err));
       return callback(err, null);
@@ -972,30 +972,30 @@ function updateDbNetwork(params, callback) {
 
       nnDb = networkDefaults(nnDb);
 
-      if (incrementTestCycles) { nnDb.testCycles += 1; }
-
       nnDb.successRate = networkObj.successRate;
       nnDb.matchRate = networkObj.matchRate;
       nnDb.overallMatchRate = networkObj.overallMatchRate;
 
       if (networkObj.testCycles > nnDb.testCycles) { nnDb.testCycles = networkObj.testCycles; }
+      if (incrementTestCycles) { nnDb.testCycles += 1; }
 
-      if (networkObj.testCycleHistory.length > nnDb.testCycleHistory.length) { nnDb.testCycleHistory = networkObj.testCycleHistory; }
+      if (nnDb.testCycleHistory.length < networkObj.testCycleHistory.length) { nnDb.testCycleHistory = networkObj.testCycleHistory; }
 
       if (testHistoryItem) { 
         nnDb.testCycleHistory.push(testHistoryItem); 
       }
 
-      nnDb.markModified("overallMatchRate");
-      nnDb.markModified("testCycles");
-      nnDb.markModified("testCycleHistory");
+      // nnDb.markModified("overallMatchRate");
+      // nnDb.markModified("testCycles");
+      // nnDb.markModified("testCycleHistory");
 
       nnDb.save()
       .then(function(nnDbUpdated){
         if (verbose) {
-          printNetworkObj("TFE | +++ NN DB HIT  | UPDATED", nnDbUpdated);
+          // console.log(chalkAlert("nnDbUpdated UPDATED\n", jsonPrint(nnDbUpdated.toObject())));
+          printNetworkObj("TFE | +++ NN DB HIT  | UPDATED", nnDbUpdated.toObject());
         }
-        callback(null, nnDbUpdated);
+        callback(null, nnDbUpdated.toObject());
       })
       .catch(function(err) {
         console.log(chalkError("updateDbNetwork | *** SAVE UPDATED NN DB ERROR: " + err));
@@ -1014,9 +1014,10 @@ function updateDbNetwork(params, callback) {
       newNnDb.save()
       .then(function(nnDbUpdated){
         if (verbose) {
-          printNetworkObj("TFE | --- NN DB MISS | SAVED  ", nnDbUpdated);
+          // console.log(chalkAlert("nnDbUpdated NEW\n", jsonPrint(nnDbUpdated.toObject())));
+          printNetworkObj("TFE | --- NN DB MISS | SAVED  ", nnDbUpdated.toObject());
         }
-        callback(null, nnDbUpdated);
+        callback(null, nnDbUpdated.toObject());
       })
       .catch(function(err) {
         console.log(chalkError("updateDbNetwork | *** SAVE NEW NN DB ERROR: " + err));
@@ -1208,7 +1209,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
         if (bestNetworkHashMap.has(networkId)) {
 
-          const bnhmObj = bestNetworkHashMap.get(networkId);
+          let bnhmObj = bestNetworkHashMap.get(networkId);
 
           if (!bnhmObj || (bnhmObj === undefined)) {
             console.log(chalkError("bestNetworkHashMap ENTRY UNDEFINED??? | " + networkId));
@@ -1537,7 +1538,6 @@ function loadBestNeuralNetworkFile(callback) {
             currentBestNetworkId = bestRuntimeNetworkId;
 
             bnhmObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
-            // bnwObj = deepcopy(bnhmObj.networkObj);
             bnwObj = bnhmObj.networkObj;
 
             if (bnwObj.successRate === undefined) {
@@ -1582,7 +1582,6 @@ function loadBestNeuralNetworkFile(callback) {
           else {
 
             bnhmObj = bestNetworkHashMap.get(bestRuntimeNetworkId);
-            // bnwObj = deepcopy(bnhmObj.networkObj);
             bnwObj = bnhmObj.networkObj;
 
             if (bnwObj.successRate === undefined) {
@@ -3043,7 +3042,7 @@ function saveFile (params, callback){
       + " | " + fullPath
     ));
 
-    writeJsonFile(fullPath, params.obj)
+    writeJsonFile(fullPath, params.obj, { mode: 0o777 })
     .then(function() {
 
       console.log(chalkAlert("TFE | SAVED DROPBOX LOCALLY"
@@ -4538,27 +4537,33 @@ function updateNetworkStats(params, callback) {
   //   printTestCycleHistory(nn);
   // }
 
+  let bnhmObj;
+  let bnwObj;
+
   async.eachSeries(nnIds, function(nnId, cb) {
 
     if (bestNetworkHashMap.has(nnId)) {
 
-      const bnhmObj = bestNetworkHashMap.get(nnId);
+      bnhmObj = bestNetworkHashMap.get(nnId);
+      bnwObj = bnhmObj.networkObj;
 
       // const networkObj = params.networkObj;
       // const testHistoryItem = params.testHistoryItem || false;
       // const verbose = params.verbose || false;
 
-      // if (bnhmObj.networkObj.testCycleHistory === undefined) {
-      //   bnhmObj.networkObj.testCycleHistory = [];
+      // if (bnwObj.testCycleHistory === undefined) {
+      //   bnwObj.testCycleHistory = [];
       // }
 
 
-      bnhmObj.networkObj.incrementTestCycles = incrementTestCycles;
-      bnhmObj.networkObj.matchRate = params.networkStatsObj[nnId].matchRate;
-      bnhmObj.networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
+      bnwObj.incrementTestCycles = incrementTestCycles;
+      bnwObj.matchRate = params.networkStatsObj[nnId].matchRate;
+      bnwObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
+
+      printNetworkObj("bnwObj", bnwObj);
 
       const testHistoryItem = {
-        testCycle: bnhmObj.networkObj.testCycles,
+        testCycle: bnwObj.testCycles,
         match: params.networkStatsObj[nnId].match,
         mismatch: params.networkStatsObj[nnId].mismatch,
         total: params.networkStatsObj[nnId].total,
@@ -4568,7 +4573,7 @@ function updateNetworkStats(params, callback) {
       };
 
       const updateDbNetworkParams = {
-        networkObj: bnhmObj.networkObj,
+        networkObj: bnwObj,
         incrementTestCycles: incrementTestCycles,
         testHistoryItem: testHistoryItem,
         verbose: configuration.verbose
