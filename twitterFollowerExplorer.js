@@ -4531,8 +4531,6 @@ function updateNetworkStats(params, callback) {
       bnwObj.matchRate = params.networkStatsObj[nnId].matchRate;
       bnwObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
 
-      printNetworkObj("bnwObj", bnwObj);
-
       const testHistoryItem = {
         testCycle: bnwObj.testCycles,
         match: params.networkStatsObj[nnId].match,
