@@ -4419,29 +4419,20 @@ function saveNetworkHashMap(params, callback) {
 
     const networkObj = bestNetworkHashMap.get(nnId).networkObj;
 
-    console.log(chalkNetwork("SAVING NN"
-      + " | " + networkObj.numInputs + " IN"
-      + " | SR: " + networkObj.successRate.toFixed(2) + "%"
-      + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
-      + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-      + " | TEST CYCs: " + networkObj.testCycles
-      + " | TC HISTORY: " + networkObj.testCycleHistory.length
-      + " | " + networkObj.networkId
-      + " | DST: " + folder + "/" + networkObj.networkId + ".json"
-    ));
+    printNetworkObj("SAVING NN", networkObj);
 
     const file = nnId + ".json";
 
     if (params.saveImmediate) {
       saveFileQueue.push({folder: folder, file: file, obj: networkObj });
-      console.log(chalkNetwork("SAVING NN (Q)"
+      debug(chalkNetwork("SAVING NN (Q)"
         + " | " + networkObj.networkId
       ));
       cb0();
     }
     else {
       saveCache.set(file, {folder: folder, file: file, obj: networkObj });
-      console.log(chalkNetwork("SAVING NN ($)"
+      debug(chalkNetwork("SAVING NN ($)"
         + " | " + networkObj.networkId
       ));
       cb0();
