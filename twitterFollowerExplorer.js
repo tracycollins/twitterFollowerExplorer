@@ -958,6 +958,8 @@ function updateGlobalHistograms(params, callback) {
 function updateDbNetwork(params, callback) {
 
   const networkObj = params.networkObj;
+  const incrementTestCycles = params.incrementTestCycles;
+  const testHistoryItem = params.testHistoryItem || false;
   const verbose = params.verbose || false;
 
   NeuralNetwork.findOne({"networkId": networkObj.networkId}, function(err, nnDb){
@@ -970,12 +972,19 @@ function updateDbNetwork(params, callback) {
 
       nnDb = networkDefaults(nnDb);
 
+      if (incrementTestCycles) { nnDb.testCycles += 1; }
+      
       nnDb.successRate = networkObj.successRate;
       nnDb.matchRate = networkObj.matchRate;
       nnDb.overallMatchRate = networkObj.overallMatchRate;
 
       if (networkObj.testCycles > nnDb.testCycles) { nnDb.testCycles = networkObj.testCycles; }
-      if (networkObj.testCycleHistory.length > nnDb.testCycleHistory.length) { nnDb.testCycleHistory = networkObj.testCycleHistory; }
+
+      // if (networkObj.testCycleHistory.length > nnDb.testCycleHistory.length) { nnDb.testCycleHistory = networkObj.testCycleHistory; }
+
+      if (testHistoryItem) { 
+        nnDb.testCycleHistory.push(networkObj.testHistoryItem); 
+      }
 
       nnDb.markModified("overallMatchRate");
       nnDb.markModified("testCycles");
@@ -998,6 +1007,10 @@ function updateDbNetwork(params, callback) {
 
       const newNnDb = new NeuralNetwork(networkObj);
 
+      if (testHistoryItem) { 
+        newNnDb.testCycleHistory.push(networkObj.testHistoryItem); 
+      }
+
       newNnDb.save()
       .then(function(nnDbUpdated){
         if (verbose) {
@@ -1015,7 +1028,7 @@ function updateDbNetwork(params, callback) {
 
 function processBestNetwork(params, callback){
 
-  let nnObj = params.networkObj;
+  const nnObj = params.networkObj;
 
   updateDbNetwork({networkObj: nnObj, verbose: true}, function(err, networkObj){
 
@@ -1131,11 +1144,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
         currentBestNetwork = nnArray[0];
         currentBestNetwork.isValid = true;
 
-        if (currentBestNetwork.testCycles === undefined) { currentBestNetwork.testCycles = 0; }
-        if (currentBestNetwork.testCycleHistory === undefined) { currentBestNetwork.testCycleHistory = []; }
-        if (currentBestNetwork.successRate === undefined) { currentBestNetwork.successRate = 0; }
-        if (currentBestNetwork.matchRate === undefined) { currentBestNetwork.matchRate = 0; }
-        if (currentBestNetwork.overallMatchRate === undefined) { currentBestNetwork.overallMatchRate = 0; }
+        currentBestNetwork.networkDefaults(currentBestNetwork);
 
         console.log(chalk.bold.blue("+++ BEST NEURAL NETWORK LOADED FROM DB"
           + " | " + currentBestNetwork.networkId
@@ -4551,41 +4560,37 @@ function updateNetworkStats(params, callback) {
 
       const bnhmObj = bestNetworkHashMap.get(nnId);
 
-      if (bnhmObj.networkObj.testCycleHistory === undefined) {
-        bnhmObj.networkObj.testCycleHistory = [];
-      }
+      // const networkObj = params.networkObj;
+      // const testHistoryItem = params.testHistoryItem || false;
+      // const verbose = params.verbose || false;
+
+      // if (bnhmObj.networkObj.testCycleHistory === undefined) {
+      //   bnhmObj.networkObj.testCycleHistory = [];
+      // }
+
 
       bnhmObj.networkObj.incrementTestCycles = incrementTestCycles;
       bnhmObj.networkObj.matchRate = params.networkStatsObj[nnId].matchRate;
       bnhmObj.networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
 
-      const query = { networkId: nnId };
-
-      const update = {
-        "$inc": { testCycles: 1 },
-        "$set": { 
-          matchRate: bnhmObj.networkObj.matchRate,
-          overallMatchRate: bnhmObj.networkObj.overallMatchRate,
-        },
-        "$push": {
-          testCycleHistory: {
-            testCycle: bnhmObj.networkObj.testCycles,
-            match: params.networkStatsObj[nnId].match,
-            mismatch: params.networkStatsObj[nnId].mismatch,
-            total: params.networkStatsObj[nnId].total,
-            matchRate: params.networkStatsObj[nnId].matchRate,
-            timeStamp: moment().valueOf()
-          }
-        }
+      const testHistoryItem = {
+        testCycle: bnhmObj.networkObj.testCycles,
+        match: params.networkStatsObj[nnId].match,
+        mismatch: params.networkStatsObj[nnId].mismatch,
+        total: params.networkStatsObj[nnId].total,
+        matchRate: params.networkStatsObj[nnId].matchRate,
+        timeStampString: moment().format(compactDateTimeFormat),
+        timeStamp: moment().valueOf()
       };
 
-      const options = {
-        new: true,
-        upsert: true,
-        setDefaultsOnInsert: true,
+      const updateDbNetworkParams = {
+        networkObj: bnhmObj.networkObj,
+        incrementTestCycles: incrementTestCycles,
+        testHistoryItem: testHistoryItem,
+        verbose: configuration.verbose
       };
 
-      NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
+      updateDbNetwork(updateDbNetworkParams, function(err, nnDbUpdated){
         if (err) {
           console.log(chalkError("NN DB UPDATE ERROR: " + err));
           return cb();
@@ -4597,8 +4602,50 @@ function updateNetworkStats(params, callback) {
         printNn(nnDbUpdated);
 
         cb();
-
       });
+
+
+      // const query = { networkId: nnId };
+
+      // const update = {
+      //   "$inc": { testCycles: 1 },
+      //   "$set": { 
+      //     matchRate: bnhmObj.networkObj.matchRate,
+      //     overallMatchRate: bnhmObj.networkObj.overallMatchRate,
+      //   },
+      //   "$push": {
+      //     testCycleHistory: {
+      //       testCycle: bnhmObj.networkObj.testCycles,
+      //       match: params.networkStatsObj[nnId].match,
+      //       mismatch: params.networkStatsObj[nnId].mismatch,
+      //       total: params.networkStatsObj[nnId].total,
+      //       matchRate: params.networkStatsObj[nnId].matchRate,
+      //       timeStampString: moment().format(compactDateTimeFormat),
+      //       timeStamp: moment().valueOf()
+      //     }
+      //   }
+      // };
+
+      // const options = {
+      //   new: true,
+      //   upsert: true,
+      //   setDefaultsOnInsert: true,
+      // };
+
+      // NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
+      //   if (err) {
+      //     console.log(chalkError("NN DB UPDATE ERROR: " + err));
+      //     return cb();
+      //   }
+
+      //   bnhmObj.networkObj = nnDbUpdated;
+      //   bestNetworkHashMap.set(nnDbUpdated.networkId, bnhmObj);
+
+      //   printNn(nnDbUpdated);
+
+      //   cb();
+
+      // });
 
 
     }
