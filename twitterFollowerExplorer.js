@@ -966,7 +966,24 @@ function updateDbNetwork(params, callback) {
 
   let update = {};
 
-  update["$set"] = { matchRate: networkObj.matchRate, overallMatchRate: networkObj.overallMatchRate };
+  update["$setOnInsert"] = { 
+    seedNetworkId: networkObj.seedNetworkId,
+    seedNetworkRes: networkObj.seedNetworkRes,
+    network: networkObj.network,
+    successRate: networkObj.successRate, 
+    numInputs: networkObj.numInputs,
+    numOutputs: networkObj.numOutputs,
+    inputsId: networkObj.inputsId,
+    inputsObj: networkObj.inputsObj,
+    outputs: networkObj.outputs,
+    evolve: networkObj.evolve,
+    test: networkObj.test
+  };
+
+  update["$set"] = { 
+    matchRate: networkObj.matchRate, 
+    overallMatchRate: networkObj.overallMatchRate,
+  };
 
   if (incrementTestCycles) { update["$inc"] = { testCycles: 1 }; }
   if (testHistoryItem) { update["$push"] = { testCycleHistory: testHistoryItem }; }
