@@ -1010,9 +1010,7 @@ function updateDbNetwork(params, callback) {
 
 function processBestNetwork(params, callback){
 
-  const nnObj = params.networkObj;
-
-  updateDbNetwork({networkObj: nnObj, verbose: true}, function(err, networkObj){
+  updateDbNetwork({networkObj: params.networkObj, verbose: true}, function(err, networkObj){
 
     if (err) {
       console.log(chalkError("processBestNetwork *** SAVE DB ERROR: " + err));
@@ -1023,7 +1021,7 @@ function processBestNetwork(params, callback){
     let entry = {};
 
     if (params.entry === undefined) {
-      entry.name = nnObj.networkId + ".json";
+      entry.name = networkObj.networkId + ".json";
       entry.content_hash = false;
       entry.client_modified = moment().valueOf();
     }
@@ -1033,7 +1031,7 @@ function processBestNetwork(params, callback){
 
     const bnhmObj = {
       entry: entry,
-      networkObj: nnObj
+      networkObj: networkObj
     };
 
     bestNetworkHashMap.set(networkObj.networkId, bnhmObj);
