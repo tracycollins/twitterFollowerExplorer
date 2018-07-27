@@ -58,11 +58,11 @@ let userObj = {
   name: USER_ID,
   nodeId: USER_ID,
   userId: USER_ID,
+  utilId: USER_ID, 
   url: "https://www.twitter.com",
   screenName: SCREEN_NAME,
   namespace: "util",
   type: "TFE",
-  mode: "muxstream",
   timeStamp: moment().valueOf(),
   tags: {},
   stats: {}
@@ -132,6 +132,110 @@ const HashMap = require("hashmap").HashMap;
 
 let statsObj = {};
 let statsObjSmall = {};
+
+
+statsObj.pid = process.pid;
+statsObj.childrenFetchBusy = false;
+
+statsObj.hostname = hostname;
+statsObj.startTimeMoment = moment();
+statsObj.elapsed = 0;
+
+statsObj.status = "START";
+statsObj.fsmState = "---";
+statsObj.fetchCycle = 0;
+statsObj.newBestNetwork = false;
+statsObj.fetchAllIntervalStartMoment = moment();
+
+statsObj.fetchCycleStartMoment = moment();
+statsObj.fetchCycleEndMoment = moment();
+statsObj.fetchCycleElapsed = 0;
+
+statsObj.userAuthenticated = false;
+statsObj.serverConnected = false;
+statsObj.userReadyTransmitted = false;
+statsObj.userReadyAck = false;
+statsObj.heartbeatsReceived = 0;
+statsObj.users = {};
+statsObj.users.totalFriendsCount = 0;
+statsObj.users.totalFriendsFetched = 0;
+statsObj.users.totalPercentFetched = 0;
+statsObj.users.totalFriendsProcessed = 0;
+statsObj.users.totalPercentProcessed = 0;
+statsObj.users.grandTotalFriendsFetched = 0;
+statsObj.users.grandTotalPercentFetched = 0;
+statsObj.users.grandTotalFriendsProcessed = 0;
+statsObj.users.grandTotalPercentProcessed = 0;
+statsObj.users.classifiedAuto = 0;
+statsObj.users.classified = 0;
+statsObj.user = {};
+statsObj.user.altthreecee00 = {};
+statsObj.user.altthreecee01 = {};
+statsObj.user.altthreecee02 = {};
+statsObj.user.altthreecee00.friendsProcessed = 0;
+statsObj.user.altthreecee00.percentProcessed = 0;
+statsObj.user.altthreecee01.friendsProcessed = 0;
+statsObj.user.altthreecee01.percentProcessed = 0;
+statsObj.user.altthreecee02.friendsProcessed = 0;
+statsObj.user.altthreecee02.percentProcessed = 0;
+statsObj.analyzer = {};
+statsObj.analyzer.total = 0;
+statsObj.analyzer.analyzed = 0;
+statsObj.analyzer.skipped = 0;
+statsObj.analyzer.errors = 0;
+statsObj.twitterErrors = 0;
+statsObj.fetchUsersComplete = false;
+
+statsObj.bestNetworks = {};
+
+statsObj.bestNetwork = {};
+statsObj.bestNetwork.testCycles = 0;
+statsObj.bestNetwork.testCycleHistory = [];
+statsObj.bestNetwork.networkId = false;
+statsObj.bestNetwork.successRate = 0;
+statsObj.bestNetwork.matchRate = 0;
+statsObj.bestNetwork.overallMatchRate = 0;
+statsObj.bestNetwork.numInputs = 0;
+statsObj.bestNetwork.inputsId = "";
+
+statsObj.totalInputs = 0;
+statsObj.numNetworksLoaded = 0;
+statsObj.numNetworksUpdated = 0;
+statsObj.numNetworksSkipped = 0;
+statsObj.histograms = {};
+statsObj.normalization = {};
+statsObj.normalization.score = {};
+statsObj.normalization.magnitude = {};
+statsObj.normalization.score.min = 1.0;
+statsObj.normalization.score.max = -1.0;
+statsObj.normalization.magnitude.min = 0;
+statsObj.normalization.magnitude.max = -Infinity;
+statsObj.numLangAnalyzed = 0;
+statsObj.categorized = {};
+statsObj.categorized.manual = {};
+statsObj.categorized.auto = {};
+statsObj.categorized.total = 0;
+statsObj.categorized.totalManual = 0;
+statsObj.categorized.totalAuto = 0;
+
+let statsPickArray = [
+  "pid", 
+  "startTime", 
+  "elapsed", 
+  "serverConnected", 
+  "status", 
+  "authenticated", 
+  "numChildren", 
+  "socketError", 
+  "userReadyAck", 
+  "userReadyAckWait", 
+  "userReadyTransmitted",
+  "fsmState",
+  "categorized",
+  "bestNetwork",
+  "users",
+  "fetchCycle"
+];
 
 let tfeChildHashMap = {};
 let fsm;
@@ -249,6 +353,10 @@ const jsonPrint = function (obj) {
 
 const quit = function(options) {
 
+  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+  statsObj.timeStamp = moment().format(compactDateTimeFormat);
+  statsObj.status = "QUIT";
+
   const forceQuitFlag = options.force || false;
 
   const caller = callerId.getData();
@@ -258,10 +366,6 @@ const quit = function(options) {
   ));
 
   clearInterval(dbConnectionReadyInterval);
-
-  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
-  statsObj.timeStamp = moment().format(compactDateTimeFormat);
-  statsObj.status = "QUIT";
 
   quitFlag = true;
 
@@ -432,89 +536,6 @@ configuration.keepaliveInterval = 5*ONE_SECOND;
 configuration.userDbCrawl = TFE_USER_DB_CRAWL;
 configuration.quitOnComplete = DEFAULT_QUIT_ON_COMPLETE;
 
-statsObj.pid = process.pid;
-statsObj.childrenFetchBusy = false;
-
-statsObj.hostname = hostname;
-statsObj.startTimeMoment = moment();
-statsObj.elapsed = 0;
-
-statsObj.status = "START";
-statsObj.fsmState = "---";
-statsObj.fetchCycle = 0;
-statsObj.newBestNetwork = false;
-statsObj.fetchAllIntervalStartMoment = moment();
-
-statsObj.fetchCycleStartMoment = moment();
-statsObj.fetchCycleEndMoment = moment();
-statsObj.fetchCycleElapsed = 0;
-
-statsObj.userAuthenticated = false;
-statsObj.serverConnected = false;
-statsObj.userReadyTransmitted = false;
-statsObj.userReadyAck = false;
-statsObj.heartbeatsReceived = 0;
-statsObj.users = {};
-statsObj.users.totalFriendsCount = 0;
-statsObj.users.totalFriendsFetched = 0;
-statsObj.users.totalPercentFetched = 0;
-statsObj.users.totalFriendsProcessed = 0;
-statsObj.users.totalPercentProcessed = 0;
-statsObj.users.grandTotalFriendsFetched = 0;
-statsObj.users.grandTotalPercentFetched = 0;
-statsObj.users.grandTotalFriendsProcessed = 0;
-statsObj.users.grandTotalPercentProcessed = 0;
-statsObj.users.classifiedAuto = 0;
-statsObj.users.classified = 0;
-statsObj.user = {};
-statsObj.user.altthreecee00 = {};
-statsObj.user.altthreecee01 = {};
-statsObj.user.altthreecee02 = {};
-statsObj.user.altthreecee00.friendsProcessed = 0;
-statsObj.user.altthreecee00.percentProcessed = 0;
-statsObj.user.altthreecee01.friendsProcessed = 0;
-statsObj.user.altthreecee01.percentProcessed = 0;
-statsObj.user.altthreecee02.friendsProcessed = 0;
-statsObj.user.altthreecee02.percentProcessed = 0;
-statsObj.analyzer = {};
-statsObj.analyzer.total = 0;
-statsObj.analyzer.analyzed = 0;
-statsObj.analyzer.skipped = 0;
-statsObj.analyzer.errors = 0;
-statsObj.twitterErrors = 0;
-statsObj.fetchUsersComplete = false;
-
-statsObj.bestNetworks = {};
-
-statsObj.bestNetwork = {};
-statsObj.bestNetwork.testCycles = 0;
-statsObj.bestNetwork.testCycleHistory = [];
-statsObj.bestNetwork.networkId = false;
-statsObj.bestNetwork.successRate = 0;
-statsObj.bestNetwork.matchRate = 0;
-statsObj.bestNetwork.overallMatchRate = 0;
-statsObj.bestNetwork.numInputs = 0;
-statsObj.bestNetwork.inputsId = "";
-
-statsObj.totalInputs = 0;
-statsObj.numNetworksLoaded = 0;
-statsObj.numNetworksUpdated = 0;
-statsObj.numNetworksSkipped = 0;
-statsObj.histograms = {};
-statsObj.normalization = {};
-statsObj.normalization.score = {};
-statsObj.normalization.magnitude = {};
-statsObj.normalization.score.min = 1.0;
-statsObj.normalization.score.max = -1.0;
-statsObj.normalization.magnitude.min = 0;
-statsObj.normalization.magnitude.max = -Infinity;
-statsObj.numLangAnalyzed = 0;
-statsObj.categorized = {};
-statsObj.categorized.manual = {};
-statsObj.categorized.auto = {};
-statsObj.categorized.total = 0;
-statsObj.categorized.totalManual = 0;
-statsObj.categorized.totalAuto = 0;
 
 // Object.keys(statsObj.categorized).forEach(function(cat) {
 ["manual", "auto"].forEach(function(cat) {
@@ -683,9 +704,13 @@ function printNetworkObj(title, networkObj) {
 }
 
 function resetTwitterUserState(user, callback) {
+
+  statsObj.status = "RESET TWITTER USERS";
+
   console.log(chalkTwitterBold("RESET TWITTER STATE"
     + " | @" + user
   ));
+
   if (statsObj.user[user] === undefined) {
     statsObj.user[user] = {};
   }
@@ -707,6 +732,9 @@ function resetTwitterUserState(user, callback) {
 }
 
 function resetAllTwitterUserState(callback) {
+
+  statsObj.status = "RESET ALL TWITTER USERS";
+
   async.forEach(Object.keys(twitterUserHashMap), function(user, cb) {
     resetTwitterUserState(user, function() {
       cb();
@@ -718,11 +746,12 @@ function resetAllTwitterUserState(callback) {
 
 function updateBestNetworkStats(networkObj) {
 
+  statsObj.status = "UPDATE BEST NN STATS";
+
   if (statsObj.bestNetwork === undefined) { statsObj.bestNetwork = {}; }
 
   statsObj.bestRuntimeNetworkId = networkObj.networkId;
   statsObj.currentBestNetworkId = networkObj.networkId;
-
 
   statsObj.bestNetwork.networkId = networkObj.networkId;
   statsObj.bestNetwork.network = networkObj.network;
@@ -881,6 +910,8 @@ function connectDb(callback){
 
 function loadMaxInputDropbox(folder, file, callback) {
 
+  statsObj.status = "LOAD MAX INPUT";
+
   console.log(chalkNetwork("TFE | ... LOADING DROPBOX MAX INPUT HASHMAP | " + folder + "/" + file));
 
   let options = {path: folder};
@@ -905,10 +936,11 @@ function loadMaxInputDropbox(folder, file, callback) {
       if (callback !== undefined) { callback(null); }
     }
   });
-
 }
 
 function updateGlobalHistograms(params, callback) {
+
+  statsObj.status = "UPDATE GLOBAL HISTOGRAMS";
 
   async.each(Object.keys(params.user.histograms), function(type, cb0) {
 
@@ -956,6 +988,8 @@ function updateGlobalHistograms(params, callback) {
 }
 
 function updateDbNetwork(params, callback) {
+
+  statsObj.status = "UPDATE DB NETWORKS";
 
   const networkObj = params.networkObj;
   const incrementTestCycles = params.incrementTestCycles;
@@ -1017,6 +1051,8 @@ function updateDbNetwork(params, callback) {
 }
 
 function processBestNetwork(params, callback){
+
+  statsObj.status = "PROCESS BEST NN";
 
   updateDbNetwork({networkObj: params.networkObj, verbose: true}, function(err, networkObj){
 
@@ -1092,7 +1128,7 @@ function processBestNetwork(params, callback){
 
 function loadBestNetworkDropboxFolder(folder, callback) {
 
-  statsObj.status = "LOAD NNs";
+  statsObj.status = "LOAD BEST NNs";
 
   let options = {path: folder};
   
@@ -1351,6 +1387,8 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
 function initUnfollowableUserSet(){
 
+  statsObj.status = "INIT UNFOLLOWABLE USER SET";
+
   loadFile(dropboxConfigDefaultFolder, unfollowableUserFile, function(err, unfollowableUserSetArray){
     if (err) {
       if (err.code === "ENOTFOUND") {
@@ -1371,8 +1409,9 @@ function initUnfollowableUserSet(){
   });
 }
 
-
 function initRandomNetworks(params, callback) {
+
+  statsObj.status = "INIT RNNs";
 
   if (loadedNetworksFlag && !configuration.forceInitRandomNetworks) {
     console.log(chalkLog("SKIP INIT RANDOM NETWORKS: loadedNetworksFlag: " + loadedNetworksFlag));
@@ -1466,6 +1505,8 @@ function initRandomNetworks(params, callback) {
 }
 
 function loadBestNeuralNetworkFile(callback) {
+
+  statsObj.status = "LOAD BEST NN";
 
   console.log(chalkLog("... LOADING DROPBOX NEURAL NETWORKS"
     + " | FOLDER: " + bestNetworkFolder
@@ -1694,6 +1735,8 @@ function runEnable(displayArgs) {
 
 function updateUserCategoryStats(user, callback) {
 
+  statsObj.status = "UPDATE USER CAT STATS";
+
   return new Promise(function() {
 
     let catObj = {};
@@ -1887,6 +1930,9 @@ function updateHistograms(params, callback) {
 }
 
 function generateAutoCategory(user, callback) {
+
+  statsObj.status = "GEN AUTO CAT";
+
   async.waterfall([
     function userScreenName(cb) {
       if (user.screenName !== undefined) {
@@ -2202,6 +2248,8 @@ function generateAutoCategory(user, callback) {
 
 function processUser(threeceeUser, userIn, callback) {
 
+  statsObj.status = "PROCESS USER";
+
   debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
 
   if (userServerController === undefined) {
@@ -2423,7 +2471,6 @@ function processUser(threeceeUser, userIn, callback) {
     }
 
   });
-
 }
 
 const checkChildrenState = function (checkState, callback) {
@@ -2869,6 +2916,8 @@ fsm = Stately.machine(fsmStates);
 
 function initFetchAllInterval(interval) {
 
+  statsObj.status = "INIT FETCH ALL INTERVAL";
+
   fetchAllIntervalReady = true;
 
   console.log(chalkInfo("INIT FETCH ALL INTERVAL | " + msToTime(interval)));
@@ -3179,6 +3228,8 @@ function initProcessUserQueueInterval(interval) {
 
     if (processUserQueueReady && processUserQueue.length > 0) {
 
+      statsObj.status = "PROCESS USER";
+
       processUserQueueReady = false;
 
       mObj = processUserQueue.shift();
@@ -3299,53 +3350,60 @@ function initSaveFileQueue(cnf) {
 
 }
 
-function updateStatsObjSmall(){
+// function updateStatsObjSmall(){
 
-  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
-  statsObj.timeStamp = moment().format(compactDateTimeFormat);
+//   statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+//   statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
-  userObj.stats.elapsed = statsObj.elapsed;
+//   userObj.stats.elapsed = statsObj.elapsed;
 
-  statsObjSmall = pick(
-    statsObj,
-    [
-      "serverConnected",
-      "socketId",
-      "timeStamp",
-      "elapsed",
-      "user",
-      "users",
-      "userReadyTransmitted",
-      "userReadyAckWait",
-      "userReadyTransmitted",
-      "userReadyAck",
-      "userAuthenticated",
-      "fetchCycle", 
-      "newBestNetwork", 
-      "fetchAllIntervalStartMoment"
-    ]
-  );
-}
+//   statsObjSmall = pick(
+//     statsObj,
+//     [
+//       "serverConnected",
+//       "socketId",
+//       "timeStamp",
+//       "elapsed",
+//       "user",
+//       "users",
+//       "userReadyTransmitted",
+//       "userReadyAckWait",
+//       "userReadyTransmitted",
+//       "userReadyAck",
+//       "userAuthenticated",
+//       "fetchCycle", 
+//       "newBestNetwork", 
+//       "fetchAllIntervalStartMoment"
+//     ]
+//   );
+// }
 
 function sendKeepAlive(callback) {
 
   if (statsObj.userAuthenticated && statsObj.serverConnected) {
 
-    debug(chalkAlert("TX KEEPALIVE"
-      + " | " + moment().format(compactDateTimeFormat)
+    statsObj.elapsed = moment().valueOf() - statsObj.startTime;
+    statsObj.timeStamp = moment().format(compactDateTimeFormat);
+    userObj.timeStamp = moment().valueOf();
+    userObj.stats.elapsed = statsObj.elapsed;
+    
+    statsObjSmall = pick(statsObj, statsPickArray);
+
+    debug(chalkInfo("TX KEEPALIVE"
       + " | " + userObj.userId
+      + " | " + moment().format(compactDateTimeFormat)
     ));
 
     socket.emit(
       "SESSION_KEEPALIVE", 
       {
         user: userObj, 
-        status: statsObj.status,
-        stats: statsObjSmall
+        stats: statsObjSmall,
+        status: statsObj.status
       }
     );
 
-    callback(null, userObj);
+    callback(null);
   }
   else {
     console.log(chalkError("!!!! CANNOT TX KEEPALIVE"
@@ -3354,7 +3412,7 @@ function sendKeepAlive(callback) {
       + " | READY ACK: " + statsObj.userAuthenticated
       + " | " + moment().format(compactDateTimeFormat)
     ));
-    callback("ERROR", null);
+    callback("ERROR");
   }
 }
 
@@ -3369,11 +3427,11 @@ function initKeepalive(interval) {
     + " | INTERVAL: " + interval + " ms"
   ));
 
-  sendKeepAlive(function(err, results) {
+  sendKeepAlive(function(err) {
     if (err) {
       console.log(chalkError("KEEPALIVE ERROR: " + err));
     }
-    else if (results) {
+    else {
       debug(chalkConnect("KEEPALIVE"
         + " | " + moment().format(compactDateTimeFormat)
       ));
@@ -3382,13 +3440,13 @@ function initKeepalive(interval) {
 
   socketKeepAliveInterval = setInterval(function() { // TX KEEPALIVE
 
-    updateStatsObjSmall();
+    // updateStatsObjSmall();
 
-    sendKeepAlive(function(err, results) {
+    sendKeepAlive(function(err) {
       if (err) {
         console.log(chalkError("KEEPALIVE ERROR: " + err));
       }
-      else if (results) {
+      else {
         debug(chalkConnect("KEEPALIVE"
           + " | " + moment().format(compactDateTimeFormat)
         ));
@@ -3495,7 +3553,7 @@ function initSocket(cnf) {
         + " | " + userObj.url
         + " | " + userObj.screenName
         + " | " + userObj.type
-        + " | " + userObj.mode
+        // + " | " + userObj.mode
         + "\nTAGS\n" + jsonPrint(userObj.tags)
       ));
 
@@ -3775,9 +3833,12 @@ function initStatsUpdate(callback) {
 
 function initTwitterFollowerChild(twitterConfig, callback) {
 
+
   const user = twitterConfig.threeceeUser;
   const childId = TFC_CHILD_PREFIX + twitterConfig.threeceeUser;
   console.log(chalkLog("+++ NEW TFE CHILD | TFC ID: " + childId));
+
+  statsObj.status = "INIT CHILD | " +user ;
 
   let childEnv = {};
   childEnv.env = {};
@@ -4029,6 +4090,8 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 }
 
 function initTwitter(threeceeUser, callback) {
+
+  statsObj.status = "INIT TWITTER";
 
   let twitterConfigFile =  threeceeUser + ".json";
 
@@ -4505,7 +4568,6 @@ function printTestCycleHistory(nn){
   });
 }
 
-
 function updateNetworkStats(params, callback) {
 
   statsObj.status = "UPDATE NN STATS";
@@ -4517,20 +4579,6 @@ function updateNetworkStats(params, callback) {
   const nnIds = Object.keys(params.networkStatsObj);
 
   let newNnDb;
-
-  // function printNn(nn){
-  //   console.log(chalkNetwork("NN UPDATED"
-  //     + " | TEST CYCs: " + nn.testCycles
-  //     + " | TC HISTORY: " + nn.testCycleHistory.length
-  //     + " | OAMR: " + nn.overallMatchRate.toFixed(2) + "%"
-  //     + " | MR: " + nn.matchRate.toFixed(2) + "%"
-  //     + " | SR: " + nn.successRate.toFixed(2) + "%"
-  //     + " | " + nn.networkId
-  //   ));
-
-  //   printTestCycleHistory(nn);
-  // }
-
   let bnhmObj;
   let bnwObj;
 
@@ -4592,6 +4640,8 @@ function updateNetworkStats(params, callback) {
 }
 
 function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
+
+  statsObj.status = "INIT RNT INTERVAL";
 
   randomNetworkTreeMessageRxQueueReadyFlag = true;
 
@@ -4880,9 +4930,15 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 }
 
 function initLangAnalyzerMessageRxQueueInterval(interval, callback) {
+
+  statsObj.status = "INIT LANG INTERVAL";
+
   langAnalyzerMessageRxQueueReadyFlag = true;
+
   console.log(chalkInfo("INIT LANG ANALIZER QUEUE INTERVAL: " + interval + " ms"));
+
   let langEntityKeys = [];
+
   langAnalyzerMessageRxQueueInterval = setInterval(function () {
     if (langAnalyzerMessageRxQueueReadyFlag && (langAnalyzerMessageRxQueue.length > 0)) {
       langAnalyzerMessageRxQueueReadyFlag = false;
@@ -5090,8 +5146,13 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback) {
 }
 
 function initUserDbUpdateQueueInterval(interval) {
+
+  statsObj.status = "INIT USER DB UPDATE INTERVAL";
+
   console.log(chalkBlue("INIT USER DB UPDATE QUEUE INTERVAL: " + interval));
+
   clearInterval(userDbUpdateQueueInterval);
+
   userDbUpdateQueueInterval = setInterval(function userDbUpdateQueueInterval() {
     if (userDbUpdateQueueReadyFlag && (userDbUpdateQueue.length > 0)) {
       userDbUpdateQueueReadyFlag = false;
@@ -5188,8 +5249,13 @@ function initRandomNetworkTree(callback) {
 }
 
 function initLangAnalyzer(callback) {
+
+  statsObj.status = "INIT LANG ANALYZER";
+
   console.log(chalkInfo("INIT LANGUAGE ANALYZER CHILD PROCESS"));
+
   langAnalyzer = cp.fork(`languageAnalyzerChild.js`);
+
   langAnalyzer.on("message", function(m) {
     debug(chalkLog("<== LA RX"
       + " [" + langAnalyzerMessageRxQueue.length + "]"
