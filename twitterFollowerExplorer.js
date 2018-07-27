@@ -2828,7 +2828,7 @@ const fsmStates = {
 
               bnhmObj.networkObj = networkDefaults(bnhmObj.networkObj);
 
-              bestNetworkHashMap.clear();
+              // bestNetworkHashMap.clear();
               bestNetworkHashMap.set(statsObj.bestNetwork.networkId, bnhmObj);
 
               if (configuration.quitOnComplete) {
