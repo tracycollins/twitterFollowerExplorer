@@ -3386,7 +3386,7 @@ function sendKeepAlive(callback) {
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
     userObj.timeStamp = moment().valueOf();
     userObj.stats.elapsed = statsObj.elapsed;
-    
+
     statsObjSmall = pick(statsObj, statsPickArray);
 
     debug(chalkInfo("TX KEEPALIVE"
@@ -4506,6 +4506,8 @@ function saveNetworkHashMap(params, callback) {
     const networkObj = bestNetworkHashMap.get(nnId).networkObj;
 
     printNetworkObj("SAVING NN", networkObj);
+
+    statsObj.status = "SAVE NN HASHMAP | SAVE Q: " + saveFileQueue.length;
 
     const file = nnId + ".json";
 
