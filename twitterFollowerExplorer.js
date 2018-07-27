@@ -353,7 +353,7 @@ const jsonPrint = function (obj) {
 
 const quit = function(options) {
 
-  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+  statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
   statsObj.timeStamp = moment().format(compactDateTimeFormat);
   statsObj.status = "QUIT";
 
@@ -3036,7 +3036,7 @@ function showStats(options) {
       + " | AUTHENTICATED: " + statsObj.userAuthenticated
       + " | READY TXD: " + statsObj.userReadyTransmitted
       + " | READY ACK: " + statsObj.userReadyAck
-      + " | E: " + statsObj.elapsed
+      + " | E: " + msToTime(statsObj.elapsed)
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
       + " | PUQ: " + processUserQueue.length
       + " | FSM: " + fsm.getMachineState()
@@ -3382,7 +3382,7 @@ function sendKeepAlive(callback) {
 
   if (statsObj.userAuthenticated && statsObj.serverConnected) {
 
-    statsObj.elapsed = moment().valueOf() - statsObj.startTime;
+    statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
     userObj.timeStamp = moment().valueOf();
     userObj.stats.elapsed = statsObj.elapsed;
@@ -3804,7 +3804,9 @@ function initStatsUpdate(callback) {
 
   console.log(chalkTwitter("INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
 
-  statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+
+  // statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+  statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
   statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
   twitterTextParser.getGlobalHistograms(function(hist) {
@@ -3817,7 +3819,7 @@ function initStatsUpdate(callback) {
 
     initUnfollowableUserSet();
 
-    statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+    statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
     statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
     twitterTextParser.getGlobalHistograms(function(hist) {
