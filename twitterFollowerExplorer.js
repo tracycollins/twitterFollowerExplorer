@@ -4636,6 +4636,9 @@ function updateNetworkStats(params, callback) {
   }, function(err) {
 
     saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: params.saveImmediate, updateDb: params.updateDb}, function() {
+
+      statsObj.status = statsObj.fsmState;
+
       if (callback !== undefined) { callback(err); }
     });
   });
