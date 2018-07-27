@@ -4553,7 +4553,7 @@ function updateNetworkStats(params, callback) {
         networkObj: bnwObj,
         incrementTestCycles: incrementTestCycles,
         testHistoryItem: testHistoryItem,
-        verbose: configuration.verbose
+        verbose: true
       };
 
       updateDbNetwork(updateDbNetworkParams, function(err, nnDbUpdated){
