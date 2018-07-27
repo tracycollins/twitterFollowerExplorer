@@ -1634,8 +1634,8 @@ function loadBestNeuralNetworkFile(callback) {
               + " | SR: " + bnwObj.successRate.toFixed(2)
               + " | MR: " + bnwObj.matchRate.toFixed(2)
               + " | OAMR: " + bnwObj.overallMatchRate.toFixed(2)
-              + " | TEST CYCs: " + bnwObj.testCycles
-              + " | TC HISTORY: " + bnwObj.testCycleHistory.length
+              + " | TC: " + bnwObj.testCycles
+              + " | TCH: " + bnwObj.testCycleHistory.length
             ));
 
             bnhmObj.networkObj = bnwObj;
@@ -1677,8 +1677,8 @@ function loadBestNeuralNetworkFile(callback) {
             + " | SR: " + bnwObj.successRate.toFixed(2)
             + " | MR: " + bnwObj.matchRate.toFixed(2)
             + " | OAMR: " + bnwObj.overallMatchRate.toFixed(2)
-            + " | TEST CYCs: " + bnwObj.testCycles
-            + " | TC HISTORY: " + bnwObj.testCycleHistory.length
+            + " | TC: " + bnwObj.testCycles
+            + " | TCH: " + bnwObj.testCycleHistory.length
           ));
 
           bnhmObj.networkObj = bnwObj;
@@ -2742,8 +2742,8 @@ const fsmStates = {
           + "\n SR:          " + statsObj.bestNetwork.successRate.toFixed(3) + "%"
           + "\n MR:          " + statsObj.bestNetwork.matchRate.toFixed(3) + "%"
           + "\n OAMR:        " + statsObj.bestNetwork.overallMatchRate.toFixed(3) + "%"
-          + "\n TEST CYCs:   " + statsObj.bestNetwork.testCycles
-          + "\n TC HISTORY:  " + statsObj.bestNetwork.testCycleHistory.length
+          + "\n TC:          " + statsObj.bestNetwork.testCycles
+          + "\n TCH:         " + statsObj.bestNetwork.testCycleHistory.length
         ));
 
         console.log(chalk.bold.blue("===================================================="));
@@ -3740,8 +3740,8 @@ function initSocket(cnf) {
             + " SR: " + networkObj.successRate.toFixed(2) + "%"
             + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
             + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-            + " | TEST CYCs: " + networkObj.testCycles
-            + " | TC HISTORY: " + networkObj.testCycleHistory.length
+            + " | TC: " + networkObj.testCycles
+            + " | TCH: " + networkObj.testCycleHistory.length
             + " | CR: " + getTimeStamp(networkObj.createdAt)
             + " | IN: " + networkObj.numInputs
             + " | " + networkObj.networkId
@@ -4837,8 +4837,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
               + " | MR: " + m.bestNetwork.matchRate.toFixed(2) + "%"
               + " | OAMR: " + m.bestNetwork.overallMatchRate.toFixed(2) + "%"
-              + " | TEST CYCs: " + m.bestNetwork.testCycles
-              + " | TC HISTORY: " + m.bestNetwork.testCycleHistory.length
+              + " | TC: " + m.bestNetwork.testCycles
+              + " | TCH: " + m.bestNetwork.testCycleHistory.length
               + " | @" + m.user.screenName
               + " | C: " + m.user.category
               + " | CA: " + m.categoryAuto
@@ -4903,8 +4903,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               + " | " + m.networkId
               + " | MR: " + m.matchRate.toFixed(2)
               + " | OAMR: " + m.overallMatchRate.toFixed(2)
-              + " | TEST CYCs: " + m.testCycles
-              + " | TC HISTORY: " + m.testCycleHistory.length
+              + " | TC: " + m.testCycles
+              + " | TCH: " + m.testCycleHistory.length
             ));
           }
           if (m.previousBestNetworkId && bestNetworkHashMap.has(m.previousBestNetworkId)) {
