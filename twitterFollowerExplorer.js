@@ -992,9 +992,9 @@ function updateDbNetwork(params, callback) {
   statsObj.status = "UPDATE DB NETWORKS";
 
   const networkObj = params.networkObj;
-  const incrementTestCycles = params.incrementTestCycles;
-  const testHistoryItem = params.testHistoryItem || false;
-  const addToTestHistory = params.addToTestHistory || true;
+  const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
+  const testHistoryItem = (params.testHistoryItem !== undefined) ? params.testHistoryItem : false;
+  const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : true;
   const verbose = params.verbose || false;
 
   const query = { networkId: networkObj.networkId };
@@ -1024,7 +1024,7 @@ function updateDbNetwork(params, callback) {
   // if (testHistoryItem) { update["$push"] = { testCycleHistory: testHistoryItem }; }
   
   if (testHistoryItem) { 
-    update["$addToSet"] = { testCycleHistory: testHistoryItem };
+    update["$push"] = { testCycleHistory: testHistoryItem };
   }
   else if (addToTestHistory) {
     update["$addToSet"] = { testCycleHistory: { $each: networkObj.testCycleHistory } };
@@ -1054,7 +1054,7 @@ function processBestNetwork(params, callback){
 
   statsObj.status = "PROCESS BEST NN";
 
-  updateDbNetwork({networkObj: params.networkObj, verbose: true}, function(err, networkObj){
+  updateDbNetwork({networkObj: params.networkObj, addToTestHistory: true, verbose: true}, function(err, networkObj){
 
     if (err) {
       console.log(chalkError("processBestNetwork *** SAVE DB ERROR: " + err));
@@ -3717,6 +3717,7 @@ function initSocket(cnf) {
       }
 
       if (entry.name === bestRuntimeNetworkFileName) {
+
         loadFile(bestNetworkFolder, entry.name, function(err, networkObj) {
 
           if (err) {
@@ -4611,6 +4612,7 @@ function updateNetworkStats(params, callback) {
         networkObj: bnwObj,
         incrementTestCycles: incrementTestCycles,
         testHistoryItem: testHistoryItem,
+        addToTestHistory: false,
         verbose: true
       };
 
