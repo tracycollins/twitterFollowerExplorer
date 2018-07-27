@@ -960,6 +960,7 @@ function updateDbNetwork(params, callback) {
   const networkObj = params.networkObj;
   const incrementTestCycles = params.incrementTestCycles;
   const testHistoryItem = params.testHistoryItem || false;
+  const addToTestHistory = params.addToTestHistory || true;
   const verbose = params.verbose || false;
 
   const query = { networkId: networkObj.networkId };
@@ -986,7 +987,14 @@ function updateDbNetwork(params, callback) {
   };
 
   if (incrementTestCycles) { update["$inc"] = { testCycles: 1 }; }
-  if (testHistoryItem) { update["$push"] = { testCycleHistory: testHistoryItem }; }
+  // if (testHistoryItem) { update["$push"] = { testCycleHistory: testHistoryItem }; }
+  
+  if (testHistoryItem) { 
+    update["$addToSet"] = { testCycleHistory: testHistoryItem };
+  }
+  else if (addToTestHistory) {
+    update["$addToSet"] = { testCycleHistory: { $each: networkObj.testCycleHistory } };
+  }
 
   const options = {
     new: true,
