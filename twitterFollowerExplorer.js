@@ -3524,67 +3524,13 @@ function initSocket(cnf) {
 
     console.log(chalkConnect("SOCKET CONNECT | " + socket.id + " ... AUTHENTICATE ..."));
 
-    // socket.on("unauthorized", function(err) {
-    //   console.log(chalkError("*** AUTHENTICATION ERROR: ", err.message));
-    //   statsObj.userAuthenticated = false ;
-    // });
-
     socket.emit("authentication", { namespace: "util", userId: userObj.userId, password: "0123456789" });
-
-    // socket.on("authenticated", function() {
-
-    //   statsObj.serverConnected = true ;
-
-    //   console.log("AUTHENTICATED | " + socket.id);
-
-    //   statsObj.socketId = socket.id;
-
-    //   console.log(chalkConnect( "CONNECTED TO HOST"
-    //     + " | SERVER: " + cnf.targetServer
-    //     + " | ID: " + socket.id
-    //   ));
-
-    //   userObj.timeStamp = moment().valueOf();
-
-    //   console.log(chalkInfo(socket.id
-    //     + " | TX USER_READY"
-    //     + " | " + moment().format(compactDateTimeFormat)
-    //     + " | " + userObj.userId
-    //     + " | " + userObj.url
-    //     + " | " + userObj.screenName
-    //     + " | " + userObj.type
-    //     // + " | " + userObj.mode
-    //     + "\nTAGS\n" + jsonPrint(userObj.tags)
-    //   ));
-
-    //   statsObj.userAuthenticated = true ;
-
-    //   initKeepalive(cnf.keepaliveInterval);
-
-    //   initUserReadyInterval(5000);
-    // });
-
-    // socket.on("disconnect", function(reason) {
-
-    //   statsObj.userAuthenticated = false ;
-    //   statsObj.serverConnected = false;
-    //   statsObj.userReadyTransmitted = false;
-    //   statsObj.userReadyAck = false ;
-
-    //   console.log(chalkAlert(moment().format(compactDateTimeFormat)
-    //     + " | SOCKET DISCONNECT: " + statsObj.socketId
-    //     + " | REASON: " + reason
-    //   ));
-    // });
-
   });
 
   socket.on("unauthorized", function(err) {
     console.log(chalkError("*** AUTHENTICATION ERROR: ", err.message));
     statsObj.userAuthenticated = false ;
   });
-
-  // socket.emit("authentication", { namespace: "util", userId: userObj.userId, password: "0123456789" });
 
   socket.on("authenticated", function() {
 
@@ -3659,7 +3605,7 @@ function initSocket(cnf) {
 
     statsObj.serverConnected = true;
 
-    console.log(chalkInfo("TFE | >RX CONTROL PANEL FOLLOW"
+    console.log(chalkInfo("TFE | >RX FOLLOW"
       + " | " + socket.id
       + " | UID: " + u.userId
       + " | @" + u.screenName
@@ -3855,7 +3801,6 @@ function initStatsUpdate(callback) {
   console.log(chalkTwitter("INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
 
 
-  // statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
   statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
   statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
