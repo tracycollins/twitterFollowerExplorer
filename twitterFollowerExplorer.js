@@ -3617,6 +3617,8 @@ function initSocket(cnf) {
 
   socket.on("UNFOLLOW", function(u) {
 
+    if (!u || (u === undefined)) { return; }
+
     statsObj.serverConnected = true;
 
     console.log(chalkInfo("TFE | >RX UNFOLLOW"
