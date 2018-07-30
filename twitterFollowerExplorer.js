@@ -4087,6 +4087,15 @@ function initSocket(cnf) {
 
   socket.on("FOLLOW", function(u) {
 
+    if (u === undefined) {
+      console.log(chalkAlert("TFE | >RX FOLLOW ERROR"
+        + " | " + socket.id
+        + " | USER UNDEFINED"
+        + " | " + moment().format(compactDateTimeFormat)
+      ));
+      return;
+    }
+
     statsObj.serverConnected = true;
 
     console.log(chalkInfo("TFE | >RX FOLLOW"
@@ -5865,4 +5874,6 @@ initialize(configuration, function(err, cnf) {
       console.log(chalkAlert("... WAIT DB CONNECTED ..."));
     }
   }, 1000);
+
+
 });
