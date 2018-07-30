@@ -2982,6 +2982,26 @@ function processUser(threeceeUser, userIn, callback) {
   });
 }
 
+function initChild(params, callback){
+  const initObj = {
+    op: "INIT",
+    childId: tfeChildHashMap[params.threeceeUser].childId,
+    threeceeUser: tfeChildHashMap[params.threeceeUser].threeceeUser,
+    twitterConfig: tfeChildHashMap[params.threeceeUser].twitterConfig,
+    verbose: configuration.verbose
+  };
+
+  tfeChildHashMap[params.threeceeUser].child.send(initObj, function(err) {
+    if (err) {
+      console.log(chalkError("*** CHILD SEND INIT ERROR"
+        + " | @" + params.threeceeUser
+        + " | ERR: " + err
+      ));
+    }
+    callback(err);
+  });
+}
+
 const checkChildrenState = function (checkState, callback) {
 
   async.every(Object.keys(tfeChildHashMap), function(user, cb) {
@@ -4354,12 +4374,19 @@ function initTwitterFollowerChild(twitterConfig, callback) {
     switch(m.op) {
 
       case "ERROR":
+
         console.log(chalkError("TFC | CHILD ERROR | " + m.threeceeUser));
+
         if (m.error) { 
           console.log(chalkError("TFC | CHILD ERROR\n" + jsonPrint(m.error))); 
         }
+
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
-        checkChildrenState(m.op);
+
+        initChild({threeceeUser: m.threeceeUser}, function(err){
+          checkChildrenState(m.op);
+        });
+
       break;
 
       case "INIT":
