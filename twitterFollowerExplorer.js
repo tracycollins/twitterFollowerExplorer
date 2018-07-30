@@ -1294,14 +1294,20 @@ function loadAllConfigFiles(callback){
       loadConfigFile(dropboxConfigDefaultFolder, dropboxConfigDefaultFile, function(err, defaultConfig){
 
         if (err) {
+
           console.log(chalkAlert("TFE | ERROR LOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
           console.log(chalkAlert("TFE | ERROR LOADED DEFAULT CONFIG " + err));
+
+          if ((err.status === 404) || (err.status === 409)) {
+            console.log(chalkAlert("TFE | !!! DROPBOX READ FILE " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile + " NOT FOUND ... SKIPPING"));
+            return cb();
+          }
+
           return cb(err);
         }
 
         if (defaultConfig) {
 
-          // defaultConfiguration = deepcopy(defaultConfig);
           defaultConfiguration = defaultConfig;
 
           console.log(chalkAlert("TFE | +++ RELOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
@@ -1319,14 +1325,20 @@ function loadAllConfigFiles(callback){
       loadConfigFile(dropboxConfigHostFolder, dropboxConfigHostFile, function(err, hostConfig){
 
         if (err) {
+
           console.log(chalkAlert("TFE | ERROR LOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
           console.log(chalkAlert("TFE | ERROR LOADED HOST CONFIG " + err));
+
+          if ((err.status === 404) || (err.status === 409)) {
+            console.log(chalkAlert("TFE | !!! DROPBOX READ FILE " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile + " NOT FOUND ... SKIPPING"));
+            return cb();
+          }
+
           return cb(err);
         }
 
         if (hostConfig) {
 
-          // hostConfiguration = deepcopy(hostConfig);
           hostConfiguration = hostConfig;
 
           console.log(chalkAlert("TFE | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
@@ -1352,6 +1364,8 @@ function loadAllConfigFiles(callback){
 
     // configuration = deepcopy(tempConfig);
     configuration = tempConfig;
+
+    configuration.twitterUsers = _.uniq(configuration.twitterUsers);
 
     callback();
   });
@@ -4216,6 +4230,7 @@ function initSocket(cnf) {
       // const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE;
 
       if ((entry.name === dropboxConfigDefaultFile) || (entry.name === dropboxConfigHostFile)) {
+
         loadAllConfigFiles(function(err){
 
           loadCommandLineArgs(function(err, results){
@@ -4232,7 +4247,7 @@ function initSocket(cnf) {
             });
 
           });
-          
+
         });
       }
 
@@ -4747,7 +4762,7 @@ function initialize(cnf, callback) {
   console.log(chalkAlert("FORCE LANG ANALYSIS: " + cnf.forceLanguageAnalysis));
 
   cnf.twitterDefaultUser = process.env.TFE_TWITTER_DEFAULT_USER || TWITTER_DEFAULT_USER ;
-  cnf.twitterUsers = process.env.TFE_TWITTER_USERS || [ "altthreecee02", "altthreecee01", "altthreecee00" ] ;
+  // cnf.twitterUsers = process.env.TFE_TWITTER_USERS || [ "altthreecee02", "altthreecee01", "altthreecee00" ] ;
   cnf.statsUpdateIntervalTime = process.env.TFE_STATS_UPDATE_INTERVAL || ONE_MINUTE;
   cnf.twitterConfigFolder = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER || "/config/twitter";
   cnf.twitterConfigFile = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE || cnf.twitterDefaultUser + ".json";
