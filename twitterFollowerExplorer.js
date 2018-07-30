@@ -4383,9 +4383,11 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
 
-        initChild({threeceeUser: m.threeceeUser}, function(err){
-          checkChildrenState(m.op);
-        });
+        if (m.type !== "INVALID_TOKEN") {
+          initChild({threeceeUser: m.threeceeUser}, function(err){
+            checkChildrenState(m.op);
+          });
+        }
 
       break;
 
