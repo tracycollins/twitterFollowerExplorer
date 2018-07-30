@@ -541,6 +541,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
       nnId,
       statsObj.allTimeLoadedNetworks[nnId].inputsId,
       statsObj.allTimeLoadedNetworks[nnId].numInputs,
+      statsObj.allTimeLoadedNetworks[nnId].overallMatchRate.toFixed(2),
       statsObj.allTimeLoadedNetworks[nnId].successRate.toFixed(2),
       statsObj.allTimeLoadedNetworks[nnId].total,
       statsObj.allTimeLoadedNetworks[nnId].match,
@@ -619,6 +620,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
             "NNID",
             "INPUTSID",
             "INPUTS",
+            "OAMR",
             "SR",
             "ATOT",
             "AM",
@@ -635,11 +637,11 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           ]);
 
           console.log(chalk.blue(
-              "\n------------------------------------------------------------------------------------------------------------------"
+              "\n-------------------------------------------------------------------------------------------------------------------------------------------------"
             + "\n" + title 
-            + "\n------------------------------------------------------------------------------------------------------------------\n"
-            + table(statsTextArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
-            + "\n------------------------------------------------------------------------------------------------------------------"
+            + "\n-------------------------------------------------------------------------------------------------------------------------------------------------\n"
+            + table(statsTextArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+            + "\n-------------------------------------------------------------------------------------------------------------------------------------------------"
           ));
 
         });
