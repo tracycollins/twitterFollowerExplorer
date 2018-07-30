@@ -994,6 +994,16 @@ function initTwitter(twitterConfig, callback){
 
     twitStream = twitClient.stream("user", { stringify_friend_ids: true });
 
+    twitStream.on("error", function(err){
+
+      console.log(chalkError("TFC | *** ERROR USER @" + configuration.threeceeUser
+        + " | " +  jsonPrint(err)
+      ));
+
+      quit("TWITTER STREAM ERROR | " + err);
+
+    });
+
     twitStream.on("follow", function(followMessage){
 
       console.log(chalkInfo("TFC | +++ USER @" + configuration.threeceeUser + " FOLLOW"
