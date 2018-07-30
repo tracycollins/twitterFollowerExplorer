@@ -1365,7 +1365,7 @@ function loadAllConfigFiles(callback){
     // configuration = deepcopy(tempConfig);
     configuration = tempConfig;
 
-    configuration.twitterUsers = _.uniq(configuration.twitterUsers);
+    configuration.twitterUsers = _.uniq(configuration.twitterUsers);  // merge concats arrays!
 
     callback();
   });
@@ -4230,6 +4230,8 @@ function initSocket(cnf) {
       // const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE;
 
       if ((entry.name === dropboxConfigDefaultFile) || (entry.name === dropboxConfigHostFile)) {
+
+        console.log(chalkAlert(">R DROPBOX_CHANGE | CONFIG FILE | " + entry.name));
 
         loadAllConfigFiles(function(err){
 
