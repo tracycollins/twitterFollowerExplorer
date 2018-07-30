@@ -966,9 +966,9 @@ const fsmStates = {
       return this.ERROR;
     },
 
-    "fsm_fetchUserEnd": "FETCH_END",
-    "fsm_init": "INIT",
-    "fsm_error": "ERROR",
+    // "fsm_fetchUserEnd": "FETCH_END",
+    // "fsm_init": "INIT",
+    // "fsm_error": "ERROR",
     "fsm_reset": "RESET"
 
   }
@@ -1168,7 +1168,8 @@ function unfollowFriend(params, callback){
 
   if (!twitClient) {
     console.log(chalkAlert("TFC | UNFOLLOW FRIEND | TWIT CLIENT UNDEFINED | SKIPPING"
-      + " | " + jsonPrint(params)
+      + " | UID: " + params.user.userId
+      + " | @" + params.user.screenName
     ));
     return callback(null, null);
   }
