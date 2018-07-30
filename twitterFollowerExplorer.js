@@ -4375,7 +4375,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
       case "ERROR":
 
-        console.log(chalkError("TFC | CHILD ERROR | " + m.threeceeUser));
+        console.log(chalkError("TFC | CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
 
         if (m.error) { 
           console.log(chalkError("TFC | CHILD ERROR\n" + jsonPrint(m.error))); 
