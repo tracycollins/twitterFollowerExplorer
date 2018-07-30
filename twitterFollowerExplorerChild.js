@@ -210,15 +210,34 @@ function checkRateLimit(callback){
     
     if (err){
 
-      console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR | APPLICATION RATE LIMIT STATUS"
-        + " | @" + configuration.threeceeUser
-        + " | " + getTimeStamp()
-        + " | CODE: " + err.code
-        + " | STATUS CODE: " + err.statusCode
-        + " | " + err.message
-      ));
 
       statsObj.threeceeUser.twitterErrors+= 1;
+
+      if (err.code === 89){
+
+        console.log(chalkAlert("*** TWITTER GET RATE LIMIT STATUS ERROR | INVALID OR EXPIRED TOKEN" 
+          + " | " + getTimeStamp() 
+          + " | @" + configuration.threeceeUser 
+        ));
+
+        statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+
+        statsObj.threeceeUser.err = err;
+
+        fsm.fsm_error();
+
+        process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, error: err});
+
+      }
+      else {
+        console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR | APPLICATION RATE LIMIT STATUS"
+          + " | @" + configuration.threeceeUser
+          + " | " + getTimeStamp()
+          + " | CODE: " + err.code
+          + " | STATUS CODE: " + err.statusCode
+          + " | " + err.message
+        ));
+      }
 
       if (callback !== undefined) { callback(err, null); }
     }
