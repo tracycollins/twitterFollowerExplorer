@@ -4476,9 +4476,9 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         Object.keys(statsObj.user).forEach(function(tcUser) {
 
           if ((statsObj.user[tcUser] !== undefined) 
-            && (tfeChildHashMap[m.threeceeUser].status !== "DISABLED")
-            && (tfeChildHashMap[m.threeceeUser].status !== "ERROR")
-            && (tfeChildHashMap[m.threeceeUser].status !== "RESET")
+            && (tfeChildHashMap[tcUser].status !== "DISABLED")
+            && (tfeChildHashMap[tcUser].status !== "ERROR")
+            && (tfeChildHashMap[tcUser].status !== "RESET")
           ) { 
             statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;
           }
