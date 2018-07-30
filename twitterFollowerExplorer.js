@@ -3002,6 +3002,24 @@ function initChild(params, callback){
   });
 }
 
+function disableChild(params, callback){
+
+  const mObj = {
+    op: "DISABLE",
+    verbose: configuration.verbose
+  };
+
+  tfeChildHashMap[params.threeceeUser].child.send(mObj, function(err) {
+    if (err) {
+      console.log(chalkError("*** CHILD SEND DISABLE ERROR"
+        + " | @" + params.threeceeUser
+        + " | ERR: " + err
+      ));
+    }
+    callback(err);
+  });
+}
+
 const checkChildrenState = function (checkState, callback) {
 
   async.every(Object.keys(tfeChildHashMap), function(user, cb) {
@@ -4384,7 +4402,9 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
 
         if (m.type === "INVALID_TOKEN") {
-          tfeChildHashMap[m.threeceeUser].status = "DISABLED";
+          disableChild({threeceeUser: m.threeceeUser}, function(err){
+            tfeChildHashMap[m.threeceeUser].status = "DISABLED";
+          });
         }
         else {
           initChild({threeceeUser: m.threeceeUser}, function(err){
@@ -4455,7 +4475,13 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
         Object.keys(statsObj.user).forEach(function(tcUser) {
 
-          if (statsObj.user[tcUser] !== undefined) { statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;}
+          if ((statsObj.user[tcUser] !== undefined) 
+            && (tfeChildHashMap[m.threeceeUser].status !== "DISABLED")
+            && (tfeChildHashMap[m.threeceeUser].status !== "ERROR")
+            && (tfeChildHashMap[m.threeceeUser].status !== "RESET")
+          ) { 
+            statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;
+          }
 
         });
 

@@ -768,6 +768,7 @@ const fsmStates = {
     },
 
     "fsm_fetchUserEnd": "FETCH_END",
+    "fsm_disable": "DISABLE",
     "fsm_reset": "RESET",
     "fsm_init": "INIT",
     "fsm_ready": "INIT",
@@ -791,6 +792,7 @@ const fsmStates = {
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_ready": "READY",
     "fsm_reset": "RESET",
+    "fsm_disable": "DISABLE",
     "fsm_error": "ERROR"
 
   },
@@ -811,6 +813,7 @@ const fsmStates = {
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_reset": "RESET",
+    "fsm_disable": "DISABLE",
     "fsm_error": "ERROR"
   },
 
@@ -835,6 +838,7 @@ const fsmStates = {
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_reset": "RESET",
+    "fsm_disable": "DISABLE",
     "fsm_error": "ERROR",
     "fsm_fetchUserStart": "FETCH_USER_START"
 
@@ -857,6 +861,7 @@ const fsmStates = {
     "fsm_init": "INIT",
     "fsm_reset": "RESET",
     "fsm_error": "ERROR",
+    "fsm_disable": "DISABLE",
     "fsm_fetchUser": "FETCH_USER",
     "fsm_fetchUserStart": "FETCH_USER_START",
     "fsm_fetchUserEnd": "FETCH_END"
@@ -910,6 +915,7 @@ const fsmStates = {
     "fsm_init": "INIT",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
+    "fsm_disable": "DISABLE",
     "fsm_fetchUserContinue": "FETCH_USER",
     "fsm_fetchUserEnd": "FETCH_END",
 
@@ -935,6 +941,7 @@ const fsmStates = {
 
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
+    "fsm_disable": "DISABLE",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET"
 
@@ -949,6 +956,7 @@ const fsmStates = {
 
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
+    "fsm_disable": "DISABLE",
 
     "fsm_rateLimitEnd": function(){
       return statsObj.fsmPreviousPauseState;
@@ -958,17 +966,26 @@ const fsmStates = {
 
   },
 
+  "DISABLE":{
+
+    onEnter: function(event, oldState, newState){
+      reporter(event, oldState, newState);
+      return this.ERROR;
+    },
+
+    "fsm_init": "INIT",
+    "fsm_reset": "RESET"
+
+  },
+
   "ERROR":{
 
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
-      // process.send({op:"ERROR", threeceeUser: configuration.threeceeUser});
       return this.ERROR;
     },
 
-    // "fsm_fetchUserEnd": "FETCH_END",
-    // "fsm_init": "INIT",
-    // "fsm_error": "ERROR",
+    "fsm_disable": "DISABLE",
     "fsm_reset": "RESET"
 
   }
@@ -1542,6 +1559,10 @@ process.on("message", function(m) {
     case "QUIT":
       fsm.fsm_reset();
       quit("PARENT");
+    break;
+
+    case "DISABLE":
+      fsm.fsm_disable();
     break;
 
     case "RESET":
