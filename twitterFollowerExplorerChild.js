@@ -1390,7 +1390,7 @@ function initCheckRateLimitInterval(interval){
       + " | EXCEPTION: " + statsObj.threeceeUser.twitterRateLimitExceptionFlag
     ));
 
-    checkRateLimit();
+    if (statsObj.fsmState !== "ERROR") { checkRateLimit(); }
 
   }, interval);
 }
