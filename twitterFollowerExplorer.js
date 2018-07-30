@@ -1810,6 +1810,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
               return cb();
             }
 
+
             if (networkObj.network === undefined) {
               console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR | NETWORK UNDEFINED"
                 + " | " + folder + "/" + entry.name
@@ -4161,7 +4162,7 @@ function initSocket(cnf) {
         return;
       }
 
-      if (entry.name === bestRuntimeNetworkFileName) {
+      if (entry.name !== bestRuntimeNetworkFileName) {
 
         loadFile(bestNetworkFolder, entry.name, function(err, networkObj) {
 
