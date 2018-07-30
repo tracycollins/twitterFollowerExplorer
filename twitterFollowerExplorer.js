@@ -4336,7 +4336,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
   tfeChildHashMap[user].twitterConfig.access_token_secret = twitterConfig.TOKEN_SECRET;
 
   console.log(chalkLog("+++ NEW TFE CHILD | childEnv\n" + jsonPrint(childEnv)));
-  console.log(chalkLog("+++ NEW TFE CHILD | twitterConfig\n" + jsonPrint(tfeChildHashMap[user].twitterConfig)));
+  // console.log(chalkLog("+++ NEW TFE CHILD | twitterConfig\n" + jsonPrint(tfeChildHashMap[user].twitterConfig)));
 
   const tfeChild = cp.fork(`twitterFollowerExplorerChild.js`, childEnv );
 
@@ -4586,7 +4586,7 @@ function initTwitter(threeceeUser, callback) {
     console.log(chalkTwitter("LOADED TWITTER CONFIG"
       + " | @" + threeceeUser
       + " | CONFIG FILE: " + configuration.twitterConfigFolder + "/" + twitterConfigFile
-      + "\n" + jsonPrint(twitterConfig)
+      // + "\n" + jsonPrint(twitterConfig)
     ));
 
     initTwitterFollowerChild(twitterConfig, function(err0, childId) {
@@ -4792,6 +4792,10 @@ function initialize(cnf, callback) {
       
       statsObj.commandLineArgsLoaded = true;
 
+      if (configuration.enableStdin) {
+        initStdIn();
+      }
+
       initStatsUpdate(function() {
 
         loadFile(configuration.twitterConfigFolder, configuration.twitterConfigFile, function(err, tc) {
@@ -4810,7 +4814,10 @@ function initialize(cnf, callback) {
           }
 
           configuration.twitterConfig = {};
-          configuration.twitterConfig = tc;
+          configuration.twitterConfig.consumer_key = tc.consumer_key;
+          configuration.twitterConfig.consumer_secret = tc.consumer_secret;
+          configuration.twitterConfig.app_only_auth = true;
+          // configuration.twitterConfig = tc;
 
           console.log(chalkInfo(getTimeStamp() + " | TWITTER CONFIG FILE "
             + configuration.twitterConfigFolder + "/" + configuration.twitterConfigFile

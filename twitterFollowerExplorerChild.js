@@ -100,6 +100,8 @@ threeceeUserDefaults.friendsCount = 0;
 threeceeUserDefaults.followersCount = 0;
 threeceeUserDefaults.statusesCount = 0;
 
+threeceeUserDefaults.error = false;
+
 threeceeUserDefaults.count = configuration.fetchCount;
 threeceeUserDefaults.endFetch = false;
 threeceeUserDefaults.nextCursor = false;
@@ -391,6 +393,23 @@ function twitterUsersShow(callback){
         fsm.fsm_rateLimitStart();
 
         process.send({op:"THREECEE_USER", threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
+
+      }
+      if (err.code === 89){
+
+        console.log(chalkAlert("*** TWITTER SHOW USER ERROR | INVALID OR EXPIRED TOKEN" 
+          + " | " + getTimeStamp() 
+          + " | @" + configuration.threeceeUser 
+        ));
+
+
+        statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+
+        statsObj.threeceeUser.err = err;
+
+        fsm.fsm_error();
+
+        process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, error: err});
 
       }
 
@@ -1001,7 +1020,11 @@ function initTwitter(twitterConfig, callback){
         + " | " +  jsonPrint(err)
       ));
 
-      quit("TWITTER STREAM ERROR | " + err);
+      fsm.fsm_error();
+
+      process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "INIT", error: err });
+
+      // quit("TWITTER STREAM ERROR | " + err);
 
     });
 
@@ -1374,7 +1397,7 @@ process.on("message", function(m) {
       console.log(chalkInfo("TFC | TFE CHILD INIT"
         + " | CHILD ID: " + m.childId
         + " | 3C: @" + m.threeceeUser
-        + " | TWITTER CONFIG\n" + jsonPrint(m.twitterConfig)
+        // + " | TWITTER CONFIG\n" + jsonPrint(m.twitterConfig)
       ));
 
       configuration.childId = m.childId;
