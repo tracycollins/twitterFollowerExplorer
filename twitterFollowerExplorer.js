@@ -3008,7 +3008,7 @@ const checkChildrenState = function (checkState, callback) {
 
     debug("CH ID: " + user + " | " + tfeChildHashMap[user].status);
 
-    const cs = (tfeChildHashMap[user].status === checkState);
+    const cs = ((tfeChildHashMap[user].status === "DISABLED") || (tfeChildHashMap[user].status === checkState));
 
     if (!cs && (checkState === "FETCH_END") 
       && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
@@ -4383,11 +4383,15 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
 
-        if (m.type !== "INVALID_TOKEN") {
+        if (m.type === "INVALID_TOKEN") {
+          tfeChildHashMap[m.threeceeUser].status = "DISABLED";
+        }
+        else {
           initChild({threeceeUser: m.threeceeUser}, function(err){
             checkChildrenState(m.op);
           });
         }
+
 
       break;
 
