@@ -732,6 +732,7 @@ const fsmStates = {
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_reset": "RESET",
     "fsm_init": "INIT",
+    "fsm_ready": "INIT",
     "fsm_error": "ERROR"
 
   },
