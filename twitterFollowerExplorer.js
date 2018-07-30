@@ -4126,15 +4126,17 @@ function initSocket(cnf) {
 
     response.entries.forEach(function(entry) {
 
-      debug(chalkInfo(">R DROPBOX_CHANGE"
-        + " | " + entry[".tag"].toUpperCase()
-        + " | " + entry.path_lower
-        + " | NAME: " + entry.name
-      ));
+      if (configuration.verbose) {
+        console.log(chalkInfo(">R DROPBOX_CHANGE"
+          + " | " + entry[".tag"].toUpperCase()
+          + " | " + entry.path_lower
+          + " | NAME: " + entry.name
+        ));
+      }
 
       const entryNameArray = entry.name.split(".");
 
-      if ((entryNameArray[1] !== "json") || (entry.name === bestRuntimeNetworkFileName)) {
+      if ((entryNameArray[1] !== "json")) {
         debug(chalkAlert("SKIP: " + entry.path_lower));
         return;
       }
@@ -4208,6 +4210,30 @@ function initSocket(cnf) {
 
       if (entry.name === unfollowableUserFile) {
         initUnfollowableUserSet();
+      }
+
+      // const dropboxConfigDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE;
+      // const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE;
+
+      if ((entry.name === dropboxConfigDefaultFile) || (entry.name === dropboxConfigHostFile)) {
+        loadAllConfigFiles(function(err){
+
+          loadCommandLineArgs(function(err, results){
+          
+            const configArgs = Object.keys(configuration);
+
+            configArgs.forEach(function(arg){
+              if (_.isObject(configuration[arg])) {
+                console.log("TFE | _FINAL CONFIG | " + arg + "\n" + jsonPrint(configuration[arg]));
+              }
+              else {
+                console.log("TFE | _FINAL CONFIG | " + arg + ": " + configuration[arg]);
+              }
+            });
+
+          });
+          
+        });
       }
 
     });
@@ -4943,20 +4969,23 @@ function initialize(cnf, callback) {
         loadFile(configuration.twitterConfigFolder, configuration.twitterConfigFile, function(err, tc) {
 
           if (err) {
-            console.log(chalkError("*** TWITTER YAML CONFIG LOAD ERROR"
-              + " | " + cnf.twitterConfigFolder + "/" + cnf.twitterConfigFile
+
+            console.log(chalkError("*** TWITTER CONFIG LOAD ERROR"
+              + " | " + configuration.twitterConfigFolder + "/" + configuration.twitterConfigFile
               + "\n" + err
             ));
+
             quit({source: "CONFIG", error: err});
+
             return;
+
           }
 
           configuration.twitterConfig = {};
           configuration.twitterConfig = tc;
 
           console.log(chalkInfo(getTimeStamp() + " | TWITTER CONFIG FILE "
-            + configuration.twitterConfigFolder
-            + configuration.twitterConfigFile
+            + configuration.twitterConfigFolder + "/" + configuration.twitterConfigFile
           ));
 
           return callback(err, configuration) ;
