@@ -21,8 +21,8 @@ const DEFAULT_TWITTER_USERS = [
   "altthreecee05"
 ];
 
-let defaultSourceTwitterScreenName = "ninjathreecee";
-let defaultDestinationTwitterScreenName = "altthreecee01";
+let defaultSourceTwitterScreenName = "altthreecee02";
+let defaultDestinationTwitterScreenName = "altthreecee03";
 
 let cloneTwitterFriendsBusy = false;
 let cloneTwitterFriendsInterval;
