@@ -38,6 +38,7 @@
     "json-parse-safe": "^1.0.5",
     "keypress": "^0.2.1",
     "keyword-extractor": "0.0.15",
+    "lodash": "^4.17.10",
     "lodash.padend": "^4.6.1",
     "lodash.padstart": "^4.6.1",
     "mentions-regex": "^2.0.3",
