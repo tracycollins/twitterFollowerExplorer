@@ -13,7 +13,7 @@ hostname = hostname.replace(/word/g, "google");
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
-const DEFAULT_DOMINANT_MIN_STEP = 0.05;
+const DEFAULT_DOMINANT_MIN_STEP = 0.001;
 const DEFAULT_TOTAL_MIN_STEP = 0.95;
 
 const DEFAULT_MIN_INPUTS_PER_TYPE_MULTIPLIER = 0.3;
