@@ -536,10 +536,6 @@ configuration.forceLanguageAnalysis = false;
 configuration.processUserQueueInterval = 20;
 configuration.bestNetworkIncrementalUpdate = false;
 configuration.twitterUsers = ["altthreecee02", "altthreecee01", "altthreecee00"];
-configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
-configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
-configuration.histogramParseTotalMin = DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN;
-configuration.histogramParseDominantMin = DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN;
 configuration.saveFileQueueInterval = 1000;
 configuration.testMode = false;
 configuration.minSuccessRate = DEFAULT_MIN_SUCCESS_RATE;
@@ -1150,9 +1146,9 @@ function loadConfigFile(folder, file, callback) {
               newConfiguration.targetServer = loadedConfigObj.TFE_UTIL_TARGET_SERVER;
             }
 
-            if (loadedConfigObj.DEFAULT_THRECEE_AUTO_FOLLOW_USER !== undefined) {
-              console.log("LOADED DEFAULT_THRECEE_AUTO_FOLLOW_USER: " + loadedConfigObj.DEFAULT_THRECEE_AUTO_FOLLOW_USER);
-              newConfiguration.threeceeAutoFollowUser = loadedConfigObj.DEFAULT_THRECEE_AUTO_FOLLOW_USER;
+            if (loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER !== undefined) {
+              console.log("LOADED TFE_THRECEE_AUTO_FOLLOW_USER: " + loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER);
+              newConfiguration.threeceeAutoFollowUser = loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER;
             }
 
             if (loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS !== undefined) {
@@ -1187,6 +1183,16 @@ function loadConfigFile(folder, file, callback) {
               }
               if ((loadedConfigObj.TFE_QUIT_ON_COMPLETE === false) || (loadedConfigObj.TFE_QUIT_ON_COMPLETE === "false")) {
                 newConfiguration.quitOnComplete = false;
+              }
+            }
+
+            if (loadedConfigObj.TFE_VERBOSE !== undefined) {
+              console.log("LOADED TFE_VERBOSE: " + loadedConfigObj.TFE_VERBOSE);
+              if ((loadedConfigObj.TFE_VERBOSE === true) || (loadedConfigObj.TFE_VERBOSE === "true")) {
+                newConfiguration.verbose = true;
+              }
+              if ((loadedConfigObj.TFE_VERBOSE === false) || (loadedConfigObj.TFE_VERBOSE === "false")) {
+                newConfiguration.verbose = false;
               }
             }
 
@@ -4729,8 +4735,6 @@ function initialize(cnf, callback) {
   cnf.processName = process.env.TFE_PROCESS_NAME || "twitterFollowerExplorer";
   cnf.targetServer = process.env.TFE_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
   cnf.forceInitRandomNetworks = process.env.TFE_FORCE_INIT_RANDOM_NETWORKS || DEFAULT_FORCE_INIT_RANDOM_NETWORKS ;
-  cnf.histogramParseDominantMin = process.env.TFE_HISTOGRAM_PARSE_DOMINANT_MIN || DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN ;
-  cnf.histogramParseTotalMin = process.env.TFE_HISTOGRAM_PARSE_TOTAL_MIN || DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN;
   cnf.minSuccessRate = process.env.TFE_MIN_SUCCESS_RATE || DEFAULT_MIN_SUCCESS_RATE ;
   cnf.minMatchRate = process.env.TFE_MIN_MATCH_RATE || DEFAULT_MIN_MATCH_RATE ;
   cnf.numRandomNetworks = process.env.TFE_NUM_RANDOM_NETWORKS || TFE_NUM_RANDOM_NETWORKS ;
@@ -4769,199 +4773,6 @@ function initialize(cnf, callback) {
   cnf.twitterConfigFolder = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER || "/config/twitter";
   cnf.twitterConfigFile = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE || cnf.twitterDefaultUser + ".json";
   cnf.neuralNetworkFile = defaultNeuralNetworkFile;
-
-  // loadFile(dropboxConfigHostFolder, dropboxConfigFile, function(err, loadedConfigObj) {
-
-  //   let commandLineArgs;
-  //   let configArgs;
-
-  //   if (!err) {
-
-  //     console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
-
-  //     if (loadedConfigObj.TFE_UTIL_TARGET_SERVER !== undefined) {
-  //       console.log("LOADED TFE_UTIL_TARGET_SERVER: " + loadedConfigObj.TFE_UTIL_TARGET_SERVER);
-  //       cnf.targetServer = loadedConfigObj.TFE_UTIL_TARGET_SERVER;
-  //     }
-
-  //     if (loadedConfigObj.DEFAULT_THRECEE_AUTO_FOLLOW_USER !== undefined) {
-  //       console.log("LOADED DEFAULT_THRECEE_AUTO_FOLLOW_USER: " + loadedConfigObj.DEFAULT_THRECEE_AUTO_FOLLOW_USER);
-  //       cnf.threeceeAutoFollowUser = loadedConfigObj.DEFAULT_THRECEE_AUTO_FOLLOW_USER;
-  //     }
-
-  //     if (loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS !== undefined) {
-  //       console.log("LOADED TFE_FORCE_INIT_RANDOM_NETWORKS: " + loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS);
-  //       cnf.forceInitRandomNetworks = loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS;
-  //     }
-
-  //     if (loadedConfigObj.TFE_FETCH_ALL_INTERVAL !== undefined) {
-  //       console.log("LOADED TFE_FETCH_ALL_INTERVAL: " + loadedConfigObj.TFE_FETCH_ALL_INTERVAL);
-  //       cnf.fetchAllIntervalTime = loadedConfigObj.TFE_FETCH_ALL_INTERVAL;
-  //     }
-
-  //     if (cnf.testMode) {
-  //       cnf.fetchAllIntervalTime = TEST_MODE_FETCH_ALL_INTERVAL;
-  //       console.log(chalkAlert("TEST MODE | fetchAllIntervalTime: " + cnf.fetchAllIntervalTime));
-  //     }
-
-  //     if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined) {
-  //       console.log("LOADED TFE_BEST_NN_INCREMENTAL_UPDATE: " + loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE);
-  //       cnf.bestNetworkIncrementalUpdate = loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE;
-  //     }
-
-  //     if (loadedConfigObj.TFE_TEST_MODE !== undefined) {
-  //       console.log("LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
-  //       cnf.testMode = loadedConfigObj.TFE_TEST_MODE;
-  //     }
-
-  //     if (loadedConfigObj.TFE_QUIT_ON_COMPLETE !== undefined) {
-  //       console.log("LOADED TFE_QUIT_ON_COMPLETE: " + loadedConfigObj.TFE_QUIT_ON_COMPLETE);
-  //       if ((loadedConfigObj.TFE_QUIT_ON_COMPLETE === true) || (loadedConfigObj.TFE_QUIT_ON_COMPLETE === "true")) {
-  //         cnf.quitOnComplete = true;
-  //       }
-  //       if ((loadedConfigObj.TFE_QUIT_ON_COMPLETE === false) || (loadedConfigObj.TFE_QUIT_ON_COMPLETE === "false")) {
-  //         cnf.quitOnComplete = false;
-  //       }
-  //     }
-
-  //     if (loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined) {
-  //       console.log("LOADED TFE_HISTOGRAM_PARSE_DOMINANT_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN);
-  //       cnf.histogramParseDominantMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN;
-  //     }
-
-  //     if (loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN !== undefined) {
-  //       console.log("LOADED TFE_HISTOGRAM_PARSE_TOTAL_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN);
-  //       cnf.histogramParseTotalMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN;
-  //     }
-
-  //     if (loadedConfigObj.TFE_MIN_SUCCESS_RATE !== undefined) {
-  //       console.log("LOADED TFE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_MIN_SUCCESS_RATE);
-  //       cnf.minSuccessRate = loadedConfigObj.TFE_MIN_SUCCESS_RATE;
-  //     }
-
-  //     if (loadedConfigObj.TFE_MIN_MATCH_RATE !== undefined) {
-  //       console.log("LOADED TFE_MIN_MATCH_RATE: " + loadedConfigObj.TFE_MIN_MATCH_RATE);
-  //       cnf.minMatchRate = loadedConfigObj.TFE_MIN_MATCH_RATE;
-  //     }
-
-  //     if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined) {
-  //       console.log("LOADED TFE_NUM_RANDOM_NETWORKS: " + loadedConfigObj.TFE_NUM_RANDOM_NETWORKS);
-  //       cnf.numRandomNetworks = loadedConfigObj.TFE_NUM_RANDOM_NETWORKS;
-  //     }
-
-  //     if (loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS !== undefined) {
-  //       console.log("LOADED TFE_ENABLE_LANG_ANALYSIS: " + loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS);
-  //       cnf.enableLanguageAnalysis = loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS;
-  //     }
-
-  //     if (loadedConfigObj.TFE_FORCE_LANG_ANALYSIS !== undefined) {
-  //       console.log("LOADED TFE_FORCE_LANG_ANALYSIS: " + loadedConfigObj.TFE_FORCE_LANG_ANALYSIS);
-  //       cnf.forceLanguageAnalysis = loadedConfigObj.TFE_FORCE_LANG_ANALYSIS;
-  //     }
-
-  //     if (loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS !== undefined) {
-  //       console.log("LOADED TFE_FORCE_IMAGE_ANALYSIS: " + loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS);
-  //       cnf.forceImageAnalysis = loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS;
-  //     }
-
-  //     if (loadedConfigObj.TFE_ENABLE_STDIN !== undefined) {
-  //       console.log("LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_ENABLE_STDIN);
-  //       cnf.enableStdin = loadedConfigObj.TFE_ENABLE_STDIN;
-  //     }
-
-  //     if (loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID  !== undefined) {
-  //       console.log("LOADED TFE_NEURAL_NETWORK_FILE_PID: " + loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID);
-  //       cnf.loadNeuralNetworkID = loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID;
-  //     }
-
-  //     if (loadedConfigObj.TFE_USER_DB_CRAWL !== undefined) {
-  //       console.log("LOADED TFE_USER_DB_CRAWL: " + loadedConfigObj.TFE_USER_DB_CRAWL);
-  //       cnf.userDbCrawl = loadedConfigObj.TFE_USER_DB_CRAWL;
-  //     }
-
-  //     if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER !== undefined) {
-  //       console.log("LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER: "
-  //         + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER));
-  //       cnf.twitterConfigFolder = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER;
-  //     }
-
-  //     if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE !== undefined) {
-  //       console.log("LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE: "
-  //         + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE));
-  //       cnf.twitterConfigFile = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE;
-  //     }
-
-  //     if (loadedConfigObj.TFE_TWITTER_USERS !== undefined) {
-  //       console.log("LOADED TFE_TWITTER_USERS: " + jsonPrint(loadedConfigObj.TFE_TWITTER_USERS));
-  //       cnf.twitterUsers = loadedConfigObj.TFE_TWITTER_USERS;
-  //     }
-
-  //     if (loadedConfigObj.TFE_TWITTER_DEFAULT_USER !== undefined) {
-  //       console.log("LOADED TFE_TWITTER_DEFAULT_USER: " + jsonPrint(loadedConfigObj.TFE_TWITTER_DEFAULT_USER));
-  //       cnf.twitterDefaultUser = loadedConfigObj.TFE_TWITTER_DEFAULT_USER;
-  //     }
-
-  //     if (loadedConfigObj.TFE_KEEPALIVE_INTERVAL !== undefined) {
-  //       console.log("LOADED TFE_KEEPALIVE_INTERVAL: " + loadedConfigObj.TFE_KEEPALIVE_INTERVAL);
-  //       cnf.keepaliveInterval = loadedConfigObj.TFE_KEEPALIVE_INTERVAL;
-  //     }
-  //     // OVERIDE CONFIG WITH COMMAND LINE ARGS
-  //     commandLineArgs = Object.keys(commandLineConfig);
-  //     commandLineArgs.forEach(function(arg) {
-  //       cnf[arg] = commandLineConfig[arg];
-  //       console.log("--> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
-  //     });
-  //     console.log(chalkLog("USER\n" + jsonPrint(userObj)));
-  //     configArgs = Object.keys(cnf);
-  //     configArgs.forEach(function(arg) {
-  //       console.log("INITIALIZE FINAL CONFIG | " + arg + ": " + cnf[arg]);
-  //     });
-  //     if (cnf.enableStdin) { initStdIn(); }
-  //     initStatsUpdate(function() {
-  //       loadFile(cnf.twitterConfigFolder, cnf.twitterConfigFile, function(err, tc) {
-  //         if (err) {
-  //           console.log(chalkError("*** TWITTER YAML CONFIG LOAD ERROR"
-  //             + " | " + cnf.twitterConfigFolder + "/" + cnf.twitterConfigFile
-  //             + "\n" + err
-  //           ));
-  //           quit({source: "CONFIG", error: err});
-  //           return;
-  //         }
-  //         cnf.twitterConfig = {};
-  //         cnf.twitterConfig = tc;
-  //         console.log(chalkInfo(getTimeStamp() + " | TWITTER CONFIG FILE "
-  //           + cnf.twitterConfigFolder
-  //           + cnf.twitterConfigFile
-  //         ));
-  //         return callback(err, cnf) ;
-  //       });
-  //     });
-  //   }
-  //   else {
-  //     console.log("dropboxConfigFile: " + dropboxConfigFile + "\n" + jsonPrint(err));
-
-  //     // OVERIDE CONFIG WITH COMMAND LINE ARGS
-  //     commandLineArgs = Object.keys(commandLineConfig);
-  //     commandLineArgs.forEach(function(arg) {
-  //       cnf[arg] = commandLineConfig[arg];
-  //       console.log("--> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
-  //     });
-
-  //     console.log(chalkLog("USER\n" + jsonPrint(userObj)));
-
-  //     configArgs = Object.keys(cnf);
-  //     configArgs.forEach(function(arg) {
-  //       console.log("INITIALIZE FINAL CONFIG | " + arg + ": " + cnf[arg]);
-  //     });
-
-  //     if (cnf.enableStdin) { initStdIn(); }
-
-  //     initStatsUpdate(function() {
-  //       return callback(err, cnf) ;
-  //     });
-
-  //    }
-  // });
 
 
   loadAllConfigFiles(function(err){
