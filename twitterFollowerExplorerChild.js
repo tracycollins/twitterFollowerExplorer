@@ -226,7 +226,7 @@ function checkRateLimit(callback){
 
         fsm.fsm_error();
 
-        process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, error: err});
+        process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
 
       }
       else {
@@ -428,7 +428,7 @@ function twitterUsersShow(callback){
 
         fsm.fsm_error();
 
-        process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, error: err});
+        process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
 
       }
 
@@ -889,7 +889,7 @@ const fsmStates = {
             process.send({op:"PAUSE_RATE_LIMIT", threeceeUser: configuration.threeceeUser, state: "PAUSE_RATE_LIMIT", params: params, error: err });
           }
           else {
-            process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "FETCH_USER", params: params, error: err });
+            process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "FETCH_USER", params: params, error: err });
           }
 
         }
@@ -962,7 +962,7 @@ const fsmStates = {
 
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
-      process.send({op:"ERROR", threeceeUser: configuration.threeceeUser});
+      // process.send({op:"ERROR", threeceeUser: configuration.threeceeUser});
       return this.ERROR;
     },
 
@@ -1041,7 +1041,7 @@ function initTwitter(twitterConfig, callback){
 
       fsm.fsm_error();
 
-      process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "INIT", error: err });
+      process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "INIT", error: err });
 
       // quit("TWITTER STREAM ERROR | " + err);
 
@@ -1329,7 +1329,8 @@ function initUnfollowQueueInterval(interval){
 
           process.send(
             {
-              op:"ERROR", 
+              op:"ERROR",
+              type: "UNKNOWN", 
               threeceeUser: configuration.threeceeUser, 
               state: "UNFOLLOW_ERROR", 
               params: {screen_name: friend.screen_name}, 
@@ -1462,7 +1463,7 @@ process.on("message", function(m) {
                 + " | " + err
               ));
 
-              process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
+              process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
             }
             else {
               // debug("data\n" + jsonPrint(data));
@@ -1502,7 +1503,8 @@ process.on("message", function(m) {
 
           process.send(
             {
-              op:"ERROR", 
+              op:"ERROR",
+              type: "UNKNOWN", 
               threeceeUser: configuration.threeceeUser, 
               state: "UNFOLLOW_ERR", 
               params: { user: m.user }, 
