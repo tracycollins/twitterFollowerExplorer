@@ -4087,7 +4087,7 @@ function initSocket(cnf) {
 
   socket.on("FOLLOW", function(u) {
 
-    if (u === undefined) {
+    if (!u || (u === undefined)) {
       console.log(chalkAlert("TFE | >RX FOLLOW ERROR"
         + " | " + socket.id
         + " | USER UNDEFINED"
