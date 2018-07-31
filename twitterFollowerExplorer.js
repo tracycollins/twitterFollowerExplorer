@@ -3454,7 +3454,7 @@ const fsmStates = {
 
             resetAllTwitterUserState(function() {
 
-              childSendAll({op: "QUIT"});
+              // childSendAll({op: "QUIT"});
 
               statsObj.users.totalFriendsCount = 0;
               statsObj.users.totalFriendsProcessed = 0;
@@ -3483,7 +3483,31 @@ const fsmStates = {
               else {
                 // fsm.fsm_init();
                 // fsm.fsm_reset();
-                startFetch();
+                // startFetch();
+                loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
+
+                  if (err) {
+                    console.log("LOAD MAX INPUTS HASHMAP FILE ERROR: " + err);
+                    quit("LOAD MAX INPUTS HASHMAP FILE ERROR");
+                    return;
+                  }
+
+                  if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+
+                    randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
+                      console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+
+                      initFetchAllInterval(configuration.fetchAllIntervalTime);
+
+                      setTimeout(function() {
+                        fsm.fsm_init();
+                        initFsmTickInterval(FSM_TICK_INTERVAL);
+                      }, 3000);
+                    });
+                  }
+
+                });
+
               }
 
             });
@@ -5805,7 +5829,7 @@ function initLangAnalyzer(callback) {
 
 function startFetch(){
 
-  // fsm.fsm_reset();
+  fsm.fsm_reset();
 
   initTwitterUsers(function initTwitterUsersCallback(e) {
     if (e) {
@@ -5927,7 +5951,7 @@ initialize(configuration, function(err, cnf) {
 
       neuralNetworkInitialized = true;
 
-      // fsm.fsm_resetEnd();
+      fsm.fsm_resetEnd();
 
       initSocket(configuration);
 

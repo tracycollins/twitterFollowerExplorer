@@ -382,7 +382,7 @@ function quit(c){
 
 function twitterUsersShow(callback){
 
-  if (!twitClient) {
+  if (!twitClient || (twitClient === undefined)) {
     console.log(chalkAlert("twitterUsersShow | twitClient UNDEFINED | @" + configuration.threeceeUser));
     return callback(new Error("twitClient UNDEFINED"));
   }
