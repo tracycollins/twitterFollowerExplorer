@@ -4712,12 +4712,18 @@ function initTwitterUsers(callback) {
       statsObj.users.totalFriendsCount = 0;
       statsObj.users.totalFriendsFetched = 0;
 
-      configuration.twitterUsers.forEach(function(tUserScreenName) {
+      configuration.twitterUsers.forEach(function(tcUser) {
 
-        if (statsObj.user[tUserScreenName] !== undefined) {
+        statsObj.users.totalFriendsCount = 0;
 
-          statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
-          statsObj.users.totalFriendsCount += statsObj.user[tUserScreenName].friendsCount;
+        if ((statsObj.user[tcUser] !== undefined) 
+            && (tfeChildHashMap[tcUser].status !== "DISABLED")
+            && (tfeChildHashMap[tcUser].status !== "ERROR")
+            && (tfeChildHashMap[tcUser].status !== "RESET")
+          ) {
+
+          statsObj.users.totalFriendsFetched += statsObj.user[tcUser].totalFriendsFetched;
+          statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;
           statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalFriendsCount;
 
         }
