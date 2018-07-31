@@ -520,6 +520,9 @@ let defaultConfiguration = {}; // general configuration for TNN
 let hostConfiguration = {}; // host-specific configuration for TNN
 
 let configuration = {};
+
+configuration.reinitializeChildOnClose = false;
+
 configuration.DROPBOX = {};
 configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
 configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY ;
@@ -1438,7 +1441,7 @@ function loadMaxInputDropbox(folder, file, callback) {
       maxInputHashMap = {};
       maxInputHashMap = deepcopy(maxInputHashMapObj.maxInputHashMap);
 
-      console.log(chalkInfo("TFE | LOADED DROPBOX MAX INPUT HASHMAP"
+      console.log(chalkBlue("TFE | LOADED DROPBOX MAX INPUT HASHMAP"
       ));
 
       if (callback !== undefined) { callback(null); }
@@ -3132,14 +3135,52 @@ let waitFileSaveInterval;
 const fsmStates = {
 
   "RESET":{
+
     onEnter: function(event, oldState, newState) {
+
       reporter(event, oldState, newState);
+
+      checkChildrenState("RESET", function(err, allChildrenReset) {
+        console.log("ALL CHILDREN RESET: " + allChildrenReset);
+        if (!allChildrenReset && (event !== "fsm_tick")) { childSendAll({op: "RESET"}); }
+      });
+
     },
+
+    fsm_tick: function() {
+      checkChildrenState("RESET", function(err, allChildrenReset) {
+        debug("RESET TICK"
+          + " | Q READY: " + processUserQueueReady
+          + " | Q EMPTY: " + processUserQueueEmpty()
+          + " | ALL CHILDREN RESET: " + allChildrenReset
+        );
+        if (allChildrenReset) { fsm.fsm_resetEnd(); }
+      });
+    },
+
     "fsm_resetEnd": "IDLE"
   },
 
   "IDLE":{
-    onEnter: reporter,
+    onEnter: function(event, oldState, newState) {
+
+      reporter(event, oldState, newState);
+
+      checkChildrenState("INIT", function(err, allChildrenInit) {
+        console.log("ALL CHILDREN INIT: " + allChildrenInit);
+        if (!allChildrenInit && (event !== "fsm_tick")) { childSendAll({op: "INIT"}); }
+      });
+
+    },
+
+    fsm_tick: function() {
+      checkChildrenState("INIT", function(err, allChildrenInit) {
+        debug("INIT TICK"
+          + " | ALL CHILDREN INIT: " + allChildrenInit
+        );
+        if (allChildrenInit) { fsm.fsm_init(); }
+      });
+    },
     "fsm_init": "INIT",
     "fsm_error": "ERROR"
   },
@@ -3156,20 +3197,21 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState);
-        checkChildrenState("INIT", function(err, aci) {
-          console.log("ALL CHILDREN INIT: " + aci);
-          if (!aci && (event !== "fsm_tick")) { childSendAll({op: "INIT"}); }
+        checkChildrenState("READY", function(err, allChildrenReady) {
+          console.log("ALL CHILDREN READY: " + allChildrenReady);
+          if (!allChildrenReady && (event !== "fsm_tick")) { childSendAll({op: "READY"}); }
         });
       }
     },
     fsm_tick: function() {
-      checkChildrenState("INIT", function(err, aci) {
-        debug("INIT TICK"
+      checkChildrenState("READY", function(err, allChildrenReady) {
+        debug("READY TICK"
           + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
-          + " | ALL CHILDREN INIT: " + aci
+          + " | ALL CHILDREN READY: " + allChildrenReady
         );
-        if (aci && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_ready(); }
+        if (!allChildrenReady) { childSendAll({op: "READY"}); }
+        if (allChildrenReady && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_ready(); }
       });
     },
     "fsm_error": "ERROR",
@@ -3181,23 +3223,23 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState);
-        checkChildrenState("READY", function(err, aci) {
-          console.log("ALL CHILDREN READY: " + aci);
-          if (!aci && (event !== "fsm_tick")) { childSendAll({op: "READY"}); }
+        checkChildrenState("READY", function(err, allChildrenReady) {
+          console.log("ALL CHILDREN READY: " + allChildrenReady);
+          if (!allChildrenReady && (event !== "fsm_tick")) { childSendAll({op: "READY"}); }
         });
       }
     },
     fsm_tick: function() {
 
-      checkChildrenState("READY", function(err, acr) {
+      checkChildrenState("READY", function(err, allChildrenReady) {
 
         debug("READY TICK"
           + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
-          + " | ALL CHILDREN READY: " + acr
+          + " | ALL CHILDREN READY: " + allChildrenReady
         );
 
-        if (fetchAllIntervalReady && acr && processUserQueueReady && processUserQueueEmpty()) {
+        if (fetchAllIntervalReady && allChildrenReady && processUserQueueReady && processUserQueueEmpty()) {
           fetchAllIntervalReady = false;
 
           statsObj.status = "FETCH ALL";
@@ -3412,6 +3454,8 @@ const fsmStates = {
 
             resetAllTwitterUserState(function() {
 
+              childSendAll({op: "QUIT"});
+
               statsObj.users.totalFriendsCount = 0;
               statsObj.users.totalFriendsProcessed = 0;
               statsObj.users.totalFriendsFetched = 0;
@@ -3437,7 +3481,9 @@ const fsmStates = {
                 quit({source: "QUIT_ON_COMPLETE"});
               }
               else {
-                fsm.fsm_init();
+                // fsm.fsm_init();
+                // fsm.fsm_reset();
+                startFetch();
               }
 
             });
@@ -3544,7 +3590,9 @@ function showStats(options) {
     statsObj.fetchAllIntervalNext.add(configuration.fetchAllIntervalTime, "ms");
 
     console.log(chalkLog("### FEM S"
+      + " | FSM: " + fsm.getMachineState()
       + " | N: " + getTimeStamp()
+      + " | PUQ READY: " + processUserQueueReady
       + " | SERVER CONNECTED: " + statsObj.serverConnected
       + " | AUTHENTICATED: " + statsObj.userAuthenticated
       + " | READY TXD: " + statsObj.userReadyTransmitted
@@ -3552,7 +3600,6 @@ function showStats(options) {
       + " | E: " + msToTime(statsObj.elapsed)
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
       + " | PUQ: " + processUserQueue.length
-      + " | FSM: " + fsm.getMachineState()
       + "\nFETCH_ALL START:    " + statsObj.fetchAllIntervalStartMoment.format(compactDateTimeFormat)
       + "\nFETCH_ALL INTERVAL: " + msToTime(configuration.fetchAllIntervalTime)
       + "\nFETCH_ALL NEXT:     " + statsObj.fetchAllIntervalNext.format(compactDateTimeFormat)
@@ -4485,6 +4532,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         Object.keys(statsObj.user).forEach(function(tcUser) {
 
           if ((statsObj.user[tcUser] !== undefined) 
+            && (statsObj.user[tcUser].friendsCount !== undefined)
             && (tfeChildHashMap[tcUser].status !== "DISABLED")
             && (tfeChildHashMap[tcUser].status !== "ERROR")
             && (tfeChildHashMap[tcUser].status !== "RESET")
@@ -4606,7 +4654,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
     if (tfeChildHashMap[user]) {
       tfeChildHashMap[user].status = "CLOSE";
  
-       if (!quitFlag) {
+       if (!quitFlag && configuration.reinitializeChildOnClose) {
 
         console.log(chalkAlert(">>> RE-INIT ON CLOSE | @" + user + " ..."));
 
@@ -4716,7 +4764,8 @@ function initTwitterUsers(callback) {
 
         statsObj.users.totalFriendsCount = 0;
 
-        if ((statsObj.user[tcUser] !== undefined) 
+        if ((statsObj.user[tcUser] !== undefined)
+            && (statsObj.user[tcUser].friendsCount !== undefined)
             && (tfeChildHashMap[tcUser].status !== "DISABLED")
             && (tfeChildHashMap[tcUser].status !== "ERROR")
             && (tfeChildHashMap[tcUser].status !== "RESET")
@@ -5754,6 +5803,48 @@ function initLangAnalyzer(callback) {
   });
 }
 
+function startFetch(){
+
+  // fsm.fsm_reset();
+
+  initTwitterUsers(function initTwitterUsersCallback(e) {
+    if (e) {
+      console.log(chalkError("*** ERROR INIT TWITTER USERS: " + e));
+      return quit({source: "TFE", error: e});
+    }
+
+    console.log(chalkTwitter("TFE CHILDREN"
+      + " | " + Object.keys(tfeChildHashMap)
+    ));
+
+    // initSocket(configuration);
+
+    loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
+
+      if (err) {
+        console.log("LOAD MAX INPUTS HASHMAP FILE ERROR: " + err);
+        quit("LOAD MAX INPUTS HASHMAP FILE ERROR");
+        return;
+      }
+
+      if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+
+        randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
+          console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+
+          initFetchAllInterval(configuration.fetchAllIntervalTime);
+
+          setTimeout(function() {
+            fsm.fsm_init();
+            initFsmTickInterval(FSM_TICK_INTERVAL);
+          }, 3000);
+        });
+      }
+
+    });
+  });
+}
+
 initialize(configuration, function(err, cnf) {
 
   if (err) {
@@ -5836,45 +5927,49 @@ initialize(configuration, function(err, cnf) {
 
       neuralNetworkInitialized = true;
 
-      fsm.fsm_resetEnd();
+      // fsm.fsm_resetEnd();
 
-      initTwitterUsers(function initTwitterUsersCallback(e) {
-        if (e) {
-          console.log(chalkError("*** ERROR INIT TWITTER USERS: " + e));
-          return quit({source: "TFE", error: e});
-        }
+      initSocket(configuration);
 
-        console.log(chalkTwitter("TFE CHILDREN"
-          + " | " + Object.keys(tfeChildHashMap)
-        ));
+      startFetch();
 
-        initSocket(configuration);
+      // initTwitterUsers(function initTwitterUsersCallback(e) {
+      //   if (e) {
+      //     console.log(chalkError("*** ERROR INIT TWITTER USERS: " + e));
+      //     return quit({source: "TFE", error: e});
+      //   }
 
-        loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
+      //   console.log(chalkTwitter("TFE CHILDREN"
+      //     + " | " + Object.keys(tfeChildHashMap)
+      //   ));
 
-          if (err) {
-            console.log("LOAD MAX INPUTS HASHMAP FILE ERROR: " + err);
-            quit("LOAD MAX INPUTS HASHMAP FILE ERROR");
-            return;
-          }
+      //   // initSocket(configuration);
 
-          if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+      //   loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
 
-            randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
-              console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+      //     if (err) {
+      //       console.log("LOAD MAX INPUTS HASHMAP FILE ERROR: " + err);
+      //       quit("LOAD MAX INPUTS HASHMAP FILE ERROR");
+      //       return;
+      //     }
 
-              initFetchAllInterval(configuration.fetchAllIntervalTime);
+      //     if (randomNetworkTree && (randomNetworkTree !== undefined)) {
 
-              setTimeout(function() {
-                fsm.fsm_init();
-                initFsmTickInterval(FSM_TICK_INTERVAL);
-              }, 3000);
-            });
-          }
+      //       randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
+      //         console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
 
-        });
+      //         initFetchAllInterval(configuration.fetchAllIntervalTime);
 
-      });
+      //         setTimeout(function() {
+      //           fsm.fsm_init();
+      //           initFsmTickInterval(FSM_TICK_INTERVAL);
+      //         }, 3000);
+      //       });
+      //     }
+
+      //   });
+      // });
+
     }
     else {
       console.log(chalkAlert("... WAIT DB CONNECTED ..."));

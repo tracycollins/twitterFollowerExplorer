@@ -15,11 +15,11 @@ const DEFAULT_CURSOR_BATCH_SIZE = 100;
 
 const DEFAULT_TWITTER_USERS = [
   "altthreecee02",
-  "altthreecee01"
+  "altthreecee03"
 ];
 
 let defaultSourceTwitterScreenName = "altthreecee02";
-let defaultDestinationTwitterScreenName = "altthreecee01";
+let defaultDestinationTwitterScreenName = "altthreecee03";
 
 let cloneTwitterFriendsBusy = false;
 let cloneTwitterFriendsInterval;
@@ -531,6 +531,7 @@ let sourceUserFriendsQueue = [];
 function initUserQueryCursor(params, callback){
 
   statsObj.userQueryCursor = "INIT";
+  statsObj.numSourceUsers = 0;
 
   let query = { "threeceeFollowing": params.threeceeUser, "following": true };
   const batchSizeParam = (params.batchSize !== undefined) ? params.batchSize : DEFAULT_CURSOR_BATCH_SIZE;
@@ -547,11 +548,16 @@ function initUserQueryCursor(params, callback){
 
     sourceUserFriendsQueue.push(user);
 
-    console.log(chalkInfo("U"
-      + " [ SRC Q: " + sourceUserFriendsQueue.length + "]"
-      + " | @" + user.screenName
-      + " | " + user.nodeId
-    ));
+    statsObj.numSourceUsers += 1;
+
+    if (statsObj.numSourceUsers % 100 === 0){
+      console.log(chalkInfo("U"
+        + " [ SRC Q: " + sourceUserFriendsQueue.length
+        + " | SRC FTCHD: " + statsObj.numSourceUsers + "]"
+        + " | @" + user.screenName
+        + " | " + user.nodeId
+      ));
+    }
 
   });
 

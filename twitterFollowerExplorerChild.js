@@ -372,7 +372,7 @@ function quit(c){
 
   console.log(chalkAlert("TFC | QUIT"
     + " | " + configuration.childId
-    + " | CAUSE: " + cause
+    + " | CAUSE: " + jsonPrint(cause)
   ));
 
   setTimeout(function(){
@@ -381,6 +381,11 @@ function quit(c){
 }
 
 function twitterUsersShow(callback){
+
+  if (!twitClient) {
+    console.log(chalkAlert("twitterUsersShow | twitClient UNDEFINED | @" + configuration.threeceeUser));
+    return callback(new Error("twitClient UNDEFINED"));
+  }
 
   twitClient.get("users/show", {screen_name: configuration.threeceeUser}, function(err, userShowData, response) {
 
