@@ -47,6 +47,7 @@ const util = require("util");
 const Twit = require("twit");
 const async = require("async");
 const treeify = require("treeify");
+const _ = require("lodash");
 
 let quitWaitInterval;
 
@@ -135,10 +136,10 @@ statsObj.userAuthenticated = false;
 statsObj.serverConnected = false;
 statsObj.heartbeatsReceived = 0;
 statsObj.user = {};
-statsObj.totalTwitterFriends = 0;
+// statsObj.totalTwitterFriends = 0;
 statsObj.twitterErrors = 0;
 statsObj.users = {};
-statsObj.users.totalTwitterFriends = 0;
+// statsObj.users.totalTwitterFriends = 0;
 statsObj.users.grandTotalFriendsFetched = 0;
 statsObj.users.totalFriendsFetched = 0;
 statsObj.users.totalPercentFetched = 0;
@@ -314,11 +315,6 @@ function twitterUserUpdate(userScreenName, callback){
       return(callback(err));
     }
 
-    // debug(chalkTwitter("TWITTER USER DATA\n" + jsonPrint(userShowData)));
-    // debug(chalkTwitter("TWITTER USER RESPONSE\n" + jsonPrint(response)));
-
-    // statsObj.user[userScreenName] = {};
-
     statsObj.user[userScreenName].id = userShowData.id_str;
     statsObj.user[userScreenName].name = userShowData.name;
     statsObj.user[userScreenName].screenName = userShowData.screen_name.toLowerCase();
@@ -327,22 +323,6 @@ function twitterUserUpdate(userScreenName, callback){
     statsObj.user[userScreenName].statusesCount = userShowData.statuses_count;
     statsObj.user[userScreenName].friendsCount = userShowData.friends_count;
     statsObj.user[userScreenName].followersCount = userShowData.followers_count;
-
-    // statsObj.user[userScreenName].totalFriendsFetched = 0;
-    // statsObj.user[userScreenName].endFetch = false;
-    // statsObj.user[userScreenName].count = configuration.fetchCount;
-    // statsObj.user[userScreenName].friendsProcessed = 0;
-    // statsObj.user[userScreenName].percentProcessed = 0;
-    // statsObj.user[userScreenName].nextCursor = -1;
-    // statsObj.user[userScreenName].nextCursorValid = false;
-    // statsObj.user[userScreenName].twitterRateLimit = 0;
-    // statsObj.user[userScreenName].twitterRateLimitExceptionFlag = false;
-    // statsObj.user[userScreenName].twitterRateLimitRemaining = 0;
-    // statsObj.user[userScreenName].twitterRateLimitResetAt = moment();
-    // statsObj.user[userScreenName].twitterRateLimitRemainingTime = 0;
-    // statsObj.user[userScreenName].friendsProcessStart = moment();
-    // statsObj.user[userScreenName].friendsProcessEnd = moment();
-    // statsObj.user[userScreenName].friendsProcessElapsed = 0;
 
     console.log(chalkTwitterBold("====================================================================="
       + "\nTWITTER USER"
@@ -357,119 +337,6 @@ function twitterUserUpdate(userScreenName, callback){
     callback(null);
   });
 }
-
-// function checkRateLimit(params, callback){
-
-//   const screenName = params.screenName;
-
-//   if (twitterUserHashMap[params.screenName] === undefined) {
-//     if (callback !== undefined) { 
-//       return(callback(null, null));
-//     }
-//     else {
-//     return;
-//     }
-//   }
-
-//   twitterUserHashMap[screenName].twit.get(
-//     "application/rate_limit_status", 
-//     function(err, data, response) {
-
-//     debug("application/rate_limit_status response: " + jsonPrint(response));
-    
-//     if (err){
-//       console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR"
-//         + " | @" + screenName
-//         + " | " + getTimeStamp()
-//         + " | CODE: " + err.code
-//         + " | STATUS CODE: " + err.statusCode
-//         + " | " + err.message
-//         // + "\n" + jsonPrint(err)
-//       ));
-//       statsObj.twitterErrors+= 1;
-
-//       if (callback !== undefined) { callback(err, null); }
-//     }
-//     else {
-//       debug(chalkTwitter("\n-------------------------------------\nTWITTER RATE LIMIT STATUS\n" 
-//         + JSON.stringify(data, null, 3)
-//       ));
-
-//       if (statsObj.user[screenName].twitterRateLimitExceptionFlag 
-//         && statsObj.user[screenName].twitterRateLimitResetAt.isBefore(moment())){
-
-
-//         fsm.fsm_rateLimitEnd();
-//         statsObj.user[screenName].twitterRateLimitExceptionFlag = false;
-//       // 
-//         console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
-//           + " | @" + screenName
-//           + " | LIM " + statsObj.user[screenName].twitterRateLimit
-//           + " | REM: " + statsObj.user[screenName].twitterRateLimitRemaining
-//           + " | EXP @: " + statsObj.user[screenName].twitterRateLimitException.format(compactDateTimeFormat)
-//           + " | NOW: " + moment().format(compactDateTimeFormat)
-//         ));
-//       }
-
-//       statsObj.user[screenName].twitterRateLimit = data.resources.application["/application/rate_limit_status"].limit;
-//       statsObj.user[screenName].twitterRateLimitRemaining = data.resources.application["/application/rate_limit_status"].remaining;
-//       statsObj.user[screenName].twitterRateLimitResetAt = moment(1000*data.resources.application["/application/rate_limit_status"].reset);
-//       statsObj.user[screenName].twitterRateLimitRemainingTime = statsObj.user[screenName].twitterRateLimitResetAt.diff(moment());
-
-//       console.log(chalkLog("TWITTER RATE LIMIT STATUS"
-//         + " | @" + screenName
-//         + " | " + getTimeStamp()
-//         + " | LIMIT " + statsObj.user[screenName].twitterRateLimit
-//         + " | REMAINING " + statsObj.user[screenName].twitterRateLimitRemaining
-//         + " | RESET " + getTimeStamp(statsObj.user[screenName].twitterRateLimitResetAt)
-//         + " | IN " + msToTime(statsObj.user[screenName].twitterRateLimitRemainingTime)
-//       ));
-
-//       if (statsObj.user[screenName].twitterRateLimitExceptionFlag 
-//         && statsObj.user[screenName].twitterRateLimitResetAt.isBefore(moment())){
-
-//         statsObj.user[screenName].twitterRateLimitExceptionFlag = false;
-
-//         console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
-//           + " | @" + screenName
-//           + " | LIM " + statsObj.user[screenName].twitterRateLimit
-//           + " | REM: " + statsObj.user[screenName].twitterRateLimitRemaining
-//           + " | EXP @: " + statsObj.user[screenName].twitterRateLimitException.format(compactDateTimeFormat)
-//           + " | NOW: " + moment().format(compactDateTimeFormat)
-//         ));
-
-//         fsm.fsm_rateLimitEnd();
-//       }
-//       else if (statsObj.user[screenName].twitterRateLimitExceptionFlag){
-
-//         console.log(chalkAlert("*** TWITTER RATE LIMIT"
-//           + " | @" + screenName
-//           + " | LIM " + statsObj.user[screenName].twitterRateLimit
-//           + " | REM: " + statsObj.user[screenName].twitterRateLimitRemaining
-//           + " | EXP @: " + statsObj.user[screenName].twitterRateLimitException.format(compactDateTimeFormat)
-//           + " | RST @: " + statsObj.user[screenName].twitterRateLimitResetAt.format(compactDateTimeFormat)
-//           + " | NOW: " + moment().format(compactDateTimeFormat)
-//           + " | IN " + msToTime(statsObj.user[screenName].twitterRateLimitRemainingTime)
-//         ));
-//         fsmPreviousState = fsm.getMachineState();
-//         fsm.fsm_rateLimitStart();
-//       }
-//       else {
-//         debug(chalkInfo("... NO TWITTER RATE LIMIT"
-//           + " | @" + screenName
-//           + " | LIM " + statsObj.user[screenName].twitterRateLimit
-//           + " | REM: " + statsObj.user[screenName].twitterRateLimitRemaining
-//           + " | RST @: " + statsObj.user[screenName].twitterRateLimitResetAt.format(compactDateTimeFormat)
-//           + " | NOW: " + moment().format(compactDateTimeFormat)
-//           + " | IN " + msToTime(statsObj.user[screenName].twitterRateLimitRemainingTime)
-//         ));
-//         fsm.fsm_rateLimitEnd();
-//       }
-
-//       if (callback !== undefined) { callback(); }
-//     }
-//   });
-// }
 
 function printUserObj(title, user) {
 
@@ -578,6 +445,116 @@ function initUserQueryCursor(params, callback){
   });
 }
 
+function unfollowFriend(params, callback){
+
+  // console.log(chalkAlert("unfollowFriend params\n" + jsonPrint(params)));
+
+  const threeceeUser = params.threeceeUser;
+
+  const twitterClient = twitterUserHashMap[threeceeUser].twit;
+
+  if (!twitterClient) {
+    console.log(chalkAlert("TCF | UNFOLLOW FRIEND | TWIT CLIENT UNDEFINED | SKIPPING"
+      + " | 3C Q" + threeceeUser
+      + " | UID: " + params.user.userId
+    ));
+    return callback("TWIT UNDEFINED", null);
+  }
+
+  let unfollowFriendParams = {};
+
+  if (params.user.user_id !== undefined) { 
+    unfollowFriendParams.user_id = params.user.user_id;
+  }
+  else if (params.user.userId !== undefined) { 
+    unfollowFriendParams.user_id = params.user.userId;
+  }
+
+  if (params.user.screen_name !== undefined) { 
+    unfollowFriendParams.screen_name = params.user.screen_name;
+  }
+  else if (params.user.screenName !== undefined) { 
+    unfollowFriendParams.screen_name = params.user.screenName;
+  }
+
+  if ((unfollowFriendParams.user_id === undefined)
+    && (unfollowFriendParams.screen_name === undefined)
+  ){
+
+    console.log(chalkAlert("TFC | UNFOLLOW FRIEND"
+      + "\nINVALID PARAMS"
+      + "\n" + jsonPrint(params)
+    ));
+
+    quit("UNFOLLOW FRIEND | INVALID PARAMS");
+
+    return callback("INVALID PARAMS", null);
+  }
+
+  twitterClient.post(
+
+    "friendships/destroy", unfollowFriendParams, 
+
+    function destroyFriend(err, data, response){  // if success, data = user
+
+      if (err) {
+
+        console.log(chalkError("TCF | *** UNFOLLOW FRIEND ERROR"
+          + " | 3C @" + threeceeUser
+          + " | UID: " + unfollowFriendParams.user_id
+          + " | @" + unfollowFriendParams.screen_name
+          + " | ERROR: " + err
+          // + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
+        ));
+
+        return callback(err, unfollowFriendParams);
+
+      }
+
+      if (_.isObject(response) 
+        && (response.statusCode !== undefined) 
+        && (response.statusCode !== 200)) 
+      {
+
+        console.log(chalkError("TCF | *** UNFOLLOW FAIL"
+          + " | 3C: @" + threeceeUser
+          + " | RESPONSE CODE: " + response.statusCode
+          + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
+          + "\nRESPONSE\n" + jsonPrint(response)
+        ));
+
+        return callback(err, response);
+      }
+
+      if (data.following) {
+
+        console.log(chalkAlert("TCF | XXX UNFOLLOW"
+          + " | 3C: @" + threeceeUser
+          + " | UID: " + data.id_str
+          + " | @" + data.screen_name
+          + " | FLWRs: " + data.followers_count
+          + " | FRNDs: " + data.friends_count
+          + " | Ts: " + data.statuses_count
+          + " | FOLLOWING: " + data.following
+        ));
+
+        return callback(null, data);
+
+      }
+
+      console.log(chalkInfo("TCF | miss UNFOLLOW"
+        + " | 3C: @" + threeceeUser
+        + " | UID: " + unfollowFriendParams.user_id
+        + " | @" + unfollowFriendParams.screen_name
+      ));
+
+      callback(null, null);
+
+    }
+  );
+}
+
+
 function cloneTwitterFriends(params){
 
   if (cloneTwitterFriendsBusy) {
@@ -621,8 +598,10 @@ function cloneTwitterFriends(params){
       statsObj.users.grandTotalFriendsFetched += 1;
 
       statsObj.user[sourceScreenName].totalFriendsFetched += 1;
-      statsObj.user[sourceScreenName].totalPercentFetched = 100*(statsObj.user[sourceScreenName].totalFriendsFetched/statsObj.user[sourceScreenName].friendsCount); 
-      statsObj.user[sourceScreenName].percentFetched = 100*(statsObj.user[sourceScreenName].totalFriendsFetched/statsObj.user[sourceScreenName].friendsCount); 
+      // statsObj.user[sourceScreenName].totalPercentFetched = 100*(statsObj.user[sourceScreenName].totalFriendsFetched/statsObj.user[sourceScreenName].friendsCount); 
+      statsObj.user[sourceScreenName].totalPercentFetched = 100*(statsObj.user[sourceScreenName].totalFriendsFetched/statsObj.numSourceUsers); 
+      // statsObj.user[sourceScreenName].percentFetched = 100*(statsObj.user[sourceScreenName].totalFriendsFetched/statsObj.user[sourceScreenName].friendsCount); 
+      statsObj.user[sourceScreenName].percentFetched = 100*(statsObj.user[sourceScreenName].totalFriendsFetched/statsObj.numSourceUsers); 
 
       if (configuration.testMode 
         && (statsObj.user[sourceScreenName].totalFriendsFetched >= TEST_MODE_TOTAL_FETCH)) {
@@ -648,10 +627,12 @@ function cloneTwitterFriends(params){
       }
 
       statsObj.user[sourceScreenName].friendsProcessed += 1;
-      statsObj.user[sourceScreenName].percentProcessed = 100*statsObj.user[sourceScreenName].friendsProcessed/statsObj.user[sourceScreenName].friendsCount;
+      // statsObj.user[sourceScreenName].percentProcessed = 100*statsObj.user[sourceScreenName].friendsProcessed/statsObj.user[sourceScreenName].friendsCount;
+      statsObj.user[sourceScreenName].percentProcessed = 100*statsObj.user[sourceScreenName].friendsProcessed/statsObj.numSourceUsers;
 
       console.log(chalkInfo("@" + sourceScreenName
-        + " | " + statsObj.user[sourceScreenName].friendsProcessed + " / " + statsObj.user[sourceScreenName].friendsCount
+        // + " | " + statsObj.user[sourceScreenName].friendsProcessed + " / " + statsObj.user[sourceScreenName].friendsCount
+        + " | " + statsObj.user[sourceScreenName].friendsProcessed + " / " + statsObj.numSourceUsers
         + " (" + statsObj.user[sourceScreenName].percentProcessed.toFixed(1) + "%)"
         + " | FRIEND ID: " + friend.userId
         + " | @" + friend.screenName
@@ -659,7 +640,6 @@ function cloneTwitterFriends(params){
 
       destinationTwitter.twit.post("friendships/create", {user_id: friend.userId}, function(err, data, response){
         if (err) {
-
 
           if (err.code === 158) {
             console.log(chalkError("ERROR: FOLLOW SELF"
@@ -679,17 +659,10 @@ function cloneTwitterFriends(params){
               + " | @" + friend.screenName
             ));
 
-
             updateDbUser({ userObj: friend, threeceeUser: false, following: false }, function(err, udpateUser){
 
-              if (err) {
-
-              }
-              else {
-
-                printUserObj("--- UNFOLLOW", udpateUser);
-                
-              }
+              if (err) {   }
+              else {  printUserObj("--- UNFOLLOW", udpateUser); }
 
               setTimeout(function(){
                 cloneTwitterFriendsBusy = false;
@@ -704,12 +677,9 @@ function cloneTwitterFriends(params){
               + " | @" + destinationScreenName
               + " | " + friend.userId
               + " | @" + friend.screenName
-              // + " | " + jsonPrint(err)
             ));
 
-            setTimeout(function(){
-              quit("TWITTER FOLLOW LIMIT | @" + destinationScreenName );
-            }, 5000);
+            setTimeout(function(){ quit("TWITTER FOLLOW LIMIT | @" + destinationScreenName ); }, 5000);
           }
 
           if ((err.code !== 158) && (err.code !== 108) && (err.code !== 161)) {
@@ -717,7 +687,6 @@ function cloneTwitterFriends(params){
               + " | @" + destinationScreenName
               + " | " + friend.userId
               + " | @" + friend.screenName
-              // + " | " + jsonPrint(err)
             ));
 
             cloneTwitterFriendsBusy = false;
@@ -731,10 +700,15 @@ function cloneTwitterFriends(params){
             if (err) {
 
             }
-            else {
+            else if (udpateUser) {
 
-              printUserObj("+++ FOLLOW", udpateUser);
+              unfollowFriend({ threeceeUser: sourceScreenName, user: udpateUser }, function(err, results){
+                printUserObj("+++ FOLLOW", udpateUser);
+              });
               
+            }
+            else {
+              printUserObj("??? NO DB UPDATE FOLLOW ??? | ", friend);
             }
 
             setTimeout(function(){
@@ -986,50 +960,26 @@ process.on("message", function(msg) {
   }
 });
 
-// const runEnableArgs = {};
-// runEnableArgs.userServerReady = userServerReady;
-
-// function runEnable(displayArgs) {
-
-//   runEnableArgs.userServerReady = userServerReady;
-
-//   const runEnableKeys = Object.keys(runEnableArgs);
-
-//   if (displayArgs) { console.log(chalkInfo("------ runEnable ------")); }
-
-//   runEnableKeys.forEach(function(key){
-//     if (displayArgs) { console.log(chalkInfo("runEnable | " + key + ": " + runEnableArgs[key])); }
-//     if (!runEnableArgs[key]) {
-//       if (displayArgs) { console.log(chalkInfo("------ runEnable ------")); }
-//       return false;
-//     }
-//   });
-
-//   if (displayArgs) { console.log(chalkInfo("------ runEnable ------")); }
-
-//   return true;
-// }
-
 function showStats(options){
-  // runEnable();
   if (options) {
   }
   else {
 
     if (statsObj.user[defaultSourceTwitterScreenName] !== undefined) {
 
-      statsObj.user[defaultSourceTwitterScreenName].percentProcessed = 100*statsObj.user[defaultSourceTwitterScreenName].friendsProcessed/statsObj.user[defaultSourceTwitterScreenName].friendsCount;
+      // statsObj.user[defaultSourceTwitterScreenName].percentProcessed = 100*statsObj.user[defaultSourceTwitterScreenName].friendsProcessed/statsObj.user[defaultSourceTwitterScreenName].friendsCount;
+      statsObj.user[defaultSourceTwitterScreenName].percentProcessed = 100*statsObj.user[defaultSourceTwitterScreenName].friendsProcessed/statsObj.numSourceUsers;
       statsObj.user[defaultSourceTwitterScreenName].friendsProcessElapsed = moment().diff(statsObj.user[defaultSourceTwitterScreenName].friendsProcessStart);
 
-      statsObj.users.totalTwitterFriends = 0;
+      // statsObj.users.totalTwitterFriends = 0;
       statsObj.users.totalFriendsFetched = 0;
 
       configuration.twitterUsers.forEach(function(tUserScreenName){
         if (statsObj.user[tUserScreenName] !== undefined) {
           statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
-          statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
+          // statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
         }
-        statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
+        // statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
       });
 
       console.log(chalkLog("--- STATS --------------------------------------\n"
@@ -1038,7 +988,8 @@ function showStats(options){
         + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
         + "\nELAPSED: " + statsObj.elapsed
         + "\nFSM:     " + fsm.getMachineState()
-        + "\nU PRCSD: " + statsObj.user[defaultSourceTwitterScreenName].friendsProcessed + " / " + statsObj.user[defaultSourceTwitterScreenName].friendsCount
+        // + "\nU PRCSD: " + statsObj.user[defaultSourceTwitterScreenName].friendsProcessed + " / " + statsObj.user[defaultSourceTwitterScreenName].friendsCount
+        + "\nU PRCSD: " + statsObj.user[defaultSourceTwitterScreenName].friendsProcessed + " / " + statsObj.numSourceUsers
         + " (" + statsObj.user[defaultSourceTwitterScreenName].percentProcessed.toFixed(2) + "%)"
         + "\n------------------------------------------------\n"
       ));
@@ -1306,10 +1257,17 @@ function initTwitter(currentTwitterUser, callback){
         newTwit = new Twit({
           consumer_key: twitterConfig.CONSUMER_KEY,
           consumer_secret: twitterConfig.CONSUMER_SECRET,
-          app_only_auth: true
-          // access_token: twitterConfig.TOKEN,
-          // access_token_secret: twitterConfig.TOKEN_SECRET
+          access_token: twitterConfig.TOKEN,
+          access_token_secret: twitterConfig.TOKEN_SECRET
         });
+
+        // newTwit = new Twit({
+        //   consumer_key: twitterConfig.CONSUMER_KEY,
+        //   consumer_secret: twitterConfig.CONSUMER_SECRET,
+        //   app_only_auth: true
+        //   // access_token: twitterConfig.TOKEN,
+        //   // access_token_secret: twitterConfig.TOKEN_SECRET
+        // });
       }
       else {
         newTwit = new Twit({
@@ -1411,22 +1369,22 @@ function initTwitterUsers(callback){
         if (callback !== undefined) { return(callback(err)); }
       }
 
-      statsObj.users.totalTwitterFriends = 0;
+      // statsObj.users.totalTwitterFriends = 0;
       statsObj.users.totalFriendsFetched = 0;
 
       configuration.twitterUsers.forEach(function(tUserScreenName){
         statsObj.users.totalFriendsFetched += statsObj.user[tUserScreenName].totalFriendsFetched;
-        statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
-        statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
+        // statsObj.users.totalTwitterFriends += statsObj.user[tUserScreenName].friendsCount;
+        // statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalTwitterFriends;
       });
 
-      console.log(chalkTwitterBold("====================================================================="
-        + "\nALL TWITTER USERS"
-        + " | " + statsObj.users.totalTwitterFriends + " GRAND TOTAL FRIENDS"
-        + " | " + statsObj.users.totalFriendsFetched + " GRAND TOTAL FETCHED"
-        + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
-        + "\n====================================================================="
-      ));
+      // console.log(chalkTwitterBold("====================================================================="
+      //   + "\nALL TWITTER USERS"
+      //   // + " | " + statsObj.users.totalTwitterFriends + " GRAND TOTAL FRIENDS"
+      //   // + " | " + statsObj.users.totalFriendsFetched + " GRAND TOTAL FETCHED"
+      //   + " (" + statsObj.users.totalPercentFetched.toFixed(2) + "%)"
+      //   + "\n====================================================================="
+      // ));
 
       if (callback !== undefined) { callback(err); }
     });
