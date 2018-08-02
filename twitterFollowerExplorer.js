@@ -2028,11 +2028,11 @@ function loadBestNeuralNetworkFile(callback) {
   loadBestNetworkDropboxFolder(bestNetworkFolder, function(err, results) {
     if (err) {
       console.log(chalkError("LOAD DROPBOX NETWORKS ERROR: " + err));
-      callback(new Error(err), null);
+      if (callback !== undefined) { callback(new Error(err), null); }
     }
     else if (results.best === undefined) {
       console.log(chalkAlert("??? NO BEST DROPBOX NETWORK ???"));
-      callback(null, null);
+      if (callback !== undefined) { callback(null, null); }
     }
     else {
 
@@ -2040,7 +2040,7 @@ function loadBestNeuralNetworkFile(callback) {
 
         if (err) {
           console.log(chalkError("initRandomNetworks ERROR: " + err));
-          return callback(err, null);
+          if (callback !== undefined) { return callback(err, null); }
         }
 
         if (loadedNetworksFlag
@@ -2159,7 +2159,8 @@ function loadBestNeuralNetworkFile(callback) {
 
           updateBestNetworkStats(bnwObj);
 
-          callback(null, bnwObj);
+          if (callback !== undefined) { callback(null, bnwObj); }
+          // callback(null, bnwObj);
         }
         else if (currentBestNetworkId && bestNetworkHashMap.has(currentBestNetworkId)) {
 
@@ -2199,12 +2200,12 @@ function loadBestNeuralNetworkFile(callback) {
 
           printNetworkObj("LOADED NETWORK", bnwObj);
 
-          callback(null, bnwObj);
+          if (callback !== undefined) { callback(null, bnwObj); }
         }
         else {
           console.log(chalkAlert("??? NO BEST RUNTIME NETWORK | loadBestNeuralNetworkFile"
           ));
-          callback(null, null);
+          if (callback !== undefined) { callback(null, null); }
         }
       });
     }
@@ -3111,6 +3112,48 @@ function childSendAll(params, callback) {
   });
 }
 
+function initNetworks(params, callback){
+
+  async.parallel({
+
+    bestNetworks: function(cb) {
+
+      loadBestNeuralNetworkFile(function(err, networkObj) {
+
+        if (err) {
+          console.log(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
+          return cb(err, null);
+        }
+
+        console.log("loadBestNeuralNetworkFile DONE");
+        cb(null, networkObj);
+
+      });
+
+    },
+
+    maxInputs: function(cb) {
+
+     loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
+        if (err) {
+          console.log(chalkError("*** LOAD MAX INPUS FILE ERROR: " + err));
+          return cb(err, null);
+        }
+
+        console.log("loadMaxInputDropbox DONE");
+        cb(null, maxInputHashMap);
+
+      });
+
+    }
+  }, function(err) {
+    callback(err, results);
+  });
+
+
+}
+
+
 function reporter(event, oldState, newState) {
 
   statsObj.fsmState = newState;
@@ -3166,19 +3209,17 @@ const fsmStates = {
 
       reporter(event, oldState, newState);
 
-      checkChildrenState("INIT", function(err, allChildrenInit) {
-        console.log("ALL CHILDREN INIT: " + allChildrenInit);
-        if (!allChildrenInit && (event !== "fsm_tick")) { childSendAll({op: "INIT"}); }
+      checkChildrenState("IDLE", function(err, allChildrenIdle) {
+        console.log("ALL CHILDREN IDLE: " + allChildrenIdle);
+        if (!allChildrenIdle && (event !== "fsm_tick")) { childSendAll({op: "IDLE"}); }
       });
 
     },
 
     fsm_tick: function() {
-      checkChildrenState("INIT", function(err, allChildrenInit) {
-        debug("INIT TICK"
-          + " | ALL CHILDREN INIT: " + allChildrenInit
-        );
-        if (allChildrenInit) { fsm.fsm_init(); }
+      checkChildrenState("IDLE", function(err, allChildrenIdle) {
+        debug("INIT TICK | ALL CHILDREN IDLE: " + allChildrenIdle );
+        if (allChildrenIdle) { fsm.fsm_init(); }
       });
     },
     "fsm_init": "INIT",
@@ -3197,21 +3238,21 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState);
-        checkChildrenState("READY", function(err, allChildrenReady) {
-          console.log("ALL CHILDREN READY: " + allChildrenReady);
-          if (!allChildrenReady && (event !== "fsm_tick")) { childSendAll({op: "READY"}); }
+        checkChildrenState("INIT", function(err, allChildrenInit) {
+          console.log("ALL CHILDREN INIT: " + allChildrenInit);
+          if (!allChildrenInit && (event !== "fsm_tick")) { childSendAll({op: "INIT"}); }
         });
       }
     },
     fsm_tick: function() {
-      checkChildrenState("READY", function(err, allChildrenReady) {
-        debug("READY TICK"
+      checkChildrenState("INIT", function(err, allChildrenInit) {
+        debug("READY INIT"
           + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
-          + " | ALL CHILDREN READY: " + allChildrenReady
+          + " | ALL CHILDREN READY: " + allChildrenInit
         );
-        if (!allChildrenReady) { childSendAll({op: "READY"}); }
-        if (allChildrenReady && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_ready(); }
+        if (!allChildrenInit) { childSendAll({op: "INIT"}); }
+        if (allChildrenInit && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_ready(); }
       });
     },
     "fsm_error": "ERROR",
@@ -3223,10 +3264,12 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState);
+
         checkChildrenState("READY", function(err, allChildrenReady) {
           console.log("ALL CHILDREN READY: " + allChildrenReady);
           if (!allChildrenReady && (event !== "fsm_tick")) { childSendAll({op: "READY"}); }
         });
+
       }
     },
     fsm_tick: function() {
@@ -3239,12 +3282,31 @@ const fsmStates = {
           + " | ALL CHILDREN READY: " + allChildrenReady
         );
 
-        if (fetchAllIntervalReady && allChildrenReady && processUserQueueReady && processUserQueueEmpty()) {
-          fetchAllIntervalReady = false;
+        if (
+          fetchAllIntervalReady 
+          && networksSentFlag 
+          && loadedNetworksFlag 
+          && allChildrenReady 
+          && processUserQueueReady 
+          && processUserQueueEmpty()
+        ) {
+          
+          // fetchAllIntervalReady = false;
+          // statsObj.status = "FETCH ALL";
+          // fsm.fsm_fetchAllStart();
 
-          statsObj.status = "FETCH ALL";
+          randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
 
-          fsm.fsm_fetchAllStart();
+            fetchAllIntervalReady = false;
+            statsObj.status = "FETCH ALL";
+            fsm.fsm_fetchAllStart();
+
+            console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+            childSendAll({op: "FETCH_USER_START"});
+            statsObj.fetchCycleStartMoment = moment();
+            statsObj.fetchCycleElapsed = 0;
+          });
+
         }
 
       });
@@ -3262,28 +3324,6 @@ const fsmStates = {
         reporter(event, oldState, newState);
 
         console.log("FETCH_ALL | onEnter | " + event);
-
-        loadBestNeuralNetworkFile(function(err, networkObj) {
-          if (err) {
-            console.log(chalkError("*** LOAD BEST NETWORK FILE ERROR: " + err));
-          }
-          // debug("loadBestNeuralNetworkFile networkObj\n" + jsonPrint(networkObj));
-          console.log("FETCH_ALL | loadBestNeuralNetworkFile DONE");
-
-          loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function() {
-
-            if (randomNetworkTree && (randomNetworkTree !== undefined)) {
-
-              randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
-                console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
-                childSendAll({op: "FETCH_USER_START"});
-                statsObj.fetchCycleStartMoment = moment();
-                statsObj.fetchCycleElapsed = 0;
-              });
-
-            }
-          });
-        });
       }
     },
     fsm_tick: function() {
@@ -3294,6 +3334,7 @@ const fsmStates = {
           + " | Q EMPTY: " + processUserQueueEmpty()
           + " | ALL CHILDREN FETCH_END: " + acfe
         );
+        if (!acfe) { fsm.fsm_fetchAllEnd(); }
         if (acfe && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_fetchAllEnd(); }
       });
     },
@@ -3481,10 +3522,10 @@ const fsmStates = {
                 quit({source: "QUIT_ON_COMPLETE"});
               }
               else {
-                // fsm.fsm_init();
-                // fsm.fsm_reset();
-                // startFetch();
-                loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
+
+                initNetworks(function(err, results){
+
+                // loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
 
                   if (err) {
                     console.log("LOAD MAX INPUTS HASHMAP FILE ERROR: " + err);
@@ -4491,56 +4532,54 @@ function initTwitterFollowerChild(twitterConfig, callback) {
             checkChildrenState(m.op);
           });
         }
-
-
       break;
 
       case "INIT":
       case "INIT_COMPLETE":
-        console.log(chalkInfo("TFC | CHILD INIT COMPLETE | " + m.threeceeUser));
+        console.log(chalkTwitter("R< TFC | CHILD INIT COMPLETE | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "INIT";
         checkChildrenState(m.op);
       break;
  
       case "IDLE":
-        console.log(chalkInfo("TFC | CHILD IDLE | " + m.threeceeUser));
+        console.log(chalkTwitter("R< TFC | CHILD IDLE | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "IDLE";
         checkChildrenState(m.op);
       break;
 
       case "RESET":
-        console.log(chalkInfo("TFC | CHILD RESET | " + m.threeceeUser));
+        console.log(chalkTwitter("R< TFC | CHILD RESET | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "RESET";
         checkChildrenState(m.op);
       break;
 
       case "READY":
-        console.log(chalkInfo("TFC | CHILD READY | " + m.threeceeUser));
+        console.log(chalkTwitter("R< TFC | CHILD READY | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "READY";
         checkChildrenState(m.op);
       break;
 
       case "FETCH":
-        console.log(chalkInfo("TFC | CHILD FETCH | " + m.threeceeUser));
+        console.log(chalkTwitter("R< TFC | CHILD FETCH | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "FETCH";
         checkChildrenState(m.op);
       break;
 
       case "FETCH_END":
-        console.log(chalkInfo("TFC | CHILD FETCH_END | " + m.threeceeUser));
+        console.log(chalkTwitter("R< TFC | CHILD FETCH_END | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "FETCH_END";
         checkChildrenState(m.op);
       break;
 
       case "PAUSE_RATE_LIMIT":
-        console.log(chalkInfo("TFC | CHILD PAUSE_RATE_LIMIT | " + m.threeceeUser));
+        console.log(chalkTwitter("R< TFC | CHILD PAUSE_RATE_LIMIT | " + m.threeceeUser));
         tfeChildHashMap[m.threeceeUser].status = "PAUSE_RATE_LIMIT";
         checkChildrenState(m.op);
       break;
 
       case "THREECEE_USER":
 
-        console.log(chalkInfo("TFC | R> THREECEE_USER"
+        console.log(chalkTwitter("R< TFC | THREECEE_USER"
           + " | @" + m.threeceeUser.screenName
           + " | Ts: " + m.threeceeUser.statusesCount
           + " | FRNDs: " + m.threeceeUser.friendsCount
@@ -4570,7 +4609,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
       case "FRIENDS_IDS":
         twitterUserHashMap[m.threeceeUser].friends = new Set(m.friendsIds);
-        console.log(chalkInfo("TFC | R> FRIENDS_IDS"
+        console.log(chalkTwitter("R< TFC | FRIENDS_IDS"
           + " | 3C: @" + m.threeceeUser
           + " | " + twitterUserHashMap[m.threeceeUser].friends.size + " FRIENDS"
         ));
@@ -4578,7 +4617,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
       case "FRIEND_RAW":
         if (configuration.testMode) {
-          console.log(chalkInfo("TFC | R> FRIEND"
+          console.log(chalkInfo("R< TFC | FRIEND"
             + " | FOLLOW: " + m.follow
             + " | 3C: @" + m.threeceeUser
             + " | @" + m.friend.screen_name
@@ -4598,7 +4637,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
       case "UNFOLLOWED":
 
-        console.log(chalkAlert("TFC | CHILD UNFOLLOWED"
+        console.log(chalkAlert("R< TFC | CHILD UNFOLLOWED"
           + " | " + m.threeceeUser
           + " | UID: " + m.user.id_str
           + " | @" + m.user.screen_name
@@ -4623,7 +4662,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         tfeChildHashMap[m.threeceeUser].statsObj = m.statsObj;
 
         if (configuration.verbose) {
-          console.log(chalkInfo("TFC | CHILD STATS"
+          console.log(chalkInfo("R< TFC | CHILD STATS"
             + " | " + m.threeceeUser
             + " | " + getTimeStamp() + " ___________________________\n"
             + jsonPrint(m.statsObj, "TFC | STATS ")
@@ -4634,7 +4673,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
       break;
 
       default:
-        console.log(chalkError("TFC | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
+        console.log(chalkError("R< TFC | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
         quit("UNKNOWN OP" + m.op);
     }
   });
@@ -4872,7 +4911,7 @@ function initStdIn() {
   });
 }
 
-function initialize(cnf, callback) {
+function initConfig(cnf, callback) {
 
   statsObj.status = "INITIALIZE";
 
@@ -5827,52 +5866,52 @@ function initLangAnalyzer(callback) {
   });
 }
 
-function startFetch(){
+// function startFetch(){
 
-  fsm.fsm_reset();
+//   fsm.fsm_reset();
 
-  initTwitterUsers(function initTwitterUsersCallback(e) {
-    if (e) {
-      console.log(chalkError("*** ERROR INIT TWITTER USERS: " + e));
-      return quit({source: "TFE", error: e});
-    }
+//   initTwitterUsers(function initTwitterUsersCallback(e) {
+//     if (e) {
+//       console.log(chalkError("*** ERROR INIT TWITTER USERS: " + e));
+//       return quit({source: "TFE", error: e});
+//     }
 
-    console.log(chalkTwitter("TFE CHILDREN"
-      + " | " + Object.keys(tfeChildHashMap)
-    ));
+//     console.log(chalkTwitter("TFE CHILDREN"
+//       + " | " + Object.keys(tfeChildHashMap)
+//     ));
 
-    // initSocket(configuration);
+//     // initSocket(configuration);
 
-    loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
+//     loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
 
-      if (err) {
-        console.log("LOAD MAX INPUTS HASHMAP FILE ERROR: " + err);
-        quit("LOAD MAX INPUTS HASHMAP FILE ERROR");
-        return;
-      }
+//       if (err) {
+//         console.log("LOAD MAX INPUTS HASHMAP FILE ERROR: " + err);
+//         quit("LOAD MAX INPUTS HASHMAP FILE ERROR");
+//         return;
+//       }
 
-      if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+//       if (randomNetworkTree && (randomNetworkTree !== undefined)) {
 
-        randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
-          console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
+//         randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
+//           console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
 
-          initFetchAllInterval(configuration.fetchAllIntervalTime);
+//           initFetchAllInterval(configuration.fetchAllIntervalTime);
 
-          setTimeout(function() {
-            fsm.fsm_init();
-            initFsmTickInterval(FSM_TICK_INTERVAL);
-          }, 3000);
-        });
-      }
+//           setTimeout(function() {
+//             fsm.fsm_init();
+//             initFsmTickInterval(FSM_TICK_INTERVAL);
+//           }, 3000);
+//         });
+//       }
 
-    });
-  });
-}
+//     });
+//   });
+// }
 
-initialize(configuration, function(err, cnf) {
+initConfig(configuration, function(err, cnf) {
 
   if (err) {
-    console.log(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
+    console.log(chalkError("***** INIT CONFIG ERROR *****\n" + jsonPrint(err)));
     if (err.code !== 404) {
       console.log("err.status: " + err.status);
       quit();
@@ -5955,7 +5994,7 @@ initialize(configuration, function(err, cnf) {
 
       initSocket(configuration);
 
-      startFetch();
+      // startFetch();
 
       // initTwitterUsers(function initTwitterUsersCallback(e) {
       //   if (e) {

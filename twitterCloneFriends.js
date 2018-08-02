@@ -745,7 +745,7 @@ function reporter(event, oldState, newState) {
 const fsmStates = {
   "IDLE":{
     onEnter: reporter,
-    "fsm_initStart": "INIT"
+    "fsm_reset": "RESET",
   },
   "RESET":{
     onEnter: reporter,

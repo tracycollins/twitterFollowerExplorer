@@ -1049,6 +1049,12 @@ process.on("disconnect", function() {
 
 function initTwitter(twitterConfig, callback){
 
+  console.log(chalkTwitter("TFC | INITIALIZING TWITTER" 
+    + " | " + getTimeStamp() 
+    + " | @" + configuration.threeceeUser 
+    + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
+  ));
+
   if (!twitClient || (twitClient === undefined)){
 
     twitClient = new Twit(twitterConfig);
@@ -1066,7 +1072,6 @@ function initTwitter(twitterConfig, callback){
       process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "INIT", error: err });
 
       // quit("TWITTER STREAM ERROR | " + err);
-
     });
 
     twitStream.on("follow", function(followMessage){
@@ -1088,7 +1093,6 @@ function initTwitter(twitterConfig, callback){
       };
 
       process.send(friendRawObj, function(){});
-
     });
 
   }
