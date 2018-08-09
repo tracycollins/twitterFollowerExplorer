@@ -30,7 +30,7 @@
     "eventemitter2": "^5.0.1",
     "get-urls": "^7.2.0",
     "google-gax": "^0.18.0",
-    "grpc": "^1.14.0-pre2",
+    "grpc": "^1.14.0-pre4",
     "hashmap": "^2.3.0",
     "hashtag-regex": "^2.0.0",
     "intervalometer": "^1.0.4",
