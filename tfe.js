@@ -30,7 +30,7 @@ const writeJsonFile = require("write-json-file");
 const sizeof = require("object-sizeof");
 const fs = require("fs");
 const JSONParse = require("json-parse-safe");
-const debug = require("debug")("TMP");
+const debug = require("debug")("TFE");
 const NodeCache = require("node-cache");
 const util = require("util");
 const deepcopy = require("deep-copy");
@@ -88,23 +88,25 @@ DEFAULT_CONFIGURATION.hostname = DEFAULT_CONFIGURATION.hostname.replace(/.fios-r
 DEFAULT_CONFIGURATION.hostname = DEFAULT_CONFIGURATION.hostname.replace(/word0-instance-1/g, "google");
 DEFAULT_CONFIGURATION.hostname = DEFAULT_CONFIGURATION.hostname.replace(/word/g, "google");
 
-DEFAULT_CONFIGURATION.processName = "template_fsm";
-DEFAULT_CONFIGURATION.processTitle = "node_template_fsm";
+DEFAULT_CONFIGURATION.processName = "tfe";
+DEFAULT_CONFIGURATION.processTitle = "node_tfe";
 DEFAULT_CONFIGURATION.runId = DEFAULT_CONFIGURATION.hostname + "_" + getTimeStamp() + "_" + process.pid;
 
 DEFAULT_CONFIGURATION.configFolder = "/config";
-DEFAULT_CONFIGURATION.defaultConfigFolder = "/config/default";
-DEFAULT_CONFIGURATION.defaultConfigFile = DEFAULT_CONFIGURATION.processName + "Config.json";
-DEFAULT_CONFIGURATION.hostConfigFolder = "/config/" + DEFAULT_CONFIGURATION.hostname;
-DEFAULT_CONFIGURATION.hostConfigFile = DEFAULT_CONFIGURATION.hostname + "_" + DEFAULT_CONFIGURATION.defaultConfigFile;
+DEFAULT_CONFIGURATION.defaultConfigFolder = "/config/utility/default";
+DEFAULT_CONFIGURATION.defaultConfigFile = "default_" + DEFAULT_CONFIGURATION.processName + "Config.json";
+DEFAULT_CONFIGURATION.hostConfigFolder = "/config/utility/" + DEFAULT_CONFIGURATION.hostname;
+DEFAULT_CONFIGURATION.hostConfigFile = DEFAULT_CONFIGURATION.hostname + "_" + DEFAULT_CONFIGURATION.processName + "Config.json";
 DEFAULT_CONFIGURATION.statsFile = DEFAULT_CONFIGURATION.processName + "Stats.json";
 
+DEFAULT_CONFIGURATION.randomEvenDelayMin = 10; // seconds
+DEFAULT_CONFIGURATION.randomEvenDelayMax = 20; // seconds
 
 DEFAULT_CONFIGURATION.offlineMode = false;
 DEFAULT_CONFIGURATION.quitOnComplete = false;
 DEFAULT_CONFIGURATION.testMode = false;
 
-DEFAULT_CONFIGURATION.processPrefix = "TMP";
+DEFAULT_CONFIGURATION.processPrefix = "TFE";
 
 DEFAULT_CONFIGURATION.childPrefix = "TMC";
 
@@ -165,7 +167,8 @@ DEFAULT_CONFIGURATION.user.tags = {};
 DEFAULT_CONFIGURATION.user.stats = {};
 
 DEFAULT_CONFIGURATION.child = {};
-DEFAULT_CONFIGURATION.child.sourceFile = "templateChild.js";
+// DEFAULT_CONFIGURATION.child.sourceFile = "templateChild.js";
+DEFAULT_CONFIGURATION.child.sourceFile = "tfeChild.js";
 DEFAULT_CONFIGURATION.child.db = {};
 DEFAULT_CONFIGURATION.child.db = DEFAULT_CONFIGURATION.db;
 DEFAULT_CONFIGURATION.child.dropbox = {};
@@ -184,7 +187,7 @@ DEFAULT_CONFIGURATION.slack.channel = "#test";
 let configuration = {};
 configuration = deepcopy(DEFAULT_CONFIGURATION);
 
-process.title = configuration.PROCESS_TITLE;
+process.title = configuration.processTitle;
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
@@ -222,8 +225,6 @@ let prevConfigFileModifiedMoment = moment("2010-01-01");
 let quitWaitInterval;
 let quitFlag = false;
 
-
-
 let statsObj = {};
 let statsObjSmall = {};
 
@@ -243,6 +244,7 @@ statsObj.heartbeatsReceived = 0;
 
 statsObj.children = {};
 statsObj.children.childIndex = 0;
+statsObj.children.numChildren = 0;
 
 statsObj.db = {};
 statsObj.db.connected = false;
@@ -316,6 +318,7 @@ function initDropbox(cfg){
       }
       else {
         dropboxClient = new Dropbox({ accessToken: config.accessToken });
+        configuration.child.dropbox.accessToken = config.accessToken;
       }
 
       statsObj.status = "INIT DROPBOX OK";
@@ -377,15 +380,10 @@ function initSlack(config){
           reject(err);
         }
 
-        // console.log(chalkInfo("TMP | SLACK TEST RESPONSE\n" + jsonPrint(response)));
-
         slack.api("chat.postMessage", {text: "SLACK INIT", channel: channel }, function(err, response){
           if (err) {
             reject(err);
           }
-
-          // console.log(chalkInfo("TMP | SLACK INIT MESSAGE RESPONSE\n" + jsonPrint(response)));
-
           resolve(slack);
         });
 
@@ -430,7 +428,7 @@ async function quit(options) {
   let forceQuitFlag = false;
 
   if (options) { 
-    console.log(chalkAlert("TMP | QUIT OPTIONS\n" + jsonPrint(options) ));
+    console.log(chalkAlert("TFE | QUIT OPTIONS\n" + jsonPrint(options) ));
     forceQuitFlag = options.force || false;
   }
 
@@ -442,7 +440,7 @@ async function quit(options) {
 
   const caller = callerId.getData();
 
-  console.log(chalkAlert("TMP | *** QUIT ***\n" + jsonPrint(caller) ));
+  console.log(chalkAlert("TFE | *** QUIT ***\n" + jsonPrint(caller) ));
 
   await reset("QUIT");
 
@@ -464,9 +462,9 @@ async function quit(options) {
   if (global.dbConnection) {
     global.dbConnection.close(function () {
       console.log(chalkAlert(
-        "\nTMP ==========================\n"
-        + "TMP MONGO DB CONNECTION CLOSED"
-        + "\nTMP ==========================\n"
+        "\nTFE ==========================\n"
+        + "TFE MONGO DB CONNECTION CLOSED"
+        + "\nTFE ==========================\n"
       ));
 
     });
@@ -742,7 +740,7 @@ function loadConfigFile(folder, file) {
       
         if (fileModifiedMoment.isSameOrBefore(prevConfigFileModifiedMoment)){
 
-          console.log(chalkInfo("TMP | CONFIG FILE BEFORE OR EQUAL"
+          console.log(chalkInfo("TFE | CONFIG FILE BEFORE OR EQUAL"
             + " | " + fullPath
             + " | PREV: " + prevConfigFileModifiedMoment.format(compactDateTimeFormat)
             + " | " + fileModifiedMoment.format(compactDateTimeFormat)
@@ -752,7 +750,7 @@ function loadConfigFile(folder, file) {
         }
         else {
 
-          console.log(chalkLog("TMP | +++ CONFIG FILE AFTER ... LOADING"
+          console.log(chalkLog("TFE | +++ CONFIG FILE AFTER ... LOADING"
             + " | " + fullPath
             + " | PREV: " + prevConfigFileModifiedMoment.format(compactDateTimeFormat)
             + " | " + fileModifiedMoment.format(compactDateTimeFormat)
@@ -771,7 +769,7 @@ function loadConfigFile(folder, file) {
 
             const loadedConfigObj = await loadFile(folder, file);
 
-            console.log(chalkInfo("TMP | LOADED CONFIG FILE: " + file + "\n" + jsonPrint(loadedConfigObj)));
+            console.log(chalkInfo("TFE | LOADED CONFIG FILE: " + file + "\n" + jsonPrint(loadedConfigObj)));
 
             let newConfiguration = {};
             newConfiguration.socket = {};
@@ -783,16 +781,16 @@ function loadConfigFile(folder, file) {
 
             if (newConfiguration.testMode) {
               newConfiguration.fetchAllIntervalTime = TEST_MODE_FETCH_ALL_INTERVAL;
-              console.log(chalkAlert("TMP | TEST MODE | fetchAllIntervalTime: " + newConfiguration.fetchAllIntervalTime));
+              console.log(chalkAlert("TFE | TEST MODE | fetchAllIntervalTime: " + newConfiguration.fetchAllIntervalTime));
             }
 
             if (loadedConfigObj.TEST_MODE !== undefined) {
-              console.log("TMP | LOADED TEST_MODE: " + loadedConfigObj.TEST_MODE);
+              console.log("TFE | LOADED TEST_MODE: " + loadedConfigObj.TEST_MODE);
               newConfiguration.testMode = loadedConfigObj.TEST_MODE;
             }
 
             if (loadedConfigObj.QUIT_ON_COMPLETE !== undefined) {
-              console.log("TMP | LOADED QUIT_ON_COMPLETE: " + loadedConfigObj.QUIT_ON_COMPLETE);
+              console.log("TFE | LOADED QUIT_ON_COMPLETE: " + loadedConfigObj.QUIT_ON_COMPLETE);
               if ((loadedConfigObj.QUIT_ON_COMPLETE === true) || (loadedConfigObj.QUIT_ON_COMPLETE === "true")) {
                 newConfiguration.quitOnComplete = true;
               }
@@ -802,7 +800,7 @@ function loadConfigFile(folder, file) {
             }
 
             if (loadedConfigObj.VERBOSE !== undefined) {
-              console.log("TMP | LOADED VERBOSE: " + loadedConfigObj.VERBOSE);
+              console.log("TFE | LOADED VERBOSE: " + loadedConfigObj.VERBOSE);
               if ((loadedConfigObj.VERBOSE === true) || (loadedConfigObj.VERBOSE === "true")) {
                 newConfiguration.verbose = true;
               }
@@ -812,12 +810,12 @@ function loadConfigFile(folder, file) {
             }
 
             if (loadedConfigObj.KEEPALIVE_INTERVAL !== undefined) {
-              console.log("TMP | LOADED KEEPALIVE_INTERVAL: " + loadedConfigObj.KEEPALIVE_INTERVAL);
+              console.log("TFE | LOADED KEEPALIVE_INTERVAL: " + loadedConfigObj.KEEPALIVE_INTERVAL);
               newConfiguration.keepaliveInterval = loadedConfigObj.KEEPALIVE_INTERVAL;
             }
 
             if (loadedConfigObj.TWITTER_USER !== undefined) {
-              console.log("TMP | LOADED TWITTER_USER: " + loadedConfigObj.TWITTER_USER);
+              console.log("TFE | LOADED TWITTER_USER: " + loadedConfigObj.TWITTER_USER);
               newConfiguration.twitter.user = loadedConfigObj.TWITTER_USER;
             }
 
@@ -826,7 +824,7 @@ function loadConfigFile(folder, file) {
           }
 
           catch (err) {
-            console.log(chalkError("TMP | *** LOAD FILE ERR: " + err));
+            console.log(chalkError("TFE | *** LOAD FILE ERR: " + err));
             return reject(err);
           }
 
@@ -834,7 +832,7 @@ function loadConfigFile(folder, file) {
       }
     }
     catch (err) {
-      console.log(chalkError("TMP | *** LOAD CONFIG FILE ERROR", err));
+      console.log(chalkError("TFE | *** LOAD CONFIG FILE ERROR", err));
       reject(err);
     }
   });
@@ -846,7 +844,7 @@ function loadAllConfigFiles(){
 
     statsObj.status = "LOAD CONFIG";
 
-    console.log(chalkInfo("TMP | LOAD ALL DEFAULT " + configuration.defaultConfigFolder + "/" + configuration.defaultConfigFile));
+    console.log(chalkInfo("TFE | LOAD ALL DEFAULT " + configuration.defaultConfigFolder + "/" + configuration.defaultConfigFile));
 
 
     async.parallel({
@@ -856,11 +854,11 @@ function loadAllConfigFiles(){
         loadConfigFile(configuration.defaultConfigFolder, configuration.defaultConfigFile)
           .then(function(defaultConfig){
             defaultConfiguration = defaultConfig;
-            cb();
           })
           .catch(function(err){
-            cb();
+            return cb();
           });
+            cb();
 
       },
 
@@ -869,11 +867,11 @@ function loadAllConfigFiles(){
         loadConfigFile(configuration.hostConfigFolder, configuration.hostConfigFile)
           .then(function(hostConfig){
             hostConfiguration = hostConfig;
-            cb();
           })
           .catch(function(err){
-            cb();
+            return cb();
           });
+        cb();
 
       },
 
@@ -918,9 +916,9 @@ function closeDbConnection(){
         statsObj.db.connected = false;
 
         console.log(chalkAlert(
-          "\nTMP | ==========================\n"
-          + "TMP | MONGO DB CONNECTION CLOSED"
-          + "\nTMP | ==========================\n"
+          "\nTFE | ==========================\n"
+          + "TFE | MONGO DB CONNECTION CLOSED"
+          + "\nTFE | ==========================\n"
         ));
 
         resolve();
@@ -985,39 +983,39 @@ function reporter(event, oldState, newState) {
 
   fsmPreviousState = oldState;
 
-  console.log(chalkLog("TMP --------------------------------------------------------\n"
-    + "TMP << FSM MAIN >>"
+  console.log(chalkBlue("TFE | --------------------------------------------------------\n"
+    + "TFE | << FSM MAIN >>"
     + " | " + getTimeStamp()
     + " | " + event
     + " | " + fsmPreviousState
     + " -> " + newState
-    + "\nTMP --------------------------------------------------------"
+    + "\nTFE | --------------------------------------------------------"
   ));
 }
 
-function fsmEvent(event, delay){
+// function fsmEvent(event, delay){
 
-  if (delay === "random") { delay = randomInt(0,5)}
+//   if (delay === "random") { delay = randomInt(configuration.randomEvenDelayMin,configuration.randomEvenDelayMax); }
 
-  console.log(chalkLog("TMP | >Q FSM EVENT " + event 
-    + " | DELAY: " + delay + " SECS"
-    + " | NOW " + getTimeStamp() 
-    + " | FIRES AT " + moment().add(delay, "s").format(compactDateTimeFormat)
-  ));
+//   // console.log(chalkLog("TFE | >Q FSM EVENT " + event 
+//   //   + " | DELAY: " + delay + " SECS"
+//   //   + " | NOW " + getTimeStamp() 
+//   //   + " | FIRES AT " + moment().add(delay, "s").format(compactDateTimeFormat)
+//   // ));
 
-  setTimeout(function(){
+//   setTimeout(function(){
 
-    console.log(chalkLog("TMP | -> FSM EVENT " + event + " | DELAY: " + delay + " SECS"));
+//     console.log(chalkLog("TFE | -> FSM EVENT " + event + " | DELAY: " + delay + " SECS"));
 
-    fsmMain[event]();
+//     fsmMain[event]();
 
-  }, delay*1000);
-}
+//   }, delay*1000);
+// }
 
-function fsmEventOR(eventArray, delay){
-  const event = randomItem(eventArray);
-  fsmEvent(event, delay);
-}
+// function fsmEventOR(eventArray, delay){
+//   const event = randomItem(eventArray);
+//   fsmEvent(event, delay);
+// }
 
 // create db connection
 // create socket connection
@@ -1073,8 +1071,8 @@ const fsmStates = {
         await closeDbConnection();
         await closeSocketConnection();
         await closeSlackConnection();
+        fsmMain.fsm_init();
 
-        fsmEvent("fsm_idle", "random");
       }
     },
 
@@ -1091,7 +1089,6 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) { 
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState);
-        fsmEvent("fsm_init", "random");
       }
     },
 
@@ -1105,7 +1102,6 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState);
-        fsmEvent("fsm_reset", "random");
       }
     },
     "fsm_run_complete": "RUN_COMPLETE",
@@ -1118,27 +1114,29 @@ const fsmStates = {
         reporter(event, oldState, newState); 
 
         try {
+
           global.dbConnection = await initDb(configuration.db);
           socket = await initSocket(configuration.socket);
           slack = await initSlack(configuration.slack);
           twit = await initTwitter(configuration.twitter);
 
-          configuration.childId = configuration.child.childIdPrefix + statsObj.children.childIndex.toFixed(2);
-          configuration.child.db = configuration.db;
+          if (Object.keys(childHashMap).length < 10) {
 
-          configuration.child.twitter = configuration.twitter;
+            configuration.child.childId = configuration.child.childIdPrefix + statsObj.children.childIndex;
+            configuration.child.db = configuration.db;
+            configuration.child.dropbox = configuration.dropbox;
+            configuration.child.twitter = configuration.twitter;
 
-          console.log("TMP | INIT configuration.child\n" + jsonPrint(configuration.child));
+            console.log("TFE | INIT configuration.child\n" + jsonPrint(configuration.child));
 
-          child = await initChild(configuration.child);
+            child = await initChild(configuration.child);
 
-          statsObj.children.childIndex += 1;
+            statsObj.children.childIndex += 1;
+          }
 
-          fsmEvent("fsm_ready", "random");
         }
         catch(err){
-          console.log(chalkError("TMP | *** ERROR\n" + jsonPrint(err)));
-          fsmEvent("fsm_error", 1);
+          console.log(chalkError("TFE | *** ERROR\n" + jsonPrint(err)));
         }
       }
 
@@ -1157,7 +1155,6 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) { 
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState); 
-        fsmEvent("fsm_run", "random");
       }
     },
     fsm_tick: function() {
@@ -1177,7 +1174,6 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) { 
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState); 
-        fsmEventOR(["fsm_pause", "fsm_error", "fsm_run_complete"], "random");
       }
     },
     fsm_tick: function() {
@@ -1195,7 +1191,6 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) { 
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState); 
-        fsmEventOR(["fsm_run", "fsm_error", "fsm_run_complete"], "random");
       }
     },
     fsm_tick: function() {
@@ -1213,7 +1208,6 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) { 
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState); 
-        fsmEvent("fsm_save", "random");
       }
     },
     fsm_tick: function() {
@@ -1232,7 +1226,6 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) { 
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState); 
-        fsmEventOR(["fsm_init", "fsm_run", "fsm_pause", "fsm_error", "fsm_run_complete"], "random");
       }
     },
     fsm_tick: function() {
@@ -1258,14 +1251,13 @@ const fsmStates = {
     fsm_tick: function() {
     }
   },
-
 };
 
 fsmMain = Stately.machine(fsmStates);
 
 function initFsmTickInterval(interval) {
 
-  console.log(chalkInfo("TMP | INIT FSM TICK INTERVAL | " + msToTime(interval)));
+  console.log(chalkInfo("TFE | INIT FSM TICK INTERVAL | " + msToTime(interval)));
 
   clearInterval(fsmTickInterval);
 
@@ -1276,15 +1268,15 @@ function initFsmTickInterval(interval) {
 
 }
 
-reporter("TMP | START", "---", fsmMain.getMachineState());
+reporter("TFE | START", "---", fsmMain.getMachineState());
 
-console.log("\n\nTMP =================================");
-console.log("TMP | HOST:          " + configuration.hostname);
-console.log("TMP | PROCESS TITLE: " + configuration.processTitle);
-console.log("TMP | PROCESS ID:    " + process.pid);
-console.log("TMP | RUN ID:        " + configuration.runId);
-console.log("TMP | PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, depth: 1}));
-console.log("TMP =================================");
+console.log("\n\nTFE =================================");
+console.log("TFE | HOST:          " + configuration.hostname);
+console.log("TFE | PROCESS TITLE: " + configuration.processTitle);
+console.log("TFE | PROCESS ID:    " + process.pid);
+console.log("TFE | RUN ID:        " + configuration.runId);
+console.log("TFE | PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, depth: 1}));
+console.log("TFE =================================");
 
 process.on("exit", function() {
 });
@@ -1293,7 +1285,7 @@ process.on("message", function(msg) {
   if ((msg === "SIGINT") || (msg === "shutdown")) {
     clearInterval(statsUpdateInterval);
     setTimeout(function() {
-      console.log(chalkAlert("TMP | QUITTING"));
+      console.log(chalkAlert("TFE | QUITTING"));
       quit("SHUTDOWN");
     }, 1000);
   }
@@ -1301,18 +1293,21 @@ process.on("message", function(msg) {
 
 function showStats(options) {
 
+  statsObj.children.numChildren = Object.keys(childHashMap).length;
+
   if (options) {
-    console.log("TMP | STATS\n" + jsonPrint(statsObj));
+    console.log("TFE | STATS\n" + jsonPrint(statsObj));
   }
   else {
 
-    console.log(chalkLog("TMP"
+    console.log(chalkLog("TFE"
       + " | FSM: " + fsmMain.getMachineState()
-      + " | N: " + getTimeStamp()
+      + " | " + statsObj.children.numChildren + " CHILDREN"
       + " | SERVER CONNECTED: " + statsObj.serverConnected
       + " | AUTHENTICATED: " + statsObj.userAuthenticated
       + " | READY TXD: " + statsObj.userReadyTransmitted
       + " | READY ACK: " + statsObj.userReadyAck
+      + " | N: " + getTimeStamp()
       + " | E: " + msToTime(statsObj.elapsed)
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
     ));
@@ -1339,7 +1334,7 @@ function saveFile (params, callback){
     const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
 
     showStats();
-    console.log(chalkBlue("TMP | ... SAVING DROPBOX LOCALLY"
+    console.log(chalkBlue("TFE | ... SAVING DROPBOX LOCALLY"
       + " | " + objSizeMBytes.toFixed(3) + " MB"
       + " | " + fullPath
     ));
@@ -1347,7 +1342,7 @@ function saveFile (params, callback){
     writeJsonFile(fullPath, params.obj, { mode: 0o777 })
     .then(function() {
 
-      console.log(chalkBlue("TMP | SAVED DROPBOX LOCALLY"
+      console.log(chalkBlue("TFE | SAVED DROPBOX LOCALLY"
         + " | " + objSizeMBytes.toFixed(3) + " MB"
         + " | " + fullPath
       ));
@@ -1355,7 +1350,7 @@ function saveFile (params, callback){
 
     })
     .catch(function(err){
-      console.trace(chalkError("TMP | " + moment().format(compactDateTimeFormat) 
+      console.trace(chalkError("TFE | " + moment().format(compactDateTimeFormat) 
         + " | !!! ERROR DROBOX LOCAL JSON WRITE | FILE: " + fullPath 
         + " | ERROR: " + err
         + " | ERROR\n" + jsonPrint(err)
@@ -1379,7 +1374,7 @@ function saveFile (params, callback){
       })
       .catch(function(err){
         if (err.status === 413){
-          console.error(chalkError("TMP | " + moment().format(compactDateTimeFormat) 
+          console.error(chalkError("TFE | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: 413"
             + " | ERROR: FILE TOO LARGE"
@@ -1387,7 +1382,7 @@ function saveFile (params, callback){
           if (callback !== undefined) { return callback(err); }
         }
         else if (err.status === 429){
-          console.error(chalkError("TMP | " + moment().format(compactDateTimeFormat) 
+          console.error(chalkError("TFE | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: TOO MANY WRITES"
           ));
@@ -1401,7 +1396,7 @@ function saveFile (params, callback){
           if (callback !== undefined) { return callback(err); }
         }
         else {
-          console.trace(chalkError("TMP | " + moment().format(compactDateTimeFormat) 
+          console.trace(chalkError("TFE | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: " + err
           ));
@@ -1415,7 +1410,7 @@ function saveFile (params, callback){
       dropboxClient.filesListFolder({path: params.folder, limit: DROPBOX_LIST_FOLDER_LIMIT})
       .then(function(response){
 
-        debug(chalkLog("TMP | DROPBOX LIST FOLDER"
+        debug(chalkLog("TFE | DROPBOX LIST FOLDER"
           + " | ENTRIES: " + response.entries.length
           // + " | CURSOR (trunc): " + response.cursor.substr(-10)
           + " | MORE: " + response.has_more
@@ -1426,7 +1421,7 @@ function saveFile (params, callback){
 
         async.each(response.entries, function(entry, cb){
 
-          console.log(chalkInfo("TMP | DROPBOX FILE"
+          console.log(chalkInfo("TFE | DROPBOX FILE"
             + " | " + params.folder
             + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
             + " | " + entry.name
@@ -1440,25 +1435,25 @@ function saveFile (params, callback){
 
         }, function(err){
           if (err) {
-            console.log(chalkError("TMP | *** ERROR DROPBOX SAVE FILE: " + err));
+            console.log(chalkError("TFE | *** ERROR DROPBOX SAVE FILE: " + err));
             if (callback !== undefined) { 
               return callback(err, null);
             }
             return;
           }
           if (fileExits) {
-            console.log(chalkAlert("TMP | ... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
+            console.log(chalkAlert("TFE | ... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
             if (callback !== undefined) { callback(err, null); }
           }
           else {
-            console.log(chalkAlert("TMP | ... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
+            console.log(chalkAlert("TFE | ... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
             dbFileUpload();
           }
         });
       })
       .catch(function(err){
-        console.log(chalkError("TMP | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
-        console.log(chalkError("TMP | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
+        console.log(chalkError("TFE | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
+        console.log(chalkError("TFE | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
         if (callback !== undefined) { callback(err, null); }
       });
     }
@@ -1470,7 +1465,7 @@ function saveFile (params, callback){
 
 function initSaveFileQueue() {
 
-  console.log(chalkBlue("TMP | INIT DROPBOX SAVE FILE INTERVAL | " + configuration.saveFileQueueInterval + " MS"));
+  console.log(chalkBlue("TFE | INIT DROPBOX SAVE FILE INTERVAL | " + configuration.saveFileQueueInterval + " MS"));
 
   clearInterval(saveFileQueueInterval);
 
@@ -1484,11 +1479,11 @@ function initSaveFileQueue() {
 
       saveFile(saveFileObj, function(err) {
         if (err) {
-          console.log(chalkError("TMP | *** SAVE FILE ERROR ... RETRY | " + saveFileObj.folder + "/" + saveFileObj.file));
+          console.log(chalkError("TFE | *** SAVE FILE ERROR ... RETRY | " + saveFileObj.folder + "/" + saveFileObj.file));
           saveFileQueue.push(saveFileObj);
         }
         else {
-          console.log(chalkLog("TMP | SAVED FILE [Q: " + saveFileQueue.length + "] " + saveFileObj.folder + "/" + saveFileObj.file));
+          console.log(chalkLog("TFE | SAVED FILE [Q: " + saveFileQueue.length + "] " + saveFileObj.folder + "/" + saveFileObj.file));
         }
         saveFileBusy = false;
       });
@@ -1509,7 +1504,7 @@ function sendKeepAlive(callback) {
     statsObjSmall = pick(statsObj, statsPickArray);
 
     if (configuration.verbose) {
-      debug(chalkInfo("TMP | TX KEEPALIVE"
+      debug(chalkInfo("TFE | TX KEEPALIVE"
         + " | " + configuration.user.userId
         + " | " + moment().format(compactDateTimeFormat)
       ));
@@ -1527,7 +1522,7 @@ function sendKeepAlive(callback) {
     callback(null);
   }
   else {
-    console.log(chalkError("TMP | !!!! CANNOT TX KEEPALIVE"
+    console.log(chalkError("TFE | !!!! CANNOT TX KEEPALIVE"
       + " | " + configuration.user.userId
       + " | CONNECTED: " + statsObj.serverConnected
       + " | READY ACK: " + statsObj.userAuthenticated
@@ -1541,7 +1536,7 @@ function initKeepalive(interval) {
 
   clearInterval(socketKeepAliveInterval);
 
-  console.log(chalkConnect("TMP | START KEEPALIVE"
+  console.log(chalkConnect("TFE | START KEEPALIVE"
     + " | " + getTimeStamp()
     + " | READY ACK: " + statsObj.userAuthenticated
     + " | SERVER CONNECTED: " + statsObj.serverConnected
@@ -1550,10 +1545,10 @@ function initKeepalive(interval) {
 
   sendKeepAlive(function(err) {
     if (err) {
-      console.log(chalkError("TMP | KEEPALIVE ERROR: " + err));
+      console.log(chalkError("TFE | KEEPALIVE ERROR: " + err));
     }
     else if (configuration.verbose) {
-      console.log(chalkLog("TMP | T> KEEPALIVE | " + moment().format(compactDateTimeFormat)));
+      console.log(chalkLog("TFE | T> KEEPALIVE | " + moment().format(compactDateTimeFormat)));
     }
   });
 
@@ -1563,10 +1558,10 @@ function initKeepalive(interval) {
 
     sendKeepAlive(function(err) {
       if (err) {
-        console.log(chalkError("TMP | KEEPALIVE ERROR: " + err));
+        console.log(chalkError("TFE | KEEPALIVE ERROR: " + err));
       }
       else if (configuration.verbose) {
-        console.log(chalkLog("TMP | T> KEEPALIVE | " + moment().format(compactDateTimeFormat)));
+        console.log(chalkLog("TFE | T> KEEPALIVE | " + moment().format(compactDateTimeFormat)));
       }
     });
 
@@ -1577,7 +1572,7 @@ let userReadyInterval;
 
 function initUserReadyInterval(interval) {
 
-  console.log(chalkInfo("TMP | INIT USER READY INTERVAL"));
+  console.log(chalkInfo("TFE | INIT USER READY INTERVAL"));
 
   clearInterval(userReadyInterval);
 
@@ -1596,7 +1591,7 @@ function initUserReadyInterval(interval) {
 
       if (statsObj.userReadyTransmittedElapsed > USER_READY_ACK_TIMEOUT) {
 
-        console.log(chalkAlert("TMP | USER_READY_ACK_TIMEOUT | RETRANSMIT USER_READY"
+        console.log(chalkAlert("TFE | USER_READY_ACK_TIMEOUT | RETRANSMIT USER_READY"
           + " | NOW: " + moment().format(compactDateTimeFormat) 
           + " | TXD: " + moment(statsObj.userReadyTransmitted).format(compactDateTimeFormat) 
           + " | AGO: " + msToTime(moment().valueOf() - statsObj.userReadyTransmitted)
@@ -1609,7 +1604,7 @@ function initUserReadyInterval(interval) {
         socket.emit("USER_READY", {userId: configuration.user.userId, timeStamp: moment().valueOf()});
       }
       else {
-        console.log(chalkAlert("TMP | WAITING FOR USER_READY_ACK ..."
+        console.log(chalkAlert("TFE | WAITING FOR USER_READY_ACK ..."
           + " | NOW: " + moment().format(compactDateTimeFormat) 
           + " | TXD: " + moment(statsObj.userReadyTransmitted).format(compactDateTimeFormat) 
           + " | AGO: " + msToTime(moment().valueOf() - statsObj.userReadyTransmitted)
@@ -1623,15 +1618,17 @@ function initUserReadyInterval(interval) {
 
 function initChild(config) {
 
+  console.log(chalkAlert("initChild CONFIG\n" + jsonPrint(config)));
+
   return new Promise(async function (resolve, reject){
 
     if (config.sourceFile === undefined) {
-      console.log(chalkError("TMP | *** INIT CHILD ERROR | SOURCE FILE USER"));
-      return reject(new Error("TMP | SOURCE FILE UNDEFINED"));
+      console.log(chalkError("TFE | *** INIT CHILD ERROR | SOURCE FILE USER"));
+      return reject(new Error("TFE | SOURCE FILE UNDEFINED"));
     }
 
     if (childHashMap[config.childId]) {
-      console.log(chalkAlert("TMP | *** INIT CHILD ERROR | CHILD EXISTS ... SENDING INIT ..."));
+      console.log(chalkAlert("TFE | *** INIT CHILD ERROR | CHILD EXISTS ... SENDING INIT ..."));
 
       const initObj = {
         op: "INIT",
@@ -1642,7 +1639,7 @@ function initChild(config) {
 
       childHashMap[config.childId].child.send(initObj, function(err) {
         if (err) {
-          console.log(chalkError("TMP | *** CHILD SEND INIT ERROR"
+          console.log(chalkError("TFE | *** CHILD SEND INIT ERROR"
             + " | CHILD ID: " + config.childId
             + " | @" + config.threeceeUser
             + " | ERR: " + err
@@ -1658,7 +1655,7 @@ function initChild(config) {
 
     const childId = config.childId;
 
-    console.log(chalkLog("TMP | +++ NEW CHILD | ID: " + childId));
+    console.log(chalkLog("TFE | +++ NEW CHILD | ID: " + childId));
 
     statsObj.status = "INIT CHILD | " + childId ;
 
@@ -1675,8 +1672,15 @@ function initChild(config) {
       childEnv.env["twitter_" + key] = config.twitter[key];
     });
 
+    Object.keys(config.dropbox).forEach(function(key){
+      childEnv.env["dropbox_" + key] = config.dropbox[key];
+    });
+
     childEnv.env.TWITTER = {};
     childEnv.env.TWITTER = config.twitter;
+
+    childEnv.env.DROPBOX = {};
+    childEnv.env.DROPBOX = config.dropbox;
 
     childHashMap[childId] = {};
     childHashMap[childId].childId = childId;
@@ -1702,16 +1706,16 @@ function initChild(config) {
 
       childHashMap[childId].child.on("message", function(m) {
 
-        debug(chalkAlert("TMP | R< tmpChild | " + m.childId + " | " + m.op));
+        debug(chalkAlert("TFE | R< tmpChild | " + m.childId + " | " + m.op));
 
         switch(m.op) {
 
           case "ERROR":
 
-            console.log(chalkError("TMP | CHILD ERROR | " + m.childId + " | TYPE: " + m.type));
+            console.log(chalkError("TFE | CHILD ERROR | " + m.childId + " | TYPE: " + m.type));
 
             if (m.error) { 
-              console.log(chalkError("TMP | CHILD ERROR\n" + jsonPrint(m.error))); 
+              console.log(chalkError("TFE | CHILD ERROR\n" + jsonPrint(m.error))); 
             }
 
             childHashMap[m.childId].status = "ERROR";
@@ -1730,50 +1734,50 @@ function initChild(config) {
 
           case "INIT":
           case "INIT_COMPLETE":
-            console.log(chalkTwitter("R< TMP | CHILD INIT COMPLETE | " + m.childId));
+            console.log(chalkTwitter("R< TFE | CHILD INIT COMPLETE | " + m.childId));
             childHashMap[m.childId].status = "INIT";
             checkChildrenState(m.op);
           break;
      
           case "IDLE":
-            console.log(chalkTwitter("R< TMP | CHILD IDLE | " + m.childId));
+            console.log(chalkTwitter("R< TFE | CHILD IDLE | " + m.childId));
             childHashMap[m.childId].status = "IDLE";
             checkChildrenState(m.op);
           break;
 
           case "RESET":
-            console.log(chalkTwitter("R< TMP | CHILD RESET | " + m.childId));
+            console.log(chalkTwitter("R< TFE | CHILD RESET | " + m.childId));
             childHashMap[m.childId].status = "RESET";
             checkChildrenState(m.op);
           break;
 
           case "READY":
-            console.log(chalkTwitter("R< TMP | CHILD READY | " + m.childId));
+            console.log(chalkTwitter("R< TFE | CHILD READY | " + m.childId));
             childHashMap[m.childId].status = "READY";
             checkChildrenState(m.op);
           break;
 
           case "FETCH":
-            console.log(chalkTwitter("R< TMP | CHILD FETCH | " + m.childId));
+            console.log(chalkTwitter("R< TFE | CHILD FETCH | " + m.childId));
             childHashMap[m.childId].status = "FETCH";
             checkChildrenState(m.op);
           break;
 
           case "FETCH_END":
-            console.log(chalkTwitter("R< TMP | CHILD FETCH_END | " + m.childId));
+            console.log(chalkTwitter("R< TFE | CHILD FETCH_END | " + m.childId));
             childHashMap[m.childId].status = "FETCH_END";
             checkChildrenState(m.op);
           break;
 
           case "PAUSE_RATE_LIMIT":
-            console.log(chalkTwitter("R< TMP | CHILD PAUSE_RATE_LIMIT | " + m.childId));
+            console.log(chalkTwitter("R< TFE | CHILD PAUSE_RATE_LIMIT | " + m.childId));
             childHashMap[m.childId].status = "PAUSE_RATE_LIMIT";
             checkChildrenState(m.op);
           break;
 
           case "THREECEE_USER":
 
-            console.log(chalkTwitter("R< TMP | THREECEE_USER"
+            console.log(chalkTwitter("R< TFE | THREECEE_USER"
               + " | @" + m.childId.screenName
               + " | Ts: " + m.childId.statusesCount
               + " | FRNDs: " + m.childId.friendsCount
@@ -1803,7 +1807,7 @@ function initChild(config) {
 
           case "FRIENDS_IDS":
             twitterUserHashMap[m.childId].friends = new Set(m.friendsIds);
-            console.log(chalkTwitter("R< TMP | FRIENDS_IDS"
+            console.log(chalkTwitter("R< TFE | FRIENDS_IDS"
               + " | 3C: @" + m.childId
               + " | " + twitterUserHashMap[m.childId].friends.size + " FRIENDS"
             ));
@@ -1811,7 +1815,7 @@ function initChild(config) {
 
           case "FRIEND_RAW":
             if (configuration.testMode) {
-              console.log(chalkInfo("R< TMP | FRIEND"
+              console.log(chalkInfo("R< TFE | FRIEND"
                 + " | FOLLOW: " + m.follow
                 + " | 3C: @" + m.childId
                 + " | @" + m.friend.screen_name
@@ -1823,7 +1827,7 @@ function initChild(config) {
             if (m.follow) {
               slackText = "\n*FOLLOW | 3C @" + m.childId + " > <http://twitter.com/" + m.friend.screen_name 
               + "|" + " @" + m.friend.screen_name + ">*";
-              console.log("TMP | SLACK TEXT: " + slackText);
+              console.log("TFE | SLACK TEXT: " + slackText);
               slackPostMessage(slackChannel, slackText);
             }
 
@@ -1831,7 +1835,7 @@ function initChild(config) {
 
           case "UNFOLLOWED":
 
-            console.log(chalkInfo("R< TMP | CHILD UNFOLLOWED"
+            console.log(chalkInfo("R< TFE | CHILD UNFOLLOWED"
               + " | " + m.childId
               + " | UID: " + m.user.id_str
               + " | @" + m.user.screen_name
@@ -1842,7 +1846,7 @@ function initChild(config) {
 
             slackText = "\n*UNFOLLOW | 3C @" + m.childId + " > <http://twitter.com/" + m.user.screen_name 
             + "|" + " @" + m.user.screen_name + ">*";
-            console.log("TMP | SLACK TEXT: " + slackText);
+            console.log("TFE | SLACK TEXT: " + slackText);
             slackPostMessage(slackChannel, slackText);
 
           break;
@@ -1856,18 +1860,18 @@ function initChild(config) {
             childHashMap[m.childId].statsObj = m.statsObj;
 
             if (configuration.verbose) {
-              console.log(chalkInfo("R< TMP | CHILD STATS"
+              console.log(chalkInfo("R< TFE | CHILD STATS"
                 + " | " + m.childId
                 + " | " + getTimeStamp() + " ___________________________\n"
-                + jsonPrint(m.statsObj, "TMP | STATS ")
-                + "\nTMP | CHILD STATS___________________________"
+                + jsonPrint(m.statsObj, "TFE | STATS ")
+                + "\nTFE | CHILD STATS___________________________"
               ));
             }
 
           break;
 
           default:
-            console.log(chalkError("R< TMP | CHILD " + m.childId + " | UNKNOWN OP: " + m.op));
+            console.log(chalkError("R< TFE | CHILD " + m.childId + " | UNKNOWN OP: " + m.op));
             reject(new Error("UNKNOWN OP" + m.op + " | CH ID: " + m.childId));
         }
       });
@@ -1902,7 +1906,7 @@ function initChild(config) {
         if (childHashMap[childId]) {
           childHashMap[childId].status = "EXIT";
         }
-        console.log(chalkError("*** childHashMap " + user + " EXIT *** : " + err));
+        console.log(chalkError("*** childHashMap " + childId + " EXIT *** : " + err));
       });
 
       childHashMap[childId].child.on("close", function(code) {
@@ -1925,7 +1929,7 @@ function initChild(config) {
             });
           }
         }
-        console.log(chalkError("*** childHashMap " + user + " CLOSE *** : " + code));
+        console.log(chalkError("*** childHashMap " + childId + " CLOSE *** : " + code));
       });
 
        if (configuration.verbose) { console.log(chalkBlue("+++ NEW CHILD\nchildEnv\n" + jsonPrint(childEnv))); }
@@ -1971,11 +1975,11 @@ function initDb(config){
         });
 
         db.on("disconnected", function(){
-          console.log(chalkAlert("TMP | " + name + " | *** MONGO DISCONNECTED ***\n"));
+          console.log(chalkAlert("TFE | " + name + " | *** MONGO DISCONNECTED ***\n"));
           statsObj.db.connected = false;
         });
 
-        console.log(chalk.green("TMP | " + name + " | MONGOOSE DEFAULT CONNECTION OPEN"));
+        console.log(chalk.green("TFE | " + name + " | MONGOOSE DEFAULT CONNECTION OPEN"));
 
         User = mongoose.model("User", userModel.UserSchema);
         Hashtag = mongoose.model("Hashtag", hashtagModel.HashtagSchema);
@@ -1985,10 +1989,10 @@ function initDb(config){
           countUsers: function(cb){
             User.countDocuments({}, function (err, count) {
               if (err) {
-                console.log(chalkError("TMP | " + "*** ERROR INIT DB | COUNT USERS: " + err));
+                console.log(chalkError("TFE | " + "*** ERROR INIT DB | COUNT USERS: " + err));
                 return cb(err);
               }
-              console.log(chalkLog("TMP | " + count + " USERS"));
+              console.log(chalkLog("TFE | " + count + " USERS"));
               cb();
             });
           },
@@ -1998,7 +2002,7 @@ function initDb(config){
                 console.log(chalkError("*** ERROR INIT DB | COUNT HASHTAGS: " + err));
                 return cb(err);
               }
-              console.log(chalkLog("TMP | " + count + " HASHTAGS"));
+              console.log(chalkLog("TFE | " + count + " HASHTAGS"));
               cb();
             });
           },
@@ -2008,7 +2012,7 @@ function initDb(config){
                 console.log(chalkError("*** ERROR INIT DB | COUNT NEURAL NETWORKS: " + err));
                 return cb(err);
               }
-              console.log(chalkLog("TMP | " + count + " NEURAL NETWORKS"));
+              console.log(chalkLog("TFE | " + count + " NEURAL NETWORKS"));
               cb();
             });
           },
@@ -2049,12 +2053,12 @@ function initSocket(config){
     statsObj.status = "INIT SOCKET";
 
     if (configuration.offlineMode) {
-      console.log(chalkError("TMP | *** INIT SOCKET | OFFLINE MODE *** "));
+      console.log(chalkError("TFE | *** INIT SOCKET | OFFLINE MODE *** "));
       return reject(new Error("OFFLINE MODE"));
     }
 
     if (socket && socket.id) {
-      console.log(chalkAlert("TMP | !!! INIT SOCKET | DISCONNECT EXISTING SOCKET CONNECTION | " + socket.id));
+      console.log(chalkAlert("TFE | !!! INIT SOCKET | DISCONNECT EXISTING SOCKET CONNECTION | " + socket.id));
       socket.disconnect();
       socket = null;
     }
@@ -2063,7 +2067,7 @@ function initSocket(config){
 
     try {
 
-      console.log(chalkLog("TMP | INIT SOCKET"
+      console.log(chalkLog("TFE | INIT SOCKET"
         + " | " + targetServer
         + " | USER: " + user.userId
         + " | RECONNECTION: " + reconnection
@@ -2076,13 +2080,13 @@ function initSocket(config){
         statsObj.socketId = s.id ;
         statsObj.serverConnected = true ;
 
-        console.log(chalkConnect("TMP | SOCKET CONNECT | " + s.id + " ... AUTHENTICATE ..."));
+        console.log(chalkConnect("TFE | SOCKET CONNECT | " + s.id + " ... AUTHENTICATE ..."));
 
         s.emit("authentication", { namespace: "util", userId: user.userId, password: "0123456789" });
       });
 
       s.on("unauthorized", function(err) {
-        console.log(chalkError("TMP | *** AUTHENTICATION ERROR: ", err.message));
+        console.log(chalkError("TFE | *** AUTHENTICATION ERROR: ", err.message));
         statsObj.userAuthenticated = false ;
       });
 
@@ -2090,18 +2094,18 @@ function initSocket(config){
 
         statsObj.serverConnected = true ;
 
-        console.log("TMP | SOCKET AUTHENTICATED | " + s.id);
+        console.log("TFE | SOCKET AUTHENTICATED | " + s.id);
 
         statsObj.socketId = socket.id;
 
-        console.log(chalkConnect("TMP | SOCKET CONNECTED TO SERVER"
+        console.log(chalkConnect("TFE | SOCKET CONNECTED TO SERVER"
           + " | SERVER: " + configuration.socket.targetServer
           + " | ID: " + s.id
         ));
 
         user.timeStamp = moment().valueOf();
 
-        console.log(chalkInfo("TMP | T> USER_READY"
+        console.log(chalkInfo("TFE | T> USER_READY"
           + " | " + s.id
           + " | " + moment().format(compactDateTimeFormat)
           + " | " + user.userId
@@ -2126,7 +2130,7 @@ function initSocket(config){
         statsObj.userReadyTransmitted = false;
         statsObj.userReadyAck = false ;
 
-        console.log(chalkAlert("TMP | " + moment().format(compactDateTimeFormat)
+        console.log(chalkAlert("TFE | " + moment().format(compactDateTimeFormat)
           + " | SOCKET DISCONNECT: " + statsObj.socketId
           + " | REASON: " + reason
         ));
@@ -2136,7 +2140,7 @@ function initSocket(config){
 
         statsObj.serverConnected = true;
 
-        console.log(chalkInfo("TMP | SOCKET RECONNECT"
+        console.log(chalkInfo("TFE | SOCKET RECONNECT"
           + " | " + moment().format(compactDateTimeFormat)
           + " | " + s.id
           + " | REASON: " + reason
@@ -2148,7 +2152,7 @@ function initSocket(config){
         statsObj.userReadyAck = true ;
         statsObj.serverConnected = true;
 
-        console.log(chalkBlue("TMP | R< USER_READY_ACK MESSAGE"
+        console.log(chalkBlue("TFE | R< USER_READY_ACK MESSAGE"
           + " | " + s.id
           + " | USER ID: " + user.userId
           + " | " + moment().format(compactDateTimeFormat)
@@ -2156,7 +2160,7 @@ function initSocket(config){
       });
 
       s.on("error", function(err) {
-        console.log(chalkError("TMP | " + moment().format(compactDateTimeFormat)
+        console.log(chalkError("TFE | " + moment().format(compactDateTimeFormat)
           + " | *** SOCKET ERROR"
           + " | " + s.id
           + " | " + err
@@ -2170,7 +2174,7 @@ function initSocket(config){
         statsObj.userReadyTransmitted = false;
         statsObj.userReadyAck = false ;
 
-        console.log(chalkError("TMP | *** SOCKET CONNECT ERROR "
+        console.log(chalkError("TFE | *** SOCKET CONNECT ERROR "
           + " | " + moment().format(compactDateTimeFormat)
           + " | " + err.type
           + " | " + err.description
@@ -2184,7 +2188,7 @@ function initSocket(config){
         statsObj.userReadyTransmitted = false;
         statsObj.userReadyAck = false ;
 
-        console.log(chalkError("TMP | *** SOCKET RECONNECT ERROR "
+        console.log(chalkError("TFE | *** SOCKET RECONNECT ERROR "
           + " | " + moment().format(compactDateTimeFormat)
           + " | " + err.type
           + " | " + err.description
@@ -2194,14 +2198,14 @@ function initSocket(config){
       s.on("HEARTBEAT", function() {
         statsObj.serverConnected = true;
         statsObj.heartbeatsReceived += 1;
-        if (configuration.verbose) { console.log(chalkLog("TMP | R< HEARTBEAT [" + statsObj.heartbeatsReceived + "]")); }
+        if (configuration.verbose) { console.log(chalkLog("TFE | R< HEARTBEAT [" + statsObj.heartbeatsReceived + "]")); }
       });
 
       resolve(s);
 
     }
     catch (err) {
-      console.log(chalkError("TMP | *** ERROR INIT SOCKET: " + err));
+      console.log(chalkError("TFE | *** ERROR INIT SOCKET: " + err));
       statsObj.status = "INIT SOCKET ERROR";
       reject(err);
     }
@@ -2228,7 +2232,7 @@ function initTwitter(config){
     }
 
     if (twit && config.reinit) {
-      console.log(chalkAlert("TMP | !!! INIT TWITTER | DISCONNECT EXISTING TWITTER CONNECTION"));
+      console.log(chalkAlert("TFE | !!! INIT TWITTER | DISCONNECT EXISTING TWITTER CONNECTION"));
       // twit.disconnect();
       twit = null;
     }
@@ -2244,7 +2248,7 @@ function initTwitter(config){
 
       // console.log("initTwitter loadedConfig\n" + jsonPrint(loadedConfig));
 
-      console.log(chalkLog("TMP | INIT TWITTER"));
+      console.log(chalkLog("TFE | INIT TWITTER"));
 
       configuration.twitter.consumerKey = loadedConfig.consumer_key;
       configuration.twitter.consumerSecret = loadedConfig.consumer_secret;
@@ -2265,7 +2269,7 @@ function initTwitter(config){
 
       t.get("account/verify_credentials", { skip_status: true })
         .catch(function (err) {
-          console.log(chalkError("TMP | INIT TWITTER ERROR", err.stack));
+          console.log(chalkError("TFE | INIT TWITTER ERROR", err.stack));
           reject(err);
         })
         .then(function (result) {
@@ -2275,12 +2279,12 @@ function initTwitter(config){
           // See https://github.com/ttezel/twit#tgetpath-params-callback
           // for details.
        
-          // console.log(chalkLog("TMP | INIT TWITTER RESULTS\n" + jsonPrint(result.data)));
+          // console.log(chalkLog("TFE | INIT TWITTER RESULTS\n" + jsonPrint(result.data)));
           resolve(t);
         });
     }
     catch (err) {
-      console.log(chalkError("TMP | *** ERROR INIT TWITTER: " + err));
+      console.log(chalkError("TFE | *** ERROR INIT TWITTER: " + err));
       statsObj.status = "INIT TWITTER ERROR";
       reject(err);
     }
@@ -2291,7 +2295,7 @@ function initTwitter(config){
 
 function initStatsUpdate(callback) {
 
-  console.log(chalkTwitter("TMP | INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
+  console.log(chalkTwitter("TFE | INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
 
   statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
   statsObj.timeStamp = moment().format(compactDateTimeFormat);
@@ -2318,7 +2322,7 @@ function toggleVerbose(){
 
   configuration.verbose = !configuration.verbose;
 
-  console.log(chalkAlert("TMP | VERBOSE: " + configuration.verbose));
+  console.log(chalkAlert("TFE | VERBOSE: " + configuration.verbose));
 }
 
 function initStdIn() {
@@ -2333,7 +2337,7 @@ function initStdIn() {
     switch (key) {
       case "a":
         abortCursor = true;
-        console.log(chalkAlert("TMP | ABORT: " + abortCursor));
+        console.log(chalkAlert("TFE | ABORT: " + abortCursor));
       break;
 
       case "K":
@@ -2368,6 +2372,31 @@ function initStdIn() {
   });
 }
 
+function checkChildrenState(checkState, callback) {
+
+  async.every(Object.keys(childHashMap), function(childId, cb) {
+
+    console.log(chalkBlue("checkChildrenState | CH ID: " + childId + " | " + childHashMap[childId].status));
+
+    const cs = (childHashMap[childId].status === checkState);
+
+    cb(null, cs);
+
+  }, function(err, allCheckState) {
+
+    if (err) {
+      console.log(chalkError("*** ERROR: checkChildrenState: " + err));
+      if (callback !== undefined) { return callback(err, allCheckState); }
+    }
+
+    debug(chalkAlert("MAIN: " + fsmMain.getMachineState()
+      + " | ALL CHILDREN: CHECKSTATE: " + checkState + " | " + allCheckState
+    ));
+
+    if (callback !== undefined) { return callback(null, allCheckState); }
+  });
+}
+
 function initConfig(cnf) {
 
   return new Promise(async function(resolve, reject){
@@ -2386,7 +2415,7 @@ function initConfig(cnf) {
 
 
       if (cnf.testMode) {
-        console.log(chalkAlert("TMP | TEST MODE"));
+        console.log(chalkAlert("TFE | TEST MODE"));
       }
 
       cnf.quitOnError = process.env.QUIT_ON_ERROR || false ;
@@ -2421,7 +2450,7 @@ function initConfig(cnf) {
 
     }
     catch (err) {
-      console.log(chalkError("TMP | *** ERROR INIT CONFIG: " + err));
+      console.log(chalkError("TFE | *** ERROR INIT CONFIG: " + err));
       statsObj.status = "INIT CONFIG ERROR";
       reject(err);
     }
@@ -2430,22 +2459,24 @@ function initConfig(cnf) {
 
 function startFsmMain(){
   initFsmTickInterval(FSM_TICK_INTERVAL)
-  console.log(chalkLog("TMP | +++ START FSM MAIN | " + getTimeStamp()));
-  fsmEvent("fsm_reset", "random");
+  console.log(chalkBlue("TFE | +++ START FSM MAIN | " + getTimeStamp()));
+  fsmMain["fsm_reset"]();
 }
 
 initConfig(configuration)
   .then(async function(cnf){
     configuration = deepcopy(cnf);
 
-    console.log(chalkTwitter(configuration.processName
-      + " STARTED " + getTimeStamp()
+    console.log(chalkTwitter("==================================================="
+      + "\n" + configuration.processName
+      + " | STARTED " + getTimeStamp()
+      + "\n==================================================="
     ));
 
     startFsmMain();
 
   })
   .catch(function(err){
-    console.log(chalkError("TMP | ***** INIT CONFIG ERROR ***** ", err));
+    console.log(chalkError("TFE | ***** INIT CONFIG ERROR ***** ", err));
     quit();
   });

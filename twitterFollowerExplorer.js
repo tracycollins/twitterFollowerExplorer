@@ -4467,7 +4467,6 @@ function initStatsUpdate(callback) {
 
 function initTwitterFollowerChild(twitterConfig, callback) {
 
-
   const user = twitterConfig.threeceeUser;
   const childId = TFC_CHILD_PREFIX + twitterConfig.threeceeUser;
   console.log(chalkLog("+++ NEW TFE CHILD | TFC ID: " + childId));
@@ -5993,45 +5992,6 @@ initConfig(configuration, function(err, cnf) {
       fsm.fsm_resetEnd();
 
       initSocket(configuration);
-
-      // startFetch();
-
-      // initTwitterUsers(function initTwitterUsersCallback(e) {
-      //   if (e) {
-      //     console.log(chalkError("*** ERROR INIT TWITTER USERS: " + e));
-      //     return quit({source: "TFE", error: e});
-      //   }
-
-      //   console.log(chalkTwitter("TFE CHILDREN"
-      //     + " | " + Object.keys(tfeChildHashMap)
-      //   ));
-
-      //   // initSocket(configuration);
-
-      //   loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
-
-      //     if (err) {
-      //       console.log("LOAD MAX INPUTS HASHMAP FILE ERROR: " + err);
-      //       quit("LOAD MAX INPUTS HASHMAP FILE ERROR");
-      //       return;
-      //     }
-
-      //     if (randomNetworkTree && (randomNetworkTree !== undefined)) {
-
-      //       randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
-      //         console.log(chalkBlue("SEND MAX INPUTS HASHMAP"));
-
-      //         initFetchAllInterval(configuration.fetchAllIntervalTime);
-
-      //         setTimeout(function() {
-      //           fsm.fsm_init();
-      //           initFsmTickInterval(FSM_TICK_INTERVAL);
-      //         }, 3000);
-      //       });
-      //     }
-
-      //   });
-      // });
 
     }
     else {
