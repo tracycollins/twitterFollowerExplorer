@@ -1548,7 +1548,7 @@ function processBestNetwork(params, callback){
 
   statsObj.status = "PROCESS BEST NN";
 
-  updateDbNetwork({networkObj: params.networkObj, addToTestHistory: true, verbose: true}, function(err, networkObj){
+  updateDbNetwork({networkObj: params.networkObj, addToTestHistory: true}, function(err, networkObj){
 
     if (err) {
       console.log(chalkError("TFE | *** processBestNetwork *** SAVE DB ERROR: " + err));
@@ -4662,8 +4662,7 @@ function updateNetworkStats(params, callback) {
         networkObj: bnwObj,
         incrementTestCycles: incrementTestCycles,
         testHistoryItem: testHistoryItem,
-        addToTestHistory: false,
-        verbose: true
+        addToTestHistory: false
       };
 
       updateDbNetwork(updateDbNetworkParams, function(err, nnDbUpdated){
