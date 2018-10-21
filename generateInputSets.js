@@ -73,8 +73,8 @@ const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 const chalkConnect = chalk.green;
 
-let socket;
-let socketKeepAliveInterval;
+// let socket;
+// let socketKeepAliveInterval;
 
 const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
 const slackChannel = "#gis";
@@ -89,7 +89,7 @@ function slackPostMessage(channel, text, callback) {
     channel: channel
   }, function(err, response) {
     if (err) {
-      console.log(chalkError("*** SLACK POST MESSAGE ERROR\n" + err));
+      console.log(chalkError("GIS | *** SLACK POST MESSAGE ERROR\n" + err));
     }
     else {
       debug(response);
@@ -267,9 +267,9 @@ const optionDefinitions = [
 
 const commandLineConfig = cla(optionDefinitions);
 
-console.log(chalkInfo("COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
+console.log(chalkInfo("GIS | COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
 
-console.log("COMMAND LINE OPTIONS\n" + jsonPrint(commandLineConfig));
+console.log("GIS | COMMAND LINE OPTIONS\n" + jsonPrint(commandLineConfig));
 
 
 if (commandLineConfig.targetServer === "LOCAL") {
@@ -282,13 +282,13 @@ if (commandLineConfig.targetServer === "REMOTE") {
 
 
 process.title = "node_generateInputSets";
-console.log("\n\n=================================");
-console.log("HOST:          " + hostname);
-console.log("PROCESS TITLE: " + process.title);
-console.log("PROCESS ID:    " + process.pid);
-console.log("RUN ID:        " + statsObj.runId);
-console.log("PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, depth: 1}));
-console.log("=================================");
+console.log("\n\nGIS | =================================");
+console.log("GIS | HOST:          " + hostname);
+console.log("GIS | PROCESS TITLE: " + process.title);
+console.log("GIS | PROCESS ID:    " + process.pid);
+console.log("GIS | RUN ID:        " + statsObj.runId);
+console.log("GIS | PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, depth: 1}));
+console.log("GIS | =================================");
 
 process.on("exit", function() {
 });
@@ -303,7 +303,7 @@ process.on("message", function(msg) {
 
     setTimeout(function() {
       showStats();
-      console.log("QUITTING generateInputSets");
+      console.log("GIS | QUITTING generateInputSets");
       process.exit(0);
     }, 300);
 
@@ -339,10 +339,10 @@ else {
 const localInputsFolder = dropboxConfigHostFolder + "/inputs";
 const defaultInputsFolder = dropboxConfigDefaultFolder + "/inputs";
 
-console.log("DROPBOX_GIS_CONFIG_FILE: " + DROPBOX_GIS_CONFIG_FILE);
-console.log("DROPBOX_GIS_STATS_FILE : " + DROPBOX_GIS_STATS_FILE);
-console.log("statsFolder : " + statsFolder);
-console.log("statsFile : " + statsFile);
+console.log("GIS | DROPBOX_GIS_CONFIG_FILE: " + DROPBOX_GIS_CONFIG_FILE);
+console.log("GIS | DROPBOX_GIS_STATS_FILE : " + DROPBOX_GIS_STATS_FILE);
+console.log("GIS | statsFolder : " + statsFolder);
+console.log("GIS | statsFile : " + statsFile);
 
 debug("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN);
 debug("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
@@ -387,7 +387,7 @@ const sortedObjectValues = function(params) {
 
     }
     else {
-      console.log("sortedObjectValues ERROR | params\n" + jsonPrint(params));
+      console.log("GIS | sortedObjectValues ERROR | params\n" + jsonPrint(params));
       reject(new Error("ERROR"));
     }
 
@@ -510,7 +510,7 @@ function generateInputSets3(params, callback) {
 
           histogramParser.parse(hpParams, function(err, histResults){
             if (err){
-              console.log(chalkError("HISTOGRAM PARSE ERROR: " + err));
+              console.log(chalkError("GIS | *** HISTOGRAM PARSE ERROR: " + err));
               return cb1(err);
             }
 
@@ -533,7 +533,7 @@ function generateInputSets3(params, callback) {
               newInputsObj.meta.type[type].overMaxNumInputs = newInputsObj.meta.type[type].numInputs;
             }
 
-            spinner.text = "... GEN TYPE"
+            spinner.text = "GIS | ... GEN TYPE"
               + " [" + iteration + "]"
               + " " + type.toUpperCase()
               + " | " + newInputsObj.meta.type[type].numInputs
@@ -549,7 +549,7 @@ function generateInputSets3(params, callback) {
             if ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
               && (prevNumInputs < MAX_NUM_INPUTS_PER_TYPE)) {
 
-              spinner.info("*** GEN TYPE"
+              spinner.info("GIS | *** GEN TYPE"
                 + " [" + iteration + "]"
                 + " " + type.toUpperCase()
                 + " | " + newInputsObj.meta.type[type].numInputs
@@ -621,7 +621,7 @@ function generateInputSets3(params, callback) {
 
           newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
 
-          spinner.text = "+++ END TYPE"
+          spinner.text = "GIS | +++ END TYPE"
             + " [" + iteration + "]"
             + " " + type.toUpperCase()
             + " | " + newInputsObj.meta.type[type].numInputs
@@ -663,10 +663,10 @@ let userReadyInterval;
 
 function quit(cause){
 
-  console.log( "\n... QUITTING ..." );
+  console.log( "\nGIS | ... QUITTING ..." );
 
   if (cause) {
-    console.log( "CAUSE: " + cause );
+    console.log( "GIS | CAUSE: " + cause );
   }
 
   quitWaitInterval = setInterval(function () {
@@ -680,7 +680,7 @@ function quit(cause){
       clearInterval(statsUpdateInterval);
       clearInterval(quitWaitInterval);
 
-      console.log(chalkAlert("\nALL PROCESSES COMPLETE ... QUITTING"
+      console.log(chalkAlert("\nGIS | ALL PROCESSES COMPLETE ... QUITTING"
        + " | SAVE FILE BUSY: " + saveFileBusy
        + " | SAVE FILE Q: " + saveFileQueue.length
       ));
@@ -693,7 +693,7 @@ function quit(cause){
 
     }
     else {
-      console.log(chalkInfo("... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
+      console.log(chalkInfo("GIS | ... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
        + " | SAVE FILE BUSY: " + saveFileBusy
        + " | SAVE FILE Q: " + saveFileQueue.length
       ));
@@ -730,7 +730,7 @@ function getTimeStamp(inputTime) {
 function saveFile(params, callback){
 
   if (OFFLINE_MODE) {
-    console.log("OFFLINE_MODE: " + OFFLINE_MODE);
+    console.log("GIS | OFFLINE_MODE: " + OFFLINE_MODE);
     if (callback !== undefined) { 
       return(callback(null, null));
     }
@@ -754,33 +754,33 @@ function saveFile(params, callback){
   const dbFileUpload = function () {
     dropboxClient.filesUpload(options)
     .then(function(){
-      debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
+      debug(chalkLog("GIS | SAVED DROPBOX JSON | " + options.path));
       if (callback !== undefined) { callback(null); }
     })
     .catch(function(error){
       if (error.status === 413){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.error(chalkError("GIS | " + moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: 413"
         ));
         if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 429){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.error(chalkError("GIS | " + moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: TOO MANY WRITES"
         ));
         if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 500){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.error(chalkError("GIS | " + moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: DROPBOX SERVER ERROR"
         ));
         if (callback !== undefined) { callback(error); }
       }
       else {
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
+        console.error(chalkError("GIS | " + moment().format(compactDateTimeFormat) 
           + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: " + error
         ));
@@ -794,7 +794,7 @@ function saveFile(params, callback){
     dropboxClient.filesListFolder({path: params.folder})
     .then(function(response){
 
-      debug(chalkLog("DROPBOX LIST FOLDER"
+      debug(chalkLog("GIS | DROPBOX LIST FOLDER"
         + " | " + options.path
         + " | " + jsonPrint(response)
       ));
@@ -816,24 +816,24 @@ function saveFile(params, callback){
 
       }, function(err){
         if (err) {
-          console.log(chalkError("*** ERROR DROPBOX SAVE FILE: " + err));
+          console.log(chalkError("GIS | *** ERROR DROPBOX SAVE FILE: " + err));
           if (callback !== undefined) { 
             return(callback(err, null));
           }
           return;
         }
         if (fileExits) {
-          console.log(chalkAlert("... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
+          console.log(chalkAlert("GIS | ... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
           if (callback !== undefined) { callback(err, null); }
         }
         else {
-          console.log(chalkAlert("... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
+          console.log(chalkAlert("GIS | ... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
           dbFileUpload();
         }
       });
     })
     .catch(function(err){
-      console.log(chalkError("saveFile *** DROPBOX FILES LIST FOLDER ERROR ", err));
+      console.log(chalkError("GIS | saveFile *** DROPBOX FILES LIST FOLDER ERROR ", err));
       if (callback !== undefined) { callback(err, null); }
     });
   }
@@ -890,7 +890,7 @@ function loadFile(params, callback) {
     }
     fs.readFile(fullPath, "utf8", function(err, data) {
       if (err) {
-        console.log(chalkError("LOAD FILE ERROR: " + err));
+        console.log(chalkError("GIS | LOAD FILE ERROR: " + err));
         return (callback(err, null));
       }
       debug(chalkLog(getTimeStamp()
@@ -916,7 +916,7 @@ function loadFile(params, callback) {
   else if (streamMode) {
     fullPath = folder + "/" + file;
 
-    console.log(chalkInfo("STREAM MODE: FULL PATH " + fullPath));
+    console.log(chalkInfo("GIS | STREAM MODE: FULL PATH " + fullPath));
 
     let fileObj = {};
 
@@ -941,11 +941,11 @@ function loadFile(params, callback) {
     });
 
     pipeline.on("header", function(header){
-      console.log("HEADER: " + jsonPrint(header));
+      console.log("GIS | HEADER: " + jsonPrint(header));
     });
 
     pipeline.on("footer", function(footer){
-      console.log("FOOTER: " + jsonPrint(footer));
+      console.log("GIS | FOOTER: " + jsonPrint(footer));
     });
 
     pipeline.on("end", function(){
@@ -957,14 +957,14 @@ function loadFile(params, callback) {
     });
 
     pipeline.on("error", function(err){
-      console.log(chalkError("LOAD FILE ERROR PARSE: " + err));
+      console.log(chalkError("GIS | *** LOAD FILE ERROR PARSE: " + err));
       callback(err, null);
     });
   }
   else {
     dropboxClient.filesDownload({path: fullPath})
     .then(function(data) {
-      console.log(chalkLog(getTimeStamp()
+      console.log("GIS | " + chalkLog(getTimeStamp()
         + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
       ));
 
@@ -1004,7 +1004,6 @@ function loadFile(params, callback) {
         }
       }
 
-      // console.log(chalkError("GIS | DROPBOX LOAD FILE ERROR: " + fullPath + " | " + error.response.statusText));
       console.log(chalkError("GIS | !!! DROPBOX READ " + fullPath + " ERROR"));
       console.log(chalkError("GIS | " + error));
       console.log(chalkError("GIS | " + jsonPrint(error)));
@@ -1015,263 +1014,263 @@ function loadFile(params, callback) {
   }
 }
 
-function sendKeepAlive(userObj, callback) {
-  if (statsObj.userAuthenticated && statsObj.serverConnected) {
-    debug(chalkAlert("TX KEEPALIVE"
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + userObj.userId
-    ));
-    // socket.emit("SESSION_KEEPALIVE", userObj);
-    socket.emit(
-      "SESSION_KEEPALIVE", 
-      {
-        user: userObj, 
-        stats: statsObj, 
-        results: {}
-      }
-    );
-    callback(null, userObj);
-  }
-  else {
-    console.log(chalkError("!!!! CANNOT TX KEEPALIVE"
-      + " | " + userObj.userId
-      + " | CONNECTED: " + statsObj.serverConnected
-      + " | READY ACK: " + statsObj.userAuthenticated
-      + " | " + moment().format(compactDateTimeFormat)
-    ));
-    callback("ERROR", null);
-  }
-}
+// function sendKeepAlive(userObj, callback) {
+//   if (statsObj.userAuthenticated && statsObj.serverConnected) {
+//     debug(chalkAlert("TX KEEPALIVE"
+//       + " | " + moment().format(compactDateTimeFormat)
+//       + " | " + userObj.userId
+//     ));
+//     // socket.emit("SESSION_KEEPALIVE", userObj);
+//     socket.emit(
+//       "SESSION_KEEPALIVE", 
+//       {
+//         user: userObj, 
+//         stats: statsObj, 
+//         results: {}
+//       }
+//     );
+//     callback(null, userObj);
+//   }
+//   else {
+//     console.log(chalkError("!!!! CANNOT TX KEEPALIVE"
+//       + " | " + userObj.userId
+//       + " | CONNECTED: " + statsObj.serverConnected
+//       + " | READY ACK: " + statsObj.userAuthenticated
+//       + " | " + moment().format(compactDateTimeFormat)
+//     ));
+//     callback("ERROR", null);
+//   }
+// }
 
-function initKeepalive(interval) {
+// function initKeepalive(interval) {
 
-  clearInterval(socketKeepAliveInterval);
+//   clearInterval(socketKeepAliveInterval);
 
-  console.log(chalkConnect("START KEEPALIVE"
-    + " | " + getTimeStamp()
-    + " | READY ACK: " + statsObj.userAuthenticated
-    + " | SERVER CONNECTED: " + statsObj.serverConnected
-    + " | INTERVAL: " + interval + " ms"
-  ));
+//   console.log(chalkConnect("START KEEPALIVE"
+//     + " | " + getTimeStamp()
+//     + " | READY ACK: " + statsObj.userAuthenticated
+//     + " | SERVER CONNECTED: " + statsObj.serverConnected
+//     + " | INTERVAL: " + interval + " ms"
+//   ));
 
-  userObj.stats = statsObj;
+//   userObj.stats = statsObj;
 
-  sendKeepAlive(userObj, function(err, results) {
-    if (err) {
-      console.log(chalkError("KEEPALIVE ERROR: " + err));
-    }
-    else if (results) {
-      debug(chalkConnect("KEEPALIVE"
-        + " | " + moment().format(compactDateTimeFormat)
-      ));
-    }
-  });
+//   sendKeepAlive(userObj, function(err, results) {
+//     if (err) {
+//       console.log(chalkError("KEEPALIVE ERROR: " + err));
+//     }
+//     else if (results) {
+//       debug(chalkConnect("KEEPALIVE"
+//         + " | " + moment().format(compactDateTimeFormat)
+//       ));
+//     }
+//   });
 
-  socketKeepAliveInterval = setInterval(function() { // TX KEEPALIVE
+//   socketKeepAliveInterval = setInterval(function() { // TX KEEPALIVE
 
-    userObj.stats = statsObj;
+//     userObj.stats = statsObj;
 
-    sendKeepAlive(userObj, function(err, results) {
-      if (err) {
-        console.log(chalkError("KEEPALIVE ERROR: " + err));
-      }
-      else if (results) {
-        debug(chalkConnect("KEEPALIVE"
-          + " | " + moment().format(compactDateTimeFormat)
-        ));
-      }
-    });
+//     sendKeepAlive(userObj, function(err, results) {
+//       if (err) {
+//         console.log(chalkError("KEEPALIVE ERROR: " + err));
+//       }
+//       else if (results) {
+//         debug(chalkConnect("KEEPALIVE"
+//           + " | " + moment().format(compactDateTimeFormat)
+//         ));
+//       }
+//     });
 
-  }, interval);
-}
+//   }, interval);
+// }
 
-function initUserReadyInterval(interval) {
+// function initUserReadyInterval(interval) {
 
-  console.log(chalkInfo("INIT USER READY INTERVAL"));
+//   console.log(chalkInfo("INIT USER READY INTERVAL"));
 
-  clearInterval(userReadyInterval);
+//   clearInterval(userReadyInterval);
 
-  userReadyInterval = setInterval(function() {
+//   userReadyInterval = setInterval(function() {
 
-    if (statsObj.serverConnected && !statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
+//     if (statsObj.serverConnected && !statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
 
-      statsObj.userReadyTransmitted = true;
-      userObj.timeStamp = moment().valueOf();
+//       statsObj.userReadyTransmitted = true;
+//       userObj.timeStamp = moment().valueOf();
 
-      socket.emit("USER_READY", {userId: userObj.userId, timeStamp: moment().valueOf()});
-    }
-    else if (statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
-      statsObj.userReadyAckWait += 1;
-      console.log(chalkAlert("... WAITING FOR USER_READY_ACK ..."));
-    }
-  }, interval);
-}
+//       socket.emit("USER_READY", {userId: userObj.userId, timeStamp: moment().valueOf()});
+//     }
+//     else if (statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
+//       statsObj.userReadyAckWait += 1;
+//       console.log(chalkAlert("... WAITING FOR USER_READY_ACK ..."));
+//     }
+//   }, interval);
+// }
 
-function initSocket(cnf) {
-  if (OFFLINE_MODE) {
-    console.log(chalkError("*** OFFLINE MODE *** "));
-    return;
-  }
+// function initSocket(cnf) {
+//   if (OFFLINE_MODE) {
+//     console.log(chalkError("*** OFFLINE MODE *** "));
+//     return;
+//   }
 
-  console.log(chalkLog("INIT SOCKET"
-    + " | " + cnf.targetServer
-    + " | " + jsonPrint(userObj)
-  ));
+//   console.log(chalkLog("INIT SOCKET"
+//     + " | " + cnf.targetServer
+//     + " | " + jsonPrint(userObj)
+//   ));
 
-  socket = require("socket.io-client")(cnf.targetServer, { reconnection: true });
+//   socket = require("socket.io-client")(cnf.targetServer, { reconnection: true });
 
-  socket.on("connect", function() {
+//   socket.on("connect", function() {
 
-    statsObj.serverConnected = true ;
+//     statsObj.serverConnected = true ;
 
-    console.log(chalkConnect("SOCKET CONNECT | " + socket.id + " ... AUTHENTICATE ..."));
+//     console.log(chalkConnect("SOCKET CONNECT | " + socket.id + " ... AUTHENTICATE ..."));
 
-    socket.on("unauthorized", function(err) {
-      console.log(chalkError("*** AUTHENTICATION ERROR: ", err.message));
-      statsObj.userAuthenticated = false ;
-    });
+//     socket.on("unauthorized", function(err) {
+//       console.log(chalkError("*** AUTHENTICATION ERROR: ", err.message));
+//       statsObj.userAuthenticated = false ;
+//     });
 
-    socket.emit("authentication", { namespace: "util", userId: userObj.userId, password: "0123456789" });
+//     socket.emit("authentication", { namespace: "util", userId: userObj.userId, password: "0123456789" });
 
-    socket.on("authenticated", function() {
+//     socket.on("authenticated", function() {
 
-      statsObj.serverConnected = true ;
+//       statsObj.serverConnected = true ;
 
-      console.log("AUTHENTICATED | " + socket.id);
+//       console.log("AUTHENTICATED | " + socket.id);
 
-      statsObj.socketId = socket.id;
+//       statsObj.socketId = socket.id;
 
-      console.log(chalkConnect( "CONNECTED TO HOST"
-        + " | SERVER: " + cnf.targetServer
-        + " | ID: " + socket.id
-      ));
+//       console.log(chalkConnect( "CONNECTED TO HOST"
+//         + " | SERVER: " + cnf.targetServer
+//         + " | ID: " + socket.id
+//       ));
 
-      userObj.timeStamp = moment().valueOf();
+//       userObj.timeStamp = moment().valueOf();
 
-      console.log(chalkInfo(socket.id
-        + " | TX USER_READY"
-        + " | " + moment().format(compactDateTimeFormat)
-        + " | " + userObj.userId
-        + " | " + userObj.url
-        + " | " + userObj.screenName
-        + " | " + userObj.type
-        + " | " + userObj.mode
-        + "\nTAGS\n" + jsonPrint(userObj.tags)
-      ));
+//       console.log(chalkInfo(socket.id
+//         + " | TX USER_READY"
+//         + " | " + moment().format(compactDateTimeFormat)
+//         + " | " + userObj.userId
+//         + " | " + userObj.url
+//         + " | " + userObj.screenName
+//         + " | " + userObj.type
+//         + " | " + userObj.mode
+//         + "\nTAGS\n" + jsonPrint(userObj.tags)
+//       ));
 
-      statsObj.userAuthenticated = true ;
+//       statsObj.userAuthenticated = true ;
 
-      initKeepalive(cnf.keepaliveInterval);
+//       initKeepalive(cnf.keepaliveInterval);
 
-      initUserReadyInterval(5000);
-    });
+//       initUserReadyInterval(5000);
+//     });
 
-    socket.on("disconnect", function(reason) {
+//     socket.on("disconnect", function(reason) {
 
-      statsObj.userAuthenticated = false ;
-      statsObj.serverConnected = false;
-      statsObj.userReadyTransmitted = false;
-      statsObj.userReadyAck = false ;
+//       statsObj.userAuthenticated = false ;
+//       statsObj.serverConnected = false;
+//       statsObj.userReadyTransmitted = false;
+//       statsObj.userReadyAck = false ;
 
-      console.log(chalkConnect(moment().format(compactDateTimeFormat)
-        + " | SOCKET DISCONNECT: " + socket.id
-        + " | REASON: " + reason
-      ));
-    });
+//       console.log(chalkConnect(moment().format(compactDateTimeFormat)
+//         + " | SOCKET DISCONNECT: " + socket.id
+//         + " | REASON: " + reason
+//       ));
+//     });
 
-  });
+//   });
 
-  socket.on("reconnect", function(reason) {
+//   socket.on("reconnect", function(reason) {
 
-    statsObj.serverConnected = true;
+//     statsObj.serverConnected = true;
 
-    console.log(chalkInfo("RECONNECT"
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + socket.id
-      + " | REASON: " + reason
-    ));
-  });
+//     console.log(chalkInfo("RECONNECT"
+//       + " | " + moment().format(compactDateTimeFormat)
+//       + " | " + socket.id
+//       + " | REASON: " + reason
+//     ));
+//   });
 
-  socket.on("USER_READY_ACK", function(userObj) {
+//   socket.on("USER_READY_ACK", function(userObj) {
 
-    statsObj.userReadyAck = true ;
-    statsObj.serverConnected = true;
+//     statsObj.userReadyAck = true ;
+//     statsObj.serverConnected = true;
 
-    console.log(chalkInfo("RX USER_READY_ACK MESSAGE"
-      + " | " + socket.id
-      + " | USER ID: " + userObj.userId
-      + " | " + moment().format(compactDateTimeFormat)
-    ));
-  });
+//     console.log(chalkInfo("GIS | RX USER_READY_ACK MESSAGE"
+//       + " | " + socket.id
+//       + " | USER ID: " + userObj.userId
+//       + " | " + moment().format(compactDateTimeFormat)
+//     ));
+//   });
 
-  socket.on("error", function(error) {
-    console.log(chalkError(moment().format(compactDateTimeFormat)
-      + " | *** SOCKET ERROR"
-      + " | " + socket.id
-      + " | " + error
-    ));
-  });
+//   socket.on("error", function(error) {
+//     console.log(chalkError(moment().format(compactDateTimeFormat)
+//       + " | *** SOCKET ERROR"
+//       + " | " + socket.id
+//       + " | " + error
+//     ));
+//   });
 
-  socket.on("connect_error", function(err) {
-    statsObj.userAuthenticated = false ;
-    statsObj.serverConnected = false ;
-    statsObj.userReadyTransmitted = false;
-    statsObj.userReadyAck = false ;
-    console.log(chalkError("*** CONNECT ERROR "
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + err.type
-      + " | " + err.description
-    ));
-  });
+//   socket.on("connect_error", function(err) {
+//     statsObj.userAuthenticated = false ;
+//     statsObj.serverConnected = false ;
+//     statsObj.userReadyTransmitted = false;
+//     statsObj.userReadyAck = false ;
+//     console.log(chalkError("GIS | *** CONNECT ERROR "
+//       + " | " + moment().format(compactDateTimeFormat)
+//       + " | " + err.type
+//       + " | " + err.description
+//     ));
+//   });
 
-  socket.on("reconnect_error", function(err) {
+//   socket.on("reconnect_error", function(err) {
 
-    statsObj.userAuthenticated = false ;
-    statsObj.serverConnected = false ;
-    statsObj.userReadyTransmitted = false;
-    statsObj.userReadyAck = false ;
+//     statsObj.userAuthenticated = false ;
+//     statsObj.serverConnected = false ;
+//     statsObj.userReadyTransmitted = false;
+//     statsObj.userReadyAck = false ;
 
-    console.log(chalkError("*** RECONNECT ERROR "
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + err.type
-      + " | " + err.description
-    ));
-  });
+//     console.log(chalkError("GIS | *** RECONNECT ERROR "
+//       + " | " + moment().format(compactDateTimeFormat)
+//       + " | " + err.type
+//       + " | " + err.description
+//     ));
+//   });
 
-  socket.on("SESSION_ABORT", function(sessionId) {
-    console.log(chalkAlert("@@@@@ RX SESSION_ABORT | " + sessionId));
-    if (sessionId === statsObj.socketId) {
-      console.log(chalkAlert("***** RX SESSION_ABORT HIT | " + sessionId));
-      socket.disconnect();
-      statsObj.userAuthenticated = false ;
-      statsObj.serverConnected = false;
-    }
-  });
+//   socket.on("SESSION_ABORT", function(sessionId) {
+//     console.log(chalkAlert("@@@@@ RX SESSION_ABORT | " + sessionId));
+//     if (sessionId === statsObj.socketId) {
+//       console.log(chalkAlert("GIS | *** RX SESSION_ABORT HIT | " + sessionId));
+//       socket.disconnect();
+//       statsObj.userAuthenticated = false ;
+//       statsObj.serverConnected = false;
+//     }
+//   });
 
-  socket.on("SESSION_EXPIRED", function(sessionId) {
-    console.log(chalkAlert("RX SESSION_EXPIRED | " + sessionId));
-    if (sessionId === statsObj.socketId) {
-      console.log(chalkAlert("***** RX SESSION_EXPIRED HIT | " + sessionId));
-      socket.disconnect();
-      statsObj.userAuthenticated = false ;
-      statsObj.serverConnected = false;
-    }
-  });
+//   socket.on("SESSION_EXPIRED", function(sessionId) {
+//     console.log(chalkAlert("RX SESSION_EXPIRED | " + sessionId));
+//     if (sessionId === statsObj.socketId) {
+//       console.log(chalkAlert("GIS | *** RX SESSION_EXPIRED HIT | " + sessionId));
+//       socket.disconnect();
+//       statsObj.userAuthenticated = false ;
+//       statsObj.serverConnected = false;
+//     }
+//   });
 
-  socket.on("HEARTBEAT", function() {
-    statsObj.serverConnected = true;
-    statsObj.heartbeatsReceived += 1;
-  });
+//   socket.on("HEARTBEAT", function() {
+//     statsObj.serverConnected = true;
+//     statsObj.heartbeatsReceived += 1;
+//   });
 
-  socket.on("KEEPALIVE_ACK", function(userId) {
-    statsObj.serverConnected = true;
-    debug(chalkLog("RX KEEPALIVE_ACK | " + userId));
-  });
-}
+//   socket.on("KEEPALIVE_ACK", function(userId) {
+//     statsObj.serverConnected = true;
+//     debug(chalkLog("RX KEEPALIVE_ACK | " + userId));
+//   });
+// }
 
 function initStatsUpdate(callback){
 
-  console.log(chalkTwitter("INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
+  console.log(chalkTwitter("GIS | INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
 
   clearInterval(statsUpdateInterval);
 
@@ -1324,7 +1323,7 @@ function initStdIn(){
 function initialize(cnf, callback){
 
   if (debug.enabled){
-    console.log("\n%%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
+    console.log("\nGIS | %%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
   }
 
   cnf.processName = process.env.GIS_PROCESS_NAME || "generateInputSets";
@@ -1358,27 +1357,27 @@ function initialize(cnf, callback){
       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
 
       if (loadedConfigObj.GIS_MAX_ITERATIONS !== undefined){
-        console.log("LOADED GIS_MAX_ITERATIONS: " + loadedConfigObj.GIS_MAX_ITERATIONS);
+        console.log("GIS | LOADED GIS_MAX_ITERATIONS: " + loadedConfigObj.GIS_MAX_ITERATIONS);
         cnf.maxIterations = loadedConfigObj.GIS_MAX_ITERATIONS;
       }
 
       if (loadedConfigObj.GIS_MIN_INPUTS_GENERATED !== undefined){
-        console.log("LOADED GIS_MIN_INPUTS_GENERATED: " + loadedConfigObj.GIS_MIN_INPUTS_GENERATED);
+        console.log("GIS | LOADED GIS_MIN_INPUTS_GENERATED: " + loadedConfigObj.GIS_MIN_INPUTS_GENERATED);
         cnf.minInputsGenerated = loadedConfigObj.GIS_MIN_INPUTS_GENERATED;
       }
 
       if (loadedConfigObj.GIS_MAX_INPUTS_GENERATED !== undefined){
-        console.log("LOADED GIS_MAX_INPUTS_GENERATED: " + loadedConfigObj.GIS_MAX_INPUTS_GENERATED);
+        console.log("GIS | LOADED GIS_MAX_INPUTS_GENERATED: " + loadedConfigObj.GIS_MAX_INPUTS_GENERATED);
         cnf.maxInputsGenerated = loadedConfigObj.GIS_MAX_INPUTS_GENERATED;
       }
 
       if (loadedConfigObj.GIS_MIN_TOTAL_MIN !== undefined){
-        console.log("LOADED GIS_MIN_TOTAL_MIN: " + loadedConfigObj.GIS_MIN_TOTAL_MIN);
+        console.log("GIS | LOADED GIS_MIN_TOTAL_MIN: " + loadedConfigObj.GIS_MIN_TOTAL_MIN);
         cnf.minTotalMin = loadedConfigObj.GIS_MIN_TOTAL_MIN;
       }
 
       if (loadedConfigObj.GIS_MAX_TOTAL_MIN !== undefined){
-        console.log("LOADED GIS_MAX_TOTAL_MIN: " + loadedConfigObj.GIS_MAX_TOTAL_MIN);
+        console.log("GIS | LOADED GIS_MAX_TOTAL_MIN: " + loadedConfigObj.GIS_MAX_TOTAL_MIN);
         cnf.maxTotalMin = loadedConfigObj.GIS_MAX_TOTAL_MIN;
       }
 
@@ -1388,37 +1387,37 @@ function initialize(cnf, callback){
       }
 
       if (loadedConfigObj.GIS_MAX_DOMINANT_MIN !== undefined){
-        console.log("LOADED GIS_MAX_DOMINANT_MIN: " + loadedConfigObj.GIS_MAX_DOMINANT_MIN);
+        console.log("GIS | LOADED GIS_MAX_DOMINANT_MIN: " + loadedConfigObj.GIS_MAX_DOMINANT_MIN);
         cnf.maxDominantMin = loadedConfigObj.GIS_MAX_DOMINANT_MIN;
       }
 
       if (loadedConfigObj.GIS_TEST_MODE !== undefined){
-        console.log("LOADED GIS_TEST_MODE: " + loadedConfigObj.GIS_TEST_MODE);
+        console.log("GIS | LOADED GIS_TEST_MODE: " + loadedConfigObj.GIS_TEST_MODE);
         cnf.testMode = loadedConfigObj.GIS_TEST_MODE;
       }
 
       if (loadedConfigObj.GIS_QUIT_ON_COMPLETE !== undefined){
-        console.log("LOADED GIS_QUIT_ON_COMPLETE: " + loadedConfigObj.GIS_QUIT_ON_COMPLETE);
+        console.log("GIS | LOADED GIS_QUIT_ON_COMPLETE: " + loadedConfigObj.GIS_QUIT_ON_COMPLETE);
         cnf.quitOnComplete = loadedConfigObj.GIS_QUIT_ON_COMPLETE;
       }
 
       if (loadedConfigObj.GIS_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined){
-        console.log("LOADED GIS_HISTOGRAM_PARSE_DOMINANT_MIN: " + loadedConfigObj.GIS_HISTOGRAM_PARSE_DOMINANT_MIN);
+        console.log("GIS | LOADED GIS_HISTOGRAM_PARSE_DOMINANT_MIN: " + loadedConfigObj.GIS_HISTOGRAM_PARSE_DOMINANT_MIN);
         cnf.histogramParseDominantMin = loadedConfigObj.GIS_HISTOGRAM_PARSE_DOMINANT_MIN;
       }
 
       if (loadedConfigObj.GIS_HISTOGRAM_PARSE_TOTAL_MIN !== undefined){
-        console.log("LOADED GIS_HISTOGRAM_PARSE_TOTAL_MIN: " + loadedConfigObj.GIS_HISTOGRAM_PARSE_TOTAL_MIN);
+        console.log("GIS | LOADED GIS_HISTOGRAM_PARSE_TOTAL_MIN: " + loadedConfigObj.GIS_HISTOGRAM_PARSE_TOTAL_MIN);
         cnf.histogramParseTotalMin = loadedConfigObj.GIS_HISTOGRAM_PARSE_TOTAL_MIN;
       }
 
       if (loadedConfigObj.GIS_ENABLE_STDIN !== undefined){
-        console.log("LOADED GIS_ENABLE_STDIN: " + loadedConfigObj.GIS_ENABLE_STDIN);
+        console.log("GIS | LOADED GIS_ENABLE_STDIN: " + loadedConfigObj.GIS_ENABLE_STDIN);
         cnf.enableStdin = loadedConfigObj.GIS_ENABLE_STDIN;
       }
 
       if (loadedConfigObj.GIS_KEEPALIVE_INTERVAL !== undefined) {
-        console.log("LOADED GIS_KEEPALIVE_INTERVAL: " + loadedConfigObj.GIS_KEEPALIVE_INTERVAL);
+        console.log("GIS | LOADED GIS_KEEPALIVE_INTERVAL: " + loadedConfigObj.GIS_KEEPALIVE_INTERVAL);
         cnf.keepaliveInterval = loadedConfigObj.GIS_KEEPALIVE_INTERVAL;
       }
 
@@ -1428,14 +1427,14 @@ function initialize(cnf, callback){
 
       commandLineArgs.forEach(function(arg){
         cnf[arg] = commandLineConfig[arg];
-        console.log("--> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
+        console.log("GIS | --> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
       });
 
       console.log(chalkLog("USER\n" + jsonPrint(userObj)));
 
       configArgs = Object.keys(cnf);
       configArgs.forEach(function(arg){
-        console.log("INITIALIZE FINAL CONFIG | " + arg + ": " + cnf[arg]);
+        console.log("GIS | INITIALIZE FINAL CONFIG | " + arg + ": " + cnf[arg]);
       });
 
       if (cnf.enableStdin){ initStdIn(); }
@@ -1445,7 +1444,7 @@ function initialize(cnf, callback){
       });
     }
     else {
-      console.error(chalkError("*** DROPBOX CONFIG FILE " + dropboxConfigFile + " NOT LOADED *** | USING DEFAULTS"));
+      console.error(chalkError("GIS | *** DROPBOX CONFIG FILE " + dropboxConfigFile + " NOT LOADED *** | USING DEFAULTS"));
 
       // OVERIDE CONFIG WITH COMMAND LINE ARGS
 
@@ -1453,14 +1452,14 @@ function initialize(cnf, callback){
 
       commandLineArgs.forEach(function(arg){
         cnf[arg] = commandLineConfig[arg];
-        console.log("--> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
+        console.log("GIS | --> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
       });
 
       console.log(chalkLog("USER\n" + jsonPrint(userObj)));
 
       configArgs = Object.keys(cnf);
       configArgs.forEach(function(arg){
-        console.log("INITIALIZE FINAL CONFIG | " + arg + ": " + cnf[arg]);
+        console.log("GIS | INITIALIZE FINAL CONFIG | " + arg + ": " + cnf[arg]);
       });
 
       if (cnf.enableStdin){ initStdIn(); }
@@ -1476,11 +1475,11 @@ initialize(configuration, function(err, cnf){
 
   if (err) {
     if (err.response && (err.response.status !== 404) && (err.response.status !== 409)){
-      console.error(chalkError("***** INIT ERROR *** QUITING: ERROR: " + jsonPrint(err)));
+      console.error(chalkError("GIS | *** INIT ERROR *** QUITING: ERROR: " + jsonPrint(err)));
       quit();
     }
     else {
-      console.error(chalkError("***** INIT ERROR *** ERROR: CONFIG FILE NOT FOUND | ERROR CODE: " + err.status));
+      console.error(chalkError("GIS | *** INIT ERROR *** ERROR: CONFIG FILE NOT FOUND | ERROR CODE: " + err.status));
     }
   }
 
@@ -1495,9 +1494,9 @@ initialize(configuration, function(err, cnf){
   if (configuration.testMode) {
   }
 
-  console.log(chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
+  console.log(chalkTwitter("GIS | " + configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
-  initSocket(configuration);
+  // initSocket(configuration);
 
   console.log("LOAD " + defaultHistogramsFolder);
 
@@ -1516,15 +1515,15 @@ initialize(configuration, function(err, cnf){
     loadFile({folder: folder, file: file, streamMode: true}, function(err, results){
 
       if (err) {
-        console.log(chalkError("LOAD histograms.json ERROR"));
+        console.log(chalkError("GIS | LOAD histograms.json ERROR"));
         cb();
       }
       else {
-        console.log(chalkInfo("\n+++ LOADED HISTOGRAM | " + type.toUpperCase()
-          + "\n TOTAL ITEMS:          " + results.totalInputs
-          + "\n MIN TOTAL MIN:        " + configuration.minTotalMin
-          + "\n MORE THAN TOTAL MIN:  " + results.moreThanMin + " (" + (100*results.moreThanMin/results.totalInputs).toFixed(2) + "%)"
-          + "\n LESS THAN TOTAL MIN:  " + results.lessThanMin + " (" + (100*results.lessThanMin/results.totalInputs).toFixed(2) + "%)"
+        console.log(chalkInfo("\nGIS | +++ LOADED HISTOGRAM | " + type.toUpperCase()
+          + "\nGIS | TOTAL ITEMS:          " + results.totalInputs
+          + "\nGIS | MIN TOTAL MIN:        " + configuration.minTotalMin
+          + "\nGIS | MORE THAN TOTAL MIN:  " + results.moreThanMin + " (" + (100*results.moreThanMin/results.totalInputs).toFixed(2) + "%)"
+          + "\nGIS | LESS THAN TOTAL MIN:  " + results.lessThanMin + " (" + (100*results.lessThanMin/results.totalInputs).toFixed(2) + "%)"
         ));
 
         genInParams.histogramsObj.histograms[type] = {};
@@ -1532,7 +1531,7 @@ initialize(configuration, function(err, cnf){
 
         generateInputSets3(genInParams, function(err, inputsObj){
           if (err) {
-            console.log(chalkError("generateInputSets ERROR: " + err));
+            console.log(chalkError("GIS | generateInputSets ERROR: " + err));
             quit();
           }
           else {
@@ -1595,11 +1594,11 @@ initialize(configuration, function(err, cnf){
     }, function(){
 
       console.log(chalk.blue(
-          "\n-------------------------------------------------------------------------------"
-        + "\nINPUTS" 
-        + "\n-------------------------------------------------------------------------------\n"
+          "\nGIS | -------------------------------------------------------------------------------"
+        + "\nGIS | INPUTS" 
+        + "\nGIS | -------------------------------------------------------------------------------\n"
         + table(tableArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r"] })
-        + "\n-------------------------------------------------------------------------------"
+        + "\nGIS | -------------------------------------------------------------------------------"
       ));
 
 
@@ -1609,7 +1608,7 @@ initialize(configuration, function(err, cnf){
       slackPostMessage(slackChannel, slackText);
 
       const inFile = globalInputsObj.inputsId + ".json"; 
-      console.log(chalkInfo("... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+      console.log(chalkInfo("GIS | ... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
       saveFileQueue.push({folder: inFolder, file: inFile, obj: globalInputsObj});
 
       quit();
