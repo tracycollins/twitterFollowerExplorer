@@ -162,6 +162,7 @@ statsObj.categorize.neutral = 0;
 statsObj.categorize.right = 0;
 statsObj.categorize.positive = 0;
 statsObj.categorize.negative = 0;
+statsObj.categorize.skipped = 0;
 
 statsObj.hostname = hostname;
 statsObj.pid = process.pid;
@@ -878,10 +879,12 @@ function initActivateNetworkInterval(interval){
                   }
                 }
                 else {
+                  statsObj.categorize.skipped += 1;
                   printActivateResult("RNT | ___ skip ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
                 }
               }
               else {
+                statsObj.categorize.skipped += 1;
                 printActivateResult("RNT | ___ skip ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
               }
             }
@@ -1102,6 +1105,7 @@ function resetStats(callback){
   statsObj.categorize.right = 0;
   statsObj.categorize.positive = 0;
   statsObj.categorize.negative = 0;
+  statsObj.categorize.skipped = 0;
 
   if (callback) { callback(); }
 

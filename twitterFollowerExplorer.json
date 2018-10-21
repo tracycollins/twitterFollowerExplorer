@@ -15,7 +15,7 @@
       "GOOGLE_PROJECT_ID": "graphic-tangent-627",
       "GOOGLE_APPLICATION_CREDENTIALS": "/home/tc/Dropbox/Apps/wordAssociation/config/googleCloud/threeceeTwitterStream-cd581ff76075.json",
       "TFE_UTIL_TARGET_SERVER": "http://localhost/util",
-      "TFE_TWITTER_DEFAULT_USER": "altthreecee00",
+      "TFE_TWITTER_DEFAULT_USER": "altthreecee05",
       "TFE_FETCH_ALL_INTERVAL": 3600000,
       "TFE_KEEPALIVE_INTERVAL": 30000,
       "TFE_STATS_UPDATE_INTERVAL": 60000,
