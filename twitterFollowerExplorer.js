@@ -234,7 +234,7 @@ let statsPickArray = [
   "status", 
   "authenticated", 
   "numChildren", 
-  "socketError", 
+  // "socketError", 
   "userReadyAck", 
   "userReadyAckWait", 
   "userReadyTransmitted",
@@ -341,8 +341,8 @@ let processUserQueue = [];
 let processUserQueueInterval;
 let processUserQueueReady = true;
 
-let socket;
-let socketKeepAliveInterval;
+// let socket;
+// let socketKeepAliveInterval;
 
 let saveFileQueueInterval;
 let saveFileBusy = false;
@@ -472,7 +472,7 @@ const quit = function(options) {
               + "\n==========================\n"
             ));
 
-            if (socket) { socket.disconnect(); }
+            // if (socket) { socket.disconnect(); }
             process.exit();
           });
 
@@ -3977,464 +3977,464 @@ function initSaveFileQueue(cnf) {
   }, cnf.saveFileQueueInterval);
 }
 
-function sendKeepAlive(callback) {
-
-  if (statsObj.userAuthenticated && statsObj.serverConnected) {
-
-    statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
-    statsObj.timeStamp = moment().format(compactDateTimeFormat);
-    userObj.timeStamp = moment().valueOf();
-    userObj.stats.elapsed = statsObj.elapsed;
-
-    statsObjSmall = pick(statsObj, statsPickArray);
-
-    debug(chalkInfo("TX KEEPALIVE"
-      + " | " + userObj.userId
-      + " | " + moment().format(compactDateTimeFormat)
-    ));
-
-    socket.emit(
-      "SESSION_KEEPALIVE", 
-      {
-        user: userObj, 
-        stats: statsObjSmall,
-        status: statsObj.status
-      }
-    );
-
-    callback(null);
-  }
-  else {
-    console.log(chalkError("!!!! CANNOT TX KEEPALIVE"
-      + " | " + userObj.userId
-      + " | CONNECTED: " + statsObj.serverConnected
-      + " | READY ACK: " + statsObj.userAuthenticated
-      + " | " + moment().format(compactDateTimeFormat)
-    ));
-    callback("ERROR");
-  }
-}
-
-function initKeepalive(interval) {
-
-  clearInterval(socketKeepAliveInterval);
-
-  console.log(chalkConnect("START KEEPALIVE"
-    + " | " + getTimeStamp()
-    + " | READY ACK: " + statsObj.userAuthenticated
-    + " | SERVER CONNECTED: " + statsObj.serverConnected
-    + " | INTERVAL: " + interval + " ms"
-  ));
-
-  sendKeepAlive(function(err) {
-    if (err) {
-      console.log(chalkError("KEEPALIVE ERROR: " + err));
-    }
-    else {
-      debug(chalkConnect("KEEPALIVE"
-        + " | " + moment().format(compactDateTimeFormat)
-      ));
-    }
-  });
-
-  socketKeepAliveInterval = setInterval(function() { // TX KEEPALIVE
-
-    // updateStatsObjSmall();
+// function sendKeepAlive(callback) {
+
+//   if (statsObj.userAuthenticated && statsObj.serverConnected) {
+
+//     statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
+//     statsObj.timeStamp = moment().format(compactDateTimeFormat);
+//     userObj.timeStamp = moment().valueOf();
+//     userObj.stats.elapsed = statsObj.elapsed;
+
+//     statsObjSmall = pick(statsObj, statsPickArray);
+
+//     debug(chalkInfo("TX KEEPALIVE"
+//       + " | " + userObj.userId
+//       + " | " + moment().format(compactDateTimeFormat)
+//     ));
+
+//     socket.emit(
+//       "SESSION_KEEPALIVE", 
+//       {
+//         user: userObj, 
+//         stats: statsObjSmall,
+//         status: statsObj.status
+//       }
+//     );
+
+//     callback(null);
+//   }
+//   else {
+//     console.log(chalkError("!!!! CANNOT TX KEEPALIVE"
+//       + " | " + userObj.userId
+//       + " | CONNECTED: " + statsObj.serverConnected
+//       + " | READY ACK: " + statsObj.userAuthenticated
+//       + " | " + moment().format(compactDateTimeFormat)
+//     ));
+//     callback("ERROR");
+//   }
+// }
+
+// function initKeepalive(interval) {
+
+//   clearInterval(socketKeepAliveInterval);
+
+//   console.log(chalkConnect("START KEEPALIVE"
+//     + " | " + getTimeStamp()
+//     + " | READY ACK: " + statsObj.userAuthenticated
+//     + " | SERVER CONNECTED: " + statsObj.serverConnected
+//     + " | INTERVAL: " + interval + " ms"
+//   ));
+
+//   sendKeepAlive(function(err) {
+//     if (err) {
+//       console.log(chalkError("KEEPALIVE ERROR: " + err));
+//     }
+//     else {
+//       debug(chalkConnect("KEEPALIVE"
+//         + " | " + moment().format(compactDateTimeFormat)
+//       ));
+//     }
+//   });
+
+//   socketKeepAliveInterval = setInterval(function() { // TX KEEPALIVE
+
+//     // updateStatsObjSmall();
 
-    sendKeepAlive(function(err) {
-      if (err) {
-        console.log(chalkError("KEEPALIVE ERROR: " + err));
-      }
-      else {
-        debug(chalkConnect("KEEPALIVE"
-          + " | " + moment().format(compactDateTimeFormat)
-        ));
-      }
-    });
-
-  }, interval);
-}
-
-let userReadyInterval;
-
-function initUserReadyInterval(interval) {
-
-  console.log(chalkInfo("INIT USER READY INTERVAL"));
-
-  clearInterval(userReadyInterval);
-
-  userReadyInterval = setInterval(function() {
+//     sendKeepAlive(function(err) {
+//       if (err) {
+//         console.log(chalkError("KEEPALIVE ERROR: " + err));
+//       }
+//       else {
+//         debug(chalkConnect("KEEPALIVE"
+//           + " | " + moment().format(compactDateTimeFormat)
+//         ));
+//       }
+//     });
+
+//   }, interval);
+// }
+
+// let userReadyInterval;
+
+// function initUserReadyInterval(interval) {
+
+//   console.log(chalkInfo("INIT USER READY INTERVAL"));
+
+//   clearInterval(userReadyInterval);
+
+//   userReadyInterval = setInterval(function() {
 
-    if (statsObj.serverConnected && !statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
+//     if (statsObj.serverConnected && !statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
 
-      statsObj.userReadyTransmitted = moment().valueOf();
-      userObj.timeStamp = moment().valueOf();
+//       statsObj.userReadyTransmitted = moment().valueOf();
+//       userObj.timeStamp = moment().valueOf();
 
-      socket.emit("USER_READY", {userId: userObj.userId, timeStamp: moment().valueOf()});
-    }
-    else if (statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
+//       socket.emit("USER_READY", {userId: userObj.userId, timeStamp: moment().valueOf()});
+//     }
+//     else if (statsObj.userReadyTransmitted && !statsObj.userReadyAck) {
 
-      statsObj.userReadyTransmittedElapsed = moment().valueOf() - statsObj.userReadyTransmitted;
-
-      if (statsObj.userReadyTransmittedElapsed > USER_READY_ACK_TIMEOUT) {
+//       statsObj.userReadyTransmittedElapsed = moment().valueOf() - statsObj.userReadyTransmitted;
+
+//       if (statsObj.userReadyTransmittedElapsed > USER_READY_ACK_TIMEOUT) {
 
-        console.log(chalkAlert("USER_READY_ACK_TIMEOUT | RETRANSMIT USER_READY"
-          + " | NOW: " + moment().format(compactDateTimeFormat) 
-          + " | TXD: " + moment(statsObj.userReadyTransmitted).format(compactDateTimeFormat) 
-          + " | AGO: " + msToTime(moment().valueOf() - statsObj.userReadyTransmitted)
-          + " | TIMEOUT: " + msToTime(USER_READY_ACK_TIMEOUT)
-        ));
+//         console.log(chalkAlert("USER_READY_ACK_TIMEOUT | RETRANSMIT USER_READY"
+//           + " | NOW: " + moment().format(compactDateTimeFormat) 
+//           + " | TXD: " + moment(statsObj.userReadyTransmitted).format(compactDateTimeFormat) 
+//           + " | AGO: " + msToTime(moment().valueOf() - statsObj.userReadyTransmitted)
+//           + " | TIMEOUT: " + msToTime(USER_READY_ACK_TIMEOUT)
+//         ));
 
-        statsObj.userReadyTransmitted = moment().valueOf();
-        userObj.timeStamp = moment().valueOf();
+//         statsObj.userReadyTransmitted = moment().valueOf();
+//         userObj.timeStamp = moment().valueOf();
 
-        socket.emit("USER_READY", {userId: userObj.userId, timeStamp: moment().valueOf()});
-      }
-      else {
-        console.log(chalkAlert("WAITING FOR USER_READY_ACK ..."
-          + " | NOW: " + moment().format(compactDateTimeFormat) 
-          + " | TXD: " + moment(statsObj.userReadyTransmitted).format(compactDateTimeFormat) 
-          + " | AGO: " + msToTime(moment().valueOf() - statsObj.userReadyTransmitted)
-          + " | TIMEOUT: " + msToTime(USER_READY_ACK_TIMEOUT)
-        ));
-      }
+//         socket.emit("USER_READY", {userId: userObj.userId, timeStamp: moment().valueOf()});
+//       }
+//       else {
+//         console.log(chalkAlert("WAITING FOR USER_READY_ACK ..."
+//           + " | NOW: " + moment().format(compactDateTimeFormat) 
+//           + " | TXD: " + moment(statsObj.userReadyTransmitted).format(compactDateTimeFormat) 
+//           + " | AGO: " + msToTime(moment().valueOf() - statsObj.userReadyTransmitted)
+//           + " | TIMEOUT: " + msToTime(USER_READY_ACK_TIMEOUT)
+//         ));
+//       }
 
-    }
-  }, interval);
-}
+//     }
+//   }, interval);
+// }
 
-function initSocket(cnf) {
-  if (OFFLINE_MODE) {
-    console.log(chalkError("*** OFFLINE MODE *** "));
-    return;
-  }
+// function initSocket(cnf) {
+//   if (OFFLINE_MODE) {
+//     console.log(chalkError("*** OFFLINE MODE *** "));
+//     return;
+//   }
 
-  console.log(chalkLog("INIT SOCKET"
-    + " | " + cnf.targetServer
-    + " | " + jsonPrint(userObj)
-  ));
+//   console.log(chalkLog("INIT SOCKET"
+//     + " | " + cnf.targetServer
+//     + " | " + jsonPrint(userObj)
+//   ));
 
-  socket = require("socket.io-client")(cnf.targetServer, { reconnection: true });
+//   socket = require("socket.io-client")(cnf.targetServer, { reconnection: true });
 
-  socket.on("connect", function() {
+//   socket.on("connect", function() {
 
-    statsObj.socketId = socket.id ;
-    statsObj.serverConnected = true ;
+//     statsObj.socketId = socket.id ;
+//     statsObj.serverConnected = true ;
 
-    console.log(chalkConnect("SOCKET CONNECT | " + socket.id + " ... AUTHENTICATE ..."));
-
-    socket.emit("authentication", { namespace: "util", userId: userObj.userId, password: "0123456789" });
-  });
+//     console.log(chalkConnect("SOCKET CONNECT | " + socket.id + " ... AUTHENTICATE ..."));
+
+//     socket.emit("authentication", { namespace: "util", userId: userObj.userId, password: "0123456789" });
+//   });
 
-  socket.on("unauthorized", function(err) {
-    console.log(chalkError("*** AUTHENTICATION ERROR: ", err.message));
-    statsObj.userAuthenticated = false ;
-  });
+//   socket.on("unauthorized", function(err) {
+//     console.log(chalkError("*** AUTHENTICATION ERROR: ", err.message));
+//     statsObj.userAuthenticated = false ;
+//   });
 
-  socket.on("authenticated", function() {
+//   socket.on("authenticated", function() {
 
-    statsObj.serverConnected = true ;
+//     statsObj.serverConnected = true ;
 
-    console.log("AUTHENTICATED | " + socket.id);
+//     console.log("AUTHENTICATED | " + socket.id);
 
-    statsObj.socketId = socket.id;
+//     statsObj.socketId = socket.id;
 
-    console.log(chalkConnect( "CONNECTED TO HOST"
-      + " | SERVER: " + cnf.targetServer
-      + " | ID: " + socket.id
-    ));
+//     console.log(chalkConnect( "CONNECTED TO HOST"
+//       + " | SERVER: " + cnf.targetServer
+//       + " | ID: " + socket.id
+//     ));
 
-    userObj.timeStamp = moment().valueOf();
+//     userObj.timeStamp = moment().valueOf();
 
-    console.log(chalkInfo(socket.id
-      + " | TX USER_READY"
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + userObj.userId
-      + " | " + userObj.url
-      + " | " + userObj.screenName
-      + " | " + userObj.type
-      // + " | " + userObj.mode
-      + "\nTAGS\n" + jsonPrint(userObj.tags)
-    ));
-
-    statsObj.userAuthenticated = true ;
-
-    initKeepalive(cnf.keepaliveInterval);
+//     console.log(chalkInfo(socket.id
+//       + " | TX USER_READY"
+//       + " | " + moment().format(compactDateTimeFormat)
+//       + " | " + userObj.userId
+//       + " | " + userObj.url
+//       + " | " + userObj.screenName
+//       + " | " + userObj.type
+//       // + " | " + userObj.mode
+//       + "\nTAGS\n" + jsonPrint(userObj.tags)
+//     ));
+
+//     statsObj.userAuthenticated = true ;
+
+//     initKeepalive(cnf.keepaliveInterval);
 
-    initUserReadyInterval(5000);
-  });
-
-  socket.on("disconnect", function(reason) {
+//     initUserReadyInterval(5000);
+//   });
+
+//   socket.on("disconnect", function(reason) {
 
-    statsObj.userAuthenticated = false ;
-    statsObj.serverConnected = false;
-    statsObj.userReadyTransmitted = false;
-    statsObj.userReadyAck = false ;
-
-    console.log(chalkAlert(moment().format(compactDateTimeFormat)
-      + " | SOCKET DISCONNECT: " + statsObj.socketId
-      + " | REASON: " + reason
-    ));
-  });
-
-  socket.on("reconnect", function(reason) {
-
-    statsObj.serverConnected = true;
-
-    console.log(chalkInfo("RECONNECT"
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + socket.id
-      + " | REASON: " + reason
-    ));
-  });
-
-  socket.on("USER_READY_ACK", function(userObj) {
-
-    statsObj.userReadyAck = true ;
-    statsObj.serverConnected = true;
-
-    console.log(chalkBlue("RX USER_READY_ACK MESSAGE"
-      + " | " + socket.id
-      + " | USER ID: " + userObj.userId
-      + " | " + moment().format(compactDateTimeFormat)
-    ));
-  });
-
-  socket.on("FOLLOW", function(u) {
-
-    if (!u || (u === undefined)) {
-      console.log(chalkAlert("TFE | >RX FOLLOW ERROR"
-        + " | " + socket.id
-        + " | USER UNDEFINED"
-        + " | " + moment().format(compactDateTimeFormat)
-      ));
-      return;
-    }
-
-    statsObj.serverConnected = true;
-
-    console.log(chalkInfo("TFE | >RX FOLLOW"
-      + " | " + socket.id
-      + " | UID: " + u.userId
-      + " | @" + u.screenName
-      + " | " + moment().format(compactDateTimeFormat)
-    ));
-
-    // tfeChildHashMap.altthreecee03.child.send({op: "FOLLOW", user:u});
-    tfeChildHashMap[configuration.threeceeAutoFollowUser].child.send({op: "FOLLOW", user:u});
-  });  
-
-  socket.on("UNFOLLOW", function(u) {
-
-    if (!u || (u === undefined)) { return; }
-
-    statsObj.serverConnected = true;
-
-    console.log(chalkInfo("TFE | >RX UNFOLLOW"
-      + " | " + socket.id
-      + " | UID: " + u.userId
-      + " | @" + u.screenName
-      + " | " + moment().format(compactDateTimeFormat)
-    ));
-
-    twitterUserHashMap.altthreecee00.friends.delete(u.nodeId);
-    // twitterUserHashMap.altthreecee01.friends.delete(u.nodeId);
-    // twitterUserHashMap.altthreecee03.friends.delete(u.nodeId);
-
-    tfeChildHashMap.altthreecee00.child.send({op: "UNFOLLOW", user: u });
-    // tfeChildHashMap.altthreecee01.child.send({op: "UNFOLLOW", user: u });
-    // tfeChildHashMap.altthreecee03.child.send({op: "UNFOLLOW", user: u });
-
-    unfollowableUserSet.add(u.nodeId);
-    console.log(chalk.bold.black("UNFOLLOWABLE USERS | " + unfollowableUserSet.size + " USERS"));
-  });  
-
-  socket.on("error", function(error) {
-    console.log(chalkError(moment().format(compactDateTimeFormat)
-      + " | *** SOCKET ERROR"
-      + " | " + socket.id
-      + " | " + error
-    ));
-  });
-
-  socket.on("connect_error", function(err) {
-
-    statsObj.userAuthenticated = false ;
-    statsObj.serverConnected = false ;
-    statsObj.userReadyTransmitted = false;
-    statsObj.userReadyAck = false ;
-
-    console.log(chalkError("*** CONNECT ERROR "
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + err.type
-      + " | " + err.description
-    ));
-  });
-
-  socket.on("reconnect_error", function(err) {
-
-    statsObj.userAuthenticated = false ;
-    statsObj.serverConnected = false ;
-    statsObj.userReadyTransmitted = false;
-    statsObj.userReadyAck = false ;
-
-    console.log(chalkError("*** RECONNECT ERROR "
-      + " | " + moment().format(compactDateTimeFormat)
-      + " | " + err.type
-      + " | " + err.description
-    ));
-  });
-
-  socket.on("SESSION_ABORT", function(sessionId) {
-    console.log(chalkAlert("@@@@@ RX SESSION_ABORT | " + sessionId));
-    if (sessionId === statsObj.socketId) {
-      console.log(chalkAlert("***** RX SESSION_ABORT HIT | " + sessionId));
-      socket.disconnect();
-      statsObj.userAuthenticated = false ;
-      statsObj.serverConnected = false;
-    }
-  });
-
-  socket.on("SESSION_EXPIRED", function(sessionId) {
-    console.log(chalkAlert("RX SESSION_EXPIRED | " + sessionId));
-    if (sessionId === statsObj.socketId) {
-      console.log(chalkAlert("***** RX SESSION_EXPIRED HIT | " + sessionId));
-      socket.disconnect();
-      statsObj.userAuthenticated = false ;
-      statsObj.serverConnected = false;
-    }
-  });
-
-  socket.on("DROPBOX_CHANGE", function(response) {
-
-    response.entries.forEach(function(entry) {
-
-      if (configuration.verbose) {
-        console.log(chalkInfo(">R DROPBOX_CHANGE"
-          + " | " + entry[".tag"].toUpperCase()
-          + " | " + entry.path_lower
-          + " | NAME: " + entry.name
-        ));
-      }
-
-      const entryNameArray = entry.name.split(".");
-
-      if ((entryNameArray[1] !== "json")) {
-        debug(chalkAlert("SKIP: " + entry.path_lower));
-        return;
-      }
-
-      if (entry.name !== bestRuntimeNetworkFileName) {
-
-        loadFile(bestNetworkFolder, entry.name, function(err, networkObj) {
-
-          if (err) {
-            console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR"
-              + " | " + bestNetworkFolder + "/" + entry.name
-              + " | " + err
-            ));
-            return;
-          }
-
-          if (networkObj.successRate === undefined) { networkObj.successRate = 0; }
-          if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
-          if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
-          if (networkObj.testCycles === undefined) { networkObj.testCycles = 0; }
-          if (networkObj.testCycleHistory === undefined) { networkObj.testCycleHistory = []; }
-          if (networkObj.numInputs === undefined) { networkObj.numInputs = networkObj.network.input; }
-
-
-          console.log(chalkInfo("+0+ UPDATED NN"
-            + " SR: " + networkObj.successRate.toFixed(2) + "%"
-            + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
-            + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-            + " | TC: " + networkObj.testCycles
-            + " | TCH: " + networkObj.testCycleHistory.length
-            + " | CR: " + getTimeStamp(networkObj.createdAt)
-            + " | IN: " + networkObj.numInputs
-            + " | " + networkObj.networkId
-          ));
-
-          const bnhmObj = {
-            entry: entry,
-            networkObj: networkObj
-          };
-
-          bestNetworkHashMap.set(networkObj.networkId, bnhmObj);
-
-          if (!currentBestNetwork
-            || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)) {
-
-            currentBestNetwork = networkObj;
-            prevBestNetworkId = bestRuntimeNetworkId;
-            bestRuntimeNetworkId = networkObj.networkId;
-
-            updateBestNetworkStats(bnhmObj.networkObj);
-
-            printNetworkObj("BEST NETWORK", currentBestNetwork);
-
-            if (hostname === "google") {
-              const fileObj = {
-                networkId: bestRuntimeNetworkId,
-                successRate: networkObj.successRate,
-                matchRate:  networkObj.matchRate,
-                overallMatchRate:  networkObj.overallMatchRate,
-                testCycles:  networkObj.testCycles,
-                testCycleHistory:  networkObj.testCycleHistory
-              };
-              saveCache.set(
-                bestRuntimeNetworkFileName,
-                { folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj }
-              );
-            }
-          }
-        });
-      }
-
-      if (entry.name === unfollowableUserFile) {
-        initUnfollowableUserSet();
-      }
-
-      // const dropboxConfigDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE;
-      // const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE;
-
-      if ((entry.name === dropboxConfigDefaultFile) || (entry.name === dropboxConfigHostFile)) {
-
-        console.log(chalkAlert(">R DROPBOX_CHANGE | CONFIG FILE | " + entry.name));
-
-        loadAllConfigFiles(function(err){
-
-          loadCommandLineArgs(function(err, results){
+//     statsObj.userAuthenticated = false ;
+//     statsObj.serverConnected = false;
+//     statsObj.userReadyTransmitted = false;
+//     statsObj.userReadyAck = false ;
+
+//     console.log(chalkAlert(moment().format(compactDateTimeFormat)
+//       + " | SOCKET DISCONNECT: " + statsObj.socketId
+//       + " | REASON: " + reason
+//     ));
+//   });
+
+//   socket.on("reconnect", function(reason) {
+
+//     statsObj.serverConnected = true;
+
+//     console.log(chalkInfo("RECONNECT"
+//       + " | " + moment().format(compactDateTimeFormat)
+//       + " | " + socket.id
+//       + " | REASON: " + reason
+//     ));
+//   });
+
+//   socket.on("USER_READY_ACK", function(userObj) {
+
+//     statsObj.userReadyAck = true ;
+//     statsObj.serverConnected = true;
+
+//     console.log(chalkBlue("RX USER_READY_ACK MESSAGE"
+//       + " | " + socket.id
+//       + " | USER ID: " + userObj.userId
+//       + " | " + moment().format(compactDateTimeFormat)
+//     ));
+//   });
+
+//   socket.on("FOLLOW", function(u) {
+
+//     if (!u || (u === undefined)) {
+//       console.log(chalkAlert("TFE | >RX FOLLOW ERROR"
+//         + " | " + socket.id
+//         + " | USER UNDEFINED"
+//         + " | " + moment().format(compactDateTimeFormat)
+//       ));
+//       return;
+//     }
+
+//     statsObj.serverConnected = true;
+
+//     console.log(chalkInfo("TFE | >RX FOLLOW"
+//       + " | " + socket.id
+//       + " | UID: " + u.userId
+//       + " | @" + u.screenName
+//       + " | " + moment().format(compactDateTimeFormat)
+//     ));
+
+//     // tfeChildHashMap.altthreecee03.child.send({op: "FOLLOW", user:u});
+//     tfeChildHashMap[configuration.threeceeAutoFollowUser].child.send({op: "FOLLOW", user:u});
+//   });  
+
+//   socket.on("UNFOLLOW", function(u) {
+
+//     if (!u || (u === undefined)) { return; }
+
+//     statsObj.serverConnected = true;
+
+//     console.log(chalkInfo("TFE | >RX UNFOLLOW"
+//       + " | " + socket.id
+//       + " | UID: " + u.userId
+//       + " | @" + u.screenName
+//       + " | " + moment().format(compactDateTimeFormat)
+//     ));
+
+//     twitterUserHashMap.altthreecee00.friends.delete(u.nodeId);
+//     // twitterUserHashMap.altthreecee01.friends.delete(u.nodeId);
+//     // twitterUserHashMap.altthreecee03.friends.delete(u.nodeId);
+
+//     tfeChildHashMap.altthreecee00.child.send({op: "UNFOLLOW", user: u });
+//     // tfeChildHashMap.altthreecee01.child.send({op: "UNFOLLOW", user: u });
+//     // tfeChildHashMap.altthreecee03.child.send({op: "UNFOLLOW", user: u });
+
+//     unfollowableUserSet.add(u.nodeId);
+//     console.log(chalk.bold.black("UNFOLLOWABLE USERS | " + unfollowableUserSet.size + " USERS"));
+//   });  
+
+//   socket.on("error", function(error) {
+//     console.log(chalkError(moment().format(compactDateTimeFormat)
+//       + " | *** SOCKET ERROR"
+//       + " | " + socket.id
+//       + " | " + error
+//     ));
+//   });
+
+//   socket.on("connect_error", function(err) {
+
+//     statsObj.userAuthenticated = false ;
+//     statsObj.serverConnected = false ;
+//     statsObj.userReadyTransmitted = false;
+//     statsObj.userReadyAck = false ;
+
+//     console.log(chalkError("*** CONNECT ERROR "
+//       + " | " + moment().format(compactDateTimeFormat)
+//       + " | " + err.type
+//       + " | " + err.description
+//     ));
+//   });
+
+//   socket.on("reconnect_error", function(err) {
+
+//     statsObj.userAuthenticated = false ;
+//     statsObj.serverConnected = false ;
+//     statsObj.userReadyTransmitted = false;
+//     statsObj.userReadyAck = false ;
+
+//     console.log(chalkError("*** RECONNECT ERROR "
+//       + " | " + moment().format(compactDateTimeFormat)
+//       + " | " + err.type
+//       + " | " + err.description
+//     ));
+//   });
+
+//   socket.on("SESSION_ABORT", function(sessionId) {
+//     console.log(chalkAlert("@@@@@ RX SESSION_ABORT | " + sessionId));
+//     if (sessionId === statsObj.socketId) {
+//       console.log(chalkAlert("***** RX SESSION_ABORT HIT | " + sessionId));
+//       socket.disconnect();
+//       statsObj.userAuthenticated = false ;
+//       statsObj.serverConnected = false;
+//     }
+//   });
+
+//   socket.on("SESSION_EXPIRED", function(sessionId) {
+//     console.log(chalkAlert("RX SESSION_EXPIRED | " + sessionId));
+//     if (sessionId === statsObj.socketId) {
+//       console.log(chalkAlert("***** RX SESSION_EXPIRED HIT | " + sessionId));
+//       socket.disconnect();
+//       statsObj.userAuthenticated = false ;
+//       statsObj.serverConnected = false;
+//     }
+//   });
+
+//   socket.on("DROPBOX_CHANGE", function(response) {
+
+//     response.entries.forEach(function(entry) {
+
+//       if (configuration.verbose) {
+//         console.log(chalkInfo(">R DROPBOX_CHANGE"
+//           + " | " + entry[".tag"].toUpperCase()
+//           + " | " + entry.path_lower
+//           + " | NAME: " + entry.name
+//         ));
+//       }
+
+//       const entryNameArray = entry.name.split(".");
+
+//       if ((entryNameArray[1] !== "json")) {
+//         debug(chalkAlert("SKIP: " + entry.path_lower));
+//         return;
+//       }
+
+//       if (entry.name !== bestRuntimeNetworkFileName) {
+
+//         loadFile(bestNetworkFolder, entry.name, function(err, networkObj) {
+
+//           if (err) {
+//             console.log(chalkError("DROPBOX NETWORK LOAD FILE ERROR"
+//               + " | " + bestNetworkFolder + "/" + entry.name
+//               + " | " + err
+//             ));
+//             return;
+//           }
+
+//           if (networkObj.successRate === undefined) { networkObj.successRate = 0; }
+//           if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
+//           if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
+//           if (networkObj.testCycles === undefined) { networkObj.testCycles = 0; }
+//           if (networkObj.testCycleHistory === undefined) { networkObj.testCycleHistory = []; }
+//           if (networkObj.numInputs === undefined) { networkObj.numInputs = networkObj.network.input; }
+
+
+//           console.log(chalkInfo("+0+ UPDATED NN"
+//             + " SR: " + networkObj.successRate.toFixed(2) + "%"
+//             + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
+//             + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+//             + " | TC: " + networkObj.testCycles
+//             + " | TCH: " + networkObj.testCycleHistory.length
+//             + " | CR: " + getTimeStamp(networkObj.createdAt)
+//             + " | IN: " + networkObj.numInputs
+//             + " | " + networkObj.networkId
+//           ));
+
+//           const bnhmObj = {
+//             entry: entry,
+//             networkObj: networkObj
+//           };
+
+//           bestNetworkHashMap.set(networkObj.networkId, bnhmObj);
+
+//           if (!currentBestNetwork
+//             || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)) {
+
+//             currentBestNetwork = networkObj;
+//             prevBestNetworkId = bestRuntimeNetworkId;
+//             bestRuntimeNetworkId = networkObj.networkId;
+
+//             updateBestNetworkStats(bnhmObj.networkObj);
+
+//             printNetworkObj("BEST NETWORK", currentBestNetwork);
+
+//             if (hostname === "google") {
+//               const fileObj = {
+//                 networkId: bestRuntimeNetworkId,
+//                 successRate: networkObj.successRate,
+//                 matchRate:  networkObj.matchRate,
+//                 overallMatchRate:  networkObj.overallMatchRate,
+//                 testCycles:  networkObj.testCycles,
+//                 testCycleHistory:  networkObj.testCycleHistory
+//               };
+//               saveCache.set(
+//                 bestRuntimeNetworkFileName,
+//                 { folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj }
+//               );
+//             }
+//           }
+//         });
+//       }
+
+//       if (entry.name === unfollowableUserFile) {
+//         initUnfollowableUserSet();
+//       }
+
+//       // const dropboxConfigDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE;
+//       // const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE;
+
+//       if ((entry.name === dropboxConfigDefaultFile) || (entry.name === dropboxConfigHostFile)) {
+
+//         console.log(chalkAlert(">R DROPBOX_CHANGE | CONFIG FILE | " + entry.name));
+
+//         loadAllConfigFiles(function(err){
+
+//           loadCommandLineArgs(function(err, results){
           
-            const configArgs = Object.keys(configuration);
+//             const configArgs = Object.keys(configuration);
 
-            configArgs.forEach(function(arg){
-              if (_.isObject(configuration[arg])) {
-                console.log("TFE | _FINAL CONFIG | " + arg + "\n" + jsonPrint(configuration[arg]));
-              }
-              else {
-                console.log("TFE | _FINAL CONFIG | " + arg + ": " + configuration[arg]);
-              }
-            });
+//             configArgs.forEach(function(arg){
+//               if (_.isObject(configuration[arg])) {
+//                 console.log("TFE | _FINAL CONFIG | " + arg + "\n" + jsonPrint(configuration[arg]));
+//               }
+//               else {
+//                 console.log("TFE | _FINAL CONFIG | " + arg + ": " + configuration[arg]);
+//               }
+//             });
 
-          });
+//           });
 
-        });
-      }
+//         });
+//       }
 
-    });
-  });
+//     });
+//   });
 
-  socket.on("HEARTBEAT", function() {
-    statsObj.serverConnected = true;
-    statsObj.heartbeatsReceived += 1;
-  });
+//   socket.on("HEARTBEAT", function() {
+//     statsObj.serverConnected = true;
+//     statsObj.heartbeatsReceived += 1;
+//   });
 
-  socket.on("KEEPALIVE_ACK", function(userId) {
-    statsObj.serverConnected = true;
-    debug(chalkLog("RX KEEPALIVE_ACK | " + userId));
-  });
-}
+//   socket.on("KEEPALIVE_ACK", function(userId) {
+//     statsObj.serverConnected = true;
+//     debug(chalkLog("RX KEEPALIVE_ACK | " + userId));
+//   });
+// }
 
 function initStatsUpdate(callback) {
 
@@ -5996,7 +5996,7 @@ initConfig(configuration, function(err, cnf) {
         }
         neuralNetworkInitialized = true;
         fsm.fsm_resetEnd();
-        initSocket(configuration);
+        // initSocket(configuration);
 
       });
 
