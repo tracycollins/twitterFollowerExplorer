@@ -6,7 +6,7 @@ let start = process.hrtime();
 let elapsed_time = function(note){
     const precision = 3; // 3 decimal places
     const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
-    console.log(process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
+    console.log("RNT | " + process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
     start = process.hrtime(); // reset the timer
 };
 
@@ -113,12 +113,12 @@ function msToTime(duration) {
 }
 
 process.title = "node_randomNetworkTree";
-console.log("\n\n=================================");
-console.log("HOST:          " + hostname);
-console.log("PROCESS TITLE: " + process.title);
-console.log("PROCESS ID:    " + process.pid);
-console.log("PROCESS ARGS:  " + util.inspect(process.argv, {showHidden: false, depth: 1}));
-console.log("=================================");
+console.log("\n\nRNT | =================================");
+console.log("RNT | HOST:          " + hostname);
+console.log("RNT | PROCESS TITLE: " + process.title);
+console.log("RNT | PROCESS ID:    " + process.pid);
+console.log("RNT | PROCESS ARGS:  " + util.inspect(process.argv, {showHidden: false, depth: 1}));
+console.log("RNT | =================================");
 
 let initializeBusy = false;
 
@@ -177,10 +177,10 @@ function showStats(options){
   statsObj.maxHeap = Math.max(statsObj.maxHeap, statsObj.heap);
 
   if (options) {
-    console.log("= NT STATS\n" + jsonPrint(statsObj));
+    console.log("RNT | = NT STATS\n" + jsonPrint(statsObj));
   }
   else {
-    console.log(chalk.gray("== * == RNT S"
+    console.log(chalk.gray("RNT | == * == S"
       + " | E: " + statsObj.elapsed
       + " | S: " + moment(parseInt(statsObj.startTime)).format(compactDateTimeFormat)
     ));
@@ -195,7 +195,7 @@ function quit(message) {
     exitCode = 1;
   }
   showStats(false);
-  console.log(process.argv[1]
+  console.log("RNT | " + process.argv[1]
     + " | RANDOM NETWORK TREE: **** QUITTING"
     + " | CAUSE: " + msg
     + " | PID: " + process.pid
@@ -211,7 +211,7 @@ function quit(message) {
 function indexOfMax (arr, callback) {
 
   if (arr.length === 0) {
-    console.log(chalkAlert("indexOfMax: 0 LENG ARRAY: -1"));
+    console.log(chalkAlert("RNT | indexOfMax: 0 LENG ARRAY: -1"));
     return callback(-1);
   }
   if ((arr[0] === arr[1]) && (arr[1] === arr[2])){
@@ -259,7 +259,7 @@ const sortedObjectValues = function(params) {
 
     }
     else {
-      console.log("sortedObjectValues ERROR | params\n" + jsonPrint(params));
+      console.log("RNT | sortedObjectValues ERROR | params\n" + jsonPrint(params));
       reject(new Error("ERROR"));
     }
 
@@ -374,7 +374,7 @@ function activateNetwork2(user, callback){
     networkOutput[nnId].negative = statsObj.loadedNetworks[nnId].negative;
 
     if (networkObj.inputsObj.inputs === undefined) {
-      console.log(chalkError("UNDEFINED NETWORK INPUTS OBJ | NETWORK OBJ KEYS: " + Object.keys(networkObj)));
+      console.log(chalkError("RNT | UNDEFINED NETWORK INPUTS OBJ | NETWORK OBJ KEYS: " + Object.keys(networkObj)));
     }
 
     const params = {
@@ -391,7 +391,7 @@ function activateNetwork2(user, callback){
       const output = networkObj.network.activate(networkInput);
 
       if (output.length !== 3) {
-        console.log(chalkError("*** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
+        console.log(chalkError("RNT | *** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
         return(cb("ZERO LENGTH NETWORK OUTPUT", networkOutput));
       }
 
@@ -565,7 +565,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
     .then(function(sortedNetworkResults){
 
       if (!sortedNetworkResults) { 
-        console.log(chalkAlert("NO sortedNetworkResults??"));
+        console.log(chalkAlert("RNT | NO sortedNetworkResults??"));
         callback("NO RESULTS", {});
         quit();
       }
@@ -594,18 +594,18 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
       if (previousBestNetworkId !== currentBestNetworkId) {
 
-        console.log(chalk.bold.blue("\n==================================================================\n"
-          + "*** NEW BEST NETWORK ***"
-          + "\nNETWORK ID:   " + statsObj.bestNetwork.networkId
-          + "\nINPUTS ID:    " + statsObj.bestNetwork.inputsId
-          + "\nINPUTS:       " + statsObj.bestNetwork.numInputs
-          + "\nSR:           " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
-          + "\nMR:           " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-          + "\nOAMR:         " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
-          + "\nTCs:          " + statsObj.bestNetwork.testCycles
-          + "\nTCH:          " + statsObj.bestNetwork.testCycleHistory.length
-          + "\nPREV BEST:    " + previousBestNetworkMatchRate.toFixed(2) + "%" + " | ID: " + previousBestNetworkId
-          + "\n==================================================================\n"
+        console.log(chalk.bold.blue("\nRNT | ==================================================================\n"
+          + "RNT | *** NEW BEST NETWORK ***"
+          + "\nRNT | NETWORK ID:   " + statsObj.bestNetwork.networkId
+          + "\nRNT | INPUTS ID:    " + statsObj.bestNetwork.inputsId
+          + "\nRNT | INPUTS:       " + statsObj.bestNetwork.numInputs
+          + "\nRNT | SR:           " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
+          + "\nRNT | MR:           " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+          + "\nRNT | OAMR:         " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
+          + "\nRNT | TCs:          " + statsObj.bestNetwork.testCycles
+          + "\nRNT | TCH:          " + statsObj.bestNetwork.testCycleHistory.length
+          + "\nRNT | PREV BEST:    " + previousBestNetworkMatchRate.toFixed(2) + "%" + " | ID: " + previousBestNetworkId
+          + "\nRNT | ==================================================================\n"
         ));
 
         async.eachOf(sortedNetworkResults.sortedKeys, function genStatsTextArray(nnId, index, cb0){
@@ -637,11 +637,11 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
           ]);
 
           console.log(chalk.blue(
-              "\n-------------------------------------------------------------------------------------------------------------------------------------------------"
-            + "\n" + title 
-            + "\n-------------------------------------------------------------------------------------------------------------------------------------------------\n"
+              "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
+            + "\nRNT | " + title 
+            + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------\n"
             + table(statsTextArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
-            + "\n-------------------------------------------------------------------------------------------------------------------------------------------------"
+            + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
           ));
 
         });
@@ -673,22 +673,22 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
         switch (maxOutputIndex) {
           case 0:
-            if (enableLog) { console.log(chalk.blue("NAKW | L | " + bestNetworkOutput + " | " + maxOutputIndex)); }
+            if (enableLog) { console.log(chalk.blue("RNT | NAKW | L | " + bestNetworkOutput + " | " + maxOutputIndex)); }
             results.bestNetwork.left = 100;
             results.categoryAuto = "left";
           break;
           case 1:
-            if (enableLog) { console.log(chalk.black("NAKW | N | " + bestNetworkOutput + " | " + maxOutputIndex)); }
+            if (enableLog) { console.log(chalk.black("RNT | NAKW | N | " + bestNetworkOutput + " | " + maxOutputIndex)); }
             results.bestNetwork.neutral = 100;
             results.categoryAuto = "neutral";
           break;
           case 2:
-            if (enableLog) { console.log(chalk.red("NAKW | R | " + bestNetworkOutput + " | " + maxOutputIndex)); }
+            if (enableLog) { console.log(chalk.red("RNT | NAKW | R | " + bestNetworkOutput + " | " + maxOutputIndex)); }
             results.bestNetwork.right = 100;
             results.categoryAuto = "right";
           break;
           default:
-            if (enableLog) { console.log(chalk.gray("NAKW | 0 | " + bestNetworkOutput + " | " + maxOutputIndex)); }
+            if (enableLog) { console.log(chalk.gray("RNT | NAKW | 0 | " + bestNetworkOutput + " | " + maxOutputIndex)); }
             results.bestNetwork.none = 100;
             results.categoryAuto = "none";
         }
@@ -700,7 +700,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
     })
     .catch(function(err){
-      console.trace(chalkError("SORTER ERROR: " + err));
+      console.trace(chalkError("RNT | *** SORTER ERROR: " + err));
       generateNetworksOutputBusy = false;
       quit(err);
       callback(err, {});
@@ -762,7 +762,7 @@ function initActivateNetworkInterval(interval){
 
   clearInterval(activateNetworkInterval);
 
-  console.log(chalkConnect("START NETWORK ACTIVATE INTERVAL"
+  console.log(chalkConnect("RNT | START NETWORK ACTIVATE INTERVAL"
     + " | INTERVAL: " + interval + " ms"
   ));
 
@@ -781,7 +781,7 @@ function initActivateNetworkInterval(interval){
       if (maxQueueFlag && (rxActivateNetworkQueue.length < MAX_Q_SIZE)) {
         process.send({op: "QUEUE_READY", queue: rxActivateNetworkQueue.length}, function(err){
           if (err) { 
-            console.trace(chalkError("SEND ERROR | QUEUE_READY | " + err));
+            console.trace(chalkError("RNT | SEND ERROR | QUEUE_READY | " + err));
             quit("SEND QUEUE_READY ERROR");
           }
         });
@@ -790,7 +790,7 @@ function initActivateNetworkInterval(interval){
       else if (rxActivateNetworkQueue.length === 0){
         process.send({op: "QUEUE_EMPTY", queue: rxActivateNetworkQueue.length}, function(err){
           if (err) { 
-            console.trace(chalkError("SEND ERROR | QUEUE_EMPTY | " + err));
+            console.trace(chalkError("RNT | SEND ERROR | QUEUE_EMPTY | " + err));
             quit("SEND QUEUE_EMPTY ERROR");
           }
         });
@@ -800,7 +800,7 @@ function initActivateNetworkInterval(interval){
       if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
         process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
           if (err) { 
-            console.trace(chalkError("SEND ERROR | QUEUE_FULL | " + err));
+            console.trace(chalkError("RNT | SEND ERROR | QUEUE_FULL | " + err));
             quit("SEND QUEUE_FULL ERROR");
           }
         });
@@ -810,7 +810,7 @@ function initActivateNetworkInterval(interval){
       activateNetwork2(obj.user, function(err, networkOutputObj){
 
         if (err){
-          console.log(chalkError("ACTIVATE NETWORK ERROR"
+          console.log(chalkError("RNT | ACTIVATE NETWORK ERROR"
             + " | @" + obj.user.screenName
             + " | " + obj.networkInput.length + " INPUTS"
             + " | " + err
@@ -865,7 +865,7 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.match += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                    printActivateResult("+++ MATCH", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+                    printActivateResult("RNT | +++ MATCH", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
 
                   }
                   else {
@@ -873,16 +873,16 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.mismatch += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                    printActivateResult("000 MISS ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+                    printActivateResult("RNT | 000 MISS ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
 
                   }
                 }
                 else {
-                  printActivateResult("___ skip ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+                  printActivateResult("RNT | ___ skip ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
                 }
               }
               else {
-                printActivateResult("___ skip ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+                printActivateResult("RNT | ___ skip ", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
               }
             }
 
@@ -918,7 +918,7 @@ function getInputNames(nodes, callback){
   async.eachSeries(nodes, function(node, cb){
     if (node.type === "input") {
       if (node.name === undefined) {
-        console.log(chalkError("NODE NAME UNDEFINED"));
+        console.log(chalkError("RNT | *** NODE NAME UNDEFINED"));
         return cb("NODE NAME UNDEFINED");
       }
       inputNames.push(node.name);
@@ -946,7 +946,7 @@ function loadNetworks(networksObj, callback){
     let networkObj = networksObj[nnId];
 
     if (networkObj.network === undefined) {
-      console.log(chalkError("*** LOAD NETWORK INPUT UNDEFINED: " + networkObj.networkId));
+      console.log(chalkError("RNT | *** LOAD NETWORK INPUT UNDEFINED: " + networkObj.networkId));
       return cb();
     }
 
@@ -1041,17 +1041,17 @@ function loadNetworks(networksObj, callback){
 }
 
 function printCategorizeHistory(){
-  console.log(chalkInfo("RNT CATGORIZE HISTORY ==========================================="));
+  console.log(chalkInfo("RNT | CATGORIZE HISTORY ==========================================="));
   statsObj.categorizeHistory.forEach(function(catStats){
-    console.log(chalkInfo("RNT CATGORIZE HISTORY"
+    console.log(chalkInfo("RNT | CATGORIZE HISTORY"
       + " | S: " + moment(catStats.startTime).format(compactDateTimeFormat)
       + " E: " + moment(catStats.endTime).format(compactDateTimeFormat)
       + " R: " + msToTime(catStats.endTime - catStats.startTime)
-      + "\nBEST: " + catStats.bestNetwork.networkId
+      + "\nRNT | BEST: " + catStats.bestNetwork.networkId
       + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SR"
       + " - MR: " + catStats.bestNetwork.matchRate.toFixed(2) + "% MR"
       + " - OAMR:" + catStats.bestNetwork.overallMatchRate.toFixed(2) + "% MR"
-      + "\nMR: " + catStats.matchRate.toFixed(2) + "%"
+      + "\nRNT | MR: " + catStats.matchRate.toFixed(2) + "%"
       + " | OAMR: " + catStats.overallMatchRate.toFixed(2) + "%"
       + " | TOT: " + catStats.total
       + " | MATCH: " + catStats.match
@@ -1130,14 +1130,14 @@ process.on("message", function(m) {
 
     case "INIT":
 
-      console.log(chalkLog("RNT INIT | INTERVAL: " + m.interval));
+      console.log(chalkLog("RNT | INIT | INTERVAL: " + m.interval));
 
       initActivateNetworkInterval(m.interval);
 
       process.send({ op: "IDLE" }, function(err){
         if (err) { 
-          console.trace(chalkError("RNT SEND ERROR | IDLE | " + err));
-          console.error.bind(console, "RNT SEND ERROR | IDLE | " + err);
+          console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
+          console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
         }
       });
 
@@ -1146,7 +1146,7 @@ process.on("message", function(m) {
     case "LOAD_MAX_INPUTS_HASHMAP":
       maxInputHashMap = {};
       maxInputHashMap = m.maxInputHashMap;
-      console.log(chalkLog("RNT LOAD_MAX_INPUTS_HASHMAP"
+      console.log(chalkLog("RNT | LOAD_MAX_INPUTS_HASHMAP"
         + " | " + Object.keys(maxInputHashMap)
       ));
     break;
@@ -1156,16 +1156,16 @@ process.on("message", function(m) {
       if (cause) {
         process.send({ op: "BUSY", cause: cause }, function(err){
         if (err) { 
-          console.trace(chalkError("SEND ERROR | BUSY | " + err));
-          console.error.bind(console, "RNT SEND ERROR | BUSY | " + err);
+          console.trace(chalkError("RNT | *** SEND ERROR | BUSY | " + err));
+          console.error.bind(console, "RNT | *** SEND ERROR | BUSY | " + err);
         }
       });
       }
       else {
         process.send({ op: "IDLE" }, function(err){
         if (err) { 
-          console.trace(chalkError("SEND ERROR | IDLE | " + err));
-          console.error.bind(console, "RNT SEND ERROR | IDLE | " + err);
+          console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
+          console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
         }
       });
       }
@@ -1176,16 +1176,16 @@ process.on("message", function(m) {
       if (busy()) {
         process.send({ op: "BUSY", cause: busy() }, function(err){
         if (err) { 
-          console.trace(chalkError("SEND ERROR | BUSY | " + err));
-          console.error.bind(console, "RNT SEND ERROR | BUSY | " + err);
+          console.trace(chalkError("RNT | *** SEND ERROR | BUSY | " + err));
+          console.error.bind(console, "RNT | *** SEND ERROR | BUSY | " + err);
         }
       });
       }
       else {
         process.send({ op: "IDLE" }, function(err){
         if (err) { 
-          console.trace(chalkError("SEND ERROR | IDLE | " + err));
-          console.error.bind(console, "RNT SEND ERROR | IDLE | " + err);
+          console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
+          console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
         }
       });
       }
@@ -1194,8 +1194,8 @@ process.on("message", function(m) {
     case "GET_STATS":
       process.send({ op: "STATS", statsObj: statsObj }, function(err){
         if (err) { 
-          console.trace(chalkError("SEND ERROR | GET_STATS | " + err));
-          console.error.bind(console, "RNT SEND ERROR | STATS | " + err);
+          console.trace(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
+          console.error.bind(console, "RNT | *** SEND ERROR | STATS | " + err);
         }
       });
     break;
@@ -1207,8 +1207,8 @@ process.on("message", function(m) {
     case "QUIT":
       process.send({ op: "IDLE" }, function(err){
         if (err) { 
-          console.trace(chalkError("SEND ERROR | IDLE | " + err));
-          console.error.bind(console, "RNT SEND ERROR | IDLE | " + err);
+          console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
+          console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
           quit("STATS PROCESS SEND ERRROR");
         }
       });
@@ -1225,8 +1225,8 @@ process.on("message", function(m) {
         statsObj.networksLoaded = true;
         process.send({op: "NETWORK_READY"}, function(err){
           if (err) { 
-            console.trace(chalkError("SEND ERROR | NETWORK_READY | " + err));
-            console.error.bind(console, "RNT SEND ERROR | NETWORK_READY | " + err);
+            console.trace(chalkError("RNT | *** SEND ERROR | NETWORK_READY | " + err));
+            console.error.bind(console, "RNT | *** SEND ERROR | NETWORK_READY | " + err);
           }
         });
       });
@@ -1247,14 +1247,14 @@ process.on("message", function(m) {
 
       process.send({op: "NETWORK_BUSY"}, function(err){
         if (err) { 
-          console.error.bind(console, "RNT SEND ERROR | NETWORK_BUSY | " + err);
+          console.error.bind(console, "RNT | *** SEND ERROR | NETWORK_BUSY | " + err);
         }
       });
 
       if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
         process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
           if (err) { 
-            console.error.bind(console, "RNT SEND ERROR | QUEUE_FULL | " + err);
+            console.error.bind(console, "RNT | *** SEND ERROR | QUEUE_FULL | " + err);
           }
         });
         maxQueueFlag = true;
@@ -1263,11 +1263,11 @@ process.on("message", function(m) {
     break;
     
     default:
-      console.log(chalkError("RANDOM NETWORK TREE | UNKNOWN OP ERROR"
+      console.log(chalkError("RNT | *** UNKNOWN OP ERROR"
         + " | " + m.op
         + "\n" + jsonPrint(m)
       ));
-      console.error.bind(console, "RNT UNKNOWN OP ERROR | " + m.op + "\n" + jsonPrint(m));
+      console.error.bind(console, "RNT | *** UNKNOWN OP ERROR | " + m.op + "\n" + jsonPrint(m));
   }
 });
 
@@ -1283,8 +1283,8 @@ const dropboxConfigFile = hostname + "_" + DROPBOX_RNT_CONFIG_FILE;
 const statsFolder = "/stats/" + hostname;
 const statsFile = DROPBOX_RNT_STATS_FILE;
 
-console.log("DROPBOX_RNT_CONFIG_FILE: " + DROPBOX_RNT_CONFIG_FILE);
-console.log("DROPBOX_RNT_STATS_FILE : " + DROPBOX_RNT_STATS_FILE);
+console.log("RNT | DROPBOX_RNT_CONFIG_FILE: " + DROPBOX_RNT_CONFIG_FILE);
+console.log("RNT | DROPBOX_RNT_STATS_FILE : " + DROPBOX_RNT_STATS_FILE);
 
 debug("dropboxConfigFolder : " + dropboxConfigFolder);
 debug("dropboxConfigFile : " + dropboxConfigFile);
@@ -1320,36 +1320,30 @@ function saveFile (path, file, jsonObj, callback){
     })
     .catch(function(error){
       if (error.status === 413){
-        console.log(chalkError(moment().format(compactDateTimeFormat) 
-          + " | RNT | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+        console.log(chalkError("RNT | " + moment().format(compactDateTimeFormat) 
+          + " | *** ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: 413"
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 429){
-        console.log(chalkError(moment().format(compactDateTimeFormat) 
-          + " | RNT | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+        console.log(chalkError("RNT | " + moment().format(compactDateTimeFormat) 
+          + " | *** ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: TOO MANY WRITES"
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 500){
-        console.log(chalkError(moment().format(compactDateTimeFormat) 
-          + " | RNT | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+        console.log(chalkError("RNT | " + moment().format(compactDateTimeFormat) 
+          + " | *** ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: DROPBOX SERVER ERROR"
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
       else {
-        // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
-        console.log(chalkError(moment().format(compactDateTimeFormat) 
-          + " | RNT | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          // + " | ERROR\n" + jsonPrint(error)
+        console.log(chalkError("RNT | " + moment().format(compactDateTimeFormat) 
+          + " | *** ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: " + error
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
@@ -1360,7 +1354,7 @@ function initStatsUpdate(cnf){
 
   clearInterval(statsUpdateInterval);
 
-  console.log(chalkInfo("initStatsUpdate | INTERVAL: " + cnf.statsUpdateIntervalTime));
+  console.log(chalkInfo("RNT | initStatsUpdate | INTERVAL: " + cnf.statsUpdateIntervalTime));
 
   statsUpdateInterval = setInterval(function () {
 
@@ -1384,7 +1378,7 @@ function initialize(cnf, callback){
   initializeBusy = true;
 
   if (debug.enabled || debugCache.enabled){
-    console.log("\n%%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
+    console.log("\nRNT | %%%%%%%%%%%%%%\nRNT |  DEBUG ENABLED \nRNT | %%%%%%%%%%%%%%\n");
   }
 
   cnf.processName = process.env.RNT_PROCESS_NAME || "randomNetworkTree";
@@ -1396,10 +1390,7 @@ function initialize(cnf, callback){
 
   cnf.statsUpdateIntervalTime = process.env.RNT_STATS_UPDATE_INTERVAL || 1000;
 
-  debug("CONFIG\n" + jsonPrint(cnf));
-
-  debug(chalkWarn("dropboxConfigFolder: " + dropboxConfigFolder));
-  debug(chalkWarn("dropboxConfigFile  : " + dropboxConfigFile));
+  debug("RNT | CONFIG\n" + jsonPrint(cnf));
 
   callback(null, cnf);
 }
@@ -1411,11 +1402,11 @@ setTimeout(function(){
     initializeBusy = false;
 
     if (err && (err.status !== 404)) {
-      console.log(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
-      console.error.bind(console, "RNT INIT ERROR: " + err);
+      console.log(chalkError("RNT | *** INIT ERROR\n" + jsonPrint(err)));
+      console.error.bind(console, "RNT | *** INIT ERROR: " + err);
       quit(err);
     }
-    console.log(chalkInfo(cnf.processName + " STARTED " + getTimeStamp() + "\n" + jsonPrint(cnf)));
+    console.log(chalkInfo("RNT | " + cnf.processName + " STARTED " + getTimeStamp() + "\n" + jsonPrint(cnf)));
     initStatsUpdate(cnf);
   });
 }, 1 * ONE_SECOND);

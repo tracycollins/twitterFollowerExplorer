@@ -45,7 +45,7 @@ const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 
 let twitClient;
-let twitStream;
+// let twitStream;
 
 let fsm;
 
@@ -87,7 +87,7 @@ if (process.env.TEST_MODE > 0) {
 configuration.fetchCount = configuration.testMode ? process.env.TEST_MODE_FETCH_COUNT :  process.env.DEFAULT_FETCH_COUNT;
 configuration.fetchUserTimeout = process.env.DEFAULT_FETCH_USER_TIMEOUT || ONE_MINUTE;
 
-console.log(chalkLog("CONFIGURATION\n" + jsonPrint(configuration)));
+console.log(chalkLog("TFC | CONFIGURATION\n" + jsonPrint(configuration)));
 
 let threeceeUserDefaults = {};
 
@@ -215,7 +215,7 @@ function checkRateLimit(callback){
 
       if (err.code === 89){
 
-        console.log(chalkAlert("*** TWITTER GET RATE LIMIT STATUS ERROR | INVALID OR EXPIRED TOKEN" 
+        console.log(chalkAlert("TFC | *** TWITTER GET RATE LIMIT STATUS ERROR | INVALID OR EXPIRED TOKEN" 
           + " | " + getTimeStamp() 
           + " | @" + configuration.threeceeUser 
         ));
@@ -230,7 +230,7 @@ function checkRateLimit(callback){
 
       }
       else {
-        console.log(chalkError("!!!!! TWITTER ACCOUNT ERROR | APPLICATION RATE LIMIT STATUS"
+        console.log(chalkError("TFC | *** TWITTER ACCOUNT ERROR | APPLICATION RATE LIMIT STATUS"
           + " | @" + configuration.threeceeUser
           + " | " + getTimeStamp()
           + " | CODE: " + err.code
@@ -245,7 +245,7 @@ function checkRateLimit(callback){
 
       if (configuration.verbose) {
 
-        console.log(chalkLog("TWITTER RATE LIMIT STATUS"
+        console.log(chalkLog("TFC | TWITTER RATE LIMIT STATUS"
           + " | @" + configuration.threeceeUser
           + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
           + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
@@ -267,7 +267,7 @@ function checkRateLimit(callback){
 
           statsObj.threeceeUser.twitterRateLimitExceptionFlag = false;
 
-          console.log(chalkAlert("XXX RESET TWITTER RATE LIMIT"
+          console.log(chalkAlert("TFC | XXX RESET TWITTER RATE LIMIT"
             + " | @" + configuration.threeceeUser
             + " | CONTEXT: " + data.rate_limit_context.access_token
             + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
@@ -299,7 +299,7 @@ function checkRateLimit(callback){
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
         if (statsObj.fsmState !== "PAUSE_RATE_LIMIT"){
-          console.log(chalkAlert("*** TWITTER SHOW USER ERROR | RATE LIMIT EXCEEDED" 
+          console.log(chalkAlert("TFC | *** TWITTER SHOW USER ERROR | RATE LIMIT EXCEEDED" 
             + " | @" + configuration.threeceeUser
             + " | CONTEXT: " + data.rate_limit_context.access_token
             + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
@@ -310,7 +310,7 @@ function checkRateLimit(callback){
           fsm.fsm_rateLimitStart();
         }
         else {
-          console.log(chalkLog("--- TWITTER RATE LIMIT"
+          console.log(chalkLog("TFC | --- TWITTER RATE LIMIT"
             + " | @" + configuration.threeceeUser
             + " | CONTEXT: " + data.rate_limit_context.access_token
             + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
@@ -329,7 +329,7 @@ function checkRateLimit(callback){
         statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
-        console.log(chalkLog("--- TWITTER RATE LIMIT"
+        console.log(chalkLog("TFC | --- TWITTER RATE LIMIT"
           + " | @" + configuration.threeceeUser
           + " | CONTEXT: " + data.rate_limit_context.access_token
           + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
@@ -348,7 +348,7 @@ function checkRateLimit(callback){
         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
         if (configuration.verbose) {
-          console.log(chalkInfo("... NO TWITTER RATE LIMIT"
+          console.log(chalkInfo("TFC | ... NO TWITTER RATE LIMIT"
             + " | @" + configuration.threeceeUser
             + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
             + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
@@ -383,17 +383,20 @@ function quit(c){
 function twitterUsersShow(callback){
 
   if (!twitClient || (twitClient === undefined)) {
-    console.log(chalkAlert("twitterUsersShow | twitClient UNDEFINED | @" + configuration.threeceeUser));
+    console.log(chalkAlert("TFC | twitterUsersShow | twitClient UNDEFINED | @" + configuration.threeceeUser));
     return callback(new Error("twitClient UNDEFINED"));
+  }
+
+  if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
+    console.log(chalkAlert("TFC | twitterUsersShow | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
+    return callback(null);
   }
 
   twitClient.get("users/show", {screen_name: configuration.threeceeUser}, function(err, userShowData, response) {
 
-    // console.log("users/show\n", response);
-
     if (err){
 
-      console.log(chalkError("*** TWITTER SHOW USER ERROR"
+      console.log(chalkError("TFC | *** TWITTER SHOW USER ERROR"
         + " | @" + configuration.threeceeUser 
         + " | " + getTimeStamp() 
         + " | ERR CODE: " + err.code
@@ -402,7 +405,7 @@ function twitterUsersShow(callback){
 
       if (err.code === 88){
 
-        console.log(chalkAlert("*** TWITTER SHOW USER ERROR | RATE LIMIT EXCEEDED" 
+        console.log(chalkAlert("TFC | *** TWITTER SHOW USER ERROR | RATE LIMIT EXCEEDED" 
           + " | " + getTimeStamp() 
           + " | @" + configuration.threeceeUser 
         ));
@@ -421,7 +424,7 @@ function twitterUsersShow(callback){
       }
       if (err.code === 89){
 
-        console.log(chalkAlert("*** TWITTER SHOW USER ERROR | INVALID OR EXPIRED TOKEN" 
+        console.log(chalkAlert("TFC | *** TWITTER SHOW USER ERROR | INVALID OR EXPIRED TOKEN" 
           + " | " + getTimeStamp() 
           + " | @" + configuration.threeceeUser 
         ));
@@ -461,11 +464,16 @@ function twitterUsersShow(callback){
 
 function twitterUserUpdate(params, callback){
 
+  if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
+    console.log(chalkAlert("TFC | twitterUserUpdate | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
+    return callback(null);
+  }
+
   twitterUsersShow(function(err){
 
     if (err){
 
-      console.log(chalkError("*** TWITTER SHOW USER ERROR"
+      console.log(chalkError("TFC | *** TWITTER SHOW USER ERROR"
         + " | @" + configuration.threeceeUser 
         + " | " + getTimeStamp() 
         + " | ERR CODE: " + err.code
@@ -480,7 +488,7 @@ function twitterUserUpdate(params, callback){
 
       if (err){
 
-        console.log(chalkError("*** TWITTER USER FRIENDS IDS ERROR"
+        console.log(chalkError("TFC | *** TWITTER USER FRIENDS IDS ERROR"
           + " | @" + configuration.threeceeUser 
           + " | " + getTimeStamp() 
           + " | ERR CODE: " + err.code
@@ -498,24 +506,24 @@ function twitterUserUpdate(params, callback){
       statsObj.threeceeUser.prevCursorValid = statsObj.threeceeUser.prevCursorValid || false;
       statsObj.threeceeUser.prevCursor = statsObj.threeceeUser.prevCursor || -1;
 
-      console.log(chalkLog("friends/ids"
+      console.log(chalkLog("TFC | friends/ids"
         + " | @" + configuration.threeceeUser 
         + " | IDs: " + userFriendsIds.ids.length
         + " | PREV CURSOR: " + userFriendsIds.previous_cursor_str
         + " | NEXT CURSOR: " + userFriendsIds.next_cursor_str
       ));
 
-      console.log(chalkTwitterBold("====================================================================="
-        + "\nTWITTER USER"
+      console.log(chalkTwitterBold("TFC | ====================================================================="
+        + "\nTFC | TWITTER USER"
         + " | @" + statsObj.threeceeUser.screenName 
         + " | " + statsObj.threeceeUser.name 
-        + "\nNEXT CURSOR VALID: " + statsObj.threeceeUser.nextCursorValid 
+        + "\nTFC | NEXT CURSOR VALID: " + statsObj.threeceeUser.nextCursorValid 
         + " | NEXT CURSOR: " + statsObj.threeceeUser.nextCursor 
-        + "\nTs: " + statsObj.threeceeUser.statusesCount 
+        + "\nTFC | Ts: " + statsObj.threeceeUser.statusesCount 
         + " | FLWRs: " + statsObj.threeceeUser.followersCount
         + " | FRNDS: " + statsObj.threeceeUser.friendsCount 
         + " | FRNDS IDs: " + userFriendsIds.ids.length 
-        + "\n====================================================================="
+        + "\nTFC | ====================================================================="
       ));
 
       callback(null);
@@ -555,7 +563,7 @@ function checkFriendMinimumProperties(friend, callback){
 
 function fetchFriends(params, callback) {
 
-  if (configuration.testMode) { console.log(chalkInfo("FETCH FRIENDS params\n" + jsonPrint(params))); }
+  if (configuration.testMode) { console.log(chalkInfo("TFC | FETCH FRIENDS params\n" + jsonPrint(params))); }
 
   const threeceeUser = configuration.threeceeUser;
 
@@ -565,7 +573,7 @@ function fetchFriends(params, callback) {
 
       if (err){
 
-        console.log(chalkError("*** TWITTER FRIENDS LIST ERROR"
+        console.log(chalkError("TFC | *** TWITTER FRIENDS LIST ERROR"
           + " | @" + configuration.threeceeUser 
           + " | " + getTimeStamp() 
           + " | ERR CODE: " + err.code
@@ -574,7 +582,7 @@ function fetchFriends(params, callback) {
 
         if (err.code === 88){
 
-          console.log(chalkAlert("*** TWITTER FRIENDS LIST ERROR | RATE LIMIT EXCEEDED" 
+          console.log(chalkAlert("TFC | *** TWITTER FRIENDS LIST ERROR | RATE LIMIT EXCEEDED" 
             + " | " + getTimeStamp() 
             + " | @" + configuration.threeceeUser 
           ));
@@ -609,13 +617,13 @@ function fetchFriends(params, callback) {
         statsObj.threeceeUser.nextCursorValid = false;
         statsObj.threeceeUser.endFetch = true;
 
-        console.log(chalkAlert("\n=====================================\n"
+        console.log(chalkAlert("\nTFC | =====================================\n"
           + "*** TEST MODE END FETCH ***"
-          + "\n@" + configuration.threeceeUser
-          + "\nTEST_MODE_FETCH_COUNT: " + TEST_MODE_FETCH_COUNT
-          + "\nTEST_MODE_TOTAL_FETCH: " + TEST_MODE_TOTAL_FETCH
-          + "\nFRIENDS FETCHED: " + statsObj.threeceeUser.friendsFetched
-          + "\n=====================================\n"
+          + "\nTFC | @" + configuration.threeceeUser
+          + "\nTFC | TEST_MODE_FETCH_COUNT: " + TEST_MODE_FETCH_COUNT
+          + "\nTFC | TEST_MODE_TOTAL_FETCH: " + TEST_MODE_TOTAL_FETCH
+          + "\nTFC | FRIENDS FETCHED: " + statsObj.threeceeUser.friendsFetched
+          + "\nTFC | =====================================\n"
         ));
       }
       else if (data.next_cursor_str > 0) {
@@ -627,18 +635,18 @@ function fetchFriends(params, callback) {
         statsObj.threeceeUser.endFetch = true;
       }
 
-      console.log(chalkTwitter("===========================================================\n"
+      console.log(chalkTwitter("TFC | ===========================================================\n"
         + "---- END FETCH ----"
         + " | " + getTimeStamp()
         + " | @" + statsObj.threeceeUser.screenName
-        + "\nFRIENDS:       " + statsObj.threeceeUser.friendsCount
-        + "\nFRNDs FETCHED: " + statsObj.threeceeUser.friendsFetched
+        + "\nTFC | FRIENDS:       " + statsObj.threeceeUser.friendsCount
+        + "\nTFC | FRNDs FETCHED: " + statsObj.threeceeUser.friendsFetched
         + " (" + statsObj.threeceeUser.percentFetched.toFixed(1) + "%)"
-        + "\nCOUNT:         " + configuration.fetchCount
-        + "\nFETCHED:       " + data.users.length
-        + "\nEND FETCH:     " + statsObj.threeceeUser.endFetch
-        + "\nMORE:          " + statsObj.threeceeUser.nextCursorValid
-        + "\n==========================================================="
+        + "\nTFC | COUNT:         " + configuration.fetchCount
+        + "\nTFC | FETCHED:       " + data.users.length
+        + "\nTFC | END FETCH:     " + statsObj.threeceeUser.endFetch
+        + "\nTFC | MORE:          " + statsObj.threeceeUser.nextCursorValid
+        + "\nTFC | ==========================================================="
       ));
 
       const subFriendsSortedArray = sortOn(data.users, "-followers_count");
@@ -648,7 +656,7 @@ function fetchFriends(params, callback) {
         checkFriendMinimumProperties(friend, function(err, unfollowFlag){
 
           if (err) {
-            console.log(chalkError("TFC CHECK FRIEND ERROR | " + err));
+            console.log(chalkError("TFC | *** CHECK FRIEND ERROR | " + err));
             return cb();
           }
 
@@ -656,7 +664,7 @@ function fetchFriends(params, callback) {
 
             unfollowQueue.push(friend);
 
-            console.log(chalkError("TFC CHECK FRIEND | XXX UNFOLLOW"
+            console.log(chalkError("TFC | CHECK FRIEND | XXX UNFOLLOW"
               + " [ UFQ: " + unfollowQueue.length + "]"
               + " | UNFOLLOW: " + unfollowFlag
               + " | ID: " + friend.id_str
@@ -697,7 +705,7 @@ function fetchFriends(params, callback) {
         });
       }, function subFriendsProcess(err){
         if (err) {
-          console.trace("subFriendsProcess ERROR");
+          console.trace("TFC | *** subFriendsProcess ERROR");
           callback(err, null);
         }
         else {
@@ -713,7 +721,7 @@ function fetchFriends(params, callback) {
 
       statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
-      console.log(chalkAlert("SKIP FETCH FRIENDS --- TWITTER RATE LIMIT"
+      console.log(chalkAlert("TFC | SKIP FETCH FRIENDS --- TWITTER RATE LIMIT"
         + " | @" + threeceeUser
         + " | LIM " + statsObj.threeceeUser.twitterRateLimit
         + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
@@ -724,7 +732,7 @@ function fetchFriends(params, callback) {
       ));
     }
 
-    console.log(chalkLog("fetchFriends"
+    console.log(chalkLog("TFC | fetchFriends"
       + " | CURRENT: @" + threeceeUser 
       + " | RATE LIMIT: " + statsObj.threeceeUser.twitterRateLimitExceptionFlag
     ));
@@ -745,13 +753,13 @@ function reporter(event, oldState, newState) {
 
   // fsmPreviousState = oldState;
 
-  console.log(chalkStats("--------------------------------------------------------\n"
-    + "<< FSM >>"
+  console.log(chalkStats("TFC | --------------------------------------------------------"
+    + "\nTFC | << TFC FSM >>"
     + " | @" + configuration.threeceeUser
     + " | " + statsObj.fsmStateTimeStamp
     + " | " + event
     + " | " + statsObj.fsmPreviousState + " -> " + newState
-    + "\n--------------------------------------------------------"
+    + "\nTFC | --------------------------------------------------------"
   ));
 
 }
@@ -776,6 +784,7 @@ const fsmStates = {
     "fsm_disable": "DISABLED",
     "fsm_reset": "RESET",
     "fsm_init": "INIT",
+    "fsm_idle": "IDLE",
     "fsm_ready": "INIT",
     "fsm_error": "ERROR"
 
@@ -796,6 +805,7 @@ const fsmStates = {
 
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_ready": "READY",
+    "fsm_idle": "IDLE",
     "fsm_reset": "RESET",
     "fsm_disable": "DISABLED",
     "fsm_error": "ERROR"
@@ -842,6 +852,7 @@ const fsmStates = {
 
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
+    "fsm_idle": "IDLE",
     "fsm_reset": "RESET",
     "fsm_disable": "DISABLED",
     "fsm_error": "ERROR",
@@ -864,6 +875,7 @@ const fsmStates = {
     },
 
     "fsm_init": "INIT",
+    "fsm_idle": "IDLE",
     "fsm_reset": "RESET",
     "fsm_error": "ERROR",
     "fsm_disable": "DISABLED",
@@ -893,7 +905,7 @@ const fsmStates = {
 
       fetchFriends(params, function(err, results){
         if (err) {
-          console.log(chalkError("fetchFriends ERROR: " + err));
+          console.log(chalkError("TFC | *** fetchFriends ERROR: " + err));
 
           if (err.code === 88){
             process.send({op:"PAUSE_RATE_LIMIT", threeceeUser: configuration.threeceeUser, state: "PAUSE_RATE_LIMIT", params: params, error: err });
@@ -936,7 +948,7 @@ const fsmStates = {
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
       process.send({op:"FETCH_END", threeceeUser: configuration.threeceeUser});
-      console.log("FETCH_END | PREV STATE: " + oldState);
+      console.log("TFC | FETCH_END | PREV STATE: " + oldState);
     },
 
     "fsm_rateLimitStart": function(){
@@ -946,6 +958,7 @@ const fsmStates = {
 
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
+    "fsm_idle": "IDLE",
     "fsm_disable": "DISABLED",
     "fsm_error": "ERROR",
     "fsm_reset": "RESET"
@@ -979,6 +992,7 @@ const fsmStates = {
     },
 
     "fsm_init": "INIT",
+    "fsm_idle": "IDLE",
     "fsm_reset": "RESET"
 
   },
@@ -991,6 +1005,7 @@ const fsmStates = {
     },
 
     "fsm_disable": "DISABLED",
+    "fsm_idle": "IDLE",
     "fsm_reset": "RESET"
 
   }
@@ -1000,14 +1015,14 @@ const fsmStates = {
 fsm = Stately.machine(fsmStates);
 resetTwitterUserState();
 
-process.title = "node_twitterFollowerExplorerChild";
-console.log("\n\n=================================");
-console.log("HOST:          " + hostname);
-console.log("PROCESS TITLE: " + process.title);
-console.log("PROCESS ID:    " + process.pid);
-console.log("CHILD ID:      " + configuration.childId);
-console.log("PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, depth: 1}));
-console.log("=================================");
+process.title = "node_tfeChild";
+console.log("\n\nTFC | =================================");
+console.log("TFC | HOST:          " + hostname);
+console.log("TFC | PROCESS TITLE: " + process.title);
+console.log("TFC | PROCESS ID:    " + process.pid);
+console.log("TFC | CHILD ID:      " + configuration.childId);
+console.log("TFC | PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, depth: 1}));
+console.log("TFC | =================================");
 
 process.on("exit", function() {
   console.log(chalkAlert("TFC | " + configuration.threeceeUser + " | *** EXIT ***"));
@@ -1020,14 +1035,14 @@ function showStats(options){
 
   statsObj.threeceeUser.percentFetched = (statsObj.threeceeUser.friendsCount > 0) ? 100*(statsObj.threeceeUser.friendsFetched/statsObj.threeceeUser.friendsCount) : 0;
 
-  console.log(chalkLog("--- STATS --------------------------------------\n"
-    + "CUR USR: @" + configuration.threeceeUser
-    + "\nSTART:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
-    + "\nELAPSED: " + msToTime(statsObj.elapsed)
-    + "\nFSM:     " + fsm.getMachineState()
-    + "\nT FTCHD: " + statsObj.threeceeUser.friendsFetched + " / " + statsObj.threeceeUser.friendsCount
+  console.log(chalkLog("TFC | --- STATS --------------------------------------\n"
+    + "TFC | CUR USR: @" + configuration.threeceeUser
+    + "\nTFC | START:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
+    + "\nTFC | ELAPSED: " + msToTime(statsObj.elapsed)
+    + "\nTFC | FSM:     " + fsm.getMachineState()
+    + "\nTFC | T FTCHD: " + statsObj.threeceeUser.friendsFetched + " / " + statsObj.threeceeUser.friendsCount
     + " (" + statsObj.threeceeUser.percentFetched.toFixed(2) + "%)"
-    + "\n------------------------------------------------\n"
+    + "\nTFC | ------------------------------------------------\n"
   ));
 }
 
@@ -1049,51 +1064,51 @@ process.on("disconnect", function() {
 
 function initTwitter(twitterConfig, callback){
 
-  console.log(chalkTwitter("TFC | INITIALIZING TWITTER" 
-    + " | " + getTimeStamp() 
-    + " | @" + configuration.threeceeUser 
-    + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
-  ));
-
   if (!twitClient || (twitClient === undefined)){
+
+    console.log(chalkTwitter("TFC | INITIALIZING TWITTER" 
+      + " | " + getTimeStamp() 
+      + " | @" + configuration.threeceeUser 
+      + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
+    ));
 
     twitClient = new Twit(twitterConfig);
 
-    twitStream = twitClient.stream("user", { stringify_friend_ids: true });
+    // twitStream = twitClient.stream("user", { stringify_friend_ids: true });
 
-    twitStream.on("error", function(err){
+    // twitStream.on("error", function(err){
 
-      console.log(chalkError("TFC | *** ERROR USER @" + configuration.threeceeUser
-        + " | " +  jsonPrint(err)
-      ));
+    //   console.log(chalkError("TFC | *** ERROR USER @" + configuration.threeceeUser
+    //     + "\n" +  jsonPrint(err)
+    //   ));
 
-      fsm.fsm_error();
+    //   fsm.fsm_error();
 
-      process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "INIT", error: err });
+    //   process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "INIT", error: err });
 
-      // quit("TWITTER STREAM ERROR | " + err);
-    });
+    //   // quit("TWITTER STREAM ERROR | " + err);
+    // });
 
-    twitStream.on("follow", function(followMessage){
+    // twitStream.on("follow", function(followMessage){
 
-      console.log(chalkInfo("TFC | +++ USER @" + configuration.threeceeUser + " FOLLOW"
-        + " | " +  followMessage.target.id_str
-        + " | @" +  followMessage.target.screen_name.toLowerCase()
-      ));
+    //   console.log(chalkInfo("TFC | +++ USER @" + configuration.threeceeUser + " FOLLOW"
+    //     + " | " +  followMessage.target.id_str
+    //     + " | @" +  followMessage.target.screen_name.toLowerCase()
+    //   ));
 
-      followMessage.target.following = true;
-      followMessage.target.threeceeFollowing = configuration.threeceeUser;
+    //   followMessage.target.following = true;
+    //   followMessage.target.threeceeFollowing = configuration.threeceeUser;
 
-      const friendRawObj = {
-        op:"FRIEND_RAW", 
-        follow: true, 
-        threeceeUser: configuration.threeceeUser,
-        childId: configuration.childId, 
-        friend: followMessage.target
-      };
+    //   const friendRawObj = {
+    //     op:"FRIEND_RAW", 
+    //     follow: true, 
+    //     threeceeUser: configuration.threeceeUser,
+    //     childId: configuration.childId, 
+    //     friend: followMessage.target
+    //   };
 
-      process.send(friendRawObj, function(){});
-    });
+    //   process.send(friendRawObj, function(){});
+    // });
 
   }
   else {
@@ -1104,22 +1119,17 @@ function initTwitter(twitterConfig, callback){
       + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
     ));
 
+    return callback(null, null);
   }
+
 
   twitClient.get("account/settings", function(err, accountSettings, response) {
 
     if (err){
 
-      console.log(chalkError("*** TWITTER ACCOUNT SETTINGS ERROR"
-        + " | @" + configuration.threeceeUser 
-        + " | " + getTimeStamp() 
-        + " | ERR CODE: " + err.code
-        + " | " + err.message
-      ));
-
       if (err.code === 88){
 
-        console.log(chalkAlert("*** TWITTER ACCOUNT SETTINGS ERROR | RATE LIMIT EXCEEDED" 
+        console.log(chalkAlert("TFC | *** TWITTER ACCOUNT SETTINGS ERROR | RATE LIMIT EXCEEDED" 
           + " | " + getTimeStamp() 
           + " | @" + configuration.threeceeUser 
         ));
@@ -1139,6 +1149,14 @@ function initTwitter(twitterConfig, callback){
 
       }
 
+      console.log(chalkError("TFC | *** TWITTER ACCOUNT SETTINGS ERROR"
+        + " | @" + configuration.threeceeUser 
+        + " | " + getTimeStamp() 
+        + " | ERR CODE: " + err.code
+        + " | " + err.message
+      ));
+
+
       fsm.fsm_error();
 
       return callback(err, null);
@@ -1155,7 +1173,7 @@ function initTwitter(twitterConfig, callback){
         err.user = userScreenName;
 
         if (err.code === 88) {
-          console.log(chalkAlert("*** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
+          console.log(chalkAlert("TFC | *** TWITTER USER UPDATE ERROR | RATE LIMIT EXCEEDED" 
             + " | " + getTimeStamp() 
             + " | @" + userScreenName 
           ));
@@ -1169,7 +1187,7 @@ function initTwitter(twitterConfig, callback){
           return callback(null, null);
         }
 
-        console.log(chalkError("*** TWITTER USER UPDATE ERROR" 
+        console.log(chalkError("TFC | *** TWITTER USER UPDATE ERROR" 
           + " | " + getTimeStamp() 
           + " | @" + userScreenName 
           + "\n" + jsonPrint(err)
@@ -1253,8 +1271,8 @@ function unfollowFriend(params, callback){
         console.log(chalkError("TFC | *** UNFOLLOW FAIL"
           + " | 3C: @" + configuration.threeceeUser
           + " | RESPONSE CODE: " + response.statusCode
-          + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
-          + "\nRESPONSE\n" + jsonPrint(response)
+          + "\nTFC | PARAMS\n" + jsonPrint(unfollowFriendParams)
+          + "\nTFC | RESPONSE\n" + jsonPrint(response)
         ));
 
         return callback(err, response);
@@ -1336,7 +1354,7 @@ function initUnfollowQueueInterval(interval){
 
         if (err) {
 
-          console.log(chalkError("*** UNFOLLOW ERROR"
+          console.log(chalkError("TFC | *** UNFOLLOW ERROR"
             + " [ UFQ: " + unfollowQueue.length + "]"
             + " | 3C: @" + configuration.threeceeUser
             + " | NID: " + friend.user_id
@@ -1346,7 +1364,7 @@ function initUnfollowQueueInterval(interval){
 
           if (err.code === 34){
 
-            console.log(chalkError("=X= UNFOLLOW ERROR | NON-EXISTENT USER"
+            console.log(chalkError("TFC | =X= UNFOLLOW ERROR | NON-EXISTENT USER"
               + " | 3C: @" + configuration.threeceeUser
               + " | @" + friend.screen_name
             ));
@@ -1434,7 +1452,7 @@ process.on("message", function(m) {
     case "SIGINT":
       clearInterval(checkRateLimitInterval);
       setTimeout(function() {
-        console.log("QUITTING TFC CHILD | @" + configuration.threeceeUser);
+        console.log("TFC | QUITTING TFC CHILD | @" + configuration.threeceeUser);
         process.exit(0);
       }, 500);
     break;
@@ -1461,6 +1479,10 @@ process.on("message", function(m) {
         });
 
       });
+    break;
+
+    case "IDLE":
+      fsm.fsm_idle();
     break;
 
     case "READY":
@@ -1493,8 +1515,6 @@ process.on("message", function(m) {
               process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
             }
             else {
-              // debug("data\n" + jsonPrint(data));
-              // debug("response\n" + jsonPrint(response));
 
               console.log(chalkInfo("TFC | +++ FOLLOW"
                 + " | 3C: @" + configuration.threeceeUser
@@ -1509,23 +1529,21 @@ process.on("message", function(m) {
 
     case "UNFOLLOW":
 
-      // console.log("UNFOLLOW MESSAGE\n" + jsonPrint(m.user));
-
       unfollowFriend({ user: m.user }, function(err, results){
 
         if (err) {
 
           if (err.code === 34){
-            console.log(chalkError("=X= UNFOLLOW ERROR | NON-EXISTENT USER"
+            console.log(chalkError("TFC | *** =X= UNFOLLOW ERROR | NON-EXISTENT USER"
               + " | 3C: @" + configuration.threeceeUser
-              + "\n" + jsonPrint(m.user)
+              + "\nTFC | " + jsonPrint(m.user)
             ));
             return;
           }
 
-          console.log(chalkError("=X= UNFOLLOW ERROR"
+          console.log(chalkError("TFC | *** =X= UNFOLLOW ERROR"
             + " | 3C: @" + configuration.threeceeUser
-            + "\n" + jsonPrint(m.user)
+            + "\nTFC | " + jsonPrint(m.user)
           ));
 
           process.send(
@@ -1579,7 +1597,7 @@ process.on("message", function(m) {
     break;
 
     case "RESET_TWITTER_USER_STATE":
-      console.log("TFC @" + configuration.threeceeUser + " | RESET_TWITTER_USER_STATE" );
+      console.log("TFC | @" + configuration.threeceeUser + " | RESET_TWITTER_USER_STATE" );
       resetTwitterUserState();
     break;    
 
@@ -1589,12 +1607,12 @@ process.on("message", function(m) {
     break;
 
     case "VERBOSE":
-      console.log(chalkAlert("TFC @" + configuration.threeceeUser + " | SET VERBOSE: " + m.verbose));
+      console.log(chalkAlert("TFC | @" + configuration.threeceeUser + " | SET VERBOSE: " + m.verbose));
       configuration.verbose = m.verbose;
     break;
 
     default:
-      console.log(chalkError("TFC | UNKNOWN OP ERROR"
+      console.log(chalkError("TFC | *** UNKNOWN OP ERROR"
         + " | " + m.op
       ));
   }
@@ -1603,14 +1621,14 @@ process.on("message", function(m) {
 initialize(function(err){
 
   if (err) {
-    console.error(chalkError("***** INIT ERROR *****\n" + jsonPrint(err)));
+    console.error(chalkError("TFC | *** INIT ERROR *****\n" + jsonPrint(err)));
     if (err.code !== 404){
       console.log("err.status: " + err.status);
       quit();
     }
   }
 
-  console.log(chalkTwitter(configuration.childId 
+  console.log("TFC | " + chalkTwitter(configuration.childId 
     + " STARTED " + getTimeStamp() 
   ));
 
@@ -1618,5 +1636,5 @@ initialize(function(err){
     configuration.fetchCount = TEST_MODE_FETCH_COUNT;
   }
 
-  console.log(chalkTwitter("INITIALIZE " + configuration.childId ));
+  console.log(chalkTwitter("TFC | INITIALIZE " + configuration.childId ));
 });

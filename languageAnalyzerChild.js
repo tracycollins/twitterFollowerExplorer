@@ -83,12 +83,12 @@ function msToTime(duration) {
 }
 
 process.title = "node_languageAnalyzer";
-console.log("\n\n=================================");
-console.log("HOST:          " + hostname);
-console.log("PROCESS TITLE: " + process.title);
-console.log("PROCESS ID:    " + process.pid);
-console.log("PROCESS ARGS:  " + util.inspect(process.argv, {showHidden: false, depth: 1}));
-console.log("=================================");
+console.log("\n\nLAC | =================================");
+console.log("LAC | HOST:          " + hostname);
+console.log("LAC | PROCESS TITLE: " + process.title);
+console.log("LAC | PROCESS ID:    " + process.pid);
+console.log("LAC | PROCESS ARGS:  " + util.inspect(process.argv, {showHidden: false, depth: 1}));
+console.log("LAC | =================================");
 
 
 let statsObj = {};
@@ -117,10 +117,10 @@ function showStats(options){
   statsObj.maxHeap = Math.max(statsObj.maxHeap, statsObj.heap);
 
   if (options) {
-    console.log("= LA STATS\n" + jsonPrint(statsObj));
+    console.log("LAC | STATS\n" + jsonPrint(statsObj));
   }
   else {
-    console.log(chalk.gray("= LA S"
+    console.log(chalk.gray("LAC"
       + " | E: " + statsObj.elapsed
       + " | S: " + moment(parseInt(statsObj.startTime)).format(compactDateTimeFormat)
       + " | RXWQ: " + rxWordQueue.length
@@ -137,7 +137,7 @@ function quit(message) {
   let msg = "";
   if (message) { msg = message; }
   showStats(true);
-  console.log(process.argv[1]
+  console.log("LAC | " + process.argv[1]
     + " | LANG ANAL: **** QUITTING"
     + " | CAUSE: " + msg
     + " | PID: " + process.pid
@@ -191,7 +191,7 @@ function initAnalyzeLanguageInterval(interval){
 
   clearInterval(initAnalyzeLanguageInterval);
 
-  console.log(chalkConnect("START LANGUAGE ANALYZER INTERVAL"
+  console.log(chalkConnect("LAC | START LANGUAGE ANALYZER INTERVAL"
     + " | INTERVAL: " + interval + " ms"
   ));
 
@@ -239,27 +239,24 @@ function initAnalyzeLanguageInterval(interval){
               + " | " + langObj.obj.nodeId
               + " | @" + langObj.obj.screenName
               + " | " + err
-              // + "\nERROR" + jsonPrint(err)
-              // + "\nRESULTS" + jsonPrint(results)
             ));
           }
           else if (err.code === 8) {
-            console.error(chalkAlert("LAC [RXLQ: " + rxLangObjQueue.length + "]"
+            console.error(chalkAlert("LAC | *** [RXLQ: " + rxLangObjQueue.length + "]"
               + " | LANGUAGE QUOTA"
               + " | " + langObj.obj.nodeId
               + " | @" + langObj.obj.screenName
               + " | RESOURCE_EXHAUSTED"
-              // + "\n" + jsonPrint(err)
             ));
             rxLangObjQueue.push(langObj);
           }
           else {
-            console.error(chalkError("LAC [RXLQ: " + rxLangObjQueue.length + "]"
+            console.error(chalkError("LAC | *** [RXLQ: " + rxLangObjQueue.length + "]"
               + " | LANGUAGE TEXT ERROR"
               + " | " + langObj.obj.nodeId
               + " | @" + langObj.obj.screenName
               + " | " + err
-              + "\n" + jsonPrint(err)
+              + "\nLAC | " + jsonPrint(err)
             ));
           }
 
@@ -270,7 +267,7 @@ function initAnalyzeLanguageInterval(interval){
           messageObj.stats = statsObj;
 
           process.send(messageObj, function(){
-            debug(chalkInfo("LAC SENT LANG_RESULTS"));
+            debug(chalkInfo("LAC | SENT LANG_RESULTS"));
             analyzeLanguageReady = true;
             if (rxLangObjQueue.length === 0){
               process.send({op: "IDLE", queue: rxLangObjQueue.length});
@@ -320,20 +317,20 @@ function initAnalyzeLanguageInterval(interval){
 
       wordCache.get(rxWordObj.wordCacheIndex, function(err, wordHit){
         if (err) {
-          console.log(chalkInfo("LAC WORD CACHE ERROR"
+          console.log(chalkInfo("LAC | WORD CACHE ERROR"
             + " | " + rxWordObj.wordCacheIndex
             + "\n" + jsonPrint(err)
           ));
           analyzeLanguageReady = true;
         }
         else if (wordHit) {
-          debugLang(chalkLog("LAC WORD CACHE HIT ... SKIP | " + wordHit.wordCacheIndex));
+          debugLang(chalkLog("LAC | WORD CACHE HIT ... SKIP | " + wordHit.wordCacheIndex));
           analyzeLanguageReady = true;
           statsObj.analyzer.total += 1;
           statsObj.analyzer.skipped += 1;
         }
         else {
-          debug(chalkLog("LAC WORD CACHE MISS | " + rxWordObj.wordCacheIndex));
+          debug(chalkLog("LAC | WORD CACHE MISS | " + rxWordObj.wordCacheIndex));
 
           let wordObj = {};
           wordObj = rxWordObj;
@@ -347,11 +344,9 @@ function initAnalyzeLanguageInterval(interval){
               statsObj.analyzer.errors += 1;
               wordObj.sentiment = {};
               wordCache.set(wordObj.wordCacheIndex, wordObj);
-              console.log(chalkError("LANGUAGE WORD ERROR"
+              console.log(chalkError("LAC | WORD ERROR"
                 + " | " + wordObj.wordCacheIndex
                 + " | " + err
-                // + "\n" + jsonPrint(wordObj)
-                // + "\n" + jsonPrint(err)
               ));
             }
             else {
@@ -374,14 +369,20 @@ function initAnalyzeLanguageInterval(interval){
   }, interval);
 }
 
-process.on("SIGHUP", function() {
+process.on( "SIGHUP", function() {
+  console.log(chalkAlert("LAC | *** SIGHUP ***"));
   quit("SIGHUP");
 });
 
-process.on("SIGINT", function() {
+process.on( "SIGINT", function() {
+  console.log(chalkAlert("LAC | *** SIGINT ***"));
   quit("SIGINT");
 });
 
+process.on("disconnect", function() {
+  console.log(chalkAlert("LAC | *** DISCONNECT ***"));
+  quit("DISCONNECT");
+});
 
 const testText = "This is a test of this universe!";
 const testDocument = {
@@ -400,7 +401,7 @@ process.on("message", function(m) {
   switch (m.op) {
 
     case "INIT":
-      console.log(chalkInfo("LANG ANAL INIT"
+      console.log(chalkInfo("LAC | INIT"
         + " | INTERVAL: " + m.interval
       ));
 
@@ -408,12 +409,12 @@ process.on("message", function(m) {
 
       languageClient.analyzeSentiment({document: testDocument}).then(function(responses) {
           const response = responses[0];
-          console.log(chalkInfo("=========================\nLANGUAGE TEST\n" + jsonPrint(response)));
+          console.log(chalkInfo("LAC | =========================\nLAC\n" + jsonPrint(response)));
           process.send({op: "LANG_TEST_PASS", results: response});
           process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
       })
       .catch(function(err) {
-          console.error(chalkError("*** LANGUAGE TEST ERROR: " + err));
+          console.error(chalkError("LAC | *** LANGUAGE TEST ERROR: " + err));
           process.send({op: "LANG_TEST_FAIL", err: err});
           process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
       });
@@ -436,9 +437,9 @@ process.on("message", function(m) {
       }
     break;
     default:
-      console.log(chalkError("LANG ANALIZE UNKNOWN OP ERROR"
+      console.log(chalkError("LAC | *** UNKNOWN OP ERROR"
         + " | " + m.op
-        + "\n" + jsonPrint(m)
+        + "\nLAC\n" + jsonPrint(m)
       ));
   }
 });
@@ -475,8 +476,8 @@ const dropboxConfigFile = hostname + "_" + DROPBOX_LA_CONFIG_FILE;
 const statsFolder = "/stats/" + hostname;
 const statsFile = DROPBOX_LA_STATS_FILE;
 
-console.log("DROPBOX_LA_CONFIG_FILE: " + DROPBOX_LA_CONFIG_FILE);
-console.log("DROPBOX_LA_STATS_FILE : " + DROPBOX_LA_STATS_FILE);
+console.log("LAC | DROPBOX_LA_CONFIG_FILE: " + DROPBOX_LA_CONFIG_FILE);
+console.log("LAC | DROPBOX_LA_STATS_FILE : " + DROPBOX_LA_STATS_FILE);
 
 debug("dropboxConfigFolder : " + dropboxConfigFolder);
 debug("dropboxConfigFile : " + dropboxConfigFile);
@@ -525,36 +526,30 @@ function saveFile (path, file, jsonObj, callback){
     })
     .catch(function(error){
       if (error.status === 413){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
-          + " | LAC | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+        console.error(chalkError("LAC | *** " + moment().format(compactDateTimeFormat) 
+          + " | ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: 413"
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 429){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
-          + " | LAC | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+        console.error(chalkError("LAC | *** " + moment().format(compactDateTimeFormat) 
+          + " | ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: TOO MANY WRITES"
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
       else if (error.status === 500){
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
-          + " | LAC | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
+        console.error(chalkError("LAC | *** " + moment().format(compactDateTimeFormat) 
+          + " | ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: DROPBOX SERVER ERROR"
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
       else {
-        // const errorText = (error.error_summary !== undefined) ? error.error_summary : jsonPrint(error);
-        console.error(chalkError(moment().format(compactDateTimeFormat) 
-          + " | LAC | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          // + " | ERROR\n" + jsonPrint(error)
+        console.error(chalkError("LAC | *** " + moment().format(compactDateTimeFormat) 
+          + " | ERROR DROBOX JSON WRITE | FILE: " + fullPath 
           + " | ERROR: " + error
-          // + " ERROR\n" + jsonPrint(error.error)
         ));
         if (callback !== undefined) { callback(error); }
       }
@@ -565,7 +560,7 @@ function initStatsUpdate(cnf){
 
   clearInterval(statsUpdateInterval);
 
-  console.log(chalkInfo("LAC initStatsUpdate | INTERVAL: " + cnf.statsUpdateIntervalTime));
+  console.log(chalkInfo("LAC | initStatsUpdate | INTERVAL: " + cnf.statsUpdateIntervalTime));
 
   statsUpdateInterval = setInterval(function () {
 
@@ -584,7 +579,7 @@ function initStatsUpdate(cnf){
 function initialize(cnf, callback){
 
   if (debug.enabled || debugCache.enabled || debugQ.enabled){
-    console.log("\nLAC %%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
+    console.log("\nLAC | %%%%%%%%%%%%%%\nLAC | DEBUG ENABLED \nLAC | %%%%%%%%%%%%%%\n");
   }
 
   cnf.processName = process.env.LA_PROCESS_NAME || "languageAnalyzer";
@@ -609,10 +604,10 @@ setTimeout(function(){
 
   initialize(configuration, function(err, cnf){
     if (err && (err.status !== 404)) {
-      console.error(chalkError("LAC ***** INIT ERROR *****\n" + jsonPrint(err)));
+      console.error(chalkError("LAC | *** INIT ERROR\n" + jsonPrint(err)));
       quit("INIT ERROR");
     }
-    console.log(chalkInfo(cnf.processName + " STARTED " + getTimeStamp() + "\n"));
+    console.log(chalkInfo("LAC | " + cnf.processName + " STARTED " + getTimeStamp() + "\n"));
     initStatsUpdate(cnf);
   });
 }, 1 * ONE_SECOND);
