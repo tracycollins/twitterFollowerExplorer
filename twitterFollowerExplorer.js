@@ -1679,7 +1679,10 @@ function loadBestNetworkDropboxFolder(folder, callback) {
         currentBestNetwork = nnArray[0];
         currentBestNetwork.isValid = true;
 
-        currentBestNetwork.networkDefaults(currentBestNetwork);
+        currentBestNetwork = networkDefaults(currentBestNetwork);
+        bestRuntimeNetworkId = currentBestNetwork.networkId;
+
+        bestNetworkHashMap.set(bestRuntimeNetworkId, currentBestNetwork);
 
         console.log(chalk.bold.blue("+++ BEST NEURAL NETWORK LOADED FROM DB"
           + " | " + currentBestNetwork.networkId
@@ -1901,7 +1904,7 @@ function initUnfollowableUserSet(){
 
   statsObj.status = "INIT UNFOLLOWABLE USER SET";
 
-  loadFile(dropboxConfigDefaultFolder, unfollowableUserFile, function(err, unfollowableUserSetArray){
+  loadFile(dropboxConfigDefaultFolder, unfollowableUserFile, function(err, unfollowableUserSetObj){
     if (err) {
       if (err.code === "ENOTFOUND") {
         console.log(chalkError("*** LOAD UNFOLLOWABLE USERS ERROR: FILE NOT FOUND:  " 
@@ -1912,9 +1915,9 @@ function initUnfollowableUserSet(){
         console.log(chalkError("*** LOAD UNFOLLOWABLE USERS ERROR: " + err));
       }
     }
-    else if (unfollowableUserSetArray) {
+    else if (unfollowableUserSetObj) {
 
-      unfollowableUserSet = new Set(unfollowableUserSetArray);
+      unfollowableUserSet = new Set(unfollowableUserSetObj.userIds);
 
       console.log(chalk.bold.black("INIT UNFOLLOWABLE USERS | " + unfollowableUserSet.size + " USERS"));
     }
@@ -3136,7 +3139,7 @@ function initNetworks(params, callback){
 
      loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
         if (err) {
-          console.log(chalkError("*** LOAD MAX INPUS FILE ERROR: " + err));
+          console.log(chalkError("*** LOAD MAX INPUTS FILE ERROR: " + err));
           return cb(err, null);
         }
 
@@ -3147,7 +3150,7 @@ function initNetworks(params, callback){
 
     }
   }, function(err) {
-    callback(err, results);
+    callback(err);
   });
 
 
@@ -3523,7 +3526,7 @@ const fsmStates = {
               }
               else {
 
-                initNetworks(function(err, results){
+                initNetworks({}, function(err){
 
                 // loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
 
@@ -5986,12 +5989,16 @@ initConfig(configuration, function(err, cnf) {
       initLangAnalyzerMessageRxQueueInterval(1);
       initLangAnalyzer();
       initUnfollowableUserSet();
+      initNetworks({}, function(err){
 
-      neuralNetworkInitialized = true;
+        if (err) {
+          console.log(chalkError("TFE | *** INIT NETWORKS ERROR: " + err));
+        }
+        neuralNetworkInitialized = true;
+        fsm.fsm_resetEnd();
+        initSocket(configuration);
 
-      fsm.fsm_resetEnd();
-
-      initSocket(configuration);
+      });
 
     }
     else {
