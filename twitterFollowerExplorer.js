@@ -4,6 +4,8 @@
 
 const DEFAULT_THRECEE_AUTO_FOLLOW_USER = "altthreecee00";
 
+let tfeChildHashMap = {};
+
 global.dbConnection = false;
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
@@ -134,7 +136,6 @@ const omit = require("object.omit");
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
-// const twitterImageParser = require("../twitter-image-parser");
 
 const HashMap = require("hashmap").HashMap;
 
@@ -159,11 +160,6 @@ statsObj.fetchCycleStartMoment = moment();
 statsObj.fetchCycleEndMoment = moment();
 statsObj.fetchCycleElapsed = 0;
 
-// statsObj.userAuthenticated = false;
-// statsObj.serverConnected = false;
-// statsObj.userReadyTransmitted = false;
-// statsObj.userReadyAck = false;
-// statsObj.heartbeatsReceived = 0;
 statsObj.users = {};
 statsObj.users.totalFriendsCount = 0;
 statsObj.users.totalFriendsFetched = 0;
@@ -178,14 +174,7 @@ statsObj.users.classifiedAuto = 0;
 statsObj.users.classified = 0;
 statsObj.user = {};
 statsObj.user.altthreecee00 = {};
-// statsObj.user.altthreecee01 = {};
-// statsObj.user.altthreecee03 = {};
 statsObj.user.altthreecee00.friendsProcessed = 0;
-// statsObj.user.altthreecee00.percentProcessed = 0;
-// statsObj.user.altthreecee01.friendsProcessed = 0;
-// statsObj.user.altthreecee01.percentProcessed = 0;
-// statsObj.user.altthreecee03.friendsProcessed = 0;
-// statsObj.user.altthreecee03.percentProcessed = 0;
 statsObj.analyzer = {};
 statsObj.analyzer.total = 0;
 statsObj.analyzer.analyzed = 0;
@@ -230,14 +219,8 @@ let statsPickArray = [
   "pid", 
   "startTime", 
   "elapsed", 
-  // "serverConnected", 
   "status", 
-  // "authenticated", 
   "numChildren", 
-  // "socketError", 
-  // "userReadyAck", 
-  // "userReadyAckWait", 
-  // "userReadyTransmitted",
   "fsmState",
   "categorized",
   "bestNetwork",
@@ -245,9 +228,11 @@ let statsPickArray = [
   "fetchCycle"
 ];
 
-let tfeChildHashMap = {};
+
 let fsm;
 let fsmTickInterval;
+let fsmPreviousState = "IDLE";
+
 let fetchAllInterval;
 let fetchAllIntervalReady = false;
 
@@ -350,9 +335,6 @@ currentBestNetwork.testCycleHistory = [];
 let processUserQueue = [];
 let processUserQueueInterval;
 let processUserQueueReady = true;
-
-// let socket;
-// let socketKeepAliveInterval;
 
 let saveFileQueueInterval;
 let saveFileBusy = false;
@@ -482,7 +464,6 @@ const quit = function(options) {
               + "\nTFE | ==========================\n"
             ));
 
-            // if (socket) { socket.disconnect(); }
             process.exit();
           });
 
@@ -548,8 +529,7 @@ configuration.enableLanguageAnalysis = false;
 configuration.forceLanguageAnalysis = false;
 configuration.processUserQueueInterval = 20;
 configuration.bestNetworkIncrementalUpdate = false;
-// configuration.twitterUsers = ["altthreecee03", "altthreecee01", "altthreecee00"];
-configuration.twitterUsers = ["altthreecee00"];
+configuration.twitterUsers = ["altthreecee00", "altthreecee01", "altthreecee02", "altthreecee03", "altthreecee04", "altthreecee05"];
 configuration.saveFileQueueInterval = 1000;
 configuration.testMode = false;
 configuration.minSuccessRate = DEFAULT_MIN_SUCCESS_RATE;
@@ -589,12 +569,7 @@ configuration.neuralNetworkFile = defaultNeuralNetworkFile;
 const DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
 const DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY ;
 const DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
-// const DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
 const DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || "twitterFollowerExplorerStats.json";
-
-// let dropboxConfigHostFolder = "/config/utility/" + hostname;
-// let dropboxConfigDefaultFolder = "/config/utility/default";
-// let dropboxConfigFile = hostname + "_" + DROPBOX_TFE_CONFIG_FILE;
 
 const dropboxConfigFolder = "/config/utility";
 const dropboxConfigDefaultFolder = "/config/utility/default";
@@ -619,15 +594,10 @@ const defaultMaxInputHashmapFile = "maxInputHashMap.json";
 const localHistogramsFolder = dropboxConfigHostFolder + "/histograms";
 const defaultHistogramsFolder = dropboxConfigDefaultFolder + "/histograms";
 
-// const Dropbox = require("./js/dropbox").Dropbox;
 const Dropbox = require("dropbox").Dropbox;
-
-// const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
 
 function filesListFolderLocal(options){
   return new Promise(function(resolve, reject) {
-
-    // debug("filesListFolderLocal options\n" + jsonPrint(options));
 
     const fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + options.path;
 
@@ -670,8 +640,6 @@ function filesGetMetadataLocal(options){
 
   return new Promise(function(resolve, reject) {
 
-    // console.log("filesGetMetadataLocal options\n" + jsonPrint(options));
-
     const fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + options.path;
 
     fs.stat(fullPath, function(err, stats){
@@ -699,16 +667,10 @@ let dropboxLocalClient = {  // offline mode
 };
 
 
-let fsmPreviousState = "IDLE";
-
-
-
 process.on("unhandledRejection", function(err, promise) {
   console.trace("TFE | *** Unhandled rejection (promise: ", promise, ", reason: ", err, ").");
   process.exit();
 });
-
-
 
 
 // ==================================================================
@@ -960,12 +922,10 @@ const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean};
 const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean};
 const testMode = { name: "testMode", alias: "X", type: Boolean, defaultValue: false};
 const loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
-// const targetServer = { name: "targetServer", alias: "t", type: String};
 
 const optionDefinitions = [
   enableStdin, 
   numRandomNetworks, 
-  // targetServer, 
   quitOnError, 
   quitOnComplete, 
   loadNeuralNetworkID, 
@@ -976,15 +936,6 @@ const optionDefinitions = [
 const commandLineConfig = cla(optionDefinitions);
 console.log(chalkInfo("TFE | COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
 console.log("TFE | COMMAND LINE OPTIONS\n" + jsonPrint(commandLineConfig));
-
-// if (commandLineConfig.targetServer === "LOCAL") {
-//   commandLineConfig.targetServer = "http://127.0.0.1:9997/util";
-// }
-
-// if (commandLineConfig.targetServer === "REMOTE") {
-//   commandLineConfig.targetServer = "http://word.threeceelabs.com/util";
-// }
-
 
 function loadCommandLineArgs(callback){
 
@@ -1001,11 +952,8 @@ function loadCommandLineArgs(callback){
     cb();
 
   }, function(){
-
     statsObj.commandLineArgsLoaded = true;
-
     if (callback !== undefined) { callback(null, commandLineConfig); }
-
   });
 
 }
@@ -1299,11 +1247,8 @@ function loadAllConfigFiles(callback){
         }
 
         if (defaultConfig) {
-
           defaultConfiguration = defaultConfig;
-
           console.log(chalkAlert("TFE | +++ RELOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
-
           cb();
         }
         else {
@@ -1354,7 +1299,6 @@ function loadAllConfigFiles(callback){
     let defaultAndHostConfig = merge(defaultConfiguration, hostConfiguration); // host settings override defaults
     let tempConfig = merge(configuration, defaultAndHostConfig); // any new settings override existing config
 
-    // configuration = deepcopy(tempConfig);
     configuration = tempConfig;
 
     configuration.twitterUsers = _.uniq(configuration.twitterUsers);  // merge concats arrays!
@@ -1402,7 +1346,10 @@ function connectDb(callback){
   });
 }
 
-function loadMaxInputDropbox(folder, file, callback) {
+function loadMaxInputDropbox(params, callback) {
+
+  const folder = params.folder;
+  const file = params.file;
 
   statsObj.status = "LOAD MAX INPUT";
 
@@ -1515,7 +1462,6 @@ function updateDbNetwork(params, callback) {
   };
 
   if (incrementTestCycles) { update["$inc"] = { testCycles: 1 }; }
-  // if (testHistoryItem) { update["$push"] = { testCycleHistory: testHistoryItem }; }
   
   if (testHistoryItem) { 
     update["$push"] = { testCycleHistory: testHistoryItem };
@@ -2738,7 +2684,6 @@ function generateAutoCategory(user, callback) {
         callback(null, updatedUser);
       });
 
-      // });
     });
   });
 }
@@ -2877,63 +2822,10 @@ function processUser(threeceeUser, userIn, callback) {
       });
     },
 
-    function unfollowFriend(user, cb) {
-      
-      // if (
-      //      ((threeceeUser === "altthreecee01") && twitterUserHashMap.altthreecee00.friends.has(user.nodeId))
-      //   || ((threeceeUser === "altthreecee03") && twitterUserHashMap.altthreecee00.friends.has(user.nodeId))
-      //   || ((threeceeUser === "altthreecee03") && twitterUserHashMap.altthreecee01.friends.has(user.nodeId))
-      // ) {
-
-      //   let unfollowTarget;
-
-      //   if (twitterUserHashMap.altthreecee00.friends.has(user.nodeId)) {
-
-      //     if (twitterUserHashMap.altthreecee01.friends.has(user.nodeId)) {
-      //       twitterUserHashMap.altthreecee01.friends.delete(user.nodeId);
-      //       unfollowTarget = "altthreecee01";
-      //     }
-
-      //     if (twitterUserHashMap.altthreecee03.friends.has(user.nodeId)) {
-      //       twitterUserHashMap.altthreecee03.friends.delete(user.nodeId);
-      //       unfollowTarget = "altthreecee03";
-      //     }
-
-      //     user.following = true;
-      //     user.threeceeFollowing = "altthreecee00";
-
-      //   }
-      //   else if (twitterUserHashMap.altthreecee01.friends.has(user.nodeId)) {
-
-      //     if (twitterUserHashMap.altthreecee03.friends.has(user.nodeId)) {
-      //       twitterUserHashMap.altthreecee03.friends.delete(user.nodeId);
-      //       unfollowTarget = "altthreecee03";
-      //     }
-
-      //     user.following = true;
-      //     user.threeceeFollowing = "altthreecee01";
-
-      //   }
-
-      //   console.log(chalkInfo("XXX UNFOLLOW | altthreecee00 OR altthreecee01 FOLLOWING"
-      //     + " | " + user.nodeId
-      //     + " | " + user.screenName.toLowerCase()
-      //     + " | FLWg: " + user.following
-      //     + " | 3CF: " + user.threeceeFollowing
-      //   ));
-
-      //   tfeChildHashMap[unfollowTarget].child.send({ op: "UNFOLLOW", user: user });
-
-      //   cb(null, user);
-      // }
-      // else {
-
-        user.following = true;
-        user.threeceeFollowing = threeceeUser;
-
-        cb(null, user);
-
-      // }
+    function updateFollowing(user, cb) {
+      user.following = true;
+      user.threeceeFollowing = threeceeUser;
+      cb(null, user);
     },
 
     function updateUserCategory(user, cb) {
@@ -2970,82 +2862,114 @@ function processUser(threeceeUser, userIn, callback) {
   });
 }
 
-function initChild(params, callback){
-  const initObj = {
-    op: "INIT",
-    childId: tfeChildHashMap[params.threeceeUser].childId,
-    threeceeUser: tfeChildHashMap[params.threeceeUser].threeceeUser,
-    twitterConfig: tfeChildHashMap[params.threeceeUser].twitterConfig,
-    verbose: configuration.verbose
-  };
+function initChild(params){
 
-  tfeChildHashMap[params.threeceeUser].child.send(initObj, function(err) {
-    if (err) {
-      console.log(chalkError("TFE | *** CHILD SEND INIT ERROR"
-        + " | @" + params.threeceeUser
-        + " | ERR: " + err
-      ));
-    }
-    callback(err);
+  return new Promise(function(resolve, reject){
+
+    const initObj = {
+      op: "INIT",
+      childId: tfeChildHashMap[params.threeceeUser].childId,
+      threeceeUser: tfeChildHashMap[params.threeceeUser].threeceeUser,
+      twitterConfig: tfeChildHashMap[params.threeceeUser].twitterConfig,
+      verbose: configuration.verbose
+    };
+
+    tfeChildHashMap[params.threeceeUser].child.send(initObj, function(err) {
+      if (err) {
+        console.log(chalkError("TFE | *** CHILD SEND INIT ERROR"
+          + " | @" + params.threeceeUser
+          + " | ERR: " + err
+        ));
+        return reject(err);
+      }
+      resolve();
+    });
+
   });
 }
 
 function disableChild(params, callback){
 
-  const mObj = {
-    op: "DISABLE",
-    verbose: configuration.verbose
-  };
+  return new Promise(function(resolve, reject){
 
-  tfeChildHashMap[params.threeceeUser].child.send(mObj, function(err) {
-    if (err) {
-      console.log(chalkError("TFE | *** CHILD SEND DISABLE ERROR"
-        + " | @" + params.threeceeUser
-        + " | ERR: " + err
-      ));
-    }
-    callback(err);
+    const mObj = {
+      op: "DISABLE",
+      verbose: configuration.verbose
+    };
+
+    tfeChildHashMap[params.threeceeUser].child.send(mObj, function(err) {
+      if (err) {
+        console.log(chalkError("TFE | *** CHILD SEND DISABLE ERROR"
+          + " | @" + params.threeceeUser
+          + " | ERR: " + err
+        ));
+        return reject(err);
+      }
+      resolve();
+    });
+
   });
 }
 
-const checkChildrenState = function (checkState, callback) {
+function checkChildrenState (checkState) {
 
-  async.every(Object.keys(tfeChildHashMap), function(user, cb) {
+  return new Promise(function(resolve, reject){
 
-    debug("CH ID: " + user + " | " + tfeChildHashMap[user].status);
+    let allCheckState = true;
 
-    const cs = ((tfeChildHashMap[user].status === "DISABLED") || (tfeChildHashMap[user].status === checkState));
+    Object.keys(tfeChildHashMap).forEach(function(childId){
 
-    if (!cs && (checkState === "FETCH_END") 
-      && ((tfeChildHashMap[user].status === "RESET") || (tfeChildHashMap[user].status === "IDLE"))){
+      const child = tfeChildHashMap[childId];
 
-      tfeChildHashMap[user].child.send({op: "FETCH_END", verbose: configuration.verbose}, function(err) {
-        if (err) {
-          console.log(chalkError("TFE | *** CHILD SEND FETCH_END ERROR"
-            + " | @" + user
-            + " | ERR: " + err
-          ));
-        }
-      });
+      if (child === undefined) { 
+        console.error("CHILD UNDEFINED");
+        return reject(new Error("CHILD UNDEFINED"));
+      }
 
+      const cs = ((child.status === "DISABLED") || (child.status === checkState));
+
+      if (!cs && (checkState === "FETCH_END") 
+        && ((child.status === "RESET") || (child.status === "IDLE"))){
+
+        child.child.send({op: "FETCH_END", verbose: configuration.verbose}, function(err) {
+          if (err) {
+            console.log(chalkError("TFE | *** CHILD SEND FETCH_END ERROR"
+              + " | @" + user
+              + " | ERR: " + err
+            ));
+            return reject(err);
+          }
+        });
+      }
+
+      if (!cs) {
+        allCheckState = false;
+      } 
+
+      if (configuration.verbose) {
+        console.log("checkChildrenState"
+          + " | CH ID: " + childId 
+          + " | " + child.status 
+          + " | CHCK STATE: " + checkState 
+          + " | cs: " + cs
+          + " | allCheckState: " + allCheckState
+        );
+      }
+
+    });
+
+    if (configuration.verbose) {
+      console.log(chalkAlert("TFE | MAIN: " + fsm.getMachineState()
+        + " | ALL CHILDREN CHECKSTATE: " + checkState + " | " + allCheckState
+      ));
     }
 
-    cb(null, cs);
+    resolve(allCheckState);
 
-  }, function(err, allCheckState) {
-
-    if (err) {
-      console.log(chalkError("TFE | *** ERROR: checkChildrenState: " + err));
-      if (callback !== undefined) { return callback(err, allCheckState); }
-    }
-
-    debug(chalkAlert("TFE | MAIN: " + fsm.getMachineState()
-      + " | ALL CHILDREN: CHECKSTATE: " + checkState + " | " + allCheckState
-    ));
-
-    if (callback !== undefined) { return callback(null, allCheckState); }
   });
-};
+
+  
+}
 
 function childSendAll(params, callback) {
 
@@ -3104,44 +3028,52 @@ function childSendAll(params, callback) {
   });
 }
 
-function initNetworks(params, callback){
+function initRandomNetworkTree(params){
 
-  async.parallel({
+  return new Promise(async function(resolve, reject){
 
-    bestNetworks: function(cb) {
+    if (randomNetworkTree && (randomNetworkTree !== undefined)) {
 
-      loadBestNeuralNetworkFile(function(err, networkObj) {
-
-        if (err) {
-          console.log(chalkError("TFE | *** LOAD BEST NETWORK FILE ERROR: " + err));
-          return cb(err, null);
-        }
-
-        console.log("TFE | loadBestNeuralNetworkFile DONE");
-        cb(null, networkObj);
-
+      randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
+        console.log(chalkBlue("TFE | SENT MAX INPUTS HASHMAP > RNT"));
+        resolve();
       });
-
-    },
-
-    maxInputs: function(cb) {
-
-     loadMaxInputDropbox(defaultTrainingSetFolder, defaultMaxInputHashmapFile, function(err) {
-        if (err) {
-          console.log(chalkError("TFE | *** LOAD MAX INPUTS FILE ERROR: " + err));
-          return cb(err, null);
-        }
-
-        console.log("TFE | loadMaxInputDropbox DONE");
-        cb(null, maxInputHashMap);
-
-      });
-
     }
-  }, function(err) {
-    callback(err);
-  });
+    else {
+      console.log(chalkError("TFE | *** RNT NOT INITIALIZED *** "));
+      reject(new Error("RNT NOT INITIALIZED"));
+    }
 
+  });
+}
+
+function initNetworks(params){
+
+  console.log(chalkTwitter("TFE | INIT NETWORKS"));
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+      await loadBestNeuralNetworkFile();
+      await loadMaxInputDropbox({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile});
+      await initRandomNetworkTree();
+
+      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL }, function(err) {
+
+        if (err) {
+          console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
+          return reject(err);
+        }
+        neuralNetworkInitialized = true;
+        resolve();
+      });
+    }
+    catch(err){
+      console.log(chalkError("TFE | *** INIT NETWORKS ERROR: " + err));
+      reject(err);
+    }
+
+  });
 
 }
 
@@ -3165,6 +3097,17 @@ const processUserQueueEmpty = function() {
   return (processUserQueue.length === 0);
 };
 
+const fetchAllReady = function(){
+  debug(chalkLog("fetchAllReady"
+    + " | fetchAllIntervalReady: " + fetchAllIntervalReady
+    + " | networksSentFlag: " + networksSentFlag
+    + " | loadedNetworksFlag: " + loadedNetworksFlag
+    + " | processUserQueueReady: " + processUserQueueReady
+    + " | processUserQueueEmpty: " + processUserQueueEmpty()
+  ));
+  return (fetchAllIntervalReady && networksSentFlag && loadedNetworksFlag && processUserQueueReady && processUserQueueEmpty() );
+};
+
 let waitFileSaveInterval;
 let loadMaxInputHasMapBusy = false;
 
@@ -3177,22 +3120,32 @@ const fsmStates = {
       loadMaxInputHasMapBusy = false;
       reporter(event, oldState, newState);
 
-      checkChildrenState("RESET", function(err, allChildrenReset) {
-        console.log("TFE | ALL CHILDREN RESET: " + allChildrenReset);
+      checkChildrenState("RESET").then(function(allChildrenReset){
+        console.log(chalkTwitter("TFE | ALL CHILDREN RESET: " + allChildrenReset));
         if (!allChildrenReset && (event !== "fsm_tick")) { childSendAll({op: "RESET"}); }
+      })
+      .catch(function(err){
+        console.log(chalkError("TFE | *** ALL CHILDREN RESET ERROR: " + err));
+        fsm.fsm_error();
       });
 
     },
 
     fsm_tick: function() {
-      checkChildrenState("RESET", function(err, allChildrenReset) {
-        debug("RESET TICK"
+
+      checkChildrenState("RESET").then(function(allChildrenReset){
+        console.log("RESET TICK"
           + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
           + " | ALL CHILDREN RESET: " + allChildrenReset
         );
         if (allChildrenReset) { fsm.fsm_resetEnd(); }
+      })
+      .catch(function(err){
+        console.log(chalkError("TFE | *** ALL CHILDREN RESET ERROR: " + err));
+        fsm.fsm_error();
       });
+
     },
 
     "fsm_resetEnd": "IDLE"
@@ -3203,19 +3156,30 @@ const fsmStates = {
 
       reporter(event, oldState, newState);
 
-      checkChildrenState("IDLE", function(err, allChildrenIdle) {
-        console.log("TFE | ALL CHILDREN IDLE: " + allChildrenIdle);
+      checkChildrenState("IDLE").then(function(allChildrenIdle){
+        console.log(chalkTwitter("TFE | ALL CHILDREN IDLE: " + allChildrenIdle));
         if (!allChildrenIdle && (event !== "fsm_tick")) { childSendAll({op: "IDLE"}); }
+      })
+      .catch(function(err){
+        console.log(chalkError("TFE | *** ALL CHILDREN IDLE ERROR: " + err));
+        fsm.fsm_error();
       });
 
     },
 
     fsm_tick: function() {
-      checkChildrenState("IDLE", function(err, allChildrenIdle) {
+
+      checkChildrenState("IDLE").then(function(allChildrenIdle){
         debug("INIT TICK | ALL CHILDREN IDLE: " + allChildrenIdle );
         if (allChildrenIdle) { fsm.fsm_init(); }
+      })
+      .catch(function(err){
+        console.log(chalkError("TFE | *** ALL CHILDREN IDLE ERROR: " + err));
+        fsm.fsm_error();
       });
+
     },
+
     "fsm_init": "INIT",
     "fsm_error": "ERROR"
   },
@@ -3223,23 +3187,34 @@ const fsmStates = {
   "ERROR":{
     onEnter: function(event, oldState, newState) {
       reporter(event, oldState, newState);
-      fsm.fsm_reset();
-    },
-    "fsm_reset": "RESET"
+      quit("FSM ERROR");
+    }
   },
 
   "INIT":{
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
+
         reporter(event, oldState, newState);
-        checkChildrenState("INIT", function(err, allChildrenInit) {
-          console.log("TFE | ALL CHILDREN INIT: " + allChildrenInit);
-          if (!allChildrenInit && (event !== "fsm_tick")) { childSendAll({op: "INIT"}); }
-        });
+
+        initNetworks()
+          .then(function(){
+            return checkChildrenState("INIT");
+          })
+          .then(function(allChildrenInit){
+            debug("INIT ENTER | ALL CHILDREN INIT: " + allChildrenInit );
+            if (!allChildrenInit && (event !== "fsm_tick")) { childSendAll({op: "INIT"}); }
+          })
+          .catch(function(err){
+            console.log(chalkError("TFE | *** ALL CHILDREN IDLE ERROR: " + err));
+            fsm.fsm_error();
+          });
+
       }
     },
     fsm_tick: function() {
-      checkChildrenState("INIT", function(err, allChildrenInit) {
+
+      checkChildrenState("INIT").then(function(allChildrenInit){
         debug("READY INIT"
           + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
@@ -3247,7 +3222,12 @@ const fsmStates = {
         );
         if (!allChildrenInit) { childSendAll({op: "INIT"}); }
         if (allChildrenInit && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_ready(); }
+      })
+      .catch(function(err){
+        console.log(chalkError("TFE | *** ALL CHILDREN INIT ERROR: " + err));
+        fsm.fsm_error();
       });
+
     },
     "fsm_error": "ERROR",
     "fsm_ready": "READY",
@@ -3259,51 +3239,32 @@ const fsmStates = {
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState);
 
-        checkChildrenState("READY", function(err, allChildrenReady) {
+        checkChildrenState("READY").then(function(allChildrenReady){
           console.log("TFE | ALL CHILDREN READY: " + allChildrenReady);
           if (!allChildrenReady && (event !== "fsm_tick")) { childSendAll({op: "READY"}); }
+        })
+        .catch(function(err){
+          console.log(chalkError("TFE | *** ALL CHILDREN READY ERROR: " + err));
+          fsm.fsm_error();
         });
 
       }
     },
     fsm_tick: function() {
 
-      checkChildrenState("READY", function(err, allChildrenReady) {
-
+      checkChildrenState("READY").then(function(allChildrenReady){
         debug("READY TICK"
           + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
           + " | ALL CHILDREN READY: " + allChildrenReady
         );
-
-        if (
-          fetchAllIntervalReady 
-          && networksSentFlag 
-          && loadedNetworksFlag 
-          && allChildrenReady 
-          && processUserQueueReady 
-          && processUserQueueEmpty()
-          && !loadMaxInputHasMapBusy
-        ) {
-
-          loadMaxInputHasMapBusy = true;
-          
-          randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
-
-            loadMaxInputHasMapBusy = false;
-            fetchAllIntervalReady = false;
-            statsObj.status = "FETCH ALL";
-            fsm.fsm_fetchAllStart();
-
-            console.log(chalkBlue("TFE | SEND MAX INPUTS HASHMAP"));
-            childSendAll({op: "FETCH_USER_START"});
-            statsObj.fetchCycleStartMoment = moment();
-            statsObj.fetchCycleElapsed = 0;
-          });
-
-        }
-
+        if (allChildrenReady && fetchAllReady()) { fsm.fsm_fetchAllStart(); }
+      })
+      .catch(function(err){
+        console.log(chalkError("TFE | *** ALL CHILDREN READY ERROR: " + err));
+        fsm.fsm_error();
       });
+
     },
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
@@ -3316,20 +3277,34 @@ const fsmStates = {
 
         reporter(event, oldState, newState);
 
+        fetchAllIntervalReady = false;
+
+        childSendAll({op: "FETCH_USER_START"});
+        statsObj.fetchCycleStartMoment = moment();
+        statsObj.fetchCycleElapsed = 0;
+
+        initFetchAllInterval(configuration.fetchAllIntervalTime);
+
         console.log("TFE | FETCH_ALL | onEnter | " + event);
       }
     },
     fsm_tick: function() {
+
       statsObj.fetchCycleElapsed = moment().diff(statsObj.fetchCycleStartMoment);
-      checkChildrenState("FETCH_END", function(err, acfe) {
+
+      checkChildrenState("FETCH_END").then(function(allChildrenFetchEnd){
         debug("FETCH_END TICK"
           + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
-          + " | ALL CHILDREN FETCH_END: " + acfe
+          + " | ALL CHILDREN FETCH_END: " + allChildrenFetchEnd
         );
-        // if (!acfe) { fsm.fsm_fetchAllEnd(); }
-        if (acfe && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_fetchAllEnd(); }
+        if (allChildrenFetchEnd && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_fetchAllEnd(); }
+      })
+      .catch(function(err){
+        console.log(chalkError("TFE | *** ALL CHILDREN FETCH_END ERROR: " + err));
+        fsm.fsm_error();
       });
+
     },
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
@@ -3337,7 +3312,9 @@ const fsmStates = {
   },
 
   "FETCH_END_ALL":{
+
     onEnter: function(event, oldState, newState) {
+
       if (event !== "fsm_tick") {
 
         statsObj.status = "END FETCH ALL";
@@ -3512,29 +3489,7 @@ const fsmStates = {
               }
               else {
 
-                initNetworks({}, function(err){
-
-                  if (err) {
-                    console.log("TFE | LOAD MAX INPUTS HASHMAP FILE ERROR: " + err);
-                    quit("LOAD MAX INPUTS HASHMAP FILE ERROR");
-                    return;
-                  }
-
-                  if (randomNetworkTree && (randomNetworkTree !== undefined)) {
-
-                    randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap }, function() {
-                      console.log(chalkBlue("TFE | SEND MAX INPUTS HASHMAP"));
-
-                      initFetchAllInterval(configuration.fetchAllIntervalTime);
-
-                      setTimeout(function() {
-                        fsm.fsm_init();
-                        initFsmTickInterval(FSM_TICK_INTERVAL);
-                      }, 3000);
-                    });
-                  }
-
-                });
+                fsm.fsm_init();
 
               }
 
@@ -3563,7 +3518,7 @@ function initFetchAllInterval(interval) {
 
   statsObj.status = "INIT FETCH ALL INTERVAL";
 
-  fetchAllIntervalReady = true;
+  // fetchAllIntervalReady = true;
 
   console.log(chalkInfo("TFE | INIT FETCH ALL INTERVAL | " + msToTime(interval)));
 
@@ -3579,11 +3534,17 @@ function initFetchAllInterval(interval) {
 }
 
 function initFsmTickInterval(interval) {
+
   console.log(chalkInfo("TFE | INIT FSM TICK INTERVAL | " + msToTime(interval)));
+
   clearInterval(fsmTickInterval);
+
   fsmTickInterval = setInterval(function() {
+
     statsObj.fetchCycleElapsed = moment().diff(statsObj.fetchCycleStartMoment);
+
     fsm.fsm_tick();
+
   }, FSM_TICK_INTERVAL);
 }
 
@@ -3645,10 +3606,6 @@ function showStats(options) {
       + " | FSM: " + fsm.getMachineState()
       + " | N: " + getTimeStamp()
       + " | PUQ READY: " + processUserQueueReady
-      // + " | SERVER CONNECTED: " + statsObj.serverConnected
-      // + " | AUTHENTICATED: " + statsObj.userAuthenticated
-      // + " | READY TXD: " + statsObj.userReadyTransmitted
-      // + " | READY ACK: " + statsObj.userReadyAck
       + " | E: " + msToTime(statsObj.elapsed)
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
       + " | PUQ: " + processUserQueue.length
@@ -3658,7 +3615,7 @@ function showStats(options) {
       + "\nTFE | FETCH_ALL ELAPSED:  " + msToTime(statsObj.fetchAllIntervalTimeElapsed)
       + "\nTFE | FETCH_ALL REMAIN:   " + msToTime(statsObj.fetchAllIntervalRemain)
       + "\nTFE | FETCH_ALL CYCLES:   " + statsObj.fetchCycle
-      + "\nTFE | BEST NN:   " + currentBestNetwork.networkId
+      + "\nTFE | BEST NN:            " + currentBestNetwork.networkId
     ));
 
     printNetworkObj("TFE | BEST NETWORK", currentBestNetwork);
@@ -4028,7 +3985,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
   let slackText = "";
 
-  tfeChildHashMap[user].child.on("message", function(m) {
+  tfeChildHashMap[user].child.on("message", async function(m) {
 
     debug(chalkAlert("TFE | tfeChild RX"
       + " | " + m.op
@@ -4047,14 +4004,12 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
 
         if (m.type === "INVALID_TOKEN") {
-          disableChild({threeceeUser: m.threeceeUser}, function(err){
-            tfeChildHashMap[m.threeceeUser].status = "DISABLED";
-          });
+          await disableChild({threeceeUser: m.threeceeUser});
+          tfeChildHashMap[m.threeceeUser].status = "DISABLED";
         }
         else {
-          initChild({threeceeUser: m.threeceeUser}, function(err){
-            checkChildrenState(m.op);
-          });
+          await initChild({threeceeUser: m.threeceeUser});
+          await checkChildrenState(m.op);
         }
       break;
 
@@ -4096,8 +4051,10 @@ function initTwitterFollowerChild(twitterConfig, callback) {
       break;
 
       case "PAUSE_RATE_LIMIT":
-        console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT | " + m.threeceeUser));
+        console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT | " + m.threeceeUser + " | REMAIN: " + msToTime(m.remaining)));
         tfeChildHashMap[m.threeceeUser].status = "PAUSE_RATE_LIMIT";
+        tfeChildHashMap[m.threeceeUser].twitterRateLimitRemaining = m.remaining;
+        tfeChildHashMap[m.threeceeUser].twitterRateLimitResetAt = m.resetAt;
         checkChildrenState(m.op);
       break;
 
@@ -4539,9 +4496,6 @@ function initConfig(cnf, callback) {
     });
 
   });
-
-
-
 }
 
 function saveNetworkHashMap(params, callback) {
@@ -4627,6 +4581,8 @@ function updateNetworkStats(params, callback) {
 
   statsObj.status = "UPDATE NN STATS";
 
+  console.log(chalkTwitter("TFE | UPDATE NETWORK STATS"));
+
   const updateOverallMatchRate = (params.updateOverallMatchRate !== undefined) ? params.updateOverallMatchRate : false;
   const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
   const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
@@ -4682,7 +4638,7 @@ function updateNetworkStats(params, callback) {
     }
     else {
       console.log(chalkAlert("TFE | ??? NETWORK NOT IN BEST NETWORK HASHMAP ???"
-        + " | " + nnId
+        + " | NNID: " + nnId
       ));
       cb();
     }
@@ -5239,69 +5195,85 @@ function initUserDbUpdateQueueInterval(interval) {
   }, interval);
 }
 
-function initRandomNetworkTree(callback) {
+function initRandomNetworkTree() {
 
-  statsObj.status = "INIT RAN NNs";
+  return new Promise(function(resolve, reject){
 
-  console.log(chalkBlue("TFE | INIT RANDOM NETWORK TREE CHILD PROCESS"));
-  randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`);
-  randomNetworkTree.on("message", function(m) {
-    switch (m.op) {
-      case "IDLE":
+    statsObj.status = "INIT RAN NNs";
+
+    if (randomNetworkTree === undefined) {
+
+      console.log(chalkBlue("TFE | INIT RANDOM NETWORK TREE CHILD PROCESS"));
+
+      randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`);
+
+      randomNetworkTree.on("message", function(m) {
+        switch (m.op) {
+          case "IDLE":
+            randomNetworkTreeBusyFlag = false;
+            randomNetworkTreeReadyFlag = true;
+            debug(chalkAlert("TFE | <== RNT RX"
+              + " [" + randomNetworkTreeMessageRxQueue.length + "]"
+              + " | " + m.op
+            ));
+          break;
+          case "BUSY":
+            randomNetworkTreeReadyFlag = false;
+            randomNetworkTreeBusyFlag = m.cause;
+            debug(chalkAlert("TFE | <== RNT RX BUSY"
+              + " [" + randomNetworkTreeMessageRxQueue.length + "]"
+              + " | " + m.op
+              + " | " + m.cause
+            ));
+          break;
+          default:
+            randomNetworkTreeMessageRxQueue.push(m);
+            debug(chalkAlert("TFE | <== RNT RX"
+              + " [" + randomNetworkTreeMessageRxQueue.length + "]"
+              + " | " + m.op
+            ));
+        }
+      });
+
+      randomNetworkTree.on("error", function(err) {
         randomNetworkTreeBusyFlag = false;
         randomNetworkTreeReadyFlag = true;
-        debug(chalkAlert("TFE | <== RNT RX"
-          + " [" + randomNetworkTreeMessageRxQueue.length + "]"
-          + " | " + m.op
-        ));
-      break;
-      case "BUSY":
-        randomNetworkTreeReadyFlag = false;
-        randomNetworkTreeBusyFlag = m.cause;
-        debug(chalkAlert("TFE | <== RNT RX BUSY"
-          + " [" + randomNetworkTreeMessageRxQueue.length + "]"
-          + " | " + m.op
-          + " | " + m.cause
-        ));
-      break;
-      default:
-        randomNetworkTreeMessageRxQueue.push(m);
-        debug(chalkAlert("TFE | <== RNT RX"
-          + " [" + randomNetworkTreeMessageRxQueue.length + "]"
-          + " | " + m.op
-        ));
+        randomNetworkTreeActivateQueueSize = 0;
+        randomNetworkTree = null;
+        console.log(chalkError("TFE | *** randomNetworkTree ERROR *** : " + err));
+        console.log(chalkError("TFE | *** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
+        if (!quitFlag) { quit({source: "RNT", error: err }); }
+      });
+
+      randomNetworkTree.on("exit", function(err) {
+        randomNetworkTreeBusyFlag = false;
+        randomNetworkTreeReadyFlag = true;
+        randomNetworkTreeActivateQueueSize = 0;
+        randomNetworkTree = null;
+        console.log(chalkError("TFE | *** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
+        if (!quitFlag) { quit({source: "RNT", error: err }); }
+      });
+
+      randomNetworkTree.on("close", function(code) {
+        randomNetworkTreeBusyFlag = false;
+        randomNetworkTreeReadyFlag = true;
+        randomNetworkTreeActivateQueueSize = 0;
+        randomNetworkTree = null;
+        console.log(chalkError("TFE | *** randomNetworkTree CLOSE *** | " + code));
+        if (!quitFlag) { quit({source: "RNT", code: code }); }
+      });
+
     }
-  });
-  randomNetworkTree.on("error", function(err) {
-    randomNetworkTreeBusyFlag = false;
-    randomNetworkTreeReadyFlag = true;
-    randomNetworkTreeActivateQueueSize = 0;
-    randomNetworkTree = null;
-    console.log(chalkError("TFE | *** randomNetworkTree ERROR *** : " + err));
-    console.log(chalkError("TFE | *** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
-    if (!quitFlag) { quit({source: "RNT", error: err }); }
-  });
 
-  randomNetworkTree.on("exit", function(err) {
-    randomNetworkTreeBusyFlag = false;
-    randomNetworkTreeReadyFlag = true;
-    randomNetworkTreeActivateQueueSize = 0;
-    randomNetworkTree = null;
-    console.log(chalkError("TFE | *** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
-    if (!quitFlag) { quit({source: "RNT", error: err }); }
-  });
+    // randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL }, function(err) {
 
-  randomNetworkTree.on("close", function(code) {
-    randomNetworkTreeBusyFlag = false;
-    randomNetworkTreeReadyFlag = true;
-    randomNetworkTreeActivateQueueSize = 0;
-    randomNetworkTree = null;
-    console.log(chalkError("TFE | *** randomNetworkTree CLOSE *** | " + code));
-    if (!quitFlag) { quit({source: "RNT", code: code }); }
-  });
+    //   if (err) {
+    //     console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
+    //     return reject(err);
+    //   }
+    //   resolve();
+    // });
 
-  randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL }, function() {
-    if (callback !== undefined) { callback(); }
   });
 }
 
@@ -5423,7 +5395,6 @@ initConfig(configuration, function(err, cnf) {
 
   console.log("TFE | " + chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(configuration)));
 
-
   connectDb(function(err, db){
 
     if (err) {
@@ -5451,7 +5422,7 @@ initConfig(configuration, function(err, cnf) {
 
   });
 
-  dbConnectionReadyInterval = setInterval(function() {
+  dbConnectionReadyInterval = setInterval(async function() {
 
     if (dbConnectionReady) {
 
@@ -5460,30 +5431,27 @@ initConfig(configuration, function(err, cnf) {
       initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
       initUserDbUpdateQueueInterval(1);
       initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
-      initRandomNetworkTree();
       initLangAnalyzerMessageRxQueueInterval(1);
       initLangAnalyzer();
       initUnfollowableUserSet();
       initTwitterUsers();
-      initNetworks({}, function(err){
+      initFsmTickInterval(FSM_TICK_INTERVAL);
 
-        if (err) {
-          console.log(chalkError("TFE | *** INIT NETWORKS ERROR: " + err));
-        }
-        neuralNetworkInitialized = true;
-
+      try {
+        // await initNetworks();
+        // neuralNetworkInitialized = true;
         fsm.fsm_resetEnd();
         fsm.fsm_init();
-        initFsmTickInterval(FSM_TICK_INTERVAL);
-        initFetchAllInterval(configuration.fetchAllIntervalTime);
-
-      });
-
+        fetchAllIntervalReady = true;
+        // initFetchAllInterval(configuration.fetchAllIntervalTime);
+      }
+      catch (err){
+        console.log(chalkError("TFE | *** INIT NETWORKS ERROR: " + err));
+      }
+      
     }
     else {
       console.log(chalkAlert("TFE | ... WAIT DB CONNECTED ..."));
     }
   }, 1000);
-
-
 });

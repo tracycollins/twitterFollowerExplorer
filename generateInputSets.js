@@ -23,7 +23,7 @@ const DEFAULT_TOTAL_MIN_STEP_MULTIPLIER = 0.35;
 let enableMinNumInputsPerTypeMultiplier = true;
 
 const MAX_NUM_INPUTS_PER_TYPE = 300;
-const MIN_NUM_INPUTS_PER_TYPE = 220;
+const MIN_NUM_INPUTS_PER_TYPE = 230;
 
 const INIT_DOM_MIN = 0.99999;
 const INIT_TOT_MIN = 5000;
@@ -118,7 +118,7 @@ globalInputsObj.inputs = {};
 let stdin;
 
 require("isomorphic-fetch");
-const Dropbox = require("./js/dropbox").Dropbox;
+const Dropbox = require("dropbox").Dropbox;
 
 function msToTime(duration) {
   let seconds = parseInt((duration / 1000) % 60);

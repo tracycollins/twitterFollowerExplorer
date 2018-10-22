@@ -419,7 +419,7 @@ function twitterUsersShow(callback){
 
         fsm.fsm_rateLimitStart();
 
-        process.send({op:"THREECEE_USER", threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
+        // process.send({op:"THREECEE_USER", threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
 
       }
       if (err.code === 89){
@@ -587,18 +587,21 @@ function fetchFriends(params, callback) {
             + " | @" + configuration.threeceeUser 
           ));
 
+          checkRateLimit(function(err2){
 
-          statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+            statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
 
-          statsObj.threeceeUser.twitterRateLimitException = moment();
-          statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
-          statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
+            statsObj.threeceeUser.twitterRateLimitException = moment();
+            statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
+            statsObj.threeceeUser.twitterRateLimitResetAt = moment(moment().valueOf() + 60000);
 
-          fsm.fsm_rateLimitStart();
+            fsm.fsm_rateLimitStart();
 
-          process.send({op:"THREECEE_USER", threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
+            // process.send({op:"THREECEE_USER", threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
 
-          return callback(err, []);
+            return callback(err, []);
+
+          });
 
         }
 
@@ -635,8 +638,8 @@ function fetchFriends(params, callback) {
         statsObj.threeceeUser.endFetch = true;
       }
 
-      console.log(chalkTwitter("TFC | ===========================================================\n"
-        + "---- END FETCH ----"
+      console.log(chalkTwitter("TFC | ==========================================================="
+        + "\nTFC |  END FETCH"
         + " | " + getTimeStamp()
         + " | @" + statsObj.threeceeUser.screenName
         + "\nTFC | FRIENDS:       " + statsObj.threeceeUser.friendsCount
@@ -908,7 +911,7 @@ const fsmStates = {
           console.log(chalkError("TFC | *** fetchFriends ERROR: " + err));
 
           if (err.code === 88){
-            process.send({op:"PAUSE_RATE_LIMIT", threeceeUser: configuration.threeceeUser, state: "PAUSE_RATE_LIMIT", params: params, error: err });
+            // process.send({op:"PAUSE_RATE_LIMIT", threeceeUser: configuration.threeceeUser, state: "PAUSE_RATE_LIMIT", params: params, error: err });
           }
           else {
             process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "FETCH_USER", params: params, error: err });
@@ -969,7 +972,25 @@ const fsmStates = {
 
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
-      process.send({op:"PAUSE_RATE_LIMIT", threeceeUser: configuration.threeceeUser});
+      process.send({op:"PAUSE_RATE_LIMIT", 
+        threeceeUser: configuration.threeceeUser,
+        exception: statsObj.threeceeUser.twitterRateLimitException.valueOf(),
+        remaining: statsObj.threeceeUser.twitterRateLimitRemainingTime,
+        flag: statsObj.threeceeUser.twitterRateLimitExceptionFlag,
+        resetAt: statsObj.threeceeUser.twitterRateLimitResetAt
+      });
+    },
+
+
+    fsm_tick: function() {
+      console.log(chalkLog("TFC | TWITTER RATE LIMIT STATUS"
+        + " | @" + configuration.threeceeUser
+        + " | LIM: " + statsObj.threeceeUser.twitterRateLimit
+        + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
+        + " | RST: " + getTimeStamp(statsObj.threeceeUser.twitterRateLimitResetAt)
+        + " | NOW: " + moment().format(compactDateTimeFormat)
+        + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
+      ));
     },
 
     "fsm_error": "ERROR",
@@ -1035,14 +1056,14 @@ function showStats(options){
 
   statsObj.threeceeUser.percentFetched = (statsObj.threeceeUser.friendsCount > 0) ? 100*(statsObj.threeceeUser.friendsFetched/statsObj.threeceeUser.friendsCount) : 0;
 
-  console.log(chalkLog("TFC | --- STATS --------------------------------------\n"
-    + "TFC | CUR USR: @" + configuration.threeceeUser
-    + "\nTFC | START:   " + statsObj.startTimeMoment.format(compactDateTimeFormat)
-    + "\nTFC | ELAPSED: " + msToTime(statsObj.elapsed)
-    + "\nTFC | FSM:     " + fsm.getMachineState()
-    + "\nTFC | T FTCHD: " + statsObj.threeceeUser.friendsFetched + " / " + statsObj.threeceeUser.friendsCount
+  console.log(chalkLog("TFC | --- STATS --------------------------------------"
+    + "\nTFC | 3C @" + configuration.threeceeUser
+    + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
+    + " | E: " + msToTime(statsObj.elapsed)
+    + " | FSM: " + fsm.getMachineState()
+    + " | FTCHD: " + statsObj.threeceeUser.friendsFetched + " / " + statsObj.threeceeUser.friendsCount
     + " (" + statsObj.threeceeUser.percentFetched.toFixed(2) + "%)"
-    + "\nTFC | ------------------------------------------------\n"
+    + "\nTFC | ------------------------------------------------"
   ));
 }
 
@@ -1074,49 +1095,13 @@ function initTwitter(twitterConfig, callback){
 
     twitClient = new Twit(twitterConfig);
 
-    // twitStream = twitClient.stream("user", { stringify_friend_ids: true });
-
-    // twitStream.on("error", function(err){
-
-    //   console.log(chalkError("TFC | *** ERROR USER @" + configuration.threeceeUser
-    //     + "\n" +  jsonPrint(err)
-    //   ));
-
-    //   fsm.fsm_error();
-
-    //   process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "INIT", error: err });
-
-    //   // quit("TWITTER STREAM ERROR | " + err);
-    // });
-
-    // twitStream.on("follow", function(followMessage){
-
-    //   console.log(chalkInfo("TFC | +++ USER @" + configuration.threeceeUser + " FOLLOW"
-    //     + " | " +  followMessage.target.id_str
-    //     + " | @" +  followMessage.target.screen_name.toLowerCase()
-    //   ));
-
-    //   followMessage.target.following = true;
-    //   followMessage.target.threeceeFollowing = configuration.threeceeUser;
-
-    //   const friendRawObj = {
-    //     op:"FRIEND_RAW", 
-    //     follow: true, 
-    //     threeceeUser: configuration.threeceeUser,
-    //     childId: configuration.childId, 
-    //     friend: followMessage.target
-    //   };
-
-    //   process.send(friendRawObj, function(){});
-    // });
-
   }
   else {
 
     console.log(chalkLog("TFC | TWITTER ALREADY INITIALIZED" 
       + " | " + getTimeStamp() 
       + " | @" + configuration.threeceeUser 
-      + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
+      // + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
     ));
 
     return callback(null, null);
@@ -1143,7 +1128,7 @@ function initTwitter(twitterConfig, callback){
 
         fsm.fsm_rateLimitStart();
 
-        process.send({op:"THREECEE_USER", threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
+        // process.send({op:"THREECEE_USER", threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
 
         return callback(err, null);
 
@@ -1165,6 +1150,8 @@ function initTwitter(twitterConfig, callback){
     const userScreenName = accountSettings.screen_name.toLowerCase();
 
     debug(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: @" + userScreenName));
+
+    initCheckRateLimitInterval(checkRateLimitIntervalTime);
 
     twitterUserUpdate({userScreenName: userScreenName}, function(err){
 
@@ -1472,7 +1459,7 @@ process.on("message", function(m) {
 
       initTwitter(m.twitterConfig, function initTwitterUsersCallback(e){
 
-        initCheckRateLimitInterval(checkRateLimitIntervalTime);
+        // initCheckRateLimitInterval(checkRateLimitIntervalTime);
 
         twitterUserUpdate({}, function(){
           fsm.fsm_init();
