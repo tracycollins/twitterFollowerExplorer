@@ -1467,8 +1467,6 @@ process.on("message", function(m) {
 
       initTwitter(m.twitterConfig, function initTwitterUsersCallback(e){
 
-        // initCheckRateLimitInterval(checkRateLimitIntervalTime);
-
         twitterUserUpdate({}, function(){
           fsm.fsm_init();
         });

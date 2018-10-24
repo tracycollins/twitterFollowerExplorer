@@ -3215,13 +3215,16 @@ const fsmStates = {
     fsm_tick: function() {
 
       checkChildrenState("INIT").then(function(allChildrenInit){
+
         debug("READY INIT"
           + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
           + " | ALL CHILDREN READY: " + allChildrenInit
         );
+
         if (!allChildrenInit) { childSendAll({op: "INIT"}); }
         if (allChildrenInit && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_ready(); }
+
       })
       .catch(function(err){
         console.log(chalkError("TFE | *** ALL CHILDREN INIT ERROR: " + err));
@@ -3258,6 +3261,7 @@ const fsmStates = {
           + " | Q EMPTY: " + processUserQueueEmpty()
           + " | ALL CHILDREN READY: " + allChildrenReady
         );
+        if (!allChildrenReady) { childSendAll({op: "READY"}); }
         if (allChildrenReady && fetchAllReady()) { fsm.fsm_fetchAllStart(); }
       })
       .catch(function(err){
