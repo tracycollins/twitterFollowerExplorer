@@ -1255,13 +1255,11 @@ function unfollowFriend(params, callback){
         ));
 
         return callback(err, unfollowFriendParams);
-
       }
 
       if (_.isObject(response) 
         && (response.statusCode !== undefined) 
-        && (response.statusCode !== 200)) 
-      {
+        && (response.statusCode !== 200)) {
 
         console.log(chalkError("TFC | *** UNFOLLOW FAIL"
           + " | 3C: @" + configuration.threeceeUser
@@ -1304,13 +1302,11 @@ function unfollowFriend(params, callback){
         );
 
         return callback(null, data);
-
       }
 
       console.log(chalkInfo("TFC | miss UNFOLLOW"
         + " | 3C: @" + configuration.threeceeUser
         + " | UID: " + unfollowFriendParams.user_id
-        + " | @" + unfollowFriendParams.screen_name
       ));
 
       callback(null, null);
