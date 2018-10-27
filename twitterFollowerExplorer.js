@@ -3100,7 +3100,7 @@ const processUserQueueEmpty = function() {
 };
 
 const fetchAllReady = function(){
-  debug(chalkLog("fetchAllReady"
+  console.log(chalkLog("fetchAllReady"
     + " | fetchAllIntervalReady: " + fetchAllIntervalReady
     + " | networksSentFlag: " + networksSentFlag
     + " | loadedNetworksFlag: " + loadedNetworksFlag
