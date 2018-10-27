@@ -2802,7 +2802,9 @@ function processUser(threeceeUser, userIn, callback) {
           }
           if (
             (user.status !== undefined) 
+            && user.status 
             && (userIn.status !== undefined) 
+            && userIn.status 
             && user.status.id_str 
             && userIn.status.id_str 
             && (user.status.id_str !== userIn.status.id_str)) {
