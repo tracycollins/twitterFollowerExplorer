@@ -81,7 +81,7 @@ let prevHostConfigFileModifiedMoment = moment("2010-01-01");
 let prevDefaultConfigFileModifiedMoment = moment("2010-01-01");
 let prevConfigFileModifiedMoment = moment("2010-01-01");
 
-const DEFAULT_QUIT_ON_COMPLETE = false;
+const DEFAULT_QUIT_ON_COMPLETE = true;
 const LANGUAGE_ANALYZE_INTERVAL = 100;
 const RANDOM_NETWORK_TREE_INTERVAL = 1;
 const TWITTER_DEFAULT_USER = "altthreecee00";

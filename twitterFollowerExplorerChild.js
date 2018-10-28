@@ -214,6 +214,13 @@ function resetTwitterUserState(){
 
 function checkRateLimit(callback){
 
+  if (!twitClient || (twitClient === undefined)) {
+    console.log(chalkError("TFC | *** CHECK RATE LIMIT | TWIT CLIENT UNDEFINED"
+      + " | @" + configuration.threeceeUser
+    ));
+    return callback(new Error("TWIT CLIENT UNDEFINED"), null);
+  }
+
   twitClient.get("application/rate_limit_status", function(err, data, response) {
     
     if (err){
@@ -570,6 +577,11 @@ function checkFriendMinimumProperties(friend, callback){
 }
 
 function fetchFriends(params, callback) {
+
+  if (!twitClient || (twitClient === undefined)) {
+    console.log(chalkAlert("TFC | FETCH FRIENDS | TWIT CLIENT UNDEFINED | @" + configuration.threeceeUser));
+    return callback(new Error("FETCH FRIENDS | TWIT CLIENT UNDEFINED"), null);
+  }
 
   if (configuration.testMode) { console.log(chalkInfo("TFC | FETCH FRIENDS params\n" + jsonPrint(params))); }
 
@@ -1204,12 +1216,13 @@ function initialize(callback){
 
 function unfollowFriend(params, callback){
 
-  if (!twitClient) {
-    console.log(chalkAlert("TFC | UNFOLLOW FRIEND | TWIT CLIENT UNDEFINED | SKIPPING"
+  if (!twitClient || twitClient === undefined) {
+    console.log(chalkAlert("TFC | UNFOLLOW FRIEND | TWIT CLIENT UNDEFINED"
+      + " |  @" + configuration.threeceeUser
       + " | UID: " + params.user.userId
       + " | @" + params.user.screenName
     ));
-    return callback(null, null);
+    return callback(new Error("TWIT CLIENT UNDEFINED"), null);
   }
 
   let unfollowFriendParams = {};
@@ -1487,7 +1500,7 @@ process.on("message", function(m) {
 
     case "FOLLOW":
 
-      if (twitClient) {
+      if (twitClient && (twitClient !== undefined)) {
 
         twitClient.post(
 
