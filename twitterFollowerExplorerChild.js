@@ -1064,14 +1064,13 @@ function showStats(options){
 
   statsObj.threeceeUser.percentFetched = (statsObj.threeceeUser.friendsCount > 0) ? 100*(statsObj.threeceeUser.friendsFetched/statsObj.threeceeUser.friendsCount) : 0;
 
-  console.log(chalkLog("TFC | --- STATS --------------------------------------"
-    + "\nTFC | 3C @" + configuration.threeceeUser
+  console.log(chalkLog("TFC | STATS"
+    + " | 3C @" + configuration.threeceeUser
     + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
     + " | E: " + msToTime(statsObj.elapsed)
     + " | FSM: " + fsm.getMachineState()
     + " | FTCHD: " + statsObj.threeceeUser.friendsFetched + " / " + statsObj.threeceeUser.friendsCount
     + " (" + statsObj.threeceeUser.percentFetched.toFixed(2) + "%)"
-    + "\nTFC | ------------------------------------------------"
   ));
 }
 

@@ -22,6 +22,7 @@ let rxActivateNetworkQueue = [];
 let maxQueueFlag = false;
 let maxInputHashMap = {};
 
+let loadNetworksBusy = false;
 let activateNetworkInterval;
 let activateNetworkIntervalBusy = false;
 
@@ -943,27 +944,19 @@ function getInputNames(nodes, callback){
   });
 }
 
-let loadNetworksBusy = false;
 
-function loadNetworks(networksObj, callback){
+function loadNetwork(networkObj){
 
-  loadNetworksBusy = true;
+  return new Promise(function(resolve, reject){
 
+    // if (params.networkObj.network === undefined) {
+    //   console.log(chalkError("RNT | *** LOAD NETWORK INPUT UNDEFINED: " + params.networkObj.networkId));
+    //   return reject(new Error("LOAD NETWORK INPUT UNDEFINED: " + params.networkObj.networkId));
+    // }
 
-  const nnIds = Object.keys(networksObj);
+    // console.log(chalkLog("RNT | LOAD NETWORK"));
 
-  async.eachSeries(nnIds, function(nnId, cb){
-
-    let networkObj = networksObj[nnId];
-
-    if (networkObj.network === undefined) {
-      console.log(chalkError("RNT | *** LOAD NETWORK INPUT UNDEFINED: " + networkObj.networkId));
-      return cb();
-    }
-
-    debug(chalkLog("RNT | LOAD NETWORK\nKEYS: " + Object.keys(networkObj.network)));
-
-    const network = neataptic.Network.fromJSON(networkObj.network);
+    let network = neataptic.Network.fromJSON(networkObj.network);
 
     networkObj.network = {};
     networkObj.network = network;
@@ -973,61 +966,61 @@ function loadNetworks(networksObj, callback){
     networkObj.matchRate = (networkObj.matchRate !== undefined) ? networkObj.matchRate : 0 ;
     networkObj.overallMatchRate = (networkObj.overallMatchRate !== undefined) ? networkObj.overallMatchRate : 0 ;
 
-    networksHashMap.set(nnId, networkObj);
+    networksHashMap.set(networkObj.networkId, networkObj);
 
-    if (statsObj.loadedNetworks[nnId] === undefined) {
-      statsObj.loadedNetworks[nnId] = {};
-      statsObj.loadedNetworks[nnId].networkId = nnId;
-      statsObj.loadedNetworks[nnId].inputsId = networkObj.inputsId;
-      statsObj.loadedNetworks[nnId].numInputs = networkObj.numInputs;
-      statsObj.loadedNetworks[nnId].output = [];
-      statsObj.loadedNetworks[nnId].successRate = networkObj.successRate;
-      statsObj.loadedNetworks[nnId].matchRate = networkObj.matchRate;
-      statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
-      statsObj.loadedNetworks[nnId].testCycles = networkObj.testCycles;
-      statsObj.loadedNetworks[nnId].testCycleHistory = [];
-      statsObj.loadedNetworks[nnId].testCycleHistory = networkObj.testCycleHistory;
-      statsObj.loadedNetworks[nnId].total = 0;
-      statsObj.loadedNetworks[nnId].match = 0;
-      statsObj.loadedNetworks[nnId].mismatch = 0;
-      statsObj.loadedNetworks[nnId].matchFlag = false;
-      statsObj.loadedNetworks[nnId].left = 0;
-      statsObj.loadedNetworks[nnId].neutral = 0;
-      statsObj.loadedNetworks[nnId].right = 0;
-      statsObj.loadedNetworks[nnId].positive = 0;
-      statsObj.loadedNetworks[nnId].negative = 0;
+    if (statsObj.loadedNetworks[networkObj.networkId] === undefined) {
+      statsObj.loadedNetworks[networkObj.networkId] = {};
+      statsObj.loadedNetworks[networkObj.networkId].networkId = networkObj.networkId;
+      statsObj.loadedNetworks[networkObj.networkId].inputsId = networkObj.inputsId;
+      statsObj.loadedNetworks[networkObj.networkId].numInputs = networkObj.numInputs;
+      statsObj.loadedNetworks[networkObj.networkId].output = [];
+      statsObj.loadedNetworks[networkObj.networkId].successRate = networkObj.successRate;
+      statsObj.loadedNetworks[networkObj.networkId].matchRate = networkObj.matchRate;
+      statsObj.loadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+      statsObj.loadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
+      statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = [];
+      statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
+      statsObj.loadedNetworks[networkObj.networkId].total = 0;
+      statsObj.loadedNetworks[networkObj.networkId].match = 0;
+      statsObj.loadedNetworks[networkObj.networkId].mismatch = 0;
+      statsObj.loadedNetworks[networkObj.networkId].matchFlag = false;
+      statsObj.loadedNetworks[networkObj.networkId].left = 0;
+      statsObj.loadedNetworks[networkObj.networkId].neutral = 0;
+      statsObj.loadedNetworks[networkObj.networkId].right = 0;
+      statsObj.loadedNetworks[networkObj.networkId].positive = 0;
+      statsObj.loadedNetworks[networkObj.networkId].negative = 0;
     }
 
-    statsObj.loadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
-    statsObj.loadedNetworks[nnId].testCycles = networkObj.testCycles;
-    statsObj.loadedNetworks[nnId].testCycleHistory = networkObj.testCycleHistory;
+    statsObj.loadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+    statsObj.loadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
+    statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
 
-    if (statsObj.allTimeLoadedNetworks[nnId] === undefined) {
-      statsObj.allTimeLoadedNetworks[nnId] = {};
-      statsObj.allTimeLoadedNetworks[nnId].networkId = nnId;
-      statsObj.allTimeLoadedNetworks[nnId].inputsId = networkObj.inputsId;
-      statsObj.allTimeLoadedNetworks[nnId].numInputs = networkObj.numInputs;
-      statsObj.allTimeLoadedNetworks[nnId].output = [];
-      statsObj.allTimeLoadedNetworks[nnId].successRate = networkObj.successRate;
-      statsObj.allTimeLoadedNetworks[nnId].matchRate = networkObj.matchRate;
-      statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
-      statsObj.allTimeLoadedNetworks[nnId].testCycles = networkObj.testCycles;
-      statsObj.allTimeLoadedNetworks[nnId].testCycleHistory = [];
-      statsObj.allTimeLoadedNetworks[nnId].testCycleHistory = networkObj.testCycleHistory;
-      statsObj.allTimeLoadedNetworks[nnId].total = 0;
-      statsObj.allTimeLoadedNetworks[nnId].match = 0;
-      statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
-      statsObj.allTimeLoadedNetworks[nnId].matchFlag = false;
-      statsObj.allTimeLoadedNetworks[nnId].left = 0;
-      statsObj.allTimeLoadedNetworks[nnId].neutral = 0;
-      statsObj.allTimeLoadedNetworks[nnId].right = 0;
-      statsObj.allTimeLoadedNetworks[nnId].positive = 0;
-      statsObj.allTimeLoadedNetworks[nnId].negative = 0;
+    if (statsObj.allTimeLoadedNetworks[networkObj.networkId] === undefined) {
+      statsObj.allTimeLoadedNetworks[networkObj.networkId] = {};
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].networkId = networkObj.networkId;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].inputsId = networkObj.inputsId;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].numInputs = networkObj.numInputs;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].output = [];
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].successRate = networkObj.successRate;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].matchRate = networkObj.matchRate;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = [];
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].total = 0;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].match = 0;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].mismatch = 0;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].matchFlag = false;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].left = 0;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].neutral = 0;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].right = 0;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].positive = 0;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].negative = 0;
     }
 
-    statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = networkObj.overallMatchRate;
-    statsObj.allTimeLoadedNetworks[nnId].testCycles = networkObj.testCycles;
-    statsObj.allTimeLoadedNetworks[nnId].testCycleHistory = networkObj.testCycleHistory;
+    statsObj.allTimeLoadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+    statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
+    statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
 
     console.log(chalkLog("RNT | LOAD NETWORK"
       + " | [ " + networksHashMap.size + " NNs IN HM ]"
@@ -1036,19 +1029,13 @@ function loadNetworks(networksObj, callback){
       + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
       + " | TC: " + networkObj.testCycles
       + " | TCH: " + networkObj.testCycleHistory.length
-      + " | " + nnId
+      + " | " + networkObj.networkId
     ));
 
-
-    cb();
-
-  }, function(err){
-
-    loadNetworksBusy = false;
-
-    if (callback) { callback(err); }
+    resolve();
 
   });
+
 }
 
 function printCategorizeHistory(){
@@ -1152,7 +1139,6 @@ process.on("message", function(m) {
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
         }
       });
-
     break;
 
     case "LOAD_MAX_INPUTS_HASHMAP":
@@ -1227,35 +1213,37 @@ process.on("message", function(m) {
       quit("QUIT OP");
     break;
 
-    case "LOAD_NETWORKS":
+    case "LOAD_NETWORK":
 
-      console.log(chalkLog("RNT | LOAD_NETWORKS"
-        + " | " + Object.keys(m.networksObj).length + " NNs"
-      ));
+      // console.log(chalkLog("RNT | LOAD_NETWORK | " + m.networkObj.networkId));
 
-      loadNetworks(m.networksObj, function(){
-        statsObj.networksLoaded = true;
-        process.send({op: "NETWORK_READY"}, function(err){
-          if (err) { 
-            console.trace(chalkError("RNT | *** SEND ERROR | NETWORK_READY | " + err));
-            console.error.bind(console, "RNT | *** SEND ERROR | NETWORK_READY | " + err);
-          }
-        });
-      });
+      try {
+        loadNetwork(m.networkObj);
+      }
+      catch(err){
+        console.trace(chalkError("RNT | *** LOAD NETWORK ERROR | " + err));
+        quit("LOAD NETWORK ERROR");
+      }
+    break;
 
+    case "LOAD_NETWORK_DONE":
+      console.log(chalkLog("RNT | LOAD_NETWORK_DONE"));
+      statsObj.networksLoaded = true;
     break;
     
     case "ACTIVATE":
 
       rxActivateNetworkQueue.push(m.obj);
 
-      debug(chalkInfo("### ACTIVATE"
-        + " [" + rxActivateNetworkQueue.length + "]"
-        + " | " + getTimeStamp()
-        + " | " + m.obj.user.nodeId
-        + " | @" + m.obj.user.screenName
-        + " | C: " + m.obj.user.category
-      ));
+      if (configuration.verbose) {
+        console.log(chalkInfo("### ACTIVATE"
+          + " [" + rxActivateNetworkQueue.length + "]"
+          + " | " + getTimeStamp()
+          + " | " + m.obj.user.nodeId
+          + " | @" + m.obj.user.screenName
+          + " | C: " + m.obj.user.category
+        ));
+      }
 
       process.send({op: "NETWORK_BUSY"}, function(err){
         if (err) { 
@@ -1271,7 +1259,6 @@ process.on("message", function(m) {
         });
         maxQueueFlag = true;
       }
-
     break;
     
     default:
