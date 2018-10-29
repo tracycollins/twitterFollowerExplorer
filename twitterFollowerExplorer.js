@@ -5020,7 +5020,7 @@ function initRandomNetworkTreeChild() {
           return reject(err);
         }
 
-        console.log(chalkError("TFE | RNT CHILD INITIALIZED"));
+        console.log(chalkLog("TFE | RNT CHILD INITIALIZED"));
 
         resolve();
       });
@@ -5033,7 +5033,7 @@ function initRandomNetworkTreeChild() {
           return reject(err);
         }
         
-        console.log(chalkError("TFE | RNT CHILD INITIALIZED"));
+        console.log(chalkLog("TFE | RNT CHILD INITIALIZED"));
 
         resolve();
       });
