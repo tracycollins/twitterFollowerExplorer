@@ -934,7 +934,7 @@ const fsmStates = {
             // process.send({op:"PAUSE_RATE_LIMIT", threeceeUser: configuration.threeceeUser, state: "PAUSE_RATE_LIMIT", params: params, error: err });
           }
           else {
-            process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "FETCH_USER", params: params, error: err });
+            process.send({op:"ERROR", type: "FETCH FRIENDS", threeceeUser: configuration.threeceeUser, state: "FETCH_USER", params: params, error: err });
           }
 
         }
@@ -1513,7 +1513,7 @@ process.on("message", function(m) {
                 + " | " + err
               ));
 
-              process.send({op:"ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
+              process.send({op:"ERROR", type: "TWITTER FOLLOW", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
             }
             else {
 
@@ -1550,7 +1550,7 @@ process.on("message", function(m) {
           process.send(
             {
               op:"ERROR",
-              type: "UNKNOWN", 
+              type: "TWITTER UNFOLLOW", 
               threeceeUser: configuration.threeceeUser, 
               state: "UNFOLLOW_ERR", 
               params: { user: m.user }, 

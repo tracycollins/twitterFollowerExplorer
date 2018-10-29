@@ -3746,11 +3746,13 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
         console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
 
-        if (m.error) { 
-          console.log(chalkError("TFE | *** CHILD ERROR\nTFE | " + jsonPrint(m.error))); 
-        }
-
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
+
+        if (m.error) { 
+          tfeChildHashMap[m.threeceeUser].error = m.error;
+          console.log(chalkError("TFE | *** CHILD ERROR: " + m.error)); 
+          console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
+        }
 
         if (m.type === "INVALID_TOKEN") {
           await disableChild({threeceeUser: m.threeceeUser});
