@@ -14,7 +14,7 @@ process.env.GOOGLE_APPLICATION_CREDENTIALS = "/Users/tc/Dropbox/Apps/wordAssocia
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
-require("isomorphic-fetch");
+const fetch = require("isomorphic-fetch");
 const cp = require("child_process");
 const os = require("os");
 const _ = require("lodash");
@@ -342,7 +342,12 @@ function initDropbox(cfg){
         };
       }
       else {
-        dropboxClient = new Dropbox({ accessToken: config.accessToken });
+        dropboxClient = new Dropbox({ 
+          accessToken: config.accessToken,
+          fetch: fetch
+        });
+
+        // dropboxClient = new Dropbox({ accessToken: config.accessToken });
       }
 
       statsObj.status = "INIT DROPBOX OK";

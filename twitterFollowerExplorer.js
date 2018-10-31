@@ -2250,7 +2250,7 @@ function updateUserCategoryStats(user, callback) {
 
   statsObj.status = "UPDATE USER CAT STATS";
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   return new Promise(function() {
 
@@ -2390,7 +2390,7 @@ function updateHistograms(params, callback) {
 
   statsObj.status = "UPDATE HISTOGRAMS";
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   let user = {};
   let histogramsIn = {};
@@ -2454,7 +2454,7 @@ function generateAutoCategory(user, callback) {
 
   statsObj.status = "GEN AUTO CAT";
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   async.waterfall([
     function userScreenName(cb) {
