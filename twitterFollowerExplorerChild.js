@@ -659,7 +659,7 @@ function fetchFriends(params, callback) {
       }
 
       console.log(chalkTwitter("TFC | ==========================================================="
-        + "\nTFC |  END FETCH"
+        + "\nTFC | END FETCH"
         + " | " + getTimeStamp()
         + " | @" + statsObj.threeceeUser.screenName
         + "\nTFC | FRIENDS:       " + statsObj.threeceeUser.friendsCount

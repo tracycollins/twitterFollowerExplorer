@@ -293,6 +293,7 @@ let slackText = "";
 const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
 const slackConversationId = "D65CSAELX"; // wordbot
 const slackRtmToken = "xoxb-209434353623-bNIoT4Dxu1vv8JZNgu7CDliy";
+const shackTitleLink = "https://twitter.com/threecee";
 
 const Slack = require("slack-node");
 const slack = new Slack(slackOAuthAccessToken);
@@ -381,9 +382,12 @@ function slackSendWebStats(params){
 
     try {
 
+      const token = params.token || slackOAuthAccessToken;
+      const channel = params.channel || slackChannel;
       const title = "TFE | " + hostname +  "_" + process.pid + " | STATS";
+      const title_link = params.title_link || shackTitleLink;
       const pretext = params.pretext || "S: " + statsObj.startTimeMoment.format(compactDateTimeFormat) + " | E: " + msToTime(statsObj.elapsed);
-      const text = params.text || "TFE | " + hostname + "_" + process.pid + " | " + msgObj;
+      const text = params.text || "TFE | " + hostname + "_" + process.pid;
       const attachments = params.attachments || slackDefaultAttachments;
 
       let message = {
@@ -415,37 +419,21 @@ function slackMessageHandler(message){
 
     try {
 
-      console.log(chalkAlert("TFE | MESSAGE | " + message.type + " | " + message.text));
+      console.log(chalkAlert("TFE | <RX MESSAGE | " + message.type + " | " + message.text));
 
       switch (message.text) {
+        case "ERROR":
         case "INIT":
-          slackSendRtmMessage("SLACK INIT");
-          resolve();
-        break;
+        case "FETCH FRIENDS":
         case "STATS":
-          slackSendWebStats("STATS");
-          slackSendRtmMessage("SLACK STATS");
-          resolve();
-        break;
+        case "SLACK READY":
         case "READY":
-          slackSendRtmMessage("SLACK READY");
-          resolve();
-        break;
         case "START":
-          slackSendRtmMessage("SLACK START");
-          resolve();
-        break;
         case "RESET":
-          slackSendRtmMessage("SLACK RESET");
-          resolve();
-        break;
-        case "QUIT":
-          quit("SLACK QUIT");
-          slackSendRtmMessage("SLACK QUIT");
-          resolve();
-        break;
+        case "SLACK QUIT":
         case "TEXT":
-          slackSendRtmMessage("SLACK TEXT");
+          slackSendWebStats(message.text);
+          slackSendRtmMessage(message.text);
           resolve();
         break;
         case "PING":
@@ -454,7 +442,6 @@ function slackMessageHandler(message){
           resolve();
         break;
         case "PONG":
-          // slackSendRtmMessage("PONG");
           resolve();
         break;
         default:
@@ -1272,7 +1259,6 @@ function loadCommandLineArgs(callback){
     statsObj.commandLineArgsLoaded = true;
     if (callback !== undefined) { callback(null, commandLineConfig); }
   });
-
 }
 
 let dropboxClient;
@@ -1317,7 +1303,6 @@ function getFileMetadata(path, file, callback) {
       callback(error, null);
 
     });
-
 }
 
 function loadConfigFile(folder, file, callback) {
@@ -1539,7 +1524,6 @@ function loadConfigFile(folder, file, callback) {
   }
 }
 
-
 function loadAllConfigFiles(callback){
 
   statsObj.status = "LOAD CONFIG";
@@ -1624,7 +1608,6 @@ function loadAllConfigFiles(callback){
   });
 }
 
-
 function connectDb(callback){
 
   statsObj.status = "CONNECT DB";
@@ -1671,12 +1654,12 @@ function connectDb(callback){
 
 function loadMaxInputDropbox(params) {
 
+  statsObj.status = "LOAD MAX INPUT";
+
   return new Promise(function(resolve, reject){
 
     const folder = params.folder;
     const file = params.file;
-
-    statsObj.status = "LOAD MAX INPUT";
 
     console.log(chalkNetwork("TFE | ... LOADING DROPBOX MAX INPUT HASHMAP | " + folder + "/" + file));
 
@@ -1704,7 +1687,6 @@ function loadMaxInputDropbox(params) {
     });
 
   });
-
 }
 
 function updateGlobalHistograms(params, callback) {
@@ -2189,9 +2171,9 @@ function initUnfollowableUserSet(){
 
 function loadBestNeuralNetworkFiles() {
 
-  return new Promise(function(resolve, reject){
+  statsObj.status = "LOAD BEST NN";
 
-    statsObj.status = "LOAD BEST NN";
+  return new Promise(function(resolve, reject){
 
     console.log(chalkLog("TFE | ... LOADING DROPBOX NEURAL NETWORKS"
       + " | FOLDER: " + bestNetworkFolder
@@ -2946,6 +2928,8 @@ function processUser(threeceeUser, userIn, callback) {
 
 function initChild(params){
 
+  statsObj.status = "INIT CHILD | @" + params.threeceeUser;
+
   return new Promise(function(resolve, reject){
 
     const initObj = {
@@ -3050,8 +3034,6 @@ function checkChildrenState (checkState) {
     resolve(allCheckState);
 
   });
-
-  
 }
 
 function childSendAll(params, callback) {
@@ -3113,6 +3095,8 @@ function childSendAll(params, callback) {
 
 function initRandomNetworks(params){
 
+  statsObj.status = "INIT RAN NNs";
+
   return new Promise(async function(resolve, reject){
 
     loadedNetworksFlag = false;
@@ -3157,6 +3141,8 @@ function initRandomNetworks(params){
 
 function initMaxInputHashMap(params){
 
+  statsObj.status = "INIT MAX INPUT HASHMAP";
+
   return new Promise(async function(resolve, reject){
 
     if (randomNetworkTree && (randomNetworkTree !== undefined)) {
@@ -3177,6 +3163,8 @@ function initMaxInputHashMap(params){
 
 function initNetworks(params){
 
+  statsObj.status = "INIT NNs";
+
   console.log(chalkTwitter("TFE | INIT NETWORKS"));
 
   return new Promise(async function(resolve, reject){
@@ -3195,9 +3183,7 @@ function initNetworks(params){
     }
 
   });
-
 }
-
 
 function reporter(event, oldState, newState) {
 
@@ -3244,6 +3230,8 @@ const fsmStates = {
       loadMaxInputHasMapBusy = false;
       reporter(event, oldState, newState);
 
+      statsObj.status = "FSM READY";
+
       checkChildrenState("RESET").then(function(allChildrenReset){
         console.log(chalkTwitter("TFE | ALL CHILDREN RESET: " + allChildrenReset));
         if (!allChildrenReset && (event !== "fsm_tick")) { childSendAll({op: "RESET"}); }
@@ -3280,6 +3268,8 @@ const fsmStates = {
 
       reporter(event, oldState, newState);
 
+      statsObj.status = "FSM IDLE";
+
       checkChildrenState("IDLE").then(function(allChildrenIdle){
         console.log(chalkTwitter("TFE | ALL CHILDREN IDLE: " + allChildrenIdle));
         if (!allChildrenIdle && (event !== "fsm_tick")) { childSendAll({op: "IDLE"}); }
@@ -3311,6 +3301,9 @@ const fsmStates = {
   "ERROR":{
     onEnter: function(event, oldState, newState) {
       reporter(event, oldState, newState);
+
+      statsObj.status = "FSM ERROR";
+
       try { 
         slackSendWebMessage("ERROR");
         slackSendRtmMessage("ERROR");
@@ -3327,6 +3320,8 @@ const fsmStates = {
       if (event !== "fsm_tick") {
 
         reporter(event, oldState, newState);
+
+        statsObj.status = "FSM INIT";
 
         let slackText = "\n*INIT*";
         slackText = slackText + " | " + hostname;
@@ -3389,6 +3384,8 @@ const fsmStates = {
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState);
 
+        statsObj.status = "FSM READY";
+
         checkChildrenState("READY").then(function(allChildrenReady){
           console.log("TFE | ALL CHILDREN READY: " + allChildrenReady);
           if (!allChildrenReady && (event !== "fsm_tick")) { childSendAll({op: "READY"}); }
@@ -3426,6 +3423,9 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) {
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState);
+
+        statsObj.status = "FSM FETCH_ALL";
+
         childSendAll({op: "FETCH_USER_START"});
         console.log("TFE | FETCH_ALL | onEnter | " + event);
       }
@@ -3457,7 +3457,7 @@ const fsmStates = {
 
       if (event !== "fsm_tick") {
 
-        statsObj.status = "END FETCH ALL";
+        statsObj.status = "FSM FETCH_END_ALL";
 
         reporter(event, oldState, newState);
 
@@ -3900,6 +3900,8 @@ function saveFile (params, callback){
 
 function initProcessUserQueueInterval(interval) {
 
+  statsObj.status = "INIT PROCESS USER QUEUE";
+
   let mObj = {};
   let tcUser;
 
@@ -4069,7 +4071,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
   const childId = TFC_CHILD_PREFIX + twitterConfig.threeceeUser;
   console.log(chalkLog("TFE | +++ NEW TFE CHILD | TFC ID: " + childId));
 
-  statsObj.status = "INIT CHILD | " +user ;
+  statsObj.status = "INIT CHILD | @" + user ;
 
   let childEnv = {};
   childEnv.env = {};
@@ -4338,7 +4340,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
 function initTwitter(threeceeUser, callback) {
 
-  statsObj.status = "INIT TWITTER";
+  statsObj.status = "INIT TWITTER | @" + threeceeUser;
 
   let twitterConfigFile =  threeceeUser + ".json";
 
@@ -4516,7 +4518,7 @@ function initStdIn() {
 
 async function initConfig(cnf, callback) {
 
-  statsObj.status = "INITIALIZE";
+  statsObj.status = "INIT CONFIG";
 
   if (debug.enabled) {
     console.log("\nTFE | %%%%%%%%%%%%%%\nTFE |  DEBUG ENABLED \nTFE | %%%%%%%%%%%%%%\n");
@@ -5326,9 +5328,9 @@ function initUserDbUpdateQueueInterval(interval) {
 
 function initRandomNetworkTreeChild() {
 
-  return new Promise(function(resolve, reject){
+  statsObj.status = "INIT RNT CHILD";
 
-    statsObj.status = "INIT RNT CHILD";
+  return new Promise(function(resolve, reject){
 
     if (randomNetworkTree === undefined) {
 
