@@ -1013,15 +1013,15 @@ const fsmStates = {
       ));
     },
 
-    "fsm_error": "ERROR",
-    "fsm_reset": "RESET",
-    "fsm_disable": "DISABLED",
-
     "fsm_rateLimitEnd": function(){
       return statsObj.fsmPreviousPauseState;
     },
 
-    "fsm_fetchUserEnd": "FETCH_END"
+    "fsm_init": "INIT",
+    "fsm_error": "ERROR",
+    "fsm_reset": "RESET",
+    "fsm_disable": "DISABLED"
+
 
   },
 
@@ -1029,9 +1029,10 @@ const fsmStates = {
 
     onEnter: function(event, oldState, newState){
       reporter(event, oldState, newState);
-      return this.ERROR;
+      return this.DISABLED;
     },
 
+    "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
     "fsm_idle": "IDLE",
     "fsm_reset": "RESET"
@@ -1045,6 +1046,7 @@ const fsmStates = {
       return this.ERROR;
     },
 
+    "fsm_fetchUserEnd": "FETCH_END",
     "fsm_disable": "DISABLED",
     "fsm_idle": "IDLE",
     "fsm_reset": "RESET"

@@ -32,7 +32,7 @@ let userServerController;
 
 let userServerControllerReady = false;
 
-require("isomorphic-fetch");
+const fetch = require("isomorphic-fetch"); // or another library of choice.
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -114,6 +114,7 @@ const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 1; // ms
 const chalk = require("chalk");
 const chalkConnect = chalk.green;
 const chalkNetwork = chalk.blue;
+const chalkBlueBold = chalk.blue.bold;
 const chalkTwitter = chalk.blue;
 const chalkTwitterBold = chalk.bold.blue;
 const chalkBlue = chalk.blue;
@@ -141,6 +142,8 @@ const twitterTextParser = require("@threeceelabs/twitter-text-parser");
 const twitterImageParser = require("@threeceelabs/twitter-image-parser");
 
 const HashMap = require("hashmap").HashMap;
+
+const channelsHashMap = new HashMap();
 
 let statsObj = {};
 let statsObjSmall = {};
@@ -284,27 +287,294 @@ function msToTime(duration) {
   return "- " + days + ":" + hours + ":" + minutes + ":" + seconds;
 }
 
+let slackChannel = "tfe";
+let slackText = "";
+
 const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
-const slackChannel = "#tfe";
+const slackConversationId = "D65CSAELX"; // wordbot
+const slackRtmToken = "xoxb-209434353623-bNIoT4Dxu1vv8JZNgu7CDliy";
+
 const Slack = require("slack-node");
+const slack = new Slack(slackOAuthAccessToken);
 
-let slack = new Slack(slackOAuthAccessToken);
+let slackRtmClient;
+let slackWebClient;
 
-function slackPostMessage(channel, text, callback) {
-  debug(chalkInfo("SLACK POST: " + text));
-  slack.api("chat.postMessage", {
-    text: text,
-    channel: channel
-  }, function(err, response) {
-    if (err) {
-      console.log(chalkError("TFE | *** SLACK POST MESSAGE ERROR\n" + err));
+let slackMessagePrefix = "#" + slackChannel + ":" + hostname + "_" + process.pid;
+
+function slackSendRtmMessage(msg){
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      // const message = slackMessagePrefix + ":" + msg;
+
+      console.log(chalkBlueBold("TFE | SLACK RTM | SEND: " + msg));
+
+      const sendResponse = await slackRtmClient.sendMessage(msg, slackConversationId);
+
+      console.log(chalkLog("TFE | SLACK RTM | >T\n" + jsonPrint(sendResponse)));
+      resolve(sendResponse);
     }
-    else {
-      debug(response);
+    catch(err){
+      reject(err);
     }
-    if (callback !== undefined) { callback(err, response); }
+
   });
 }
+
+let slackDefaultAttachments = [];
+
+let slackDefaultAttachment = {};
+slackDefaultAttachment.fallback = "TFE | " + hostname + "_" + process.pid;
+slackDefaultAttachment.title = "@threecee";
+slackDefaultAttachment.title_link = "http://twitter.com/threecee";
+slackDefaultAttachment.text = "TFE";
+slackDefaultAttachment.fields = [];
+slackDefaultAttachment.fields.push({ title: "PROCESS", value: hostname + "_" + process.pid });
+
+slackDefaultAttachments.push(slackDefaultAttachment);
+
+
+function slackSendWebMessage(msgObj){
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      const token = msgObj.token || slackOAuthAccessToken;
+      const channel = msgObj.channel || configuration.slackChannel.id;
+      const title = msgObj.title || null;
+      const title_link = msgObj.title_link || null;
+      const pretext = msgObj.pretext || hostname + "_" + process.pid;
+      const text = msgObj.text || "TFE | " + hostname + "_" + process.pid + " | " + msgObj;
+      const attachments = msgObj.attachments || slackDefaultAttachments;
+
+      let message = {
+        token: token, 
+        channel: channel,
+        title: title,
+        title_link: title_link,
+        pretext: pretext,
+        text: text,
+        attachments: attachments
+      };
+
+      console.log(chalkBlueBold("TFE | SLACK WEB | SEND\n" + jsonPrint(message)));
+
+      const sendResponse = await slackWebClient.chat.postMessage(message);
+
+      console.log(chalkLog("TFE | SLACK WEB | >T\n" + jsonPrint(sendResponse)));
+      resolve(sendResponse);
+    }
+    catch(err){
+      reject(err);
+    }
+
+  });
+}
+
+function slackSendWebStats(params){
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      const title = "TFE | " + hostname +  "_" + process.pid + " | STATS";
+      const pretext = params.pretext || "S: " + statsObj.startTimeMoment.format(compactDateTimeFormat) + " | E: " + msToTime(statsObj.elapsed);
+      const text = params.text || "TFE | " + hostname + "_" + process.pid + " | " + msgObj;
+      const attachments = params.attachments || slackDefaultAttachments;
+
+      let message = {
+        token: token, 
+        channel: channel,
+        title: title,
+        title_link: title_link,
+        pretext: pretext,
+        text: text,
+        attachments: attachments
+      };
+
+      console.log(chalkBlueBold("TFE | SLACK WEB | SEND\n" + jsonPrint(message)));
+
+      const sendResponse = await slackWebClient.chat.postMessage(message);
+
+      console.log(chalkLog("TFE | SLACK WEB | >T\n" + jsonPrint(sendResponse)));
+      resolve(sendResponse);
+    }
+    catch(err){
+      reject(err);
+    }
+
+  });
+}
+
+function slackMessageHandler(message){
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      console.log(chalkAlert("TFE | MESSAGE | " + message.type + " | " + message.text));
+
+      switch (message.text) {
+        case "INIT":
+          slackSendRtmMessage("SLACK INIT");
+          resolve();
+        break;
+        case "STATS":
+          slackSendWebStats("STATS");
+          slackSendRtmMessage("SLACK STATS");
+          resolve();
+        break;
+        case "READY":
+          slackSendRtmMessage("SLACK READY");
+          resolve();
+        break;
+        case "START":
+          slackSendRtmMessage("SLACK START");
+          resolve();
+        break;
+        case "RESET":
+          slackSendRtmMessage("SLACK RESET");
+          resolve();
+        break;
+        case "QUIT":
+          quit("SLACK QUIT");
+          slackSendRtmMessage("SLACK QUIT");
+          resolve();
+        break;
+        case "TEXT":
+          slackSendRtmMessage("SLACK TEXT");
+          resolve();
+        break;
+        case "PING":
+          slackSendRtmMessage("PONG");
+          slackSendWebMessage("PONG");
+          resolve();
+        break;
+        case "PONG":
+          // slackSendRtmMessage("PONG");
+          resolve();
+        break;
+        default:
+          console.log(chalkError("TFE | *** UNDEFINED SLACK MESSAGE\n" + jsonPrint(message)));
+          reject(new Error("UNDEFINED SLACK MESSAGE TYPE: " + message.text));
+      }
+    }
+    catch(err){
+      reject(err);
+    }
+
+  });
+}
+
+function initSlackWebClient(params){
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      const { WebClient } = require("@slack/client");
+      slackWebClient = new WebClient(slackRtmToken);
+
+      const testResponse = await slackWebClient.api.test();
+      console.log("TFE | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
+
+      const botsInfoResponse = await slackWebClient.bots.info();
+      console.log("TFE | SLACK WEB BOTS INFO RESPONSE\n" + jsonPrint(botsInfoResponse));
+
+      const conversationsListResponse = await slackWebClient.conversations.list({token: slackOAuthAccessToken});
+
+      conversationsListResponse.channels.forEach(async function(channel){
+  
+        console.log(chalkLog("TFE | CHANNEL | " + channel.id + " | " + channel.name));
+
+        if (channel.name === slackChannel) {
+          configuration.slackChannel = channel;
+          const conversationsJoinResponse = await slackWebClient.conversations.join({token: slackOAuthAccessToken, channel: configuration.slackChannel.id });
+
+          slackSendWebMessage("SLACK INIT");
+
+        }
+
+        channelsHashMap.set(channel.id, channel);
+
+      });
+
+      resolve();
+
+    }
+    catch(err){
+      console.log(chalkError("TFE | *** INIT SLACK WEB CLIENT ERROR: " + err));
+      reject(err);
+    }
+
+  });
+}
+
+function initSlackRtmClient(params){
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      const { RTMClient } = require("@slack/client");
+      slackRtmClient = new RTMClient(slackRtmToken);
+
+      const slackInfo = await slackRtmClient.start();
+
+      console.log(chalkInfo("TFE | SLACK RTM | INFO\n" + jsonPrint(slackInfo)));
+
+      slackRtmClient.on("slack_event", async function(eventType, event){
+        switch (eventType) {
+          case "pong":
+            console.log(chalkLog("TFE | SLACK RTM PONG | " + getTimeStamp() + " | " + event.reply_to));
+          break;
+          default: console.log(chalkInfo("TFE | SLACK RTM EVENT | " + getTimeStamp() + " | "  + eventType + "\n" + jsonPrint(event)));
+        }
+      });
+
+
+      slackRtmClient.on("message", async function(message){
+        if (configuration.verbose)  { console.log(chalkLog("TFE | RTM R<\n" + jsonPrint(message))); }
+        console.log(`TFE | SLACK RTM MESSAGE | R< | CH: ${message.channel} | USER: ${message.user} | ${message.text}`);
+
+        try {
+          await slackMessageHandler(message);
+        }
+        catch(err){
+          console.log(chalkError("TFE | *** SLACK RTM MESSAGE ERROR: " + err));
+        }
+
+      });
+
+      slackRtmClient.on("ready", async function(){
+        try {
+          await slackSendRtmMessage("READY");
+
+          let message = {};
+          message.pretext = hostname + "_" + process.pid;
+          message.text = "TFE | " + hostname + "_" + process.pid + " | READY";
+
+          await slackSendWebMessage(message);
+          resolve();
+        }
+        catch(err){
+          reject(err);
+        }
+      });
+
+
+    }
+    catch(err){
+      console.log(chalkError("TFE | *** INIT SLACK RTM CLIENT | " + err));
+      reject(err);
+    }
+
+  });
+}
+
 // will use histograms to determine neural net inputs
 // for emoji, hashtags, mentions, words
 
@@ -347,7 +617,43 @@ const jsonPrint = function (obj) {
   }
 };
 
-const quit = function(options) {
+function genSlackStatus(params) {
+
+  let message = {};
+  message.token = slackOAuthAccessToken;
+  message.channel = configuration.slackChannel.id,
+  message.pretext = hostname + "_" + process.pid,
+  message.text = "TFE | " + hostname + "_" + process.pid + "\nSTATUS: " + statsObj.status;
+  message.attachments = [];
+
+  let fieldsArray = [];
+  fieldsArray.push({ short: false, title: hostname, value: process.pid });
+  fieldsArray.push({ short: false, title: "STATUS", value: statsObj.status });
+  fieldsArray.push({ short: false, title: "BEST", value: bestRuntimeNetworkId });
+  fieldsArray.push({ short: false, title: "IN", value: currentBestNetwork.numInputs + " | " + currentBestNetwork.inputsId });
+  fieldsArray.push({ short: true, title:  "OAMR", value: currentBestNetwork.overallMatchRate.toFixed(2) + "%" });
+  fieldsArray.push({ short: true, title:  "MR", value: currentBestNetwork.matchRate.toFixed(2) + "%" });
+  fieldsArray.push({ short: true, title:  "SR", value: currentBestNetwork.successRate.toFixed(2) + "%" });
+  fieldsArray.push({ short: true, title:  "START", value: statsObj.startTimeMoment.format(compactDateTimeFormat) });
+  fieldsArray.push({ short: true, title:  "ELPSD", value: msToTime(statsObj.elapsed) });
+  fieldsArray.push({ short: true, title:  "TOT PRCSD", value: statsObj.users.totalFriendsProcessed });
+  fieldsArray.push({ short: true, title:  "GTOT PRCSD", value: statsObj.users.grandTotalPercentProcessed });
+  fieldsArray.push({ short: true, title:  "TCs", value: currentBestNetwork.testCycles });
+  fieldsArray.push({ short: true, title:  "TCH", value: currentBestNetwork.testCycleHistory.length });
+
+  message.attachments.push({text: "STATS", fields: fieldsArray});
+
+  return message;
+}
+
+const quit = async function(options) {
+
+  // try {
+  //   await slackSendWebMessage("QUIT");
+  // }
+  // catch(err){
+  //   console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
+  // }
 
   statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
   statsObj.timeStamp = moment().format(compactDateTimeFormat);
@@ -389,25 +695,32 @@ const quit = function(options) {
     console.log( "TFE | options: " + jsonPrint(options) );
   }
 
-  let slackText = "\n*QUIT*";
-  slackText = slackText + "\nFORCE QUIT:  " + forceQuitFlag;
-  slackText = slackText + "\nHOST:        " + hostname;
-  slackText = slackText + "\nBEST:        " + bestRuntimeNetworkId;
-  slackText = slackText + "\nTEST CYCs:   " + currentBestNetwork.testCycles;
-  slackText = slackText + "\nTC HISTORY:  " + currentBestNetwork.testCycleHistory.length;
-  slackText = slackText + "\nOAMR:        " + currentBestNetwork.overallMatchRate.toFixed(2) + "%";
-  slackText = slackText + "\nMR:          " + currentBestNetwork.matchRate.toFixed(2) + "%";
-  slackText = slackText + "\nSR:          " + currentBestNetwork.successRate.toFixed(2) + "%";
-  slackText = slackText + "\nSTART:       " + statsObj.startTimeMoment.format(compactDateTimeFormat);
-  slackText = slackText + "\nELPSD:       " + msToTime(statsObj.elapsed);
-  slackText = slackText + "\nTOT PRCSSD:  " + statsObj.users.totalFriendsProcessed;
-  slackText = slackText + "\nGTOT PRCSSD: " + statsObj.users.grandTotalFriendsProcessed;
+  // let slackText = "\n*QUIT*";
+  // slackText = slackText + "\nFORCE QUIT:  " + forceQuitFlag;
+  // slackText = slackText + "\nHOST:        " + hostname;
+  // slackText = slackText + "\nBEST:        " + bestRuntimeNetworkId;
+  // slackText = slackText + "\nTEST CYCs:   " + currentBestNetwork.testCycles;
+  // slackText = slackText + "\nTC HISTORY:  " + currentBestNetwork.testCycleHistory.length;
+  // slackText = slackText + "\nOAMR:        " + currentBestNetwork.overallMatchRate.toFixed(2) + "%";
+  // slackText = slackText + "\nMR:          " + currentBestNetwork.matchRate.toFixed(2) + "%";
+  // slackText = slackText + "\nSR:          " + currentBestNetwork.successRate.toFixed(2) + "%";
+  // slackText = slackText + "\nSTART:       " + statsObj.startTimeMoment.format(compactDateTimeFormat);
+  // slackText = slackText + "\nELPSD:       " + msToTime(statsObj.elapsed);
+  // slackText = slackText + "\nTOT PRCSSD:  " + statsObj.users.totalFriendsProcessed;
+  // slackText = slackText + "\nGTOT PRCSSD: " + statsObj.users.grandTotalFriendsProcessed;
 
-  console.log("TFE | SLACK TEXT: " + slackText);
+  // console.log("TFE | SLACK TEXT: " + slackText);
 
-  slackPostMessage(slackChannel, slackText);
+  let message = genSlackStatus();
 
-  quitWaitInterval = setInterval(function () {
+  try {
+    await slackSendWebMessage(message);
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
+  }
+
+  quitWaitInterval = setInterval(async function() {
 
     if (forceQuitFlag 
       || (!saveFileBusy
@@ -449,19 +762,23 @@ const quit = function(options) {
           + " | USR DB UDQ: " + userDbUpdateQueue.length
         ));
       }
-        setTimeout(function() {
 
-          global.dbConnection.close(function () {
-            console.log(chalkAlert(
-              "\nTFE | ==========================\n"
-              + "TFE | MONGO DB CONNECTION CLOSED"
-              + "\nTFE | ==========================\n"
-            ));
+      slackSendRtmMessage("QUIT");
+      await slackSendWebMessage("QUIT");
 
-            process.exit();
-          });
+      setTimeout(function() {
 
-        }, 5000);
+        global.dbConnection.close(function () {
+          console.log(chalkAlert(
+            "\nTFE | ==========================\n"
+            + "TFE | MONGO DB CONNECTION CLOSED"
+            + "\nTFE | ==========================\n"
+          ));
+
+          process.exit();
+        });
+
+      }, 5000);
 
     }
     else {
@@ -505,6 +822,8 @@ let defaultConfiguration = {}; // general configuration for TNN
 let hostConfiguration = {}; // host-specific configuration for TNN
 
 let configuration = {};
+
+configuration.slackChannel = {};
 
 configuration.reinitializeChildOnClose = false;
 
@@ -651,7 +970,11 @@ function filesGetMetadataLocal(options){
   });
 }
 
-let dropboxRemoteClient = new Dropbox({ accessToken: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN });
+let dropboxRemoteClient = new Dropbox({ 
+  accessToken: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN,
+  fetch: fetch
+});
+
 let dropboxLocalClient = {  // offline mode
   filesListFolder: filesListFolderLocal,
   filesUpload: function(){},
@@ -1306,23 +1629,29 @@ function connectDb(callback){
 
   statsObj.status = "CONNECT DB";
 
-  wordAssoDb.connect("TFE_" + process.pid, function(err, db){
+  wordAssoDb.connect("TFE_" + process.pid, async function(err, db){
     if (err) {
       console.log(chalkError("TFE | *** MONGO DB CONNECTION ERROR: " + err));
       callback(err, null);
+      slackSendWebMessage("ERROR");
+      slackSendRtmMessage("TFE | " + hostname + " | ERROR | MONGO CONNECT");
       dbConnectionReady = false;
     }
     else {
 
-      db.on("error", function(){
+      db.on("error", async function(){
         console.error.bind(console, "TFE | *** MONGO DB CONNECTION ERROR ***\n");
         console.log(chalkError("TFE | *** MONGO DB CONNECTION ERROR ***\n"));
+        await slackSendWebMessage("ERROR");
+        slackSendRtmMessage("TFE | " + hostname + " | ERROR | MONGO");
         db.close();
         dbConnectionReady = false;
       });
 
-      db.on("disconnected", function(){
+      db.on("disconnected", async function(){
         console.error.bind(console, "TFE | *** MONGO DB DISCONNECTED ***\n");
+        await slackSendWebMessage("ERROR");
+        slackSendRtmMessage("TFE | " + hostname + " | ERROR | MONGO DISCONNECTED");
         console.log(chalkAlert("TFE | *** MONGO DB DISCONNECTED ***\n"));
         dbConnectionReady = false;
       });
@@ -1767,10 +2096,11 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
               statsObj.numNetworksLoaded += 1;
 
-              const printString = "TFE | +++ LOADED NN"
+              const printString = "TFE | +++ LOAD NN"
                 + " [ UPDATED: " + statsObj.numNetworksUpdated
                 + " | LOADED: " + statsObj.numNetworksLoaded
-                + " | SKIPPED: " + statsObj.numNetworksSkipped + " ]";
+                + " | SKIPPED: " + statsObj.numNetworksSkipped + " ]"
+                + " | MR MIN: " + configuration.minMatchRate;
 
               printNetworkObj(printString, networkObj);
 
@@ -1787,10 +2117,11 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
               statsObj.numNetworksSkipped += 1;
 
-              const printString = "TFE | --- SKIP LOAD NN "
+              const printString = "TFE | --- LOAD NN "
                 + " [ UPDATED: " + statsObj.numNetworksUpdated
                 + " | LOADED: " + statsObj.numNetworksLoaded
-                + " | SKIPPED: " + statsObj.numNetworksSkipped + " ]";
+                + " | SKIPPED: " + statsObj.numNetworksSkipped + " ]"
+                + " | MR MIN: " + configuration.minMatchRate;
 
               printNetworkObj(printString, networkObj);
 
@@ -2680,10 +3011,11 @@ function checkChildrenState (checkState) {
       const cs = ((child.status === "DISABLED") || (child.status === checkState));
 
       if (!cs && (checkState === "FETCH_END") 
-        && ((child.status === "RESET") || (child.status === "IDLE"))){
+        && ((child.status === "ERROR") || (child.status === "RESET") || (child.status === "IDLE"))){
 
         child.child.send({op: "FETCH_END", verbose: configuration.verbose}, function(err) {
           if (err) {
+            slackSendRtmMessage("TFE | " + hostname + " | ERROR | CHILD SEND FETCH_END");
             console.log(chalkError("TFE | *** CHILD SEND FETCH_END ERROR"
               + " | @" + user
               + " | ERR: " + err
@@ -2979,15 +3311,34 @@ const fsmStates = {
   "ERROR":{
     onEnter: function(event, oldState, newState) {
       reporter(event, oldState, newState);
+      try { 
+        slackSendWebMessage("ERROR");
+        slackSendRtmMessage("ERROR");
+      }
+      catch(err){
+        console.log(chalkError("TFE | *** SLACK INIT MESSAGE ERROR: " + err));
+      }
       quit("FSM ERROR");
     }
   },
 
   "INIT":{
-    onEnter: function(event, oldState, newState) {
+    onEnter: async function(event, oldState, newState) {
       if (event !== "fsm_tick") {
 
         reporter(event, oldState, newState);
+
+        let slackText = "\n*INIT*";
+        slackText = slackText + " | " + hostname;
+        slackText = slackText + "\nSTART: " + statsObj.startTimeMoment.format(compactDateTimeFormat);
+        slackText = slackText + " | RUN: " + msToTime(statsObj.elapsed);
+
+        try { 
+          slackSendWebMessage("INIT");
+        }
+        catch(err){
+          console.log(chalkError("TFE | *** SLACK INIT MESSAGE ERROR: " + err));
+        }
 
         initNetworks()
         .then(function(){
@@ -3102,7 +3453,7 @@ const fsmStates = {
 
   "FETCH_END_ALL":{
 
-    onEnter: function(event, oldState, newState) {
+    onEnter: async function(event, oldState, newState) {
 
       if (event !== "fsm_tick") {
 
@@ -3227,8 +3578,15 @@ const fsmStates = {
         slackText = slackText + " | TEST CYCs: " + statsObj.bestNetwork.testCycles;
         slackText = slackText + " | TC HISTORY: " + statsObj.bestNetwork.testCycleHistory.length;
 
+        slackSendWebMessage("END FETCH ALL")
+          .then(function(){
+
+          })
+          .catch(function(err){
+
+          });
+
         clearInterval(waitFileSaveInterval);
-        slackPostMessage(slackChannel, slackText);
 
         waitFileSaveInterval = setInterval(function() {
 
@@ -3340,7 +3698,7 @@ process.on("message", function(msg) {
   }
 });
 
-function showStats(options) {
+async function showStats(options) {
 
   runEnable();
 
@@ -3350,11 +3708,19 @@ function showStats(options) {
 
   childSendAll({op: "STATS"});
 
+  let message = genSlackStatus();
+
+  try {
+    await slackSendWebMessage(message);
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
+  }
+
   if (options) {
     console.log("TFE | STATS\n" + jsonPrint(statsObj));
   }
   else {
-
 
     console.log(chalkLog("TFE | ### FEM S"
       + " | FSM: " + fsm.getMachineState()
@@ -3745,6 +4111,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
       case "ERROR":
 
         console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
+        slackSendRtmMessage("TFE | " + hostname + " | ERROR | CHILD @" + m.threeceeUser + " | TYPE: " + m.type);
 
         tfeChildHashMap[m.threeceeUser].status = "ERROR";
 
@@ -3760,7 +4127,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
         }
         else {
           await initChild({threeceeUser: m.threeceeUser});
-          await checkChildrenState(m.op);
+          await checkChildrenState("INIT");
         }
       break;
 
@@ -3848,21 +4215,15 @@ function initTwitterFollowerChild(twitterConfig, callback) {
       break;
 
       case "FRIEND_RAW":
-        // if (configuration.testMode) {
-        //   console.log(chalkInfo("TFE | FRIEND"
-        //     + " | FOLLOW: " + m.follow
-        //     + " | 3C: @" + m.threeceeUser
-        //     + " | @" + m.friend.screen_name
-        //   ));
-        // }
-
         processUserQueue.unshift(m);
 
         if (m.follow) {
-          slackText = "\n*FOLLOW | 3C @" + m.threeceeUser + " > <http://twitter.com/" + m.friend.screen_name 
-          + "|" + " @" + m.friend.screen_name + ">*";
-          console.log("TFE | SLACK TEXT: " + slackText);
-          slackPostMessage(slackChannel, slackText);
+          try { 
+            slackSendWebMessage("FOLLOW | @" + m.threeceeUser + " | " + m.userId + " | @" + m.screenName);
+          }
+          catch(err){
+            console.log(chalkError("TFE | *** SLACK FOLLOW MESSAGE ERROR: " + err));
+          }
         }
 
       break;
@@ -3878,10 +4239,12 @@ function initTwitterFollowerChild(twitterConfig, callback) {
           + " | Ts: " + m.user.statuses_count
         ));
 
-        slackText = "\n*UNFOLLOW | 3C @" + m.threeceeUser + " > <http://twitter.com/" + m.user.screen_name 
-        + "|" + " @" + m.user.screen_name + ">*";
-        console.log("TFE | SLACK TEXT: " + slackText);
-        slackPostMessage(slackChannel, slackText);
+          try { 
+            slackSendWebMessage("UNFOLLOW | @" + m.threeceeUser + " | " + m.user.id_str + " | @" + m.user.screen_name);
+          }
+          catch(err){
+            console.log(chalkError("TFE | *** SLACK UNFOLLOW MESSAGE ERROR: " + err));
+          }
 
       break;
 
@@ -3914,6 +4277,8 @@ function initTwitterFollowerChild(twitterConfig, callback) {
     if (tfeChildHashMap[user]) {
 
       console.log(chalkError("TFE | *** CHILD ERROR | @" + user + " ERROR *** : " + err));
+
+      slackSendRtmMessage("TFE | " + hostname + " | ERROR | CHILD @" + m.threeceeUser + " | TYPE: " + m.type);
 
       tfeChildHashMap[user].status = "ERROR";
 
@@ -4098,7 +4463,7 @@ function initStdIn() {
   }
   stdin.resume();
   stdin.setEncoding( "utf8" );
-  stdin.on( "data", function( key ) {
+  stdin.on( "data", async function( key ) {
     switch (key) {
       // case "\u0003":
       //   process.exit();
@@ -4125,6 +4490,16 @@ function initStdIn() {
         showStats(true);
       break;
 
+      case ".":
+        try { 
+          slackSendRtmMessage("PING");
+          slackSendWebMessage("PING");
+        }
+        catch(err){
+          console.log(chalkError("TFE | *** SLACK PING MESSAGE ERROR: " + err));
+        }
+      break;
+
       case "V":
         toggleVerbose();
       break;
@@ -4139,7 +4514,7 @@ function initStdIn() {
   });
 }
 
-function initConfig(cnf, callback) {
+async function initConfig(cnf, callback) {
 
   statsObj.status = "INITIALIZE";
 
@@ -4188,6 +4563,10 @@ function initConfig(cnf, callback) {
   cnf.twitterConfigFolder = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER || "/config/twitter";
   cnf.twitterConfigFile = process.env.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE || cnf.twitterDefaultUser + ".json";
   cnf.neuralNetworkFile = defaultNeuralNetworkFile;
+
+
+  await initSlackWebClient();
+  await initSlackRtmClient();
 
 
   loadAllConfigFiles(function(err){
@@ -4990,6 +5369,7 @@ function initRandomNetworkTreeChild() {
         randomNetworkTreeReadyFlag = true;
         randomNetworkTreeActivateQueueSize = 0;
         randomNetworkTree = null;
+        slackSendRtmMessage("TFE | " + hostname + " | ERROR | RNT");
         console.log(chalkError("TFE | *** randomNetworkTree ERROR *** : " + err));
         console.log(chalkError("TFE | *** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
         if (!quitFlag) { quit({source: "RNT", error: err }); }
@@ -5107,6 +5487,7 @@ function initLangAnalyzer(callback) {
   });
   langAnalyzer.on("error", function(err) {
     console.log(chalkError("TFE | *** langAnalyzer ERROR ***\n" + jsonPrint(err)));
+    slackSendRtmMessage("TFE | " + hostname + " | ERROR | LA");
     if (!quitFlag) { quit({source: "LA", error: err }); }
   });
   langAnalyzer.on("exit", function(err) {
