@@ -2946,7 +2946,7 @@ function initChild(params){
 
   statsObj.status = "INIT CHILD | @" + params.threeceeUser;
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   return new Promise(function(resolve, reject){
 
@@ -4098,7 +4098,7 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
   statsObj.status = "INIT CHILD | @" + user ;
 
-  slackSendMessage("INIT CHILD");
+  // slackSendMessage("INIT CHILD");
 
   let childEnv = {};
   childEnv.env = {};
@@ -4369,7 +4369,7 @@ function initTwitter(threeceeUser, callback) {
 
   statsObj.status = "INIT TWITTER | @" + threeceeUser;
 
-  slackSendMessage("INIT TWITTER");
+  // slackSendMessage("INIT TWITTER");
 
   let twitterConfigFile =  threeceeUser + ".json";
 
