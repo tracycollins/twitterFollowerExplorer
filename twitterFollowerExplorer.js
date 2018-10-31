@@ -303,6 +303,23 @@ let slackWebClient;
 
 let slackMessagePrefix = "#" + slackChannel + ":" + hostname + "_" + process.pid;
 
+
+function slackSendMessage(msg){
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+      await slackSendWebMessage(msg);
+      await slackSendRtmMessage(msg);
+      resolve();
+    }
+    catch(err){
+      reject(err);
+    }
+
+  });
+}
+
 function slackSendRtmMessage(msg){
 
   return new Promise(async function(resolve, reject){
@@ -432,20 +449,19 @@ function slackMessageHandler(message){
         case "RESET":
         case "SLACK QUIT":
         case "LOAD NN":
+        case "INIT UNFOLLOWABLE":
         case "TEXT":
         case "PONG":
-          // slackSendWebStats(message.text);
-          // slackSendRtmMessage(message.text);
           resolve();
         break;
         case "PING":
-          slackSendRtmMessage("PONG");
-          slackSendWebMessage("PONG");
+          slackSendMessage("PONG");
           resolve();
         break;
         default:
-          console.log(chalkError("TFE | *** UNDEFINED SLACK MESSAGE\n" + jsonPrint(message)));
-          reject(new Error("UNDEFINED SLACK MESSAGE TYPE: " + message.text));
+          console.log(chalkAlert("SHC | *** UNDEFINED SLACK MESSAGE: " + message.text));
+          // reject(new Error("UNDEFINED SLACK MESSAGE TYPE: " + message.text));
+          resolve();
       }
     }
     catch(err){
@@ -537,6 +553,7 @@ function initSlackRtmClient(params){
 
       slackRtmClient.on("ready", async function(){
         try {
+
           await slackSendRtmMessage("READY");
 
           let message = {};
@@ -634,13 +651,6 @@ function genSlackStatus(params) {
 
 const quit = async function(options) {
 
-  // try {
-  //   await slackSendWebMessage("QUIT");
-  // }
-  // catch(err){
-  //   console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
-  // }
-
   statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
   statsObj.timeStamp = moment().format(compactDateTimeFormat);
   statsObj.status = "QUIT";
@@ -700,7 +710,7 @@ const quit = async function(options) {
   let message = genSlackStatus();
 
   try {
-    await slackSendWebMessage(message);
+    await slackSendMessage(message);
   }
   catch(err){
     console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
@@ -749,8 +759,7 @@ const quit = async function(options) {
         ));
       }
 
-      slackSendRtmMessage("QUIT");
-      await slackSendWebMessage("QUIT");
+      await slackSendMessage("QUIT");
 
       setTimeout(function() {
 
@@ -1615,8 +1624,8 @@ function connectDb(callback){
     if (err) {
       console.log(chalkError("TFE | *** MONGO DB CONNECTION ERROR: " + err));
       callback(err, null);
-      slackSendWebMessage("ERROR");
-      slackSendRtmMessage("TFE | " + hostname + " | ERROR | MONGO CONNECT");
+      statsObj.status = "MONGO CONNECTION ERROR";
+      slackSendMessage(statsObj.status);
       dbConnectionReady = false;
     }
     else {
@@ -1624,16 +1633,14 @@ function connectDb(callback){
       db.on("error", async function(){
         console.error.bind(console, "TFE | *** MONGO DB CONNECTION ERROR ***\n");
         console.log(chalkError("TFE | *** MONGO DB CONNECTION ERROR ***\n"));
-        await slackSendWebMessage("ERROR");
-        slackSendRtmMessage("TFE | " + hostname + " | ERROR | MONGO");
+        await slackSendMessage("ERROR");
         db.close();
         dbConnectionReady = false;
       });
 
       db.on("disconnected", async function(){
         console.error.bind(console, "TFE | *** MONGO DB DISCONNECTED ***\n");
-        await slackSendWebMessage("ERROR");
-        slackSendRtmMessage("TFE | " + hostname + " | ERROR | MONGO DISCONNECTED");
+        await slackSendMessage("ERROR");
         console.log(chalkAlert("TFE | *** MONGO DB DISCONNECTED ***\n"));
         dbConnectionReady = false;
       });
@@ -1883,8 +1890,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
   statsObj.status = "LOAD BEST NNs";
 
-  slackSendWebMessage("LOAD NN");
-  slackSendRtmMessage("LOAD NN");
+  slackSendMessage("LOAD NN");
 
   let options = {path: folder};
   
@@ -2149,7 +2155,9 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
 function initUnfollowableUserSet(){
 
-  statsObj.status = "INIT UNFOLLOWABLE USER SET";
+  // statsObj.status = "INIT UNFOLLOWABLE USER SET";
+
+  // slackSendMessage(statsObj.status);
 
   loadFile(dropboxConfigDefaultFolder, unfollowableUserFile, function(err, unfollowableUserSetObj){
     if (err) {
@@ -2174,6 +2182,8 @@ function initUnfollowableUserSet(){
 function loadBestNeuralNetworkFiles() {
 
   statsObj.status = "LOAD BEST NN";
+
+  slackSendMessage(statsObj.status);
 
   return new Promise(function(resolve, reject){
 
@@ -2239,6 +2249,8 @@ function runEnable(displayArgs) {
 function updateUserCategoryStats(user, callback) {
 
   statsObj.status = "UPDATE USER CAT STATS";
+
+  slackSendMessage(statsObj.status);
 
   return new Promise(function() {
 
@@ -2376,9 +2388,9 @@ function startImageQuotaTimeout() {
 
 function updateHistograms(params, callback) {
 
-  // console.log("UPDATE HISTOGRAMS | " + params.user.screenName);
-
   statsObj.status = "UPDATE HISTOGRAMS";
+
+  slackSendMessage(statsObj.status);
 
   let user = {};
   let histogramsIn = {};
@@ -2441,6 +2453,8 @@ function updateHistograms(params, callback) {
 function generateAutoCategory(user, callback) {
 
   statsObj.status = "GEN AUTO CAT";
+
+  slackSendMessage(statsObj.status);
 
   async.waterfall([
     function userScreenName(cb) {
@@ -2932,6 +2946,8 @@ function initChild(params){
 
   statsObj.status = "INIT CHILD | @" + params.threeceeUser;
 
+  slackSendMessage(statsObj.status);
+
   return new Promise(function(resolve, reject){
 
     const initObj = {
@@ -3099,6 +3115,8 @@ function initRandomNetworks(params){
 
   statsObj.status = "INIT RAN NNs";
 
+  slackSendMessage(statsObj.status);
+
   return new Promise(async function(resolve, reject){
 
     loadedNetworksFlag = false;
@@ -3145,6 +3163,8 @@ function initMaxInputHashMap(params){
 
   statsObj.status = "INIT MAX INPUT HASHMAP";
 
+  slackSendMessage(statsObj.status);
+
   return new Promise(async function(resolve, reject){
 
     if (randomNetworkTree && (randomNetworkTree !== undefined)) {
@@ -3166,6 +3186,8 @@ function initMaxInputHashMap(params){
 function initNetworks(params){
 
   statsObj.status = "INIT NNs";
+
+  slackSendMessage(statsObj.status);
 
   console.log(chalkTwitter("TFE | INIT NETWORKS"));
 
@@ -3307,8 +3329,7 @@ const fsmStates = {
       statsObj.status = "FSM ERROR";
 
       try { 
-        slackSendWebMessage("ERROR");
-        slackSendRtmMessage("ERROR");
+        slackSendMessage(statsObj.status);
       }
       catch(err){
         console.log(chalkError("TFE | *** SLACK INIT MESSAGE ERROR: " + err));
@@ -3331,7 +3352,7 @@ const fsmStates = {
         slackText = slackText + " | RUN: " + msToTime(statsObj.elapsed);
 
         try { 
-          slackSendWebMessage("INIT");
+          slackSendMessage(statsObj.status);
         }
         catch(err){
           console.log(chalkError("TFE | *** SLACK INIT MESSAGE ERROR: " + err));
@@ -3580,7 +3601,9 @@ const fsmStates = {
         slackText = slackText + " | TEST CYCs: " + statsObj.bestNetwork.testCycles;
         slackText = slackText + " | TC HISTORY: " + statsObj.bestNetwork.testCycleHistory.length;
 
-        slackSendWebMessage("END FETCH ALL")
+        statsObj.status = "END FETCH ALL";
+
+        slackSendMessage(statsObj.status)
           .then(function(){
 
           })
@@ -3713,7 +3736,7 @@ async function showStats(options) {
   let message = genSlackStatus();
 
   try {
-    await slackSendWebMessage(message);
+    await slackSendMessage(message);
   }
   catch(err){
     console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
@@ -4075,6 +4098,8 @@ function initTwitterFollowerChild(twitterConfig, callback) {
 
   statsObj.status = "INIT CHILD | @" + user ;
 
+  slackSendMessage("INIT CHILD");
+
   let childEnv = {};
   childEnv.env = {};
   childEnv.env.CHILD_ID = childId;
@@ -4344,6 +4369,8 @@ function initTwitter(threeceeUser, callback) {
 
   statsObj.status = "INIT TWITTER | @" + threeceeUser;
 
+  slackSendMessage("INIT TWITTER");
+
   let twitterConfigFile =  threeceeUser + ".json";
 
   debug(chalkInfo("INIT TWITTER USER @" + threeceeUser + " | " + twitterConfigFile));
@@ -4376,6 +4403,8 @@ function initTwitter(threeceeUser, callback) {
 function initTwitterUsers(callback) {
 
   statsObj.status = "INIT TWITTER USERS";
+
+  slackSendMessage("INIT TWITTER USERS");
 
   if (!configuration.twitterUsers) {
     console.log(chalkAlert("TFE | ??? NO TWITTER USERS ???"));
@@ -4496,8 +4525,7 @@ function initStdIn() {
 
       case ".":
         try { 
-          slackSendRtmMessage("PING");
-          slackSendWebMessage("PING");
+          slackSendMessage("PING");
         }
         catch(err){
           console.log(chalkError("TFE | *** SLACK PING MESSAGE ERROR: " + err));
@@ -4635,6 +4663,8 @@ function saveNetworkHashMap(params, callback) {
 
   statsObj.status = "SAVE NN HASHMAP";
 
+  slackSendMessage("SAV NN HASHMAP");
+
   const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
 
   const nnIds = bestNetworkHashMap.keys();
@@ -4713,6 +4743,8 @@ function printTestCycleHistory(nn){
 function updateNetworkStats(params, callback) {
 
   statsObj.status = "UPDATE NN STATS";
+
+  slackSendMessage(statsObj.status);
 
   console.log(chalkTwitter("TFE | UPDATE NETWORK STATS"));
 
@@ -5332,6 +5364,8 @@ function initRandomNetworkTreeChild() {
 
   statsObj.status = "INIT RNT CHILD";
 
+  slackSendMessage(statsObj.status);
+
   return new Promise(function(resolve, reject){
 
     if (randomNetworkTree === undefined) {
@@ -5373,7 +5407,8 @@ function initRandomNetworkTreeChild() {
         randomNetworkTreeReadyFlag = true;
         randomNetworkTreeActivateQueueSize = 0;
         randomNetworkTree = null;
-        slackSendRtmMessage("TFE | " + hostname + " | ERROR | RNT");
+        statsObj.status = "ERROR RNT";
+        slackSendMessage(statsObj.status);
         console.log(chalkError("TFE | *** randomNetworkTree ERROR *** : " + err));
         console.log(chalkError("TFE | *** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
         if (!quitFlag) { quit({source: "RNT", error: err }); }
@@ -5429,6 +5464,8 @@ function initRandomNetworkTreeChild() {
 function initLangAnalyzer(callback) {
 
   statsObj.status = "INIT LANG ANALYZER";
+
+  slackSendMessage(statsObj.status);
 
   console.log(chalkInfo("TFE | INIT LANGUAGE ANALYZER CHILD PROCESS"));
 
@@ -5491,7 +5528,8 @@ function initLangAnalyzer(callback) {
   });
   langAnalyzer.on("error", function(err) {
     console.log(chalkError("TFE | *** langAnalyzer ERROR ***\n" + jsonPrint(err)));
-    slackSendRtmMessage("TFE | " + hostname + " | ERROR | LA");
+    statsObj.status = "ERROR LA";
+    slackSendMessage(statsObj.status);
     if (!quitFlag) { quit({source: "LA", error: err }); }
   });
   langAnalyzer.on("exit", function(err) {
@@ -5523,6 +5561,9 @@ initConfig(configuration, function(err, cnf) {
     + " STARTED " + getTimeStamp()
   ));
 
+  statsObj.status = "START";
+
+  slackSendMessage(statsObj.status);
 
   initSaveFileQueue(cnf);
 
