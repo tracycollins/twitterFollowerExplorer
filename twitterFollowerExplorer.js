@@ -3735,12 +3735,12 @@ async function showStats(options) {
 
   let message = genSlackStatus();
 
-  try {
-    await slackSendMessage(message);
-  }
-  catch(err){
-    console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
-  }
+  // try {
+  //   await slackSendMessage(message);
+  // }
+  // catch(err){
+  //   console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
+  // }
 
   if (options) {
     console.log("TFE | STATS\n" + jsonPrint(statsObj));
