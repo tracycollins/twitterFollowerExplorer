@@ -431,17 +431,16 @@ function slackMessageHandler(message){
         case "START":
         case "RESET":
         case "SLACK QUIT":
+        case "LOAD NN":
         case "TEXT":
-          slackSendWebStats(message.text);
-          slackSendRtmMessage(message.text);
+        case "PONG":
+          // slackSendWebStats(message.text);
+          // slackSendRtmMessage(message.text);
           resolve();
         break;
         case "PING":
           slackSendRtmMessage("PONG");
           slackSendWebMessage("PONG");
-          resolve();
-        break;
-        case "PONG":
           resolve();
         break;
         default:
@@ -525,7 +524,7 @@ function initSlackRtmClient(params){
 
       slackRtmClient.on("message", async function(message){
         if (configuration.verbose)  { console.log(chalkLog("TFE | RTM R<\n" + jsonPrint(message))); }
-        console.log(`TFE | SLACK RTM MESSAGE | R< | CH: ${message.channel} | USER: ${message.user} | ${message.text}`);
+        console.log(`TFE | SLACK RX< RTM MESSAGE | CH: ${message.channel} | USER: ${message.user} | ${message.text}`);
 
         try {
           await slackMessageHandler(message);
@@ -1883,6 +1882,9 @@ function loadBestNetworkDropboxFolder(folder, callback) {
   console.log(chalkLog("TFE | LOAD BEST NETWORK DROPBOX FOLDER: " + folder));
 
   statsObj.status = "LOAD BEST NNs";
+
+  slackSendWebMessage("LOAD NN");
+  slackSendRtmMessage("LOAD NN");
 
   let options = {path: folder};
   
