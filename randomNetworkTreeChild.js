@@ -41,9 +41,8 @@ const treeify = require("treeify");
 
 require("isomorphic-fetch");
 
-
-// const Dropbox = require("dropbox").Dropbox;
-const Dropbox = require("./js/dropbox").Dropbox;
+const Dropbox = require("dropbox").Dropbox;
+// const Dropbox = require("./js/dropbox").Dropbox;
 
 const async = require("async");
 const debug = require("debug")("rnt");
@@ -944,7 +943,6 @@ function getInputNames(nodes, callback){
   });
 }
 
-
 function loadNetwork(networkObj){
 
   return new Promise(function(resolve, reject){
@@ -1035,7 +1033,6 @@ function loadNetwork(networkObj){
     resolve();
 
   });
-
 }
 
 function printCategorizeHistory(){
@@ -1103,7 +1100,6 @@ function resetStats(callback){
   statsObj.categorize.skipped = 0;
 
   if (callback) { callback(); }
-
 }
 
 process.on("SIGHUP", function() {

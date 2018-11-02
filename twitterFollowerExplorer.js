@@ -2908,6 +2908,13 @@ function processUser(threeceeUser, userIn, callback) {
       cb(null, user);
     },
 
+    function genAutoCat(user, cb) {
+      if (!neuralNetworkInitialized) { return cb(null, user); }
+      generateAutoCategory(user, function (err, uObj) {
+        cb(err, uObj);
+      });
+    },
+
     function updateUserCategory(user, cb) {
       updateUserCategoryStats(user, function(err, u) {
         if (err) {
@@ -2919,13 +2926,6 @@ function processUser(threeceeUser, userIn, callback) {
         else {
           cb(null, u);
         }
-      });
-    },
-
-    function genAutoCat(user, cb) {
-      if (!neuralNetworkInitialized) { return cb(null, user); }
-      generateAutoCategory(user, function (err, uObj) {
-        cb(err, uObj);
       });
     }
 
