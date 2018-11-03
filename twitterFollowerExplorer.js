@@ -579,7 +579,7 @@ function initSlackRtmClient(params){
 }
 
 // will use histograms to determine neural net inputs
-// for emoji, hashtags, mentions, words
+// for emoji, hashtags, userMentions, words
 
 let globalHistograms = {};
 
@@ -803,7 +803,7 @@ const cp = require("child_process");
 let previousRandomNetworksHashMap = {};
 let availableNeuralNetHashMap = {};
 
-const inputTypes = ["emoji", "hashtags", "images", "mentions", "urls", "words"];
+const inputTypes = ["emoji", "hashtags", "images", "userMentions", "urls", "words"];
 
 inputTypes.sort();
 
