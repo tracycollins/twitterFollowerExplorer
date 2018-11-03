@@ -117,7 +117,7 @@ globalInputsObj.inputs = {};
 
 let stdin;
 
-require("isomorphic-fetch");
+const fetch = require("isomorphic-fetch");
 const Dropbox = require("dropbox").Dropbox;
 
 function msToTime(duration) {
@@ -356,7 +356,10 @@ debug("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN);
 debug("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
 debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
-const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
+const dropboxClient = new Dropbox({ 
+  accessToken: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN,
+  fetch: fetch
+});
 
 let resultsArray = [];
 
