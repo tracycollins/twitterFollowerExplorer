@@ -653,7 +653,9 @@ function generateInputSets3(params, callback) {
           prevTotMinChange = 0;
 
           if (newInputsObj.meta.type[type].numInputs === 0) {
-            quit("ZERO INPUTS");
+            // quit("ZERO INPUTS");
+            console.log(chalkAlert("GIS | ZERO INPUTS | " + type));
+            cb0();
           }
           else{
             cb0();
