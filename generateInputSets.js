@@ -357,7 +357,7 @@ debug("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
 debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
 const dropboxClient = new Dropbox({ 
-  accessToken: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN,
+  accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN,
   fetch: fetch
 });
 
