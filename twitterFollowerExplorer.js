@@ -3489,7 +3489,9 @@ const fsmStates = {
   "IDLE":{
     onEnter: function(event, oldState, newState) {
 
-      reporter(event, oldState, newState);
+      if (event !== "fsm_tick") {
+        reporter(event, oldState, newState);
+      }
 
       statsObj.status = "FSM IDLE";
 
