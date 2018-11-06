@@ -102,7 +102,7 @@ let saveFileQueue = [];
 let saveFileQueueInterval;
 let saveFileBusy = false;
 
-const inputTypes = ["emoji", "hashtags",  "images", "media", "mentions", "urls", "userMentions", "words"];
+const inputTypes = ["emoji", "hashtags",  "images", "media", "mentions", "sentiment", "urls", "userMentions", "words"];
 
 let globalInputsObj = {};
 globalInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
