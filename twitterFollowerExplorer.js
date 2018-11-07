@@ -1841,14 +1841,42 @@ function connectDb(callback){
       });
 
 
+      global.dbConnection = db;
+
       console.log(chalk.green("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
 
-      dbConnectionReady = true;
+      UserServerController = require("@threeceelabs/user-server-controller");
+      // UserServerController = require("../userServerController/index.js");
+      userServerController = new UserServerController("TFE_USC");
 
       User = mongoose.model("User", userModel.UserSchema);
       NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
 
-      callback(null, db);
+      userServerControllerReady = false;
+
+      // userServerController.on("error", function(err){
+      //   userServerControllerReady = false;
+      //   console.log(chalkAlert("TFE | *** USC ERROR | " + err));
+      //   quit("USC ERROR");
+      // });
+
+      userServerController.on("ready", function(appname){
+
+        userServerControllerReady = true;
+        console.log(chalkAlert("TFE | USC READY | " + appname));
+
+        // NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
+        // User = mongoose.model("User", userModel.UserSchema);
+
+
+        dbConnectionReady = true;
+
+        callback(null, db);
+
+      });
+
+
+
     }
   });
 }
@@ -5826,22 +5854,22 @@ setTimeout(async function(){
         quit("MONGO DB CONNECT ERROR");
       }
 
-      global.dbConnection = db;
+      // global.dbConnection = db;
 
-      UserServerController = require("@threeceelabs/user-server-controller");
-      userServerController = new UserServerController("TFE_USC");
+      // UserServerController = require("@threeceelabs/user-server-controller");
+      // userServerController = new UserServerController("TFE_USC");
 
-      userServerControllerReady = false;
+      // userServerControllerReady = false;
 
-      userServerController.on("ready", function(appname){
-        userServerControllerReady = true;
-        console.log(chalkAlert("TFE | USC READY | " + appname));
-      });
+      // userServerController.on("ready", function(appname){
+      //   userServerControllerReady = true;
+      //   console.log(chalkAlert("TFE | USC READY | " + appname));
+      // });
 
-      NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
-      User = mongoose.model("User", userModel.UserSchema);
+      // NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
+      // User = mongoose.model("User", userModel.UserSchema);
 
-      dbConnectionReady = true;
+      // dbConnectionReady = true;
 
     });
 
