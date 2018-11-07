@@ -263,6 +263,7 @@ let userObj = {
   stats: {}
 } ;
 
+
 const cla = require("command-line-args");
 
 const minInputsGenerated = { name: "minInputsGenerated", type: Number};
@@ -396,6 +397,20 @@ function showStats(options){
       + " | S: " + statsObj.startTimeMoment.format(compactDateTimeFormat)
     ));
   }
+}
+
+const inputsDefault = function (inputsObj){
+  return inputsObj;
+};
+
+function printInputsObj(title, inputsObj) {
+
+  inputsObj = inputsDefault(inputsObj);
+
+  console.log(chalkBlue(title
+    + " | " + inputsObj.inputsId
+    + "\n" + jsonPrint(inputsObj.meta)
+  ));
 }
 
 const sortedObjectValues = function(params) {
@@ -1441,24 +1456,30 @@ initialize(configuration, function(err, cnf){
 
       let networkInputsDoc = new NetworkInputs(globalInputsObj);
 
-      networkInputsDoc.save(function(err){
+      networkInputsDoc.save(function(err, savedNetworkInputsDoc){
+
         if (err) {
           console.log(chalkError("GIS | *** CREATE NETWORK INPUTS DB DOCUMENT: " + err));
         }
+        else {
+          printInputsObj("GIS | +++ SAVED NETWORK INPUTS DB DOCUMENT", savedNetworkInputsDoc);
+        }
+
+        const slackText = table(tableArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r"] });
+
+        console.log("GIS | SLACK MESSAGE SENT");
+        slackPostMessage(slackChannel, slackText);
+
+        const inFile = globalInputsObj.inputsId + ".json";
+
+        console.log(chalkInfo("GIS | ... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+
+        saveFileQueue.push({folder: inFolder, file: inFile, obj: globalInputsObj});
+
+        quit();
+
       });
 
-      const slackText = table(tableArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r"] });
-
-      console.log("GIS | SLACK MESSAGE SENT");
-      slackPostMessage(slackChannel, slackText);
-
-      const inFile = globalInputsObj.inputsId + ".json";
-
-      console.log(chalkInfo("GIS | ... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
-
-      saveFileQueue.push({folder: inFolder, file: inFile, obj: globalInputsObj});
-
-      quit();
     });  
 
   });
