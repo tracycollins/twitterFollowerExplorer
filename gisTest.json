@@ -7,6 +7,7 @@
     "node_args": "--max-old-space-size=4096",
     "autorestart": false,
     "env": {
+      "GIS_TEST_MODE": true,
       "FORCE_COLOR": 1,
       "NODE_ENV": "production",
       "GCLOUD_PROJECT": "graphic-tangent-627",

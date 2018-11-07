@@ -440,18 +440,28 @@ function slackMessageHandler(message){
 
       switch (message.text) {
         case "ERROR":
-        case "INIT":
         case "FETCH FRIENDS":
-        case "STATS":
-        case "SLACK READY":
+        case "FSM INIT":
+        case "INIT LANG ANALYZER":
+        case "INIT MAX INPUT HASHMAP":
+        case "INIT NNs":
+        case "INIT RAN NNs":
+        case "INIT RNT CHILD":
+        case "INIT TWITTER USERS":
+        case "INIT UNFOLLOWABLE":
+        case "INIT":
+        case "LOAD BEST NN":
+        case "LOAD NN":
+        case "PONG":
+        case "QUIT":
+        case "QUITTING":
         case "READY":
-        case "START":
         case "RESET":
         case "SLACK QUIT":
-        case "LOAD NN":
-        case "INIT UNFOLLOWABLE":
+        case "SLACK READY":
+        case "START":
+        case "STATS":
         case "TEXT":
-        case "PONG":
           resolve();
         break;
         case "PING":
@@ -459,7 +469,7 @@ function slackMessageHandler(message){
           resolve();
         break;
         default:
-          console.log(chalkAlert("SHC | *** UNDEFINED SLACK MESSAGE: " + message.text));
+          console.log(chalkAlert("TFE | *** UNDEFINED SLACK MESSAGE: " + message.text));
           // reject(new Error("UNDEFINED SLACK MESSAGE TYPE: " + message.text));
           resolve();
       }
@@ -1383,7 +1393,7 @@ const quitNow = { name: "quitOnError", alias: "K", type: Boolean, defaultValue: 
 const quitOnError = { name: "quitOnError", alias: "q", type: Boolean, defaultValue: true};
 const quitOnComplete = { name: "quitOnComplete", alias: "Q", type: Boolean};
 const userDbCrawl = { name: "userDbCrawl", alias: "C", type: Boolean};
-const testMode = { name: "testMode", alias: "X", type: Boolean, defaultValue: false};
+const testMode = { name: "testMode", alias: "X", type: Boolean};
 const loadNeuralNetworkID = { name: "loadNeuralNetworkID", alias: "N", type: Number };
 
 const optionDefinitions = [
@@ -1535,6 +1545,16 @@ function loadConfigFile(params) {
       let newConfiguration = {};
       newConfiguration.evolve = {};
 
+      if (loadedConfigObj.TFE_TEST_MODE !== undefined) {
+        console.log("TFE | LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
+        if ((loadedConfigObj.TFE_TEST_MODE === true) || (loadedConfigObj.TFE_TEST_MODE === "true")) {
+          newConfiguration.testMode = true;
+        }
+        if ((loadedConfigObj.TFE_TEST_MODE === false) || (loadedConfigObj.TFE_TEST_MODE === "false")) {
+          newConfiguration.testMode = false;
+        }
+      }
+
       if (loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER !== undefined) {
         console.log("TFE | LOADED TFE_THRECEE_AUTO_FOLLOW_USER: " + loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER);
         newConfiguration.threeceeAutoFollowUser = loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER;
@@ -1558,11 +1578,6 @@ function loadConfigFile(params) {
       if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined) {
         console.log("TFE | LOADED TFE_BEST_NN_INCREMENTAL_UPDATE: " + loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE);
         newConfiguration.bestNetworkIncrementalUpdate = loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE;
-      }
-
-      if (loadedConfigObj.TFE_TEST_MODE !== undefined) {
-        console.log("TFE | LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
-        newConfiguration.testMode = loadedConfigObj.TFE_TEST_MODE;
       }
 
       if (loadedConfigObj.TFE_QUIT_ON_COMPLETE !== undefined) {

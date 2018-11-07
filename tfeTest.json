@@ -6,7 +6,6 @@
     "cwd": "/Volumes/RAID1/projects/twitterFollowerExplorer",
     "node_args": "--max-old-space-size=8192",
     "autorestart": false,
-    "restart_delay": 3600000,
     "env": {
       "FORCE_COLOR": 1,
       "NODE_ENV": "production",
