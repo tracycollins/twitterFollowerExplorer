@@ -564,13 +564,13 @@ function initSlackRtmClient(params){
       slackRtmClient.on("ready", async function(){
         try {
 
-          statsObj.status = "SLACK READY";
+          statsObj.status = "SLACK RTM READY";
 
-          await slackSendRtmMessage(hostname + " | TFE | READY");
+          await slackSendRtmMessage(hostname + " | TFE | SLACK RTM READY");
 
           let message = {};
           message.pretext = hostname + "_" + process.pid;
-          message.text = hostname + "_" + process.pid + " | TFE | READY";
+          message.text = hostname + " | TFE | SLACK RTM READY";
 
           await slackSendWebMessage(message);
           resolve();
