@@ -1,5 +1,5 @@
  /*jslint node: true */
-/*jshint sub:true*/
+/*jshint subw :true*/
 "use strict";
 
 const DEFAULT_THRECEE_AUTO_FOLLOW_USER = "altthreecee00";
@@ -646,7 +646,7 @@ function genSlackStatus(params) {
   message.token = slackOAuthAccessToken;
   message.channel = configuration.slackChannel.id,
   message.pretext = hostname + "_" + process.pid,
-  message.text = "TFE | " + hostname + "_" + process.pid + "\nSTATUS: " + statsObj.status;
+  message.text = hostname + " |TFE | STATUS | \n" + statsObj.status;
   message.attachments = [];
 
   let fieldsArray = [];
@@ -711,26 +711,10 @@ const quit = async function(options) {
     console.log( "TFE | options: " + jsonPrint(options) );
   }
 
-  // let slackText = "\n*QUIT*";
-  // slackText = slackText + "\nFORCE QUIT:  " + forceQuitFlag;
-  // slackText = slackText + "\nHOST:        " + hostname;
-  // slackText = slackText + "\nBEST:        " + bestRuntimeNetworkId;
-  // slackText = slackText + "\nTEST CYCs:   " + currentBestNetwork.testCycles;
-  // slackText = slackText + "\nTC HISTORY:  " + currentBestNetwork.testCycleHistory.length;
-  // slackText = slackText + "\nOAMR:        " + currentBestNetwork.overallMatchRate.toFixed(2) + "%";
-  // slackText = slackText + "\nMR:          " + currentBestNetwork.matchRate.toFixed(2) + "%";
-  // slackText = slackText + "\nSR:          " + currentBestNetwork.successRate.toFixed(2) + "%";
-  // slackText = slackText + "\nSTART:       " + statsObj.startTimeMoment.format(compactDateTimeFormat);
-  // slackText = slackText + "\nELPSD:       " + msToTime(statsObj.elapsed);
-  // slackText = slackText + "\nTOT PRCSSD:  " + statsObj.users.totalFriendsProcessed;
-  // slackText = slackText + "\nGTOT PRCSSD: " + statsObj.users.grandTotalFriendsProcessed;
-
-  // console.log("TFE | SLACK TEXT: " + slackText);
-
   let message = genSlackStatus();
 
   try {
-    await slackSendMessage(hostname + " | TFE | QUITTING");
+    await slackSendMessage(message);
   }
   catch(err){
     console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
@@ -780,11 +764,11 @@ const quit = async function(options) {
         ));
       }
 
-      await slackSendMessage(hostname + " | TFE | QUITTING");
+      await slackSendMessage(hostname + " | TFE | QUIT");
 
       setTimeout(function() {
 
-        global.dbConnection.close(function () {
+        global.dbConnection.close(async function () {
           console.log(chalkBlue(
             "\nTFE | ==========================\n"
             + "TFE | MONGO DB CONNECTION CLOSED"
@@ -3653,7 +3637,9 @@ const fsmStates = {
 
       if (event !== "fsm_tick") {
 
-        statsObj.status = "FSM FETCH_END_ALL";
+        statsObj.status = "END FETCH ALL";
+
+        slackSendMessage(hostname + " | TFE | " + statsObj.status);
 
         reporter(event, oldState, newState);
 
@@ -3778,11 +3764,12 @@ const fsmStates = {
         slackText = slackText + " | TEST CYCs: " + statsObj.bestNetwork.testCycles;
         slackText = slackText + " | TC HISTORY: " + statsObj.bestNetwork.testCycleHistory.length;
 
-        statsObj.status = "END FETCH ALL";
-
-        slackSendMessage(hostname + " | TFE | " + statsObj.status);
 
         clearInterval(waitFileSaveInterval);
+
+        statsObj.status = "WAIT UPDATE STATS";
+
+        slackSendMessage(hostname + " | TFE | " + statsObj.status);
 
         waitFileSaveInterval = setInterval(async function() {
 
@@ -3821,6 +3808,9 @@ const fsmStates = {
               bnhmObj.networkObj = networkDefaults(bnhmObj.networkObj);
 
               bestNetworkHashMap.set(statsObj.bestNetwork.networkId, bnhmObj);
+
+              statsObj.status = "END UPDATE STATS";
+              slackSendMessage(hostname + " | TFE | " + statsObj.status);
 
               if (configuration.quitOnComplete) {
                 quit({source: "QUIT_ON_COMPLETE"});
