@@ -465,7 +465,7 @@ function slackMessageHandler(message){
           resolve();
         break;
         case "PING":
-          slackSendMessage("PONG");
+          // slackSendMessage("PONG");
           resolve();
         break;
         default:
@@ -564,11 +564,13 @@ function initSlackRtmClient(params){
       slackRtmClient.on("ready", async function(){
         try {
 
-          await slackSendRtmMessage("READY");
+          statsObj.status = "SLACK READY";
+
+          await slackSendRtmMessage(hostname + " | TFE | READY");
 
           let message = {};
           message.pretext = hostname + "_" + process.pid;
-          message.text = "TFE | " + hostname + "_" + process.pid + " | READY";
+          message.text = hostname + "_" + process.pid + " | TFE | READY";
 
           await slackSendWebMessage(message);
           resolve();
@@ -728,7 +730,7 @@ const quit = async function(options) {
   let message = genSlackStatus();
 
   try {
-    await slackSendMessage("QUITTING");
+    await slackSendMessage(hostname + " | TFE | QUITTING");
   }
   catch(err){
     console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
@@ -778,12 +780,12 @@ const quit = async function(options) {
         ));
       }
 
-      await slackSendMessage("QUIT");
+      await slackSendMessage(hostname + " | TFE | QUITTING");
 
       setTimeout(function() {
 
         global.dbConnection.close(function () {
-          console.log(chalkAlert(
+          console.log(chalkBlue(
             "\nTFE | ==========================\n"
             + "TFE | MONGO DB CONNECTION CLOSED"
             + "\nTFE | ==========================\n"
@@ -1144,7 +1146,7 @@ function resetAllTwitterUserState(callback) {
         return(err);
       }
     }, function(err) {
-      if (err) { reject(err); }
+      if (err) { return reject(err); }
       resolve();
     });
 
@@ -1731,154 +1733,84 @@ function loadAllConfigFiles(){
     }
   });
 
-  // async.series({
-
-  //   defaultConfig: async function(cb) {
-
-
-  //       if (err) {
-
-  //         console.log(chalkError("TFE | *** ERROR LOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
-  //         console.log(chalkError("TFE | *** ERROR LOADED DEFAULT CONFIG " + err));
-
-  //         if ((err.status === 404) || (err.status === 409)) {
-  //           console.log(chalkError("TFE | !!! DROPBOX READ FILE " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile + " NOT FOUND ... SKIPPING"));
-  //           cb();
-  //         }
-  //         else {
-  //           cb(err);
-  //         }
-  //       }
-  //       else if (defaultConfig) {
-  //         defaultConfiguration = defaultConfig;
-  //         console.log(chalkAlert("TFE | +++ RELOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
-  //         cb();
-  //       }
-  //       else {
-  //         cb();
-  //       }
-
-  //     });
-  //   },
-
-  //   hostConfig: function(cb){
-  //     loadConfigFile(dropboxConfigHostFolder, dropboxConfigHostFile, function(err, hostConfig){
-
-  //       if (err) {
-
-  //         console.log(chalkError("TFE | ERROR LOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
-  //         console.log(chalkError("TFE | ERROR LOADED HOST CONFIG " + err));
-
-  //         if ((err.status === 404) || (err.status === 409)) {
-  //           console.log(chalkError("TFE | !!! DROPBOX READ FILE " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile + " NOT FOUND ... SKIPPING"));
-  //           cb();
-  //         }
-  //         else {
-  //           cb(err);
-  //         }
-
-  //       }
-  //       else if (hostConfig) {
-
-  //         hostConfiguration = hostConfig;
-
-  //         console.log(chalkAlert("TFE | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
-
-  //         cb();
-  //       }
-  //       else {
-  //         cb();
-  //       }
-
-  //     });
-  //   }
-
-  // }, function(err, results) {
-
-  //   if (err) {
-  //     console.log(chalkError("TFE | *** LOAD ALL CONFIG FILES ERROR: " + err));
-  //     return callback(err);
-  //   }
-
-  //   let defaultAndHostConfig = merge(defaultConfiguration, hostConfiguration); // host settings override defaults
-  //   let tempConfig = merge(configuration, defaultAndHostConfig); // any new settings override existing config
-
-  //   configuration = tempConfig;
-
-  //   configuration.twitterUsers = _.uniq(configuration.twitterUsers);  // merge concats arrays!
-
-  //   callback();
-  // });
 }
 
-function connectDb(callback){
+function connectDb(){
 
-  statsObj.status = "CONNECT DB";
+  return new Promise(async function(resolve, reject){
 
-  wordAssoDb.connect("TFE_" + process.pid, async function(err, db){
-    if (err) {
-      console.log(chalkError("TFE | *** MONGO DB CONNECTION ERROR: " + err));
-      callback(err, null);
-      statsObj.status = "MONGO CONNECTION ERROR";
-      slackSendMessage(statsObj.status);
-      dbConnectionReady = false;
+    try {
+
+      statsObj.status = "CONNECTING MONGO DB";
+
+      wordAssoDb.connect("TFE_" + process.pid, async function(err, db){
+
+        if (err) {
+          console.log(chalkError("TFE | *** MONGO DB CONNECTION ERROR: " + err));
+          callback(err, null);
+          statsObj.status = "MONGO CONNECTION ERROR";
+          slackSendMessage(hostname + " | TFE | " + statsObj.status);
+          dbConnectionReady = false;
+          quit(statsObj.status);
+          return reject(err);
+        }
+
+        db.on("error", async function(){
+          statsObj.status = "MONGO ERROR";
+          console.error.bind(console, "TFE | *** MONGO DB CONNECTION ERROR ***\n");
+          console.log(chalkError("TFE | *** MONGO DB CONNECTION ERROR ***\n"));
+          slackSendMessage(hostname + " | TFE | " + statsObj.status);
+          db.close();
+          dbConnectionReady = false;
+          quit(statsObj.status);
+        });
+
+        db.on("disconnected", async function(){
+          statsObj.status = "MONGO DISCONNECTED";
+          console.error.bind(console, "TFE | *** MONGO DB DISCONNECTED ***\n");
+          slackSendMessage(hostname + " | TFE | " + statsObj.status);
+          console.log(chalkAlert("TFE | *** MONGO DB DISCONNECTED ***\n"));
+          dbConnectionReady = false;
+          quit(statsObj.status);
+        });
+
+
+        global.dbConnection = db;
+
+        console.log(chalk.green("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
+
+        UserServerController = require("@threeceelabs/user-server-controller");
+        // UserServerController = require("../userServerController/index.js");
+        userServerController = new UserServerController("TFE_USC");
+
+        User = mongoose.model("User", userModel.UserSchema);
+        NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
+
+        userServerControllerReady = false;
+        userServerController.on("ready", function(appname){
+
+          statsObj.status = "MONGO DB CONNECTED";
+          slackSendMessage(hostname + " | TFE | " + statsObj.status);
+
+          userServerControllerReady = true;
+          console.log(chalkAlert("TFE | USC READY | " + appname));
+          dbConnectionReady = true;
+
+          resolve(db);
+
+        });
+      });
+
+
     }
-    else {
-
-      db.on("error", async function(){
-        console.error.bind(console, "TFE | *** MONGO DB CONNECTION ERROR ***\n");
-        console.log(chalkError("TFE | *** MONGO DB CONNECTION ERROR ***\n"));
-        await slackSendMessage("ERROR");
-        db.close();
-        dbConnectionReady = false;
-      });
-
-      db.on("disconnected", async function(){
-        console.error.bind(console, "TFE | *** MONGO DB DISCONNECTED ***\n");
-        await slackSendMessage("ERROR");
-        console.log(chalkAlert("TFE | *** MONGO DB DISCONNECTED ***\n"));
-        dbConnectionReady = false;
-      });
-
-
-      global.dbConnection = db;
-
-      console.log(chalk.green("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
-
-      UserServerController = require("@threeceelabs/user-server-controller");
-      // UserServerController = require("../userServerController/index.js");
-      userServerController = new UserServerController("TFE_USC");
-
-      User = mongoose.model("User", userModel.UserSchema);
-      NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
-
-      userServerControllerReady = false;
-
-      // userServerController.on("error", function(err){
-      //   userServerControllerReady = false;
-      //   console.log(chalkAlert("TFE | *** USC ERROR | " + err));
-      //   quit("USC ERROR");
-      // });
-
-      userServerController.on("ready", function(appname){
-
-        userServerControllerReady = true;
-        console.log(chalkAlert("TFE | USC READY | " + appname));
-
-        // NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
-        // User = mongoose.model("User", userModel.UserSchema);
-
-
-        dbConnectionReady = true;
-
-        callback(null, db);
-
-      });
-
-
-
+    catch(err){
+      console.log(chalkError("TFE | *** MONGO DB CONNECT ERROR: " + err));
+      reject(err);
     }
+
   });
+
+
 }
 
 function loadMaxInputDropbox(params) {
@@ -2116,7 +2048,7 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
   statsObj.status = "LOAD BEST NNs";
 
-  slackSendMessage("LOAD NN");
+  // slackSendMessage(hostname + " | TFE | " + statsObj.status);
 
   let options = {path: folder};
   
@@ -2385,10 +2317,6 @@ function loadBestNetworkDropboxFolder(folder, callback) {
 
 function initUnfollowableUserSet(){
 
-  // statsObj.status = "INIT UNFOLLOWABLE USER SET";
-
-  // slackSendMessage(statsObj.status);
-
   return new Promise(async function(resolve, reject){
 
     try {
@@ -2425,7 +2353,7 @@ function loadBestNeuralNetworkFiles() {
 
   statsObj.status = "LOAD BEST NN";
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   return new Promise(function(resolve, reject){
 
@@ -3357,7 +3285,7 @@ function initRandomNetworks(params){
 
   statsObj.status = "INIT RAN NNs";
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   return new Promise(async function(resolve, reject){
 
@@ -3405,7 +3333,7 @@ function initMaxInputHashMap(params){
 
   statsObj.status = "INIT MAX INPUT HASHMAP";
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   return new Promise(async function(resolve, reject){
 
@@ -3429,7 +3357,7 @@ function initNetworks(params){
 
   statsObj.status = "INIT NNs";
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   console.log(chalkTwitter("TFE | INIT NETWORKS"));
 
@@ -3573,7 +3501,7 @@ const fsmStates = {
       statsObj.status = "FSM ERROR";
 
       try { 
-        slackSendMessage(statsObj.status);
+        slackSendMessage(hostname + " | TFE | " + statsObj.status);
       }
       catch(err){
         console.log(chalkError("TFE | *** SLACK INIT MESSAGE ERROR: " + err));
@@ -3595,12 +3523,12 @@ const fsmStates = {
         slackText = slackText + "\nSTART: " + statsObj.startTimeMoment.format(compactDateTimeFormat);
         slackText = slackText + " | RUN: " + msToTime(statsObj.elapsed);
 
-        try { 
-          slackSendMessage(statsObj.status);
-        }
-        catch(err){
-          console.log(chalkError("TFE | *** SLACK INIT MESSAGE ERROR: " + err));
-        }
+        // try { 
+        //   slackSendMessage(statsObj.status);
+        // }
+        // catch(err){
+        //   console.log(chalkError("TFE | *** SLACK INIT MESSAGE ERROR: " + err));
+        // }
 
         initNetworks()
         .then(function(){
@@ -3692,6 +3620,7 @@ const fsmStates = {
         reporter(event, oldState, newState);
 
         statsObj.status = "FSM FETCH_ALL";
+        slackSendMessage(hostname + " | TFE | " + statsObj.status);
 
         childSendAll({op: "FETCH_USER_START"});
         console.log("TFE | FETCH_ALL | onEnter | " + event);
@@ -3851,13 +3780,7 @@ const fsmStates = {
 
         statsObj.status = "END FETCH ALL";
 
-        slackSendMessage(statsObj.status)
-          .then(function(){
-
-          })
-          .catch(function(err){
-
-          });
+        slackSendMessage(hostname + " | TFE | " + statsObj.status);
 
         clearInterval(waitFileSaveInterval);
 
@@ -3988,13 +3911,6 @@ async function showStats(options) {
   childSendAll({op: "STATS"});
 
   let message = genSlackStatus();
-
-  // try {
-  //   await slackSendMessage(message);
-  // }
-  // catch(err){
-  //   console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
-  // }
 
   if (options) {
     console.log("TFE | STATS\n" + jsonPrint(statsObj));
@@ -4365,8 +4281,6 @@ function initTwitterFollowerChild(twitterConfig) {
 
       statsObj.status = "INIT CHILD | @" + user ;
 
-      // slackSendMessage("INIT CHILD");
-
       let childEnv = {};
       childEnv.env = {};
       childEnv.env.CHILD_ID = childId;
@@ -4675,81 +4589,77 @@ function initTwitter(threeceeUser) {
 
 function initTwitterUsers(callback) {
 
-  statsObj.status = "INIT TWITTER USERS";
+  return new Promise(async function(resolve, reject){
 
-  slackSendMessage("INIT TWITTER USERS");
+    try {
 
-  if (!configuration.twitterUsers) {
-    console.log(chalkAlert("TFE | ??? NO TWITTER USERS ???"));
-    if (callback !== undefined) {callback(null, null);}
-  }
-  else {
+      statsObj.status = "INIT TWITTER USERS";
 
-    console.log(chalkTwitter("TFE | INIT TWITTER USERS"
-      + " | FOUND " + configuration.twitterUsers.length + " USERS"
-    ));
-
-    async.each(configuration.twitterUsers, async function(userScreenName, cb) {
-
-      userScreenName = userScreenName.toLowerCase();
-
-      console.log(chalkTwitter("TFE | INIT TWITTER USER @" + userScreenName));
-
-      twitterUserHashMap[userScreenName] = {};
-      twitterUserHashMap[userScreenName].threeceeUser = userScreenName;
-      twitterUserHashMap[userScreenName].friends = new Set();
-
-      try {
-
-        await initTwitter(userScreenName);
-
-        resetTwitterUserState(userScreenName, function() {
-          cb();
-        });
-
+      if (!configuration.twitterUsers) {
+        console.log(chalkAlert("TFE | ??? NO TWITTER USERS ???"));
+        return reject(new Error("NO TWITTER USERS"));
       }
-      catch(err) {
-        console.log(chalkError("TFE | INIT TWITTER ERROR: " + err.message));
-        if (err.code === 88) {
-          return cb();
+
+      console.log(chalkTwitter("TFE | INIT TWITTER USERS"
+        + " | FOUND " + configuration.twitterUsers.length + " USERS"
+      ));
+
+      async.each(configuration.twitterUsers, async function(userScreenName) {
+
+        userScreenName = userScreenName.toLowerCase();
+
+        console.log(chalkTwitter("TFE | INIT TWITTER USER @" + userScreenName));
+
+        twitterUserHashMap[userScreenName] = {};
+        twitterUserHashMap[userScreenName].threeceeUser = userScreenName;
+        twitterUserHashMap[userScreenName].friends = new Set();
+
+        try {
+          await initTwitter(userScreenName);
+          await resetTwitterUserState(userScreenName);
+          return;
         }
-        return cb(err);
-      }
+        catch(err) {
+          console.log(chalkError("TFE | INIT TWITTER ERROR: " + err.message));
+          if (err.code === 88) { return;  }
+          return err;
+        }
 
-
-    }, function(err) {
-
-      statsObj.users.totalFriendsCount = 0;
-      statsObj.users.totalFriendsFetched = 0;
-
-      configuration.twitterUsers.forEach(function(tcUser) {
+      }, function(err) {
 
         statsObj.users.totalFriendsCount = 0;
+        statsObj.users.totalFriendsFetched = 0;
 
-        if ((statsObj.user[tcUser] !== undefined)
-            && (statsObj.user[tcUser].friendsCount !== undefined)
-            && (tfeChildHashMap[tcUser].status !== "DISABLED")
-            && (tfeChildHashMap[tcUser].status !== "ERROR")
-            && (tfeChildHashMap[tcUser].status !== "RESET")
-          ) {
+        configuration.twitterUsers.forEach(function(tcUser) {
 
-          statsObj.users.totalFriendsFetched += statsObj.user[tcUser].totalFriendsFetched;
-          statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;
-          statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalFriendsCount;
+          statsObj.users.totalFriendsCount = 0;
 
-        }
+          if ((statsObj.user[tcUser] !== undefined)
+              && (statsObj.user[tcUser].friendsCount !== undefined)
+              && (tfeChildHashMap[tcUser].status !== "DISABLED")
+              && (tfeChildHashMap[tcUser].status !== "ERROR")
+              && (tfeChildHashMap[tcUser].status !== "RESET")
+            ) {
+
+            statsObj.users.totalFriendsFetched += statsObj.user[tcUser].totalFriendsFetched;
+            statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;
+            statsObj.users.totalPercentFetched = 100 * statsObj.users.totalFriendsFetched/statsObj.users.totalFriendsCount;
+
+          }
+        });
+
+        statsObj.users.grandTotalFriendsFetched += statsObj.users.totalFriendsFetched;
+
+        resolve();
 
       });
 
-      statsObj.users.grandTotalFriendsFetched += statsObj.users.totalFriendsFetched;
-
-      console.log(chalkTwitterBold("TFE | ====================================================================="
-        + "\nTFE | ====================================================================="
-      ));
-      if (callback !== undefined) { callback(err); }
-    });
-
-  }
+    }
+    catch(err){
+      console.log(chalkTwitter("TFE | *** INIT TWITTER USERS ERROR: " + err));
+      reject(err);
+    }
+  });
 }
 
 function toggleVerbose(){
@@ -4798,7 +4708,7 @@ function initStdIn() {
 
       case ".":
         try { 
-          slackSendMessage("PING");
+          slackSendMessage("TFE | " + hostname + " | PING");
         }
         catch(err){
           console.log(chalkError("TFE | *** SLACK PING MESSAGE ERROR: " + err));
@@ -4928,7 +4838,7 @@ function saveNetworkHashMap(params, callback) {
 
   statsObj.status = "SAVE NN HASHMAP";
 
-  slackSendMessage("SAV NN HASHMAP");
+  // slackSendMessage("SAV NN HASHMAP");
 
   const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
 
@@ -5009,7 +4919,7 @@ function updateNetworkStats(params, callback) {
 
   statsObj.status = "UPDATE NN STATS";
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   console.log(chalkTwitter("TFE | UPDATE NETWORK STATS"));
 
@@ -5629,7 +5539,7 @@ function initRandomNetworkTreeChild() {
 
   statsObj.status = "INIT RNT CHILD";
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   return new Promise(function(resolve, reject){
 
@@ -5673,7 +5583,7 @@ function initRandomNetworkTreeChild() {
         randomNetworkTreeActivateQueueSize = 0;
         randomNetworkTree = null;
         statsObj.status = "ERROR RNT";
-        slackSendMessage(statsObj.status);
+        slackSendMessage(hostname + " | TFE | " + statsObj.status);
         console.log(chalkError("TFE | *** randomNetworkTree ERROR *** : " + err));
         console.log(chalkError("TFE | *** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
         if (!quitFlag) { quit({source: "RNT", error: err }); }
@@ -5730,7 +5640,7 @@ function initLangAnalyzer(callback) {
 
   statsObj.status = "INIT LANG ANALYZER";
 
-  slackSendMessage(statsObj.status);
+  // slackSendMessage(statsObj.status);
 
   console.log(chalkInfo("TFE | INIT LANGUAGE ANALYZER CHILD PROCESS"));
 
@@ -5794,7 +5704,7 @@ function initLangAnalyzer(callback) {
   langAnalyzer.on("error", function(err) {
     console.log(chalkError("TFE | *** langAnalyzer ERROR ***\n" + jsonPrint(err)));
     statsObj.status = "ERROR LA";
-    slackSendMessage(statsObj.status);
+    slackSendMessage(hostname + " | TFE | " + statsObj.status);
     if (!quitFlag) { quit({source: "LA", error: err }); }
   });
   langAnalyzer.on("exit", function(err) {
@@ -5817,13 +5727,11 @@ setTimeout(async function(){
     let cnf = await initConfig(configuration);
     configuration = deepcopy(cnf);
 
-    console.log("TFE | " + chalkTwitter(configuration.processName
-      + " STARTED " + getTimeStamp()
-    ));
+    console.log("TFE | " + chalkTwitter(configuration.processName + " STARTED " + getTimeStamp() ));
 
     statsObj.status = "START";
 
-    slackSendMessage(statsObj.status);
+    slackSendMessage(hostname + " | TFE | " + statsObj.status);
 
     initSaveFileQueue(cnf);
 
@@ -5846,32 +5754,14 @@ setTimeout(async function(){
 
     console.log("TFE | " + chalkTwitter(configuration.processName + " CONFIGURATION\n" + jsonPrint(configuration)));
 
-    connectDb(function(err, db){
-
-      if (err) {
-        dbConnectionReady = false;
-        console.log(chalkError("TFE | *** MONGO DB CONNECT ERROR: " + err + " | QUITTING ***"));
-        quit("MONGO DB CONNECT ERROR");
-      }
-
-      // global.dbConnection = db;
-
-      // UserServerController = require("@threeceelabs/user-server-controller");
-      // userServerController = new UserServerController("TFE_USC");
-
-      // userServerControllerReady = false;
-
-      // userServerController.on("ready", function(appname){
-      //   userServerControllerReady = true;
-      //   console.log(chalkAlert("TFE | USC READY | " + appname));
-      // });
-
-      // NeuralNetwork = mongoose.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
-      // User = mongoose.model("User", userModel.UserSchema);
-
-      // dbConnectionReady = true;
-
-    });
+    try {
+      await connectDb();
+    }
+    catch(err){
+      dbConnectionReady = false;
+      console.log(chalkError("TFE | *** MONGO DB CONNECT ERROR: " + err + " | QUITTING ***"));
+      quit("MONGO DB CONNECT ERROR");
+    }
 
     dbConnectionReadyInterval = setInterval(async function() {
 
@@ -5885,19 +5775,14 @@ setTimeout(async function(){
         initLangAnalyzerMessageRxQueueInterval(1);
         initLangAnalyzer();
         await initUnfollowableUserSet();
-        initTwitterUsers();
+        await initTwitterUsers();
         initFsmTickInterval(FSM_TICK_INTERVAL);
         initRandomNetworkTreeChild();
 
-        try {
-          neuralNetworkInitialized = true;
-          fsm.fsm_resetEnd();
-          fsm.fsm_init();
-          fetchAllIntervalReady = true;
-        }
-        catch (err){
-          console.log(chalkError("TFE | *** INIT NETWORKS ERROR: " + err));
-        }
+        neuralNetworkInitialized = true;
+        fsm.fsm_resetEnd();
+        fsm.fsm_init();
+        fetchAllIntervalReady = true;
         
       }
       else {
