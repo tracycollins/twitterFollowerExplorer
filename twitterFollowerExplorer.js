@@ -4492,7 +4492,7 @@ function initTwitterFollowerChild(twitterConfig) {
           break;
 
           case "FRIEND_RAW":
-            processUserQueue.unshift(m);
+            processUserQueue.push(m);
 
             if (m.follow) {
               try { 

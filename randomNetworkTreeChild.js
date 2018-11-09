@@ -10,8 +10,9 @@ let elapsed_time = function(note){
     start = process.hrtime(); // reset the timer
 };
 
+const MAX_SORT_NETWORKS = 500;
 const ONE_SECOND = 1000;
-const MAX_Q_SIZE = 500;
+const MAX_Q_SIZE = 1000;
 
 const defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
@@ -634,7 +635,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
   }, function generateNetworksOutputAsyncCallback(){
 
-    sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: 250})
+    sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: MAX_SORT_NETWORKS})
     .then(function(sortedNetworkResults){
 
       if (!sortedNetworkResults) { 
