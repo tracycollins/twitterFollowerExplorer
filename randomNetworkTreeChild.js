@@ -12,7 +12,7 @@ let elapsed_time = function(note){
 
 const MAX_SORT_NETWORKS = 500;
 const ONE_SECOND = 1000;
-const MAX_Q_SIZE = 1000;
+const MAX_Q_SIZE = 2000;
 
 const defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
