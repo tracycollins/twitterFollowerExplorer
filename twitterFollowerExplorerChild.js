@@ -673,9 +673,9 @@ function fetchFriends(params, callback) {
         + "\nTFC | ==========================================================="
       ));
 
-      const subFriendsSortedArray = sortOn(data.users, "-followers_count");
+      // const subFriendsSortedArray = sortOn(data.users, "-followers_count");
 
-      async.eachSeries(subFriendsSortedArray, function (friend, cb){
+      async.eachSeries(data.users, function (friend, cb){
 
         checkFriendMinimumProperties(friend, function(err, unfollowFlag){
 
@@ -730,10 +730,10 @@ function fetchFriends(params, callback) {
       }, function subFriendsProcess(err){
         if (err) {
           console.trace("TFC | *** subFriendsProcess ERROR");
-          callback(err, null);
+          callback(err);
         }
         else {
-          callback(null, subFriendsSortedArray);
+          callback(null);
         }
       });
 
@@ -927,7 +927,7 @@ const fsmStates = {
         twitterUsersShow(function(){});
       }
 
-      fetchFriends(params, function(err, results){
+      fetchFriends(params, function(err){
         if (err) {
           console.log(chalkError("TFC | *** fetchFriends ERROR: " + err));
 

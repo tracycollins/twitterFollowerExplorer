@@ -947,18 +947,18 @@ function initActivateNetworkInterval(interval){
                     statsObj.categorize.mismatch += 1;
                     statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                    printActivateResult("RNT | 000 MISS [" + rxActivateNetworkQueue.length + "]", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+                    printActivateResult("RNT | 000 MISS  [" + rxActivateNetworkQueue.length + "]", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
 
                   }
                 }
                 else {
                   statsObj.categorize.skipped += 1;
-                  printActivateResult("RNT | ___ skip [" + rxActivateNetworkQueue.length + "]", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+                  printActivateResult("RNT | ___ skip  [" + rxActivateNetworkQueue.length + "]", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
                 }
               }
               else {
                 statsObj.categorize.skipped += 1;
-                printActivateResult("RNT | ___ skip [" + rxActivateNetworkQueue.length + "]", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
+                printActivateResult("RNT | ___ skip  [" + rxActivateNetworkQueue.length + "]", statsObj.bestNetwork, category, results.categoryAuto, obj.user.screenName);
               }
             }
 
