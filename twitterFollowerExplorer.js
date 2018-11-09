@@ -3022,7 +3022,6 @@ function processUser(threeceeUser, userIn, callback) {
 
             }
           });
-
         }
         else {
 
