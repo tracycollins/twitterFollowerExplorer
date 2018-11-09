@@ -15,6 +15,8 @@ const inputTypes = [
   "words"
 ];
 
+inputTypes.sort();
+
 const os = require("os");
 
 let hostname = os.hostname();

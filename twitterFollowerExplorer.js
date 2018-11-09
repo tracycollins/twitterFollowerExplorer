@@ -4,7 +4,7 @@
 
 const DEFAULT_THRECEE_AUTO_FOLLOW_USER = "altthreecee00";
 
-const inputTypes = [
+let inputTypes = [
   "emoji", 
   "hashtags", 
   "images", 
@@ -12,6 +12,7 @@ const inputTypes = [
   "media", 
   "mentions", 
   "places", 
+  "sentiment", 
   "urls", 
   "userMentions", 
   "words"
