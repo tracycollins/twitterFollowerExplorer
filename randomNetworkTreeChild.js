@@ -579,6 +579,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
 
       statsObj.loadedNetworks[nnId].total += 1;
       statsObj.allTimeLoadedNetworks[nnId].total += 1;
+      nn.total = statsObj.loadedNetworks[nnId].total;
 
       if ((nnOutput[0] === expectedOutput[0])
         && (nnOutput[1] === expectedOutput[1])
@@ -587,6 +588,7 @@ function generateNetworksOutput(enableLog, title, networkOutputObj, expectedOutp
         statsObj.loadedNetworks[nnId].match += 1;
         statsObj.loadedNetworks[nnId].matchFlag = true;
         statsObj.allTimeLoadedNetworks[nnId].match += 1;
+        nn.match = statsObj.loadedNetworks[nnId].match;
 
       }
       else {
