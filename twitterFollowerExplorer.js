@@ -4,6 +4,49 @@
 
 const DEFAULT_THRECEE_AUTO_FOLLOW_USER = "altthreecee00";
 
+const inputTypes = [
+  "emoji", 
+  "hashtags", 
+  "images", 
+  "locations", 
+  "media", 
+  "mentions", 
+  "places", 
+  "urls", 
+  "userMentions", 
+  "words"
+];
+
+inputTypes.sort();
+
+let globalHistograms = {};
+let statsObj = {};
+statsObj.histograms = {};
+let statsObjSmall = {};
+
+function resetGlobalHistograms(params){
+
+  return new Promise(function(resolve, reject){
+
+    if (!params.inputTypes) {
+      return reject(new Error("inputTypes UNDEFINED"));
+    }
+
+    globalHistograms = {};
+    statsObj.histograms = {};
+
+    param.inputTypes.forEach(function(type){
+
+      globalHistograms[type] = {};
+      statsObj.histograms[type] = {};
+
+    });
+
+    resolve();
+
+  });
+}
+
 let tfeChildHashMap = {};
 
 global.dbConnection = false;
@@ -145,10 +188,6 @@ const HashMap = require("hashmap").HashMap;
 
 const channelsHashMap = new HashMap();
 
-let statsObj = {};
-let statsObjSmall = {};
-
-
 statsObj.pid = process.pid;
 statsObj.childrenFetchBusy = false;
 
@@ -199,7 +238,7 @@ statsObj.totalInputs = 0;
 statsObj.numNetworksLoaded = 0;
 statsObj.numNetworksUpdated = 0;
 statsObj.numNetworksSkipped = 0;
-statsObj.histograms = {};
+// statsObj.histograms = {};
 statsObj.normalization = {};
 statsObj.normalization.score = {};
 statsObj.normalization.magnitude = {};
@@ -469,7 +508,7 @@ function slackMessageHandler(message){
           resolve();
         break;
         default:
-          console.log(chalkAlert("TFE | *** UNDEFINED SLACK MESSAGE: " + message.text));
+          // console.log(chalkAlert("TFE | *** UNDEFINED SLACK MESSAGE: " + message.text));
           // reject(new Error("UNDEFINED SLACK MESSAGE TYPE: " + message.text));
           resolve();
       }
@@ -590,23 +629,9 @@ function initSlackRtmClient(params){
   });
 }
 
-// will use histograms to determine neural net inputs
-// for emoji, hashtags, userMentions, words
-
-let globalHistograms = {};
-globalHistograms.emoji = {};
-globalHistograms.hashtags = {};
-globalHistograms.images = {};
-globalHistograms.media = {};
-globalHistograms.urls = {};
-globalHistograms.mentions = {}; // legacy. now is userMentions
-globalHistograms.userMentions = {};
-globalHistograms.words = {};
-
 const bestRuntimeNetworkFileName = "bestRuntimeNetwork.json";
 let bestRuntimeNetworkId = false;
 let loadedNetworksFlag = false;
-// let networksSentFlag = false;
 let currentBestNetworkId = false;
 
 let currentBestNetwork = {};
@@ -808,9 +833,6 @@ const cp = require("child_process");
 let previousRandomNetworksHashMap = {};
 let availableNeuralNetHashMap = {};
 
-const inputTypes = ["emoji", "hashtags", "images", "media", "mentions", "urls", "userMentions", "words"];
-
-inputTypes.sort();
 
 let inputArrays = {};
 let stdin;
@@ -3670,7 +3692,8 @@ const fsmStates = {
 
         console.log(chalkInfo("TFE | SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
 
-        async.forEach(Object.keys(globalHistograms), function(type, cb){
+        // async.forEach(Object.keys(globalHistograms), function(type, cb){
+        async.forEach(inputTypes, function(type, cb){
 
           // const type = t.toLowerCase();
 
@@ -3785,7 +3808,10 @@ const fsmStates = {
 
             try {
 
+              clearInterval(waitFileSaveInterval);
+
               await resetAllTwitterUserState();
+              await resetGlobalHistograms();
 
               statsObj.users.totalFriendsCount = 0;
               statsObj.users.totalFriendsProcessed = 0;
@@ -3795,9 +3821,6 @@ const fsmStates = {
               statsObj.users.classifiedAuto = 0;
               statsObj.users.classified = 0;
 
-              clearInterval(waitFileSaveInterval);
-
-              globalHistograms = {};
               availableNeuralNetHashMap = {};
               maxInputHashMap = {};
 
@@ -3857,10 +3880,6 @@ function initFsmTickInterval(interval) {
 }
 
 reporter("START", "---", fsm.getMachineState());
-
-inputTypes.forEach(function(type) {
-  statsObj.histograms[type] = {};
-});
 
 process.title = "node_twitterFollowerExplorer";
 

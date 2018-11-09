@@ -277,12 +277,70 @@ const sortedObjectValues = function(params) {
 
 let generateNetworkInputBusy = false;
 
+
+function printNetworkInput(params){
+
+  return new Promise(function(resolve, reject){
+
+    const inputArray = params.inputArray;
+    const columns = params.columns || 100;
+
+    let col = 0;
+    let row = 0;
+
+    let inputText = ".";
+    let text = "";
+    let textRow = "";
+    let index = 0;
+    let hits = 0;
+    let hitRate = 0;
+    const inputArraySize = inputArray.length;
+
+    async.eachSeries(inputArray, function(input, cb){
+
+      if (input) {
+        inputText = "X";
+        hits += 1;
+        hitRate = 100 * hits / inputArraySize;
+      }
+      else {
+        inputText = ".";
+      }
+
+      textRow += inputText;
+      col += 1;
+      index += 1;
+
+      if ((col === columns) || (index === inputArraySize)){
+
+        text += textRow;
+        text += "\n";
+
+        textRow = "";
+        col = 0;
+        row += 1;
+      }
+
+      cb();
+
+    }, function(err){
+      resolve();
+      console.log(chalkLog(params.title 
+        + "\n" + hits + " / " + inputArraySize + " | HIT RATE: " + hitRate.toFixed(2) + "%"
+        + "\n" + text
+        ));
+    });
+
+  });
+}
+
 function generateNetworkInputIndexed(params, callback){
 
   generateNetworkInputBusy = true;
 
   const inputTypes = Object.keys(params.inputsObj.inputs).sort();
   let networkInput = [];
+  const title = "RNT | NETWORK INPUT | INPUTS: " + params.inputsObj.inputsId + " | " +  params.networkId + " | @" + params.userScreenName;
 
   let indexOffset = 0;
 
@@ -352,6 +410,8 @@ function generateNetworkInputIndexed(params, callback){
     generateNetworkInputBusy = false;
 
     // elapsed_time("end generateNetworkInputIndexed");
+
+    printNetworkInput({title: title, inputArray: networkInput});
 
     callback(err, networkInput);
   });
