@@ -344,13 +344,17 @@ let slackWebClient;
 let slackMessagePrefix = "#" + slackChannel + ":" + hostname + "_" + process.pid;
 
 
-function slackSendMessage(msg){
+function slackSendMessage(msgObj){
+
+  let message = msgObj;
+
+  if (msgObj.message || msgObj.webOnly) { message = msgObj.message; }
 
   return new Promise(async function(resolve, reject){
 
     try {
-      await slackSendWebMessage(msg);
-      await slackSendRtmMessage(msg);
+      await slackSendWebMessage(message);
+      if (!msgObj.webOnly && !msgObj.message) { await slackSendRtmMessage(msgObj); }
       resolve();
     }
     catch(err){
@@ -672,7 +676,7 @@ function genSlackStatus(params) {
   message.token = slackOAuthAccessToken;
   message.channel = configuration.slackChannel.id,
   message.pretext = hostname + "_" + process.pid,
-  message.text = hostname + " |TFE | STATUS | \n" + statsObj.status;
+  message.text = hostname + " | TFE | STATUS | " + statsObj.status;
   message.attachments = [];
 
   let fieldsArray = [];
@@ -740,7 +744,7 @@ const quit = async function(options) {
   let message = genSlackStatus();
 
   try {
-    await slackSendMessage(message);
+    await slackSendMessage({ webOnly: true, message: message});
   }
   catch(err){
     console.log(chalkError("TFE | *** SLACK QUIT MESSAGE ERROR: " + err));
@@ -3530,13 +3534,6 @@ const fsmStates = {
         slackText = slackText + "\nSTART: " + statsObj.startTimeMoment.format(compactDateTimeFormat);
         slackText = slackText + " | RUN: " + msToTime(statsObj.elapsed);
 
-        // try { 
-        //   slackSendMessage(statsObj.status);
-        // }
-        // catch(err){
-        //   console.log(chalkError("TFE | *** SLACK INIT MESSAGE ERROR: " + err));
-        // }
-
         initNetworks()
         .then(function(){
 
@@ -3812,7 +3809,7 @@ const fsmStates = {
               clearInterval(waitFileSaveInterval);
 
               await resetAllTwitterUserState();
-              await resetGlobalHistograms();
+              await resetGlobalHistograms({inputTypes: inputTypes});
 
               statsObj.users.totalFriendsCount = 0;
               statsObj.users.totalFriendsProcessed = 0;
@@ -3919,8 +3916,6 @@ async function showStats(options) {
   }
 
   childSendAll({op: "STATS"});
-
-  let message = genSlackStatus();
 
   if (options) {
     console.log("TFE | STATS\n" + jsonPrint(statsObj));
@@ -4557,13 +4552,13 @@ function initTwitterFollowerChild(twitterConfig) {
 
         if (tfeChildHashMap[user]) {
 
-          console.log(chalkError("TFE | *** CHILD ERROR | @" + user + " ERROR *** : " + err));
-
-          slackSendRtmMessage("TFE | " + hostname + " | ERROR | CHILD @" + m.threeceeUser + " | TYPE: " + m.type);
-
           tfeChildHashMap[user].status = "ERROR";
 
           if (!quitFlag) {
+
+            console.log(chalkError("TFE | *** CHILD ERROR | @" + user + " ERROR *** : " + err));
+
+            slackSendRtmMessage("TFE | " + hostname + " | ERROR | CHILD @" + m.threeceeUser + " | TYPE: " + m.type);
 
             console.log(chalkAlert("TFE | >>> RE-INIT ON ERROR | @" + user + " ..."));
 
@@ -4905,8 +4900,6 @@ function saveNetworkHashMap(params, callback) {
 
   statsObj.status = "SAVE NN HASHMAP";
 
-  // slackSendMessage("SAV NN HASHMAP");
-
   const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
 
   const nnIds = bestNetworkHashMap.keys();
@@ -4985,8 +4978,6 @@ function printTestCycleHistory(nn){
 function updateNetworkStats(params, callback) {
 
   statsObj.status = "UPDATE NN STATS";
-
-  // slackSendMessage(statsObj.status);
 
   console.log(chalkTwitter("TFE | UPDATE NETWORK STATS"));
 
@@ -5606,8 +5597,6 @@ function initRandomNetworkTreeChild() {
 
   statsObj.status = "INIT RNT CHILD";
 
-  // slackSendMessage(statsObj.status);
-
   return new Promise(function(resolve, reject){
 
     if (randomNetworkTree === undefined) {
@@ -5707,7 +5696,6 @@ function initLangAnalyzer(callback) {
 
   statsObj.status = "INIT LANG ANALYZER";
 
-  // slackSendMessage(statsObj.status);
 
   console.log(chalkInfo("TFE | INIT LANGUAGE ANALYZER CHILD PROCESS"));
 
