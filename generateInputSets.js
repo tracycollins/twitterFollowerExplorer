@@ -1,6 +1,20 @@
  /*jslint node: true */
 "use strict";
 
+const inputTypes = [
+  "emoji", 
+  "hashtags",  
+  "images", 
+  "locations", 
+  "media", 
+  "mentions", 
+  "places", 
+  "sentiment", 
+  "urls", 
+  "userMentions", 
+  "words"
+];
+
 const os = require("os");
 
 let hostname = os.hostname();
@@ -41,8 +55,8 @@ const DEFAULT_TOTAL_MIN_STEP_MULTIPLIER = 0.35;
 
 let enableMinNumInputsPerTypeMultiplier = true;
 
-const MAX_NUM_INPUTS_PER_TYPE = 300;
-const MIN_NUM_INPUTS_PER_TYPE = 230;
+const MAX_NUM_INPUTS_PER_TYPE = process.env.MAX_NUM_INPUTS_PER_TYPE || 350;
+const MIN_NUM_INPUTS_PER_TYPE = process.env.MIN_NUM_INPUTS_PER_TYPE || 250;
 
 const INIT_DOM_MIN = 0.99999;
 const INIT_TOT_MIN = 5000;
@@ -53,8 +67,8 @@ const DEFAULT_MAX_DOMINANT_MIN = 0.999999;
 const DEFAULT_MIN_TOTAL_MIN = 5;
 const DEFAULT_MAX_TOTAL_MIN = 1500;
 
-const DEFAULT_MIN_INPUTS_GENERATED = 1000 ;
-const DEFAULT_MAX_INPUTS_GENERATED = 1600 ;
+const DEFAULT_MIN_INPUTS_GENERATED = process.env.MIN_INPUTS_GENERATED || 1000 ;
+const DEFAULT_MAX_INPUTS_GENERATED = process.env.MAX_INPUTS_GENERATED || 1750 ;
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -121,20 +135,6 @@ function slackPostMessage(channel, text, callback) {
 let saveFileQueue = [];
 let saveFileQueueInterval;
 let saveFileBusy = false;
-
-const inputTypes = [
-  "emoji", 
-  "hashtags",  
-  "images", 
-  "locations", 
-  "media", 
-  "mentions", 
-  "places", 
-  "sentiment", 
-  "urls", 
-  "userMentions", 
-  "words"
-];
 
 let globalInputsObj = {};
 globalInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);

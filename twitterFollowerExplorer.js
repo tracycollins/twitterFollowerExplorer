@@ -55,6 +55,7 @@ mongoose.Promise = global.Promise;
 
 let unfollowableUserFile = "unfollowableUser.json";
 let unfollowableUserSet = new Set();
+let ignoredUserSet = new Set();
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
@@ -4102,18 +4103,42 @@ function saveFile (params, callback){
   }
 }
 
+function checkUserIgnored(params){
+
+  return new Promise(function(resolve, reject){
+
+    if (!params.nodeId) {
+      return reject(new Error("nodeId UNDEFINED"));
+    }
+
+    User.findOne({nodeId: params.nodeId}, function(err, user){
+
+      if (err) { return reject(err); }
+
+      if (user && user.ignored) {
+        return resolve(true);
+      }
+
+      resolve(false);
+
+    });
+
+  });
+}
+
 function initProcessUserQueueInterval(interval) {
 
   statsObj.status = "INIT PROCESS USER QUEUE";
 
   let mObj = {};
   let tcUser;
+  let ignoredFlag = false;
 
   console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + PROCESS_USER_QUEUE_INTERVAL + " MS"));
 
   clearInterval(processUserQueueInterval);
 
-  processUserQueueInterval = setInterval(function () {
+  processUserQueueInterval = setInterval(async function () {
 
     if (processUserQueueReady && processUserQueue.length > 0) {
 
@@ -4125,9 +4150,23 @@ function initProcessUserQueueInterval(interval) {
 
       tcUser = mObj.threeceeUser;
 
+      if (ignoredUserSet.has(mObj.friend.id_str)){
+
+        tfeChildHashMap[tcUser].child.send({op: "UNFOLLOW", user: {userId: mObj.friend.id_str} });
+
+        console.log(chalk.bold.black("TFE | UNFOLLOW IGNORED USER"
+          + " | ID: " + mObj.friend.id_str
+          + " | @" + mObj.friend.screen_name
+        ));
+
+        processUserQueueReady = true;
+        return;
+      }
+
+
       if (unfollowableUserSet.has(mObj.friend.id_str)){
 
-        tfeChildHashMap.altthreecee00.child.send({op: "UNFOLLOW", user: {userId: mObj.friend.id_str} });
+        tfeChildHashMap[tcUser].child.send({op: "UNFOLLOW", user: {userId: mObj.friend.id_str} });
 
         console.log(chalk.bold.black("TFE | UNFOLLOW UNFOLLOWABLE USER"
           + " | ID: " + mObj.friend.id_str
@@ -4137,6 +4176,25 @@ function initProcessUserQueueInterval(interval) {
         processUserQueueReady = true;
         return;
       }
+
+      
+      ignoredFlag = await checkUserIgnored({nodeId: mObj.friend.id_str});
+
+      if (ignoredFlag){
+
+        ignoredUserSet.add(mObj.friend.id_str);
+
+        tfeChildHashMap[tcUser].child.send({op: "UNFOLLOW", user: {userId: mObj.friend.id_str} });
+
+        console.log(chalk.bold.black("TFE | UNFOLLOW IGNORED USER"
+          + " | ID: " + mObj.friend.id_str
+          + " | @" + mObj.friend.screen_name
+        ));
+
+        processUserQueueReady = true;
+        return;
+      }
+
 
       twitterUserHashMap[tcUser].friends.add(mObj.friend.id_str);
 
