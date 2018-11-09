@@ -1059,7 +1059,7 @@ const fsmStates = {
 fsm = Stately.machine(fsmStates);
 resetTwitterUserState();
 
-process.title = "node_tfeChild";
+process.title = "node_tfeChild_" + configuration.childId;
 console.log("\n\nTFC | =================================");
 console.log("TFC | HOST:          " + hostname);
 console.log("TFC | PROCESS TITLE: " + process.title);

@@ -3658,8 +3658,9 @@ const fsmStates = {
           + " | ALL CHILDREN FETCH_END: " + allChildrenFetchEnd
         );
 
-        if (randomNetworkTreeReadyFlag 
-          && (randomNetworkTreeActivateQueueSize === 0) 
+        if ((randomNetworkTreeActivateQueueSize === 0)
+          && activateNetworkQueueReady
+          && (activateNetworkQueue.length === 0)
           && allChildrenFetchEnd 
           && processUserQueueReady 
           && processUserQueueEmpty()
