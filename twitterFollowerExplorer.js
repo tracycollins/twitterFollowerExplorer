@@ -3639,7 +3639,7 @@ const fsmStates = {
           + " | Q EMPTY: " + processUserQueueEmpty()
           + " | ALL CHILDREN FETCH_END: " + allChildrenFetchEnd
         );
-        if (allChildrenFetchEnd && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_fetchAllEnd(); }
+        if ((randomNetworkTreeActivateQueueSize === 0) && allChildrenFetchEnd && processUserQueueReady && processUserQueueEmpty()) { fsm.fsm_fetchAllEnd(); }
       })
       .catch(function(err){
         console.log(chalkError("TFE | *** ALL CHILDREN FETCH_END ERROR: " + err));
