@@ -411,7 +411,9 @@ function generateNetworkInputIndexed(params, callback){
 
     // elapsed_time("end generateNetworkInputIndexed");
 
-    printNetworkInput({title: title, inputArray: networkInput});
+    if (configuration.verbose) {
+      printNetworkInput({title: title, inputArray: networkInput});
+    }
 
     callback(err, networkInput);
   });
