@@ -38,7 +38,7 @@ function resetGlobalHistograms(params){
     globalHistograms = {};
     statsObj.histograms = {};
 
-    param.inputTypes.forEach(function(type){
+    params.inputTypes.forEach(function(type){
 
       globalHistograms[type] = {};
       statsObj.histograms[type] = {};
@@ -128,25 +128,33 @@ let prevHostConfigFileModifiedMoment = moment("2010-01-01");
 let prevDefaultConfigFileModifiedMoment = moment("2010-01-01");
 let prevConfigFileModifiedMoment = moment("2010-01-01");
 
-const ACTIVATE_NETWORK_QUEUE_INTERVAL = 10;
 const DEFAULT_QUIT_ON_COMPLETE = true;
+
+const PROCESS_USER_QUEUE_INTERVAL = 10;
+const LANG_ANAL_MSG_Q_INTERVAL = 10;
+const ACTIVATE_NETWORK_QUEUE_INTERVAL = 10;
+const USER_DB_UPDATE_QUEUE_INTERVAL = 10;
+
 const LANGUAGE_ANALYZE_INTERVAL = 100;
-const RANDOM_NETWORK_TREE_INTERVAL = 1;
-const TWITTER_DEFAULT_USER = "altthreecee00";
-const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
-const compactDateTimeFormat = "YYYYMMDD_HHmmss";
-const DROPBOX_LIST_FOLDER_LIMIT = 50;
+const RANDOM_NETWORK_TREE_INTERVAL = 10;
 const DEFAULT_FETCH_ALL_INTERVAL = 120*ONE_MINUTE;
 const FSM_TICK_INTERVAL = ONE_SECOND;
-const PROCESS_USER_QUEUE_INTERVAL = 1;
+const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 10; // ms
+
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
 const TEST_MODE_TOTAL_FETCH = 333;
 const TEST_MODE_FETCH_COUNT = 100;  // per request twitter user fetch count
 const TEST_DROPBOX_NN_LOAD = 10;
+
+const TWITTER_DEFAULT_USER = "altthreecee00";
+const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
+const compactDateTimeFormat = "YYYYMMDD_HHmmss";
+const DROPBOX_LIST_FOLDER_LIMIT = 50;
 const TFC_CHILD_PREFIX = "TFC_";
 const SAVE_CACHE_DEFAULT_TTL = 120; // seconds
 const TFE_NUM_RANDOM_NETWORKS = 100;
 const IMAGE_QUOTA_TIMEOUT = 60000;
+
 const DEFAULT_FORCE_IMAGE_ANALYSIS = true;
 const DEFAULT_FORCE_INIT_RANDOM_NETWORKS = true;
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
@@ -158,7 +166,7 @@ const DEFAULT_HISTOGRAM_PARSE_TOTAL_MIN = 5;
 const DEFAULT_HISTOGRAM_PARSE_DOMINANT_MIN = 0.4;
 const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
 const OFFLINE_MODE = false;
-const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 1; // ms
+
 const chalk = require("chalk");
 const chalkConnect = chalk.green;
 const chalkNetwork = chalk.blue;
@@ -5415,7 +5423,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
   if (callback !== undefined) { callback(); }
 }
 
-function initLangAnalyzerMessageRxQueueInterval(interval, callback) {
+function initLangAnalyzerMessageRxQueueInterval(interval) {
 
   statsObj.status = "INIT LANG INTERVAL";
 
@@ -5627,7 +5635,6 @@ function initLangAnalyzerMessageRxQueueInterval(interval, callback) {
       }
     }
   }, interval);
-  if (callback !== undefined) { callback(); }
 }
 
 function initUserDbUpdateQueueInterval(interval) {
@@ -5899,9 +5906,10 @@ setTimeout(async function(){
         clearInterval(dbConnectionReadyInterval);
 
         initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
-        initUserDbUpdateQueueInterval(1);
+        initUserDbUpdateQueueInterval(USER_DB_UPDATE_QUEUE_INTERVAL);
         initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
-        initLangAnalyzerMessageRxQueueInterval(1);
+        initLangAnalyzerMessageRxQueueInterval(LANG_ANAL_MSG_Q_INTERVAL);
+
         initLangAnalyzer();
         await initUnfollowableUserSet();
         await initTwitterUsers();
