@@ -1,6 +1,8 @@
  /*jslint node: true */
 "use strict";
 
+const DEFAULT_INPUTS_FILE_PREFIX = "inputs";
+
 const inputTypes = [
   "emoji", 
   "hashtags",  
@@ -140,7 +142,8 @@ let saveFileQueueInterval;
 let saveFileBusy = false;
 
 let globalInputsObj = {};
-globalInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+globalInputsObj.inputsId = ""; // will be generated after number of inputs determined
+// globalInputsObj.inputsId = moment().format(compactDateTimeFormat) + "_" + hostname + "_" + process.pid;
 globalInputsObj.meta = {};
 globalInputsObj.meta.type = {};
 // newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
@@ -219,6 +222,8 @@ inputTypes.forEach(function(type){
 });
 
 let configuration = {};
+
+configuration.inputsFilePrefix = DEFAULT_INPUTS_FILE_PREFIX;
 
 configuration.testMode = false;
 
@@ -455,146 +460,236 @@ const sortedObjectValues = function(params) {
   });
 };
 
-function generateInputSets3(params, callback) {
+function generateInputSets(params) {
 
-  let iteration = 0;
+  return new Promise(function(resolve, reject){
 
-  /*
-  pseudo code
+    let iteration = 0;
 
-  MIN_NUM_INPUTS_PER_TYPE = 150 (6 types * MIN_NUM_INPUTS_PER_TYPE = MAX_INPUTS: 900)
-  MAX_NUM_INPUTS_PER_TYPE = 250 (6 types * MAX_NUM_INPUTS_PER_TYPE = MAX_INPUTS: 1500)
-  totalMin = 1
-  initial dominantMin = 1.0
+    /*
+    pseudo code
 
-  for each inputs type
-    while (number of inputs of type < MIN_NUM_INPUTS_PER_TYPE)
-      dominantMin -= DOM_MIN_STEP
-  */
+    MIN_NUM_INPUTS_PER_TYPE = 150 (6 types * MIN_NUM_INPUTS_PER_TYPE = MAX_INPUTS: 900)
+    MAX_NUM_INPUTS_PER_TYPE = 250 (6 types * MAX_NUM_INPUTS_PER_TYPE = MAX_INPUTS: 1500)
+    totalMin = 1
+    initial dominantMin = 1.0
 
-  let totalMin = INIT_TOT_MIN;
-  let maxTotalMin = configuration.maxTotalMin;
-  let dominantMin = INIT_DOM_MIN;
+    for each inputs type
+      while (number of inputs of type < MIN_NUM_INPUTS_PER_TYPE)
+        dominantMin -= DOM_MIN_STEP
+    */
 
-  let newInputsObj = {};
-  newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
-  newInputsObj.meta = {};
-  newInputsObj.meta.type = {};
-  newInputsObj.meta.numInputs = 0;
-  newInputsObj.meta.histogramParseTotalMin = totalMin;
-  newInputsObj.meta.histogramParseDominantMin = dominantMin;
-  newInputsObj.inputs = {};
+    let totalMin = INIT_TOT_MIN;
+    let maxTotalMin = configuration.maxTotalMin;
+    let dominantMin = INIT_DOM_MIN;
 
-  let inTypes = Object.keys(params.histogramsObj.histograms);
-  inTypes.sort();
+    let newInputsObj = {};
+    newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
+    newInputsObj.meta = {};
+    newInputsObj.meta.type = {};
+    newInputsObj.meta.numInputs = 0;
+    newInputsObj.meta.histogramParseTotalMin = totalMin;
+    newInputsObj.meta.histogramParseDominantMin = dominantMin;
+    newInputsObj.inputs = {};
 
-  const DOM_MIN_STEP = DEFAULT_DOMINANT_MIN_STEP; // 0.1
-  const TOT_MIN_STEP = DEFAULT_TOTAL_MIN_STEP; // 0.9;
+    let inTypes = Object.keys(params.histogramsObj.histograms);
+    inTypes.sort();
 
-  let dominantMinStep = DOM_MIN_STEP;
-  let totalMinStep = TOT_MIN_STEP;
+    const DOM_MIN_STEP = DEFAULT_DOMINANT_MIN_STEP; // 0.1
+    const TOT_MIN_STEP = DEFAULT_TOTAL_MIN_STEP; // 0.9;
 
-  let prevTotMinChange = 0;
-  let prevDomMinChange = 0;
+    let dominantMinStep = DOM_MIN_STEP;
+    let totalMinStep = TOT_MIN_STEP;
 
-  let prevDomMin = dominantMin;
-  let prevTotalMin = totalMin;
-  let prevDomMinStep = dominantMinStep;
-  let prevTotalMinStep = totalMinStep;
+    let prevTotMinChange = 0;
+    let prevDomMinChange = 0;
 
-  let prevInputs = [];
-  let prevNumInputs = 0;
-  let inputsHistory = [];
+    let prevDomMin = dominantMin;
+    let prevTotalMin = totalMin;
+    let prevDomMinStep = dominantMinStep;
+    let prevTotalMinStep = totalMinStep;
 
-  let overMaxNumInputs = Infinity;
-  let underMinNumInputs = 0;
-  let lastParams;
-  let secondToLastParams;
+    let prevInputs = [];
+    let prevNumInputs = 0;
+    let inputsHistory = [];
 
-  async.eachSeries(
+    let overMaxNumInputs = Infinity;
+    let underMinNumInputs = 0;
+    let lastParams;
+    let secondToLastParams;
 
-    inTypes, 
+    async.eachSeries(
 
-    function(type, cb0){
+      inTypes, 
 
-      iteration = 0;
+      function(type, cb0){
 
-      const spinner = ora("... GEN TYPE" + " | " + type.toUpperCase()).start();
+        iteration = 0;
 
-      dominantMinStep = DOM_MIN_STEP;
+        const spinner = ora("... GEN TYPE" + " | " + type.toUpperCase()).start();
 
-      const totalTypeInputs = Object.keys(params.histogramsObj.histograms[type]).length;
+        dominantMinStep = DOM_MIN_STEP;
 
-      newInputsObj.meta.type[type] = {};
+        const totalTypeInputs = Object.keys(params.histogramsObj.histograms[type]).length;
 
-      // start with zero inputs of type if more than MIN_NUM_INPUTS_PER_TYPE
-      newInputsObj.meta.type[type].numInputs = (totalTypeInputs > MIN_NUM_INPUTS_PER_TYPE) ? 0 : totalTypeInputs;
-      newInputsObj.meta.type[type].dominantMin = dominantMin;
-      newInputsObj.meta.type[type].totalMin = totalMin;
+        newInputsObj.meta.type[type] = {};
 
-      newInputsObj.inputs[type] = Object.keys(params.histogramsObj.histograms[type]).sort();
+        // start with zero inputs of type if more than MIN_NUM_INPUTS_PER_TYPE
+        newInputsObj.meta.type[type].numInputs = (totalTypeInputs > MIN_NUM_INPUTS_PER_TYPE) ? 0 : totalTypeInputs;
+        newInputsObj.meta.type[type].dominantMin = dominantMin;
+        newInputsObj.meta.type[type].totalMin = totalMin;
 
-      let hpParams = {};
-      hpParams.histogram = {};
-      hpParams.histogram[type] = {};
-      hpParams.histogram[type] = params.histogramsObj.histograms[type];
+        newInputsObj.inputs[type] = Object.keys(params.histogramsObj.histograms[type]).sort();
 
-      hpParams.options = {};
-      hpParams.options.globalTotalMin = totalMin;
-      hpParams.options.globalDominantMin = dominantMin;
+        let hpParams = {};
+        hpParams.histogram = {};
+        hpParams.histogram[type] = {};
+        hpParams.histogram[type] = params.histogramsObj.histograms[type];
 
-      async.whilst(
+        hpParams.options = {};
+        hpParams.options.globalTotalMin = totalMin;
+        hpParams.options.globalDominantMin = dominantMin;
 
-        function() {
+        async.whilst(
 
-          debug("whilst"
-            + " | TYPE: " + type
-            + " | MIN_NUM_INPUTS_PER_TYPE: " + MIN_NUM_INPUTS_PER_TYPE
-            + " | totalTypeInputs: " + totalTypeInputs
-            + " | Object.keys(params.histogramsObj.histograms[type]).length: " + Object.keys(params.histogramsObj.histograms[type]).length
-            + " | newInputsObj.meta.type[type].numInputs: " + newInputsObj.meta.type[type].numInputs
-          );
+          function() {
 
-          return (
-            ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
-              || ((newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE) 
-                && (totalTypeInputs > MIN_NUM_INPUTS_PER_TYPE))
-            )
+            debug("whilst"
+              + " | TYPE: " + type
+              + " | MIN_NUM_INPUTS_PER_TYPE: " + MIN_NUM_INPUTS_PER_TYPE
+              + " | totalTypeInputs: " + totalTypeInputs
+              + " | Object.keys(params.histogramsObj.histograms[type]).length: " + Object.keys(params.histogramsObj.histograms[type]).length
+              + " | newInputsObj.meta.type[type].numInputs: " + newInputsObj.meta.type[type].numInputs
+            );
 
-          );
-        },
+            return (
+              ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
+                || ((newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE) 
+                  && (totalTypeInputs > MIN_NUM_INPUTS_PER_TYPE))
+              )
 
-        function(cb1){
+            );
+          },
 
-          hpParams.options.globalTotalMin = totalMin;
-          hpParams.options.globalDominantMin = dominantMin;
+          function(cb1){
 
-          histogramParser.parse(hpParams, function(err, histResults){
-            if (err){
-              console.log(chalkError("GIS | *** HISTOGRAM PARSE ERROR: " + err));
-              return cb1(err);
-            }
+            hpParams.options.globalTotalMin = totalMin;
+            hpParams.options.globalDominantMin = dominantMin;
 
-            iteration += 1;
+            histogramParser.parse(hpParams, function(err, histResults){
+              if (err){
+                console.log(chalkError("GIS | *** HISTOGRAM PARSE ERROR: " + err));
+                return cb1(err);
+              }
 
-            newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
-            newInputsObj.meta.type[type].numInputs = Object.keys(histResults.entries[type].dominantEntries).length;
-            newInputsObj.meta.type[type].dominantMin = dominantMin;
-            newInputsObj.meta.type[type].totalMin = parseInt(totalMin);
-            newInputsObj.meta.type[type].totalMinStep = totalMinStep;
-            newInputsObj.meta.type[type].dominantMinStep = dominantMinStep;
+              iteration += 1;
 
-            inputsHistory.push(newInputsObj.meta.type[type]);
+              newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
+              newInputsObj.meta.type[type].numInputs = Object.keys(histResults.entries[type].dominantEntries).length;
+              newInputsObj.meta.type[type].dominantMin = dominantMin;
+              newInputsObj.meta.type[type].totalMin = parseInt(totalMin);
+              newInputsObj.meta.type[type].totalMinStep = totalMinStep;
+              newInputsObj.meta.type[type].dominantMinStep = dominantMinStep;
 
-            if (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE) {
-              newInputsObj.meta.type[type].underMinNumInputs = newInputsObj.meta.type[type].numInputs;
-            }
+              inputsHistory.push(newInputsObj.meta.type[type]);
 
-            if (newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) {
-              newInputsObj.meta.type[type].overMaxNumInputs = newInputsObj.meta.type[type].numInputs;
-            }
+              if (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE) {
+                newInputsObj.meta.type[type].underMinNumInputs = newInputsObj.meta.type[type].numInputs;
+              }
 
-            spinner.text = "GIS | ... GEN TYPE"
+              if (newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) {
+                newInputsObj.meta.type[type].overMaxNumInputs = newInputsObj.meta.type[type].numInputs;
+              }
+
+              spinner.text = "GIS | ... GEN TYPE"
+                + " [" + iteration + "]"
+                + " " + type.toUpperCase()
+                + " | " + newInputsObj.meta.type[type].numInputs
+                + " / " + Object.keys(params.histogramsObj.histograms[type]).length + " INPUTS"
+                + " | PREV NUM INPUTS: " + prevNumInputs
+                + " | DOM MIN: " + dominantMin.toFixed(5)
+                + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
+                + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
+                + " | TOT MIN: " + parseInt(totalMin)
+                + " | PREV TOT MIN: " + parseInt(prevTotalMin)
+                + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5);
+
+              if ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
+                && (prevNumInputs < MAX_NUM_INPUTS_PER_TYPE)) {
+
+                spinner.info("GIS | *** GEN TYPE"
+                  + " [" + iteration + "]"
+                  + " " + type.toUpperCase()
+                  + " | " + newInputsObj.meta.type[type].numInputs
+                  + " / " + Object.keys(params.histogramsObj.histograms[type]).length + " INPUTS"
+                  + " | PREV NUM INPUTS: " + prevNumInputs
+                  + " | DOM MIN: " + dominantMin.toFixed(5)
+                  + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
+                  + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
+                  + " | TOT MIN: " + parseInt(totalMin)
+                  + " | PREV TOT MIN: " + parseInt(prevTotalMin)
+                  + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
+                );
+
+                if (newInputsObj.meta.type[type].numInputs === 0){
+                }
+                else {
+                  return cb1(true);
+                }
+
+              }
+              else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
+                && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) {
+
+                if (enableMinNumInputsPerTypeMultiplier 
+                  && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * MIN_NUM_INPUTS_PER_TYPE)) { // 0.1
+                  dominantMin -= (configuration.dominantMinStepMultiplier * dominantMinStep);
+                }
+                else {
+                  dominantMin -= dominantMinStep;
+                }
+
+              }
+              else if (dominantMin - dominantMinStep <= configuration.minDominantMin) {
+
+                dominantMin = INIT_DOM_MIN;
+
+                if (totalMin > 1){
+
+                  prevTotalMin = totalMin; 
+
+                  if (enableMinNumInputsPerTypeMultiplier 
+                    && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * MIN_NUM_INPUTS_PER_TYPE)) {
+                    totalMin = Math.min(
+                      parseInt(configuration.totalMinStepMultiplier * totalMinStep * totalMin), 
+                      parseInt(totalMin-1.0)
+                    );
+                  }
+                  else {
+                    totalMin = Math.min(parseInt(totalMinStep * totalMin), parseInt(totalMin-1.0));
+                  }
+                }
+                else {
+                  // console.log(chalkError("QUIT: totalMin: " + totalMin + " | dominantMin:" + dominantMin));
+                  // quit();
+                }
+              }
+
+              prevNumInputs = newInputsObj.meta.type[type].numInputs;
+              prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
+
+              async.setImmediate(function() { cb1(); });
+
+            });
+          }, 
+
+          function(err){
+
+            enableMinNumInputsPerTypeMultiplier = true;
+
+            newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
+
+            spinner.text = "GIS | +++ END TYPE"
               + " [" + iteration + "]"
               + " " + type.toUpperCase()
               + " | " + newInputsObj.meta.type[type].numInputs
@@ -607,118 +702,32 @@ function generateInputSets3(params, callback) {
               + " | PREV TOT MIN: " + parseInt(prevTotalMin)
               + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5);
 
-            if ((newInputsObj.meta.type[type].numInputs > MAX_NUM_INPUTS_PER_TYPE) 
-              && (prevNumInputs < MAX_NUM_INPUTS_PER_TYPE)) {
+            spinner.succeed();
 
-              spinner.info("GIS | *** GEN TYPE"
-                + " [" + iteration + "]"
-                + " " + type.toUpperCase()
-                + " | " + newInputsObj.meta.type[type].numInputs
-                + " / " + Object.keys(params.histogramsObj.histograms[type]).length + " INPUTS"
-                + " | PREV NUM INPUTS: " + prevNumInputs
-                + " | DOM MIN: " + dominantMin.toFixed(5)
-                + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
-                + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
-                + " | TOT MIN: " + parseInt(totalMin)
-                + " | PREV TOT MIN: " + parseInt(prevTotalMin)
-                + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
-              );
+            totalMin = parseInt(INIT_TOT_MIN);
+            dominantMin = INIT_DOM_MIN;
+            prevDomMinChange = 0;
+            prevTotMinChange = 0;
 
-              if (newInputsObj.meta.type[type].numInputs === 0){
-              }
-              else {
-                return cb1(true);
-              }
-
+            if (newInputsObj.meta.type[type].numInputs === 0) {
+              // quit("ZERO INPUTS");
+              console.log(chalkAlert("GIS | ZERO INPUTS | " + type));
+              cb0();
             }
-            else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
-              && (newInputsObj.meta.type[type].numInputs < MIN_NUM_INPUTS_PER_TYPE)) {
-
-              if (enableMinNumInputsPerTypeMultiplier 
-                && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * MIN_NUM_INPUTS_PER_TYPE)) { // 0.1
-                dominantMin -= (configuration.dominantMinStepMultiplier * dominantMinStep);
-              }
-              else {
-                dominantMin -= dominantMinStep;
-              }
-
+            else{
+              cb0();
             }
-            else if (dominantMin - dominantMinStep <= configuration.minDominantMin) {
-
-              dominantMin = INIT_DOM_MIN;
-
-              if (totalMin > 1){
-
-                prevTotalMin = totalMin; 
-
-                if (enableMinNumInputsPerTypeMultiplier 
-                  && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * MIN_NUM_INPUTS_PER_TYPE)) {
-                  totalMin = Math.min(
-                    parseInt(configuration.totalMinStepMultiplier * totalMinStep * totalMin), 
-                    parseInt(totalMin-1.0)
-                  );
-                }
-                else {
-                  totalMin = Math.min(parseInt(totalMinStep * totalMin), parseInt(totalMin-1.0));
-                }
-              }
-              else {
-                // console.log(chalkError("QUIT: totalMin: " + totalMin + " | dominantMin:" + dominantMin));
-                // quit();
-              }
-            }
-
-            prevNumInputs = newInputsObj.meta.type[type].numInputs;
-            prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
-
-            async.setImmediate(function() { cb1(); });
-
-          });
-        }, 
-
-        function(err){
-
-          enableMinNumInputsPerTypeMultiplier = true;
-
-          newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
-
-          spinner.text = "GIS | +++ END TYPE"
-            + " [" + iteration + "]"
-            + " " + type.toUpperCase()
-            + " | " + newInputsObj.meta.type[type].numInputs
-            + " / " + Object.keys(params.histogramsObj.histograms[type]).length + " INPUTS"
-            + " | PREV NUM INPUTS: " + prevNumInputs
-            + " | DOM MIN: " + dominantMin.toFixed(5)
-            + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
-            + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
-            + " | TOT MIN: " + parseInt(totalMin)
-            + " | PREV TOT MIN: " + parseInt(prevTotalMin)
-            + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5);
-
-          spinner.succeed();
-
-          totalMin = parseInt(INIT_TOT_MIN);
-          dominantMin = INIT_DOM_MIN;
-          prevDomMinChange = 0;
-          prevTotMinChange = 0;
-
-          if (newInputsObj.meta.type[type].numInputs === 0) {
-            // quit("ZERO INPUTS");
-            console.log(chalkAlert("GIS | ZERO INPUTS | " + type));
-            cb0();
           }
-          else{
-            cb0();
-          }
-        }
-      );
-    },
+        );
+      },
 
-    function(err){
-      showStats();
-      callback(err, newInputsObj);
-    }
-  );
+      function(err){
+        if (err) { return reject(err); }
+        // showStats();
+        resolve(newInputsObj);
+      }
+    );
+  });
 }
 
 let quitWaitInterval;
@@ -748,7 +757,7 @@ function quit(cause){
        + " | SAVE FILE Q: " + saveFileQueue.length
       ));
 
-      showStats();
+      // showStats();
 
       setTimeout(function(){
         process.exit();      
@@ -934,152 +943,186 @@ function initSaveFileQueue(cnf){
   }, cnf.saveFileQueueInterval);
 }
 
-function loadFile(params, callback) {
+function loadFile(params) {
 
-  const folder = params.folder;
-  const file = params.file;
-  const streamMode = params.streamMode || false;
+  return new Promise(async function(resolve, reject){
 
-  debug(chalkInfo("LOAD FOLDER " + folder));
-  debug(chalkInfo("LOAD FILE " + file));
-  debug(chalkInfo("FULL folder " + folder + "/" + file));
+    const folder = params.folder;
+    const file = params.file;
+    const streamMode = params.streamMode || false;
 
-  let fullPath = folder + "/" + file;
+    debug(chalkInfo("LOAD FOLDER " + folder));
+    debug(chalkInfo("LOAD FILE " + file));
+    debug(chalkInfo("FULL folder " + folder + "/" + file));
 
-  if (OFFLINE_MODE) {
-    if (hostname === "mbp2") {
-      fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + folder + "/" + file;
-      debug(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
+    let fullPath = folder + "/" + file;
+
+    if (OFFLINE_MODE) {
+
+      if (hostname !== "google") {
+
+        fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + folder + "/" + file;
+        debug(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
+
+        const pathExists = fs.existsSync(fullPath);
+
+        if (!pathExists) {
+          console.log(chalkAlert("GIS | !!! PATH DOES NOT EXIST ... SKIPPING LOAD: " + fullPath));
+          return reject(new Error("PATH DOES NOT EXIST: " + fullPath));
+        }
+
+      }
+      fs.readFile(fullPath, "utf8", function(err, data) {
+        if (err) {
+          console.log(chalkError("GIS | LOAD FILE ERROR: " + err));
+          return reject(err);
+        }
+        debug(chalkLog(getTimeStamp()
+          + " | LOADING FILE FROM DROPBOX FILE"
+          + " | " + fullPath
+        ));
+
+        if (file.match(/\.json$/gi)) {
+          try {
+            let fileObj = JSON.parse(data);
+            resolve(fileObj);
+          }
+          catch(e){
+            console.trace(chalkError("GIS | JSON PARSE ERROR: " + e));
+            return reject(e);
+          }
+        }
+        else {
+          resolve();
+        }
+      });
+     }
+    else if (streamMode) {
+
+      console.log(chalkInfo("GIS | STREAM MODE: FULL PATH " + fullPath));
+
+      const pathExists = fs.existsSync(fullPath);
+
+      if (!pathExists) {
+        console.log(chalkAlert("GIS | !!! PATH DOES NOT EXIST ... SKIPPING LOAD: " + fullPath));
+        return reject(new Error("PATH DOES NOT EXIST: " + fullPath));
+      }
+
+      let fileObj = {};
+
+      let totalInputs = 0;
+      let lessThanMin = 0;
+      let moreThanMin = 0;
+
+      let pipeline = fs.createReadStream(fullPath).pipe(JSONStream.parse("$*.$*.$*"));
+
+      pipeline.on("data", function(obj){
+
+        totalInputs += 1;
+
+        if (obj.value.total >= configuration.minTotalMin) {
+          moreThanMin += 1;
+          fileObj[obj.key] = obj.value;
+        }
+        else {
+          lessThanMin += 1;
+        }
+
+        debug("data: " + jsonPrint(obj));
+
+        if (configuration.verbose && totalInputs % 10000 === 0) {
+          console.log(chalkLog("GIS | STREAM INPUTS | " + fullPath + " | INPUTS: " + totalInputs));
+        }
+
+        if (configuration.testMode && (totalInputs >= MAX_TEST_INPUTS) && (totalInputs % 100 === 0)) {
+          console.log(chalkAlert("GIS | TEST MODE | END READ | TOTAL TEST INPUTS: " + totalInputs + " MAX: " + MAX_TEST_INPUTS));
+          pipeline.destroy();
+        }
+      });
+
+      pipeline.on("header", function(header){
+        console.log("GIS | HEADER: " + jsonPrint(header));
+      });
+
+      pipeline.on("footer", function(footer){
+        console.log("GIS | FOOTER: " + jsonPrint(footer));
+      });
+
+      pipeline.on("close", function(){
+        if (configuration.verbose) {console.log(chalkInfo("GIS | STREAM CLOSED | INPUTS: " + totalInputs + " | " + fullPath));}
+        return resolve({ obj: fileObj, totalInputs: totalInputs, lessThanMin: lessThanMin, moreThanMin: moreThanMin });
+      });
+
+      pipeline.on("end", function(){
+        if (configuration.verbose) {console.log(chalkInfo("GIS | STREAM END | INPUTS: " + totalInputs + " | " + fullPath));}
+        return resolve({ obj: fileObj, totalInputs: totalInputs, lessThanMin: lessThanMin, moreThanMin: moreThanMin });
+      });
+
+      pipeline.on("finish", function(){
+        if (configuration.verbose) {console.log(chalkInfo("GIS | STREAM FINISH | INPUTS: " + totalInputs + " | " + fullPath));}
+        return resolve({ obj: fileObj, totalInputs: totalInputs, lessThanMin: lessThanMin, moreThanMin: moreThanMin });
+      });
+
+      pipeline.on("error", function(err){
+        console.log(chalkError("GIS | STREAM ERROR | INPUTS: " + totalInputs + " | " + fullPath));
+        console.log(chalkError("GIS | *** LOAD FILE ERROR: " + err));
+        return reject(err);
+      });
     }
-    fs.readFile(fullPath, "utf8", function(err, data) {
-      if (err) {
-        console.log(chalkError("GIS | LOAD FILE ERROR: " + err));
-        return (callback(err, null));
-      }
-      debug(chalkLog(getTimeStamp()
-        + " | LOADING FILE FROM DROPBOX FILE"
-        + " | " + fullPath
-      ));
+    else {
+      dropboxClient.filesDownload({path: fullPath})
+      .then(function(data) {
+        console.log("GIS | " + chalkLog(getTimeStamp()
+          + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
+        ));
 
-      if (file.match(/\.json$/gi)) {
-        try {
-          let fileObj = JSON.parse(data);
-          callback(null, fileObj);
+        if (file.match(/\.json$/gi)) {
+          let payload = data.fileBinary;
+          debug(payload);
+
+          try {
+            let fileObj = JSON.parse(payload);
+            return resolve(fileObj);
+          }
+          catch(e){
+            console.trace(chalkError("GIS | JSON PARSE ERROR: " + e));
+            return reject(e);
+          }
         }
-        catch(e){
-          console.trace(chalkError("GIS | JSON PARSE ERROR: " + e));
-          callback("JSON PARSE ERROR", null);
+        else {
+          resolve();
         }
-      }
-      else {
-        callback(null, null);
-      }
-    });
-   }
-  else if (streamMode) {
-    fullPath = folder + "/" + file;
+      })
+      .catch(function(error) {
 
-    console.log(chalkInfo("GIS | STREAM MODE: FULL PATH " + fullPath));
+        if (error.response !== undefined) {
 
-    let fileObj = {};
-
-    let totalInputs = 0;
-    let lessThanMin = 0;
-    let moreThanMin = 0;
-
-    let pipeline = fs.createReadStream(fullPath).pipe(JSONStream.parse("$*.$*.$*"));
-
-    pipeline.on("data", function(obj){
-
-      totalInputs += 1;
-
-      if (obj.value.total >= configuration.minTotalMin) {
-        moreThanMin += 1;
-        fileObj[obj.key] = obj.value;
-      }
-      else {
-        lessThanMin += 1;
-      }
-      debug("data: " + jsonPrint(obj));
-
-      if (configuration.testMode && (totalInputs >= MAX_TEST_INPUTS) && (totalInputs % 100 === 0)) {
-        console.log(chalkAlert("GIS | TEST MODE | END READ | TOTAL TEST INPUTS: " + totalInputs + " MAX: " + MAX_TEST_INPUTS));
-        pipeline.destroy();
-      }
-    });
-
-    pipeline.on("header", function(header){
-      console.log("GIS | HEADER: " + jsonPrint(header));
-    });
-
-    pipeline.on("footer", function(footer){
-      console.log("GIS | FOOTER: " + jsonPrint(footer));
-    });
-
-    pipeline.on("end", function(){
-      callback(null, { obj: fileObj, totalInputs: totalInputs, lessThanMin: lessThanMin, moreThanMin: moreThanMin });
-    });
-
-    pipeline.on("finish", function(){
-      callback(null, { obj: fileObj, totalInputs: totalInputs, lessThanMin: lessThanMin, moreThanMin: moreThanMin });
-    });
-
-    pipeline.on("error", function(err){
-      console.log(chalkError("GIS | *** LOAD FILE ERROR PARSE: " + err));
-      callback(err, null);
-    });
-  }
-  else {
-    dropboxClient.filesDownload({path: fullPath})
-    .then(function(data) {
-      console.log("GIS | " + chalkLog(getTimeStamp()
-        + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
-      ));
-
-      if (file.match(/\.json$/gi)) {
-        let payload = data.fileBinary;
-        debug(payload);
-
-        try {
-          let fileObj = JSON.parse(payload);
-          callback(null, fileObj);
+          if (error.response.status === 404) {
+            console.error(chalkError("GIS | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND" + " ... SKIPPING ..."));
+            return reject(error);
+          }
+          if (error.response.status === 409) {
+            console.error(chalkError("GIS | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND" + " ... SKIPPING ..."));
+            return reject(error);
+          }
+          if (error.response.status === 0) {
+            console.error(chalkError("GIS | !!! DROPBOX NO RESPONSE"
+              + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
+            return reject(error);
+          }
         }
-        catch(e){
-          console.trace(chalkError("GIS | JSON PARSE ERROR: " + e));
-          callback("JSON PARSE ERROR", null);
-        }
-      }
-      else {
-        callback(null, null);
-      }
-    })
-    .catch(function(error) {
 
-      if (error.response !== undefined) {
+        console.log(chalkError("GIS | !!! DROPBOX READ " + fullPath + " ERROR"));
+        console.log(chalkError("GIS | " + error));
+        console.log(chalkError("GIS | " + jsonPrint(error)));
 
-        if (error.response.status === 404) {
-          console.error(chalkError("GIS | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND" + " ... SKIPPING ..."));
-          return(callback(error, null));
-        }
-        if (error.response.status === 409) {
-          console.error(chalkError("GIS | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND" + " ... SKIPPING ..."));
-          return(callback(error, null));
-        }
-        if (error.response.status === 0) {
-          console.error(chalkError("GIS | !!! DROPBOX NO RESPONSE"
-            + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
-          return(callback(error, null));
-        }
-      }
+        return reject(error);
 
-      console.log(chalkError("GIS | !!! DROPBOX READ " + fullPath + " ERROR"));
-      console.log(chalkError("GIS | " + error));
-      console.log(chalkError("GIS | " + jsonPrint(error)));
+      });
+    }
 
-      callback(error, null);
+  });
 
-    });
-  }
 }
 
 function connectDb(callback){
@@ -1119,7 +1162,6 @@ function connectDb(callback){
     }
   });
 }
-
 
 function initStatsUpdate(callback){
 
@@ -1173,41 +1215,49 @@ function initStdIn(){
   });
 }
 
-function initialize(cnf, callback){
+function initialize(cnf){
 
-  if (debug.enabled){
-    console.log("\nGIS | %%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
-  }
+  return new Promise(async function(resolve, reject){
 
-  cnf.processName = process.env.GIS_PROCESS_NAME || "generateInputSets";
-  cnf.targetServer = process.env.GIS_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
+    try {
 
-  cnf.minDominantMin = process.env.GIS_MIN_DOMINANT_MIN || DEFAULT_MIN_DOMINANT_MIN ;
-  cnf.maxDominantMin = process.env.GIS_MAX_DOMINANT_MIN || DEFAULT_MAX_DOMINANT_MIN ;
+      if (debug.enabled){
+        console.log("\nGIS | %%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
+      }
 
-  cnf.minTotalMin = process.env.GIS_MIN_TOTAL_MIN || DEFAULT_MIN_TOTAL_MIN ;
-  cnf.maxTotalMin = process.env.GIS_MAX_TOTAL_MIN || DEFAULT_MAX_TOTAL_MIN ;
+      cnf.processName = process.env.GIS_PROCESS_NAME || "generateInputSets";
+      cnf.targetServer = process.env.GIS_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
 
-  cnf.testMode = (process.env.GIS_TEST_MODE === "true") ? true : cnf.testMode;
+      cnf.minDominantMin = process.env.GIS_MIN_DOMINANT_MIN || DEFAULT_MIN_DOMINANT_MIN ;
+      cnf.maxDominantMin = process.env.GIS_MAX_DOMINANT_MIN || DEFAULT_MAX_DOMINANT_MIN ;
 
-  cnf.quitOnError = process.env.GIS_QUIT_ON_ERROR || false ;
-  if (process.env.GIS_QUIT_ON_COMPLETE === "false") {
-    cnf.quitOnComplete = false;
-  }
-  if (process.env.GIS_QUIT_ON_COMPLETE === "true") {
-    cnf.quitOnComplete = true;
-  }
-  cnf.enableStdin = process.env.GIS_ENABLE_STDIN || true ;
+      cnf.minTotalMin = process.env.GIS_MIN_TOTAL_MIN || DEFAULT_MIN_TOTAL_MIN ;
+      cnf.maxTotalMin = process.env.GIS_MAX_TOTAL_MIN || DEFAULT_MAX_TOTAL_MIN ;
 
-  cnf.statsUpdateIntervalTime = process.env.GIS_STATS_UPDATE_INTERVAL || 10*ONE_SECOND;
+      cnf.testMode = (process.env.GIS_TEST_MODE === "true") ? true : cnf.testMode;
 
-  loadFile({folder: dropboxConfigHostFolder, file: dropboxConfigFile}, function(err, loadedConfigObj){
+      cnf.quitOnError = process.env.GIS_QUIT_ON_ERROR || false ;
+      if (process.env.GIS_QUIT_ON_COMPLETE === "false") {
+        cnf.quitOnComplete = false;
+      }
+      if (process.env.GIS_QUIT_ON_COMPLETE === "true") {
+        cnf.quitOnComplete = true;
+      }
+      cnf.enableStdin = process.env.GIS_ENABLE_STDIN || true ;
 
-    let commandLineArgs;
-    let configArgs;
+      cnf.statsUpdateIntervalTime = process.env.GIS_STATS_UPDATE_INTERVAL || 10*ONE_SECOND;
 
-    if (!err) {
+      const loadedConfigObj = await loadFile({folder: dropboxConfigHostFolder, file: dropboxConfigFile});
+
+      let commandLineArgs;
+      let configArgs;
+
       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
+
+      if (loadedConfigObj.GIS_INPUTS_FILE_PREFIX !== undefined){
+        console.log("GIS | LOADED GIS_INPUTS_FILE_PREFIX: " + loadedConfigObj.GIS_INPUTS_FILE_PREFIX);
+        cnf.inputsFilePrefix = loadedConfigObj.GIS_INPUTS_FILE_PREFIX;
+      }
 
       if (loadedConfigObj.GIS_MAX_ITERATIONS !== undefined){
         console.log("GIS | LOADED GIS_MAX_ITERATIONS: " + loadedConfigObj.GIS_MAX_ITERATIONS);
@@ -1292,12 +1342,16 @@ function initialize(cnf, callback){
 
       if (cnf.enableStdin){ initStdIn(); }
 
-      initStatsUpdate(function(){
-        return(callback(err, cnf));
+      initStatsUpdate(function(err){
+        return resolve(cnf);
       });
+
     }
-    else {
-      console.error(chalkError("GIS | *** DROPBOX CONFIG FILE " + dropboxConfigFile + " NOT LOADED *** | USING DEFAULTS"));
+    catch(err){
+
+      console.log(chalkAlert("GIS | *** ERROR | DROPBOX CONFIG PATH " + dropboxConfigHostFolder + "/" + dropboxConfigFile + " | ERROR: " + err));
+
+      console.log(chalkAlert("GIS | ??? DROPBOX CONFIG PATH " + dropboxConfigHostFolder + "/" + dropboxConfigFile + " NOT LOADED | USING DEFAULTS"));
 
       // OVERIDE CONFIG WITH COMMAND LINE ARGS
 
@@ -1318,71 +1372,71 @@ function initialize(cnf, callback){
       if (cnf.enableStdin){ initStdIn(); }
 
       initStatsUpdate(function(){
-        return(callback(err, cnf));
+        return resolve(cnf);
       });
-     }
+    }
+
   });
 }
 
-initialize(configuration, function(err, cnf){
+async function main(){
 
-  if (err) {
-    if (err.response && (err.response.status !== 404) && (err.response.status !== 409)){
-      console.error(chalkError("GIS | *** INIT ERROR *** QUITING: ERROR: " + jsonPrint(err)));
-      quit();
+  try {
+
+    const cnf = await initialize(configuration);
+
+    configuration = deepcopy(cnf);
+
+    console.log(chalkTwitter(configuration.processName 
+      + " STARTED " + getTimeStamp() 
+    ));
+
+    initSaveFileQueue(configuration);
+
+    if (configuration.testMode) {
     }
-    else {
-      console.error(chalkError("GIS | *** INIT ERROR *** ERROR: CONFIG FILE NOT FOUND | ERROR CODE: " + err.status));
-    }
-  }
 
-  configuration = deepcopy(cnf);
-
-  console.log(chalkTwitter(configuration.processName 
-    + " STARTED " + getTimeStamp() 
-  ));
-
-  initSaveFileQueue(cnf);
-
-  if (configuration.testMode) {
-  }
-
-  connectDb(function(err, db){
-
-    if (err) {
-      dbConnectionReady = false;
-      console.log(chalkError("TFE | *** MONGO DB CONNECT ERROR: " + err + " | QUITTING ***"));
-      quit("MONGO DB CONNECT ERROR");
-    }
-  });
-
-  console.log(chalkTwitter("GIS | " + configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
-
-  // initSocket(configuration);
-
-  console.log("LOAD " + defaultHistogramsFolder);
-
-  async.each(inputTypes, function(type, cb){
-
-    let genInParams = {};
-
-    genInParams.histogramsObj = {};
-    genInParams.histogramsObj.histograms = {};
-    genInParams.histogramsObj.maxTotalMin = {};
-    genInParams.histogramsObj.histogramParseDominantMin = configuration.histogramParseDominantMin;
-    genInParams.histogramsObj.histogramParseTotalMin = configuration.histogramParseTotalMin;
-
-    const folder = defaultHistogramsFolder + "/types/" + type;
-    const file = "histograms_" + type + ".json";
-
-    loadFile({folder: folder, file: file, streamMode: true}, function(err, results){
+    connectDb(function(err, db){
 
       if (err) {
-        console.log(chalkError("GIS | LOAD histograms.json ERROR"));
-        cb();
+        dbConnectionReady = false;
+        console.log(chalkError("TFE | *** MONGO DB CONNECT ERROR: " + err + " | QUITTING ***"));
+        quit("MONGO DB CONNECT ERROR");
       }
-      else {
-        console.log(chalkInfo("\nGIS | +++ LOADED HISTOGRAM | " + type.toUpperCase()
+    });
+
+    console.log(chalkTwitter("GIS | " + configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
+
+    // initSocket(configuration);
+
+    console.log("LOAD " + defaultHistogramsFolder);
+
+    async.each(inputTypes, async function(type){
+
+      let genInParams = {};
+
+      genInParams.histogramsObj = {};
+      genInParams.histogramsObj.histograms = {};
+      genInParams.histogramsObj.maxTotalMin = {};
+      genInParams.histogramsObj.histogramParseDominantMin = configuration.histogramParseDominantMin;
+      genInParams.histogramsObj.histogramParseTotalMin = configuration.histogramParseTotalMin;
+
+      const folder = defaultHistogramsFolder + "/types/" + type;
+      const file = "histograms_" + type + ".json";
+
+      try {
+
+        let results;
+
+        try {
+          results = await loadFile({folder: folder, file: file, streamMode: true});
+        }
+        catch(err){
+          console.log(chalkAlert("GIS | LOAD HISTOGRAM ERROR: " + err));
+          return;
+        }
+
+        console.log(chalkBlue("\nGIS | +++ LOADED HISTOGRAM | " + type.toUpperCase()
           + "\nGIS | TOTAL ITEMS:          " + results.totalInputs
           + "\nGIS | MIN TOTAL MIN:        " + configuration.minTotalMin
           + "\nGIS | MORE THAN TOTAL MIN:  " + results.moreThanMin + " (" + (100*results.moreThanMin/results.totalInputs).toFixed(2) + "%)"
@@ -1392,110 +1446,135 @@ initialize(configuration, function(err, cnf){
         genInParams.histogramsObj.histograms[type] = {};
         genInParams.histogramsObj.histograms[type] = results.obj;
 
-        generateInputSets3(genInParams, function(err, inputsObj){
-          if (err) {
-            console.log(chalkError("GIS | generateInputSets ERROR: " + err));
-            quit();
-          }
-          else {
+        const inputsObj = await generateInputSets(genInParams);
 
-            globalInputsObj.inputs[type] = {};
-            globalInputsObj.inputs[type] = inputsObj.inputs[type];
-            globalInputsObj.meta.type[type] = {};
-            globalInputsObj.meta.type[type] = inputsObj.meta.type[type];
-            globalInputsObj.meta.type[type].totalInputs = results.totalInputs;
-            globalInputsObj.meta.type[type].lessThanMin = results.lessThanMin;
-            globalInputsObj.meta.type[type].moreThanMin = results.moreThanMin;
+        globalInputsObj.inputs[type] = {};
+        globalInputsObj.inputs[type] = inputsObj.inputs[type];
+        globalInputsObj.meta.type[type] = {};
+        globalInputsObj.meta.type[type] = inputsObj.meta.type[type];
+        globalInputsObj.meta.type[type].totalInputs = results.totalInputs;
+        globalInputsObj.meta.type[type].lessThanMin = results.lessThanMin;
+        globalInputsObj.meta.type[type].moreThanMin = results.moreThanMin;
 
-            cb();
-          }
-        });
+        return;
 
       }
-    });
-
-  }, function(err){
-
-    let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
-
-    if (configuration.testMode) { 
-      inFolder = inFolder + "_test";
-    }
-
-    let tableArray = [];
-
-    tableArray.push([
-      "TYPE",
-      "DOM MIN",
-      "TOT MIN",
-      "TYPE TOT IN",
-      "TYPE IN",
-      "TYPE MTM",
-      "TYPE LTM",
-      "TOT IN"
-    ]);
-
-    globalInputsObj.meta.numInputs = 0;
-
-    async.eachSeries(inputTypes, function(type, cb){
-
-      globalInputsObj.meta.numInputs += globalInputsObj.meta.type[type].numInputs;
-
-      tableArray.push([
-        type.toUpperCase(),
-        globalInputsObj.meta.type[type].dominantMin.toFixed(5),
-        parseInt(globalInputsObj.meta.type[type].totalMin),
-        globalInputsObj.meta.type[type].totalInputs,
-        globalInputsObj.meta.type[type].numInputs,
-        globalInputsObj.meta.type[type].moreThanMin,
-        globalInputsObj.meta.type[type].lessThanMin,
-        globalInputsObj.meta.numInputs
-      ]);
-
-      cb();
+      catch(err){
+        console.log(chalkError("GIS | LOAD HISTOGRAMS / GENERATE INPUT SETS ERROR"));
+        return(err);
+      }
 
     }, function(err){
 
       if (err) {
-        return quit(err);
+        quit(err);
+        return;
       }
 
-      console.log(chalk.blue(
-          "\nGIS | -------------------------------------------------------------------------------"
-        + "\nGIS | INPUTS" 
-        + "\nGIS | -------------------------------------------------------------------------------\n"
-        + table(tableArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r"] })
-        + "\nGIS | -------------------------------------------------------------------------------"
-      ));
+      let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
 
+      if (configuration.testMode) { 
+        inFolder = inFolder + "_test";
+      }
 
-      let networkInputsDoc = new NetworkInputs(globalInputsObj);
+      let tableArray = [];
 
-      networkInputsDoc.save(function(err, savedNetworkInputsDoc){
+      tableArray.push([
+        "GIS |",
+        "TYPE",
+        "DOM MIN",
+        "TOT MIN",
+        "TYPE TOT IN",
+        "TYPE IN",
+        "TYPE MTM",
+        "TYPE LTM",
+        "TOT IN"
+      ]);
+
+      globalInputsObj.meta.numInputs = 0;
+
+      async.eachSeries(inputTypes, function(type, cb){
+
+        if (globalInputsObj.meta.type[type] === undefined) { return cb(); }
+
+        globalInputsObj.meta.numInputs += globalInputsObj.meta.type[type].numInputs;
+
+        tableArray.push([
+          "GIS |",
+          type.toUpperCase(),
+          globalInputsObj.meta.type[type].dominantMin.toFixed(5),
+          parseInt(globalInputsObj.meta.type[type].totalMin),
+          globalInputsObj.meta.type[type].totalInputs,
+          globalInputsObj.meta.type[type].numInputs,
+          globalInputsObj.meta.type[type].moreThanMin,
+          globalInputsObj.meta.type[type].lessThanMin,
+          globalInputsObj.meta.numInputs
+        ]);
+
+        cb();
+
+      }, function(err){
 
         if (err) {
-          console.log(chalkError("GIS | *** CREATE NETWORK INPUTS DB DOCUMENT: " + err));
-        }
-        else {
-          printInputsObj("GIS | +++ SAVED NETWORK INPUTS DB DOCUMENT", savedNetworkInputsDoc);
+          return quit(err);
         }
 
-        const slackText = table(tableArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r"] });
 
-        console.log("GIS | SLACK MESSAGE SENT");
-        slackPostMessage(slackChannel, slackText);
+        globalInputsObj.inputsId = configuration.inputsFilePrefix + "_" + moment().format(compactDateTimeFormat) + "_" + globalInputsObj.meta.numInputs + "_" + hostname + "_" + process.pid;
 
-        const inFile = globalInputsObj.inputsId + ".json";
 
-        console.log(chalkInfo("GIS | ... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+        let networkInputsDoc = new NetworkInputs(globalInputsObj);
 
-        saveFileQueue.push({folder: inFolder, file: inFile, obj: globalInputsObj});
+        networkInputsDoc.save(function(err, savedNetworkInputsDoc){
 
-        quit();
+          if (err) {
+            console.log(chalkError("GIS | *** CREATE NETWORK INPUTS DB DOCUMENT: " + err));
+          }
+          else {
+            printInputsObj("GIS | +++ SAVED NETWORK INPUTS DB DOCUMENT", savedNetworkInputsDoc);
+            console.log(chalk.blue(
+                "\nGIS | ========================================================================================="
+              + "\nGIS | INPUTS" 
+              + "\nGIS | -----------------------------------------------------------------------------------------\n"
+              + table(tableArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r"] })
+              + "\nGIS | =========================================================================================\n"
+            ));
+          }
 
-      });
+          const slackText = table(tableArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r"] });
 
-    });  
+          console.log("GIS | SLACK MESSAGE SENT");
+          slackPostMessage(slackChannel, slackText);
 
-  });
-});
+          const inFile = globalInputsObj.inputsId + ".json";
+
+          console.log(chalkInfo("GIS | ... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
+
+          saveFileQueue.push({folder: inFolder, file: inFile, obj: globalInputsObj});
+
+          quit();
+
+        });
+
+      });  
+
+    });
+  }
+  catch(err){
+
+    if (err.response && (err.response.status !== 404) && (err.response.status !== 409)){
+      console.error(chalkError("GIS | *** INIT ERROR *** QUITING: ERROR: " + jsonPrint(err)));
+      quit();
+    }
+    else {
+      console.error(chalkError("GIS | *** INIT ERROR *** ERROR: CONFIG FILE NOT FOUND | ERROR CODE: " + err.status));
+    }
+  }
+}
+
+main();
+
+
+
+
+
