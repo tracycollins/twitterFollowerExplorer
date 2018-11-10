@@ -91,6 +91,7 @@ const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 const USER_READY_ACK_TIMEOUT = ONE_MINUTE;
 
 const os = require("os");
+const objectPath = require("object-path");
 const _ = require("lodash");
 const moment = require("moment");
 const defaults = require("object.defaults");
@@ -2596,16 +2597,21 @@ function updateHistograms(params, callback) {
   user = params.user;
   histogramsIn = params.histograms;
 
-  if (!user.histograms || (user.histograms === undefined)) {
-    user.histograms = {};
-  }
+  user.histograms = user.histograms || {};
+
+  // if (!user.histograms || (user.histograms === undefined)) {
+  //   user.histograms = {};
+  // }
   
   async.each(inputTypes, function(type, cb0) {
 
     // console.log("UPDATE HISTOGRAMS | TYPE: " + type);
 
-    if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
-    if (histogramsIn[type] === undefined) { histogramsIn[type] = {}; }
+    user.histograms[type] = user.histograms[type] || {};
+    histogramsIn[type] = histogramsIn[type] || {};
+
+    // if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
+    // if (histogramsIn[type] === undefined) { histogramsIn[type] = {}; }
 
     const inputHistogramTypeItems = Object.keys(histogramsIn[type]);
 
@@ -2613,12 +2619,15 @@ function updateHistograms(params, callback) {
 
       // console.log("UPDATE HISTOGRAMS | TYPE: " + type + " | ITEM: " + item);
 
-      if (user.histograms[type][item] === undefined) {
-        user.histograms[type][item] = histogramsIn[type][item];
-      }
-      else if (params.accumulateFlag) {
-        user.histograms[type][item] += histogramsIn[type][item];
-      }
+      user.histograms[type][item] = user.histograms[type][item] || 0;
+      user.histograms[type][item] += histogramsIn[type][item];
+
+      // if (user.histograms[type][item] === undefined) {
+      //   user.histograms[type][item] = histogramsIn[type][item];
+      // }
+      // else if (params.accumulateFlag) {
+      //   user.histograms[type][item] += histogramsIn[type][item];
+      // }
 
       debug("user histograms"
         + " | @" + user.screenName
@@ -2734,6 +2743,33 @@ function generateAutoCategory(user, callback) {
         else {
           async.setImmediate(function() {
             cb(null, user.retweeted_status.text);
+          });
+        }
+      }
+      else {
+        if (text) {
+          async.setImmediate(function() {
+            cb(null, text);
+          });
+        }
+        else {
+          async.setImmediate(function() {
+            cb(null, null);
+          });
+        }
+      }
+    },
+    function userLocation(text, cb) {
+
+      if ((user.location !== undefined) && user.location) {
+        if (text) {
+          async.setImmediate(function() {
+            cb(null, text + "\n" + user.location);
+          });
+        }
+        else {
+          async.setImmediate(function() {
+            cb(null, user.location);
           });
         }
       }
