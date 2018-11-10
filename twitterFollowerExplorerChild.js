@@ -86,7 +86,7 @@ if (process.env.TEST_MODE > 0) {
 }
 
 configuration.fetchCount = configuration.testMode ? process.env.TEST_MODE_FETCH_COUNT :  process.env.DEFAULT_FETCH_COUNT;
-configuration.fetchUserTimeout = process.env.DEFAULT_FETCH_USER_TIMEOUT || ONE_MINUTE;
+configuration.fetchUserTimeout = process.env.TFE_FETCH_USER_TIMEOUT || 5*ONE_MINUTE;
 
 console.log(chalkLog("TFC | CONFIGURATION\n" + jsonPrint(configuration)));
 
@@ -436,9 +436,10 @@ function twitterUsersShow(callback){
         fsm.fsm_rateLimitStart();
 
         // process.send({op:"THREECEE_USER", threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
+        return callback(err);
 
       }
-      if (err.code === 89){
+      else if (err.code === 89){
 
         console.log(chalkAlert("TFC | *** TWITTER SHOW USER ERROR | INVALID OR EXPIRED TOKEN" 
           + " | " + getTimeStamp() 
@@ -453,10 +454,12 @@ function twitterUsersShow(callback){
         fsm.fsm_error();
 
         process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+        return callback(err);
 
       }
-
-      return callback(err);
+      else {
+        return callback(err);
+      }
 
     }
 
@@ -625,10 +628,11 @@ function fetchFriends(params, callback) {
           });
 
         }
+        else {
+          fsm.fsm_error();
+          return callback(err, null);
+        }
 
-        fsm.fsm_error();
-
-        return callback(err, null);
       }
 
       statsObj.threeceeUser.friendsFetched += data.users.length;
@@ -1155,18 +1159,22 @@ function initTwitter(twitterConfig, callback){
         return callback(err, null);
 
       }
+      else {
 
-      console.log(chalkError("TFC | *** TWITTER ACCOUNT SETTINGS ERROR"
-        + " | @" + configuration.threeceeUser 
-        + " | " + getTimeStamp() 
-        + " | ERR CODE: " + err.code
-        + " | " + err.message
-      ));
+        console.log(chalkError("TFC | *** TWITTER ACCOUNT SETTINGS ERROR"
+          + " | @" + configuration.threeceeUser 
+          + " | " + getTimeStamp() 
+          + " | ERR CODE: " + err.code
+          + " | " + err.message
+        ));
 
 
-      fsm.fsm_error();
+        fsm.fsm_error();
 
-      return callback(err, null);
+        return callback(err, null);
+
+      }
+
     }
 
     const userScreenName = accountSettings.screen_name.toLowerCase();
@@ -1195,15 +1203,21 @@ function initTwitter(twitterConfig, callback){
 
           return callback(null, null);
         }
+        else {
 
-        console.log(chalkError("TFC | *** TWITTER USER UPDATE ERROR" 
-          + " | " + getTimeStamp() 
-          + " | @" + userScreenName 
-          + "\n" + jsonPrint(err)
-        ));
+          console.log(chalkError("TFC | *** TWITTER USER UPDATE ERROR" 
+            + " | " + getTimeStamp() 
+            + " | @" + userScreenName 
+            + "\n" + jsonPrint(err)
+          ));
 
-        return callback(err, null) ;
-      }
+          fsm.fsm_error();
+
+          return callback(err, null);
+
+        }
+
+       }
 
       callback(null, null);
 

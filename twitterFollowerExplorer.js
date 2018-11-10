@@ -54,6 +54,7 @@ let tfeChildHashMap = {};
 
 global.dbConnection = false;
 const mongoose = require("mongoose");
+mongoose.set("useFindAndModify", false);
 mongoose.Promise = global.Promise;
 
 let unfollowableUserFile = "unfollowableUser.json";
@@ -157,6 +158,7 @@ const IMAGE_QUOTA_TIMEOUT = 60000;
 
 const DEFAULT_FORCE_IMAGE_ANALYSIS = true;
 const DEFAULT_FORCE_INIT_RANDOM_NETWORKS = true;
+const DEFAULT_FETCH_USER_TIMEOUT = 5*ONE_MINUTE;
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
 const DEFAULT_MIN_SUCCESS_RATE = 80;
 const DEFAULT_MIN_MATCH_RATE = 80;
@@ -4380,6 +4382,7 @@ function initTwitterFollowerChild(twitterConfig) {
       childEnv.env.TEST_MODE_TOTAL_FETCH = TEST_MODE_TOTAL_FETCH;
       childEnv.env.TEST_MODE_FETCH_COUNT = TEST_MODE_FETCH_COUNT;
       childEnv.env.TEST_MODE = (configuration.testMode) ? 1 : 0;
+      childEnv.env.DEFAULT_FETCH_USER_TIMEOUT = DEFAULT_FETCH_USER_TIMEOUT;
 
       tfeChildHashMap[user] = {};
       tfeChildHashMap[user].childId = childId;

@@ -224,6 +224,7 @@ let twit = null;
 global.dbConnection = false;
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
+mongoose.set("useFindAndModify", false);
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const neuralNetworkModel = require("@threeceelabs/mongoose-twitter/models/neuralNetwork.server.model");

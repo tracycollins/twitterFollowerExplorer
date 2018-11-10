@@ -30,6 +30,7 @@ hostname = hostname.replace(/word/g, "google");
 global.dbConnection = false;
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
+mongoose.set("useFindAndModify", false);
 
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
