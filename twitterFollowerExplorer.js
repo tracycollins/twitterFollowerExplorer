@@ -130,16 +130,16 @@ let prevConfigFileModifiedMoment = moment("2010-01-01");
 
 const DEFAULT_QUIT_ON_COMPLETE = true;
 
-const PROCESS_USER_QUEUE_INTERVAL = 10;
-const LANG_ANAL_MSG_Q_INTERVAL = 10;
-const ACTIVATE_NETWORK_QUEUE_INTERVAL = 10;
-const USER_DB_UPDATE_QUEUE_INTERVAL = 10;
+const PROCESS_USER_QUEUE_INTERVAL = 5;
+const LANG_ANAL_MSG_Q_INTERVAL = 5;
+const ACTIVATE_NETWORK_QUEUE_INTERVAL = 5;
+const USER_DB_UPDATE_QUEUE_INTERVAL = 5;
 
 const LANGUAGE_ANALYZE_INTERVAL = 100;
-const RANDOM_NETWORK_TREE_INTERVAL = 10;
+const RANDOM_NETWORK_TREE_INTERVAL = 5;
 const DEFAULT_FETCH_ALL_INTERVAL = 120*ONE_MINUTE;
 const FSM_TICK_INTERVAL = ONE_SECOND;
-const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 10; // ms
+const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 5; // ms
 
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
 const TEST_MODE_TOTAL_FETCH = 333;
@@ -846,7 +846,7 @@ const quit = async function(options) {
         + " | USR DB UDQ: " + userDbUpdateQueue.length
       ));
     }
-  }, 1000);
+  }, 5000);
 };
 
 
@@ -5296,7 +5296,9 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
             }
 
-            debug(chalkAlert("NETWORK_OUTPUT"
+            // resolve({user: params.user, networkOutput: networkOutput);
+
+           debug(chalkAlert("NETWORK_OUTPUT"
               + " | " + moment().format(compactDateTimeFormat)
               + " | " + m.bestNetwork.networkId
               + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
