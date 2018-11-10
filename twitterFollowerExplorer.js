@@ -91,7 +91,6 @@ const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 const USER_READY_ACK_TIMEOUT = ONE_MINUTE;
 
 const os = require("os");
-const objectPath = require("object-path");
 const _ = require("lodash");
 const moment = require("moment");
 const defaults = require("object.defaults");
