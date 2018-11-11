@@ -99,6 +99,7 @@ const callerId = require("caller-id");
 const treeify = require("treeify");
 const table = require("text-table");
 const merge = require("deepmerge");
+const objectPath = require("object-path");
 
 let hostname = os.hostname();
 hostname = hostname.replace(/.local/g, "");
@@ -619,10 +620,39 @@ function initSlackRtmClient(params){
 
       });
 
+      slackRtmClient.on("error", async function(err){
+        console.log(chalkError("TFE | *** SLACK RTM CLIENT ERROR: " + err));
+        statsObj.status = "SLACK RTM ERROR";
+        objectPath.set(statsObj, "slack.rtm.error", err); 
+        objectPath.set(statsObj, "slack.rtm.connected", false); 
+        objectPath.set(statsObj, "slack.rtm.ready", false); 
+        console.log(chalkLog("TFE | SLACK STATUS\n" + jsonPrint(statsObj.slack)));
+      });
+
+      slackRtmClient.on("disconnected", async function(){
+        console.log(chalkAlert("TFE | *** SLACK RTM CLIENT DISCONNECTED"));
+        statsObj.status = "SLACK RTM DISCONNECTED";
+        objectPath.set(statsObj, "slack.rtm.connected", false); 
+        objectPath.set(statsObj, "slack.rtm.ready", false); 
+        console.log(chalkLog("TFE | SLACK STATUS\n" + jsonPrint(statsObj.slack)));
+      });
+
       slackRtmClient.on("ready", async function(){
+
         try {
 
           statsObj.status = "SLACK RTM READY";
+
+          objectPath.set(statsObj, "slack.rtm.error", false); 
+          objectPath.set(statsObj, "slack.rtm.connected", true); 
+
+          const slackRtmReady = objectPath.get(statsObj, "slack.rtm.ready", false); 
+
+          console.log("slackRtmReady: " + slackRtmReady);
+
+          if (slackRtmReady) { return resolve(); } // already sent slack rtm ready
+
+          objectPath.set(statsObj, "slack.rtm.ready", true); 
 
           await slackSendRtmMessage(hostname + " | TFE | SLACK RTM READY");
 
@@ -631,6 +661,9 @@ function initSlackRtmClient(params){
           message.text = hostname + " | TFE | SLACK RTM READY";
 
           await slackSendWebMessage(message);
+
+          console.log(chalkLog("TFE | SLACK STATUS\n" + jsonPrint(statsObj.slack)));
+
           resolve();
         }
         catch(err){
@@ -718,6 +751,8 @@ function genSlackStatus(params) {
 }
 
 const quit = async function(options) {
+
+  options = options || {};
 
   statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
   statsObj.timeStamp = moment().format(compactDateTimeFormat);
