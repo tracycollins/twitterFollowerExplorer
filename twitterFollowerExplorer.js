@@ -4054,7 +4054,7 @@ process.on( "SIGINT", function() {
   quit({source: "SIGINT"});
 });
 
-function saveFile (params, callback){
+function saveFile(params, callback){
 
   let fullPath = params.folder + "/" + params.file;
 
