@@ -4,7 +4,7 @@
     "name": "gis",
     "script": "generateInputSets.js",
     "cwd": "/Volumes/RAID1/projects/twitterFollowerExplorer",
-    "node_args": "--max-old-space-size=4096",
+    "node_args": "--max-old-space-size=8192",
     "autorestart": false,
     "env": {
       "FORCE_COLOR": 1,

@@ -358,7 +358,6 @@ let slackWebClient;
 
 let slackMessagePrefix = "#" + slackChannel + ":" + hostname + "_" + process.pid;
 
-
 function slackSendMessage(msgObj){
 
   let message = msgObj;
@@ -1547,7 +1546,6 @@ function getFileMetadata(params) {
     });
 
   });
-
 }
 
 function loadConfigFile(params) {
@@ -1797,7 +1795,6 @@ function loadAllConfigFiles(){
       reject(err);
     }
   });
-
 }
 
 function connectDb(){
@@ -1874,8 +1871,6 @@ function connectDb(){
     }
 
   });
-
-
 }
 
 function loadMaxInputDropbox(params) {
@@ -6011,8 +6006,6 @@ setTimeout(async function(){
       quit();
     }
   }
-
-
 }, 1000);
 
 
