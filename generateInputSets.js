@@ -1113,7 +1113,7 @@ function loadFile(params) {
         }
 
         console.log(chalkError("GIS | !!! DROPBOX READ " + fullPath + " ERROR"));
-        console.log(chalkError("GIS | " + error));
+        console.log(chalkError("GIS |\n", error));
         console.log(chalkError("GIS | " + jsonPrint(error)));
 
         return reject(error);
