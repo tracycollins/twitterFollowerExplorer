@@ -2618,8 +2618,6 @@ function updateHistograms(params, callback) {
 
   statsObj.status = "UPDATE HISTOGRAMS";
 
-  // slackSendMessage(statsObj.status);
-
   let user = {};
   let histogramsIn = {};
 
@@ -2627,36 +2625,18 @@ function updateHistograms(params, callback) {
   histogramsIn = params.histograms;
 
   user.histograms = user.histograms || {};
-
-  // if (!user.histograms || (user.histograms === undefined)) {
-  //   user.histograms = {};
-  // }
   
   async.each(inputTypes, function(type, cb0) {
 
-    // console.log("UPDATE HISTOGRAMS | TYPE: " + type);
-
     user.histograms[type] = user.histograms[type] || {};
     histogramsIn[type] = histogramsIn[type] || {};
-
-    // if (user.histograms[type] === undefined) { user.histograms[type] = {}; }
-    // if (histogramsIn[type] === undefined) { histogramsIn[type] = {}; }
 
     const inputHistogramTypeItems = Object.keys(histogramsIn[type]);
 
     async.each(inputHistogramTypeItems, function(item, cb1) {
 
-      // console.log("UPDATE HISTOGRAMS | TYPE: " + type + " | ITEM: " + item);
-
       user.histograms[type][item] = user.histograms[type][item] || 0;
       user.histograms[type][item] += histogramsIn[type][item];
-
-      // if (user.histograms[type][item] === undefined) {
-      //   user.histograms[type][item] = histogramsIn[type][item];
-      // }
-      // else if (params.accumulateFlag) {
-      //   user.histograms[type][item] += histogramsIn[type][item];
-      // }
 
       debug("user histograms"
         + " | @" + user.screenName
@@ -2689,8 +2669,6 @@ function updateHistograms(params, callback) {
 function generateAutoCategory(user, callback) {
 
   statsObj.status = "GEN AUTO CAT";
-
-  // slackSendMessage(statsObj.status);
 
   async.waterfall([
     function userScreenName(cb) {
@@ -3025,7 +3003,6 @@ function generateAutoCategory(user, callback) {
 
         activateNetworkQueue.push({user: updatedUser, normalization: statsObj.normalization});
 
-        // activateNetwork({user: updatedUser, normalization: statsObj.normalization});
         callback(null, updatedUser);
       });
 
@@ -3212,8 +3189,6 @@ function initChild(params){
 
   statsObj.status = "INIT CHILD | @" + params.threeceeUser;
 
-  // slackSendMessage(statsObj.status);
-
   return new Promise(function(resolve, reject){
 
     const initObj = {
@@ -3381,8 +3356,6 @@ function initRandomNetworks(params){
 
   statsObj.status = "INIT RAN NNs";
 
-  // slackSendMessage(statsObj.status);
-
   return new Promise(async function(resolve, reject){
 
     loadedNetworksFlag = false;
@@ -3390,8 +3363,6 @@ function initRandomNetworks(params){
     if (randomNetworkTree && (randomNetworkTree !== undefined)) {
 
       async.eachSeries(bestNetworkHashMap.values(), function(nnObj, cb){
-
-        // console.log("nnObj\n" + jsonPrint(nnObj));
 
         randomNetworkTree.send({ op: "LOAD_NETWORK", networkObj: nnObj.networkObj }, function(err) {
 
@@ -3429,8 +3400,6 @@ function initMaxInputHashMap(params){
 
   statsObj.status = "INIT MAX INPUT HASHMAP";
 
-  // slackSendMessage(statsObj.status);
-
   return new Promise(async function(resolve, reject){
 
     if (randomNetworkTree && (randomNetworkTree !== undefined)) {
@@ -3453,14 +3422,11 @@ function initNetworks(params){
 
   statsObj.status = "INIT NNs";
 
-  // slackSendMessage(statsObj.status);
-
   console.log(chalkTwitter("TFE | INIT NETWORKS"));
 
   return new Promise(async function(resolve, reject){
 
     try {
-      // await initRandomNetworkTreeChild();
       await loadBestNeuralNetworkFiles();
       await loadMaxInputDropbox({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile});
       await initRandomNetworks();
@@ -3499,7 +3465,6 @@ const fetchAllReady = function(){
   if (configuration.verbose) {
     console.log(chalkLog("fetchAllReady"
       + " | fetchAllIntervalReady: " + fetchAllIntervalReady
-      // + " | networksSentFlag: " + networksSentFlag
       + " | loadedNetworksFlag: " + loadedNetworksFlag
       + " | processUserQueueReady: " + processUserQueueReady
       + " | processUserQueueEmpty: " + processUserQueueEmpty()
@@ -4129,7 +4094,6 @@ function saveFile(params, callback){
           console.trace(chalkError("TFE | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: " + error
-            // + " | ERROR\n" + jsonPrint(error)
           ));
           if (callback !== undefined) { return callback(error); }
         }
@@ -4143,7 +4107,6 @@ function saveFile(params, callback){
 
         debug(chalkLog("DROPBOX LIST FOLDER"
           + " | ENTRIES: " + response.entries.length
-          // + " | CURSOR (trunc): " + response.cursor.substr(-10)
           + " | MORE: " + response.has_more
           + " | PATH:" + options.path
         ));
