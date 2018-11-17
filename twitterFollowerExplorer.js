@@ -891,8 +891,8 @@ const cp = require("child_process");
 let previousRandomNetworksHashMap = {};
 let availableNeuralNetHashMap = {};
 
+let inputsIdSet = new Set();
 
-let inputArrays = {};
 let stdin;
 let abortCursor = false;
 let neuralNetworkInitialized = false;
@@ -986,6 +986,8 @@ const defaultMaxInputHashmapFile = "maxInputHashMap.json";
 
 const localHistogramsFolder = dropboxConfigHostFolder + "/histograms";
 const defaultHistogramsFolder = dropboxConfigDefaultFolder + "/histograms";
+
+let  dropboxInputsConfigFile = "default_networkInputsConfig.json";
 
 const Dropbox = require("dropbox").Dropbox;
 
@@ -1781,6 +1783,18 @@ function loadAllConfigFiles(){
         console.log(chalkAlert("TFE | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
       }
       
+      try{
+        await loadInputsDropbox({folder: dropboxConfigHostFolder, file: dropboxInputsConfigFile});
+      }
+      catch(err){
+
+      }
+
+      if (hostConfig) {
+        hostConfiguration = hostConfig;
+        console.log(chalkAlert("TFE | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
+      }
+      
 
       let defaultAndHostConfig = merge(defaultConfiguration, hostConfiguration); // host settings override defaults
       let tempConfig = merge(configuration, defaultAndHostConfig); // any new settings override existing config
@@ -1862,15 +1876,55 @@ function connectDb(){
 
         });
       });
-
-
     }
     catch(err){
       console.log(chalkError("TFE | *** MONGO DB CONNECT ERROR: " + err));
       reject(err);
     }
-
   });
+}
+
+function loadInputsDropbox(params) {
+
+  statsObj.status = "LOAD INPUTS CONFIG";
+
+  return new Promise(async function(resolve, reject){
+
+    const folder = params.folder;
+    const file = params.file;
+
+    console.log(chalkNetwork("TFE | ... LOADING DROPBOX INPUTS CONFIG | " + folder + "/" + file));
+
+    let options = {path: folder};
+
+    try {
+
+      const inputsConfigObj = await loadFile({folder: folder, file: file});
+
+      if ((inputsConfigObj === undefined) || !inputsConfigObj) {
+        console.log(chalkError("TFE | DROPBOX LOAD INPUTS CONFIG FILE ERROR | JSON UNDEFINED ??? "));
+        return reject(new Error("DROPBOX LOAD INPUTS CONFIG FILE ERROR | JSON UNDEFINED"));
+      }
+
+      inputsIdSet = new Set(inputsConfigObj.INPUTS_IDS);
+
+      console.log(chalkBlue("TFE | LOADED DROPBOX INPUTS CONFIG"
+        + " | " + inputsIdSet.size + " INPUTS IDS"
+        + "\n" + jsonPrint(inputsIdSet.keys())
+      ));
+
+      resolve();
+    }
+    catch(err){
+      if ((err.status === 409) || (err.status === 404)) {
+        console.log(chalkError("TFE | DROPBOX LOAD INPUTS CONFIG FILE NOT FOUND"));
+        return resolve();
+      }
+      console.log(chalkError("TFE | DROPBOX LOAD INPUTS CONFIG FILE ERROR: ", err));
+      return reject(err);
+    }
+  });
+
 }
 
 function loadMaxInputDropbox(params) {
@@ -4971,7 +5025,7 @@ function initConfig(cnf) {
 
 function saveNetworkHashMap(params, callback) {
 
-  statsObj.status = "SAVE NN HASHMAP";
+  statsObj.status = "SAVE NN HASHMAP TO DROPBOX";
 
   const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
 
@@ -5050,7 +5104,7 @@ function printTestCycleHistory(nn){
 
 function updateNetworkStats(params, callback) {
 
-  statsObj.status = "UPDATE NN STATS";
+  statsObj.status = "UPDATE DB NN STATS";
 
   console.log(chalkTwitter("TFE | UPDATE NETWORK STATS"));
 
