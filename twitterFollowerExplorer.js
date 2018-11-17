@@ -987,7 +987,8 @@ const defaultMaxInputHashmapFile = "maxInputHashMap.json";
 const localHistogramsFolder = dropboxConfigHostFolder + "/histograms";
 const defaultHistogramsFolder = dropboxConfigDefaultFolder + "/histograms";
 
-let  dropboxInputsConfigFile = "default_networkInputsConfig.json";
+let  defaultInputsConfigFile = "default_networkInputsConfig.json";
+let  hostInputsConfigFile =  hostname + "_networkInputsConfig.json";
 
 const Dropbox = require("dropbox").Dropbox;
 
@@ -1783,18 +1784,12 @@ function loadAllConfigFiles(){
         console.log(chalkAlert("TFE | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
       }
       
-      try{
-        await loadInputsDropbox({folder: dropboxConfigHostFolder, file: dropboxInputsConfigFile});
-      }
-      catch(err){
-
-      }
-
-      if (hostConfig) {
-        hostConfiguration = hostConfig;
-        console.log(chalkAlert("TFE | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
-      }
-      
+      // try{
+        await loadInputsDropbox({folder: dropboxConfigDefaultFolder, file: defaultInputsConfigFile});
+        await loadInputsDropbox({folder: dropboxConfigHostFolder, file: hostInputsConfigFile});
+      // }
+      // catch(err){
+      // }
 
       let defaultAndHostConfig = merge(defaultConfiguration, hostConfiguration); // host settings override defaults
       let tempConfig = merge(configuration, defaultAndHostConfig); // any new settings override existing config
@@ -1906,12 +1901,19 @@ function loadInputsDropbox(params) {
         return reject(new Error("DROPBOX LOAD INPUTS CONFIG FILE ERROR | JSON UNDEFINED"));
       }
 
-      inputsIdSet = new Set(inputsConfigObj.INPUTS_IDS);
+      const tempInputsIdSet = new Set(inputsConfigObj.INPUTS_IDS);
+
+      for (let inputsId of tempInputsIdSet) {
+        inputsIdSet.add(inputsId);
+      }
 
       console.log(chalkBlue("TFE | LOADED DROPBOX INPUTS CONFIG"
-        + " | " + inputsIdSet.size + " INPUTS IDS"
-        + "\n" + jsonPrint(inputsIdSet.keys())
+        + "\nTFE | CURRENT FILE INPUTS IDS SET: " + tempInputsIdSet.size + " INPUTS IDS"
+        + "\n" + jsonPrint([...tempInputsIdSet])
+        + "\nTFE | FINAL INPUTS IDS SET: " + inputsIdSet.size + " INPUTS IDS"
+        + "\n" + jsonPrint([...inputsIdSet])
       ));
+
 
       resolve();
     }
@@ -1924,7 +1926,6 @@ function loadInputsDropbox(params) {
       return reject(err);
     }
   });
-
 }
 
 function loadMaxInputDropbox(params) {
@@ -1964,7 +1965,6 @@ function loadMaxInputDropbox(params) {
 
 
   });
-
 }
 
 function updateglobalHistograms(params, callback) {
@@ -2089,7 +2089,7 @@ function processBestNetwork(params, callback){
       if (callback !== undefined) { return callback(err, null); }
     }
 
-    let folder = params.folder;
+    let folder = params.folder || bestNetworkFolder;
     let entry = {};
 
     if (params.entry === undefined) {
@@ -2156,277 +2156,80 @@ function processBestNetwork(params, callback){
   });
 }
 
-function loadBestNetworkDropboxFolder(folder, callback) {
+function loadBestNetworksDatabase(params) {
 
-  console.log(chalkLog("TFE | LOAD BEST NETWORK DROPBOX FOLDER: " + folder));
+  return new Promise(function(resolve, reject){
 
-  statsObj.status = "LOAD BEST NNs";
+    console.log(chalkLog("TFE | LOAD BEST NETWORK DATABASE"));
 
-  // slackSendMessage(hostname + " | TFE | " + statsObj.status);
+    statsObj.status = "LOAD BEST NNs DATABASE";
+    
+    statsObj.newBestNetwork = false;
+    statsObj.numNetworksLoaded = 0;
 
-  let options = {path: folder};
-  
-  statsObj.newBestNetwork = false;
+    console.log(chalkLog("TFE | LOADING NNs FROM DB ..."));
 
-  statsObj.numNetworksLoaded = 0;
-  statsObj.numNetworksUpdated = 0;
-  statsObj.numNetworksSkipped = 0;
+    const inputsIdArray = [...inputsIdSet];
 
-  dropboxClient.filesListFolder(options)
-  .then(function(response) {
+    console.log(chalkAlert("inputsIdArray\n" + jsonPrint(inputsIdArray)));
 
-    if (response.entries.length === 0) {
+    let query = {};
+    query.inputsId = { "$in": inputsIdArray };
 
-      console.log(chalkLog("TFE | NO DROPBOX NETWORKS FOUND" + " | " + options.path ));
-      console.log(chalkLog("TFE | ... LOADING NNs FROM DB ..."));
+    console.log(chalkAlert("query\n" + jsonPrint(query)));
 
-      NeuralNetwork.find({}).lean().sort({"overallMatchRate": -1}).exec(function(err, nnArray){
-        if (err){
-          console.log(chalkError("TFE | *** NEURAL NETWORK FIND ERROR: " + err));
-          if (callback !== undefined) {
-            return callback( null, {best: currentBestNetwork} );
-          }
-          else {
-            return;
-          }
-        }
+    NeuralNetwork.find(query).lean().sort({"overallMatchRate": -1}).exec(function(err, nnArray){
 
-        if (nnArray === 0){
-          console.log(chalkError("TFE | *** NEURAL NETWORKS NOT FOUND IN DB NOR DROPBOX"));
-          if (callback !== undefined) {
-            return callback( null, {best: currentBestNetwork} );
-          }
-          return;
-        }
+      if (err){
+        console.log(chalkError("TFE | *** NEURAL NETWORK FIND ERROR: " + err));
+        return reject(err);
+      }
 
-        currentBestNetwork = nnArray[0];
-        currentBestNetwork.isValid = true;
+      if (nnArray === 0){
+        console.log(chalkError("TFE | *** NEURAL NETWORKS NOT FOUND IN DB NOR DROPBOX"));
+        return reject(new Error("NO NETWORKS FOUND IN DATABASE"));
+      }
 
-        currentBestNetwork = networkDefaults(currentBestNetwork);
-        bestRuntimeNetworkId = currentBestNetwork.networkId;
+      console.log(chalkBlue("TFE | FOUND " + nnArray.length + " NNs IN INPUTS IDS ARRAY"));
 
-        bestNetworkHashMap.set(bestRuntimeNetworkId, currentBestNetwork);
+      currentBestNetwork = nnArray[0];
+      currentBestNetwork.isValid = true;
 
-        console.log(chalk.bold.blue("TFE | +++ BEST NEURAL NETWORK LOADED FROM DB"
-          + " | " + currentBestNetwork.networkId
-          + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
-          + " | MR: " + currentBestNetwork.matchRate.toFixed(2) + "%"
-          + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2) + "%"
-          + " | TEST CYCs: " + currentBestNetwork.testCycles
-          + " | HISTORY: " + currentBestNetwork.testCycleHistory.length
-        ));
+      currentBestNetwork = networkDefaults(currentBestNetwork);
+      bestRuntimeNetworkId = currentBestNetwork.networkId;
 
-        async.eachSeries(nnArray, function(networkObj, cb){
+      bestNetworkHashMap.set(bestRuntimeNetworkId, currentBestNetwork);
 
-          processBestNetwork({networkObj: networkObj, folder: folder}, function(err, results){
-            if (err) {
-              console.log(chalkError("TFE | *** PROCESS BEST NETWORK ERROR: " + err));
-              return cb(err);
-            }
-
-            cb();
-          });
-        }, function(err){
-          if (callback !== undefined) { 
-            callback( null, {best: currentBestNetwork} ); 
-          }
-          else {
-            return;
-          }
-        });
-      });
-    }
-    else {
-      statsObj.numNetworksLoaded = 0;
-
-      console.log(chalkLog("TFE | DROPBOX NETWORKS"
-        + " | " + options.path
-        + " | FOUND " + response.entries.length + " FILES"
+      console.log(chalk.bold.blue("TFE | +++ BEST NEURAL NETWORK LOADED FROM DB"
+        + " | " + currentBestNetwork.networkId
+        + " | INPUTS ID: " + currentBestNetwork.inputsId
+        + " | INPUTS: " + currentBestNetwork.numInputs
+        + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
+        + " | MR: " + currentBestNetwork.matchRate.toFixed(2) + "%"
+        + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+        + " | TEST CYCs: " + currentBestNetwork.testCycles
+        + " | HISTORY: " + currentBestNetwork.testCycleHistory.length
       ));
 
-      async.eachSeries(response.entries, async function(entry) {
+      async.eachSeries(nnArray, function(networkObj, cb){
 
-        if (configuration.testMode && (statsObj.numNetworksLoaded >= TEST_DROPBOX_NN_LOAD)) {
-
-          console.log(chalkLog("TFE | *** TEST MODE *** LOADED DROPBOX NETWORKS"
-            + " | TEST_DROPBOX_NN_LOAD: " + TEST_DROPBOX_NN_LOAD
-            + " | FOUND " + response.entries.length + " FILES"
-          ));
-
-          return ("TEST_MODE LOAD DONE");
+        processBestNetwork({networkObj: networkObj, folder: bestNetworkFolder}, function(err, results){
+          if (err) {
+            console.log(chalkError("TFE | *** PROCESS BEST NETWORK ERROR: " + err));
+            return cb(err);
+          }
+          cb();
+        });
+      }, function(err){
+        if (err) {
+          return reject(err);
         }
-
-        debug(chalkLog("DROPBOX NETWORK FOUND"
-          + " | " + options.path
-          + " | " + entry.name
-        ));
-
-        if (entry.name === bestRuntimeNetworkFileName) {
-          return ;
-        }
-
-        const networkId = entry.name.replace(".json", "");
-
-        if (bestNetworkHashMap.has(networkId)) {
-
-          let bnhmObj = bestNetworkHashMap.get(networkId);
-
-          if (!bnhmObj || (bnhmObj === undefined)) {
-            console.log(chalkError("TFE | bestNetworkHashMap ENTRY UNDEFINED??? | " + networkId));
-            return ;
-          }
-
-          if (bnhmObj.entry === undefined) {
-            console.log(chalkError("TFE | bestNetworkHashMap ENTRY PROP UNDEFINED???"
-              + " | " + networkId + "\nTFE\n" + jsonPrint(bnhmObj)));
-            return ;
-          }
-
-          if (bnhmObj.entry.content_hash !== entry.content_hash) {
-
-            console.log(chalkInfo("TFE | DROPBOX NETWORK CONTENT CHANGE"
-              + " | " + getTimeStamp(entry.client_modified)
-              + " | " + entry.name
-            ));
-
-            try {
-
-              let networkObj = await loadFile({folder: folder, file: entry.name});
-
-              networkObj = networkDefaults(networkObj);
-
-              statsObj.numNetworksUpdated += 1;
-
-              const printString = "TFE | +0+ UPDATED NN"
-                + " [ UPDATED: " + statsObj.numNetworksUpdated
-                + " | LOADED: " + statsObj.numNetworksLoaded
-                + " | SKIPPED: " + statsObj.numNetworksSkipped + " ]";
-
-              printNetworkObj(printString, networkObj);
-
-              processBestNetwork({networkObj: networkObj, entry: entry, folder: folder}, function(err, results){
-                if (err) {
-                  console.log(chalkError("TFE | *** PROCESS BEST NETWORK ERROR: " + err));
-                  return (err);
-                }
-
-                return;
-              });
-
-            }
-            catch(err){
-              console.log(chalkError("TFE | *** DROPBOX NETWORK LOAD FILE ERROR"
-                + " | " + folder + "/" + entry.name
-                + " | " + err
-              ));
-              return ;
-            }
-          }
-          else {
-            debug(chalkLog("TFE | DROPBOX NETWORK CONTENT SAME  "
-              + " | " + entry.name
-            ));
-            async.setImmediate(function() { return; });
-          }
-        }
-        else {
-
-          try {
-
-            let networkObj = await loadFile({folder: folder, file: entry.name});
-
-            if (networkObj.network === undefined) {
-              console.log(chalkError("TFE | *** DROPBOX NETWORK LOAD FILE ERROR | NETWORK UNDEFINED"
-                + " | " + folder + "/" + entry.name
-              ));
-              return;
-            }
-
-            networkObj = networkDefaults(networkObj);
-
-            if (
-              (networkObj.overallMatchRate === 0)
-              || (networkObj.overallMatchRate >= configuration.minMatchRate)
-              || (networkObj.successRate >= configuration.minSuccessRate)
-              || (configuration.testMode && (networkObj.successRate >= 0.5*configuration.minSuccessRate) && (networkObj.overallMatchRate === 0))
-              || (configuration.testMode && (networkObj.overallMatchRate >= 0.5*configuration.minMatchRate))) {
-
-              statsObj.numNetworksLoaded += 1;
-
-              const printString = "TFE | +++ LOAD NN"
-                + " [ UPDATED: " + statsObj.numNetworksUpdated
-                + " | LOADED: " + statsObj.numNetworksLoaded
-                + " | SKIPPED: " + statsObj.numNetworksSkipped + " ]"
-                + " | MR MIN: " + configuration.minMatchRate;
-
-              printNetworkObj(printString, networkObj);
-
-              processBestNetwork({networkObj: networkObj, entry: entry, folder: folder}, function(err, results){
-                if (err) {
-                  console.log(chalkError("TFE | *** PROCESS BEST NETWORK ERROR: " + err));
-                  return (err);
-                }
-
-                return;
-              });
-            }
-            else {
-
-              statsObj.numNetworksSkipped += 1;
-
-              const printString = "TFE | --- LOAD NN "
-                + " [ UPDATED: " + statsObj.numNetworksUpdated
-                + " | LOADED: " + statsObj.numNetworksLoaded
-                + " | SKIPPED: " + statsObj.numNetworksSkipped + " ]"
-                + " | MR MIN: " + configuration.minMatchRate;
-
-              printNetworkObj(printString, networkObj);
-
-              async.setImmediate(function() { return; });
-            }
-
-          }
-          catch(err){
-            console.log(chalkError("TFE | *** DROPBOX NETWORK LOAD FILE ERROR"
-              + " | " + folder + "/" + entry.name
-              + " | " + err
-            ));
-            return ;
-          }
-
-          }
-
-      }, function() {
-        if (statsObj.newBestNetwork) {
-
-          statsObj.newBestNetwork = false;
-          printNetworkObj("TFE | BEST NETWORK", currentBestNetwork);
-
-        }
-        console.log(chalkLog("\nTFE | ===================================\n"
-          + "TFE | LOADED DROPBOX NETWORKS"
-          + "\nTFE | FOLDER:        " + options.path
-          + "\nTFE | FILES FOUND:   " + response.entries.length + " FILES"
-          + "\nTFE | NN DOWNLOADED: " + statsObj.numNetworksLoaded
-          + "\nTFE | NN UPDATED:    " + statsObj.numNetworksUpdated
-          + "\nTFE | NN SKIPPED:    " + statsObj.numNetworksSkipped
-          + "\nTFE | NN IN HASHMAP: " + bestNetworkHashMap.size
-          + "\nTFE | NN AVAIL:      " + Object.keys(availableNeuralNetHashMap).length
-          + "\n===================================\n"
-        ));
-        if (callback !== undefined) { callback( null, {best: currentBestNetwork} ); }
+        resolve(currentBestNetwork);
       });
-    }
+    });
 
-  })
-  .catch(function(err) {
-    console.log(chalkError("TFE | *** loadBestNetworkDropboxFolder *** DROPBOX FILES LIST FOLDER ERROR"
-      + "\nTFE | OPTIONS\n" + jsonPrint(options)
-      + "\nTFE | ERROR: " + err
-      // + "\nTFE | ERROR\n" + jsonPrint(err)
-    ));
-    if (callback !== undefined) { callback(err, null); }
   });
+
 }
 
 function initUnfollowableUserSet(){
@@ -2460,7 +2263,6 @@ function initUnfollowableUserSet(){
     }
 
   });
-
 }
 
 function loadBestNeuralNetworkFiles() {
@@ -2469,29 +2271,22 @@ function loadBestNeuralNetworkFiles() {
 
   // slackSendMessage(statsObj.status);
 
-  return new Promise(function(resolve, reject){
+  return new Promise(async function(resolve, reject){
 
-    console.log(chalkLog("TFE | ... LOADING DROPBOX NEURAL NETWORKS"
+    console.log(chalkLog("TFE | ... LOADING NEURAL NETWORKS"
       + " | FOLDER: " + bestNetworkFolder
       + " | TIMEOUT: " + DEFAULT_DROPBOX_TIMEOUT + " MS"
     ));
 
-    loadBestNetworkDropboxFolder(bestNetworkFolder, function(err, results) {
-      if (err) {
-        console.log(chalkError("TFE | *** LOAD DROPBOX NETWORKS ERROR: " + err));
-        return reject(err);
-      }
-      
-      if (results.best === undefined) {
-        console.log(chalkAlert("TFE | ??? NO BEST DROPBOX NETWORK ???"));
-        return resolve(false);
-      }
-
-      printNetworkObj("TFE | LOADED BEST NN", results.best);
-
+    try {
+      const bestNetworkObj = await loadBestNetworksDatabase();
+      printNetworkObj("TFE | LOADED BEST NN", bestNetworkObj);
       resolve();
-
-    });
+    }
+    catch(err){
+      console.log(chalkError("TFE | *** LOAD BEST NETWORKS DATABASE ERROR: " + err));
+      return reject(err);
+    }
 
   });
 }
@@ -4773,7 +4568,6 @@ function initTwitter(threeceeUser) {
     }
 
   });
-
 }
 
 function initTwitterUsers(callback) {
@@ -5020,7 +4814,6 @@ function initConfig(cnf) {
     }
 
   });
-
 }
 
 function saveNetworkHashMap(params, callback) {
@@ -5212,8 +5005,6 @@ function initActivateNetworkQueueInterval(interval) {
 
   });
 }
-
-
 
 function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
