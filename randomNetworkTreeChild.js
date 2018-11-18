@@ -1,6 +1,22 @@
 /*jslint node: true */
 "use strict";
 
+const DEFAULT_INPUT_TYPES = [
+  "emoji", 
+  "hashtags",  
+  "images", 
+  "locations", 
+  "media", 
+  "mentions", 
+  "places", 
+  "sentiment", 
+  "urls", 
+  "userMentions", 
+  "words"
+];
+
+DEFAULT_INPUT_TYPES.sort();
+
 let start = process.hrtime();
 
 let elapsed_time = function(note){
@@ -353,8 +369,6 @@ function generateNetworkInputIndexed(params){
 
     let indexOffset = 0;
 
-    let mihm = params.maxInputHashMap || {};
-
     async.eachSeries(inputTypes, function(inputType, cb0){
 
       debug("RNT | GENERATE NET INPUT | TYPE: " + inputType);
@@ -366,10 +380,10 @@ function generateNetworkInputIndexed(params){
 
         if (histogramObj && (histogramObj[inputName] !== undefined)) {
 
-          if (mihm[inputType] === undefined) {
+          if (maxInputHashMap[inputType] === undefined) {
 
-            mihm[inputType] = {};
-            mihm[inputType][inputName] = histogramObj[inputName];
+            maxInputHashMap[inputType] = {};
+            maxInputHashMap[inputType][inputName] = histogramObj[inputName];
 
             networkInput[indexOffset + index] = 1;
 
@@ -392,9 +406,9 @@ function generateNetworkInputIndexed(params){
             // generate maxInputHashMap on the fly if needed
             // should backfill previous input values when new max is found
 
-            if (mihm[inputType][inputName] === undefined) {
+            if (maxInputHashMap[inputType][inputName] === undefined) {
 
-              mihm[inputType][inputName] = histogramObj[inputName];
+              maxInputHashMap[inputType][inputName] = histogramObj[inputName];
 
               console.log(chalkLog("RNT | MAX INPUT NAME UNDEFINED"
                 + " | IN ID: " + params.inputsObj.inputsId
@@ -405,25 +419,25 @@ function generateNetworkInputIndexed(params){
                 + " | " + histogramObj[inputName]
               ));
             }
-            else if (histogramObj[inputName] > mihm[inputType][inputName]) {
+            else if (histogramObj[inputName] > maxInputHashMap[inputType][inputName]) {
 
-              const previousMaxInput = mihm[inputType][inputName]; 
+              const previousMaxInput = maxInputHashMap[inputType][inputName]; 
 
-              mihm[inputType][inputName] = histogramObj[inputName];
+              maxInputHashMap[inputType][inputName] = histogramObj[inputName];
 
               console.log(chalkLog("RNT | MAX INPUT VALUE UPDATED"
                 + " | IN ID: " + params.inputsObj.inputsId
-                + " | IN LENGTH: " + networkInput.length
+                + " | CURR IN INDEX: " + networkInput.length + "/" + params.inputsObj.meta.numInputs
                 + " | @" + params.userScreenName
                 + " | TYPE: " + inputType
                 + " | " + inputName
                 + " | PREV MAX: " + previousMaxInput
-                + " | CURR MAX: " + mihm[inputType][inputName]
+                + " | CURR MAX: " + maxInputHashMap[inputType][inputName]
               ));
             }
 
-            const inputValue = (mihm[inputType][inputName] > 0) 
-              ? histogramObj[inputName]/mihm[inputType][inputName] 
+            const inputValue = (maxInputHashMap[inputType][inputName] > 0) 
+              ? histogramObj[inputName]/maxInputHashMap[inputType][inputName] 
               : 1;
 
             networkInput[indexOffset + index] = inputValue;
@@ -465,7 +479,6 @@ function generateNetworkInputIndexed(params){
     });
 
   });
-
 }
 
 let activateNetworkBusy = false;
@@ -514,8 +527,8 @@ function activateNetwork(params){
         userScreenName: params.user.screenName,
         histograms: userHistograms,
         languageAnalysis: languageAnalysis,
-        inputsObj: networkObj.inputsObj,
-        maxInputHashMap: maxInputHashMap
+        inputsObj: networkObj.inputsObj
+        // maxInputHashMap: maxInputHashMap
       };
 
       try {

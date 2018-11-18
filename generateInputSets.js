@@ -3,7 +3,7 @@
 
 const DEFAULT_INPUTS_FILE_PREFIX = "inputs";
 
-const inputTypes = [
+const DEFAULT_INPUT_TYPES = [
   "emoji", 
   "hashtags",  
   "images", 
@@ -17,7 +17,7 @@ const inputTypes = [
   "words"
 ];
 
-inputTypes.sort();
+DEFAULT_INPUT_TYPES.sort();
 
 const os = require("os");
 
@@ -215,7 +215,7 @@ statsObj.normalization.magnitude.max = -Infinity;
 
 statsObj.numLangAnalyzed = 0;
 
-inputTypes.forEach(function(type){
+DEFAULT_INPUT_TYPES.forEach(function(type){
 
   statsObj.histograms[type] = {};
 
@@ -1411,7 +1411,7 @@ async function main(){
 
     console.log("LOAD " + defaultHistogramsFolder);
 
-    async.each(inputTypes, async function(type){
+    async.each(DEFAULT_INPUT_TYPES, async function(type){
 
       let genInParams = {};
 
@@ -1493,7 +1493,7 @@ async function main(){
 
       globalInputsObj.meta.numInputs = 0;
 
-      async.eachSeries(inputTypes, function(type, cb){
+      async.eachSeries(DEFAULT_INPUT_TYPES, function(type, cb){
 
         if (globalInputsObj.meta.type[type] === undefined) { return cb(); }
 

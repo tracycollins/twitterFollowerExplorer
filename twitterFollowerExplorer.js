@@ -4,9 +4,9 @@
 
 const DEFAULT_THRECEE_AUTO_FOLLOW_USER = "altthreecee00";
 
-let inputTypes = [
+const DEFAULT_INPUT_TYPES = [
   "emoji", 
-  "hashtags", 
+  "hashtags",  
   "images", 
   "locations", 
   "media", 
@@ -18,7 +18,7 @@ let inputTypes = [
   "words"
 ];
 
-inputTypes.sort();
+DEFAULT_INPUT_TYPES.sort();
 
 let globalHistograms = {};
 let statsObj = {};
@@ -2475,7 +2475,7 @@ function updateHistograms(params, callback) {
 
   user.histograms = user.histograms || {};
   
-  async.each(inputTypes, function(type, cb0) {
+  async.each(DEFAULT_INPUT_TYPES, function(type, cb0) {
 
     user.histograms[type] = user.histograms[type] || {};
     histogramsIn[type] = histogramsIn[type] || {};
@@ -3601,7 +3601,7 @@ const fsmStates = {
         console.log(chalkInfo("TFE | SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
 
         // async.forEach(Object.keys(globalHistograms), function(type, cb){
-        async.forEach(inputTypes, function(type, cb){
+        async.forEach(DEFAULT_INPUT_TYPES, function(type, cb){
 
           // const type = t.toLowerCase();
 
@@ -3719,7 +3719,7 @@ const fsmStates = {
               clearInterval(waitFileSaveInterval);
 
               await resetAllTwitterUserState();
-              await resetGlobalHistograms({inputTypes: inputTypes});
+              await resetGlobalHistograms({inputTypes: DEFAULT_INPUT_TYPES});
 
               statsObj.users.totalFriendsCount = 0;
               statsObj.users.totalFriendsProcessed = 0;
