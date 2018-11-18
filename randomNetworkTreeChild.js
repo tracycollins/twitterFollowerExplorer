@@ -496,16 +496,15 @@ function activateNetwork(params){
     
     let userHistograms = params.user.histograms;
     let languageAnalysis = params.user.languageAnalysis;
-    let networkObj = {};
-    let generateNetworkInputIndexedParams = {};
-    let maxOutputIndex;
-    let networkInput;
-    let output;
-    let categoryAuto;
+    // let networkObj = {};
+    // let generateNetworkInputIndexedParams = {};
+    // let maxOutputIndex;
+    // let networkInput;
+    // let output;
 
     async.each(networksHashMap.keys(), async function(nnId){
 
-      networkObj = networksHashMap.get(nnId);
+      const networkObj = networksHashMap.get(nnId);
 
       networkOutput[nnId] = {};
       networkOutput[nnId].output = [];
@@ -521,7 +520,7 @@ function activateNetwork(params){
         return ("UNDEFINED NETWORK INPUTS OBJ");
       }
 
-      generateNetworkInputIndexedParams = {
+      const generateNetworkInputIndexedParams = {
         networkId: networkObj.networkId,
         userScreenName: params.user.screenName,
         histograms: userHistograms,
@@ -532,9 +531,9 @@ function activateNetwork(params){
 
       try {
 
-        networkInput = await generateNetworkInputIndexed(generateNetworkInputIndexedParams);
+        const networkInput = await generateNetworkInputIndexed(generateNetworkInputIndexedParams);
 
-        output = networkObj.network.activate(networkInput);
+        const output = networkObj.network.activate(networkInput);
 
         if (output.length !== 3) {
           console.log(chalkError("RNT | *** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
@@ -542,7 +541,9 @@ function activateNetwork(params){
           return("ZERO LENGTH NETWORK OUTPUT");
         }
 
-        maxOutputIndex = await indexOfMax(output);
+        const maxOutputIndex = await indexOfMax(output);
+
+        let categoryAuto;
 
         switch (maxOutputIndex) {
           case 0:
@@ -584,8 +585,8 @@ function activateNetwork(params){
 
       resolve({
         user: params.user,
-        categoryAuto: categoryAuto,
-        bestNetwork: statsObj.bestNetwork, 
+        // categoryAuto: categoryAuto,
+        // bestNetwork: statsObj.bestNetwork, 
         networkOutput: networkOutput
       });
 
@@ -964,13 +965,13 @@ function initActivateNetworkInterval(interval){
 
     activateNetworkIntervalBusy = false;
 
-    let activateNetworkObj = {};
-    let activateNetworkResults = {};
-    let generateNetworksOutputObj = {};
-    let category;
-    let expectedOutput = false;
-    let title;
-    let enableLog = false;
+    // let activateNetworkObj = {};
+    // let activateNetworkResults = {};
+    // let generateNetworksOutputObj = {};
+    // let category;
+    // let expectedOutput = false;
+    // let title;
+    // let enableLog = false;
 
     let messageObj = {};
     messageObj.op = "NETWORK_OUTPUT";
@@ -989,7 +990,7 @@ function initActivateNetworkInterval(interval){
 
         activateNetworkIntervalBusy = true;
 
-        activateNetworkObj = rxActivateNetworkQueue.shift();
+        const activateNetworkObj = rxActivateNetworkQueue.shift();
 
         messageObj.user = activateNetworkObj.user;
 
@@ -1035,14 +1036,16 @@ function initActivateNetworkInterval(interval){
           //   networkOutput:
           // });
 
-          activateNetworkResults = await activateNetwork({ user: activateNetworkObj.user });
+          const activateNetworkResults = await activateNetwork({ user: activateNetworkObj.user });
 
           // console.log("activateNetworkResults keys: " + Object.keys(activateNetworkResults));
           // console.log("activateNetworkResults.user.category: " + activateNetworkResults.user.category);
 
-          title = "@" + activateNetworkResults.user.screenName;
+          let title = "@" + activateNetworkResults.user.screenName;
 
-          category = activateNetworkResults.user.category;
+          let category = activateNetworkResults.user.category;
+          let expectedOutput;
+          let enableLog = false;
 
           if (category == "left") {
             expectedOutput = [1,0,0];
@@ -1090,7 +1093,7 @@ function initActivateNetworkInterval(interval){
             expectedOutput: expectedOutput
           }
 
-          generateNetworksOutputObj = await generateNetworksOutput(generateNetworksOutputParams);
+          const generateNetworksOutputObj = await generateNetworksOutput(generateNetworksOutputParams);
 
           if (Object.keys(generateNetworksOutputObj.bestNetwork).length > 0){
 
@@ -1106,9 +1109,6 @@ function initActivateNetworkInterval(interval){
 
                   statsObj.categorize.match += 1;
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
-
-                  // function printActivateResult(prefix, nn, category, categoryAuto, screenName){
-
 
                   printActivateResult(
                     "RNT | ✔✔✔ MATCH [" + rxActivateNetworkQueue.length + "]", 
