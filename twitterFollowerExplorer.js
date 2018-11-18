@@ -2035,143 +2035,132 @@ function updateglobalHistograms(params, callback) {
   });
 }
 
-function updateDbNetwork(params, callback) {
+function updateDbNetwork(params) {
 
-  statsObj.status = "UPDATE DB NETWORKS";
+  return new Promise(function(resolve, reject){
 
-  const networkObj = params.networkObj;
-  const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
-  const testHistoryItem = (params.testHistoryItem !== undefined) ? params.testHistoryItem : false;
-  const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : true;
-  const verbose = params.verbose || false;
+    statsObj.status = "UPDATE DB NETWORKS";
 
-  const query = { networkId: networkObj.networkId };
+    const networkObj = params.networkObj;
+    const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
+    const testHistoryItem = (params.testHistoryItem !== undefined) ? params.testHistoryItem : false;
+    const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : true;
+    const verbose = params.verbose || false;
 
-  let update = {};
+    const query = { networkId: networkObj.networkId };
 
-  update["$setOnInsert"] = { 
-    seedNetworkId: networkObj.seedNetworkId,
-    seedNetworkRes: networkObj.seedNetworkRes,
-    network: networkObj.network,
-    successRate: networkObj.successRate, 
-    numInputs: networkObj.numInputs,
-    numOutputs: networkObj.numOutputs,
-    inputsId: networkObj.inputsId,
-    inputsObj: networkObj.inputsObj,
-    outputs: networkObj.outputs,
-    evolve: networkObj.evolve,
-    test: networkObj.test
-  };
+    let update = {};
 
-  update["$set"] = { 
-    matchRate: networkObj.matchRate, 
-    overallMatchRate: networkObj.overallMatchRate,
-  };
+    update["$setOnInsert"] = { 
+      seedNetworkId: networkObj.seedNetworkId,
+      seedNetworkRes: networkObj.seedNetworkRes,
+      network: networkObj.network,
+      successRate: networkObj.successRate, 
+      numInputs: networkObj.numInputs,
+      numOutputs: networkObj.numOutputs,
+      inputsId: networkObj.inputsId,
+      inputsObj: networkObj.inputsObj,
+      outputs: networkObj.outputs,
+      evolve: networkObj.evolve,
+      test: networkObj.test
+    };
 
-  if (incrementTestCycles) { update["$inc"] = { testCycles: 1 }; }
-  
-  if (testHistoryItem) { 
-    update["$push"] = { testCycleHistory: testHistoryItem };
-  }
-  else if (addToTestHistory) {
-    update["$addToSet"] = { testCycleHistory: { $each: networkObj.testCycleHistory } };
-  }
+    update["$set"] = { 
+      matchRate: networkObj.matchRate, 
+      overallMatchRate: networkObj.overallMatchRate,
+    };
 
-  const options = {
-    new: true,
-    upsert: true,
-    setDefaultsOnInsert: true,
-  };
-
-  NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
-
-    if (err) {
-      console.log(chalkError("TFE| *** updateDbNetwork | NETWORK FIND ONE ERROR: " + err));
-      return callback(err, null);
+    if (incrementTestCycles) { update["$inc"] = { testCycles: 1 }; }
+    
+    if (testHistoryItem) { 
+      update["$push"] = { testCycleHistory: testHistoryItem };
+    }
+    else if (addToTestHistory) {
+      update["$addToSet"] = { testCycleHistory: { $each: networkObj.testCycleHistory } };
     }
 
-    if (verbose) { printNetworkObj("TFE | +++ NN DB UPDATED", nnDbUpdated); }
+    const options = {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    };
 
-    callback(null, nnDbUpdated);
+    NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
 
-  });
-}
-
-function processBestNetwork(params, callback){
-
-  statsObj.status = "PROCESS BEST NN";
-
-  updateDbNetwork({networkObj: params.networkObj, addToTestHistory: true}, function(err, networkObj){
-
-    if (err) {
-      console.log(chalkError("TFE | *** processBestNetwork *** SAVE DB ERROR: " + err));
-      if (callback !== undefined) { return callback(err, null); }
-    }
-
-    let folder = params.folder || bestNetworkFolder;
-    // let entry = {};
-
-    // if (params.entry === undefined) {
-    //   entry.name = networkObj.networkId + ".json";
-    //   entry.content_hash = false;
-    //   entry.client_modified = moment().valueOf();
-    // }
-    // else {
-    //   entry = params.entry;
-    // }
-
-    // const bnhmObj = {
-    //   entry: entry,
-    //   networkObj: networkObj
-    // };
-
-    bestNetworkHashMap.set(networkObj.networkId, networkObj);
-
-    saveFileQueue.push({folder: folder, file: entry.name, obj: networkObj });
-
-    if (
-        !currentBestNetwork.isValid
-        || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)
-      ) 
-    {
-
-      currentBestNetwork = networkObj;
-      currentBestNetwork.isValid = true;
-
-      prevBestNetworkId = bestRuntimeNetworkId;
-      bestRuntimeNetworkId = networkObj.networkId;
-
-      statsObj.newBestNetwork = true;
-
-      updateBestNetworkStats(networkObj);
-
-      if (hostname === "google") {
-
-        // updateBestNetworkStats(networkObj);
-
-        const fileObj = {
-          networkId: bestRuntimeNetworkId,
-          successRate: networkObj.successRate,
-          matchRate:  networkObj.matchRate,
-          overallMatchRate:  networkObj.overallMatchRate,
-          testCycles:  networkObj.testCycles,
-          testCycleHistory:  networkObj.testCycleHistory
-        };
-
-        saveCache.set(
-          bestRuntimeNetworkFileName,
-          {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj }
-        );
+      if (err) {
+        console.log(chalkError("TFE| *** updateDbNetwork | NETWORK FIND ONE ERROR: " + err));
+        return reject(err);
       }
 
-      if (callback !== undefined) { callback(null, null); }
-    }
-    else {
-      if (callback !== undefined) { callback(null, null); }
-    }
+      if (verbose) { printNetworkObj("TFE | +++ NN DB UPDATED", nnDbUpdated); }
+
+      resolve(nnDbUpdated);
+
+    });
 
   });
+
 }
+
+// function processBestNetwork(params){
+
+//   return new Promise(async function(resolve, reject){
+
+//     statsObj.status = "PROCESS BEST NN";
+
+//     try {
+
+//       let networkObj = await updateDbNetwork({networkObj: params.networkObj, addToTestHistory: true});
+
+//       let folder = params.folder || bestNetworkFolder;
+   
+//       bestNetworkHashMap.set(networkObj.networkId, networkObj);
+
+//       saveFileQueue.push({folder: folder, file: entry.name, obj: networkObj });
+
+//       if (!currentBestNetwork.isValid || (networkObj.overallMatchRate > currentBestNetwork.overallMatchRate)) {
+
+//         currentBestNetwork = networkObj;
+//         currentBestNetwork.isValid = true;
+
+//         prevBestNetworkId = bestRuntimeNetworkId;
+//         bestRuntimeNetworkId = networkObj.networkId;
+
+//         statsObj.newBestNetwork = true;
+
+//         updateBestNetworkStats(networkObj);
+
+//         if (hostname === "google") {
+
+//           const fileObj = {
+//             networkId: bestRuntimeNetworkId,
+//             successRate: networkObj.successRate,
+//             matchRate:  networkObj.matchRate,
+//             overallMatchRate:  networkObj.overallMatchRate,
+//             testCycles:  networkObj.testCycles,
+//             testCycleHistory:  networkObj.testCycleHistory
+//           };
+
+//           saveCache.set(
+//             bestRuntimeNetworkFileName,
+//             {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj }
+//           );
+//         }
+
+//         resolve();
+//       }
+//       else {
+//         resolve();
+//       }
+//     }
+//     catch(err){
+//       console.log(chalkError("TFE | *** processBestNetwork *** SAVE DB ERROR: " + err));
+//       reject(err);
+//     }
+
+//   });
+
+// }
 
 function loadBestNetworksDatabase(params) {
   return new Promise(function(resolve, reject){
@@ -2549,30 +2538,56 @@ function loadBestNetworksDropbox(params) {
           return;
         }
 
-        const entryNameArray = entry.name.split(".");
-        const networkId = entryNameArray[0];
-
-        if (bestNetworkHashMap.has(networkId)){
-          console.log(chalkLog("TFE | LOAD BEST NETWORK HASHMAP HIT ... SKIP | " + networkId));
-          return;
-        }
+        // if (bestNetworkHashMap.has(networkId)){
+        //   console.log(chalkLog("TFE | LOAD BEST NETWORK HASHMAP HIT ... SKIP | " + networkId));
+        //   return;
+        // }
 
         try {
-          const nnObj = await loadFileRetry({folder: folder, file: entry.name});
 
-          if (!nnObj || nnObj=== undefined) {
+          const entryNameArray = entry.name.split(".");
+          const networkId = entryNameArray[0];
+
+          const networkObj = await loadFileRetry({folder: folder, file: entry.name});
+
+          if (!networkObj || networkObj=== undefined) {
             return reject(err);
           }
 
-          bestNetworkHashMap.set(nnObj.networkId, nnObj);
+          if (!inputsIdSet.has(networkObj.inputsId)){
+            console.log(chalkAlert("TFE | LOAD BEST NETWORK HASHMAP INPUTS ID MISS ... SKIP HM ADD"
+              + " | IN: " + networkObj.numInputs
+              + " | " + networkId 
+              + " | INPUTS ID: " + networkObj.inputsId 
+            ));
+          }
+          else if (!bestNetworkHashMap.has(networkId)){
 
-          console.log(chalkInfo("TFE | +++ DROPBOX NETWORK"
-            + " [" + bestNetworkHashMap.size + " NNs IN HM]"
-            + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
-            + " | NETWORK ID: " + networkId
-            + " | " + entry.name
-            // + "\n" + jsonPrint(Object.keys(networkDropboxFileObj))
-          ));
+            bestNetworkHashMap.set(networkObj.networkId, networkObj);
+
+            console.log(chalkInfo("TFE | +++ DROPBOX NETWORK"
+              + " [" + bestNetworkHashMap.size + " NNs IN HM]"
+              + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
+              + " | " + networkId
+              + " | INPUTS ID: " + networkObj.inputsId 
+              + " | IN: " + networkObj.numInputs
+            ));
+
+          }
+
+          try {
+            const updateDbNetworkParams = {
+              networkObj: networkObj,
+              incrementTestCycles: false,
+              addToTestHistory: false,
+              verbose: true
+            };
+            const nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
+          }
+          catch(err){
+            console.log(chalkError("TFE | *** LOAD DROPBOX NETWORK / NN DB UPDATE ERROR: " + err));
+            return(err);
+          }
 
           return;
 
@@ -5275,7 +5290,7 @@ function updateNetworkStats(params, callback) {
   let newNnDb;
   let nnObj;
 
-  async.eachSeries(nnIds, function(nnId, cb) {
+  async.eachSeries(nnIds, async function(nnId) {
 
     if (bestNetworkHashMap.has(nnId)) {
 
@@ -5302,25 +5317,26 @@ function updateNetworkStats(params, callback) {
         addToTestHistory: false
       };
 
-      updateDbNetwork(updateDbNetworkParams, function(err, nnDbUpdated){
-        if (err) {
-          console.log(chalkError("TFE | *** NN DB UPDATE ERROR: " + err));
-          return cb();
-        }
+      try {
+        const nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
+      }
+      catch(err){
+        console.log(chalkError("TFE | *** NN DB UPDATE ERROR: " + err));
+        return(err);
+      }
 
-        bestNetworkHashMap.set(nnDbUpdated.networkId, nnDbUpdated);
+      bestNetworkHashMap.set(nnDbUpdated.networkId, nnDbUpdated);
 
-        printNetworkObj("TFE | UPDATE NN STATS", nnDbUpdated);
+      printNetworkObj("TFE | UPDATE NN STATS", nnDbUpdated);
 
-        cb();
-      });
+      return;
 
     }
     else {
       console.log(chalkAlert("TFE | ??? NETWORK NOT IN BEST NETWORK HASHMAP ???"
         + " | NNID: " + nnId
       ));
-      cb();
+      return;
     }
   }, function(err) {
 
