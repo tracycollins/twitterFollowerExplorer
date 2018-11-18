@@ -56,10 +56,9 @@ const util = require("util");
 const moment = require("moment");
 const treeify = require("treeify");
 
-require("isomorphic-fetch");
+const fetch = require("isomorphic-fetch");
 
 const Dropbox = require("dropbox").Dropbox;
-// const Dropbox = require("./js/dropbox").Dropbox;
 
 const async = require("async");
 const debug = require("debug")("rnt");
@@ -1045,28 +1044,44 @@ function initActivateNetworkInterval(interval){
 
           category = activateNetworkResults.user.category;
 
-          if (category) {
-
-
-            switch (category) {
-              case "left":
-                expectedOutput = [1,0,0];
-                title = title + " | MKW: LEFT";
-              break;
-              case "neutral":
-                expectedOutput = [0,1,0];
-                title = title + " | MKW: NEUTRAL";
-              break;
-              case "right":
-                expectedOutput = [0,0,1];
-                title = title + " | MKW: RIGHT";
-              break;
-              default:
-                expectedOutput = [0,0,0];
-                title = title + " | MKW: ---";
-                enableLog = false;
-             }
+          if (category == "left") {
+            expectedOutput = [1,0,0];
+            title = title + " | MKW: LEFT";
           }
+          else if (category == "neutral") {
+            expectedOutput = [0,1,0];
+            title = title + " | MKW: NEUTRAL";
+          }
+          else if (category == "right") {
+            expectedOutput = [0,0,1];
+            title = title + " | MKW: RIGHT";
+          }
+          else {
+            category = false;
+            expectedOutput = [0,0,0];
+            title = title + " | MKW: ---";
+            enableLog = false;
+          }
+
+          //   switch (category) {
+          //     case "left":
+          //       expectedOutput = [1,0,0];
+          //       title = title + " | MKW: LEFT";
+          //     break;
+          //     case "neutral":
+          //       expectedOutput = [0,1,0];
+          //       title = title + " | MKW: NEUTRAL";
+          //     break;
+          //     case "right":
+          //       expectedOutput = [0,0,1];
+          //       title = title + " | MKW: RIGHT";
+          //     break;
+          //     default:
+          //       expectedOutput = [0,0,0];
+          //       title = title + " | MKW: ---";
+          //       enableLog = false;
+          //    }
+          // }
 
           generateNetworksOutputParams = {
             enableLog: enableLog,
@@ -1541,7 +1556,10 @@ debug("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN);
 debug("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
 debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
-const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
+const dropboxClient = new Dropbox({ 
+  accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN,
+  fetch: fetch
+});
 
 function saveFile (path, file, jsonObj, callback){
 

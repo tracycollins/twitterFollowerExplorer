@@ -1,8 +1,6 @@
  /*jslint node: true */
 "use strict";
 
-require("isomorphic-fetch");
-
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const ONE_SECOND = 1000 ;
