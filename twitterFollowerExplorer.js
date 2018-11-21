@@ -2896,349 +2896,371 @@ function updateHistograms(params, callback) {
   });
 }
 
-function generateAutoCategory(user, callback) {
+function generateAutoCategory(params) {
+  return new Promise(function(resolve, reject){
 
-  statsObj.status = "GEN AUTO CAT";
+    statsObj.status = "GEN AUTO CAT";
 
-  async.waterfall([
-    function userScreenName(cb) {
-      if (user.screenName !== undefined) {
-        async.setImmediate(function() {
-          cb(null, "@" + user.screenName.toLowerCase());
-        });
-      }
-      else {
-        async.setImmediate(function() {
-          cb(null, null);
-        });
-      }
-    },
-    function userName(text, cb) {
-      if (user.name !== undefined) {
-        if (text) {
-          async.setImmediate(function() {
-            cb(null, text + " | " + user.name);
-          });
-        }
-        else {
-          async.setImmediate(function() {
-            cb(null, user.name);
-          });
-        }
-      }
-      else {
-        if (text) {
-          async.setImmediate(function() {
-            cb(null, text);
-          });
-        }
-        else {
-          async.setImmediate(function() {
-            cb(null, null);
-          });
-        }
-      }
-    },
-    function userStatusText(text, cb) {
-      if ((user.status !== undefined)
-        && user.status
-        && user.status.text) {
-        if (text) {
-          async.setImmediate(function() {
-            cb(null, text + "\n" + user.status.text);
-          });
-        }
-        else {
-          async.setImmediate(function() {
-            cb(null, user.status.text);
-          });
-        }
-      }
-      else {
-        if (text) {
-          async.setImmediate(function() {
-            cb(null, text);
-          });
-        }
-        else {
-          async.setImmediate(function() {
-            cb(null, null);
-          });
-        }
-      }
-    },
-    function userRetweetText(text, cb) {
-      if ((user.retweeted_status !== undefined)
-        && user.retweeted_status
-        && user.retweeted_status.text) {
-        console.log(chalkTwitter("TFE | RT\n" + jsonPrint(user.retweeted_status.text)));
-        if (text) {
-          async.setImmediate(function() {
-            cb(null, text + "\n" + user.retweeted_status.text);
-          });
-        }
-        else {
-          async.setImmediate(function() {
-            cb(null, user.retweeted_status.text);
-          });
-        }
-      }
-      else {
-        if (text) {
-          async.setImmediate(function() {
-            cb(null, text);
-          });
-        }
-        else {
-          async.setImmediate(function() {
-            cb(null, null);
-          });
-        }
-      }
-    },
-    function userLocation(text, cb) {
+    // need separate user histograms for:
 
-      if ((user.location !== undefined) && user.location) {
-        if (text) {
-          async.setImmediate(function() {
-            cb(null, text + "\n" + user.location);
-          });
-        }
-        else {
-          async.setImmediate(function() {
-            cb(null, user.location);
-          });
-        }
-      }
-      else {
-        if (text) {
-          async.setImmediate(function() {
-            cb(null, text);
-          });
-        }
-        else {
-          async.setImmediate(function() {
-            cb(null, null);
-          });
-        }
-      }
-    },
-    function userDescriptionText(text, cb) {
-      if ((user.description !== undefined) && user.description) {
-        if (text) {
-          async.setImmediate(function() {
-            cb(null, text + "\n" + user.description);
-          });
-        }
-        else {
-          async.setImmediate(function() {
-            cb(null, user.description);
-          });
-        }
-      }
-      else {
-        if (text) {
-          async.setImmediate(function() {
-            cb(null, text);
-          });
-        }
-        else {
-          async.setImmediate(function() {
-            cb(null, null);
-          });
-        }
-      }
-    },
-    function userBannerImage(text, cb) {
+    // 1) USER PROFILE PROPERTIES: 
+    //    screenName, userName, description, location, bannerImage, followers?, friends?
 
-      if (!user.histograms || (user.histograms === undefined)) { 
-        user.markModified("histograms");
-        user.histograms = {}; 
-        user.histograms.images = {}; 
-      }
-      else if (user.histograms.images === undefined) { 
-        user.histograms.images = {}; 
-      }
+    // 2) USER TWEET PROPERTIES:
+    //    hashtags, userMentions, urls, places, media, etc.
 
-      if (
-        (enableImageAnalysis && !user.bannerImageAnalyzed && user.bannerImageUrl)
-        || (enableImageAnalysis && user.bannerImageUrl && (user.bannerImageAnalyzed !== user.bannerImageUrl))
-        || (configuration.forceImageAnalysis && user.bannerImageUrl)
-      ) {
-
-        twitterImageParser.parseImage(
-          user.bannerImageUrl,
-          {screenName: user.screenName, category: user.category, updateglobalHistograms: true},
-          function(err, results) {
-            if (err) {
-              if (err.code === 8) {
-                console.log(chalkAlert("TFE | *** PARSE BANNER IMAGE QUOTA ERROR"
-                ));
-                enableImageAnalysis = false;
-                startImageQuotaTimeout();
-              }
-              else if (err.code === 7) {
-                console.log(chalkAlert("TFE | *** PARSE BANNER IMAGE CLOUD VISION API ERROR"
-                ));
-                enableImageAnalysis = false;
-                startImageQuotaTimeout();
-              }
-              else{
-                console.log(chalkError("TFE | *** PARSE BANNER IMAGE ERROR"
-                  // + "\nREQ\n" + jsonPrint(results)
-                  + " | ERR: " + err
-                  + "\nERR\n" + jsonPrint(err)
-                ));
-              }
-              cb(null, text);
-            }
-            else {
-
-              if (user.bannerImageAnalyzed 
-                && user.bannerImageUrl 
-                && (user.bannerImageAnalyzed !== user.bannerImageUrl)) {
-                console.log(chalk.bold.blue("TFE | ^^^ BANNER IMG UPDATED "
-                  + " | @" + user.screenName
-                  + " | IMG ANALYZED: " + user.bannerImageAnalyzed
-                  + " | " + user.bannerImageUrl
-                ));
-              }
-              else {
-                console.log(chalk.bold.blue("TFE | +++ BANNER IMG ANALYZED"
-                  + " | @" + user.screenName
-                  + " | IMG ANALYZED: " + user.bannerImageAnalyzed
-                  + " | " + user.bannerImageUrl
-                ));
-              }
-
-              user.bannerImageAnalyzed = user.bannerImageUrl;
-              user.markModified("bannerImageAnalyzed");
-
-              if (Object.keys(results.images).length > 0) {
-
-                async.each(Object.keys(results.images), function(item, cb0){
-
-                  if (user.histograms.images[item] === undefined) { 
-                    user.histograms.images[item] = results.images[item];
-                    debug(chalk.bold.blue("TFE | +++ USER IMG HIST ADD"
-                      + " | @" + user.screenName
-                      + " | " + item + ": " + results.images[item]
-                    ));
-                  }
-                  else {
-                    console.log(chalk.bold.blue("TFE | ... USER IMG HIST HIT"
-                      + " | @" + user.screenName
-                      + " | " + item
-                      + " | IN HIST: " + user.histograms.images[item]
-                      + " | IN BANNER: " + item + ": " + results.images[item]
-                    ));
-                  }
-
-                  cb0();
-
-                }, function(){
-
-                  cb(null, text);
-
-                });
-              }
-              else {
-                cb(null, text);
-              }
-
-            }
-          }
-        );
-      }
-      else {
-        async.setImmediate(function() {
-          cb(null, text);
-        });
-      }
-    }
-  ], function (err, text, bannerResults) {
-    if (err) {
-      console.log(chalkError("TFE | *** ERROR generateAutoCategory: " + err));
-      callback(err, null);
-    }
-
-    if (!text) { text = " "; }
-
-    let parseTextOptions = {};
-    parseTextOptions.updateglobalHistograms = true;
-
-    if (user.category) {
-      parseTextOptions.category = user.category;
-    }
-    else {
-      parseTextOptions.category = false;
-    }
-
-    twitterTextParser.parseText(text, parseTextOptions, function(err, hist) {
-
-      if (err) {
-        console.log(chalkError("TFE | *** TWITTER TEXT PARSER ERROR: " + err));
-        callback(new Error(err), null);
-      }
-
-      updateHistograms({user: user, histograms: hist}, function(err, updatedUser) {
-
-        if (err) {
-          console.trace(chalkError("TFE | *** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
-          console.trace(chalkError("TFE | *** UPDATE USER HISTOGRAMS ERROR\nUSER\n" + jsonPrint(user)));
-          callback(new Error(err), null);
-        }
-
-        updatedUser.inputHits = 0;
-
-        const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
-        const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
-
-        statsObj.normalization.score.min = Math.min(score, statsObj.normalization.score.min);
-        statsObj.normalization.score.max = Math.max(score, statsObj.normalization.score.max);
-        statsObj.normalization.magnitude.min = Math.min(mag, statsObj.normalization.magnitude.min);
-        statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
-        statsObj.analyzer.total += 1;
-
-        if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
-          debug(chalkLog("TFE | >>>> LANG ANALYZE"
-            + " [ ANLd: " + statsObj.analyzer.analyzed
-            + " [ SKPd: " + statsObj.analyzer.skipped
-            + " | " + updatedUser.nodeId
-            + " | @" + updatedUser.screenName
-            + " | LAd: " + updatedUser.languageAnalyzed
-            + " | LA: S: " + score.toFixed(2)
-            + " M: " + mag.toFixed(2)
-          ));
-
-          if ((langAnalyzer !== undefined) && langAnalyzer) {
-            langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function() {
-              statsObj.analyzer.analyzed += 1;
-            });
-          }
-        }
-        else {
-          statsObj.analyzer.skipped += 1;
-          debug(chalkLog("SKIP LANG ANALYZE"
-            + " [ ANLd: " + statsObj.analyzer.analyzed
-            + " [ SKPd: " + statsObj.analyzer.skipped
-            + " | " + updatedUser.nodeId
-            + " | @" + updatedUser.screenName
-            + " | LAd: " + updatedUser.languageAnalyzed
-            + " | LA: S: " + score.toFixed(2)
-            + " M: " + mag.toFixed(2)
-          ));
-        }
+    // only update histograms on changes.  accumulate histograms
 
 
-        activateNetworkQueue.push({user: updatedUser, normalization: statsObj.normalization});
+    // async.each()
 
-        callback(null, updatedUser);
-      });
-
-    });
   });
 }
+
+
+// function generateAutoCategory(user, callback) {
+
+//   statsObj.status = "GEN AUTO CAT";
+
+//   async.waterfall([
+//     function userScreenName(cb) {
+//       if (user.screenName !== undefined) {
+//         async.setImmediate(function() {
+//           cb(null, "@" + user.screenName.toLowerCase());
+//         });
+//       }
+//       else {
+//         async.setImmediate(function() {
+//           cb(null, null);
+//         });
+//       }
+//     },
+//     function userName(text, cb) {
+//       if (user.name !== undefined) {
+//         if (text) {
+//           async.setImmediate(function() {
+//             cb(null, text + " | " + user.name);
+//           });
+//         }
+//         else {
+//           async.setImmediate(function() {
+//             cb(null, user.name);
+//           });
+//         }
+//       }
+//       else {
+//         if (text) {
+//           async.setImmediate(function() {
+//             cb(null, text);
+//           });
+//         }
+//         else {
+//           async.setImmediate(function() {
+//             cb(null, null);
+//           });
+//         }
+//       }
+//     },
+//     function userStatusText(text, cb) {
+//       if ((user.status !== undefined)
+//         && user.status
+//         && user.status.text) {
+//         if (text) {
+//           async.setImmediate(function() {
+//             cb(null, text + "\n" + user.status.text);
+//           });
+//         }
+//         else {
+//           async.setImmediate(function() {
+//             cb(null, user.status.text);
+//           });
+//         }
+//       }
+//       else {
+//         if (text) {
+//           async.setImmediate(function() {
+//             cb(null, text);
+//           });
+//         }
+//         else {
+//           async.setImmediate(function() {
+//             cb(null, null);
+//           });
+//         }
+//       }
+//     },
+//     function userRetweetText(text, cb) {
+//       if ((user.retweeted_status !== undefined)
+//         && user.retweeted_status
+//         && user.retweeted_status.text) {
+//         console.log(chalkTwitter("TFE | RT\n" + jsonPrint(user.retweeted_status.text)));
+//         if (text) {
+//           async.setImmediate(function() {
+//             cb(null, text + "\n" + user.retweeted_status.text);
+//           });
+//         }
+//         else {
+//           async.setImmediate(function() {
+//             cb(null, user.retweeted_status.text);
+//           });
+//         }
+//       }
+//       else {
+//         if (text) {
+//           async.setImmediate(function() {
+//             cb(null, text);
+//           });
+//         }
+//         else {
+//           async.setImmediate(function() {
+//             cb(null, null);
+//           });
+//         }
+//       }
+//     },
+//     function userLocation(text, cb) {
+
+//       if ((user.location !== undefined) && user.location) {
+//         if (text) {
+//           async.setImmediate(function() {
+//             cb(null, text + "\n" + user.location);
+//           });
+//         }
+//         else {
+//           async.setImmediate(function() {
+//             cb(null, user.location);
+//           });
+//         }
+//       }
+//       else {
+//         if (text) {
+//           async.setImmediate(function() {
+//             cb(null, text);
+//           });
+//         }
+//         else {
+//           async.setImmediate(function() {
+//             cb(null, null);
+//           });
+//         }
+//       }
+//     },
+//     function userDescriptionText(text, cb) {
+//       if ((user.description !== undefined) && user.description) {
+//         if (text) {
+//           async.setImmediate(function() {
+//             cb(null, text + "\n" + user.description);
+//           });
+//         }
+//         else {
+//           async.setImmediate(function() {
+//             cb(null, user.description);
+//           });
+//         }
+//       }
+//       else {
+//         if (text) {
+//           async.setImmediate(function() {
+//             cb(null, text);
+//           });
+//         }
+//         else {
+//           async.setImmediate(function() {
+//             cb(null, null);
+//           });
+//         }
+//       }
+//     },
+//     function userBannerImage(text, cb) {
+
+//       if (!user.histograms || (user.histograms === undefined)) { 
+//         user.markModified("histograms");
+//         user.histograms = {}; 
+//         user.histograms.images = {}; 
+//       }
+//       else if (user.histograms.images === undefined) { 
+//         user.histograms.images = {}; 
+//       }
+
+//       if (
+//         (enableImageAnalysis && !user.bannerImageAnalyzed && user.bannerImageUrl)
+//         || (enableImageAnalysis && user.bannerImageUrl && (user.bannerImageAnalyzed !== user.bannerImageUrl))
+//         || (configuration.forceImageAnalysis && user.bannerImageUrl)
+//       ) {
+
+//         twitterImageParser.parseImage(
+//           user.bannerImageUrl,
+//           {screenName: user.screenName, category: user.category, updateglobalHistograms: true},
+//           function(err, results) {
+//             if (err) {
+//               if (err.code === 8) {
+//                 console.log(chalkAlert("TFE | *** PARSE BANNER IMAGE QUOTA ERROR"
+//                 ));
+//                 enableImageAnalysis = false;
+//                 startImageQuotaTimeout();
+//               }
+//               else if (err.code === 7) {
+//                 console.log(chalkAlert("TFE | *** PARSE BANNER IMAGE CLOUD VISION API ERROR"
+//                 ));
+//                 enableImageAnalysis = false;
+//                 startImageQuotaTimeout();
+//               }
+//               else{
+//                 console.log(chalkError("TFE | *** PARSE BANNER IMAGE ERROR"
+//                   // + "\nREQ\n" + jsonPrint(results)
+//                   + " | ERR: " + err
+//                   + "\nERR\n" + jsonPrint(err)
+//                 ));
+//               }
+//               cb(null, text);
+//             }
+//             else {
+
+//               if (user.bannerImageAnalyzed 
+//                 && user.bannerImageUrl 
+//                 && (user.bannerImageAnalyzed !== user.bannerImageUrl)) {
+//                 console.log(chalk.bold.blue("TFE | ^^^ BANNER IMG UPDATED "
+//                   + " | @" + user.screenName
+//                   + " | IMG ANALYZED: " + user.bannerImageAnalyzed
+//                   + " | " + user.bannerImageUrl
+//                 ));
+//               }
+//               else {
+//                 console.log(chalk.bold.blue("TFE | +++ BANNER IMG ANALYZED"
+//                   + " | @" + user.screenName
+//                   + " | IMG ANALYZED: " + user.bannerImageAnalyzed
+//                   + " | " + user.bannerImageUrl
+//                 ));
+//               }
+
+//               user.bannerImageAnalyzed = user.bannerImageUrl;
+//               user.markModified("bannerImageAnalyzed");
+
+//               if (Object.keys(results.images).length > 0) {
+
+//                 async.each(Object.keys(results.images), function(item, cb0){
+
+//                   if (user.histograms.images[item] === undefined) { 
+//                     user.histograms.images[item] = results.images[item];
+//                     debug(chalk.bold.blue("TFE | +++ USER IMG HIST ADD"
+//                       + " | @" + user.screenName
+//                       + " | " + item + ": " + results.images[item]
+//                     ));
+//                   }
+//                   else {
+//                     console.log(chalk.bold.blue("TFE | ... USER IMG HIST HIT"
+//                       + " | @" + user.screenName
+//                       + " | " + item
+//                       + " | IN HIST: " + user.histograms.images[item]
+//                       + " | IN BANNER: " + item + ": " + results.images[item]
+//                     ));
+//                   }
+
+//                   cb0();
+
+//                 }, function(){
+
+//                   cb(null, text);
+
+//                 });
+//               }
+//               else {
+//                 cb(null, text);
+//               }
+
+//             }
+//           }
+//         );
+//       }
+//       else {
+//         async.setImmediate(function() {
+//           cb(null, text);
+//         });
+//       }
+//     }
+//   ], function (err, text, bannerResults) {
+//     if (err) {
+//       console.log(chalkError("TFE | *** ERROR generateAutoCategory: " + err));
+//       callback(err, null);
+//     }
+
+//     if (!text) { text = " "; }
+
+//     let parseTextOptions = {};
+//     parseTextOptions.updateglobalHistograms = true;
+
+//     if (user.category) {
+//       parseTextOptions.category = user.category;
+//     }
+//     else {
+//       parseTextOptions.category = false;
+//     }
+
+//     twitterTextParser.parseText(text, parseTextOptions, function(err, hist) {
+
+//       if (err) {
+//         console.log(chalkError("TFE | *** TWITTER TEXT PARSER ERROR: " + err));
+//         callback(new Error(err), null);
+//       }
+
+//       updateHistograms({user: user, histograms: hist}, function(err, updatedUser) {
+
+//         if (err) {
+//           console.trace(chalkError("TFE | *** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
+//           console.trace(chalkError("TFE | *** UPDATE USER HISTOGRAMS ERROR\nUSER\n" + jsonPrint(user)));
+//           callback(new Error(err), null);
+//         }
+
+//         updatedUser.inputHits = 0;
+
+//         const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
+//         const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
+
+//         statsObj.normalization.score.min = Math.min(score, statsObj.normalization.score.min);
+//         statsObj.normalization.score.max = Math.max(score, statsObj.normalization.score.max);
+//         statsObj.normalization.magnitude.min = Math.min(mag, statsObj.normalization.magnitude.min);
+//         statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
+//         statsObj.analyzer.total += 1;
+
+//         if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
+//           debug(chalkLog("TFE | >>>> LANG ANALYZE"
+//             + " [ ANLd: " + statsObj.analyzer.analyzed
+//             + " [ SKPd: " + statsObj.analyzer.skipped
+//             + " | " + updatedUser.nodeId
+//             + " | @" + updatedUser.screenName
+//             + " | LAd: " + updatedUser.languageAnalyzed
+//             + " | LA: S: " + score.toFixed(2)
+//             + " M: " + mag.toFixed(2)
+//           ));
+
+//           if ((langAnalyzer !== undefined) && langAnalyzer) {
+//             langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function() {
+//               statsObj.analyzer.analyzed += 1;
+//             });
+//           }
+//         }
+//         else {
+//           statsObj.analyzer.skipped += 1;
+//           debug(chalkLog("SKIP LANG ANALYZE"
+//             + " [ ANLd: " + statsObj.analyzer.analyzed
+//             + " [ SKPd: " + statsObj.analyzer.skipped
+//             + " | " + updatedUser.nodeId
+//             + " | @" + updatedUser.screenName
+//             + " | LAd: " + updatedUser.languageAnalyzed
+//             + " | LA: S: " + score.toFixed(2)
+//             + " M: " + mag.toFixed(2)
+//           ));
+//         }
+
+
+//         activateNetworkQueue.push({user: updatedUser, normalization: statsObj.normalization});
+
+//         callback(null, updatedUser);
+//       });
+
+//     });
+//   });
+// }
 
 function processUser(threeceeUser, userIn, callback) {
 
