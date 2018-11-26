@@ -2181,9 +2181,11 @@ function loadBestNetworksDatabase(params) {
     let query = {};
     query.inputsId = { "$in": inputsIdArray };
 
+    let limit = params.limit || 100;
+
     console.log(chalkAlert("query\n" + jsonPrint(query)));
 
-    NeuralNetwork.find(query).lean().sort({"overallMatchRate": -1}).exec(function(err, nnArray){
+    NeuralNetwork.find(query).lean().sort({"overallMatchRate": -1}).limit(limit).exec(function(err, nnArray){
 
       if (err){
         console.log(chalkError("TFE | *** NEURAL NETWORK FIND ERROR: " + err));
