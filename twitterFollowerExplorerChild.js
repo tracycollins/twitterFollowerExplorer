@@ -548,7 +548,6 @@ function twitterUserUpdate(params, callback){
     });
 
   });
-
 }
 
 let friendMinProps = {
@@ -787,7 +786,6 @@ function reporter(event, oldState, newState) {
     + " | " + statsObj.fsmPreviousState + " -> " + newState
     + "\nTFC | --------------------------------------------------------"
   ));
-
 }
 
 const fsmStates = {
@@ -1055,7 +1053,6 @@ const fsmStates = {
     "fsm_reset": "RESET"
 
   }
-
 };
 
 fsm = Stately.machine(fsmStates);
@@ -1105,7 +1102,6 @@ process.on("disconnect", function() {
   console.log(chalkAlert("TFC | " + configuration.threeceeUser + " | *** DISCONNECT ***"));
   quit("DISCONNECT");
 });
-
 
 function initTwitter(twitterConfig, callback){
 
