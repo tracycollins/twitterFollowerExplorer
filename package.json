@@ -10,7 +10,7 @@
     "@threeceelabs/mergehistograms": "^1.0.2",
     "@threeceelabs/twitter-image-parser": "^1.0.65",
     "@threeceelabs/twitter-text-parser": "^1.0.71",
-    "@threeceelabs/user-server-controller": "^1.0.380",
+    "@threeceelabs/user-server-controller": "^1.0.381",
     "@threeceelabs/word-server-controller": "^1.0.41",
     "JSONStream": "^1.3.5",
     "array-normalize": "^1.1.3",

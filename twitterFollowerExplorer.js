@@ -3562,6 +3562,27 @@ function processUser(threeceeUser, userIn, callback) {
             user.location = userIn.location;
           }
 
+          // "entities": {
+          //   "url": {
+          //     "urls": [
+          //       {
+          //         "url": "https://t.co/BNg2SBMRu0",
+          //         "expanded_url": "http://www.banquemondiale.org/",
+          //         "display_url": "banquemondiale.org",
+          //         "indices": [
+          //           0,
+          //           23
+          //         ]
+          //       }
+          //     ]
+          //   },
+          //   "description": {
+          //     "urls": []
+          //   }
+          // },
+
+          userIn.url = _.get(userIn, 'entities.url.urls[0].expanded_url', 'url');
+
           if (userIn.url && (userIn.url !== undefined) && (user.url !== userIn.url)) {
             user.previousUrl = user.url;
             user.url = userIn.url;
