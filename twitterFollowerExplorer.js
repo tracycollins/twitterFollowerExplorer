@@ -10,11 +10,13 @@ const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 
 const DEFAULT_THRECEE_AUTO_FOLLOW_USER = "altthreecee00";
 const DEFAULT_WORD_MIN_LENGTH = 3;
-const TEST_MODE_FETCH_USER_TIMEOUT = 30*ONE_SECOND;
-const TEST_MODE_NUM_NN = 10;
 
-const DEFAULT_NN_DB_LOAD_LIMIT = 100;
-const TEST_MODE_NN_DB_LOAD_LIMIT = TEST_MODE_NUM_NN;
+const TEST_MODE_FETCH_USER_TIMEOUT = 30*ONE_SECOND;
+
+const DEFAULT_NUM_NN = 100;  // TOP 100 NN's are loaded from DB
+
+const TEST_MODE_NUM_NN = 10;
+const TEST_MODE_NUM_NN = TEST_MODE_NUM_NN;
 
 const DEFAULT_INPUT_TYPES = [
   "emoji", 
@@ -156,9 +158,8 @@ const FSM_TICK_INTERVAL = ONE_SECOND;
 const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 5; // ms
 
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
-const TEST_MODE_TOTAL_FETCH = 147;
-const TEST_MODE_FETCH_COUNT = 33;  // per request twitter user fetch count
-const TEST_DROPBOX_NN_LOAD = 10;
+const TEST_MODE_TOTAL_FETCH = 47;
+const TEST_MODE_FETCH_COUNT = 21;  // per request twitter user fetch count
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
 const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
@@ -917,7 +918,7 @@ let configuration = {};
 configuration.slackChannel = {};
 
 configuration.reinitializeChildOnClose = false;
-configuration.networkDatabaseLoadLimit = configuration.testMode ? TEST_MODE_NN_DB_LOAD_LIMIT : DEFAULT_NN_DB_LOAD_LIMIT;
+configuration.networkDatabaseLoadLimit = configuration.testMode ? TEST_MODE_NUM_NN : DEFAULT_NUM_NN;
 
 configuration.DROPBOX = {};
 configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
@@ -1668,13 +1669,13 @@ function loadConfigFile(params) {
         newConfiguration.forceInitRandomNetworks = loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS;
       }
 
-      if (loadedConfigObj.TFE_NN_DB_LOAD_LIMIT !== undefined) {
-        console.log("TFE | LOADED TFE_NN_DB_LOAD_LIMIT: " + loadedConfigObj.TFE_NN_DB_LOAD_LIMIT);
-        newConfiguration.networkDatabaseLoadLimit = loadedConfigObj.TFE_NN_DB_LOAD_LIMIT;
+      if (loadedConfigObj.TFE_NUM_NN !== undefined) {
+        console.log("TFE | LOADED TFE_NUM_NN: " + loadedConfigObj.TFE_NUM_NN);
+        newConfiguration.networkDatabaseLoadLimit = loadedConfigObj.TFE_NUM_NN;
       }
 
       if (newConfiguration.testMode) {
-        newConfiguration.networkDatabaseLoadLimit = TEST_MODE_NN_DB_LOAD_LIMIT;
+        newConfiguration.networkDatabaseLoadLimit = TEST_MODE_NUM_NN;
         console.log(chalkAlert("TFE | TEST MODE | networkDatabaseLoadLimit: " + newConfiguration.networkDatabaseLoadLimit));
       }
 
@@ -5391,9 +5392,9 @@ function initConfig(cnf) {
     cnf.numRandomNetworks = process.env.TFE_NUM_RANDOM_NETWORKS || TFE_NUM_RANDOM_NETWORKS ;
     cnf.testMode = (process.env.TFE_TEST_MODE === "true") ? true : cnf.testMode;
 
-    cnf.networkDatabaseLoadLimit = process.env.TFE_NN_DB_LOAD_LIMIT || DEFAULT_NN_DB_LOAD_LIMIT;
+    cnf.networkDatabaseLoadLimit = process.env.TFE_NUM_NN || DEFAULT_NUM_NN;
     if (cnf.testMode) {
-      cnf.networkDatabaseLoadLimit = TEST_MODE_NN_DB_LOAD_LIMIT;
+      cnf.networkDatabaseLoadLimit = TEST_MODE_NUM_NN;
       console.log(chalkAlert("TFE | TEST MODE | networkDatabaseLoadLimit: " + cnf.networkDatabaseLoadLimit));
     }
 
@@ -6415,7 +6416,7 @@ setTimeout(async function(){
 
     if (configuration.testMode) {
       configuration.fetchCount = TEST_MODE_FETCH_COUNT;
-      configuration.networkDatabaseLoadLimit = TEST_MODE_NN_DB_LOAD_LIMIT;
+      configuration.networkDatabaseLoadLimit = TEST_MODE_NUM_NN;
       bestNetworkFolder = "/config/utility/" + hostname + "/test/neuralNetworks/best";
       localBestNetworkFolder = "/config/utility/" + hostname + "/test/neuralNetworks/local";
       configuration.fetchAllIntervalTime = TEST_MODE_FETCH_ALL_INTERVAL;
