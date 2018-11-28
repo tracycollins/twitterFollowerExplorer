@@ -3,6 +3,7 @@
 "use strict";
 
 const DEFAULT_THRECEE_AUTO_FOLLOW_USER = "altthreecee00";
+const DEFAULT_WORD_MIN_LENGTH = 3;
 
 const DEFAULT_INPUT_TYPES = [
   "emoji", 
@@ -100,6 +101,8 @@ const treeify = require("treeify");
 const table = require("text-table");
 const merge = require("deepmerge");
 const objectPath = require("object-path");
+const MergeHistograms = require("@threeceelabs/mergehistograms");
+const mergeHistograms = new MergeHistograms();
 
 let hostname = os.hostname();
 hostname = hostname.replace(/.local/g, "");
@@ -2162,8 +2165,10 @@ function updateDbNetwork(params) {
 
 // }
 
-function loadBestNetworksDatabase(params) {
+function loadBestNetworksDatabase(paramsIn) {
   return new Promise(function(resolve, reject){
+
+  	let params = (paramsIn === undefined) ? {} : paramsIn;
 
     console.log(chalkLog("TFE | LOAD BEST NETWORKS DATABASE"));
 
@@ -2176,14 +2181,14 @@ function loadBestNetworksDatabase(params) {
 
     const inputsIdArray = [...inputsIdSet];
 
-    console.log(chalkAlert("inputsIdArray\n" + jsonPrint(inputsIdArray)));
+    if (configuration.verbose) { console.log(chalkLog("inputsIdArray\n" + jsonPrint(inputsIdArray))); }
 
     let query = {};
     query.inputsId = { "$in": inputsIdArray };
 
     let limit = params.limit || 100;
 
-    console.log(chalkAlert("query\n" + jsonPrint(query)));
+    if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
 
     NeuralNetwork.find(query).lean().sort({"overallMatchRate": -1}).limit(limit).exec(function(err, nnArray){
 
@@ -3305,6 +3310,51 @@ function checkUserStatusChanged(params) {
   return results;    
 }
 
+function parseText(params){
+
+  return new Promise(function(resolve, reject) {
+
+    params.updateGlobalHistograms = (params.updateGlobalHistograms !== undefined) ? params.updateGlobalHistograms : false;
+    params.category = (params.user && params.user.category) ? params.user.category : "none";
+    params.minWordLength = params.minWordLength || DEFAULT_WORD_MIN_LENGTH;
+
+    twitterTextParser.parseText(params)
+    .then(function(hist){
+      resolve(hist);
+    })
+    .catch(function(err){
+      console.log(chalkError("*** TWITTER TEXT PARSER ERROR: " + err));
+      console.error(err);
+      reject(err);
+    });
+
+  });
+}
+
+function parseImage(params){
+
+  return new Promise(function(resolve, reject) {
+
+    params.updateGlobalHistograms = (params.updateGlobalHistograms !== undefined) ? params.updateGlobalHistograms : false;
+    params.category = params.user.category || "none";
+    params.imageUrl = params.user.bannerImageUrl;
+    params.histograms = params.user.histograms;
+    params.screenName = params.user.screenName;
+
+    twitterImageParser.parseImage(params)
+    .then(function(hist){
+      resolve(hist);
+    })
+    .catch(function(err){
+      console.log(chalkError("*** TWITTER IMAGE PARSER ERROR: " + err));
+      console.error(err);
+      reject(err);
+    });
+
+  });
+}
+
+
 function userProfileChangeHistogram(params) {
 
   return new Promise(function(resolve, reject){
@@ -3512,6 +3562,10 @@ function userStatusChangeHistogram(params) {
     });
 
   });
+}
+
+function userDefaults(user){
+	return user;
 }
 
 function updateUserHistograms(params) {
