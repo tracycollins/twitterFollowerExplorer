@@ -486,21 +486,12 @@ function activateNetwork(params){
 
   return new Promise(function(resolve, reject){
 
-    // console.log("activateNetwork");
-
     activateNetworkBusy = true;
 
     let networkOutput = {};
-    // networkOutput.user = {};
-    // networkOutput.user.screenName = params.user.screenName;
     
     let userHistograms = params.user.histograms;
     let languageAnalysis = params.user.languageAnalysis;
-    // let networkObj = {};
-    // let generateNetworkInputIndexedParams = {};
-    // let maxOutputIndex;
-    // let networkInput;
-    // let output;
 
     async.each(networksHashMap.keys(), async function(nnId){
 
@@ -526,7 +517,6 @@ function activateNetwork(params){
         histograms: userHistograms,
         languageAnalysis: languageAnalysis,
         inputsObj: networkObj.inputsObj
-        // maxInputHashMap: maxInputHashMap
       };
 
       try {
@@ -585,8 +575,6 @@ function activateNetwork(params){
 
       resolve({
         user: params.user,
-        // categoryAuto: categoryAuto,
-        // bestNetwork: statsObj.bestNetwork, 
         networkOutput: networkOutput
       });
 
@@ -965,14 +953,6 @@ function initActivateNetworkInterval(interval){
 
     activateNetworkIntervalBusy = false;
 
-    // let activateNetworkObj = {};
-    // let activateNetworkResults = {};
-    // let generateNetworksOutputObj = {};
-    // let category;
-    // let expectedOutput = false;
-    // let title;
-    // let enableLog = false;
-
     let messageObj = {};
     messageObj.op = "NETWORK_OUTPUT";
     messageObj.queue = rxActivateNetworkQueue.length;
@@ -1029,17 +1009,7 @@ function initActivateNetworkInterval(interval){
 
         try {
 
-          // resolve({
-          //   user: 
-          //   categoryAuto: 
-          //   bestNetwork: 
-          //   networkOutput:
-          // });
-
           const activateNetworkResults = await activateNetwork({ user: activateNetworkObj.user });
-
-          // console.log("activateNetworkResults keys: " + Object.keys(activateNetworkResults));
-          // console.log("activateNetworkResults.user.category: " + activateNetworkResults.user.category);
 
           let title = "@" + activateNetworkResults.user.screenName;
 
@@ -1065,26 +1035,6 @@ function initActivateNetworkInterval(interval){
             title = title + " | MKW: ---";
             enableLog = false;
           }
-
-          //   switch (category) {
-          //     case "left":
-          //       expectedOutput = [1,0,0];
-          //       title = title + " | MKW: LEFT";
-          //     break;
-          //     case "neutral":
-          //       expectedOutput = [0,1,0];
-          //       title = title + " | MKW: NEUTRAL";
-          //     break;
-          //     case "right":
-          //       expectedOutput = [0,0,1];
-          //       title = title + " | MKW: RIGHT";
-          //     break;
-          //     default:
-          //       expectedOutput = [0,0,0];
-          //       title = title + " | MKW: ---";
-          //       enableLog = false;
-          //    }
-          // }
 
           generateNetworksOutputParams = {
             enableLog: enableLog,

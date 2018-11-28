@@ -84,7 +84,7 @@ if (process.env.TEST_MODE > 0) {
 }
 
 configuration.fetchCount = configuration.testMode ? process.env.TEST_MODE_FETCH_COUNT :  process.env.DEFAULT_FETCH_COUNT;
-configuration.fetchUserTimeout = process.env.TFE_FETCH_USER_TIMEOUT || 5*ONE_MINUTE;
+configuration.fetchUserTimeout = configuration.testMode ? process.env.TEST_MODE_FETCH_USER_TIMEOUT :  process.env.DEFAULT_FETCH_USER_TIMEOUT;
 
 console.log(chalkLog("TFC | CONFIGURATION\n" + jsonPrint(configuration)));
 
@@ -1473,16 +1473,19 @@ process.on("message", function(m) {
 
     case "INIT":
 
-      console.log(chalkInfo("TFC | TFE CHILD INIT"
-        + " | CHILD ID: " + m.childId
-        + " | 3C: @" + m.threeceeUser
-        // + " | TWITTER CONFIG\n" + jsonPrint(m.twitterConfig)
-      ));
-
       configuration.childId = m.childId;
       configuration.threeceeUser = m.threeceeUser;
       configuration.twitterConfig = {};
       configuration.twitterConfig = m.twitterConfig;
+      configuration.fetchUserTimeout = m.fetchUserTimeout || configuration.fetchUserTimeout;
+
+      console.log(chalkInfo("TFC | TFE CHILD INIT"
+        + " | CHILD ID: " + m.childId
+        + " | 3C: @" + m.threeceeUser
+        + " | FETCH USER TIMEOUT: " + msToTime(m.fetchUserTimeout)
+        // + " | TWITTER CONFIG\n" + jsonPrint(m.twitterConfig)
+      ));
+
 
       initTwitter(m.twitterConfig, function initTwitterUsersCallback(e){
 
