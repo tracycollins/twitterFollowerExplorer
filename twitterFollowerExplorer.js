@@ -15,7 +15,11 @@ const TEST_MODE_FETCH_USER_TIMEOUT = 30*ONE_SECOND;
 
 const DEFAULT_NUM_NN = 100;  // TOP 100 NN's are loaded from DB
 
-const TEST_MODE_NUM_NN = 10;
+const TEST_MODE_NUM_NN = 5;
+
+const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
+const TEST_MODE_TOTAL_FETCH = 27;
+const TEST_MODE_FETCH_COUNT = 11;  // per request twitter user fetch count
 
 const DEFAULT_INPUT_TYPES = [
   "emoji", 
@@ -155,10 +159,6 @@ const RANDOM_NETWORK_TREE_INTERVAL = 5;
 const DEFAULT_FETCH_ALL_INTERVAL = 120*ONE_MINUTE;
 const FSM_TICK_INTERVAL = ONE_SECOND;
 const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 5; // ms
-
-const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
-const TEST_MODE_TOTAL_FETCH = 47;
-const TEST_MODE_FETCH_COUNT = 21;  // per request twitter user fetch count
 
 const TWITTER_DEFAULT_USER = "altthreecee00";
 const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
@@ -4742,6 +4742,20 @@ function initProcessUserQueueInterval(interval) {
 
       twitterUserHashMap[tcUser].friends.add(mObj.friend.id_str);
 
+      if (saveRawFriendFlag){
+        const file = "user_" + mObj.friend.id_str + ".json";
+        console.log(chalkLog("TFE | SAVE FRIEND_RAW FILE"
+          + " | " + file
+        ));
+        debug(chalkAlert("TFE | SAVE FRIEND_RAW FILE"
+          + " | " + file
+          + "\n" + jsonPrint(mObj.friend)
+        ));
+        statsObj.rawFriend = mObj.friend;
+        saveFileQueue.push({folder: testDataUserFolder, file: file, obj: mObj.friend });
+        saveRawFriendFlag = false;
+      }
+
       processUser(tcUser, mObj.friend, function(err, user) {
 
         if (err) {
@@ -5052,7 +5066,7 @@ function initTwitterFollowerChild(twitterConfig) {
             processUserQueue.push(m);
 
             if (configuration.verbose || saveRawFriendFlag) {
-              console.log(chalkAlert("TFE | CHILD FRIEND_RAW"
+              console.log(chalkInfo("TFE | TEST DATA: FRIEND_RAW"
                 + " [ PUQ: " + processUserQueue.length + " ]"
                 + " | 3C @" + m.threeceeUser
                 + " | @" + m.friend.screen_name
@@ -5063,10 +5077,14 @@ function initTwitterFollowerChild(twitterConfig) {
 
               if (saveRawFriendFlag){
                 const file = "user_" + m.friend.id_str + ".json";
-                console.log(chalkAlert("TFE | SAVE FRIEND_RAW FILE"
+                console.log(chalkLog("TFE | SAVE FRIEND_RAW FILE"
+                  + " | " + file
+                ));
+                debug(chalkAlert("TFE | SAVE FRIEND_RAW FILE"
                   + " | " + file
                   + "\n" + jsonPrint(m.friend)
                 ));
+                statsObj.rawFriend = m.friend;
                 saveFileQueue.push({folder: testDataUserFolder, file: file, obj: m.friend });
                 saveRawFriendFlag = false;
               }
