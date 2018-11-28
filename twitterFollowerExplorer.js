@@ -16,7 +16,6 @@ const TEST_MODE_FETCH_USER_TIMEOUT = 30*ONE_SECOND;
 const DEFAULT_NUM_NN = 100;  // TOP 100 NN's are loaded from DB
 
 const TEST_MODE_NUM_NN = 10;
-const TEST_MODE_NUM_NN = TEST_MODE_NUM_NN;
 
 const DEFAULT_INPUT_TYPES = [
   "emoji", 
