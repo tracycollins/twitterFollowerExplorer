@@ -915,6 +915,8 @@ let hostConfiguration = {}; // host-specific configuration for TNN
 
 let configuration = {};
 
+configuration.archiveNetworkOnInputsMiss = true;
+
 configuration.slackChannel = {};
 
 configuration.reinitializeChildOnClose = false;
@@ -2362,6 +2364,27 @@ function loadBestNetworksDropbox(params) {
               + " | " + networkId 
               + " | INPUTS ID: " + networkObj.inputsId 
             ));
+
+            if (configuration.archiveNetworkOnInputsMiss && (hostname === "google")) {
+
+              const archivePath = folder + "/archive/" + entry.name;
+
+              console.log(chalkAlert("TFE | ARCHIVE NETWORK ON INPUTS ID MISS"
+                + " | IN: " + networkObj.numInputs
+                + " | " + networkId 
+                + " | INPUTS ID: " + networkObj.inputsId 
+                + " | FROM: " + entry.path_display
+                + " | TO: " + archivePath
+              ));
+
+
+              dropboxClient.filesMove({
+                from_path: entry.path_display,
+                to_path: archivePath,
+                autorename: false
+              });
+
+            }
           }
           else if (!bestNetworkHashMap.has(networkId)){
 
