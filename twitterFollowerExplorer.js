@@ -3271,11 +3271,11 @@ function userProfileChangeHistogram(params) {
             parseText({category: user.category, text: text})
             .then(function(textParseResults){
 
-              if (profileUrl) {
+              if (url || profileUrl) {
 
                 let histB = {};
                 histB.urls = {};
-                
+
                 if (url) { histB.urls[url] = 1; }
                 if (profileUrl) { histB.urls[profileUrl] = 1; }
 
