@@ -2365,7 +2365,7 @@ function loadBestNetworksDropbox(params) {
               + " | INPUTS ID: " + networkObj.inputsId 
             ));
 
-            if (configuration.archiveNetworkOnInputsMiss && (hostname === "google")) {
+            if (configuration.archiveNetworkOnInputsMiss) {
 
               const archivePath = folder + "/archive/" + entry.name;
 
@@ -2672,57 +2672,57 @@ function startImageQuotaTimeout() {
   }, IMAGE_QUOTA_TIMEOUT);
 }
 
-function updateHistograms(params, callback) {
+// function updateHistograms(params, callback) {
 
-  statsObj.status = "UPDATE HISTOGRAMS";
+//   statsObj.status = "UPDATE HISTOGRAMS";
 
-  let user = {};
-  let histogramsIn = {};
+//   let user = {};
+//   let histogramsIn = {};
 
-  user = params.user;
-  histogramsIn = params.histograms;
+//   user = params.user;
+//   histogramsIn = params.histograms;
 
-  user.histograms = user.histograms || {};
+//   user.histograms = user.histograms || {};
   
-  async.each(DEFAULT_INPUT_TYPES, function(type, cb0) {
+//   async.each(DEFAULT_INPUT_TYPES, function(type, cb0) {
 
-    user.histograms[type] = user.histograms[type] || {};
-    histogramsIn[type] = histogramsIn[type] || {};
+//     user.histograms[type] = user.histograms[type] || {};
+//     histogramsIn[type] = histogramsIn[type] || {};
 
-    const inputHistogramTypeItems = Object.keys(histogramsIn[type]);
+//     const inputHistogramTypeItems = Object.keys(histogramsIn[type]);
 
-    async.each(inputHistogramTypeItems, function(item, cb1) {
+//     async.each(inputHistogramTypeItems, function(item, cb1) {
 
-      user.histograms[type][item] = user.histograms[type][item] || 0;
-      user.histograms[type][item] += histogramsIn[type][item];
+//       user.histograms[type][item] = user.histograms[type][item] || 0;
+//       user.histograms[type][item] += histogramsIn[type][item];
 
-      debug("user histograms"
-        + " | @" + user.screenName
-        + " | " + type
-        + " | " + item
-        + " | USER VAL: " + user.histograms[type][item]
-        + " | UPDATE VAL: " + histogramsIn[type][item]
-      );
+//       debug("user histograms"
+//         + " | @" + user.screenName
+//         + " | " + type
+//         + " | " + item
+//         + " | USER VAL: " + user.histograms[type][item]
+//         + " | UPDATE VAL: " + histogramsIn[type][item]
+//       );
 
-      async.setImmediate(function() {
-        cb1();
-      });
+//       async.setImmediate(function() {
+//         cb1();
+//       });
 
-    }, function (argument) {
+//     }, function (argument) {
 
-      async.setImmediate(function() {
-        cb0();
-      });
+//       async.setImmediate(function() {
+//         cb0();
+//       });
 
-    });
-  }, function(err) {
+//     });
+//   }, function(err) {
 
-    updateglobalHistograms({user: user}, function(){
-      callback(err, user);
-    });
+//     updateglobalHistograms({user: user}, function(){
+//       callback(err, user);
+//     });
 
-  });
-}
+//   });
+// }
 
 function generateAutoCategory(user, callback) {
 
@@ -3200,6 +3200,7 @@ function userProfileChangeHistogram(params) {
       if (user[prevUserProp] && user[prevUserProp] !== undefined) {
 
         console.log(chalkInfo("TFE | +++ USER PROFILE CHANGE"
+          + " | @" + user.screenName 
           + " | " + userProp 
           + "\n NEW: " + user[userProp] + "\n OLD: " + user[prevUserProp]
         ));
@@ -3273,7 +3274,10 @@ function userProfileChangeHistogram(params) {
               if (profileUrl) {
 
                 let histB = {};
-                histB[profileUrl] = 1;
+                histB.urls = {};
+                
+                if (url) { histB.urls[url] = 1; }
+                if (profileUrl) { histB.urls[profileUrl] = 1; }
 
                 mergeHistograms.merge({ histogramA: textParseResults, histogramB: histB })
                 .then(function(textParseResults){
@@ -3334,6 +3338,7 @@ function userStatusChangeHistogram(params) {
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
       console.log(chalkLog("TFE | +++ USER STATUS CHANGE"
+        + " | @" + user.screenName 
         + " | " + userProp 
         + " | " + user[userProp] + " <-- " + user[prevUserProp]
       ));
@@ -3413,7 +3418,7 @@ function updateUserHistograms(params) {
 
           async.parallel({
 
-            profHist: function(cb){
+            profileHist: function(cb){
 
               if (profileHistogramChanges) {
 
@@ -3469,244 +3474,237 @@ function updateUserHistograms(params) {
   });
 }
 
-function processUser(threeceeUser, userIn, callback) {
+// function processUser(threeceeUser, userIn, callback) {
+function processUser(params) {
 
-  statsObj.status = "PROCESS USER";
+  return new Promise(function(resolve, reject){
 
-  debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
+    statsObj.status = "PROCESS USER";
 
-  if (userServerController === undefined) {
-    console.log(chalkError("TFE | *** processUser userServerController UNDEFINED"));
-    quit("processUser userServerController UNDEFINED");
-  }
+    let userIn = params.user;
+    let threeceeUser = params.threeceeUser;
 
-  async.waterfall(
-  [
-    function findUserInDb(cb) {
+    debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
 
-      User.findOne({ nodeId: userIn.id_str }).exec(function(err, user) {
+    if (userServerController === undefined) {
+      console.log(chalkError("TFE | *** processUser userServerController UNDEFINED"));
+      return reject(new Error("processUser userServerController UNDEFINED"));
+    }
 
-        if (err) {
-          console.log(chalkError("TFE | *** ERROR DB FIND ONE USER | " + err));
-          return cb(err, user) ;
-        }
+    async.waterfall(
+    [
+      function findUserInDb(cb) {
 
-        if (!user) {
+        User.findOne({ nodeId: userIn.id_str }).exec(function(err, user) {
 
-          userIn.modified = moment();
-          userIn.following = true;
-          userIn.threeceeFollowing = threeceeUser;
+          if (err) {
+            console.log(chalkError("TFE | *** ERROR DB FIND ONE USER | " + err));
+            return cb(err, user) ;
+          }
 
-          console.log(chalkLog("TFE | USER DB MISS"
-            + " | 3C @" + threeceeUser
-            + " | " + userIn.id_str
-            + " | @" + userIn.screen_name
-          ));
+          if (!user) {
 
-          userServerController.convertRawUser({user:userIn}, function(err, user) {
+            userIn.modified = moment();
+            userIn.following = true;
+            userIn.threeceeFollowing = threeceeUser;
 
-            if (err) {
+            console.log(chalkLog("TFE | USER DB MISS"
+              + " | 3C @" + threeceeUser
+              + " | " + userIn.id_str
+              + " | @" + userIn.screen_name
+            ));
 
-              console.log(chalkError("TFE | *** CONVERT USER ERROR"
-                + " | " + err
-              ));
+            userServerController.convertRawUser({user:userIn}, function(err, user) {
 
-              cb(err, null);
+              if (err) {
 
-            }
-            else {
+                console.log(chalkError("TFE | *** CONVERT USER ERROR"
+                  + " | " + err
+                ));
 
-              if ((user.status !== undefined) && user.status) { 
-                user.lastSeen = user.status.created_at;
-                user.updateLastSeen = true;
+                cb(err, null);
+
               }
+              else {
 
-              cb(null, user);
+                if ((user.status !== undefined) && user.status) { 
+                  user.lastSeen = user.status.created_at;
+                  user.updateLastSeen = true;
+                }
 
-            }
-          });
-        }
-        else {
+                cb(null, user);
 
-          if ((typeof user.threeceeFollowing === "object") || (typeof user.threeceeFollowing === "boolean")) {
-            console.log(chalkAlert("TFE | >>> CONVERT TO STRING | USER @" + user.screenName
-              + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
-              + " | threeceeFollowing: " + user.threeceeFollowing
-            ));
-
-            let newUser = new User(user);
-
-            newUser.threeceeFollowing = threeceeUser;
-
-            user = new User(newUser);
-
-            console.log(chalkAlert("TFE | ... CONVERTED STRING | USER @" + user.screenName
-              + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
-              + " | threeceeFollowing: " + user.threeceeFollowing
-            ));
+              }
+            });
           }
           else {
-            user.following = true;
-            user.threeceeFollowing = threeceeUser;
+
+            if ((typeof user.threeceeFollowing === "object") || (typeof user.threeceeFollowing === "boolean")) {
+              console.log(chalkAlert("TFE | >>> CONVERT TO STRING | USER @" + user.screenName
+                + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
+                + " | threeceeFollowing: " + user.threeceeFollowing
+              ));
+
+              let newUser = new User(user);
+
+              newUser.threeceeFollowing = threeceeUser;
+
+              user = new User(newUser);
+
+              console.log(chalkAlert("TFE | ... CONVERTED STRING | USER @" + user.screenName
+                + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
+                + " | threeceeFollowing: " + user.threeceeFollowing
+              ));
+            }
+            else {
+              user.following = true;
+              user.threeceeFollowing = threeceeUser;
+            }
+
+            // previousScreenName: { type: String, default: "" },
+            // previousName: { type: String, default: "" },
+            // previousDescription: { type: String, default: "" },
+            // previousLocation: { type: String, default: "" },
+            // previousUrl: { type: String, default: "" },  
+            // previousProfileUrl: { type: String, default: "" },  
+            // previousBannerImageUrl: { type: String, default: "" },  // is like previousBannerImageUrl
+
+            if ((user.status !== undefined) && userIn.status) { 
+              user.lastSeen = userIn.status.created_at;
+              user.updateLastSeen = true;
+            }
+
+            let catObj = {};
+
+            catObj.manual = user.category || false;
+            catObj.auto = user.categoryAuto || false;
+
+            if (userIn.screen_name && (userIn.screen_name !== undefined) && (user.screenName !== userIn.screen_name)) {
+              user.previousScreenName = user.screenName;
+              user.screenName = userIn.screen_name.toLowerCase();
+              user.screenNameLower = userIn.screen_name.toLowerCase();
+            }
+
+            if (user.name !== userIn.name) {
+              user.previousName = user.name;
+              user.name = userIn.name;
+            }
+            
+            if (userIn.description && (userIn.description !== undefined) && (user.description !== userIn.description)) {
+              user.previousDescription = user.description;
+              user.description = userIn.description;
+            }
+
+            if (userIn.location && (userIn.location !== undefined) && (user.location !== userIn.location)) {
+              user.previousLocation = user.location;
+              user.location = userIn.location;
+            }
+
+            // "entities": {
+            //   "url": {
+            //     "urls": [
+            //       {
+            //         "url": "https://t.co/BNg2SBMRu0",
+            //         "expanded_url": "http://www.banquemondiale.org/",
+            //         "display_url": "banquemondiale.org",
+            //         "indices": [
+            //           0,
+            //           23
+            //         ]
+            //       }
+            //     ]
+            //   },
+            //   "description": {
+            //     "urls": []
+            //   }
+            // },
+
+            userIn.url = _.get(userIn, 'entities.url.urls[0].expanded_url', 'url');
+
+            if (userIn.url && (userIn.url !== undefined) && (user.url !== userIn.url)) {
+              user.previousUrl = user.url;
+              user.url = userIn.url;
+            }
+
+            if (userIn.profile_url && (userIn.profile_url !== undefined) && (user.profileUrl !== userIn.profile_url)) {
+              user.previousProfileUrl = user.profileUrl;
+              user.profileUrl = userIn.profile_url;
+            }
+
+            if (userIn.profile_banner_url && (userIn.profile_banner_url !== undefined) && (user.bannerImageUrl !== userIn.profile_banner_url)) {
+              user.bannerImageAnalyzed = false;
+              user.previousBannerImageUrl = user.bannerImageUrl;
+              user.bannerImageUrl = userIn.profile_banner_url;
+            }
+
+            if (userIn.profile_image_url && (userIn.profile_image_url !== undefined) && (user.profileImageUrl !== userIn.profile_image_url)) {
+              user.profileImageUrl = userIn.profile_image_url;
+            }
+
+            if (userIn.status && (userIn.status !== undefined) && (user.statusId !== userIn.status.id_str)) {
+              user.previousStatusId = user.statusId;
+              user.statusId = userIn.status.id_str;
+              user.status = userIn.status;
+            }
+
+            if (userIn.quoted_status_id_str && (userIn.quoted_status_id_str !== undefined) && (user.quotedStatusId !== userIn.quoted_status_id_str)) {
+              user.previousQuotedStatusId = user.quotedStatusId;
+              user.quotedStatusId = userIn.quoted_status_id_str;
+              user.quotedStatus = userIn.quoted_status;
+            }
+
+            // if (
+            //   (user.status !== undefined)
+            //   && user.status
+            //   && (userIn.status !== undefined) 
+            //   && userIn.status
+            //   && user.status.id_str 
+            //   && userIn.status.id_str 
+            //   && (user.status.id_str !== userIn.status.id_str)) {
+            //   user.status = userIn.status;
+            // }
+
+            if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)) {
+              user.followersCount = userIn.followers_count;
+            }
+            if ((userIn.friends_count !== undefined) && (user.friendsCount !== userIn.friends_count)) {
+              user.friendsCount = userIn.friends_count;
+            }
+            if ((userIn.statuses_count !== undefined) && (user.statusesCount !== userIn.statuses_count)) {
+              user.statusesCount = userIn.statuses_count;
+            }
+            cb(null, user);
           }
+        });
+      },
 
-          // previousScreenName: { type: String, default: "" },
-          // previousName: { type: String, default: "" },
-          // previousDescription: { type: String, default: "" },
-          // previousLocation: { type: String, default: "" },
-          // previousUrl: { type: String, default: "" },  
-          // previousProfileUrl: { type: String, default: "" },  
-          // previousBannerImageUrl: { type: String, default: "" },  // is like previousBannerImageUrl
+      function updateFollowing(user, cb) {
+        user.following = true;
+        user.threeceeFollowing = threeceeUser;
+        cb(null, user);
+      },
 
-          if ((user.status !== undefined) && userIn.status) { 
-            user.lastSeen = userIn.status.created_at;
-            user.updateLastSeen = true;
-          }
+      function genAutoCat(user, cb) {
 
-          let catObj = {};
+        if (!neuralNetworkInitialized) { return cb(null, user); }
 
-          catObj.manual = user.category || false;
-          catObj.auto = user.categoryAuto || false;
+        generateAutoCategory(user, function (err, uObj) {
+          cb(err, uObj);
+        });
+      }
+    ], function (err, user) {
 
-          if (userIn.screen_name && (userIn.screen_name !== undefined) && (user.screenName !== userIn.screen_name)) {
-            user.previousScreenName = user.screenName;
-            user.screenName = userIn.screen_name.toLowerCase();
-            user.screenNameLower = userIn.screen_name.toLowerCase();
-          }
+      if (err) {
+        console.log(chalkError("TFE | *** PROCESS USER ERROR: " + err));
+        return reject(err);
+      }
+        
+      resolve(user);
 
-          if (user.name !== userIn.name) {
-            user.previousName = user.name;
-            user.name = userIn.name;
-          }
-          
-          if (userIn.description && (userIn.description !== undefined) && (user.description !== userIn.description)) {
-            user.previousDescription = user.description;
-            user.description = userIn.description;
-          }
-
-          if (userIn.location && (userIn.location !== undefined) && (user.location !== userIn.location)) {
-            user.previousLocation = user.location;
-            user.location = userIn.location;
-          }
-
-          // "entities": {
-          //   "url": {
-          //     "urls": [
-          //       {
-          //         "url": "https://t.co/BNg2SBMRu0",
-          //         "expanded_url": "http://www.banquemondiale.org/",
-          //         "display_url": "banquemondiale.org",
-          //         "indices": [
-          //           0,
-          //           23
-          //         ]
-          //       }
-          //     ]
-          //   },
-          //   "description": {
-          //     "urls": []
-          //   }
-          // },
-
-          userIn.url = _.get(userIn, 'entities.url.urls[0].expanded_url', 'url');
-
-          if (userIn.url && (userIn.url !== undefined) && (user.url !== userIn.url)) {
-            user.previousUrl = user.url;
-            user.url = userIn.url;
-          }
-
-          if (userIn.profile_url && (userIn.profile_url !== undefined) && (user.profileUrl !== userIn.profile_url)) {
-            user.previousProfileUrl = user.profileUrl;
-            user.profileUrl = userIn.profile_url;
-          }
-
-          if (userIn.profile_banner_url && (userIn.profile_banner_url !== undefined) && (user.bannerImageUrl !== userIn.profile_banner_url)) {
-            user.bannerImageAnalyzed = false;
-            user.previousBannerImageUrl = user.bannerImageUrl;
-            user.bannerImageUrl = userIn.profile_banner_url;
-          }
-
-          if (userIn.profile_image_url && (userIn.profile_image_url !== undefined) && (user.profileImageUrl !== userIn.profile_image_url)) {
-            user.profileImageUrl = userIn.profile_image_url;
-          }
-
-          if (userIn.status && (userIn.status !== undefined) && (user.statusId !== userIn.status.id_str)) {
-            user.previousStatusId = user.statusId;
-            user.statusId = userIn.status.id_str;
-            user.status = userIn.status;
-          }
-
-          if (userIn.quoted_status_id_str && (userIn.quoted_status_id_str !== undefined) && (user.quotedStatusId !== userIn.quoted_status_id_str)) {
-            user.previousQuotedStatusId = user.quotedStatusId;
-            user.quotedStatusId = userIn.quoted_status_id_str;
-            user.quotedStatus = userIn.quoted_status;
-          }
-
-          // if (
-          //   (user.status !== undefined)
-          //   && user.status
-          //   && (userIn.status !== undefined) 
-          //   && userIn.status
-          //   && user.status.id_str 
-          //   && userIn.status.id_str 
-          //   && (user.status.id_str !== userIn.status.id_str)) {
-          //   user.status = userIn.status;
-          // }
-
-          if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)) {
-            user.followersCount = userIn.followers_count;
-          }
-          if ((userIn.friends_count !== undefined) && (user.friendsCount !== userIn.friends_count)) {
-            user.friendsCount = userIn.friends_count;
-          }
-          if ((userIn.statuses_count !== undefined) && (user.statusesCount !== userIn.statuses_count)) {
-            user.statusesCount = userIn.statuses_count;
-          }
-          cb(null, user);
-        }
-      });
-    },
-
-    function updateFollowing(user, cb) {
-      user.following = true;
-      user.threeceeFollowing = threeceeUser;
-      cb(null, user);
-    },
-
-    function genAutoCat(user, cb) {
-
-      if (!neuralNetworkInitialized) { return cb(null, user); }
-
-      generateAutoCategory(user, function (err, uObj) {
-        cb(err, uObj);
-      });
-    }
-
-    // function updateUserCategory(user, cb) {
-    //   updateUserCategoryStats(user, function(err, u) {
-    //     if (err) {
-    //       console.trace(chalkError("TFE | *** ERROR classifyUser | NID: " + user.nodeId
-    //         + "\n" + err
-    //       ));
-    //       cb(err, user);
-    //     }
-    //     else {
-    //       cb(null, u);
-    //     }
-    //   });
-    // }
-
-  ], function (err, user) {
-
-    if (err) {
-      console.log(chalkError("TFE | *** PROCESS USER ERROR: " + err));
-      callback(new Error(err), null);
-    }
-    else {
-      callback(null, user);
-    }
+    });
 
   });
+
 }
 
 function initChild(params){
@@ -4806,13 +4804,10 @@ function initProcessUserQueueInterval(interval) {
         saveRawFriendFlag = false;
       }
 
-      processUser(tcUser, mObj.friend, function(err, user) {
+      try {
 
-        if (err) {
-          console.trace("TFE | *** processUser ERROR");
-          processUserQueueReady = true;
-          return;
-        }
+        // processUser(tcUser, mObj.friend, function(err, user) {
+        let user = await processUser({threeceeUser: tcUser, user: mObj.friend});
 
         statsObj.users.grandTotalFriendsProcessed += 1;
         statsObj.users.totalFriendsProcessed += 1;
@@ -4862,6 +4857,9 @@ function initProcessUserQueueInterval(interval) {
 
         }
 
+        user.markModified("tweetHistograms");
+        user.markModified("profileHistograms");
+
         user.save()
         .then(function() {
           processUserQueueReady = true;
@@ -4870,8 +4868,12 @@ function initProcessUserQueueInterval(interval) {
           console.log(chalkError("TFE | *** ERROR processUser USER SAVE: @" + user.screenName + " | " + err));
           processUserQueueReady = true;
         });
-        
-      });
+      }
+      catch(err){
+        console.log(chalkError("TFE | *** ERROR processUser USER @" + mObj.friend.screen_name + " | " + err));
+        processUserQueueReady = true;
+      }
+
     }
   }, interval);
 }

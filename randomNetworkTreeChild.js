@@ -55,6 +55,8 @@ const os = require("os");
 const util = require("util");
 const moment = require("moment");
 const treeify = require("treeify");
+const MergeHistograms = require("@threeceelabs/mergehistograms");
+const mergeHistograms = new MergeHistograms();
 
 const fetch = require("isomorphic-fetch");
 
@@ -484,101 +486,122 @@ let activateNetworkBusy = false;
 
 function activateNetwork(params){
 
-  return new Promise(function(resolve, reject){
+  return new Promise(async function(resolve, reject){
 
     activateNetworkBusy = true;
 
     let networkOutput = {};
-    
-    let userHistograms = params.user.histograms;
-    let languageAnalysis = params.user.languageAnalysis;
 
-    async.each(networksHashMap.keys(), async function(nnId){
+    // params.user.profileHistograms = results.profileHist;
+    // params.user.tweetHistograms = results.tweetHist;
 
-      const networkObj = networksHashMap.get(nnId);
+    try {
+      let userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
 
-      networkOutput[nnId] = {};
-      networkOutput[nnId].output = [];
-      networkOutput[nnId].left = statsObj.loadedNetworks[nnId].left;
-      networkOutput[nnId].neutral = statsObj.loadedNetworks[nnId].neutral;
-      networkOutput[nnId].right = statsObj.loadedNetworks[nnId].right;
-      networkOutput[nnId].none = statsObj.loadedNetworks[nnId].none;
-      networkOutput[nnId].positive = statsObj.loadedNetworks[nnId].positive;
-      networkOutput[nnId].negative = statsObj.loadedNetworks[nnId].negative;
+      // let userHistograms = params.user.histograms;
 
-      if (networkObj.inputsObj.inputs === undefined) {
-        console.log(chalkError("RNT | UNDEFINED NETWORK INPUTS OBJ | NETWORK OBJ KEYS: " + Object.keys(networkObj)));
-        return ("UNDEFINED NETWORK INPUTS OBJ");
-      }
+      let languageAnalysis = params.user.languageAnalysis;
 
-      const generateNetworkInputIndexedParams = {
-        networkId: networkObj.networkId,
-        userScreenName: params.user.screenName,
-        histograms: userHistograms,
-        languageAnalysis: languageAnalysis,
-        inputsObj: networkObj.inputsObj
-      };
+      async.each(networksHashMap.keys(), async function(nnId){
 
-      try {
+        const networkObj = networksHashMap.get(nnId);
 
-        const networkInput = await generateNetworkInputIndexed(generateNetworkInputIndexedParams);
+        networkOutput[nnId] = {};
+        networkOutput[nnId].output = [];
+        networkOutput[nnId].left = statsObj.loadedNetworks[nnId].left;
+        networkOutput[nnId].neutral = statsObj.loadedNetworks[nnId].neutral;
+        networkOutput[nnId].right = statsObj.loadedNetworks[nnId].right;
+        networkOutput[nnId].none = statsObj.loadedNetworks[nnId].none;
+        networkOutput[nnId].positive = statsObj.loadedNetworks[nnId].positive;
+        networkOutput[nnId].negative = statsObj.loadedNetworks[nnId].negative;
 
-        const output = networkObj.network.activate(networkInput);
+        if (networkObj.inputsObj.inputs === undefined) {
+          console.log(chalkError("RNT | UNDEFINED NETWORK INPUTS OBJ | NETWORK OBJ KEYS: " + Object.keys(networkObj)));
+          return ("UNDEFINED NETWORK INPUTS OBJ");
+        }
 
-        if (output.length !== 3) {
-          console.log(chalkError("RNT | *** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
+        const generateNetworkInputIndexedParams = {
+          networkId: networkObj.networkId,
+          userScreenName: params.user.screenName,
+          histograms: userHistograms,
+          languageAnalysis: languageAnalysis,
+          inputsObj: networkObj.inputsObj
+        };
+
+        try {
+
+          const networkInput = await generateNetworkInputIndexed(generateNetworkInputIndexedParams);
+
+          const output = networkObj.network.activate(networkInput);
+
+          if (output.length !== 3) {
+            console.log(chalkError("RNT | *** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
+            activateNetworkBusy = false;
+            return("ZERO LENGTH NETWORK OUTPUT");
+          }
+
+          const maxOutputIndex = await indexOfMax(output);
+
+          let categoryAuto;
+
+          switch (maxOutputIndex) {
+            case 0:
+              categoryAuto = "left";
+              networkOutput[nnId].output = [1,0,0];
+              networkOutput[nnId].left += 1;
+            break;
+            case 1:
+              categoryAuto = "neutral";
+              networkOutput[nnId].output = [0,1,0];
+              networkOutput[nnId].neutral += 1;
+            break;
+            case 2:
+              categoryAuto = "right";
+              networkOutput[nnId].output = [0,0,1];
+              networkOutput[nnId].right += 1;
+            break;
+            default:
+              categoryAuto = "none";
+              networkOutput[nnId].output = [0,0,0];
+              networkOutput[nnId].none += 1;
+          }
+
+          if (configuration.verbose) {
+            printNetworkInput({title: params.user.screenName + " | C: " + params.user.category + " | A: " + categoryAuto , inputArray: networkInput});
+          }
+
+          return;
+
+        }
+        catch(err){
+          console.log(chalkError("RNT | *** ERROR ACTIVATE NETWORK: " + err));
           activateNetworkBusy = false;
-          return("ZERO LENGTH NETWORK OUTPUT");
+          return reject(err);
+        }
+      }, function(err){
+
+        if (err) {
+          console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR: " + err));
+          return reject(err);
         }
 
-        const maxOutputIndex = await indexOfMax(output);
-
-        let categoryAuto;
-
-        switch (maxOutputIndex) {
-          case 0:
-            categoryAuto = "left";
-            networkOutput[nnId].output = [1,0,0];
-            networkOutput[nnId].left += 1;
-          break;
-          case 1:
-            categoryAuto = "neutral";
-            networkOutput[nnId].output = [0,1,0];
-            networkOutput[nnId].neutral += 1;
-          break;
-          case 2:
-            categoryAuto = "right";
-            networkOutput[nnId].output = [0,0,1];
-            networkOutput[nnId].right += 1;
-          break;
-          default:
-            categoryAuto = "none";
-            networkOutput[nnId].output = [0,0,0];
-            networkOutput[nnId].none += 1;
-        }
-
-        if (configuration.verbose) {
-          printNetworkInput({title: params.user.screenName + " | C: " + params.user.category + " | A: " + categoryAuto , inputArray: networkInput});
-        }
-
-        return;
-
-      }
-      catch(err){
-        console.log(chalkError("RNT | *** ERROR ACTIVATE NETWORK: " + err));
         activateNetworkBusy = false;
-        return reject(err);
-      }
-    }, function(err){
+
+        resolve({
+          user: params.user,
+          networkOutput: networkOutput
+        });
+        
+      });
+
+    }
+    catch(err){
 
       activateNetworkBusy = false;
 
-      resolve({
-        user: params.user,
-        networkOutput: networkOutput
-      });
-
-    });
+      console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR: " + err));
+      reject(err);
+    }
 
   });
 }
