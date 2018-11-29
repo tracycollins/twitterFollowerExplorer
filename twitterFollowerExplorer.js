@@ -2373,15 +2373,18 @@ function loadBestNetworksDropbox(params) {
                 + " | IN: " + networkObj.numInputs
                 + " | " + networkId 
                 + " | INPUTS ID: " + networkObj.inputsId 
-                + " | FROM: " + entry.path_display
+                + "\nTFE | FROM: " + entry.path_display
                 + " | TO: " + archivePath
               ));
 
 
-              dropboxClient.filesMove({
-                from_path: entry.path_display,
-                to_path: archivePath,
-                autorename: false
+              dropboxClient.filesMove({ from_path: entry.path_display, to_path: archivePath, autorename: false })
+              .then(function(){
+                return;
+              })
+              .catch(function(err){
+                console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR: " + err));
+                return;
               });
 
             }
