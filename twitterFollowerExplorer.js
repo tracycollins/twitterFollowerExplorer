@@ -39,6 +39,7 @@ DEFAULT_INPUT_TYPES.sort();
 
 let globalHistograms = {};
 let statsObj = {};
+statsObj.randomNetworkTreeOp = null;
 statsObj.randomNetworkTreeActivateQueueSize = 0;
 statsObj.histograms = {};
 statsObj.friends = {};
@@ -4490,11 +4491,13 @@ async function showStats(options) {
       + " | FSM: " + fsm.getMachineState()
       + " | N: " + getTimeStamp()
       + " | PUQ EMPTY: " + processUserQueueEmpty()
-      + " | PUQ READY: " + processUserQueueReady
-      + " | PUQ LENGTH: " + processUserQueue.length
-      + " | ANQ READY: " + activateNetworkQueueReady
-      + " | ANQ LENGTH: " + activateNetworkQueue.length
-      + " | RNTQ LENGTH: " + randomNetworkTreeActivateQueueSize
+      + " | PUQ RDY: " + processUserQueueReady
+      + " | PUQ LNG: " + processUserQueue.length
+      + " | ANQ RDY: " + activateNetworkQueueReady
+      + " | ANQ LNG: " + activateNetworkQueue.length
+      + " | RNT OP: " + statsObj.randomNetworkTreeOp
+      + " | RNT RDY: " + randomNetworkTreeReadyFlag
+      + " | RNTQ LNG: " + randomNetworkTreeActivateQueueSize
       + " | ALL CH FETCH END: " + statsObj.allChildrenFetchEnd
       + "\nTFE | ### FEM S"
       + " | E: " + msToTime(statsObj.elapsed)
@@ -5733,6 +5736,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
       let prevBestNnObj = {};
       let fileObj = {};
       let file;
+
+      statsObj.randomNetworkTreeOp = m.op;
 
       switch (m.op) {
         case "IDLE":
