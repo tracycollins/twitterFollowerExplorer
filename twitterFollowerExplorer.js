@@ -5700,9 +5700,9 @@ function initActivateNetworkQueueInterval(interval) {
 
         activateNetworkObj = activateNetworkQueue.shift();
 
-        randomNetworkTree.send({op: "ACTIVATE", obj: activateNetworkObj});
-
-        activateNetworkQueueReady = true;
+        randomNetworkTree.send({op: "ACTIVATE", obj: activateNetworkObj}, function(){
+          activateNetworkQueueReady = true;
+        });
 
       }
 
