@@ -64,7 +64,7 @@
     "random-item": "^1.0.0",
     "regex": "^0.1.1",
     "slack-node": "^0.1.8",
-    "socket.io-client": "^2.1.1",
+    "socket.io-client": "^2.2.0",
     "sort-on": "^3.0.0",
     "stately.js": "^2.0.0",
     "stream-json": "^1.1.3",
