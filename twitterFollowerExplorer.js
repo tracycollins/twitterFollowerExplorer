@@ -2021,54 +2021,54 @@ function loadMaxInputDropbox(params) {
   });
 }
 
-function updateglobalHistograms(params, callback) {
+// function updateglobalHistograms(params, callback) {
 
-  statsObj.status = "UPDATE GLOBAL HISTOGRAMS";
+//   statsObj.status = "UPDATE GLOBAL HISTOGRAMS";
 
-  async.each(Object.keys(params.user.histograms), function(type, cb0) {
+//   async.each(Object.keys(params.user.histograms), function(type, cb0) {
 
-    if (globalHistograms[type] === undefined) { globalHistograms[type] = {}; }
+//     if (globalHistograms[type] === undefined) { globalHistograms[type] = {}; }
 
-    async.each(Object.keys(params.user.histograms[type]), function(item, cb1) {
+//     async.each(Object.keys(params.user.histograms[type]), function(item, cb1) {
 
-      if (globalHistograms[type][item] === undefined) {
-        globalHistograms[type][item] = {};
-        globalHistograms[type][item].total = 0;
-        globalHistograms[type][item].left = 0;
-        globalHistograms[type][item].neutral = 0;
-        globalHistograms[type][item].right = 0;
-        globalHistograms[type][item].positive = 0;
-        globalHistograms[type][item].negative = 0;
-        globalHistograms[type][item].uncategorized = 0;
-      }
+//       if (globalHistograms[type][item] === undefined) {
+//         globalHistograms[type][item] = {};
+//         globalHistograms[type][item].total = 0;
+//         globalHistograms[type][item].left = 0;
+//         globalHistograms[type][item].neutral = 0;
+//         globalHistograms[type][item].right = 0;
+//         globalHistograms[type][item].positive = 0;
+//         globalHistograms[type][item].negative = 0;
+//         globalHistograms[type][item].uncategorized = 0;
+//       }
 
-      globalHistograms[type][item].total += 1;
+//       globalHistograms[type][item].total += 1;
 
-      if (params.user.category) {
-        if (params.user.category === "left") { globalHistograms[type][item].left += 1; }
-        if (params.user.category === "neutral") { globalHistograms[type][item].neutral += 1; }
-        if (params.user.category === "right") { globalHistograms[type][item].right += 1; }
-        if (params.user.category === "positive") { globalHistograms[type][item].positive += 1; }
-        if (params.user.category === "negative") { globalHistograms[type][item].negative += 1; }
-      }
-      else {
-        globalHistograms[type][item].uncategorized += 1;
-      }
+//       if (params.user.category) {
+//         if (params.user.category === "left") { globalHistograms[type][item].left += 1; }
+//         if (params.user.category === "neutral") { globalHistograms[type][item].neutral += 1; }
+//         if (params.user.category === "right") { globalHistograms[type][item].right += 1; }
+//         if (params.user.category === "positive") { globalHistograms[type][item].positive += 1; }
+//         if (params.user.category === "negative") { globalHistograms[type][item].negative += 1; }
+//       }
+//       else {
+//         globalHistograms[type][item].uncategorized += 1;
+//       }
 
-      cb1();
+//       cb1();
 
-    }, function() {
+//     }, function() {
 
-      cb0();
+//       cb0();
 
-    });
+//     });
 
-  }, function() {
+//   }, function() {
 
-    if (callback !== undefined) { callback(); }
+//     if (callback !== undefined) { callback(); }
 
-  });
-}
+//   });
+// }
 
 function updateDbNetwork(params) {
 
@@ -3244,14 +3244,28 @@ function userProfileChangeHistogram(params) {
 
         imageHist: function(cb) {
 
+          // params.updateGlobalHistograms = (params.updateGlobalHistograms !== undefined) ? params.updateGlobalHistograms : false;
+          // params.category = params.user.category || "none";
+          // params.imageUrl = params.user.bannerImageUrl;
+          // params.histograms = params.user.histograms;
+          // params.screenName = params.user.screenName;
+
           if (bannerImageUrl){
-            parseImage(params)
+
+            parseImage({
+              screenName: user.screenName, 
+              category: user.category, 
+              imageUrl: bannerImageUrl, 
+              histograms: user.histograms,
+              updateGlobalHistograms: true
+            })
             .then(function(imageParseResults){
               cb(null, imageParseResults);
             })
             .catch(function(err){
               cb(err, null);
             });
+
           }
           else {
             cb(null, null);
@@ -3268,7 +3282,7 @@ function userProfileChangeHistogram(params) {
             // params.category = params.user.category || "none";
             // params.minWordLength = params.minWordLength || DEFAULT_WORD_MIN_LENGTH;
 
-            parseText({category: user.category, text: text})
+            parseText({ category: user.category, text: text, updateGlobalHistograms: true })
             .then(function(textParseResults){
 
               if (url || profileUrl) {
@@ -3964,6 +3978,14 @@ function initNetworks(params){
   });
 }
 
+function getGlobalHistograms(params){
+  return new Promise(function(resolve, reject){
+    twitterTextParser.getGlobalHistograms(function(hist) {
+      resolve(hist);
+    });
+  });
+}
+
 function reporter(event, oldState, newState) {
 
   statsObj.fsmState = newState;
@@ -4274,9 +4296,16 @@ const fsmStates = {
 
         let histogramsSavedFlag = false;
 
+        try {
+          globalHistograms = await getGlobalHistograms();
+        }
+        catch(err){
+          console.log(chalkError("TFE | *** GET GLOBAL HISTOGRAMS ERROR: " + err));
+          quit(err);
+        }
+
         console.log(chalkLog("TFE | SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
 
-        // async.forEach(Object.keys(globalHistograms), function(type, cb){
         async.forEach(DEFAULT_INPUT_TYPES, function(type, cb){
 
           // const type = t.toLowerCase();
@@ -4917,9 +4946,9 @@ function initStatsUpdate(callback) {
       statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
       statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
-      twitterTextParser.getGlobalHistograms(function(hist) {
+      // twitterTextParser.getGlobalHistograms(function(hist) {
         saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
-      });
+      // });
 
       clearInterval(statsUpdateInterval);
 
@@ -4930,9 +4959,9 @@ function initStatsUpdate(callback) {
         statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
         statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
-        twitterTextParser.getGlobalHistograms(function(hist) {
+        // twitterTextParser.getGlobalHistograms(function(hist) {
           saveFileQueue.push({folder: statsFolder, file: statsFile, obj: statsObj});
-        });
+        // });
 
         showStats();
         
