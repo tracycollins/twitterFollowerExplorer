@@ -285,6 +285,9 @@ let userObj = {
 
 
 const cla = require("command-line-args");
+let commandLineArgs;
+let configArgs;
+
 
 const minInputsGenerated = { name: "minInputsGenerated", type: Number};
 const maxInputsGenerated = { name: "maxInputsGenerated", type: Number};
@@ -1125,42 +1128,46 @@ function loadFile(params) {
 
 }
 
-function connectDb(callback){
+function connectDb(){
 
-  statsObj.status = "CONNECT DB";
+  return new Promise(function(resolve, reject){
 
-  wordAssoDb.connect("TNN_" + process.pid, function(err, db){
-    if (err) {
-      console.log(chalkError("*** TNN | MONGO DB CONNECTION ERROR: " + err));
-      callback(err, null);
-      dbConnectionReady = false;
-    }
-    else {
+    statsObj.status = "CONNECT DB";
+
+    wordAssoDb.connect("TNN_" + process.pid, function(err, db){
+      if (err) {
+        console.log(chalkError("*** GIS | MONGO DB CONNECTION ERROR: " + err));
+        dbConnectionReady = false;
+        return reject(err);
+      }
 
       db.on("error", function(){
-        console.error.bind(console, "*** TNN | MONGO DB CONNECTION ERROR ***\n");
-        console.log(chalkError("*** TNN | MONGO DB CONNECTION ERROR ***\n"));
-        db.close();
         dbConnectionReady = false;
+        console.error.bind(console, "*** GIS | MONGO DB CONNECTION ERROR ***\n");
+        console.log(chalkError("*** GIS | MONGO DB CONNECTION ERROR ***\n"));
+        db.close();
       });
 
       db.on("disconnected", function(){
-        console.error.bind(console, "*** TNN | MONGO DB DISCONNECTED ***\n");
-        console.log(chalkAlert("*** TNN | MONGO DB DISCONNECTED ***\n"));
         dbConnectionReady = false;
+        console.error.bind(console, "*** GIS | MONGO DB DISCONNECTED ***\n");
+        console.log(chalkAlert("*** GIS | MONGO DB DISCONNECTED ***\n"));
       });
 
 
-      console.log(chalkBlue("TNN | MONGOOSE DEFAULT CONNECTION OPEN"));
+      console.log(chalkBlue("GIS | MONGOOSE DEFAULT CONNECTION OPEN"));
 
       dbConnectionReady = true;
 
       User = mongoose.model("User", userModel.UserSchema);
       NetworkInputs = mongoose.model("NetworkInputs", networkInputsModel.NetworkInputsSchema);
 
-      callback(null, db);
-    }
+      resolve(db);
+
+    });
+
   });
+
 }
 
 function initStatsUpdate(callback){
@@ -1248,9 +1255,6 @@ function initialize(cnf){
       cnf.statsUpdateIntervalTime = process.env.GIS_STATS_UPDATE_INTERVAL || 10*ONE_SECOND;
 
       const loadedConfigObj = await loadFile({folder: dropboxConfigHostFolder, file: dropboxConfigFile});
-
-      let commandLineArgs;
-      let configArgs;
 
       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
 
@@ -1396,14 +1400,15 @@ async function main(){
     if (configuration.testMode) {
     }
 
-    connectDb(function(err, db){
+    try {
+      global.dbConnection = await connectDb();
+    }
+    catch(err){
+      dbConnectionReady = false;
+      console.log(chalkError("TFE | *** MONGO DB CONNECT ERROR: " + err + " | QUITTING ***"));
+      quit("MONGO DB CONNECT ERROR");
+    }
 
-      if (err) {
-        dbConnectionReady = false;
-        console.log(chalkError("TFE | *** MONGO DB CONNECT ERROR: " + err + " | QUITTING ***"));
-        quit("MONGO DB CONNECT ERROR");
-      }
-    });
 
     console.log(chalkTwitter("GIS | " + configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
 
