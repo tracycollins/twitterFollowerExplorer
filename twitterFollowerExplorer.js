@@ -4940,38 +4940,36 @@ function initStatsUpdate(callback) {
 
   return new Promise(function(resolve, reject){
 
-    try {
-      console.log(chalkTwitter("TFE | INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
+    console.log(chalkTwitter("TFE | INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
+
+    statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
+    statsObj.timeStamp = moment().format(compactDateTimeFormat);
+
+    // twitterTextParser.getGlobalHistograms(function(hist) {
+      saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
+    // });
+
+    clearInterval(statsUpdateInterval);
+
+    statsUpdateInterval = setInterval(async function () {
+
+      try {
+        await initUnfollowableUserSet();
+      }
+      catch(err){
+        console.log(chalkError("TFE | *** INIT UNFOLLOWABLE USER SET ERROR: " + err));
+      }
 
       statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
       statsObj.timeStamp = moment().format(compactDateTimeFormat);
 
-      // twitterTextParser.getGlobalHistograms(function(hist) {
-        saveFile({folder: statsFolder, file: statsFile, obj: statsObj});
-      // });
+      saveFileQueue.push({folder: statsFolder, file: statsFile, obj: statsObj});
 
-      clearInterval(statsUpdateInterval);
+      showStats();
+      
+    }, configuration.statsUpdateIntervalTime);
 
-      statsUpdateInterval = setInterval(async function () {
-
-        await initUnfollowableUserSet();
-
-        statsObj.elapsed = moment().valueOf() - statsObj.startTimeMoment.valueOf();
-        statsObj.timeStamp = moment().format(compactDateTimeFormat);
-
-        // twitterTextParser.getGlobalHistograms(function(hist) {
-          saveFileQueue.push({folder: statsFolder, file: statsFile, obj: statsObj});
-        // });
-
-        showStats();
-        
-      }, configuration.statsUpdateIntervalTime);
-
-      resolve();
-    }
-    catch(err){
-      reject(err);
-    }
+    resolve();
 
   });
 }
