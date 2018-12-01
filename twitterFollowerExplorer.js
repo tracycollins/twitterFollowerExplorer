@@ -1,5 +1,5 @@
  /*jslint node: true */
-/*jshint subw :true*/
+/*jshint sub:true*/
 "use strict";
 
 const ONE_SECOND = 1000 ;
@@ -2021,54 +2021,74 @@ function loadMaxInputDropbox(params) {
   });
 }
 
-// function updateglobalHistograms(params, callback) {
+function updateGlobalHistograms(params) {
 
-//   statsObj.status = "UPDATE GLOBAL HISTOGRAMS";
+  return new Promise(async function(resolve, reject){
 
-//   async.each(Object.keys(params.user.histograms), function(type, cb0) {
+    statsObj.status = "UPDATE GLOBAL HISTOGRAMS";
 
-//     if (globalHistograms[type] === undefined) { globalHistograms[type] = {}; }
+    let mergedHistograms = {};
 
-//     async.each(Object.keys(params.user.histograms[type]), function(item, cb1) {
+    try {
+      mergedHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
+    }
+    catch(err){
+      console.log(chalkError("TFE | *** UPDATE GLOBAL HISTOGRAMS ERROR: " + err));
+      return reject(err);
+    }
 
-//       if (globalHistograms[type][item] === undefined) {
-//         globalHistograms[type][item] = {};
-//         globalHistograms[type][item].total = 0;
-//         globalHistograms[type][item].left = 0;
-//         globalHistograms[type][item].neutral = 0;
-//         globalHistograms[type][item].right = 0;
-//         globalHistograms[type][item].positive = 0;
-//         globalHistograms[type][item].negative = 0;
-//         globalHistograms[type][item].uncategorized = 0;
-//       }
+    async.each(Object.keys(mergedHistograms), function(type, cb0) {
 
-//       globalHistograms[type][item].total += 1;
+      if (globalHistograms[type] === undefined) { globalHistograms[type] = {}; }
 
-//       if (params.user.category) {
-//         if (params.user.category === "left") { globalHistograms[type][item].left += 1; }
-//         if (params.user.category === "neutral") { globalHistograms[type][item].neutral += 1; }
-//         if (params.user.category === "right") { globalHistograms[type][item].right += 1; }
-//         if (params.user.category === "positive") { globalHistograms[type][item].positive += 1; }
-//         if (params.user.category === "negative") { globalHistograms[type][item].negative += 1; }
-//       }
-//       else {
-//         globalHistograms[type][item].uncategorized += 1;
-//       }
+      async.each(Object.keys(mergedHistograms[type]), function(item, cb1) {
 
-//       cb1();
+        if (globalHistograms[type][item] === undefined) {
+          globalHistograms[type][item] = {};
+          globalHistograms[type][item].total = 0;
+          globalHistograms[type][item].left = 0;
+          globalHistograms[type][item].neutral = 0;
+          globalHistograms[type][item].right = 0;
+          globalHistograms[type][item].positive = 0;
+          globalHistograms[type][item].negative = 0;
+          globalHistograms[type][item].none = 0;
+          globalHistograms[type][item].uncategorized = 0;
+        }
 
-//     }, function() {
+        globalHistograms[type][item].total += 1;
 
-//       cb0();
+        if (params.user.category) {
+          if (params.user.category === "left") { globalHistograms[type][item].left += 1; }
+          if (params.user.category === "neutral") { globalHistograms[type][item].neutral += 1; }
+          if (params.user.category === "right") { globalHistograms[type][item].right += 1; }
+          if (params.user.category === "positive") { globalHistograms[type][item].positive += 1; }
+          if (params.user.category === "negative") { globalHistograms[type][item].negative += 1; }
+          if (params.user.category === "none") { globalHistograms[type][item].none += 1; }
+        }
+        else {
+          globalHistograms[type][item].uncategorized += 1;
+        }
 
-//     });
+        cb1();
 
-//   }, function() {
+      }, function(err) {
 
-//     if (callback !== undefined) { callback(); }
+        if (err) { return reject(err); }
 
-//   });
-// }
+        cb0();
+
+      });
+
+    }, function(err) {
+
+      if (err) { return reject(err); }
+
+      resolve();
+
+    });
+
+  });
+}
 
 function updateDbNetwork(params) {
 
@@ -3441,7 +3461,8 @@ function updateUserHistograms(params) {
                   cb(null, profileHist);
                 })
                 .catch(function(err){
-                  cb(err, null);
+                  console.log(chalkError("TFE | *** MERGE HISTOGRAMS ERROR | PROFILE: " + err));
+                  return cb(err, null);
                 });
 
               }
@@ -3460,7 +3481,8 @@ function updateUserHistograms(params) {
                   cb(null, tweetHist);
                 })
                 .catch(function(err){
-                  cb(err, null);
+                  console.log(chalkError("TFE | *** MERGE HISTOGRAMS ERROR | TWEET: " + err));
+                  return cb(err, null);
                 });
 
               }
@@ -3475,7 +3497,16 @@ function updateUserHistograms(params) {
             }
             params.user.profileHistograms = results.profileHist;
             params.user.tweetHistograms = results.tweetHist;
-            resolve(params.user);
+
+            updateGlobalHistograms(params)
+            .then(function(){
+              resolve(params.user);
+            })
+            .catch(function(err){
+              console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR: " + err));
+              return reject(err);
+            });
+
           });
 
         });
@@ -3483,7 +3514,7 @@ function updateUserHistograms(params) {
       })
       .catch(function(err){
         console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR: " + err));
-        reject(err);
+        return reject(err);
       });
   });
 }
@@ -4296,13 +4327,13 @@ const fsmStates = {
 
         let histogramsSavedFlag = false;
 
-        try {
-          globalHistograms = await getGlobalHistograms();
-        }
-        catch(err){
-          console.log(chalkError("TFE | *** GET GLOBAL HISTOGRAMS ERROR: " + err));
-          quit(err);
-        }
+        // try {
+        //   globalHistograms = await getGlobalHistograms();
+        // }
+        // catch(err){
+        //   console.log(chalkError("TFE | *** GET GLOBAL HISTOGRAMS ERROR: " + err));
+        //   quit(err);
+        // }
 
         console.log(chalkLog("TFE | SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
 
