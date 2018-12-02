@@ -10,6 +10,8 @@ const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 
 const DEFAULT_THRECEE_AUTO_FOLLOW_USER = "altthreecee00";
 const DEFAULT_WORD_MIN_LENGTH = 3;
+const DEFAULT_ENABLE_IMAGE_ANALYSIS = false;
+const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
 
 const TEST_MODE_FETCH_USER_TIMEOUT = 30*ONE_SECOND;
 
@@ -88,13 +90,13 @@ function resetGlobalHistograms(params){
 
 let tfeChildHashMap = {};
 
-global.dbConnection = false;
-const mongoose = require("mongoose");
-mongoose.set("useFindAndModify", false);
-
 let unfollowableUserFile = "unfollowableUser.json";
 let unfollowableUserSet = new Set();
 let ignoredUserSet = new Set();
+
+global.dbConnection = false;
+const mongoose = require("mongoose");
+mongoose.set("useFindAndModify", false);
 
 global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
@@ -204,7 +206,6 @@ const SAVE_CACHE_DEFAULT_TTL = 120; // seconds
 const TFE_NUM_RANDOM_NETWORKS = 100;
 const IMAGE_QUOTA_TIMEOUT = 60000;
 
-const DEFAULT_FORCE_IMAGE_ANALYSIS = true;
 const DEFAULT_FORCE_INIT_RANDOM_NETWORKS = true;
 const DEFAULT_FETCH_USER_TIMEOUT = 5*ONE_MINUTE;
 const DEFAULT_FETCH_COUNT = 200;  // per request twitter user fetch count
@@ -352,7 +353,7 @@ let randomNetworkTreeMessageRxQueue = [];
 let randomNetworksObj = {};
 
 
-let enableImageAnalysis = true;
+// let enableImageAnalysis = true;
 
 let langAnalyzer;
 let langAnalyzerMessageRxQueueInterval;
@@ -968,6 +969,7 @@ configuration.DROPBOX.DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FIL
 
 configuration.threeceeAutoFollowUser = DEFAULT_THRECEE_AUTO_FOLLOW_USER;
 
+configuration.enableImageAnalysis = DEFAULT_ENABLE_IMAGE_ANALYSIS;
 configuration.forceImageAnalysis = DEFAULT_FORCE_IMAGE_ANALYSIS;
 configuration.forceInitRandomNetworks = DEFAULT_FORCE_INIT_RANDOM_NETWORKS;
 configuration.enableLanguageAnalysis = false;
@@ -1791,6 +1793,11 @@ function loadConfigFile(params) {
       if (loadedConfigObj.TFE_FORCE_LANG_ANALYSIS !== undefined) {
         console.log("TFE | LOADED TFE_FORCE_LANG_ANALYSIS: " + loadedConfigObj.TFE_FORCE_LANG_ANALYSIS);
         newConfiguration.forceLanguageAnalysis = loadedConfigObj.TFE_FORCE_LANG_ANALYSIS;
+      }
+
+      if (loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS !== undefined) {
+        console.log("TFE | LOADED TFE_ENABLE_IMAGE_ANALYSIS: " + loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS);
+        newConfiguration.enableImageAnalysis = loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS;
       }
 
       if (loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS !== undefined) {
@@ -2756,10 +2763,6 @@ function enableAnalysis(user, languageAnalysis) {
   return false;
 }
 
-// function activateNetwork(obj) {
-//   activateNetworkQueue.push(obj);
-// }
-
 function startImageQuotaTimeout() {
   setTimeout(function() {
     enableImageAnalysis = true;
@@ -2767,61 +2770,7 @@ function startImageQuotaTimeout() {
   }, IMAGE_QUOTA_TIMEOUT);
 }
 
-// function updateHistograms(params, callback) {
-
-//   statsObj.status = "UPDATE HISTOGRAMS";
-
-//   let user = {};
-//   let histogramsIn = {};
-
-//   user = params.user;
-//   histogramsIn = params.histograms;
-
-//   user.histograms = user.histograms || {};
-  
-//   async.each(DEFAULT_INPUT_TYPES, function(type, cb0) {
-
-//     user.histograms[type] = user.histograms[type] || {};
-//     histogramsIn[type] = histogramsIn[type] || {};
-
-//     const inputHistogramTypeItems = Object.keys(histogramsIn[type]);
-
-//     async.each(inputHistogramTypeItems, function(item, cb1) {
-
-//       user.histograms[type][item] = user.histograms[type][item] || 0;
-//       user.histograms[type][item] += histogramsIn[type][item];
-
-//       debug("user histograms"
-//         + " | @" + user.screenName
-//         + " | " + type
-//         + " | " + item
-//         + " | USER VAL: " + user.histograms[type][item]
-//         + " | UPDATE VAL: " + histogramsIn[type][item]
-//       );
-
-//       async.setImmediate(function() {
-//         cb1();
-//       });
-
-//     }, function (argument) {
-
-//       async.setImmediate(function() {
-//         cb0();
-//       });
-
-//     });
-//   }, function(err) {
-
-//     updateglobalHistograms({user: user}, function(){
-//       callback(err, user);
-//     });
-
-//   });
-// }
-
 function generateAutoCategory(user, callback) {
-
-  // return new Promise(function(resolve, reject){
 
     statsObj.status = "GEN AUTO CAT";
 
@@ -2847,8 +2796,6 @@ function generateAutoCategory(user, callback) {
       console.error(err);
       callback(err, user);
     });
-
-  // });
 }
 
 function checkUserProfileChanged(params) {
@@ -2927,7 +2874,6 @@ function parseImage(params){
   });
 }
 
-
 function userProfileChangeHistogram(params) {
 
   let text = "";
@@ -2948,19 +2894,11 @@ function userProfileChangeHistogram(params) {
       return resolve();
     }
 
-    // console.log(chalkInfo("TFE | userProfileChanges\n" + jsonPrint(userProfileChanges)));
-
     async.each(userProfileChanges, function(userProp, cb){
 
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
       user[prevUserProp] = (!user[prevUserProp] || (user[prevUserProp] === undefined)) ? {} : user[prevUserProp];
-
-      // console.log(chalkInfo("TFE | +++ USER PROFILE CHANGE"
-      //   + " | @" + user.screenName 
-      //   + " | " + userProp 
-      //   + "\n NEW: " + user[userProp] + "\n OLD: " + user[prevUserProp]
-      // ));
 
       switch (userProp) {
         case "name":
@@ -3006,13 +2944,7 @@ function userProfileChangeHistogram(params) {
 
         imageHist: function(cb) {
 
-          // params.updateGlobalHistograms = (params.updateGlobalHistograms !== undefined) ? params.updateGlobalHistograms : false;
-          // params.category = params.user.category || "none";
-          // params.imageUrl = params.user.bannerImageUrl;
-          // params.histograms = params.user.histograms;
-          // params.screenName = params.user.screenName;
-
-          if (bannerImageUrl){
+          if (configuration.enableImageAnalysis && bannerImageUrl){
 
             parseImage({
               screenName: user.screenName, 
@@ -3041,29 +2973,13 @@ function userProfileChangeHistogram(params) {
 
           if (text && (text !== undefined)){
 
-            // params.updateGlobalHistograms = (params.updateGlobalHistograms !== undefined) ? params.updateGlobalHistograms : false;
-            // params.category = params.user.category || "none";
-            // params.minWordLength = params.minWordLength || DEFAULT_WORD_MIN_LENGTH;
-
             parseText({ category: user.category, text: text, updateGlobalHistograms: true })
             .then(function(textParseResults){
 
-              // console.log(chalkAlert("TFE | TEST PARSE textParseResults\n" + jsonPrint(textParseResults)));
-
               if (Object.keys(urlsHistogram.urls).length > 0) {
-
-                // console.log(chalkAlert("TFE | MERGING URLS urlsHistogram\n" + jsonPrint(urlsHistogram)));
-
-                // let histB = {};
-                // histB.urls = {};
-
-                // if (url) { histB.urls[url] = 1; }
-                // if (profileUrl) { histB.urls[profileUrl] = 1; }
 
                 mergeHistograms.merge({ histogramA: textParseResults, histogramB: urlsHistogram })
                 .then(function(textMergeResults){
-
-                  // console.log(chalkLog("TFE | TEXT MERGE textMergeResults\n" + jsonPrint(textMergeResults)));
 
                   cb(null, textMergeResults);
                 })
@@ -3091,9 +3007,6 @@ function userProfileChangeHistogram(params) {
 
         mergeHistograms.merge({ histogramA: results.textHist, histogramB: results.imageHist})
         .then(function(histogramsMerged){
-
-          // console.log(chalkAlert("TFE | userProfileChangeHistogram histogramsMerged\n" + jsonPrint(histogramsMerged)));
-
           resolve(histogramsMerged);
         })
         .catch(function(err){
@@ -3106,8 +3019,6 @@ function userProfileChangeHistogram(params) {
 
   });
 }
-
-
 
 function userStatusChangeHistogram(params) {
 
@@ -3260,10 +3171,6 @@ function userStatusChangeHistogram(params) {
   });
 }
 
-// function userDefaults(user){
-// 	return user;
-// }
-
 function updateUserHistograms(params) {
 
   return new Promise(function(resolve, reject){
@@ -3275,13 +3182,9 @@ function updateUserHistograms(params) {
       reject(err);
     }
 
-    // params.user = userDefaults(params.user);
-
     userStatusChangeHistogram(params)
 
       .then(function(tweetHistogramChanges){
-
-        // params.tweetHistogramChanges = tweetHistogramChanges;
 
         userProfileChangeHistogram(params)
         .then(function(profileHistogramChanges){
@@ -3291,9 +3194,6 @@ function updateUserHistograms(params) {
             profileHist: function(cb){
 
               if (profileHistogramChanges) {
-
-                // console.log(chalkLog("TFE | updateUserHistograms params.user.profileHistograms\n" + jsonPrint(params.user.profileHistograms)));
-                // console.log(chalkLog("TFE | updateUserHistograms profileHistogramChanges\n" + jsonPrint(profileHistogramChanges)));
 
                 mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: profileHistogramChanges })
                 .then(function(profileHist){
@@ -3315,9 +3215,6 @@ function updateUserHistograms(params) {
 
               if (tweetHistogramChanges) {
 
-                // console.log(chalkLog("TFE | updateUserHistograms params.user.tweetHistograms\n" + jsonPrint(params.user.tweetHistograms)));
-                // console.log(chalkLog("TFE | updateUserHistograms tweetHistogramChanges\n" + jsonPrint(tweetHistogramChanges)));
-
                 mergeHistograms.merge({ histogramA: params.user.tweetHistograms, histogramB: tweetHistogramChanges })
                 .then(function(tweetHist){
                   cb(null, tweetHist);
@@ -3337,10 +3234,6 @@ function updateUserHistograms(params) {
             if (err) {
               return reject(err);
             }
-
-            // if (results.profileHist || results.tweetHist) {
-            //   console.log(chalkLog("TFE | updateUserHistograms results\n" + jsonPrint(results)));
-            // }
 
             params.user.profileHistograms = results.profileHist;
             params.user.tweetHistograms = results.tweetHist;
@@ -3366,7 +3259,6 @@ function updateUserHistograms(params) {
   });
 }
 
-// function processUser(threeceeUser, userIn, callback) {
 function processUser(params) {
 
   return new Promise(function(resolve, reject){
@@ -3514,18 +3406,15 @@ function processUser(params) {
             userIn.url = _.get(userIn, "entities.url.urls[0].expanded_url", userIn.url);
 
             if (userIn.url && (userIn.url !== undefined) && (user.url !== userIn.url)) {
-              // user.previousUrl = user.url;
               user.url = userIn.url;
             }
 
             if (userIn.profile_url && (userIn.profile_url !== undefined) && (user.profileUrl !== userIn.profile_url)) {
-              // user.previousProfileUrl = user.profileUrl;
               user.profileUrl = userIn.profile_url;
             }
 
             if (userIn.profile_banner_url && (userIn.profile_banner_url !== undefined) && (user.bannerImageUrl !== userIn.profile_banner_url)) {
               user.bannerImageAnalyzed = false;
-              // user.previousBannerImageUrl = user.bannerImageUrl;
               user.bannerImageUrl = userIn.profile_banner_url;
             }
 
@@ -3534,27 +3423,14 @@ function processUser(params) {
             }
 
             if (userIn.status && (userIn.status !== undefined) && (user.statusId !== userIn.status.id_str)) {
-              // user.previousStatusId = user.statusId;
               user.statusId = userIn.status.id_str;
               user.status = userIn.status;
             }
 
             if (userIn.quoted_status_id_str && (userIn.quoted_status_id_str !== undefined) && (user.quotedStatusId !== userIn.quoted_status_id_str)) {
-              // user.previousQuotedStatusId = user.quotedStatusId;
               user.quotedStatusId = userIn.quoted_status_id_str;
               user.quotedStatus = userIn.quoted_status;
             }
-
-            // if (
-            //   (user.status !== undefined)
-            //   && user.status
-            //   && (userIn.status !== undefined) 
-            //   && userIn.status
-            //   && user.status.id_str 
-            //   && userIn.status.id_str 
-            //   && (user.status.id_str !== userIn.status.id_str)) {
-            //   user.status = userIn.status;
-            // }
 
             if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)) {
               user.followersCount = userIn.followers_count;
@@ -4174,19 +4050,9 @@ const fsmStates = {
 
         let histogramsSavedFlag = false;
 
-        // try {
-        //   globalHistograms = await getGlobalHistograms();
-        // }
-        // catch(err){
-        //   console.log(chalkError("TFE | *** GET GLOBAL HISTOGRAMS ERROR: " + err));
-        //   quit(err);
-        // }
-
         console.log(chalkLog("TFE | SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
 
         async.forEach(DEFAULT_INPUT_TYPES, function(type, cb){
-
-          // const type = t.toLowerCase();
 
           if (!globalHistograms[type] || (globalHistograms[type] === undefined)){
             globalHistograms[type] = {};
@@ -5453,6 +5319,7 @@ function initConfig(cnf) {
     cnf.enableLanguageAnalysis = process.env.TFE_ENABLE_LANG_ANALYSIS || false ;
     cnf.forceLanguageAnalysis = process.env.TFE_FORCE_LANG_ANALYSIS || false ;
     cnf.forceImageAnalysis = process.env.TFE_FORCE_IMAGE_ANALYSIS || false ;
+    cnf.enableImageAnalysis = process.env.TFE_ENABLE_IMAGE_ANALYSIS || false ;
 
     console.log(chalkAlert("TFE | FORCE LANG ANALYSIS: " + cnf.forceLanguageAnalysis));
 
