@@ -1940,37 +1940,32 @@ function connectDb(){
 
         console.log(chalk.green("TFE | MONGOOSE DEFAULT CONNECTION OPEN"));
 
+
+        const emojiModel = require("@threeceelabs/mongoose-twitter/models/emoji.server.model");
+        const hashtagModel = require("@threeceelabs/mongoose-twitter/models/hashtag.server.model");
+        const locationModel = require("@threeceelabs/mongoose-twitter/models/location.server.model");
+        const mediaModel = require("@threeceelabs/mongoose-twitter/models/media.server.model");
+        const neuralNetworkModel = require("@threeceelabs/mongoose-twitter/models/neuralNetwork.server.model");
+        const placeModel = require("@threeceelabs/mongoose-twitter/models/place.server.model");
+        const tweetModel = require("@threeceelabs/mongoose-twitter/models/tweet.server.model");
+        const urlModel = require("@threeceelabs/mongoose-twitter/models/url.server.model");
+        const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.model");
+        const wordModel = require("@threeceelabs/mongoose-twitter/models/word.server.model");
+
+        global.Emoji = global.dbConnection.model("Emoji", emojiModel.EmojiSchema);
+        global.Hashtag = global.dbConnection.model("Hashtag", hashtagModel.HashtagSchema);
+        global.Location = global.dbConnection.model("Location", locationModel.LocationSchema);
+        global.Media = global.dbConnection.model("Media", mediaModel.MediaSchema);
+        global.NeuralNetwork = global.dbConnection.model("NeuralNetwork", neuralNetworkModel.NeuralNetworkSchema);
+        global.Place = global.dbConnection.model("Place", placeModel.PlaceSchema);
+        global.Tweet = global.dbConnection.model("Tweet", tweetModel.TweetSchema);
+        global.Url = global.dbConnection.model("Url", urlModel.UrlSchema);
+        global.User = global.dbConnection.model("User", userModel.UserSchema);
+        global.Word = global.dbConnection.model("Word", wordModel.WordSchema);
+
         // UserServerController = require("../userServerController/index.js");
         UserServerController = require("@threeceelabs/user-server-controller");
         userServerController = new UserServerController("TFE_USC");
-
-        // global.Url = mongoose.model("Url", global.urlModel.UrlSchema);
-        // global.User = mongoose.model("User", global.userModel.UserSchema);
-        // global.User = mongoose.model("User", global.userModel.UserSchema);
-        // global.User = mongoose.model("User", global.userModel.UserSchema);
-        // global.User = mongoose.model("User", global.userModel.UserSchema);
-        // global.User = mongoose.model("User", global.userModel.UserSchema);
-        // global.NeuralNetwork = mongoose.model("NeuralNetwork", global.neuralNetworkModel.NeuralNetworkSchema);
-
-// const emojiModel = require("@threeceelabs/mongoose-twitter/models/emoji.server.model");
-// const hashtagModel = require("@threeceelabs/mongoose-twitter/models/hashtag.server.model");
-// const mediaModel = require("@threeceelabs/mongoose-twitter/models/media.server.model");
-// const locationModel = require("@threeceelabs/mongoose-twitter/models/location.server.model");
-// const placeModel = require("@threeceelabs/mongoose-twitter/models/place.server.model");
-// const tweetModel = require("@threeceelabs/mongoose-twitter/models/tweet.server.model");
-// const urlModel = require("@threeceelabs/mongoose-twitter/models/url.server.model");
-// const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.model");
-// const wordModel = require("@threeceelabs/mongoose-twitter/models/word.server.model");
-
-        global.Emoji = global.dbConnection.model("Emoji", global.emojiModel.EmojiSchema);
-        global.Hashtag = global.dbConnection.model("Hashtag", global.hashtagModel.HashtagSchema);
-        global.Location = global.dbConnection.model("Location", global.locationModel.LocationSchema);
-        global.Media = global.dbConnection.model("Media", global.mediaModel.MediaSchema);
-        global.Place = global.dbConnection.model("Place", global.placeModel.PlaceSchema);
-        global.Tweet = global.dbConnection.model("Tweet", global.tweetModel.TweetSchema);
-        global.Url = global.dbConnection.model("Url", global.urlModel.UrlSchema);
-        global.User = global.dbConnection.model("User", global.userModel.UserSchema);
-        global.Word = global.dbConnection.model("Word", global.wordModel.WordSchema);
 
         // TweetServerController = require("../../../../tweetServerController/index.js");
         TweetServerController = require("@threeceelabs/tweet-server-controller");
@@ -2220,7 +2215,7 @@ function updateDbNetwork(params) {
       setDefaultsOnInsert: true,
     };
 
-    NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
+    global.NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
 
       if (err) {
         console.log(chalkError("TFE| *** updateDbNetwork | NETWORK FIND ONE ERROR: " + err));
@@ -2322,7 +2317,7 @@ function loadBestNetworksDatabase(paramsIn) {
 
     if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
 
-    NeuralNetwork.find(query).lean().sort({"overallMatchRate": -1}).limit(limit).exec(function(err, nnArray){
+    global.NeuralNetwork.find(query).lean().sort({"overallMatchRate": -1}).limit(limit).exec(function(err, nnArray){
 
       if (err){
         console.log(chalkError("TFE | *** NEURAL NETWORK FIND ERROR: " + err));
@@ -2856,351 +2851,6 @@ function generateAutoCategory(user, callback) {
   // });
 }
 
-
-// function generateAutoCategory(user, callback) {
-
-//   statsObj.status = "GEN AUTO CAT";
-
-//   async.waterfall([
-//     function userScreenName(cb) {
-//       if (user.screenName !== undefined) {
-//         async.setImmediate(function() {
-//           cb(null, "@" + user.screenName.toLowerCase());
-//         });
-//       }
-//       else {
-//         async.setImmediate(function() {
-//           cb(null, null);
-//         });
-//       }
-//     },
-//     function userName(text, cb) {
-//       if (user.name !== undefined) {
-//         if (text) {
-//           async.setImmediate(function() {
-//             cb(null, text + " | " + user.name);
-//           });
-//         }
-//         else {
-//           async.setImmediate(function() {
-//             cb(null, user.name);
-//           });
-//         }
-//       }
-//       else {
-//         if (text) {
-//           async.setImmediate(function() {
-//             cb(null, text);
-//           });
-//         }
-//         else {
-//           async.setImmediate(function() {
-//             cb(null, null);
-//           });
-//         }
-//       }
-//     },
-//     function userStatusText(text, cb) {
-//       if ((user.status !== undefined)
-//         && user.status
-//         && user.status.text) {
-//         if (text) {
-//           async.setImmediate(function() {
-//             cb(null, text + "\n" + user.status.text);
-//           });
-//         }
-//         else {
-//           async.setImmediate(function() {
-//             cb(null, user.status.text);
-//           });
-//         }
-//       }
-//       else {
-//         if (text) {
-//           async.setImmediate(function() {
-//             cb(null, text);
-//           });
-//         }
-//         else {
-//           async.setImmediate(function() {
-//             cb(null, null);
-//           });
-//         }
-//       }
-//     },
-//     function userRetweetText(text, cb) {
-//       if ((user.retweeted_status !== undefined)
-//         && user.retweeted_status
-//         && user.retweeted_status.text) {
-//         console.log(chalkTwitter("TFE | RT\n" + jsonPrint(user.retweeted_status.text)));
-//         if (text) {
-//           async.setImmediate(function() {
-//             cb(null, text + "\n" + user.retweeted_status.text);
-//           });
-//         }
-//         else {
-//           async.setImmediate(function() {
-//             cb(null, user.retweeted_status.text);
-//           });
-//         }
-//       }
-//       else {
-//         if (text) {
-//           async.setImmediate(function() {
-//             cb(null, text);
-//           });
-//         }
-//         else {
-//           async.setImmediate(function() {
-//             cb(null, null);
-//           });
-//         }
-//       }
-//     },
-//     function userLocation(text, cb) {
-
-//       if ((user.location !== undefined) && user.location) {
-//         if (text) {
-//           async.setImmediate(function() {
-//             cb(null, text + "\n" + user.location);
-//           });
-//         }
-//         else {
-//           async.setImmediate(function() {
-//             cb(null, user.location);
-//           });
-//         }
-//       }
-//       else {
-//         if (text) {
-//           async.setImmediate(function() {
-//             cb(null, text);
-//           });
-//         }
-//         else {
-//           async.setImmediate(function() {
-//             cb(null, null);
-//           });
-//         }
-//       }
-//     },
-//     function userDescriptionText(text, cb) {
-//       if ((user.description !== undefined) && user.description) {
-//         if (text) {
-//           async.setImmediate(function() {
-//             cb(null, text + "\n" + user.description);
-//           });
-//         }
-//         else {
-//           async.setImmediate(function() {
-//             cb(null, user.description);
-//           });
-//         }
-//       }
-//       else {
-//         if (text) {
-//           async.setImmediate(function() {
-//             cb(null, text);
-//           });
-//         }
-//         else {
-//           async.setImmediate(function() {
-//             cb(null, null);
-//           });
-//         }
-//       }
-//     },
-//     function userBannerImage(text, cb) {
-
-//       if (!user.histograms || (user.histograms === undefined)) { 
-//         user.markModified("histograms");
-//         user.histograms = {}; 
-//         user.histograms.images = {}; 
-//       }
-//       else if (user.histograms.images === undefined) { 
-//         user.histograms.images = {}; 
-//       }
-
-//       if (
-//         (enableImageAnalysis && !user.bannerImageAnalyzed && user.bannerImageUrl)
-//         || (enableImageAnalysis && user.bannerImageUrl && (user.bannerImageAnalyzed !== user.bannerImageUrl))
-//         || (configuration.forceImageAnalysis && user.bannerImageUrl)
-//       ) {
-
-//         twitterImageParser.parseImage(
-//           user.bannerImageUrl,
-//           {screenName: user.screenName, category: user.category, updateglobalHistograms: true},
-//           function(err, results) {
-//             if (err) {
-//               if (err.code === 8) {
-//                 console.log(chalkAlert("TFE | *** PARSE BANNER IMAGE QUOTA ERROR"
-//                 ));
-//                 enableImageAnalysis = false;
-//                 startImageQuotaTimeout();
-//               }
-//               else if (err.code === 7) {
-//                 console.log(chalkAlert("TFE | *** PARSE BANNER IMAGE CLOUD VISION API ERROR"
-//                 ));
-//                 enableImageAnalysis = false;
-//                 startImageQuotaTimeout();
-//               }
-//               else{
-//                 console.log(chalkError("TFE | *** PARSE BANNER IMAGE ERROR"
-//                   // + "\nREQ\n" + jsonPrint(results)
-//                   + " | ERR: " + err
-//                   + "\nERR\n" + jsonPrint(err)
-//                 ));
-//               }
-//               cb(null, text);
-//             }
-//             else {
-
-//               if (user.bannerImageAnalyzed 
-//                 && user.bannerImageUrl 
-//                 && (user.bannerImageAnalyzed !== user.bannerImageUrl)) {
-//                 console.log(chalk.bold.blue("TFE | ^^^ BANNER IMG UPDATED "
-//                   + " | @" + user.screenName
-//                   + " | IMG ANALYZED: " + user.bannerImageAnalyzed
-//                   + " | " + user.bannerImageUrl
-//                 ));
-//               }
-//               else {
-//                 console.log(chalk.bold.blue("TFE | +++ BANNER IMG ANALYZED"
-//                   + " | @" + user.screenName
-//                   + " | IMG ANALYZED: " + user.bannerImageAnalyzed
-//                   + " | " + user.bannerImageUrl
-//                 ));
-//               }
-
-//               user.bannerImageAnalyzed = user.bannerImageUrl;
-//               user.markModified("bannerImageAnalyzed");
-
-//               if (Object.keys(results.images).length > 0) {
-
-//                 async.each(Object.keys(results.images), function(item, cb0){
-
-//                   if (user.histograms.images[item] === undefined) { 
-//                     user.histograms.images[item] = results.images[item];
-//                     debug(chalk.bold.blue("TFE | +++ USER IMG HIST ADD"
-//                       + " | @" + user.screenName
-//                       + " | " + item + ": " + results.images[item]
-//                     ));
-//                   }
-//                   else {
-//                     console.log(chalk.bold.blue("TFE | ... USER IMG HIST HIT"
-//                       + " | @" + user.screenName
-//                       + " | " + item
-//                       + " | IN HIST: " + user.histograms.images[item]
-//                       + " | IN BANNER: " + item + ": " + results.images[item]
-//                     ));
-//                   }
-
-//                   cb0();
-
-//                 }, function(){
-
-//                   cb(null, text);
-
-//                 });
-//               }
-//               else {
-//                 cb(null, text);
-//               }
-
-//             }
-//           }
-//         );
-//       }
-//       else {
-//         async.setImmediate(function() {
-//           cb(null, text);
-//         });
-//       }
-//     }
-//   ], function (err, text, bannerResults) {
-//     if (err) {
-//       console.log(chalkError("TFE | *** ERROR generateAutoCategory: " + err));
-//       callback(err, null);
-//     }
-
-//     if (!text) { text = " "; }
-
-//     let parseTextOptions = {};
-//     parseTextOptions.updateglobalHistograms = true;
-
-//     if (user.category) {
-//       parseTextOptions.category = user.category;
-//     }
-//     else {
-//       parseTextOptions.category = false;
-//     }
-
-//     twitterTextParser.parseText(text, parseTextOptions, function(err, hist) {
-
-//       if (err) {
-//         console.log(chalkError("TFE | *** TWITTER TEXT PARSER ERROR: " + err));
-//         callback(new Error(err), null);
-//       }
-
-//       updateHistograms({user: user, histograms: hist}, function(err, updatedUser) {
-
-//         if (err) {
-//           console.trace(chalkError("TFE | *** UPDATE USER HISTOGRAMS ERROR\n" + jsonPrint(err)));
-//           console.trace(chalkError("TFE | *** UPDATE USER HISTOGRAMS ERROR\nUSER\n" + jsonPrint(user)));
-//           callback(new Error(err), null);
-//         }
-
-//         updatedUser.inputHits = 0;
-
-//         const score = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.score : 0;
-//         const mag = updatedUser.languageAnalysis.sentiment ? updatedUser.languageAnalysis.sentiment.magnitude : 0;
-
-//         statsObj.normalization.score.min = Math.min(score, statsObj.normalization.score.min);
-//         statsObj.normalization.score.max = Math.max(score, statsObj.normalization.score.max);
-//         statsObj.normalization.magnitude.min = Math.min(mag, statsObj.normalization.magnitude.min);
-//         statsObj.normalization.magnitude.max = Math.max(mag, statsObj.normalization.magnitude.max);
-//         statsObj.analyzer.total += 1;
-
-//         if (enableAnalysis(updatedUser, {magnitude: mag, score: score})) {
-//           debug(chalkLog("TFE | >>>> LANG ANALYZE"
-//             + " [ ANLd: " + statsObj.analyzer.analyzed
-//             + " [ SKPd: " + statsObj.analyzer.skipped
-//             + " | " + updatedUser.nodeId
-//             + " | @" + updatedUser.screenName
-//             + " | LAd: " + updatedUser.languageAnalyzed
-//             + " | LA: S: " + score.toFixed(2)
-//             + " M: " + mag.toFixed(2)
-//           ));
-
-//           if ((langAnalyzer !== undefined) && langAnalyzer) {
-//             langAnalyzer.send({op: "LANG_ANALIZE", obj: updatedUser, text: text}, function() {
-//               statsObj.analyzer.analyzed += 1;
-//             });
-//           }
-//         }
-//         else {
-//           statsObj.analyzer.skipped += 1;
-//           debug(chalkLog("SKIP LANG ANALYZE"
-//             + " [ ANLd: " + statsObj.analyzer.analyzed
-//             + " [ SKPd: " + statsObj.analyzer.skipped
-//             + " | " + updatedUser.nodeId
-//             + " | @" + updatedUser.screenName
-//             + " | LAd: " + updatedUser.languageAnalyzed
-//             + " | LA: S: " + score.toFixed(2)
-//             + " M: " + mag.toFixed(2)
-//           ));
-//         }
-
-
-//         activateNetworkQueue.push({user: updatedUser, normalization: statsObj.normalization});
-
-//         callback(null, updatedUser);
-//       });
-
-//     });
-//   });
-// }
-
 function checkUserProfileChanged(params) {
 
   let user = params.user;
@@ -3212,7 +2862,7 @@ function checkUserProfileChanged(params) {
   if (user.description && (user.description !== undefined) && (user.description !== user.previousDescription)) { results.push("description"); }
   if (user.location && (user.location !== undefined) && (user.location !== user.previousLocation)) { results.push("location"); }
   if (user.url && (user.url !== undefined) && (user.url !== user.previousUrl)) { results.push("url"); }
-  if (user.extendedUrl && (user.extendedUrl !== undefined) && (user.extendedUrl !== user.previousExtendedUrl)) { results.push("extendedUrl"); }
+  if (user.expandedUrl && (user.expandedUrl !== undefined) && (user.expandedUrl !== user.previousExpandedUrl)) { results.push("expandedUrl"); }
   if (user.profileUrl && (user.profileUrl !== undefined) && (user.profileUrl !== user.previousProfileUrl)) { results.push("profileUrl"); }
   if (user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl !== user.previousBannerImageUrl)) { results.push("bannerImageUrl"); }
 
@@ -3321,9 +2971,9 @@ function userProfileChangeHistogram(params) {
         case "screenName":
           text += "@" + user[userProp] + "\n";
         break;
-        case "extendedUrl":
+        case "expandedUrl":
           urlsHistogram.urls[user[userProp]] = (urlsHistogram.urls[user[userProp]] === undefined) ? 1 : urlsHistogram.urls[user[userProp]] + 1;
-          console.log(chalkAlert("TFE | XTND URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
+          console.log(chalkAlert("TFE | XPNDED URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
         break;
         case "url":
           urlsHistogram.urls[user[userProp]] = (urlsHistogram.urls[user[userProp]] === undefined) ? 1 : urlsHistogram.urls[user[userProp]] + 1;
@@ -3554,7 +3204,7 @@ function userStatusChangeHistogram(params) {
                 entity = entityObj.nodeId;
               break;
               case "urls":
-                entity = (entityObj.extendedUrl && entityObj.extendedUrl !== undefined) ? entityObj.extendedUrl.toLowerCase() : entityObj.nodeId;
+                entity = (entityObj.expandedUrl && entityObj.expandedUrl !== undefined) ? entityObj.expandedUrl.toLowerCase() : entityObj.nodeId;
               break;
               case "words":
                 entity = entityObj.nodeId.toLowerCase();
@@ -3688,9 +3338,9 @@ function updateUserHistograms(params) {
               return reject(err);
             }
 
-            if (results.profileHist || results.tweetHist) {
-              console.log(chalkLog("TFE | updateUserHistograms results\n" + jsonPrint(results)));
-            }
+            // if (results.profileHist || results.tweetHist) {
+            //   console.log(chalkLog("TFE | updateUserHistograms results\n" + jsonPrint(results)));
+            // }
 
             params.user.profileHistograms = results.profileHist;
             params.user.tweetHistograms = results.tweetHist;
