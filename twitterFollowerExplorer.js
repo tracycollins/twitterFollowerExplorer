@@ -200,7 +200,7 @@ const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 5; // ms
 const TWITTER_DEFAULT_USER = "altthreecee00";
 const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
-const DROPBOX_LIST_FOLDER_LIMIT = 100;
+const DROPBOX_LIST_FOLDER_LIMIT = 50;
 const TFC_CHILD_PREFIX = "TFC_";
 const SAVE_CACHE_DEFAULT_TTL = 120; // seconds
 const TFE_NUM_RANDOM_NETWORKS = 100;
@@ -1544,6 +1544,7 @@ function listDropboxFolder(params){
 
       let cursor;
       let more = false;
+      let limit = params.limit || DROPBOX_LIST_FOLDER_LIMIT;
 
       if (configuration.offlineMode) {
         dropboxClient = dropboxLocalClient;
@@ -1552,7 +1553,7 @@ function listDropboxFolder(params){
         dropboxClient = dropboxRemoteClient;
       }
 
-      dropboxClient.filesListFolder({path: params.folder, limit: DROPBOX_LIST_FOLDER_LIMIT})
+      dropboxClient.filesListFolder({path: params.folder, limit: limit})
       .then(function(response){
 
         cursor = response.cursor;
@@ -1563,7 +1564,7 @@ function listDropboxFolder(params){
           console.log(chalkLog("DROPBOX LIST FOLDER"
             + " | FOLDER:" + params.folder
             + " | ENTRIES: " + response.entries.length
-            + " | LIMIT: " + params.limit
+            + " | LIMIT: " + limit
             + " | MORE: " + more
           ));
         }
@@ -1589,7 +1590,7 @@ function listDropboxFolder(params){
                   console.log(chalkLog("DROPBOX LIST FOLDER CONT"
                     + " | PATH:" + params.folder
                     + " | ENTRIES: " + responseCont.entries.length + "/" + results.entries.length
-                    + " | LIMIT: " + params.limit
+                    + " | LIMIT: " + limit
                     + " | MORE: " + more
                   ));
                 }
@@ -2895,6 +2896,8 @@ function userProfileChangeHistogram(params) {
 
     async.each(userProfileChanges, function(userProp, cb){
 
+      const userPropValue = user[userProp].toLowerCase();
+
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
       user[prevUserProp] = (!user[prevUserProp] || (user[prevUserProp] === undefined)) ? {} : user[prevUserProp];
@@ -2903,26 +2906,26 @@ function userProfileChangeHistogram(params) {
         case "name":
         case "location":
         case "description":
-          text += user[userProp] + "\n";
+          text += userPropValue + "\n";
         break;
         case "screenName":
-          text += "@" + user[userProp] + "\n";
+          text += "@" + userPropValue + "\n";
         break;
         case "expandedUrl":
-          urlsHistogram.urls[user[userProp]] = (urlsHistogram.urls[user[userProp]] === undefined) ? 1 : urlsHistogram.urls[user[userProp]] + 1;
-          console.log(chalkLog("TFE | XPNDED URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
+          urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
+          console.log(chalkLog("TFE | XPNDED URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
         break;
         case "url":
-          urlsHistogram.urls[user[userProp]] = (urlsHistogram.urls[user[userProp]] === undefined) ? 1 : urlsHistogram.urls[user[userProp]] + 1;
-          console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
+          urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
+          console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
         break;
         case "profileUrl":
-          // profileUrl = user[userProp];
-          urlsHistogram.urls[user[userProp]] = (urlsHistogram.urls[user[userProp]] === undefined) ? 1 : urlsHistogram.urls[user[userProp]] + 1;
-          console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
+          // profileUrl = userPropValue;
+          urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
+          console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
         break;
         case "bannerImageUrl":
-          bannerImageUrl = user[userProp];
+          bannerImageUrl = userPropValue;
         break;
         default:
           console.log(chalkError("TFE | UNKNOWN USER PROPERTY: " + userProp));
@@ -3087,9 +3090,7 @@ function userStatusChangeHistogram(params) {
           async.each(tweetObj[entityType], function(entityObj, cb1){
 
             if (!entityObj) {
-              console.log(chalkInfo("TFE | !!! NULL entity? | ENTITY TYPE: " + entityType + " | entityObj: " + entityObj));
-              // console.log(chalkAlert("DBU | !!! NULL entity? | ENTITY TYPE: " + entityType + "\nentityObj\n" + jsonPrint(entityObj)));
-              // console.log(chalkAlert("DBU | !!! NULL entity?\n" + jsonPrint(tweetObj)));
+              debug(chalkInfo("TFE | !!! NULL entity? | ENTITY TYPE: " + entityType + " | entityObj: " + entityObj));
               return cb1();
             }
 
@@ -4327,6 +4328,7 @@ process.on( "SIGINT", function() {
 function saveFile(params, callback){
 
   let fullPath = params.folder + "/" + params.file;
+  let limit = params.limit || DROPBOX_LIST_FOLDER_LIMIT;
 
   debug(chalkInfo("LOAD FOLDER " + params.folder));
   debug(chalkInfo("LOAD FILE " + params.file));
@@ -4412,7 +4414,7 @@ function saveFile(params, callback){
 
     if (options.mode === "add") {
 
-      dropboxClient.filesListFolder({path: params.folder, limit: DROPBOX_LIST_FOLDER_LIMIT})
+      dropboxClient.filesListFolder({path: params.folder, limit: limit})
       .then(function(response){
 
         debug(chalkLog("DROPBOX LIST FOLDER"
