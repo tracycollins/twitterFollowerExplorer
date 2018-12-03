@@ -2913,16 +2913,16 @@ function userProfileChangeHistogram(params) {
         break;
         case "expandedUrl":
           urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
-          console.log(chalkLog("TFE | XPNDED URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
+          // console.log(chalkLog("TFE | XPNDED URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
         break;
         case "url":
           urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
-          console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
+          // console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
         break;
         case "profileUrl":
           // profileUrl = userPropValue;
           urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
-          console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
+          // console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
         break;
         case "bannerImageUrl":
           bannerImageUrl = userPropValue;
@@ -2956,7 +2956,7 @@ function userProfileChangeHistogram(params) {
               updateGlobalHistograms: true
             })
             .then(function(imageParseResults){
-              console.log(chalkLog("TFE | IMAGE PARSE imageParseResults\n" + jsonPrint(imageParseResults)));
+              // console.log(chalkLog("TFE | IMAGE PARSE imageParseResults\n" + jsonPrint(imageParseResults)));
               cb(null, imageParseResults);
             })
             .catch(function(err){
@@ -3000,7 +3000,7 @@ function userProfileChangeHistogram(params) {
             });
           }
           else {
-            console.log(chalkLog("TFE | URLS urlsHistogram\n" + jsonPrint(urlsHistogram)));
+            // console.log(chalkLog("TFE | URLS urlsHistogram\n" + jsonPrint(urlsHistogram)));
             cb(null, urlsHistogram);
           }
         }
@@ -3041,11 +3041,13 @@ function userStatusChangeHistogram(params) {
 
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
-      console.log(chalkLog("TFE | +++ USER STATUS CHANGE"
-        + " | @" + user.screenName 
-        + " | " + userProp 
-        + " | " + user[userProp] + " <-- " + user[prevUserProp]
-      ));
+      if (configuration.verbose) {
+        console.log(chalkLog("TFE | +++ USER STATUS CHANGE"
+          + " | @" + user.screenName 
+          + " | " + userProp 
+          + " | " + user[userProp] + " <-- " + user[prevUserProp]
+        ));
+      }
 
       let tscParams = {
         globalTestMode: configuration.globalTestMode,
@@ -3134,13 +3136,13 @@ function userStatusChangeHistogram(params) {
               tweetHistograms[entityType][entity] = 1;
             }
 
-            // if (configuration.verbose) {
+            if (configuration.verbose) {
               console.log(chalkLog("TFE | +++ USER HIST"
                 + " | " + entityType.toUpperCase()
                 + " | " + entity
                 + " | " + tweetHistograms[entityType][entity]
               ));
-            // }
+            }
 
             cb1();
 
@@ -4515,7 +4517,7 @@ function updatePreviousUserProps(params){
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
       if (params.user[userProp] && (params.user[userProp] !== undefined) && (params.user[prevUserProp] !== params.user[userProp])) {
-        console.log(chalkLog("TFE | updatePreviousUserProps"
+        debug(chalkLog("TFE | updatePreviousUserProps"
           + " | " + prevUserProp + ": " + params.user[prevUserProp] 
           + " <- " + userProp + ": " + params.user[userProp]
         ));
@@ -4536,6 +4538,7 @@ function updatePreviousUserProps(params){
 
       if (params.user.quotedStatusId && (params.user.quotedStatusId !== undefined) && (params.user.previousQuotedStatusId !== params.user.quotedStatusId)) {
         params.user.previousQuotedStatusId = params.user.quotedStatusId;
+        params.user.markModified("quotedStatusId");
         params.user.markModified("quotedStatusId");
       }
 

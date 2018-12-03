@@ -26,6 +26,8 @@ let elapsed_time = function(note){
     start = process.hrtime(); // reset the timer
 };
 
+const DEFAULT_INPUTS_BINARY_MODE = true;
+
 const MAX_SORT_NETWORKS = 500;
 const ONE_SECOND = 1000;
 const MAX_Q_SIZE = 2000;
@@ -46,6 +48,7 @@ let activateNetworkIntervalBusy = false;
 let statsUpdateInterval;
 
 let configuration = {};
+configuration.inputsBinaryMode = DEFAULT_INPUTS_BINARY_MODE;
 configuration.verbose = false;
 configuration.globalTestMode = false;
 configuration.testMode = false; // 
@@ -178,6 +181,7 @@ statsObj.categorize = {};
 statsObj.categorize.bestNetwork = {};
 statsObj.categorize.startTime = moment().valueOf();
 statsObj.categorize.endTime = moment().valueOf();
+statsObj.categorize.grandTotal = 0;
 statsObj.categorize.total = 0;
 statsObj.categorize.match = 0;
 statsObj.categorize.mismatch = 0;
@@ -381,6 +385,15 @@ function generateNetworkInputIndexed(params){
 
         if (histogramObj && (histogramObj[inputName] !== undefined)) {
 
+          if (configuration.inputsBinaryMode) {
+
+            networkInput[indexOffset + index] = 1;
+
+            return cb1();
+          }
+
+          let inputValue = 0;
+
           if (maxInputHashMap[inputType] === undefined) {
 
             maxInputHashMap[inputType] = {};
@@ -437,11 +450,13 @@ function generateNetworkInputIndexed(params){
               ));
             }
 
-            const inputValue = (maxInputHashMap[inputType][inputName] > 0) 
+            // let inputValue = 0;
+
+            networkInput[indexOffset + index] = (maxInputHashMap[inputType][inputName] > 0) 
               ? histogramObj[inputName]/maxInputHashMap[inputType][inputName] 
               : 1;
 
-            networkInput[indexOffset + index] = inputValue;
+            // networkInput[indexOffset + index] = inputValue;
 
             async.setImmediate(function() {
               cb1();
@@ -953,7 +968,7 @@ function printActivateResult(prefix, nn, category, categoryAuto, screenName){
     + " | OAMR: " + nn.overallMatchRate.toFixed(2) + "%"
     + " | MR: " + nn.matchRate.toFixed(2) + "%"
     + " | SR: " + nn.successRate.toFixed(2) + "%"
-    + " | " + nn.match + " / " + nn.total
+    + " | " + nn.match + " / " + nn.total + " [ " + statsObj.categorize.skipped + " SKP | " + statsObj.categorize.grandTotal + " GTOT ]"
     + " | TC: " + nn.testCycles
     + " | TCH: " + nn.testCycleHistory.length
     + " | " + nn.networkId
@@ -1069,6 +1084,8 @@ function initActivateNetworkInterval(interval){
           const generateNetworksOutputObj = await generateNetworksOutput(generateNetworksOutputParams);
 
           if (Object.keys(generateNetworksOutputObj.bestNetwork).length > 0){
+
+            statsObj.categorize.grandTotal += 1;
 
             if (category) {
 
@@ -1325,6 +1342,7 @@ function resetStats(callback){
 
   statsObj.categorize = {};
   statsObj.categorize.startTime = moment().valueOf();
+  statsObj.categorize.grandTotal = 0;
   statsObj.categorize.total = 0;
   statsObj.categorize.match = 0;
   statsObj.categorize.mismatch = 0;
