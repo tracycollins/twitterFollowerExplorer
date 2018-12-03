@@ -542,7 +542,7 @@ function slackMessageHandler(message){
 
     try {
 
-      console.log(chalkAlert("TFE | <RX MESSAGE | " + message.type + " | " + message.text));
+      console.log(chalkLog("TFE | <RX MESSAGE | " + message.type + " | " + message.text));
 
       switch (message.text) {
         case "ERROR":
@@ -1662,7 +1662,7 @@ function loadConfigFile(params) {
         return resolve();
       }
 
-      console.log(chalkAlert("TFE | +++ CONFIG FILE AFTER ... LOADING"
+      console.log(chalkLog("TFE | +++ CONFIG FILE AFTER ... LOADING"
         + " | " + fullPath
         + " | PREV: " + prevConfigFileModifiedMoment.format(compactDateTimeFormat)
         + " | " + fileModifiedMoment.format(compactDateTimeFormat)
@@ -1716,7 +1716,7 @@ function loadConfigFile(params) {
 
       if (newConfiguration.testMode) {
         newConfiguration.networkDatabaseLoadLimit = TEST_MODE_NUM_NN;
-        console.log(chalkAlert("TFE | TEST MODE | networkDatabaseLoadLimit: " + newConfiguration.networkDatabaseLoadLimit));
+        console.log(chalkLog("TFE | TEST MODE | networkDatabaseLoadLimit: " + newConfiguration.networkDatabaseLoadLimit));
       }
 
 
@@ -1727,7 +1727,7 @@ function loadConfigFile(params) {
 
       if (newConfiguration.testMode) {
         newConfiguration.fetchAllIntervalTime = TEST_MODE_FETCH_ALL_INTERVAL;
-        console.log(chalkAlert("TFE | TEST MODE | fetchAllIntervalTime: " + newConfiguration.fetchAllIntervalTime));
+        console.log(chalkLog("TFE | TEST MODE | fetchAllIntervalTime: " + newConfiguration.fetchAllIntervalTime));
       }
 
       if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined) {
@@ -1871,14 +1871,14 @@ function loadAllConfigFiles(){
 
       if (defaultConfig) {
         defaultConfiguration = defaultConfig;
-        console.log(chalkAlert("TFE | +++ RELOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
+        console.log(chalkLog("TFE | +++ RELOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
       }
       
       const hostConfig = await loadConfigFile({folder: dropboxConfigHostFolder, file: dropboxConfigHostFile});
 
       if (hostConfig) {
         hostConfiguration = hostConfig;
-        console.log(chalkAlert("TFE | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
+        console.log(chalkLog("TFE | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
       }
       
       // try{
@@ -1915,7 +1915,6 @@ function connectDb(){
 
         if (err) {
           console.log(chalkError("TFE | *** MONGO DB CONNECTION ERROR: " + err));
-          callback(err, null);
           statsObj.status = "MONGO CONNECTION ERROR";
           slackSendMessage(hostname + " | TFE | " + statsObj.status);
           dbConnectionReady = false;
@@ -1995,7 +1994,7 @@ function connectDb(){
           slackSendMessage(hostname + " | TFE | " + statsObj.status);
 
           userServerControllerReady = true;
-          console.log(chalkAlert("TFE | USC READY | " + appname));
+          console.log(chalkLog("TFE | USC READY | " + appname));
           dbConnectionReady = true;
 
           resolve(db);
@@ -2461,7 +2460,7 @@ function loadBestNetworksDropbox(params) {
           }
 
           if (!inputsIdSet.has(networkObj.inputsId)){
-            console.log(chalkAlert("TFE | LOAD BEST NETWORK HASHMAP INPUTS ID MISS ... SKIP HM ADD"
+            console.log(chalkLog("TFE | LOAD BEST NETWORK HASHMAP INPUTS ID MISS ... SKIP HM ADD"
               + " | IN: " + networkObj.numInputs
               + " | " + networkId 
               + " | INPUTS ID: " + networkObj.inputsId 
@@ -2471,7 +2470,7 @@ function loadBestNetworksDropbox(params) {
 
               const archivePath = folder + "/archive/" + entry.name;
 
-              console.log(chalkAlert("TFE | ARCHIVE NETWORK ON INPUTS ID MISS"
+              console.log(chalkLog("TFE | ARCHIVE NETWORK ON INPUTS ID MISS"
                 + " | IN: " + networkObj.numInputs
                 + " | " + networkId 
                 + " | INPUTS ID: " + networkObj.inputsId 
@@ -2911,16 +2910,16 @@ function userProfileChangeHistogram(params) {
         break;
         case "expandedUrl":
           urlsHistogram.urls[user[userProp]] = (urlsHistogram.urls[user[userProp]] === undefined) ? 1 : urlsHistogram.urls[user[userProp]] + 1;
-          console.log(chalkAlert("TFE | XPNDED URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
+          console.log(chalkLog("TFE | XPNDED URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
         break;
         case "url":
           urlsHistogram.urls[user[userProp]] = (urlsHistogram.urls[user[userProp]] === undefined) ? 1 : urlsHistogram.urls[user[userProp]] + 1;
-          console.log(chalkAlert("TFE | URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
+          console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
         break;
         case "profileUrl":
           // profileUrl = user[userProp];
           urlsHistogram.urls[user[userProp]] = (urlsHistogram.urls[user[userProp]] === undefined) ? 1 : urlsHistogram.urls[user[userProp]] + 1;
-          console.log(chalkAlert("TFE | URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
+          console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + user[userProp] + " = " + urlsHistogram.urls[user[userProp]]));
         break;
         case "bannerImageUrl":
           bannerImageUrl = user[userProp];
@@ -2954,7 +2953,7 @@ function userProfileChangeHistogram(params) {
               updateGlobalHistograms: true
             })
             .then(function(imageParseResults){
-              console.log(chalkAlert("TFE | IMAGE PARSE imageParseResults\n" + jsonPrint(imageParseResults)));
+              console.log(chalkLog("TFE | IMAGE PARSE imageParseResults\n" + jsonPrint(imageParseResults)));
               cb(null, imageParseResults);
             })
             .catch(function(err){
@@ -2998,7 +2997,7 @@ function userProfileChangeHistogram(params) {
             });
           }
           else {
-            console.log(chalkAlert("TFE | URLS urlsHistogram\n" + jsonPrint(urlsHistogram)));
+            console.log(chalkLog("TFE | URLS urlsHistogram\n" + jsonPrint(urlsHistogram)));
             cb(null, urlsHistogram);
           }
         }
@@ -3072,7 +3071,7 @@ function userStatusChangeHistogram(params) {
       tweetServerController.createStreamTweet(tscParams)
       .then(function(tweetObj){
 
-        // console.log(chalkAlert("TFE | CREATE STREAM TWEET | " + Object.keys(tweetObj)));
+        // console.log(chalkLog("TFE | CREATE STREAM TWEET | " + Object.keys(tweetObj)));
 
         async.each(DEFAULT_INPUT_TYPES, function(entityType, cb0){
 
@@ -3576,7 +3575,7 @@ function checkChildrenState (checkState) {
     });
 
     if (configuration.verbose) {
-      console.log(chalkAlert("TFE | MAIN: " + fsm.getMachineState()
+      console.log(chalkLog("TFE | MAIN: " + fsm.getMachineState()
         + " | ALL CHILDREN CHECKSTATE: " + checkState + " | " + allCheckState
       ));
     }
@@ -4983,7 +4982,7 @@ function initTwitterFollowerChild(twitterConfig) {
 
           case "UNFOLLOWED":
 
-            console.log(chalkAlert("TFE | CHILD UNFOLLOWED"
+            console.log(chalkLog("TFE | CHILD UNFOLLOWED"
               + " | " + m.threeceeUser
               + " | UID: " + m.user.id_str
               + " | @" + m.user.screen_name
@@ -5204,7 +5203,7 @@ function toggleVerbose(){
 
   configuration.verbose = !configuration.verbose;
 
-  console.log(chalkAlert("TFE | VERBOSE: " + configuration.verbose));
+  console.log(chalkLog("TFE | VERBOSE: " + configuration.verbose));
 
   childSendAll({op: "VERBOSE", verbose: configuration.verbose});
 }
@@ -5224,7 +5223,7 @@ function initStdIn() {
       // break;
       case "a":
         abortCursor = true;
-        console.log(chalkAlert("TFE | STDIN | ABORT: " + abortCursor));
+        console.log(chalkLog("TFE | STDIN | ABORT: " + abortCursor));
       break;
 
       case "K":
@@ -5259,7 +5258,7 @@ function initStdIn() {
 
       case "x":
         saveRawFriendFlag = true;
-        console.log(chalkAlert("TFE | STDIN | SAVE RAW FRIEND"));
+        console.log(chalkLog("TFE | STDIN | SAVE RAW FRIEND"));
       break;
 
       default:
@@ -6369,7 +6368,7 @@ setTimeout(async function(){
         
       }
       else {
-        console.log(chalkAlert("TFE | ... WAIT DB CONNECTED ..."));
+        console.log(chalkLog("TFE | ... WAIT DB CONNECTED ..."));
       }
     }, 1000);
 
