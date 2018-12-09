@@ -749,7 +749,7 @@ function generateNetworksOutput(params){
 
       statsTextObj[nnId] = {};
       statsTextObj[nnId] = [
-        nnId,
+        "RNT | " + nnId,
         statsObj.allTimeLoadedNetworks[nnId].inputsId,
         statsObj.allTimeLoadedNetworks[nnId].numInputs,
         statsObj.allTimeLoadedNetworks[nnId].overallMatchRate.toFixed(2),
@@ -831,7 +831,7 @@ function generateNetworksOutput(params){
           }, function(){
 
             statsTextArray.unshift([
-              "NNID",
+              "RNT | NNID",
               "INPUTSID",
               "INPUTS",
               "OAMR",
@@ -854,7 +854,7 @@ function generateNetworksOutput(params){
                 "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
               + "\nRNT | " + title 
               + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------\n"
-              + table(statsTextArray, { align: [ "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+              + table(statsTextArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
               + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
             ));
 
@@ -1366,6 +1366,11 @@ process.on("SIGHUP", function() {
 process.on("SIGINT", function() {
   console.log(chalkAlert("RNT | " + configuration.processName + " | *** SIGINT ***"));
   quit("SIGINT");
+});
+
+process.on("disconnect", function() {
+  console.log(chalkAlert("RNT | " + configuration.processName + " | *** DISCONNECT ***"));
+  quit("DISCONNECT");
 });
 
 process.on("message", async function(m) {

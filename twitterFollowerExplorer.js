@@ -9,6 +9,9 @@ const CHILD_PREFIX = "tfe_node";
 let saveRawFriendFlag = true;
 let neuralNetworkInitialized = false;
 
+const RNT_CHILD_ID = CHILD_PREFIX + "_child_rnt";
+const LAC_CHILD_ID = CHILD_PREFIX + "_child_lac";
+
 const TEST_MODE = false; // applies only to parent
 const CHILD_TEST_MODE = false; // applies only to children
 const GLOBAL_TEST_MODE = false;  // applies to parent and all children
@@ -21,6 +24,8 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const ONE_KILOBYTE = 1024;
 const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
+
+const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
 
 const OFFLINE_MODE = false;
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
@@ -39,6 +44,8 @@ const LANGUAGE_ANALYZE_INTERVAL = 100;
 const RANDOM_NETWORK_TREE_INTERVAL = 5;
 const DEFAULT_FETCH_ALL_INTERVAL = 120*ONE_MINUTE;
 const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 5; // ms
+
+let waitFileSaveInterval;
 
 const DEFAULT_ENABLE_IMAGE_ANALYSIS = false;
 const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
@@ -249,6 +256,29 @@ statsObj.userReadyAckWait = 0;
 statsObj.userReadyTransmitted = false;
 statsObj.authenticated = false;
 
+statsObj.users = {};
+statsObj.users.totalFriendsCount = 0;
+statsObj.users.totalFriendsFetched = 0;
+statsObj.users.totalPercentFetched = 0;
+statsObj.users.totalFriendsProcessed = 0;
+statsObj.users.totalPercentProcessed = 0;
+statsObj.users.grandTotalFriendsFetched = 0;
+statsObj.users.grandTotalPercentFetched = 0;
+statsObj.users.grandTotalFriendsProcessed = 0;
+statsObj.users.grandTotalPercentProcessed = 0;
+statsObj.users.classifiedAuto = 0;
+statsObj.users.classified = 0;
+statsObj.user = {};
+statsObj.user.altthreecee00 = {};
+statsObj.user.altthreecee00.friendsProcessed = 0;
+statsObj.analyzer = {};
+statsObj.analyzer.total = 0;
+statsObj.analyzer.analyzed = 0;
+statsObj.analyzer.skipped = 0;
+statsObj.analyzer.errors = 0;
+statsObj.twitterErrors = 0;
+statsObj.fetchUsersComplete = false;
+
 statsObj.maxChildrenCreated = false; 
 
 statsObj.friends = {};
@@ -387,7 +417,7 @@ function dropboxListFolders(params){
       dropboxClient = dropboxRemoteClient;
     }
 
-    console.log(chalkNetwork(MODULE_ID_PREFIX + " | ... GETTING DROPBOX FOLDERS ENTRIES"
+    console.log(chalkNetwork(MODULE_ID_PREFIX + " | GETTING DROPBOX FOLDERS ENTRIES ..."
       + " | " + params.folders.length + " FOLDERS"
       + "\n" + jsonPrint(params.folders)
     ));
@@ -479,7 +509,7 @@ function loadInputsDropbox(params) {
     const folder = params.folder;
     const file = params.file;
 
-    console.log(chalkNetwork("TFE | ... LOADING DROPBOX INPUTS CONFIG | " + folder + "/" + file));
+    console.log(chalkNetwork("TFE | LOADING DROPBOX INPUTS CONFIG | " + folder + "/" + file + " ..."));
 
     let options = {path: folder};
 
@@ -528,7 +558,7 @@ function dropboxLoadInputsFolder(params){
 
     let folder = params.folder || defaultInputsFolder;
 
-    console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING DROPBOX INPUTS FOLDER | " + folder));
+    console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING DROPBOX INPUTS FOLDER | " + folder + " ..."));
 
     let listDropboxFolderParams = {
       folder: params.folder,
@@ -781,7 +811,7 @@ function dropboxLoadBestNetworkFolders(params){
     let numNetworksLoaded = 0;
     let dropboxFoldersEntries;
 
-    console.log(chalkNetwork(MODULE_ID_PREFIX + " | ... LOADING DROPBOX NETWORK FOLDERS"
+    console.log(chalkNetwork(MODULE_ID_PREFIX + " | LOADING DROPBOX NETWORK FOLDERS"
       + " | " + params.folders.length + " FOLDERS"
       + "\n" + jsonPrint(params.folders)
     ));
@@ -807,12 +837,12 @@ function dropboxLoadBestNetworkFolders(params){
       debug("entry\n" + jsonPrint(entry));
 
       if (entry.name === bestRuntimeNetworkFileName) {
-        console.log(chalkInfo(MODULE_ID_PREFIX + " | ... SKIPPING LOAD OF " + entry.name));
+        console.log(chalkInfo(MODULE_ID_PREFIX + " | SKIPPING LOAD OF " + entry.name));
         return ;
       }
 
       if (!entry.name.endsWith(".json")) {
-        console.log(chalkInfo(MODULE_ID_PREFIX + " | ... SKIPPING LOAD OF " + entry.name));
+        console.log(chalkInfo(MODULE_ID_PREFIX + " | SKIPPING LOAD OF " + entry.name));
         return ;
       }
 
@@ -838,30 +868,12 @@ function dropboxLoadBestNetworkFolders(params){
         ));
         return ;
       }
-      
-      // console.log(chalkInfo(MODULE_ID_PREFIX + " | DROPBOX NETWORK IN *NOT* SKIP SET"
-      //   + " | " + networkId
-      //   + " | FOLDER: " + folder
-      //   + " | " + entry.name
-      // ));
 
       let networkObj;
 
       try {
 
-        // console.log(chalkInfo(MODULE_ID_PREFIX + " | CHECK NETWORK HASH"
-        //   + " | " + networkId
-        //   + " | FOLDER: " + folder
-        //   + " | " + entry.name
-        // ));
-
         const networkHashResult = await checkNetworkHash({entry: entry});
-
-        // console.log(chalkInfo(MODULE_ID_PREFIX + " | CHECK NETWORK HASH RESULT: " + networkHashResult
-        //   + " | " + networkId
-        //   + " | FOLDER: " + folder
-        //   + " | " + entry.name
-        // ));
 
         if (networkHashResult === "same"){ // no change
           console.log(chalkInfo(MODULE_ID_PREFIX + " | NN NO CHANGE"
@@ -874,11 +886,7 @@ function dropboxLoadBestNetworkFolders(params){
 
         networkObj = await loadFileRetry({path: entry.path_lower});
 
-        // printNetworkObj(MODULE_ID_PREFIX + " | LOADED DROPBOX NETWORK", networkObj);
-
         networkObj = await validateNetwork({networkId: networkId, networkObj: networkObj});
-
-        // printNetworkObj(MODULE_ID_PREFIX + " | VALIDATED DROPBOX NETWORK", networkObj);
 
         // invalid networkObj
         if (!networkObj) {  
@@ -909,8 +917,6 @@ function dropboxLoadBestNetworkFolders(params){
           return;
         }
 
-        // printNetworkObj(MODULE_ID_PREFIX + " | 0 | DROPBOX NETWORK", networkObj);
-
         //========================
         // SAVE LOCAL NETWORK TO GLOBAL
         //========================
@@ -926,8 +932,6 @@ function dropboxLoadBestNetworkFolders(params){
           saveFileQueue.push({localFlag: false, folder: globalBestNetworkFolder, file: entry.name, obj: networkObj});
         }
 
-        // printNetworkObj(MODULE_ID_PREFIX + " | 1 | DROPBOX NETWORK", networkObj);
-
         //========================
         // NETWORK MISMATCH GLOBAL/LOCAL
         //========================
@@ -941,8 +945,6 @@ function dropboxLoadBestNetworkFolders(params){
           await dropboxFileDelete({folder: localBestNetworkFolder, file: entry.name});
           return;
         }
-
-        // printNetworkObj(MODULE_ID_PREFIX + " | 2 | DROPBOX NETWORK", networkObj);
 
         //========================
         // NETWORK PASS SUCCESS or MATCH MIN
@@ -1150,7 +1152,7 @@ function loadSeedNeuralNetwork(params){
           const t = table(tableArray, { align: ["l", "r", "r", "r", "r", "r", "r", "l", "l"] });
 
           console.log(MODULE_ID_PREFIX + " | ============================================================================================================================================");
-          console.log(chalkLog(MODULE_ID_PREFIX + " | ... NO BEST NETWORKS CHANGED / LOADED | NNs IN HM: " + sortedBestNetworks.sortedKeys.length));
+          console.log(chalkLog(MODULE_ID_PREFIX + " | NO BEST NETWORKS CHANGED / LOADED | NNs IN HM: " + sortedBestNetworks.sortedKeys.length));
           if (configuration.verbose) { console.log(t); }
           console.log(MODULE_ID_PREFIX + " | ============================================================================================================================================");
 
@@ -1733,7 +1735,7 @@ function updateUserFromTrainingSet(params){
 
     let user = params.user;
 
-    debug(chalkLog("... UPDATING USER FROM TRAINING SET"
+    debug(chalkLog("UPDATING USER FROM TRAINING SET"
       + " | CM: " + printCat(user.category)
       + " | CA: " + printCat(user.categoryAuto)
       + " | @" + user.screenName
@@ -1981,12 +1983,12 @@ function checkNetworkHash(params){
     debug("entry\n" + jsonPrint(entry));
 
     if (entry.name === bestRuntimeNetworkFileName) {
-      console.log(chalkInfo(MODULE_ID_PREFIX + " | ... SKIPPING LOAD OF " + entry.name));
+      console.log(chalkInfo(MODULE_ID_PREFIX + " | SKIPPING LOAD OF " + entry.name));
       return ;
     }
 
     if (!entry.name.endsWith(".json")) {
-      console.log(chalkInfo(MODULE_ID_PREFIX + " | ... SKIPPING LOAD OF " + entry.name));
+      console.log(chalkInfo(MODULE_ID_PREFIX + " | SKIPPING LOAD OF " + entry.name));
       return ;
     }
 
@@ -1994,7 +1996,7 @@ function checkNetworkHash(params){
     const networkId = entryNameArray[0];
 
     if (!networkHashMap.has(networkId)){
-      // console.log(chalkInfo(MODULE_ID_PREFIX + " | ... NOT IN HASH " + entry.name));
+      // console.log(chalkInfo(MODULE_ID_PREFIX + " | NOT IN HASH " + entry.name));
       return resolve("miss");
     }
 
@@ -3314,6 +3316,29 @@ function jsonPrint(obj) {
   }
 }
 
+function delay(params) {
+
+  params = params || {};
+
+  let period = params.period || 10*ONE_SECOND;
+  let verbose = params.verbose || false;
+
+  return new Promise(function(resolve, reject){
+
+    if (verbose) {
+      console.log(chalkLog(MODULE_ID_PREFIX + " | +++ DELAY START | NOW: " + getTimeStamp() + " | PERIOD: " + msToTime(period)));
+    }
+
+    setTimeout(function(){
+      if (verbose) {
+        console.log(chalkLog(MODULE_ID_PREFIX + " | XXX DELAY END | NOW: " + getTimeStamp() + " | PERIOD: " + msToTime(period)));
+      }
+      resolve();
+    }, period);
+  });
+
+}
+
 function msToTime(duration) {
 
   let sign = 1;
@@ -3697,7 +3722,7 @@ function loadFile(params) {
         }
 
         console.log(chalkError(getTimeStamp()
-          + " | ... SKIP LOAD FILE FROM DROPBOX"
+          + " | SKIP LOAD FILE FROM DROPBOX"
           + " | " + fullPath
         ));
         resolve();
@@ -3771,7 +3796,7 @@ function loadFile(params) {
         
         if (err.status === 0) {
           console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX NO RESPONSE"
-            + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
+            + " | NO INTERNET CONNECTION? SKIPPING ..."));
           return resolve(new Error("NO INTERNET"));
         }
 
@@ -4318,7 +4343,7 @@ function saveFile(params, callback){
       console.log(chalkError(MODULE_ID_PREFIX + " | *** SHOW STATS ERROR"));
     });
 
-    console.log(chalkBlue(MODULE_ID_PREFIX + " | ... SAVING DROPBOX LOCALLY"
+    console.log(chalkBlue(MODULE_ID_PREFIX + " | SAVING DROPBOX LOCALLY"
       + " | " + objSizeMBytes.toFixed(3) + " MB"
       + " | " + fullPath
     ));
@@ -4427,11 +4452,11 @@ function saveFile(params, callback){
             return;
           }
           if (fileExits) {
-            console.log(chalkAlert(MODULE_ID_PREFIX + " | ... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
+            console.log(chalkAlert(MODULE_ID_PREFIX + " | DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
             if (callback !== undefined) { callback(err, null); }
           }
           else {
-            console.log(chalkAlert(MODULE_ID_PREFIX + " | ... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
+            console.log(chalkAlert(MODULE_ID_PREFIX + " | DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
             dbFileUpload();
           }
         });
@@ -4537,9 +4562,6 @@ async function quit(opts) {
 
   try{
     await childQuitAll();
-
-    await killAll();
-
     await showStats(true);
   }
   catch(err){
@@ -4566,7 +4588,7 @@ async function quit(opts) {
         ));
       }
       else {
-        console.log(chalkBlueBold(MODULE_ID_PREFIX + " | ALL PROCESSES COMPLETE ... QUITTING"
+        console.log(chalkBlueBold(MODULE_ID_PREFIX + " | ALL PROCESSES COMPLETE | QUITTING"
           + " | SAVE FILE BUSY: " + statsObj.queues.saveFileQueue.busy
           + " | SAVE FILE Q: " + statsObj.queues.saveFileQueue.size
         ));
@@ -4875,11 +4897,6 @@ function loadBestNetworksDropbox(params) {
           return;
         }
 
-        // if (bestNetworkHashMap.has(networkId)){
-        //   console.log(chalkLog("TFE | LOAD BEST NETWORK HASHMAP HIT ... SKIP | " + networkId));
-        //   return;
-        // }
-
         try {
 
           const entryNameArray = entry.name.split(".");
@@ -5057,7 +5074,7 @@ function loadBestNeuralNetworks() {
 
     statsObj.status = "LOAD BEST NN";
 
-    console.log(chalkLog("TFE | ... LOADING NEURAL NETWORKS"
+    console.log(chalkLog("TFE | LOADING NEURAL NETWORKS"
       + " | FOLDER: " + bestNetworkFolder
       + " | TIMEOUT: " + DEFAULT_DROPBOX_TIMEOUT + " MS"
     ));
@@ -5085,7 +5102,7 @@ function loadMaxInputDropbox(params) {
     const folder = params.folder;
     const file = params.file;
 
-    console.log(chalkNetwork("TFE | ... LOADING DROPBOX MAX INPUT HASHMAP | " + folder + "/" + file));
+    console.log(chalkNetwork("TFE | LOADING DROPBOX MAX INPUT HASHMAP | " + folder + "/" + file));
 
     let options = {path: folder};
 
@@ -5629,7 +5646,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeReadyFlag = true;
           randomNetworkTreeBusyFlag = false;
           runEnable();
-          console.log(chalkLog("TFE | ... RNT IDLE ..."));
+          console.log(chalkLog("TFE | RNT IDLE "));
         break;
 
         case "STATS":
@@ -5638,7 +5655,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             // + "\n" + jsonPrint(Object.keys(m.statsObj))
           ));
 
-          console.log(chalkBlue("TFE | RNT | UPDATING ALL NNs STATS IN DB..."));
+          console.log(chalkBlue("TFE | RNT | UPDATING ALL NNs STATS IN DB ..."));
 
           updateNetworkStats(
             {
@@ -5658,7 +5675,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
         case "NETWORK_READY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
-          debug(chalkInfo("... RNT NETWORK_READY ..."));
+          debug(chalkInfo("RNT NETWORK_READY ..."));
           runEnable();
         break;
 
@@ -5666,7 +5683,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
           randomNetworkTreeBusyFlag = "NETWORK_BUSY";
-          debug(chalkInfo("... RNT NETWORK_BUSY ..."));
+          debug(chalkInfo("RNT NETWORK_BUSY ..."));
         break;
 
         case "QUEUE_READY":
@@ -5740,7 +5757,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
               prevBestNetworkId = bestRuntimeNetworkId;
 
-              console.log(chalkNetwork("TFE | ... SAVING NEW BEST NETWORK"
+              console.log(chalkNetwork("TFE | SAVING NEW BEST NETWORK"
                 + " | " + currentBestNetwork.networkId
                 + " | SR: " + currentBestNetwork.successRate.toFixed(2)
                 + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
@@ -5828,7 +5845,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             if ((hostname === "google") && (prevBestNetworkId !== m.networkId)) {
 
               prevBestNetworkId = m.networkId;
-              console.log(chalkBlue("TFE | ... SAVING NEW BEST NETWORK"
+              console.log(chalkBlue("TFE | SAVING NEW BEST NETWORK"
                 + " | " + currentBestNetwork.networkId
                 + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
                 + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
@@ -5868,7 +5885,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
             if (hostname === "google") {
 
-              console.log(chalkBlue("TFE | ... SAVING PREV BEST NETWORK"
+              console.log(chalkBlue("TFE | SAVING PREV BEST NETWORK"
                 + " | MR: " + m.previousBestMatchRate.toFixed(2) + "%"
                 + " | " + m.previousBestNetworkId + ".json"
               ));
@@ -6149,6 +6166,8 @@ function initRandomNetworkTreeChild() {
 
     if (randomNetworkTree === undefined) {
 
+      const childId = RNT_CHILD_ID;
+
       console.log(chalkBlue("TFE | INIT RANDOM NETWORK TREE CHILD PROCESS"));
 
       randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`);
@@ -6213,12 +6232,21 @@ function initRandomNetworkTreeChild() {
         if (!quitFlag) { quit({source: "RNT", code: code }); }
       });
 
+
+      // childHashMap[childId] = {};
+      // childHashMap[childId].pid = randomNetworkTree.pid;
+      // childHashMap[childId].child = randomNetworkTree;
+
       randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL }, function(err) {
 
         if (err) {
           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
           return reject(err);
         }
+
+        // childHashMap[childId] = {};
+        // childHashMap[childId].pid = randomNetworkTree.pid;
+        // childHashMap[childId].child = randomNetworkTree;
 
         console.log(chalkLog("TFE | RNT CHILD INITIALIZED"));
 
@@ -6246,6 +6274,7 @@ function initLangAnalyzer(callback) {
 
   statsObj.status = "INIT LANG ANALYZER";
 
+  const childId = LAC_CHILD_ID;
 
   console.log(chalkLog("TFE | INIT LANGUAGE ANALYZER CHILD PROCESS"));
 
@@ -6294,7 +6323,7 @@ function initLangAnalyzer(callback) {
     }
     else if (m.op === "IDLE") {
       languageAnalysisBusyFlag = false;
-      debug(chalkInfo("... LANG ANAL IDLE ..."));
+      debug(chalkInfo("LANG ANAL IDLE"));
     }
     else if (m.op === "QUEUE_READY") {
       languageAnalysisBusyFlag = false;
@@ -6319,9 +6348,21 @@ function initLangAnalyzer(callback) {
     console.log(chalkError("TFE | *** langAnalyzer CLOSE *** | " + code));
     if (!quitFlag) { quit({source: "LA", code: code }); }
   });
-  langAnalyzer.send({ op: "INIT", interval: LANGUAGE_ANALYZE_INTERVAL }, function() {
-    if (callback !== undefined) { callback(); }
-  });
+
+  // childHashMap[childId] = {};
+  // childHashMap[childId].pid = langAnalyzer.pid;
+  // childHashMap[childId].child = langAnalyzer;
+
+  console.log(chalkLog("TFE | LAC CHILD CREATED | " + childId));
+
+  if (callback !== undefined) { callback(); }
+
+  // langAnalyzer.send({ op: "INIT", interval: LANGUAGE_ANALYZE_INTERVAL }, function() {
+  //   childHashMap[childId] = {};
+  //   childHashMap[childId].pid = langAnalyzer.pid;
+  //   childHashMap[childId].child = langAnalyzer;
+  //   if (callback !== undefined) { callback(); }
+  // });
 }
 
 
@@ -6630,16 +6671,16 @@ function userProfileChangeHistogram(params) {
         break;
         case "expandedUrl":
           urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
-          console.log(chalkLog("TFE | XPNDED URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
+          // console.log(chalkLog("TFE | XPNDED URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
         break;
         case "url":
           urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
-          console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
+          // console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
         break;
         case "profileUrl":
           // profileUrl = userPropValue;
           urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
-          console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
+          // console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
         break;
         case "bannerImageUrl":
           bannerImageUrl = userPropValue;
@@ -6949,7 +6990,7 @@ function processUser(params) {
 
               user = user.toObject();
 
-              console.log(chalkAlert("TFE | ... CONVERTED STRING | USER @" + user.screenName
+              console.log(chalkAlert("TFE | CONVERTED STRING | USER @" + user.screenName
                 + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
                 + " | threeceeFollowing: " + user.threeceeFollowing
               ));
@@ -7305,6 +7346,51 @@ function initUnfollowableUserSet(){
   });
 }
 
+function resetAllTwitterUserState(callback) {
+
+  return new Promise(function(resolve, reject){
+
+    statsObj.status = "RESET ALL TWITTER USERS";
+
+    async.forEach(Object.keys(twitterUserHashMap), async function(user) {
+      try {
+        await resetTwitterUserState(user);
+        return;
+      }
+      catch(err){
+        return(err);
+      }
+    }, function(err) {
+      if (err) { return reject(err); }
+      resolve();
+    });
+
+  });
+}
+
+function resetGlobalHistograms(params){
+
+  return new Promise(function(resolve, reject){
+
+    if (!params.inputTypes) {
+      return reject(new Error("inputTypes UNDEFINED"));
+    }
+
+    globalHistograms = {};
+    statsObj.histograms = {};
+
+    params.inputTypes.forEach(function(type){
+
+      globalHistograms[type] = {};
+      statsObj.histograms[type] = {};
+
+    });
+
+    resolve();
+
+  });
+}
+
 statsObj.fsmState = "RESET";
 
 const processUserQueueEmpty = function() {
@@ -7529,13 +7615,14 @@ const fsmStates = {
 
         statsObj.status = "FSM FETCH_ALL";
 
-        childSendAll({op: "FETCH_USER_START"});
+        childSendAll({op: "FETCH_START"});
         console.log("TFE | FETCH_ALL | onEnter | " + event);
       }
     },
     fsm_tick: function() {
 
-      childCheckState("FETCH_END").then(function(allChildrenFetchEnd){
+      childCheckState({checkState:"FETCH_END", noChildrenTrue: false})
+      .then(function(allChildrenFetchEnd){
         debug("FETCH_END TICK"
           + " | Q READY: " + processUserQueueReady
           + " | Q EMPTY: " + processUserQueueEmpty()
@@ -7598,7 +7685,9 @@ const fsmStates = {
         console.log(chalk.bold.blue("TFE | ================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("TFE | ===================================================="));
 
-        console.log(chalkLog("TFE | ... PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
+        console.log(chalkLog("TFE | PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
+
+        await delay({period: 10*ONE_SECOND, verbose: true});
 
         let histogramsSavedFlag = false;
 
@@ -7636,7 +7725,7 @@ const fsmStates = {
           const file = "histograms_" + type + ".json";
           const sizeInMBs = sizeof(globalHistograms[type])/ONE_MEGABYTE;
 
-          console.log(chalk.bold.blue("TFE | ... SAVING HISTOGRAM"
+          console.log(chalk.bold.blue("TFE | SAVING HISTOGRAM"
             + " | TYPE: " + type
             + " | ID: " + histObj.histogramsId
             + " | ENTRIES: " + Object.keys(histObj.histograms[type]).length
@@ -7683,7 +7772,7 @@ const fsmStates = {
 
         let slackText = "\n*END FETCH ALL*";
         slackText = slackText + " | " + hostname;
-        slackText = slackText + "\nSTART: " + statsObj.startTimeMoment.format(compactDateTimeFormat);
+        slackText = slackText + "\nSTART: " + statsObj.startTime;
         slackText = slackText + " | RUN: " + msToTime(statsObj.elapsed);
         slackText = slackText + "\nTOT: " + statsObj.users.totalFriendsProcessed;
         slackText = slackText + " | GTOT: " + statsObj.users.grandTotalFriendsProcessed;
@@ -7754,7 +7843,7 @@ const fsmStates = {
 
           }
           else {
-            console.log(chalk.bold.blue("TFE | ... WAITING FOR NNs TO BE SAVED ..."
+            console.log(chalk.bold.blue("TFE | WAITING FOR NNs TO BE SAVED ..."
               + " | HISTOGRAMS SAVED: " + histogramsSavedFlag
               + " | SAVE Q: " + saveFileQueue.length
             ));
@@ -8381,7 +8470,7 @@ function childCreate(params){
             }
             else {
               await childInit({childId: childId, config: childHashMap[childId].config});
-              await childCheckState("INIT");
+              // await childCheckState({checkState:"INIT", noChildrenTrue: false});
             }
           break;
 
@@ -8389,37 +8478,42 @@ function childCreate(params){
           case "INIT_COMPLETE":
             console.log(chalkTwitter("TFE | CHILD INIT COMPLETE | " + m.threeceeUser));
             childHashMap[childId].status = "INIT";
-            childCheckState(m.op);
           break;
      
           case "IDLE":
             console.log(chalkTwitter("TFE | CHILD IDLE | " + m.threeceeUser));
             childHashMap[childId].status = "IDLE";
-            childCheckState(m.op);
+            // await childCheckState({checkState: "IDLE", noChildrenTrue: false});
           break;
 
           case "RESET":
             console.log(chalkTwitter("TFE | CHILD RESET | " + m.threeceeUser));
             childHashMap[childId].status = "RESET";
-            childCheckState(m.op);
+            // await childCheckState({checkState: "RESET", noChildrenTrue: false});
           break;
 
           case "READY":
             console.log(chalkTwitter("TFE | CHILD READY | " + m.threeceeUser));
             childHashMap[childId].status = "READY";
-            childCheckState(m.op);
+            // await childCheckState({checkState: "READY", noChildrenTrue: false});
+          break;
+
+          case "FETCH_START":
+            console.log(chalkTwitter("TFE | CHILD FETCH_START | " + m.threeceeUser));
+            childHashMap[childId].status = "FETCH_START";
+            // await childCheckState({checkState: "FETCH", noChildrenTrue: false});
           break;
 
           case "FETCH":
             console.log(chalkTwitter("TFE | CHILD FETCH | " + m.threeceeUser));
             childHashMap[childId].status = "FETCH";
-            childCheckState(m.op);
+            // await childCheckState({checkState: "FETCH", noChildrenTrue: false});
           break;
 
           case "FETCH_END":
             console.log(chalkTwitter("TFE | CHILD FETCH_END | " + m.threeceeUser));
             childHashMap[childId].status = "FETCH_END";
-            childCheckState(m.op);
+            // await childCheckState({checkState: "FETCH_END", noChildrenTrue: false});
           break;
 
           case "PAUSE_RATE_LIMIT":
@@ -8427,7 +8521,7 @@ function childCreate(params){
             childHashMap[childId].status = "PAUSE_RATE_LIMIT";
             childHashMap[childId].twitterRateLimitRemaining = m.remaining;
             childHashMap[childId].twitterRateLimitResetAt = m.resetAt;
-            childCheckState(m.op);
+            // await childCheckState({checkState: "PAUSE_RATE_LIMIT", noChildrenTrue: false});
           break;
 
           case "THREECEE_USER":
@@ -8683,6 +8777,10 @@ function childCheckState (params) {
       if (child === undefined) { 
         console.error("CHILD UNDEFINED");
         return reject(new Error("CHILD UNDEFINED"));
+      }
+
+      if ((child === RNT_CHILD_ID) || (child === LAC_CHILD_ID)) { 
+        return ;
       }
 
       const cs = ((child.status === "DISABLED") || (child.status === checkState) || exceptionStates.includes(child.status));
