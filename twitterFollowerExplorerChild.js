@@ -2,13 +2,14 @@
 /*jshint sub:true*/
 "use strict";
 
+const TEST_MODE = false; // applies only to parent
+
 const MODULE_NAME = "tfcChild";
 const MODULE_ID_PREFIX = "TFC";
 
 const DEFAULT_INPUTS_BINARY_MODE = true;
 
 const OFFLINE_MODE = false;
-const TEST_MODE = true; // applies only to parent
 const QUIT_ON_COMPLETE = false;
 let quitOnCompleteFlag = false;
 
@@ -21,11 +22,10 @@ const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 
 const FETCH_COUNT = 200;
 const TEST_FETCH_COUNT = 11;
-
-const FETCH_USER_TIMEOUT = 15 * ONE_MINUTE;
-const TEST_FETCH_USER_TIMEOUT = 15 * ONE_SECOND;
-
 const TEST_TOTAL_FETCH = 47;
+
+const FETCH_USER_INTERVAL = 10 * ONE_MINUTE;
+const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 
 const KEEPALIVE_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = ONE_SECOND;
@@ -169,9 +169,10 @@ configuration.checkRateLimitInterval = 10 * ONE_MINUTE;
 configuration.inputsBinaryMode = DEFAULT_INPUTS_BINARY_MODE;
 configuration.testMode = TEST_MODE;
 configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : FETCH_COUNT;
+configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
 configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 configuration.fsmTickInterval = FSM_TICK_INTERVAL;
-configuration.fetchUserTimeout = (TEST_MODE) ? TEST_FETCH_USER_TIMEOUT : FETCH_USER_TIMEOUT;
+configuration.fetchUserInterval = (TEST_MODE) ? TEST_FETCH_USER_INTERVAL : FETCH_USER_INTERVAL;
 
 configuration.slackChannel = {};
 
@@ -191,6 +192,8 @@ statsObj.startTime = getTimeStamp();
 statsObj.elapsedMS = 0;
 statsObj.elapsed = getElapsedTimeStamp();
 
+statsObj.users = {};
+// statsObj.users.unfollowed = [];
 
 statsObj.queues = {};
 statsObj.queues.saveFileQueue = {};
@@ -1930,6 +1933,119 @@ let unfollowQueueReady = false;
 let unfollowQueueIntervalTime = process.env.DEFAULT_UNFOLLOW_QUEUE_INTERVAL || 5*ONE_SECOND;
 let unfollowQueue = [];
 
+function unfollowFriend(params, callback){
+
+  if (!twitClient || twitClient === undefined) {
+    console.log(chalkAlert("TFC | UNFOLLOW FRIEND | TWIT CLIENT UNDEFINED"
+      + " |  @" + configuration.threeceeUser
+      + " | UID: " + params.user.userId
+      + " | @" + params.user.screenName
+    ));
+    return callback(new Error("TWIT CLIENT UNDEFINED"), null);
+  }
+
+  let unfollowFriendParams = {};
+
+  if (params.user.user_id !== undefined) { 
+    unfollowFriendParams.user_id = params.user.user_id;
+  }
+  else if (params.user.userId !== undefined) { 
+    unfollowFriendParams.user_id = params.user.userId;
+  }
+
+  if (params.user.screen_name !== undefined) { 
+    unfollowFriendParams.screen_name = params.user.screen_name;
+  }
+  else if (params.user.screenName !== undefined) { 
+    unfollowFriendParams.screen_name = params.user.screenName;
+  }
+
+  if ((unfollowFriendParams.user_id === undefined)
+    && (unfollowFriendParams.screen_name === undefined)
+  ){
+
+    console.log(chalkAlert("TFC | UNFOLLOW FRIEND"
+      + "\nINVALID PARAMS"
+      + "\n" + jsonPrint(params)
+    ));
+    quit("UNFOLLOW FRIEND | INVALID PARAMS");
+    return callback(null, null);
+  }
+
+  twitClient.post(
+
+    "friendships/destroy", unfollowFriendParams, 
+
+    function destroyFriend(err, data, response){  // if success, data = user
+
+      if (err) {
+
+        console.log(chalkError("TFC | *** UNFOLLOW FRIEND ERROR"
+          + " | ERROR: " + err
+          + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
+        ));
+
+        return callback(err, unfollowFriendParams);
+      }
+
+      if (_.isObject(response) 
+        && (response.statusCode !== undefined) 
+        && (response.statusCode !== 200)) {
+
+        console.log(chalkError("TFC | *** UNFOLLOW FAIL"
+          + " | 3C: @" + configuration.threeceeUser
+          + " | RESPONSE CODE: " + response.statusCode
+          + "\nTFC | PARAMS\n" + jsonPrint(unfollowFriendParams)
+          + "\nTFC | RESPONSE\n" + jsonPrint(response)
+        ));
+
+        return callback(err, response);
+      }
+
+      if (data.following) {
+
+        console.log(chalkAlert("TFC | XXX UNFOLLOW"
+          + " | 3C: @" + configuration.threeceeUser
+          + " | UID: " + data.id_str
+          + " | @" + data.screen_name
+          + " | FLWRs: " + data.followers_count
+          + " | FRNDs: " + data.friends_count
+          + " | Ts: " + data.statuses_count
+          + " | FOLLOWING: " + data.following
+          // + " | RESPONSE CODE: " + response.statusCode
+          // + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
+          // + "\nDATA\n" + jsonPrint(data)
+        ));
+
+        // const userSmall = pick(
+        //   data, 
+        //   [ "id_str", "screen_name", "followers_count", "friends_count", "statuses_count"]
+        // );
+
+        // statsObj.users.unfollowed.push(userSmall);
+
+        process.send(
+          {
+            op:"UNFOLLOWED", 
+            threeceeUser: configuration.threeceeUser, 
+            user: data
+          }
+        );
+
+        return callback(null, data);
+      }
+
+      console.log(chalkInfo("TFC | miss UNFOLLOW"
+        + " | 3C: @" + configuration.threeceeUser
+        + " | UID: " + unfollowFriendParams.user_id
+      ));
+
+      callback(null, null);
+
+    }
+  );
+}
+
 function fetchFriends(params) {
 
   return new Promise(async function(resolve, reject){
@@ -2331,7 +2447,7 @@ const fsmStates = {
           await fetchFriends(params);
 
           if (statsObj.threeceeUser.nextCursorValid && !statsObj.threeceeUser.endFetch) {
-            await delay({period: configuration.fetchUserTimeout, verbose: true});
+            await delay({period: configuration.fetchUserInterval, verbose: true});
             fsm.fsm_fetchUserContinue();
           }
 
