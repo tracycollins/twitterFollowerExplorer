@@ -391,6 +391,7 @@ statsObjSmall = pick(statsObj, statsPickArray);
 
 const bestRuntimeNetworkFileName = "bestRuntimeNetwork.json";
 let bestRuntimeNetworkId = false;
+let prevBestNetworkId = false;
 let loadedNetworksFlag = false;
 let currentBestNetworkId = false;
 
