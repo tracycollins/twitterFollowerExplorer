@@ -1,6 +1,8 @@
 /*jslint node: true */
 /*jshint sub:true*/
 "use strict";
+const HOST = process.env.PRIMARY_HOST || "local";
+const PRIMARY_HOST = process.env.PRIMARY_HOST || "macpro2";
 
 const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
@@ -1025,8 +1027,8 @@ function dropboxLoadBestNetworkFolders(params){
         // PURGE FAILING NETWORKS
         //========================
 
-        if (((hostname === "google") && (folder === globalBestNetworkFolder))
-          || ((hostname !== "google") && (folder === localBestNetworkFolder)) ) {
+        if (((hostname === PRIMARY_HOST) && (folder === globalBestNetworkFolder))
+          || ((hostname !== PRIMARY_HOST) && (folder === localBestNetworkFolder)) ) {
 
           printNetworkObj(MODULE_ID_PREFIX + " | DELETING NN", networkObj);
 
@@ -1251,7 +1253,7 @@ function loadTrainingSet(params){
 
     if (archiveFlagObj.path !== statsObj.archivePath) {
 
-      const fullLocalPath = (hostname === "google") ? "/home/tc/Dropbox/Apps/wordAssociation" + archiveFlagObj.path : "/Users/tc/Dropbox/Apps/wordAssociation" + archiveFlagObj.path;
+      const fullLocalPath = "/Users/tc/Dropbox/Apps/wordAssociation" + archiveFlagObj.path;
 
       try {
         await loadUsersArchive({path: fullLocalPath, size: archiveFlagObj.size});
@@ -2063,7 +2065,7 @@ function updateCategorizedUsers(params){
 
     statsObj.status = "UPDATE CATEGORIZED USERS";
 
-    let userSubDirectory = (hostname === "google") ? configuration.defaultTrainingSetsFolder
+    let userSubDirectory = (hostname === PRIMARY_HOST) ? configuration.defaultTrainingSetsFolder
     : configuration.hostTrainingSetsFolder;
 
     let userFile;
@@ -2726,18 +2728,10 @@ function initWatch(params){
 
           console.log(chalkLog(MODULE_ID_PREFIX + " | USER ARCHIVE FLAG FILE | PATH: " + archiveFlagObj.path + " | SIZE: " + archiveFlagObj.size));
 
-          // const fullLocalPath = (hostname === "google") ? "/home/tc/Dropbox/Apps/wordAssociation" + archiveFlagObj.path : "/Users/tc/Dropbox/Apps/wordAssociation" + archiveFlagObj.path;
-
           try {
             await loadTrainingSet({folder: configuration.defaultTrainingSetsFolder, file: configuration.defaultUserArchiveFlagFile});
-            // await loadUsersArchive({path: fullLocalPath, size: archiveFlagObj.size});
-            // statsObj.archiveModifiedMoment = moment();
-            // statsObj.loadUsersArchiveBusy = false;
-            // statsObj.trainingSetReady = true;
           }
           catch(err){
-            // statsObj.loadUsersArchiveBusy = false;
-            // statsObj.trainingSetReady = false;
             console.log(chalkError(MODULE_ID_PREFIX + " | *** WATCH CHANGE ERROR | " + getTimeStamp() + " | " + err));
           }
 
@@ -3508,9 +3502,7 @@ const dropboxConfigHostFolder = "/config/utility/" + hostname;
 const dropboxConfigDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 
-let childPidFolderLocal = (hostname === "google") 
-  ? "/home/tc/Dropbox/Apps/wordAssociation/config/utility/google/children" 
-  : "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/children";
+let childPidFolderLocal = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/children";
 
 let statsFolder = "/stats/" + hostname;
 let statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
@@ -3525,7 +3517,7 @@ const defaultTrainingSetUserArchive = defaultTrainingSetFolder + "/users/users.z
 
 const globalBestNetworkFolder = "/config/utility/best/neuralNetworks";
 const localBestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
-let bestNetworkFolder = (hostname === "google") ? "/config/utility/best/neuralNetworks" : localBestNetworkFolder;
+let bestNetworkFolder = (hostname === PRIMARY_HOST) ? "/config/utility/best/neuralNetworks" : localBestNetworkFolder;
 
 let globalCategorizedUsersFolder = dropboxConfigDefaultFolder + "/categorizedUsers";
 let categorizedUsersFile = "categorizedUsers_manual.json";
@@ -3644,15 +3636,7 @@ function loadFile(params) {
 
     if (configuration.offlineMode || params.loadLocalFile) {
 
-      if (hostname === "google") {
-        fullPath = "/home/tc/Dropbox/Apps/wordAssociation/" + fullPath;
-        console.log(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
-      }
-
-      if ((hostname === "mbp3") || (hostname === "mbp2")) {
-        fullPath = "/Users/tc/Dropbox/Apps/wordAssociation/" + fullPath;
-        console.log(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
-      }
+      fullPath = "/Users/tc/Dropbox/Apps/wordAssociation/" + fullPath;
 
       fs.readFile(fullPath, "utf8", function(err, data) {
 
@@ -5745,7 +5729,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
             bestNetworkHashMap.set(bestRuntimeNetworkId, currentBestNetwork);
 
-            if ((hostname === "google") 
+            if ((hostname === PRIMARY_HOST) 
               && (prevBestNetworkId !== bestRuntimeNetworkId) 
               && configuration.bestNetworkIncrementalUpdate) 
             {
@@ -5837,7 +5821,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
             bestNetworkHashMap.set(m.networkId, currentBestNetwork);
 
-            if ((hostname === "google") && (prevBestNetworkId !== m.networkId)) {
+            if ((hostname === PRIMARY_HOST) && (prevBestNetworkId !== m.networkId)) {
 
               prevBestNetworkId = m.networkId;
               console.log(chalkBlue("TFE | SAVING NEW BEST NETWORK"
@@ -5878,7 +5862,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
             bestNetworkHashMap.set(m.previousBestNetworkId, prevBestNnObj);
 
-            if (hostname === "google") {
+            if (hostname === PRIMARY_HOST) {
 
               console.log(chalkBlue("TFE | SAVING PREV BEST NETWORK"
                 + " | MR: " + m.previousBestMatchRate.toFixed(2) + "%"
@@ -7721,12 +7705,12 @@ const fsmStates = {
           let folder;
 
           if (configuration.testMode) {
-            folder = (hostname === "google") 
+            folder = (hostname === PRIMARY_HOST) 
             ? defaultHistogramsFolder + "_test/types/" + type 
             : localHistogramsFolder + "_test/types/" + type;
           }
           else {
-            folder = (hostname === "google") 
+            folder = (hostname === PRIMARY_HOST) 
             ? defaultHistogramsFolder + "/types/" + type 
             : localHistogramsFolder + "/types/" + type;
           }
@@ -7745,16 +7729,16 @@ const fsmStates = {
           if ((sizeof(globalHistograms[type]) > MAX_SAVE_DROPBOX_NORMAL) || configuration.testMode) {
 
             if (configuration.testMode) {
-              if (hostname === "google") {
-                folder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test/types/" + type;
+              if (hostname === PRIMARY_HOST) {
+                folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test/types/" + type;
               }
               else {
                 folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms_test/types/" + type;
               }
             }
             else {
-              if (hostname === "google") {
-                folder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms/types/" + type;
+              if (hostname === PRIMARY_HOST) {
+                folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms/types/" + type;
               }
               else {
                 folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms/types/" + type;
