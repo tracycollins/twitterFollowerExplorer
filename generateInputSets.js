@@ -1,6 +1,9 @@
  /*jslint node: true */
 "use strict";
 
+const HOST = "default";
+const PRIMARY_HOST = "mbp3";
+
 const DEFAULT_INPUTS_FILE_PREFIX = "inputs";
 
 const DEFAULT_INPUT_TYPES = [
@@ -143,10 +146,8 @@ let saveFileBusy = false;
 
 let globalInputsObj = {};
 globalInputsObj.inputsId = ""; // will be generated after number of inputs determined
-// globalInputsObj.inputsId = moment().format(compactDateTimeFormat) + "_" + hostname + "_" + process.pid;
 globalInputsObj.meta = {};
 globalInputsObj.meta.type = {};
-// newInputsObj.meta.histogramsId = params.histogramsObj.histogramsId;
 globalInputsObj.meta.numInputs = 0;
 globalInputsObj.meta.histogramParseTotalMin = INIT_TOT_MIN;
 globalInputsObj.meta.histogramParseDominantMin = INIT_DOM_MIN;
@@ -380,13 +381,12 @@ let statsFile = DROPBOX_GIS_STATS_FILE;
 
 let defaultHistogramsFolder;
 
-if (hostname === "google"){ 
- defaultHistogramsFolder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
+if (hostname === PRIMARY_HOST){ 
+ defaultHistogramsFolder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
 }
 else {
  defaultHistogramsFolder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms";
 }
-// const localHistogramsFolder = "/config/utility/" + hostname + "/histograms";
 
 const localInputsFolder = dropboxConfigHostFolder + "/inputs";
 const defaultInputsFolder = dropboxConfigDefaultFolder + "/inputs";
@@ -962,7 +962,7 @@ function loadFile(params) {
 
     if (OFFLINE_MODE) {
 
-      if (hostname !== "google") {
+      if (hostname !== PRIMARY_HOST) {
 
         fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + folder + "/" + file;
         debug(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
@@ -1125,7 +1125,6 @@ function loadFile(params) {
     }
 
   });
-
 }
 
 function connectDb(){
@@ -1476,7 +1475,7 @@ async function main(){
         return;
       }
 
-      let inFolder = (hostname === "google") ? defaultInputsFolder : localInputsFolder;
+      let inFolder = (hostname === PRIMARY_HOST) ? defaultInputsFolder : localInputsFolder;
 
       if (configuration.testMode) { 
         inFolder = inFolder + "_test";
