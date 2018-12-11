@@ -3187,10 +3187,6 @@ let TweetServerController;
 let tweetServerController;
 let tweetServerControllerReady = false;
 
-// let userDbUpdateQueueInterval;
-// let userDbUpdateQueueReadyFlag = true;
-// let userDbUpdateQueue = [];
-
 function connectDb(){
 
   return new Promise(async function(resolve, reject){
