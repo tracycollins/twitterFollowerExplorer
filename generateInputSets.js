@@ -114,10 +114,6 @@ const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 const chalkConnect = chalk.green;
 
-
-// let socket;
-// let socketKeepAliveInterval;
-
 const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
 const slackChannel = "#gis";
 const Slack = require("slack-node");
