@@ -6231,21 +6231,12 @@ function initRandomNetworkTreeChild() {
         if (!quitFlag) { quit({source: "RNT", code: code }); }
       });
 
-
-      // childHashMap[childId] = {};
-      // childHashMap[childId].pid = randomNetworkTree.pid;
-      // childHashMap[childId].child = randomNetworkTree;
-
       randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL }, function(err) {
 
         if (err) {
           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
           return reject(err);
         }
-
-        // childHashMap[childId] = {};
-        // childHashMap[childId].pid = randomNetworkTree.pid;
-        // childHashMap[childId].child = randomNetworkTree;
 
         console.log(chalkLog("TFE | RNT CHILD INITIALIZED"));
 
@@ -7298,7 +7289,6 @@ function initProcessUserQueueInterval(interval) {
             + " | USR PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
             + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
           ));
-
         }
 
         user.markModified("tweetHistograms");
@@ -7317,7 +7307,7 @@ function initProcessUserQueueInterval(interval) {
             + " | " + err
             + "\nmObj\n" + jsonPrint(user)
           ));
-          quit({cause:"TFE | *** ERROR processUser save"});
+          // quit({cause:"TFE | *** ERROR processUser save"});
           processUserQueueReady = true;
         });
       }
@@ -7327,8 +7317,8 @@ function initProcessUserQueueInterval(interval) {
           + " | " + err
           + "\nmObj\n" + jsonPrint(mObj)
         ));
-        quit({cause:"TFE | *** ERROR processUser"});
-        // processUserQueueReady = true;
+        // quit({cause:"TFE | *** ERROR processUser"});
+        processUserQueueReady = true;
       }
 
     }
