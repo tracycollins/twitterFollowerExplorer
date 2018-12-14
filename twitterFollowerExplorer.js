@@ -144,6 +144,7 @@ hostname = hostname.replace(/.fios-router.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 hostname = hostname.replace(/word/g, "google");
 
+const urlParse = require("url-parse");
 const path = require("path");
 const moment = require("moment");
 const HashMap = require("hashmap").HashMap;
@@ -1656,209 +1657,209 @@ let userWatchPropertyArray = [
   "verified"
 ];
 
-function userChanged(uOld, uNew){
-  userWatchPropertyArray.forEach(function(prop){
-    if (uOld[prop] !== uNew[prop]){
-      return true;
-    }
-    return false;
-  });
-}
+// function userChanged(uOld, uNew){
+//   userWatchPropertyArray.forEach(function(prop){
+//     if (uOld[prop] !== uNew[prop]){
+//       return true;
+//     }
+//     return false;
+//   });
+// }
 
-function encodeHistogramUrls(params){
-  return new Promise(function(resolve, reject){
+// function encodeHistogramUrls(params){
+//   return new Promise(function(resolve, reject){
 
-    let user = params.user;
+//     let user = params.user;
 
-    async.eachSeries(["profileHistograms", "tweetHistograms"], function(histogram, cb){
+//     async.eachSeries(["profileHistograms", "tweetHistograms"], function(histogram, cb){
 
-      let urls = objectPath.get(user, [histogram, "urls"]);
+//       let urls = objectPath.get(user, [histogram, "urls"]);
 
-      if (urls) {
+//       if (urls) {
 
-        debug("URLS\n" + jsonPrint(urls));
+//         debug("URLS\n" + jsonPrint(urls));
 
-        async.eachSeries(Object.keys(urls), async function(url){
+//         async.eachSeries(Object.keys(urls), async function(url){
 
-          if (validUrl.isUri(url)){
-            const urlB64 = btoa(url);
-            console.log(chalkAlert("HISTOGRAM " + histogram + ".urls | " + url + " -> " + urlB64));
-            urls[urlB64] = urls[url];
-            delete urls[url];
-            return;
-          }
+//           if (validUrl.isUri(url)){
+//             const urlB64 = btoa(url);
+//             console.log(chalkAlert("HISTOGRAM " + histogram + ".urls | " + url + " -> " + urlB64));
+//             urls[urlB64] = urls[url];
+//             delete urls[url];
+//             return;
+//           }
 
-          if (url === "url") {
-            console.log(chalkAlert("HISTOGRAM " + histogram + ".urls | XXX URL: " + url));
-            delete urls[url];
-            return;
-          }
+//           if (url === "url") {
+//             console.log(chalkAlert("HISTOGRAM " + histogram + ".urls | XXX URL: " + url));
+//             delete urls[url];
+//             return;
+//           }
 
-          if (validUrl.isUri(atob(url))) {
-            console.log(chalkGreen("HISTOGRAM " + histogram + ".urls | IS B64: " + url));
-            return;
-          }
+//           if (validUrl.isUri(atob(url))) {
+//             console.log(chalkGreen("HISTOGRAM " + histogram + ".urls | IS B64: " + url));
+//             return;
+//           }
 
-          console.log(chalkAlert("HISTOGRAM " + histogram + ".urls |  XXX NOT URL NOR B64: " + url));
-          delete urls[url];
-          return;
+//           console.log(chalkAlert("HISTOGRAM " + histogram + ".urls |  XXX NOT URL NOR B64: " + url));
+//           delete urls[url];
+//           return;
 
-        }, function(err){
-          if (err) {
-            console.log(chalkError(MODULE_ID_PREFIX + " | *** ENCODE HISTOGRAM URL ERROR: " + err));
-            return cb(err);
-          }
-          if (Object.keys(urls).length > 0){
-            console.log("CONVERTED URLS\n" + jsonPrint(urls));
-          }
-          user[histogram].urls = urls;
-          cb();
-        });
+//         }, function(err){
+//           if (err) {
+//             console.log(chalkError(MODULE_ID_PREFIX + " | *** ENCODE HISTOGRAM URL ERROR: " + err));
+//             return cb(err);
+//           }
+//           if (Object.keys(urls).length > 0){
+//             console.log("CONVERTED URLS\n" + jsonPrint(urls));
+//           }
+//           user[histogram].urls = urls;
+//           cb();
+//         });
 
-      }
-      else {
-        cb();
-      }
+//       }
+//       else {
+//         cb();
+//       }
 
-    }, function(err){
-      if (err) {
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** ENCODE HISTOGRAM URL ERROR: " + err));
-        return reject(err);
-      }
-      resolve(user);
-    });
+//     }, function(err){
+//       if (err) {
+//         console.log(chalkError(MODULE_ID_PREFIX + " | *** ENCODE HISTOGRAM URL ERROR: " + err));
+//         return reject(err);
+//       }
+//       resolve(user);
+//     });
 
-  });
-}
+//   });
+// }
 
-function updateUserFromTrainingSet(params){
+// function updateUserFromTrainingSet(params){
 
-  return new Promise(async function(resolve, reject){
+//   return new Promise(async function(resolve, reject){
 
-    let user = params.user;
+//     let user = params.user;
 
-    debug(chalkLog("UPDATING USER FROM TRAINING SET"
-      + " | CM: " + printCat(user.category)
-      + " | CA: " + printCat(user.categoryAuto)
-      + " | @" + user.screenName
-    ));
+//     debug(chalkLog("UPDATING USER FROM TRAINING SET"
+//       + " | CM: " + printCat(user.category)
+//       + " | CA: " + printCat(user.categoryAuto)
+//       + " | @" + user.screenName
+//     ));
 
-    if (user.userId === undefined) { user.userId = user.nodeId; }
+//     if (user.userId === undefined) { user.userId = user.nodeId; }
 
-    try {
-      user = await encodeHistogramUrls({user: user});
-    }
-    catch(err){
-      return reject(err);
-    }
+//     try {
+//       user = await encodeHistogramUrls({user: user});
+//     }
+//     catch(err){
+//       return reject(err);
+//     }
 
-    User.findOne({ nodeId: user.nodeId }).exec(function(err, userDb) {
-      if (err) {
-        console.log(chalkError("*** ERROR FIND ONE USER trainingSet: "
-          + " | CM: " + printCat(user.category)
-          + " | CA: " + printCat(user.categoryAuto)
-          + " | UID: " + user.userId
-          + " | @" + user.screenName
-          + " | ERROR: " + err
-        ));
-        return reject(err);
-      }
+//     User.findOne({ nodeId: user.nodeId }).exec(function(err, userDb) {
+//       if (err) {
+//         console.log(chalkError("*** ERROR FIND ONE USER trainingSet: "
+//           + " | CM: " + printCat(user.category)
+//           + " | CA: " + printCat(user.categoryAuto)
+//           + " | UID: " + user.userId
+//           + " | @" + user.screenName
+//           + " | ERROR: " + err
+//         ));
+//         return reject(err);
+//       }
       
-      if (!userDb){
+//       if (!userDb){
 
-        const newUser = new User(user);
+//         const newUser = new User(user);
 
-        newUser.save()
-        .then(function(updatedUser){
+//         newUser.save()
+//         .then(function(updatedUser){
 
-          console.log(chalkLog(MODULE_ID_PREFIX + " | +++ ADD NET USER FROM TRAINING SET  "
-            + " | CM: " + printCat(updatedUser.category)
-            + " | CA: " + printCat(updatedUser.categoryAuto)
-            + " | UID: " + updatedUser.userId
-            + " | @" + updatedUser.screenName
-            + " | 3CF: " + updatedUser.threeceeFollowing
-            + " | Ts: " + updatedUser.statusesCount
-            + " | FLWRs: " + updatedUser.followersCount
-            + " | FRNDS: " + updatedUser.friendsCount
-          ));
+//           console.log(chalkLog(MODULE_ID_PREFIX + " | +++ ADD NET USER FROM TRAINING SET  "
+//             + " | CM: " + printCat(updatedUser.category)
+//             + " | CA: " + printCat(updatedUser.categoryAuto)
+//             + " | UID: " + updatedUser.userId
+//             + " | @" + updatedUser.screenName
+//             + " | 3CF: " + updatedUser.threeceeFollowing
+//             + " | Ts: " + updatedUser.statusesCount
+//             + " | FLWRs: " + updatedUser.followersCount
+//             + " | FRNDS: " + updatedUser.friendsCount
+//           ));
 
-          resolve(updatedUser);
+//           resolve(updatedUser);
 
-        })
-        .catch(function(err){
-          console.log(MODULE_ID_PREFIX + " | ERROR: updateUserFromTrainingSet newUser: " + err.message);
-          resolve();
-        });
+//         })
+//         .catch(function(err){
+//           console.log(MODULE_ID_PREFIX + " | ERROR: updateUserFromTrainingSet newUser: " + err.message);
+//           resolve();
+//         });
 
 
-      }
-      else if (userChanged(user, userDb)) {
+//       }
+//       else if (userChanged(user, userDb)) {
 
-        userDb.bannerImageUrl = user.bannerImageUrl;
-        userDb.category = user.category;
-        userDb.categoryAuto = user.categoryAuto;
-        userDb.description = user.description;
-        userDb.expandedUrl = user.expandedUrl;
-        userDb.followersCount = user.followersCount;
-        userDb.following = user.following;
-        userDb.friends = user.friends;
-        userDb.friendsCount = user.friendsCount;
-        userDb.mentions = user.mentions;
-        userDb.name = user.name;
-        userDb.profileHistograms = user.profileHistograms;
-        userDb.profileUrl = user.profileUrl;
-        userDb.screenName = user.screenName;
-        userDb.statusesCount = user.statusesCount;
-        userDb.threeceeFollowing = user.threeceeFollowing;
-        userDb.tweetHistograms = user.tweetHistograms;
-        userDb.url = user.url;
-        userDb.verified = user.verified;
+//         userDb.bannerImageUrl = user.bannerImageUrl;
+//         userDb.category = user.category;
+//         userDb.categoryAuto = user.categoryAuto;
+//         userDb.description = user.description;
+//         userDb.expandedUrl = user.expandedUrl;
+//         userDb.followersCount = user.followersCount;
+//         userDb.following = user.following;
+//         userDb.friends = user.friends;
+//         userDb.friendsCount = user.friendsCount;
+//         userDb.mentions = user.mentions;
+//         userDb.name = user.name;
+//         userDb.profileHistograms = user.profileHistograms;
+//         userDb.profileUrl = user.profileUrl;
+//         userDb.screenName = user.screenName;
+//         userDb.statusesCount = user.statusesCount;
+//         userDb.threeceeFollowing = user.threeceeFollowing;
+//         userDb.tweetHistograms = user.tweetHistograms;
+//         userDb.url = user.url;
+//         userDb.verified = user.verified;
 
-        userDb.save()
-        .then(function(updatedUser){
+//         userDb.save()
+//         .then(function(updatedUser){
 
-          console.log(chalkLog("+++ UPDATED USER FROM TRAINING SET  "
-            + " | CM: " + printCat(userDb.category)
-            + " | CA: " + printCat(userDb.categoryAuto)
-            + " | UID: " + userDb.userId
-            + " | @" + userDb.screenName
-            + " | 3CF: " + userDb.threeceeFollowing
-            + " | Ts: " + userDb.statusesCount
-            + " | FLWRs: " + userDb.followersCount
-            + " | FRNDS: " + userDb.friendsCount
-          ));
+//           console.log(chalkLog("+++ UPDATED USER FROM TRAINING SET  "
+//             + " | CM: " + printCat(userDb.category)
+//             + " | CA: " + printCat(userDb.categoryAuto)
+//             + " | UID: " + userDb.userId
+//             + " | @" + userDb.screenName
+//             + " | 3CF: " + userDb.threeceeFollowing
+//             + " | Ts: " + userDb.statusesCount
+//             + " | FLWRs: " + userDb.followersCount
+//             + " | FRNDS: " + userDb.friendsCount
+//           ));
 
-          resolve(updatedUser);
+//           resolve(updatedUser);
 
-        })
-        .catch(function(err){
-          console.log(MODULE_ID_PREFIX + " | ERROR: updateUserFromTrainingSet: " + err.message);
-          return reject(err);
-        });
+//         })
+//         .catch(function(err){
+//           console.log(MODULE_ID_PREFIX + " | ERROR: updateUserFromTrainingSet: " + err.message);
+//           return reject(err);
+//         });
 
-      }
-      else {
+//       }
+//       else {
 
-        if (configuration.verbose) {
-          console.log(chalkLog(MODULE_ID_PREFIX + " | --- NO UPDATE USER FROM TRAINING SET"
-            + " | CM: " + printCat(userDb.category)
-            + " | CA: " + printCat(userDb.categoryAuto)
-            + " | UID: " + userDb.userId
-            + " | @" + userDb.screenName
-            + " | 3CF: " + userDb.threeceeFollowing
-            + " | Ts: " + userDb.statusesCount
-            + " | FLWRs: " + userDb.followersCount
-            + " | FRNDS: " + userDb.friendsCount
-          ));
-        }
+//         if (configuration.verbose) {
+//           console.log(chalkLog(MODULE_ID_PREFIX + " | --- NO UPDATE USER FROM TRAINING SET"
+//             + " | CM: " + printCat(userDb.category)
+//             + " | CA: " + printCat(userDb.categoryAuto)
+//             + " | UID: " + userDb.userId
+//             + " | @" + userDb.screenName
+//             + " | 3CF: " + userDb.threeceeFollowing
+//             + " | Ts: " + userDb.statusesCount
+//             + " | FLWRs: " + userDb.followersCount
+//             + " | FRNDS: " + userDb.friendsCount
+//           ));
+//         }
 
-        resolve(userDb);
+//         resolve(userDb);
 
-      }
-    });
+//       }
+//     });
 
-  });
-}
+//   });
+// }
 
 function updateDbNetwork(params) {
 
@@ -6631,30 +6632,36 @@ function userProfileChangeHistogram(params) {
 
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
+      let domain;
+      let nodeId;
+
       user[prevUserProp] = (!user[prevUserProp] || (user[prevUserProp] === undefined)) ? {} : user[prevUserProp];
 
       switch (userProp) {
+
         case "name":
         case "location":
         case "description":
           text += userPropValue + "\n";
         break;
+
         case "screenName":
           text += "@" + userPropValue + "\n";
         break;
-        case "expandedUrl":
-          urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
-          // console.log(chalkLog("TFE | XPNDED URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
-        break;
-        case "url":
-          urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
-          // console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
-        break;
+
         case "profileUrl":
-          // profileUrl = userPropValue;
-          urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
-          // console.log(chalkLog("TFE | URL CHANGE | " + userProp + ": " + userPropValue + " = " + urlsHistogram.urls[userPropValue]));
+        case "url":
+        case "expandedUrl":
+
+          domain = urlParse(userPropValue.toLowerCase()).hostname;
+          nodeId = btoa(userPropValue.toLowerCase());
+
+          if (domain) { urlsHistogram.urls[domain] = (urlsHistogram.urls[domain] === undefined) ? 1 : urlsHistogram.urls[domain] + 1; }
+          urlsHistogram.urls[nodeId] = (urlsHistogram.urls[nodeId] === undefined) ? 1 : urlsHistogram.urls[nodeId] + 1;
+
+          // urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
         break;
+
         case "bannerImageUrl":
           bannerImageUrl = userPropValue;
         break;
