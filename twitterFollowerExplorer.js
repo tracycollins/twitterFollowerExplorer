@@ -28,6 +28,8 @@ const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+const DEFAULT_MIN_INTERVAL = 2;
+
 const ONE_KILOBYTE = 1024;
 const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 
@@ -41,15 +43,15 @@ const FSM_TICK_INTERVAL = ONE_SECOND;
 const STATS_UPDATE_INTERVAL = ONE_MINUTE;
 const DEFAULT_CHILD_PING_INTERVAL = ONE_MINUTE;
 
-const PROCESS_USER_QUEUE_INTERVAL = 5;
-const LANG_ANAL_MSG_Q_INTERVAL = 5;
-const ACTIVATE_NETWORK_QUEUE_INTERVAL = 5;
-const USER_DB_UPDATE_QUEUE_INTERVAL = 5;
+const PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
+const LANG_ANAL_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL;
+const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
+const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const FETCH_USER_INTERVAL = 10 * ONE_MINUTE;
 const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 
 const LANGUAGE_ANALYZE_INTERVAL = 100;
-const RANDOM_NETWORK_TREE_INTERVAL = 5;
+const RANDOM_NETWORK_TREE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_FETCH_ALL_INTERVAL = 120*ONE_MINUTE;
 const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 5; // ms
 
@@ -8489,51 +8491,21 @@ function childCreate(params){
             }
             else {
               await childInit({childId: childId, config: childHashMap[childId].config});
-              // await childCheckState({checkState:"INIT", noChildrenTrue: false});
             }
           break;
 
           case "INIT":
           case "INIT_COMPLETE":
-            console.log(chalkTwitter("TFE | CHILD INIT COMPLETE | " + m.threeceeUser));
-            childHashMap[childId].status = "INIT";
+          case "IDLE":
+          case "RESET":
+          case "READY":
+          case "FETCH_START":
+          case "FETCH":
+          case "FETCH_END":
+            console.log(chalkTwitter("TFE | CHILD " + m.op + " | " + m.threeceeUser));
+            childHashMap[childId].status = m.op;
           break;
      
-          case "IDLE":
-            console.log(chalkTwitter("TFE | CHILD IDLE | " + m.threeceeUser));
-            childHashMap[childId].status = "IDLE";
-            // await childCheckState({checkState: "IDLE", noChildrenTrue: false});
-          break;
-
-          case "RESET":
-            console.log(chalkTwitter("TFE | CHILD RESET | " + m.threeceeUser));
-            childHashMap[childId].status = "RESET";
-            // await childCheckState({checkState: "RESET", noChildrenTrue: false});
-          break;
-
-          case "READY":
-            console.log(chalkTwitter("TFE | CHILD READY | " + m.threeceeUser));
-            childHashMap[childId].status = "READY";
-            // await childCheckState({checkState: "READY", noChildrenTrue: false});
-          break;
-
-          case "FETCH_START":
-            console.log(chalkTwitter("TFE | CHILD FETCH_START | " + m.threeceeUser));
-            childHashMap[childId].status = "FETCH_START";
-            // await childCheckState({checkState: "FETCH", noChildrenTrue: false});
-          break;
-
-          case "FETCH":
-            console.log(chalkTwitter("TFE | CHILD FETCH | " + m.threeceeUser));
-            childHashMap[childId].status = "FETCH";
-            // await childCheckState({checkState: "FETCH", noChildrenTrue: false});
-          break;
-
-          case "FETCH_END":
-            console.log(chalkTwitter("TFE | CHILD FETCH_END | " + m.threeceeUser));
-            childHashMap[childId].status = "FETCH_END";
-            // await childCheckState({checkState: "FETCH_END", noChildrenTrue: false});
-          break;
 
           case "PAUSE_RATE_LIMIT":
             console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT | " + m.threeceeUser + " | REMAIN: " + msToTime(m.remaining)));
