@@ -724,7 +724,8 @@ function generateInputSets(params) {
                   newInputsObj.meta.type[type].numInputs = newInputsObj.inputs[type].length;
 
                   console.log(chalkAlert("\nGIS | XXX GIVE UP"
-                    + " | NUM INPUTS: " + newInputsObj.meta.type[type].numInputs 
+                    + " | " + type.toUpperCase()
+                    + " | NUM IN: " + newInputsObj.meta.type[type].numInputs 
                     + " | TOT MIN: " + totalMin 
                     + " | DOM MIN: " + dominantMin.toFixed(5)
                   ));
