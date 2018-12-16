@@ -371,6 +371,7 @@ const DROPBOX_GIS_STATS_FILE = process.env.DROPBOX_GIS_STATS_FILE || "generateIn
 
 let dropboxConfigHostFolder = "/config/utility/" + hostname;
 let dropboxConfigDefaultFolder = "/config/utility/default";
+let defaultNetworkInputsConfigFile = "default_networkInputsConfig.json";
 
 let dropboxConfigFile = hostname + "_" + DROPBOX_GIS_CONFIG_FILE;
 let statsFolder = "/stats/" + hostname + "/generateInputSets";
@@ -1619,7 +1620,7 @@ async function main(){
 
         let networkInputsDoc = new NetworkInputs(globalInputsObj);
 
-        networkInputsDoc.save(function(err, savedNetworkInputsDoc){
+        networkInputsDoc.save(async function(err, savedNetworkInputsDoc){
 
           if (err) {
             console.log(chalkError("GIS | *** CREATE NETWORK INPUTS DB DOCUMENT: " + err));
@@ -1645,6 +1646,15 @@ async function main(){
           console.log(chalkInfo("GIS | ... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
 
           saveFileQueue.push({folder: inFolder, file: inFile, obj: globalInputsObj});
+
+          console.log(chalkInfo("GIS | ... UPDATING INPUTS CONFIG FILE: " + dropboxConfigDefaultFolder + "/" + defaultNetworkInputsConfigFile));
+
+          let networkInputsConfigObj = await loadFile({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, noErrorNotFound: true });
+
+          networkInputsConfigObj.INPUTS_IDS.push(globalInputsObj.inputsId);
+          networkInputsConfigObj.INPUTS_IDS = _.uniq(networkInputsConfigObj.INPUTS_IDS);
+
+          saveFileQueue.push({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, obj: networkInputsConfigObj});
 
           quit();
 
