@@ -49,7 +49,7 @@ const PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const LANG_ANAL_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL;
 const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
-const FETCH_USER_INTERVAL = 10 * ONE_MINUTE;
+const FETCH_USER_INTERVAL = 5 * ONE_MINUTE;
 const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 
 const LANGUAGE_ANALYZE_INTERVAL = 100;
@@ -4092,7 +4092,7 @@ function loadConfigFile(params) {
 
       if (loadedConfigObj.TFE_FETCH_ALL_INTERVAL !== undefined) {
         console.log("TFE | LOADED TFE_FETCH_ALL_INTERVAL: " + loadedConfigObj.TFE_FETCH_ALL_INTERVAL);
-        newConfiguration.fetchAllIntervalTime = loadedConfigObj.TFE_FETCH_ALL_INTERVAL;
+        newConfiguration.fetchAllIntervalTime = loadedConfigObj.TFE_FETCH_ALL_INTERVAL; 
       }
 
       if (newConfiguration.testMode) {
@@ -4123,6 +4123,13 @@ function loadConfigFile(params) {
         if ((loadedConfigObj.TFE_VERBOSE === false) || (loadedConfigObj.TFE_VERBOSE === "false")) {
           newConfiguration.verbose = false;
         }
+      }
+
+
+
+      if (loadedConfigObj.TFE_FETCH_USER_INTERVAL !== undefined) {
+        console.log("TFE | LOADED TFE_FETCH_USER_TIMEOUT: " + loadedConfigObj.TFE_FETCH_USER_INTERVAL);
+        newConfiguration.fetchUserInterval = loadedConfigObj.TFE_FETCH_USER_INTERVAL;
       }
 
       if (loadedConfigObj.TFE_FETCH_USER_TIMEOUT !== undefined) {
@@ -6489,7 +6496,6 @@ function initLangAnalyzer(callback) {
   // });
 }
 
-
 function checkUserIgnored(params){
 
   return new Promise(function(resolve, reject){
@@ -6512,11 +6518,29 @@ function checkUserIgnored(params){
 
   });
 }
+
 function checkUserProfileChanged(params) {
 
   let user = params.user;
 
   let results = [];
+
+  if (!user.profileHistograms || (user.profileHistograms === undefined) || (user.profileHistograms === {})){
+    console.log(chalkLog(
+      MODULE_ID_PREFIX
+      + " | USER PROFILE UNDEFINED" 
+      + " | RST PREV PROP VALUES" 
+      + " | @" + user.screenName 
+    ));
+    user.previousScreenName = "";
+    user.previousName = "";
+    user.previousDescription = "";
+    user.previousLocation = "";
+    user.previousUrl = "";
+    user.previousExpandedUrl = "";
+    user.previousProfileUrl = "";
+    user.previousBannerImageUrl = "";
+  }
 
   if (user.name && (user.name !== undefined) && (user.name !== user.previousName)) { results.push("name"); }
   if (user.screenName && (user.screenName !== undefined) && (user.screenName !== user.previousScreenName)) { results.push("screenName"); }
@@ -6757,7 +6781,6 @@ function parseImage(params){
   });
 }
 
-
 function userProfileChangeHistogram(params) {
 
   let text = "";
@@ -6992,14 +7015,23 @@ function updateUserHistograms(params) {
             user.profileHistograms = results.profileHist;
             user.tweetHistograms = results.tweetHist;
 
-            updateGlobalHistograms(params)
-            .then(function(){
-              resolve(user);
+            user.save()
+            .then(function(updatedUser){
+
+              updateGlobalHistograms(params)
+              .then(function(){
+                resolve(updatedUser);
+              })
+              .catch(function(err){
+                console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR: " + err));
+                return reject(err);
+              });
+
             })
             .catch(function(err){
-              console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR: " + err));
-              return reject(err);
+
             });
+
 
           });
 
@@ -7040,7 +7072,6 @@ function generateAutoCategory(user, callback) {
       callback(err, user);
     });
 }
-
 
 function processUser(params) {
 
@@ -7296,7 +7327,6 @@ function updatePreviousUserProps(params){
   });
 }
 
-
 function initProcessUserQueueInterval(interval) {
 
   statsObj.status = "INIT PROCESS USER QUEUE";
@@ -7470,7 +7500,6 @@ function initProcessUserQueueInterval(interval) {
     }
   }, interval);
 }
-
 
 function initUnfollowableUserSet(){
 
@@ -7844,9 +7873,13 @@ const fsmStates = {
         console.log(chalk.bold.blue("TFE | ================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("TFE | ===================================================="));
 
-        console.log(chalkLog("TFE | PAUSING FOR 10 SECONDS FOR RNT STAT UPDATE ..."));
+        if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+          randomNetworkTree.send({op: "GET_STATS"});
+        }
 
-        await delay({period: 10*ONE_SECOND, verbose: true});
+        console.log(chalkLog("TFE | PAUSING FOR 30 SECONDS FOR RNT STAT UPDATE ..."));
+
+        await delay({period: 30*ONE_SECOND, verbose: true});
 
         let histogramsSavedFlag = false;
 
@@ -7925,9 +7958,9 @@ const fsmStates = {
 
         loadedNetworksFlag = false;
 
-        if (randomNetworkTree && (randomNetworkTree !== undefined)) {
-          randomNetworkTree.send({op: "GET_STATS"});
-        }
+        // if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+        //   randomNetworkTree.send({op: "GET_STATS"});
+        // }
 
         let slackText = "\n*END FETCH ALL*";
         slackText = slackText + " | " + hostname;
