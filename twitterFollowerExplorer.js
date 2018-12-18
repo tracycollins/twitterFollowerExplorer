@@ -10,6 +10,7 @@ const CHILD_PREFIX = "tfe_node";
 
 const DEFAULT_MIN_TEST_CYCLES = 5;
 const DEFAULT_MIN_WORD_LENGTH = 3;
+const DEFAULT_RANDOM_UNTESTED_LIMIT = 10;
 
 let saveRawFriendFlag = true;
 let neuralNetworkInitialized = false;
@@ -126,6 +127,7 @@ const DROPBOX_TIMEOUT = 30 * ONE_SECOND;
 
 
 let configuration = {};
+configuration.randomUntestedLimit = DEFAULT_RANDOM_UNTESTED_LIMIT;
 configuration.minWordLength = DEFAULT_MIN_WORD_LENGTH;
 configuration.minTestCycles = DEFAULT_MIN_TEST_CYCLES;
 configuration.testMode = TEST_MODE;
@@ -4524,7 +4526,8 @@ function loadBestNetworksDropbox(params) {
 }
 
 function loadBestNetworksDatabase(paramsIn) {
-  return new Promise(function(resolve, reject){
+  
+  return new Promise(async function(resolve, reject){
 
     let params = (paramsIn === undefined) ? {} : paramsIn;
 
@@ -4551,7 +4554,14 @@ function loadBestNetworksDatabase(paramsIn) {
       ]
     }
 
+    let randomUntestedQuery = {};
+    randomUntestedQuery["$and"] = [
+      { inputsId: { "$in": inputsIdArray } },
+      { testCycles: { "$eq": 0 } }
+    ];
+ 
     let limit = params.limit || configuration.networkDatabaseLoadLimit;
+    let randomUntestedLimit = params.randomUntestedLimit || configuration.randomUntestedLimit;
 
     if (configuration.testMode) {
       limit = TEST_MODE_NUM_NN;
@@ -4560,53 +4570,63 @@ function loadBestNetworksDatabase(paramsIn) {
     if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
 
 
-    console.log(chalkBlueBold("TFE | LOADING " + limit + " BEST NNs (by OAMR) FROM DB ..."));
 
-    global.NeuralNetwork.find(query).lean().sort({"overallMatchRate": -1}).limit(limit).exec(function(err, nnArray){
+    let nnArrayTopOverallMatchRate = [];
+    let nnArrayRandomUntested = [];
+    let nnArray = [];
 
-      if (err){
-        console.log(chalkError("TFE | *** NEURAL NETWORK FIND ERROR: " + err));
+    try {
+      console.log(chalkBlueBold("TFE | LOADING " + limit + " BEST NNs (by OAMR) FROM DB ..."));
+      nnArrayTopOverallMatchRate = await global.NeuralNetwork.find(query).lean().sort({"overallMatchRate": -1}).limit(limit).exec();
+
+      console.log(chalkBlueBold("TFE | LOADING " + randomUntestedLimit + " UNTESTED NNs FROM DB ..."));
+      nnArrayRandomUntested = await global.NeuralNetwork.find(randomUntestedQuery).lean().limit(randomUntestedLimit).exec();
+
+      nnArray = _.concat(nnArrayTopOverallMatchRate, nnArrayRandomUntested);
+    }
+    catch(err){
+      console.log(chalkError("TFE | *** NEURAL NETWORK FIND ERROR: " + err));
+      return reject(err);
+    }
+
+    if (nnArray.length === 0){
+      console.log(chalkAlert("TFE | ??? NO NEURAL NETWORKS NOT FOUND IN DATABASE"));
+      return resolve();
+    }
+
+    console.log(chalkBlue("TFE | FOUND " + nnArray.length + " NNs IN INPUTS IDS ARRAY"));
+
+    currentBestNetwork = nnArray[0];
+    currentBestNetwork.isValid = true;
+
+    currentBestNetwork = networkDefaults(currentBestNetwork);
+    bestRuntimeNetworkId = currentBestNetwork.networkId;
+
+    bestNetworkHashMap.set(bestRuntimeNetworkId, currentBestNetwork);
+
+    console.log(chalk.bold.blue("TFE | +++ BEST NEURAL NETWORK LOADED FROM DB"
+      + " | " + currentBestNetwork.networkId
+      + " | INPUTS ID: " + currentBestNetwork.inputsId
+      + " | INPUTS: " + currentBestNetwork.numInputs
+      + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
+      + " | MR: " + currentBestNetwork.matchRate.toFixed(2) + "%"
+      + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+      + " | TEST CYCs: " + currentBestNetwork.testCycles
+      + " | HISTORY: " + currentBestNetwork.testCycleHistory.length
+    ));
+
+    async.eachSeries(nnArray, function(networkObj, cb){
+
+      bestNetworkHashMap.set(networkObj.networkId, networkObj);
+      cb();
+
+    }, function(err){
+      if (err) {
         return reject(err);
       }
-
-      if (nnArray.length === 0){
-        console.log(chalkAlert("TFE | ??? NO NEURAL NETWORKS NOT FOUND IN DATABASE"));
-        return resolve();
-      }
-
-      console.log(chalkBlue("TFE | FOUND " + nnArray.length + " NNs IN INPUTS IDS ARRAY"));
-
-      currentBestNetwork = nnArray[0];
-      currentBestNetwork.isValid = true;
-
-      currentBestNetwork = networkDefaults(currentBestNetwork);
-      bestRuntimeNetworkId = currentBestNetwork.networkId;
-
-      bestNetworkHashMap.set(bestRuntimeNetworkId, currentBestNetwork);
-
-      console.log(chalk.bold.blue("TFE | +++ BEST NEURAL NETWORK LOADED FROM DB"
-        + " | " + currentBestNetwork.networkId
-        + " | INPUTS ID: " + currentBestNetwork.inputsId
-        + " | INPUTS: " + currentBestNetwork.numInputs
-        + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
-        + " | MR: " + currentBestNetwork.matchRate.toFixed(2) + "%"
-        + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2) + "%"
-        + " | TEST CYCs: " + currentBestNetwork.testCycles
-        + " | HISTORY: " + currentBestNetwork.testCycleHistory.length
-      ));
-
-      async.eachSeries(nnArray, function(networkObj, cb){
-
-        bestNetworkHashMap.set(networkObj.networkId, networkObj);
-        cb();
-
-      }, function(err){
-        if (err) {
-          return reject(err);
-        }
-        resolve(currentBestNetwork);
-      });
+      resolve(currentBestNetwork);
     });
+
   });
 }
 
