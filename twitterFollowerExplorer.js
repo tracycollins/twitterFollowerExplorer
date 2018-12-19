@@ -2901,7 +2901,7 @@ const dropboxConfigHostFolder = "/config/utility/" + hostname;
 const dropboxConfigDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 
-let childPidFolderLocal = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/children";
+let childPidFolderLocal = DROPBOX_ROOT_FOLDER + "/config/utility/" + hostname + "/children";
 
 let statsFolder = "/stats/" + hostname;
 let statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
@@ -2962,7 +2962,7 @@ else {
 function filesListFolderLocal(options){
   return new Promise(function(resolve, reject) {
 
-    const fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + options.path;
+    const fullPath = DROPBOX_ROOT_FOLDER + options.path;
 
     fs.readdir(fullPath, function(err, items){
       if (err) {
@@ -3003,7 +3003,7 @@ function filesGetMetadataLocal(options){
 
   return new Promise(function(resolve, reject) {
 
-    const fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + options.path;
+    const fullPath = DROPBOX_ROOT_FOLDER + options.path;
 
     fs.stat(fullPath, function(err, stats){
       if (err) {
@@ -3036,7 +3036,7 @@ function loadFile(params) {
 
     if (configuration.offlineMode || params.loadLocalFile) {
 
-      fullPath = "/Users/tc/Dropbox/Apps/wordAssociation/" + fullPath;
+      fullPath = DROPBOX_ROOT_FOLDER + fullPath;
 
       fs.readFile(fullPath, "utf8", function(err, data) {
 
@@ -7367,21 +7367,21 @@ const fsmStates = {
                 folder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test/types/" + type;
               }
               else if (hostname === PRIMARY_HOST) {
-                folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test/types/" + type;
+                folder = DROPBOX_ROOT_FOLDER + "/config/utility/default/histograms_test/types/" + type;
               }
               else {
-                folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms_test/types/" + type;
+                folder = DROPBOX_ROOT_FOLDER + "/config/utility/" + hostname + "/histograms_test/types/" + type;
               }
             }
             else {
               if (hostname === PRIMARY_HOST && hostname === "google") {
-                folder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms/types/" + type;
+                folder = DROPBOX_ROOT_FOLDER + "/config/utility/default/histograms/types/" + type;
               }
               else if (hostname === PRIMARY_HOST) {
-                folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms/types/" + type;
+                folder = DROPBOX_ROOT_FOLDER + "/config/utility/default/histograms/types/" + type;
               }
               else {
-                folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms/types/" + type;
+                folder = DROPBOX_ROOT_FOLDER + "/config/utility/" + hostname + "/histograms/types/" + type;
               }
             }
 
