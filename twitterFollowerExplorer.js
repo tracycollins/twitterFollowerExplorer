@@ -333,7 +333,12 @@ const DEFAULT_CHILD_ID_PREFIX = "tfe_node_child";
 
 const DEFAULT_RUN_ID = hostname + "_" + process.pid + "_" + statsObj.startTime;
 
-configuration.childAppPath = "/Volumes/RAID1/projects/twitterFollowerExplorer/twitterFollowerExplorerChild.js";
+if (hostname === "google") {
+  configuration.childAppPath = "/home/tc/twitterFollowerExplorer/twitterFollowerExplorerChild.js";
+}
+else {
+  configuration.childAppPath = "/Volumes/RAID1/projects/twitterFollowerExplorer/twitterFollowerExplorerChild.js";
+}
 configuration.childIdPrefix = DEFAULT_CHILD_ID_PREFIX;
 
 const twitterTextParser = require("@threeceelabs/twitter-text-parser");
