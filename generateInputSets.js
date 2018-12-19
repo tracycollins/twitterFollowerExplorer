@@ -378,7 +378,13 @@ let statsFile = DROPBOX_GIS_STATS_FILE;
 
 let defaultHistogramsFolder;
 
-if (hostname === PRIMARY_HOST){ 
+if (hostname === PRIMARY_HOST && hostname === "google"){ 
+ defaultHistogramsFolder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
+}
+else if (hostname !== PRIMARY_HOST && hostname === "google"){ 
+ defaultHistogramsFolder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/google/histograms";
+}
+else if (hostname === PRIMARY_HOST && hostname !== "google"){ 
  defaultHistogramsFolder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
 }
 else {
