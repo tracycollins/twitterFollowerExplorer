@@ -1202,10 +1202,10 @@ function loadNetwork(networkObj){
 
   return new Promise(function(resolve, reject){
 
-    // if (params.networkObj.network === undefined) {
-    //   console.log(chalkError("RNT | *** LOAD NETWORK INPUT UNDEFINED: " + params.networkObj.networkId));
-    //   return reject(new Error("LOAD NETWORK INPUT UNDEFINED: " + params.networkObj.networkId));
-    // }
+    if (!networkObj || networkObj === undefined || networkObj.network === undefined) {
+      console.log(chalkError("RNT | *** LOAD NETWORK UNDEFINED: " + networkObj));
+      return reject(new Error("LOAD NETWORK UNDEFINED"));
+    }
 
     // console.log(chalkLog("RNT | LOAD NETWORK"));
 
