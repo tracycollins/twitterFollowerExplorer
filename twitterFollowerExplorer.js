@@ -1,8 +1,27 @@
 /*jslint node: true */
 /*jshint sub:true*/
 "use strict";
-const HOST = process.env.PRIMARY_HOST || "local";
-const PRIMARY_HOST = process.env.PRIMARY_HOST || "macpro2";
+
+const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
+
+const os = require("os");
+let hostname = os.hostname();
+hostname = hostname.replace(/.local/g, "");
+hostname = hostname.replace(/.home/g, "");
+hostname = hostname.replace(/.at.net/g, "");
+hostname = hostname.replace(/.fios-router.home/g, "");
+hostname = hostname.replace(/word0-instance-1/g, "google");
+hostname = hostname.replace(/word/g, "google");
+
+let DROPBOX_ROOT_FOLDER;
+
+if (PRIMARY_HOST === "google") {
+  DROPBOX_ROOT_FOLDER = "/home/tc/Dropbox/Apps/wordAssociation";
+}
+else {
+  DROPBOX_ROOT_FOLDER = "/Users/tc/Dropbox/Apps/wordAssociation";
+}
+
 
 const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
@@ -143,16 +162,6 @@ configuration.networkDatabaseLoadLimit = (TEST_MODE) ? TEST_MODE_NUM_NN : DEFAUL
 //=========================================================================
 // HOST
 //=========================================================================
-
-const os = require("os");
-
-let hostname = os.hostname();
-hostname = hostname.replace(/.local/g, "");
-hostname = hostname.replace(/.home/g, "");
-hostname = hostname.replace(/.at.net/g, "");
-hostname = hostname.replace(/.fios-router.home/g, "");
-hostname = hostname.replace(/word0-instance-1/g, "google");
-hostname = hostname.replace(/word/g, "google");
 
 const urlParse = require("url-parse");
 const path = require("path");
@@ -1046,7 +1055,7 @@ function dropboxLoadBestNetworkFolders(params){
 
           await purgeNetwork(networkObj.networkId);
           await purgeInputs(networkObj.inputsId);
-          await dropboxFileDelete({folder: localBestNetworkFolder, file: entry.name});
+          await dropboxFileDelete({folder: folder, file: entry.name});
           return;
         }
 
@@ -1253,44 +1262,51 @@ function loadSeedNeuralNetwork(params){
   });
 }
 
-function loadTrainingSet(params){
+// function loadTrainingSet(params){
 
-  return new Promise(async function(resolve, reject){
+//   return new Promise(async function(resolve, reject){
 
-    statsObj.status = "LOAD TRAINING SET";
+//     statsObj.status = "LOAD TRAINING SET";
 
-    let archiveFlagObj = await loadFileRetry({folder: configuration.defaultTrainingSetsFolder, file: configuration.defaultUserArchiveFlagFile});
+//     let archiveFlagObj = await loadFileRetry({folder: configuration.defaultTrainingSetsFolder, file: configuration.defaultUserArchiveFlagFile});
 
-    console.log(chalkLog(MODULE_ID_PREFIX + " | USER ARCHIVE FLAG FILE | PATH: " + archiveFlagObj.path + " | SIZE: " + archiveFlagObj.size));
+//     console.log(chalkLog(MODULE_ID_PREFIX + " | USER ARCHIVE FLAG FILE | PATH: " + archiveFlagObj.path + " | SIZE: " + archiveFlagObj.size));
 
-    if (archiveFlagObj.path !== statsObj.archivePath) {
+//     if (archiveFlagObj.path !== statsObj.archivePath) {
 
-      const fullLocalPath = "/Users/tc/Dropbox/Apps/wordAssociation" + archiveFlagObj.path;
+//       let fullLocalPath;
 
-      try {
-        await loadUsersArchive({path: fullLocalPath, size: archiveFlagObj.size});
-        statsObj.archiveModified = getTimeStamp();
-        statsObj.loadUsersArchiveBusy = false;
-        statsObj.archivePath = archiveFlagObj.path;
-        statsObj.trainingSetReady = true;
-        runOnceFlag = true;
-        resolve();
-      }
-      catch(err){
-        statsObj.loadUsersArchiveBusy = false;
-        statsObj.trainingSetReady = false;
-        return reject(err);
-      }
-    }
-    else {
-      console.log(chalkLog(MODULE_ID_PREFIX + " | USERS ARCHIVE SAME ... SKIPPING | " + archiveFlagObj.path));
-      statsObj.loadUsersArchiveBusy = false;
-      statsObj.trainingSetReady = true;
-      resolve();
-    }
+//       if (PRIMARY_HOST === "google"){
+//         fullLocalPath = "/home/tc/Dropbox/Apps/wordAssociation" + archiveFlagObj.path;
+//       }
+//       else
+//         fullLocalPath = "/Users/tc/Dropbox/Apps/wordAssociation" + archiveFlagObj.path;
+//       }
 
-  });
-}
+//       try {
+//         await loadUsersArchive({path: fullLocalPath, size: archiveFlagObj.size});
+//         statsObj.archiveModified = getTimeStamp();
+//         statsObj.loadUsersArchiveBusy = false;
+//         statsObj.archivePath = archiveFlagObj.path;
+//         statsObj.trainingSetReady = true;
+//         runOnceFlag = true;
+//         resolve();
+//       }
+//       catch(err){
+//         statsObj.loadUsersArchiveBusy = false;
+//         statsObj.trainingSetReady = false;
+//         return reject(err);
+//       }
+//     }
+//     else {
+//       console.log(chalkLog(MODULE_ID_PREFIX + " | USERS ARCHIVE SAME ... SKIPPING | " + archiveFlagObj.path));
+//       statsObj.loadUsersArchiveBusy = false;
+//       statsObj.trainingSetReady = true;
+//       resolve();
+//     }
+
+//   });
+// }
 
 const networkDefaults = function (networkObj){
 
@@ -2010,48 +2026,6 @@ let watchOptions = {
   ignoreNotPermitted: true,
 }
 
-function initWatch(params){
-
-  console.log(chalkLog(MODULE_ID_PREFIX + " | INIT WATCH\n" + jsonPrint(params)));
-
-  watch.createMonitor(params.rootFolder, watchOptions, function (monitor) {
-
-    const loadArchive = async function (f, stat) {
-
-      console.log(chalkInfo(MODULE_ID_PREFIX + " | +++ FILE CREATED | " + getTimeStamp() + " | " + f));
-
-      if (f.endsWith(configuration.defaultUserArchiveFlagFile)){
-
-        console.log(chalkLog(MODULE_ID_PREFIX + " | LOAD USER ARCHIVE FLAG FILE: " + params.rootFolder + "/" + configuration.defaultUserArchiveFlagFile));
-
-        loadFileRetry({folder: configuration.defaultTrainingSetsFolder, file: configuration.defaultUserArchiveFlagFile}, async function(err, archiveFlagObj){
-
-          console.log(chalkLog(MODULE_ID_PREFIX + " | USER ARCHIVE FLAG FILE | PATH: " + archiveFlagObj.path + " | SIZE: " + archiveFlagObj.size));
-
-          try {
-            await loadTrainingSet({folder: configuration.defaultTrainingSetsFolder, file: configuration.defaultUserArchiveFlagFile});
-          }
-          catch(err){
-            console.log(chalkError(MODULE_ID_PREFIX + " | *** WATCH CHANGE ERROR | " + getTimeStamp() + " | " + err));
-          }
-
-        });
-
-      }
-    };
-
-    monitor.on("created", loadArchive);
-
-    monitor.on("changed", loadArchive);
-
-    monitor.on("removed", function (f, stat) {
-      console.log(chalkInfo(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
-    });
-
-    // monitor.stop(); // Stop watching
-  })
-}
-
 function initWatchAllConfigFolders(params){
   return new Promise(async function(resolve, reject){
 
@@ -2071,9 +2045,9 @@ function initWatchAllConfigFolders(params){
         ignoreNotPermitted: true,
       }
 
-      watch.createMonitor("/Users/tc/Dropbox/Apps/wordAssociation" + defaultInputsFolder, options, function (monitorInputs) {
+      watch.createMonitor(DROPBOX_ROOT_FOLDER + defaultInputsFolder, options, function (monitorInputs) {
 
-        console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT WATCH INPUTS CONFIG FOLDER: " + "/Users/tc/Dropbox/Apps/wordAssociation" + defaultInputsFolder));
+        console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT WATCH INPUTS CONFIG FOLDER: " + DROPBOX_ROOT_FOLDER + defaultInputsFolder));
 
         monitorInputs.on("created", async function(f, stat){
           const fileNameArray = f.split("/");
@@ -2106,9 +2080,9 @@ function initWatchAllConfigFolders(params){
         });
       });
 
-      watch.createMonitor("/Users/tc/Dropbox/Apps/wordAssociation" + dropboxConfigDefaultFolder, options, function (monitorDefaultConfig) {
+      watch.createMonitor(DROPBOX_ROOT_FOLDER + dropboxConfigDefaultFolder, options, function (monitorDefaultConfig) {
 
-        console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT WATCH DEFAULT CONFIG FOLDER: " + "/Users/tc/Dropbox/Apps/wordAssociation" + dropboxConfigDefaultFolder));
+        console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT WATCH DEFAULT CONFIG FOLDER: " + DROPBOX_ROOT_FOLDER + dropboxConfigDefaultFolder));
 
         monitorDefaultConfig.on("created", async function(f, stat){
           if (f.endsWith(dropboxConfigDefaultFile)){
@@ -2139,9 +2113,9 @@ function initWatchAllConfigFolders(params){
         });
       });
 
-      watch.createMonitor("/Users/tc/Dropbox/Apps/wordAssociation" + dropboxConfigHostFolder, options, function (monitorHostConfig) {
+      watch.createMonitor(DROPBOX_ROOT_FOLDER + dropboxConfigHostFolder, options, function (monitorHostConfig) {
 
-        console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT WATCH HOSE CONFIG FOLDER: " + "/Users/tc/Dropbox/Apps/wordAssociation" + dropboxConfigHostFolder));
+        console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT WATCH HOSE CONFIG FOLDER: " + DROPBOX_ROOT_FOLDER + dropboxConfigHostFolder));
 
         monitorHostConfig.on("created", async function(f, stat){
           if (f.endsWith(dropboxConfigHostFile)){
@@ -4526,7 +4500,7 @@ function loadBestNetworksDropbox(params) {
 }
 
 function loadBestNetworksDatabase(paramsIn) {
-  
+
   return new Promise(async function(resolve, reject){
 
     let params = (paramsIn === undefined) ? {} : paramsIn;
@@ -7370,7 +7344,10 @@ const fsmStates = {
           if ((sizeof(globalHistograms[type]) > MAX_SAVE_DROPBOX_NORMAL) || configuration.testMode) {
 
             if (configuration.testMode) {
-              if (hostname === PRIMARY_HOST) {
+              if (hostname === PRIMARY_HOST && hostname === "google") {
+                folder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test/types/" + type;
+              }
+              else if (hostname === PRIMARY_HOST) {
                 folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test/types/" + type;
               }
               else {
@@ -7378,7 +7355,10 @@ const fsmStates = {
               }
             }
             else {
-              if (hostname === PRIMARY_HOST) {
+              if (hostname === PRIMARY_HOST && hostname === "google") {
+                folder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms/types/" + type;
+              }
+              else if (hostname === PRIMARY_HOST) {
                 folder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms/types/" + type;
               }
               else {
