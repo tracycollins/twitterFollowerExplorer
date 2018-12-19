@@ -1215,6 +1215,7 @@ function loadNetwork(networkObj){
     networkObj.network = network;
 
     networkObj.testCycles = (networkObj.testCycles !== undefined) ? networkObj.testCycles : 0 ;
+    networkObj.testCycleHistory = (networkObj.testCycleHistory !== undefined) ? networkObj.testCycleHistory : [] ;
     networkObj.successRate = (networkObj.successRate !== undefined) ? networkObj.successRate : 0 ;
     networkObj.matchRate = (networkObj.matchRate !== undefined) ? networkObj.matchRate : 0 ;
     networkObj.overallMatchRate = (networkObj.overallMatchRate !== undefined) ? networkObj.overallMatchRate : 0 ;

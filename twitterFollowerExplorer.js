@@ -3248,7 +3248,7 @@ function getFileMetadata(params) {
 
     dropboxClient.filesGetMetadata({path: fullPath})
     .then(function(response) {
-      debug(chalkInfo("FILE META\n" + jsonPrint(response)));
+      // debug(chalkInfo("FILE META\n" + jsonPrint(response)));
       resolve(response);
     })
     .catch(function(err) {
@@ -4277,7 +4277,7 @@ function dropboxFileMove(params){
     .catch(function(err){
       if (err.status === 409) {
         if (params.noErrorNotFound){
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR DROPBOX FILE MOVE"
+          console.log(chalkAlert(MODULE_ID_PREFIX + " | ... DROPBOX FILE MOVE"
             + " | STATUS: " + err.status
             + " | " + srcPath
             + " > " + dstPath
