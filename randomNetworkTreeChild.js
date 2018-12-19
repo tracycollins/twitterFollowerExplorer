@@ -1476,7 +1476,7 @@ process.on("message", async function(m) {
       // console.log(chalkLog("RNT | LOAD_NETWORK | " + m.networkObj.networkId));
 
       try {
-        loadNetwork(m.networkObj);
+        await loadNetwork(m.networkObj);
       }
       catch(err){
         console.trace(chalkError("RNT | *** LOAD NETWORK ERROR | " + err));
