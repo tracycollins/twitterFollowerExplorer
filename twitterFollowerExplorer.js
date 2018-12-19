@@ -7312,9 +7312,9 @@ const fsmStates = {
           randomNetworkTree.send({op: "GET_STATS"});
         }
 
-        console.log(chalkLog("TFE | PAUSING FOR 30 SECONDS FOR RNT STAT UPDATE ..."));
+        console.log(chalkLog("TFE | PAUSING FOR 60 SECONDS FOR RNT GET_STATS RESPONSE ..."));
 
-        await delay({period: 30*ONE_SECOND, verbose: true});
+        await delay({period: 60*ONE_SECOND, verbose: true});
 
         let histogramsSavedFlag = false;
 
