@@ -1618,7 +1618,6 @@ function purgeNetwork(networkId){
       betterChildSeedNetworkIdSet.delete(networkId);
 
       skipLoadNetworkSet.add(networkId);
-          throw err;
 
       if (resultsHashmap[networkId] !== undefined) { 
         resultsHashmap[networkId].status = "PURGED";
@@ -4277,6 +4276,15 @@ function dropboxFileMove(params){
     })
     .catch(function(err){
       if (err.status === 409) {
+        if (params.noErrorNotFound){
+          console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR DROPBOX FILE MOVE"
+            + " | STATUS: " + err.status
+            + " | " + srcPath
+            + " > " + dstPath
+            + " | DOES NOT EXIST"
+          ));
+          return resolve();
+        }
         console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR DROPBOX FILE MOVE"
           + " | STATUS: " + err.status
           + " | " + srcPath
@@ -4472,7 +4480,13 @@ function loadBestNetworksDropbox(params) {
                 + " > " + globalBestNetworkArchiveFolder
             ));
 
-            await dropboxFileMove({srcFolder: folder, srcFile: entry.name, dstFolder: globalBestNetworkArchiveFolder, dstFile: entry.name});
+            await dropboxFileMove({
+              noErrorNotFound: true,
+              srcFolder: folder, 
+              srcFile: entry.name, 
+              dstFolder: globalBestNetworkArchiveFolder, 
+              dstFile: entry.name
+            });
             return;
           }
           else {
