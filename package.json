@@ -9,7 +9,7 @@
     "@slack/client": "^4.8.0",
     "@threeceelabs/histogram-parser": "^1.0.20",
     "@threeceelabs/mergehistograms": "^1.0.2",
-    "@threeceelabs/tweet-server-controller": "^1.0.421",
+    "@threeceelabs/tweet-server-controller": "^1.0.423",
     "@threeceelabs/twitter-image-parser": "^1.0.65",
     "@threeceelabs/twitter-text-parser": "^1.0.78",
     "@threeceelabs/user-server-controller": "^1.0.398",

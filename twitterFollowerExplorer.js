@@ -15,7 +15,7 @@ hostname = hostname.replace(/word/g, "google");
 
 let DROPBOX_ROOT_FOLDER;
 
-if (PRIMARY_HOST === "google") {
+if (hostname === "google") {
   DROPBOX_ROOT_FOLDER = "/home/tc/Dropbox/Apps/wordAssociation";
 }
 else {
@@ -44,8 +44,8 @@ const QUIT_ON_COMPLETE = false;
 let quitOnCompleteFlag = false;
 
 const FETCH_COUNT = 200;
-const TEST_FETCH_COUNT = 11;
-const TEST_TOTAL_FETCH = 47;
+const TEST_FETCH_COUNT = 47;
+const TEST_TOTAL_FETCH = 147;
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -162,6 +162,10 @@ configuration.networkDatabaseLoadLimit = (TEST_MODE) ? TEST_MODE_NUM_NN : DEFAUL
 //=========================================================================
 // HOST
 //=========================================================================
+
+const googleMapsClient = require("@google/maps").createClient({
+  key: "AIzaSyDBxA6RmuBcyj-t7gfvK61yp8CDNnRLUlc"
+});
 
 const urlParse = require("url-parse");
 const path = require("path");
@@ -6216,14 +6220,117 @@ function parseImage(params){
 
   });
 }
+function geoCode(params) {
+
+  return new Promise(function(resolve, reject){
+
+    let components = {};
+    let placeId = false;
+    let formattedAddress;
+
+    googleMapsClient.geocode({ address: params.address }, function(err, response) {
+      if (err) {
+        console.log(chalkError("TCS | *** GEOCODE ERROR: " + err));
+        return reject(err);
+      }
+      if (response.json.results.length > 0) {
+
+        placeId = response.json.results[0].place_id;
+        formattedAddress = response.json.results[0].formatted_address;
+
+        debug(chalkLog("TCS | GEOCODE"
+          + " | " + params.address
+          + " | PLACE ID: " + placeId
+          + " | FORMATTED: " + response.json.results[0].formatted_address
+          // + "\n" + jsonPrint(response.json)
+        ));
+
+        async.each(response.json.results[0].address_components, function(addressComponent, cb0){
+
+          // console.log(chalkLog("TCS | GEOCODE | addressComponent"
+          //  + "\n" + jsonPrint(addressComponent)
+          // ));
+
+          if (!addressComponent.types || addressComponent.types === undefined || addressComponent.types.length === 0){
+            async.setImmediate(function() { return cb0(); });
+          }
+
+          async.eachOf(addressComponent.types, function(addressComponentType, index, cb1){
+            switch(addressComponentType){
+              case "country":
+              case "locality":
+              case "sublocality":
+              case "sublocality_level_1":
+              case "administrative_area_level_1":
+              case "administrative_area_level_2":
+              case "administrative_area_level_3":
+                components[addressComponentType] = addressComponent.long_name;
+
+                debug(chalkInfo("TCS | GEOCODE | +++ ADDRESS COMPONENT"
+                  + " | " + params.address
+                  + " | FORMATTED: " + response.json.results[0].formatted_address
+                  + " | TYPE: " + addressComponentType
+                  + " | " + components[addressComponentType]
+                ));
+
+              break;
+              default:
+            }
+            cb1();
+          }, function(){
+            async.setImmediate(function() { cb0(); });
+          });
+
+        }, function(err){
+          if (err) {
+
+            console.log(chalkError("TCS | *** GEOCODE ERROR: " + err));
+            return reject(err);
+          }
+
+          debug(chalkLog("TCS | GEOCODE"
+            + " | " + params.address
+            + " | PLACE ID: " + placeId
+            + " | FORMATTED: " + response.json.results[0].formatted_address
+            // + "\n" + jsonPrint(response.json)
+          ));
+
+          resolve({ 
+            placeId: placeId, 
+            formattedAddress: formattedAddress, 
+            components: components, 
+            raw: response.json 
+          });
+        });
+      }
+      else {
+        resolve({ 
+          placeId: placeId, 
+          formattedAddress: formattedAddress, 
+          components: components, 
+          raw: response.json 
+        });
+      }
+
+      // console.log(chalkAlert("TCS | GEOCODE | PLACE: " + placeId));
+      // resolve({ placeId: placeId, components: components, raw: response.json });
+    });
+
+  });
+}
+
 
 function userProfileChangeHistogram(params) {
 
   let text = "";
+
   let urlsHistogram = {};
   urlsHistogram.urls = {};
   let profileUrl = false;
   let bannerImageUrl = false;
+
+  let locationHistogram = {};
+  locationHistogram.locations = {};
 
   let profileHistograms = {};
 
@@ -6237,7 +6344,7 @@ function userProfileChangeHistogram(params) {
       return resolve();
     }
 
-    async.each(userProfileChanges, function(userProp, cb){
+    async.each(userProfileChanges, async function(userProp){
 
       const userPropValue = user[userProp].toLowerCase();
 
@@ -6250,14 +6357,51 @@ function userProfileChangeHistogram(params) {
 
       switch (userProp) {
 
-        case "name":
         case "location":
+
+           try {
+
+            // placeId: placeId, 
+            // formattedAddress: formattedAddress, 
+            // components: components, 
+            // raw: response.json 
+  
+             const geoCodeResults = await geoCode({address: userPropValue});
+
+              user.geoValid = true;
+              user.geo = geoCodeResults;
+
+              user.markModified("geo");
+              user.markModified("geoValid");
+
+              console.log(chalkLog(MODULE_ID_PREFIX
+                + " | GEOCODE"
+                + " | NODE ID: " + user.nodeId
+                + " | PLACE ID: " + user.geo.placeId
+                + " | FORMATTED: " + user.geo.formattedAddress
+                // + "\n" + jsonPrint(locations[index].geo)
+              ));                    
+
+              return;
+            }
+            catch(err){
+              console.log(chalkError("TCS | *** GEOCODE ERROR: " + err
+              ));
+              return err;                
+            }
+
+        break;
+
+
+        case "name":
         case "description":
           text += userPropValue + "\n";
+          return;
         break;
 
         case "screenName":
           text += "@" + userPropValue + "\n";
+          return;
         break;
 
         case "profileUrl":
@@ -6270,18 +6414,18 @@ function userProfileChangeHistogram(params) {
           if (domain) { urlsHistogram.urls[domain] = (urlsHistogram.urls[domain] === undefined) ? 1 : urlsHistogram.urls[domain] + 1; }
           urlsHistogram.urls[nodeId] = (urlsHistogram.urls[nodeId] === undefined) ? 1 : urlsHistogram.urls[nodeId] + 1;
 
-          // urlsHistogram.urls[userPropValue] = (urlsHistogram.urls[userPropValue] === undefined) ? 1 : urlsHistogram.urls[userPropValue] + 1;
+          return;
         break;
 
         case "bannerImageUrl":
           bannerImageUrl = userPropValue;
+          return;
         break;
         default:
           console.log(chalkError("TFE | UNKNOWN USER PROPERTY: " + userProp));
-          return cb(new Error("UNKNOWN USER PROPERTY: " + userProp));
+          return new Error("UNKNOWN USER PROPERTY: " + userProp);
       }
 
-      cb();
 
     }, function(err){
 
