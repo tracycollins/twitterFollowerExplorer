@@ -6520,7 +6520,7 @@ function userStatusChangeHistogram(params) {
               tweetHistograms[entityType][entity] = 1;
             }
 
-            if (configuration.verbose) {
+            if (configuration.verbose || entityType === "locations") {
               console.log(chalkLog("TFE | +++ USER HIST"
                 + " | " + entityType.toUpperCase()
                 + " | " + entity

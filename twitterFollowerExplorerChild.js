@@ -2447,7 +2447,7 @@ const fsmStates = {
           await fetchFriends(params);
 
           if (statsObj.threeceeUser.nextCursorValid && !statsObj.threeceeUser.endFetch) {
-            await delay({period: configuration.fetchUserInterval, verbose: true});
+            await delay({period: configuration.fetchUserInterval, verbose: configuration.verbose});
             fsm.fsm_fetchUserContinue();
           }
 
