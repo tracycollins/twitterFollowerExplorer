@@ -1115,7 +1115,7 @@ function initActivateNetworkInterval(interval){
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
                   printActivateResult(
-                    "RNT | OOO MISS  [" + rxActivateNetworkQueue.length + "]", 
+                    "RNT | ---  miss [" + rxActivateNetworkQueue.length + "]", 
                     statsObj.bestNetwork, 
                     category, 
                     generateNetworksOutputObj.categoryAuto, 
@@ -1127,7 +1127,7 @@ function initActivateNetworkInterval(interval){
               else {
                 statsObj.categorize.skipped += 1;
                 printActivateResult(
-                  "RNT |     skip  [" + rxActivateNetworkQueue.length + "]", 
+                  "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
                   statsObj.bestNetwork, 
                   category, 
                   generateNetworksOutputObj.categoryAuto, 
@@ -1138,7 +1138,7 @@ function initActivateNetworkInterval(interval){
             else {
               statsObj.categorize.skipped += 1;
               printActivateResult(
-                "RNT |     skip  [" + rxActivateNetworkQueue.length + "]", 
+                "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
                 statsObj.bestNetwork, 
                 category, 
                 generateNetworksOutputObj.categoryAuto, 
@@ -1202,10 +1202,10 @@ function loadNetwork(networkObj){
 
   return new Promise(function(resolve, reject){
 
-    // if (params.networkObj.network === undefined) {
-    //   console.log(chalkError("RNT | *** LOAD NETWORK INPUT UNDEFINED: " + params.networkObj.networkId));
-    //   return reject(new Error("LOAD NETWORK INPUT UNDEFINED: " + params.networkObj.networkId));
-    // }
+    if (!networkObj || networkObj === undefined || networkObj.network === undefined) {
+      console.log(chalkError("RNT | *** LOAD NETWORK UNDEFINED: " + networkObj));
+      return reject(new Error("LOAD NETWORK UNDEFINED"));
+    }
 
     // console.log(chalkLog("RNT | LOAD NETWORK"));
 
@@ -1215,6 +1215,7 @@ function loadNetwork(networkObj){
     networkObj.network = network;
 
     networkObj.testCycles = (networkObj.testCycles !== undefined) ? networkObj.testCycles : 0 ;
+    networkObj.testCycleHistory = (networkObj.testCycleHistory !== undefined) ? networkObj.testCycleHistory : [] ;
     networkObj.successRate = (networkObj.successRate !== undefined) ? networkObj.successRate : 0 ;
     networkObj.matchRate = (networkObj.matchRate !== undefined) ? networkObj.matchRate : 0 ;
     networkObj.overallMatchRate = (networkObj.overallMatchRate !== undefined) ? networkObj.overallMatchRate : 0 ;
@@ -1475,7 +1476,7 @@ process.on("message", async function(m) {
       // console.log(chalkLog("RNT | LOAD_NETWORK | " + m.networkObj.networkId));
 
       try {
-        loadNetwork(m.networkObj);
+        await loadNetwork(m.networkObj);
       }
       catch(err){
         console.trace(chalkError("RNT | *** LOAD NETWORK ERROR | " + err));
