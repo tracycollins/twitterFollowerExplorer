@@ -236,6 +236,7 @@ let twitterUserHashMap = {};
 
 let bestNetworkHashMap = new HashMap();
 
+let geoCodeHashMap = {};
 let maxInputHashMap = {};
 
 let processUserQueue = [];
@@ -329,6 +330,10 @@ statsObj.users.unzipped = 0;
 statsObj.users.updatedCategorized = 0;
 statsObj.users.zipHashMapHit = 0;
 
+statsObj.geo = {};
+statsObj.geo.hashmap = {};
+statsObj.geo.hashmap.hits = 0;
+statsObj.geo.hashmap.misses = 0;
 
 //=========================================================================
 // TFE SPECIFIC
@@ -6319,6 +6324,29 @@ function geoCode(params) {
   });
 }
 
+function mergeHistogramsArray(params) {
+  return new Promise(function(resolve, reject){
+
+    let resultHistogram = {};
+
+    async.eachSeries(params.histogramArray, async function(histogram){
+      
+      try {
+        resultHistogram = await mergeHistograms.merge({ histogramA: resultHistogram, histogramB: histogram });
+        return ;
+      }
+      catch(err){
+        return err;
+      }
+
+    }, function(err){
+      if (err) {
+        return reject(err);
+      }
+      resolve(resultHistogram);
+    })
+  });
+}
 
 function userProfileChangeHistogram(params) {
 
@@ -6329,8 +6357,9 @@ function userProfileChangeHistogram(params) {
   let profileUrl = false;
   let bannerImageUrl = false;
 
-  let locationHistogram = {};
-  locationHistogram.locations = {};
+  let locationsHistogram = {};
+  locationsHistogram.locations = {};
+
 
   let profileHistograms = {};
 
@@ -6358,6 +6387,64 @@ function userProfileChangeHistogram(params) {
       switch (userProp) {
 
         case "location":
+
+
+          try {
+
+            // placeId: placeId, 
+            // formattedAddress: formattedAddress, 
+            // components: components, 
+            // raw: response.json 
+
+            if (!geoCodeHashMap[userPropValue]) {
+              geoCodeResults = await geoCode({address: userPropValue});
+              geoCodeHashMap[userPropValue] = {};
+              geoCodeHashMap[userPropValue] = geoCodeResults;
+              statsObj.geo.hashmap.size = Object.keys(geoCodeHashMap).length;
+              statsObj.geo.hashmap.misses += 1;
+            }
+            else {
+              geoCodeResults = geoCodeHashMap[userPropValue];
+              console.log(chalkLog("TFC | +++ GEOCODE HASHMAP HIT"
+                + " [" + Object.keys(geoCodeHashMap).length + "]"
+                + " | " + userPropValue + " | " + geoCodeResults.placeId
+              ));
+              statsObj.geo.hashmap.hits += 1;
+            }
+
+
+            user.geoValid = geoCodeResults.geoValid;
+            user.geo = geoCodeResults;
+
+            // user.markModified("geo");
+            // user.markModified("geoValid");
+
+            console.log(chalkLog("TFC"
+              + " | GEOCODE"
+                + " [" + Object.keys(geoCodeHashMap).length + "]"
+              + " | @" + user.screenName
+              + " | VALID: " + user.geo.geoValid
+              + " | PLACE ID: " + user.geo.placeId
+              + " | NAME: " + user.geo.address
+              + " | FORMATTED: " + user.geo.formattedAddress
+              // + "\n" + jsonPrint(locations[index].geo)
+            ));                    
+
+            if (geoCodeResults.placeId){
+              locationsHistogram.locations[geoCodeResults.placeId] = (locationsHistogram.locations[geoCodeResults.placeId] === undefined) 
+                ? 1 
+                : locationsHistogram.locations[geoCodeResults.placeId] + 1;
+            }
+
+            return;
+          }
+          catch(err){
+            console.log(chalkError("TCS | *** GEOCODE ERROR: " + err
+            ));
+            return err;                
+          }
+
+
 
            try {
 
@@ -6389,9 +6476,7 @@ function userProfileChangeHistogram(params) {
               ));
               return err;                
             }
-
         break;
-
 
         case "name":
         case "description":
@@ -6472,21 +6557,23 @@ function userProfileChangeHistogram(params) {
             parseText({ category: user.category, text: text, updateGlobalHistograms: true })
             .then(function(textParseResults){
 
-              if (Object.keys(urlsHistogram.urls).length > 0) {
+              cb(null, textParseResults);
 
-                mergeHistograms.merge({ histogramA: textParseResults, histogramB: urlsHistogram })
-                .then(function(textMergeResults){
+            //   if (Object.keys(urlsHistogram.urls).length > 0) {
 
-                  cb(null, textMergeResults);
-                })
-                .catch(function(err){
-                  cb(err, null);
-                });
+            //     mergeHistograms.merge({ histogramA: textParseResults, histogramB: urlsHistogram })
+            //     .then(function(textMergeResults){
 
-              }
-              else {
-                cb(null, textParseResults);
-              }
+            //       cb(null, textMergeResults);
+            //     })
+            //     .catch(function(err){
+            //       cb(err, null);
+            //     });
+
+            //   }
+            //   else {
+            //     cb(null, textParseResults);
+            //   }
 
             })
             .catch(function(err){
@@ -6495,26 +6582,36 @@ function userProfileChangeHistogram(params) {
           }
           else {
             // console.log(chalkLog("TFE | URLS urlsHistogram\n" + jsonPrint(urlsHistogram)));
-            cb(null, urlsHistogram);
+            cb(null, null);
           }
         }
 
       }, function(err, results){
 
-
-        // console.log("parallel results\n" + jsonPrint(results));
-
-        mergeHistograms.merge({ histogramA: results.textHist, histogramB: results.imageHist})
+        mergeHistogramsArray( {histogramArray: [ results.textHist, results.imageHist, urlsHistogram, locationsHistogram ]} )
         .then(function(histogramsMerged){
-
-          // console.log(chalkAlert("TFE | userProfileChangeHistogram histogramsMerged\n" + jsonPrint(histogramsMerged)));
-
           resolve(histogramsMerged);
         })
         .catch(function(err){
           console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
           return reject(err);
         });
+
+
+        // console.log("parallel results\n" + jsonPrint(results));
+
+        // mergeHistograms.merge({ histogramA: results.textHist, histogramB: results.imageHist})
+        // .then(function(histogramsMerged){
+
+        //   // console.log(chalkAlert("TFE | userProfileChangeHistogram histogramsMerged\n" + jsonPrint(histogramsMerged)));
+
+        //   resolve(histogramsMerged);
+        // })
+        // .catch(function(err){
+        //   console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+        //   return reject(err);
+        // });
+
       });
 
     });
