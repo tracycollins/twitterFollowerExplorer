@@ -6381,6 +6381,7 @@ function userProfileChangeHistogram(params) {
 
       let domain;
       let nodeId;
+      let geoCodeResults;
 
       user[prevUserProp] = (!user[prevUserProp] || (user[prevUserProp] === undefined)) ? {} : user[prevUserProp];
 
