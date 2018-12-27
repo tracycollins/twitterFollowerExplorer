@@ -3290,7 +3290,7 @@ function listDropboxFolder(params){
 
       statsObj.status = "LIST DROPBOX FOLDER: " + params.folder;
 
-      console.log(chalkNetwork(MODULE_ID_PREFIX + " | LISTING DROPBOX FOLDER | " + params.folder));
+      console.log(chalkInfo(MODULE_ID_PREFIX + " | LISTING DROPBOX FOLDER | " + params.folder));
 
       let results = {};
       results.entries = [];
@@ -3313,14 +3313,13 @@ function listDropboxFolder(params){
         more = response.has_more;
         results.entries = response.entries;
 
-        if (configuration.verbose) {
-          console.log(chalkLog("DROPBOX LIST FOLDER"
-            + " | FOLDER:" + params.folder
-            + " | ENTRIES: " + response.entries.length
-            + " | LIMIT: " + limit
-            + " | MORE: " + more
-          ));
-        }
+        // console.log(chalkLog(MODULE_ID_PREFIX
+        //   + " | DROPBOX LIST FOLDER"
+        //   + " | FOLDER:" + params.folder
+        //   + " | ENTRIES: " + response.entries.length
+        //   + " | LIMIT: " + limit
+        //   + " | MORE: " + more
+        // ));
 
         async.whilst(
 
@@ -3364,6 +3363,13 @@ function listDropboxFolder(params){
               console.log(chalkError(MODULE_ID_PREFIX + " | DROPBOX LIST FOLDERS: " + err + "\n" + jsonPrint(err)));
               return reject(err);
             }
+
+            console.log(chalkLog(MODULE_ID_PREFIX
+              + " | DROPBOX LIST FOLDER"
+              + " | FOLDER:" + params.folder
+              + " | ENTRIES: " + results.entries.length
+            ));
+
             resolve(results);
           });
       })
@@ -4369,7 +4375,7 @@ function loadBestNetworksDropbox(params) {
 
     const folder = params.folder;
 
-    console.log(chalkNetwork("TFE | LOADING DROPBOX BEST NETWORKS | " + folder));
+    console.log(chalkInfo("TFE | LOADING DROPBOX BEST NETWORKS | " + folder));
 
     try {
 
@@ -6075,12 +6081,8 @@ function userStatusChangeHistogram(params) {
         tscParams.tweetStatus.user.isNotRaw = true;
       }
 
-      // console.log(chalkAlert("TFE | tscParams\n", jsonPrint(tscParams)));
-
       tweetServerController.createStreamTweet(tscParams)
       .then(function(tweetObj){
-
-        // console.log(chalkLog("TFE | CREATE STREAM TWEET | " + Object.keys(tweetObj)));
 
         async.eachSeries(DEFAULT_INPUT_TYPES, function(entityType, cb0){
 
@@ -6143,6 +6145,7 @@ function userStatusChangeHistogram(params) {
 
             if (configuration.verbose || entityType === "locations") {
               console.log(chalkLog("TFE | +++ USER HIST"
+                + " @" + user.screenName
                 + " | " + entityType.toUpperCase()
                 + " | " + entity
                 + " | " + tweetHistograms[entityType][entity]
@@ -6231,6 +6234,7 @@ function geoCode(params) {
 
     let components = {};
     let placeId = false;
+    let geoValid = false;
     let formattedAddress;
 
     googleMapsClient.geocode({ address: params.address }, function(err, response) {
@@ -6240,6 +6244,7 @@ function geoCode(params) {
       }
       if (response.json.results.length > 0) {
 
+        geoValid = true;
         placeId = response.json.results[0].place_id;
         formattedAddress = response.json.results[0].formatted_address;
 
@@ -6301,6 +6306,7 @@ function geoCode(params) {
           ));
 
           resolve({ 
+            geoValid: geoValid,
             placeId: placeId, 
             formattedAddress: formattedAddress, 
             components: components, 
@@ -6310,6 +6316,7 @@ function geoCode(params) {
       }
       else {
         resolve({ 
+          geoValid: geoValid,
           placeId: placeId, 
           formattedAddress: formattedAddress, 
           components: components, 
@@ -6406,7 +6413,8 @@ function userProfileChangeHistogram(params) {
             }
             else {
               geoCodeResults = geoCodeHashMap[userPropValue];
-              console.log(chalkLog("TFC | +++ GEOCODE HASHMAP HIT"
+              console.log(chalkLog(MODULE_ID_PREFIX
+                + " | +++ GEOCODE HASHMAP HIT"
                 + " [" + Object.keys(geoCodeHashMap).length + "]"
                 + " | " + userPropValue + " | " + geoCodeResults.placeId
               ));
@@ -6420,7 +6428,7 @@ function userProfileChangeHistogram(params) {
             // user.markModified("geo");
             // user.markModified("geoValid");
 
-            console.log(chalkLog("TFC"
+            console.log(chalkLog(MODULE_ID_PREFIX
               + " | GEOCODE"
                 + " [" + Object.keys(geoCodeHashMap).length + "]"
               + " | @" + user.screenName
@@ -6440,7 +6448,7 @@ function userProfileChangeHistogram(params) {
             return;
           }
           catch(err){
-            console.log(chalkError("TCS | *** GEOCODE ERROR: " + err
+            console.log(chalkError(MODULE_ID_PREFIX + " | *** GEOCODE ERROR: " + err
             ));
             return err;                
           }
@@ -6557,25 +6565,7 @@ function userProfileChangeHistogram(params) {
 
             parseText({ category: user.category, text: text, updateGlobalHistograms: true })
             .then(function(textParseResults){
-
               cb(null, textParseResults);
-
-            //   if (Object.keys(urlsHistogram.urls).length > 0) {
-
-            //     mergeHistograms.merge({ histogramA: textParseResults, histogramB: urlsHistogram })
-            //     .then(function(textMergeResults){
-
-            //       cb(null, textMergeResults);
-            //     })
-            //     .catch(function(err){
-            //       cb(err, null);
-            //     });
-
-            //   }
-            //   else {
-            //     cb(null, textParseResults);
-            //   }
-
             })
             .catch(function(err){
               cb(err, null);
@@ -6597,21 +6587,6 @@ function userProfileChangeHistogram(params) {
           console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
           return reject(err);
         });
-
-
-        // console.log("parallel results\n" + jsonPrint(results));
-
-        // mergeHistograms.merge({ histogramA: results.textHist, histogramB: results.imageHist})
-        // .then(function(histogramsMerged){
-
-        //   // console.log(chalkAlert("TFE | userProfileChangeHistogram histogramsMerged\n" + jsonPrint(histogramsMerged)));
-
-        //   resolve(histogramsMerged);
-        // })
-        // .catch(function(err){
-        //   console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-        //   return reject(err);
-        // });
 
       });
 
