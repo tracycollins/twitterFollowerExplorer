@@ -5809,7 +5809,7 @@ function initRandomNetworkTreeChild() {
         if (!quitFlag) { quit({source: "RNT", code: code }); }
       });
 
-      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL }, function(err) {
+      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL, verbose: configuration.verbose }, function(err) {
 
         if (err) {
           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
@@ -5822,7 +5822,7 @@ function initRandomNetworkTreeChild() {
       });
     }
     else {
-      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL, verbose: true }, function(err) {
+      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL, verbose: configuration.verbose }, function(err) {
 
         if (err) {
           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));

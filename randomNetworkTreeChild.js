@@ -26,7 +26,7 @@ let elapsed_time = function(note){
     start = process.hrtime(); // reset the timer
 };
 
-const DEFAULT_INPUTS_BINARY_MODE = true;
+const DEFAULT_INPUTS_BINARY_MODE = false;
 
 const MAX_SORT_NETWORKS = 500;
 const ONE_SECOND = 1000;
