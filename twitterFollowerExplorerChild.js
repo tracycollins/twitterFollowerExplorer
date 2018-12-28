@@ -21,8 +21,8 @@ const ONE_KILOBYTE = 1024;
 const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 
 const FETCH_COUNT = 200;
-const TEST_FETCH_COUNT = 11;
-const TEST_TOTAL_FETCH = 47;
+const TEST_FETCH_COUNT = 47;
+const TEST_TOTAL_FETCH = 147;
 
 const FETCH_USER_INTERVAL = 5 * ONE_MINUTE;
 const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
@@ -50,7 +50,6 @@ const defaults = require("object.defaults");
 const pick = require("object.pick");
 const treeify = require("treeify");
 const objectPath = require("object-path");
-const fetch = require("isomorphic-fetch"); // or another library of choice.
 const NodeCache = require("node-cache");
 const merge = require("deepmerge");
 const arrayNormalize = require("array-normalize");
@@ -87,10 +86,11 @@ const chalkInfo = chalk.black;
 //=========================================================================
 
 let hostname = os.hostname();
-hostname = hostname.replace(/.local/g, "");
-hostname = hostname.replace(/.home/g, "");
-hostname = hostname.replace(/.at.net/g, "");
-hostname = hostname.replace(/.fios-router.home/g, "");
+hostname = hostname.replace(/\.example\.com/g, "");
+hostname = hostname.replace(/\.local/g, "");
+hostname = hostname.replace(/\.home/g, "");
+hostname = hostname.replace(/\.at\.net/g, "");
+hostname = hostname.replace(/\.fios-router\.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 hostname = hostname.replace(/word/g, "google");
 
@@ -573,6 +573,7 @@ function getElapsedTimeStamp(){
 // ==================================================================
 // DROPBOX
 // ==================================================================
+const fetch = require("isomorphic-fetch"); // or another library of choice.
 const Dropbox = require("dropbox").Dropbox;
 
 configuration.DROPBOX = {};

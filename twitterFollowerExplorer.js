@@ -6,10 +6,11 @@ const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
 
 const os = require("os");
 let hostname = os.hostname();
-hostname = hostname.replace(/.local/g, "");
-hostname = hostname.replace(/.home/g, "");
-hostname = hostname.replace(/.at.net/g, "");
-hostname = hostname.replace(/.fios-router.home/g, "");
+hostname = hostname.replace(/\.example\.com/g, "");
+hostname = hostname.replace(/\.local/g, "");
+hostname = hostname.replace(/\.home/g, "");
+hostname = hostname.replace(/\.at\.net/g, "");
+hostname = hostname.replace(/\.fios-router\.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 hostname = hostname.replace(/word/g, "google");
 
@@ -87,9 +88,6 @@ const TEST_MODE_FETCH_USER_TIMEOUT = 30*ONE_SECOND;
 const DEFAULT_NUM_NN = 20;  // TOP 100 NN's are loaded from DB
 const TEST_MODE_NUM_NN = 5;
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
-
-const TEST_MODE_TOTAL_FETCH = 200;
-const TEST_MODE_FETCH_COUNT = 47;  // per request twitter user fetch count
 
 const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 70;
 const DEFAULT_LOCAL_MIN_SUCCESS_RATE = 30;
@@ -5824,7 +5822,7 @@ function initRandomNetworkTreeChild() {
       });
     }
     else {
-      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL }, function(err) {
+      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL, verbose: true }, function(err) {
 
         if (err) {
           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
@@ -6143,7 +6141,8 @@ function userStatusChangeHistogram(params) {
               tweetHistograms[entityType][entity] = 1;
             }
 
-            if (configuration.verbose || entityType === "locations") {
+            // if (configuration.verbose || entityType === "locations") {
+            if (configuration.verbose) {
               console.log(chalkLog("TFE | +++ USER HIST"
                 + " @" + user.screenName
                 + " | " + entityType.toUpperCase()

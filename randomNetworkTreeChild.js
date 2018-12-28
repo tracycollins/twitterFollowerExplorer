@@ -76,8 +76,10 @@ const neataptic = require("neataptic");
 // const neataptic = require("./js/neataptic");
 
 let hostname = os.hostname();
-hostname = hostname.replace(/\.home/g, "");
+hostname = hostname.replace(/\.example\.com/g, "");
 hostname = hostname.replace(/\.local/g, "");
+hostname = hostname.replace(/\.home/g, "");
+hostname = hostname.replace(/\.at\.net/g, "");
 hostname = hostname.replace(/\.fios-router\.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 hostname = hostname.replace(/word/g, "google");
@@ -308,11 +310,14 @@ function printNetworkInput(params){
 
   return new Promise(function(resolve, reject){
 
-    const inputArray = params.inputArray;
+    const inputArray = params.inputsObj.input;
+    const nameArray = params.inputsObj.name;
     const columns = params.columns || 100;
 
     let col = 0;
     let row = 0;
+
+    let hitRowArray = [];
 
     let inputText = ".";
     let text = "";
@@ -322,12 +327,13 @@ function printNetworkInput(params){
     let hitRate = 0;
     const inputArraySize = inputArray.length;
 
-    async.eachSeries(inputArray, function(input, cb){
+    async.eachOfSeries(inputArray, function(input, index, cb){
 
       if (input) {
         inputText = "X";
         hits += 1;
         hitRate = 100 * hits / inputArraySize;
+        hitRowArray.push(nameArray[index]);
       }
       else {
         inputText = ".";
@@ -340,11 +346,13 @@ function printNetworkInput(params){
       if ((col === columns) || (index === inputArraySize)){
 
         text += textRow;
+        text += " | " + hitRowArray;
         text += "\n";
 
         textRow = "";
         col = 0;
         row += 1;
+        hitRowArray = [];
       }
 
       cb();
@@ -352,10 +360,9 @@ function printNetworkInput(params){
     }, function(err){
       resolve();
       console.log(chalkLog(
-        "______________________________________________________________________________________________________________________________________\n"
-        + hits + " / " + inputArraySize + " | HIT RATE: " + hitRate.toFixed(2) + "% | " + params.title
+        "______________________________________________________________________________________________________________________________________"
+        + "\n" + hits + " / " + inputArraySize + " | HIT RATE: " + hitRate.toFixed(2) + "% | " + params.title
         + "\n" + text
-        + "\n______________________________________________________________________________________________________________________________________"
         ));
     });
 
@@ -370,7 +377,7 @@ function generateNetworkInputIndexed(params){
 
     const inputTypes = Object.keys(params.inputsObj.inputs).sort();
     let networkInput = [];
-    // const title = "RNT | NETWORK INPUT | INPUTS: " + params.inputsObj.inputsId + " | " +  params.networkId + " | @" + params.userScreenName;
+    let networkInputName = [];
 
     let indexOffset = 0;
 
@@ -385,10 +392,10 @@ function generateNetworkInputIndexed(params){
 
         if (histogramObj && (histogramObj[inputName] !== undefined)) {
 
+          networkInputName[indexOffset + index] = inputName;
+
           if (configuration.inputsBinaryMode) {
-
             networkInput[indexOffset + index] = 1;
-
             return cb1();
           }
 
@@ -465,6 +472,7 @@ function generateNetworkInputIndexed(params){
         }
         else {
 
+          networkInputName[indexOffset + index] = false;
           networkInput[indexOffset + index] = 0;
    
           async.setImmediate(function() { 
@@ -484,14 +492,8 @@ function generateNetworkInputIndexed(params){
     }, function(err){
 
       if (err) { return reject(err); }
-
       generateNetworkInputBusy = false;
-
-      // if (configuration.verbose) {
-      //   printNetworkInput({title: title, inputArray: networkInput});
-      // }
-
-      resolve(networkInput);
+      resolve({ name: networkInputName, input: networkInput });
     });
 
   });
@@ -507,13 +509,8 @@ function activateNetwork(params){
 
     let networkOutput = {};
 
-    // params.user.profileHistograms = results.profileHist;
-    // params.user.tweetHistograms = results.tweetHist;
-
     try {
       let userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
-
-      // let userHistograms = params.user.histograms;
 
       let languageAnalysis = params.user.languageAnalysis;
 
@@ -545,9 +542,9 @@ function activateNetwork(params){
 
         try {
 
-          const networkInput = await generateNetworkInputIndexed(generateNetworkInputIndexedParams);
+          const networkInputObj = await generateNetworkInputIndexed(generateNetworkInputIndexedParams);
 
-          const output = networkObj.network.activate(networkInput);
+          const output = networkObj.network.activate(networkInputObj.input);
 
           if (output.length !== 3) {
             console.log(chalkError("RNT | *** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
@@ -581,8 +578,18 @@ function activateNetwork(params){
               networkOutput[nnId].none += 1;
           }
 
+          const match = (categoryAuto === params.user.category) ? "MATCH" : "MISS";
+
           if (configuration.verbose) {
-            printNetworkInput({title: params.user.screenName + " | C: " + params.user.category + " | A: " + categoryAuto , inputArray: networkInput});
+            printNetworkInput({
+              title: networkObj.networkId
+              + " | @" + params.user.screenName 
+              + " | C: " + params.user.category 
+              + " | A: " + categoryAuto
+              + " | MATCH: " + match
+              + "\n" + jsonPrint(userHistograms),
+              inputsObj: networkInputObj
+            });
           }
 
           return;
@@ -1387,7 +1394,8 @@ process.on("message", async function(m) {
 
     case "INIT":
 
-      console.log(chalkLog("RNT | INIT | INTERVAL: " + m.interval));
+      configuration.verbose = m.verbose || configuration.verbose;
+      console.log(chalkLog("RNT | INIT | INTERVAL: " + m.interval + "\n" + jsonPrint(configuration)));
 
       await initActivateNetworkInterval(m.interval);
 
@@ -1643,14 +1651,14 @@ function initialize(cnf, callback){
 
   cnf.processName = process.env.RNT_PROCESS_NAME || "randomNetworkTree";
 
-  cnf.verbose = process.env.RNT_VERBOSE_MODE || false ;
+  cnf.verbose = process.env.RNT_VERBOSE_MODE || configuration.verbose ;
   cnf.globalTestMode = process.env.RNT_GLOBAL_TEST_MODE || false ;
   cnf.testMode = process.env.RNT_TEST_MODE || false ;
   cnf.quitOnError = process.env.RNT_QUIT_ON_ERROR || false ;
 
   cnf.statsUpdateIntervalTime = process.env.RNT_STATS_UPDATE_INTERVAL || 1000;
 
-  debug("RNT | CONFIG\n" + jsonPrint(cnf));
+  console.log("RNT | CONFIG\n" + jsonPrint(cnf));
 
   callback(null, cnf);
 }

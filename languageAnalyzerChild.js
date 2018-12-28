@@ -32,11 +32,9 @@ const util = require("util");
 const moment = require("moment");
 const treeify = require("treeify");
 
-require("isomorphic-fetch");
+const fetch = require("isomorphic-fetch"); // or another library of choice.
 
-
-// const Dropbox = require('dropbox').Dropbox;
-const Dropbox = require("./js/dropbox").Dropbox;
+const Dropbox = require("dropbox").Dropbox;
 const NodeCache = require("node-cache");
 const debug = require("debug")("la");
 const debugLang = require("debug")("lang");
@@ -44,8 +42,10 @@ const debugCache = require("debug")("cache");
 const debugQ = require("debug")("queue");
 
 let hostname = os.hostname();
-hostname = hostname.replace(/\.home/g, "");
+hostname = hostname.replace(/\.example\.com/g, "");
 hostname = hostname.replace(/\.local/g, "");
+hostname = hostname.replace(/\.home/g, "");
+hostname = hostname.replace(/\.at\.net/g, "");
 hostname = hostname.replace(/\.fios-router\.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 hostname = hostname.replace(/word/g, "google");
@@ -493,7 +493,10 @@ debug("dropboxConfigFile : " + dropboxConfigFile);
 debug("statsFolder : " + statsFolder);
 debug("statsFile : " + statsFile);
 
-const dropboxClient = new Dropbox({ accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN });
+const dropboxClient = new Dropbox({ 
+  accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN,
+  fetch: fetch
+});
 
 function getTimeStamp(inputTime) {
   let currentTimeStamp ;
