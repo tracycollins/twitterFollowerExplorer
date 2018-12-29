@@ -361,7 +361,279 @@ let allCompleteFlag = false;
 let tempArchiveDirectory = "temp/archive_" + getTimeStamp();
 
 
+//=========================================================================
+// SLACK
+//=========================================================================
 
+const slackChannelFail = "nn-fail";
+const slackChannelPassLocal = "nn-pass-local";
+const slackChannelPassGlobal= "nn-pass-global";
+
+let slackChannel = "nn";
+let slackText = "";
+const channelsHashMap = new HashMap();
+
+const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
+const slackConversationId = "D65CSAELX"; // wordbot
+const slackRtmToken = "xoxb-209434353623-bNIoT4Dxu1vv8JZNgu7CDliy";
+
+const Slack = require("slack-node");
+const slack = new Slack(slackOAuthAccessToken);
+
+let slackRtmClient;
+let slackWebClient;
+
+let slackMessagePrefix = "#" + slackChannel + ":" + hostname + "_" + process.pid;
+
+function slackSendRtmMessage(msg){
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      console.log(chalkBlueBold("TNN | SLACK RTM | SEND: " + msg));
+
+      const sendResponse = await slackRtmClient.sendMessage(msg, slackConversationId);
+
+      console.log(chalkLog("TNN | SLACK RTM | >T\n" + jsonPrint(sendResponse)));
+      resolve(sendResponse);
+    }
+    catch(err){
+      reject(err);
+    }
+
+  });
+}
+
+function slackSendWebMessage(msgObj){
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      const token = msgObj.token || slackOAuthAccessToken;
+      const channel = msgObj.channel || configuration.slackChannel.id;
+      const text = msgObj.text || msgObj;
+
+      let message = {
+        token: token, 
+        channel: channel,
+        text: text
+      };
+
+      if (msgObj.attachments !== undefined) {
+        message.attachments = msgObj.attachments;
+      }
+
+      console.log(chalkBlueBold("TNN | SLACK WEB | SEND\n" + jsonPrint(message)));
+
+      const sendResponse = await slackWebClient.chat.postMessage(message);
+
+      console.log(chalkLog("TNN | SLACK WEB | >T\n" + jsonPrint(sendResponse)));
+      resolve(sendResponse);
+    }
+    catch(err){
+      reject(err);
+    }
+
+  });
+}
+
+function slackMessageHandler(message){
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      console.log(chalkInfo("TNN | MESSAGE | " + message.type + " | " + message.text));
+
+      if (message.type !== "message") {
+        console.log(chalkAlert("Unhandled MESSAGE TYPE: " + message.type));
+        return resolve();
+      }
+
+      const text = message.text.trim();
+      const textArray = text.split("|");
+
+      // console.log(chalkAlert("textArray: " + textArray));
+
+      const sourceHost = (textArray[0]) ? textArray[0].trim() : "NONE";
+      const sourceApp = (textArray[1]) ? textArray[1].trim() : "NONE";
+      const sourceMessage = (textArray[2]) ? textArray[2].trim() : "NONE";
+
+      switch (sourceMessage) {
+        case "END FETCH ALL":
+        case "ERROR":
+        case "FETCH FRIENDS":
+        case "FSM INIT":
+        case "FSM FETCH_ALL":
+        case "GEN AUTO CAT":
+        case "INIT CHILD":
+        case "INIT LANG ANALYZER":
+        case "INIT MAX INPUT HASHMAP":
+        case "INIT NNs":
+        case "INIT RAN NNs":
+        case "INIT RNT CHILD":
+        case "INIT TWITTER USERS":
+        case "INIT TWITTER":
+        case "INIT UNFOLLOWABLE USER SET":
+        case "INIT UNFOLLOWABLE":
+        case "INIT":
+        case "LOAD BEST NN":
+        case "LOAD NN":
+        case "MONGO DB CONNECTED":
+        case "PONG":
+        case "QUIT":
+        case "QUITTING":
+        case "READY":
+        case "RESET":
+        case "SAV NN HASHMAP":
+        case "SLACK QUIT":
+        case "SLACK READY":
+        case "SLACK RTM READY":
+        case "START":
+        case "STATS":
+        case "TEXT":
+        case "TEXT":        case "FSM INIT":
+        case "UPDATE HISTOGRAMS":
+        case "UPDATE NN STATS":
+        case "WAIT UPDATE STATS":
+        case "END UPDATE STATS":
+        case "UPDATE USER CAT STATS":
+          resolve();
+        break;
+        case "STATSUS":
+          console.log(chalkInfo(message.text));
+          resolve();
+        break;
+        case "PING":
+          await slackSendWebMessage(hostname + " | TNN | PONG");
+          resolve();
+        break;
+        case "NONE":
+          resolve();
+        break;
+        default:
+          console.log(chalkAlert("TNN | *** UNDEFINED SLACK MESSAGE: " + message.text));
+          // reject(new Error("UNDEFINED SLACK MESSAGE TYPE: " + message.text));
+          resolve({text: "UNDEFINED SLACK MESSAGE", message: message});
+      }
+    }
+    catch(err){
+      reject(err);
+    }
+
+  });
+}
+
+function initSlackWebClient(params){
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      const { WebClient } = require("@slack/client");
+      slackWebClient = new WebClient(slackRtmToken);
+
+      const testResponse = await slackWebClient.api.test();
+      console.log("TNN | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
+
+      const botsInfoResponse = await slackWebClient.bots.info();
+      console.log("TNN | SLACK WEB BOTS INFO RESPONSE\n" + jsonPrint(botsInfoResponse));
+
+      const conversationsListResponse = await slackWebClient.conversations.list({token: slackOAuthAccessToken});
+
+      conversationsListResponse.channels.forEach(async function(channel){
+  
+        console.log(chalkLog("TNN | CHANNEL | " + channel.id + " | " + channel.name));
+
+        if (channel.name === slackChannel) {
+          configuration.slackChannel = channel;
+          const conversationsJoinResponse = await slackWebClient.conversations.join({token: slackOAuthAccessToken, channel: configuration.slackChannel.id });
+
+          let message = {
+            token: slackOAuthAccessToken, 
+            channel: configuration.slackChannel.id,
+            text: "OP"
+          };
+
+          message.attachments = [];
+          message.attachments.push({text: "INIT", fields: [ { title: "SRC", value: hostname + "_" + process.pid }, { title: "DST", value: "ALL" } ]});
+
+          const chatPostMessageResponse = await slackWebClient.chat.postMessage(message);
+          console.log("TNN | SLACK WEB CHAT POST MESSAGE RESPONSE\n" + jsonPrint(chatPostMessageResponse));
+
+        }
+
+        channelsHashMap.set(channel.id, channel);
+
+      });
+
+      resolve();
+
+    }
+    catch(err){
+      console.log(chalkError("TNN | *** INIT SLACK WEB CLIENT ERROR: " + err));
+      reject(err);
+    }
+
+  });
+}
+
+function initSlackRtmClient(params){
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      const { RTMClient } = require("@slack/client");
+      slackRtmClient = new RTMClient(slackRtmToken);
+
+      const slackInfo = await slackRtmClient.start();
+
+      console.log(chalkInfo("TNN | SLACK RTM | INFO\n" + jsonPrint(slackInfo)));
+
+      slackRtmClient.on("slack_event", async function(eventType, event){
+        switch (eventType) {
+          case "pong":
+            debug(chalkLog("TNN | SLACK RTM PONG | " + getTimeStamp() + " | " + event.reply_to));
+          break;
+          default: debug(chalkInfo("TNN | SLACK RTM EVENT | " + getTimeStamp() + " | "  + eventType + "\n" + jsonPrint(event)));
+        }
+      });
+
+
+      slackRtmClient.on("message", async function(message){
+        if (configuration.verbose)  { console.log(chalkLog("TNN | RTM R<\n" + jsonPrint(message))); }
+        debug(`TNN | SLACK RTM MESSAGE | R< | CH: ${message.channel} | USER: ${message.user} | ${message.text}`);
+
+        try {
+          await slackMessageHandler(message);
+        }
+        catch(err){
+          console.log(chalkError("TNN | *** SLACK RTM MESSAGE ERROR: " + err));
+        }
+
+      });
+
+      slackRtmClient.on("ready", async function(){
+        try {
+          if (configuration.verbose) { await slackSendRtmMessage(hostname + " | TNN | SLACK RTM READY"); }
+          resolve();
+        }
+        catch(err){
+          reject(err);
+        }
+      });
+
+
+    }
+    catch(err){
+      console.log(chalkError("TNN | *** INIT SLACK RTM CLIENT | " + err));
+      reject(err);
+    }
+
+  });
+}
 
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.processName = process.env.TFE_PROCESS_NAME || "tfe_node";
@@ -3967,6 +4239,13 @@ async function quit(opts) {
   statsObj.status = "QUIT";
 
   const forceQuitFlag = options.force || false;
+
+  let slackText = "QUIT";
+  if (options) {
+    slackText += " | " + options.cause;
+  }
+
+  slackSendWebMessage({channel: slackChannel, text: slackText});
 
   fsm.fsm_quit();
 
@@ -8708,6 +8987,9 @@ setTimeout(async function(){
 
     statsObj.status = "START";
 
+    await initSlackRtmClient();
+    await initSlackWebClient();
+
     initSaveFileQueue(configuration);
 
     if (configuration.testMode) {
@@ -8722,6 +9004,7 @@ setTimeout(async function(){
     ));
 
     try {
+bClient();
 
       await connectDb();
 
