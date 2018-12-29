@@ -9004,7 +9004,6 @@ setTimeout(async function(){
     ));
 
     try {
-bClient();
 
       await connectDb();
 
