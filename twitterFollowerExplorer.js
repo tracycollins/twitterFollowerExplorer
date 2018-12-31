@@ -7920,6 +7920,7 @@ const fsmStates = {
         slackText = slackText + " | TEST CYCs: " + statsObj.bestNetwork.testCycles;
         slackText = slackText + " | TC HISTORY: " + statsObj.bestNetwork.testCycleHistory.length;
 
+        slackSendWebMessage({channel: slackChannel, text: slackText});
 
         clearInterval(waitFileSaveInterval);
 
