@@ -1,6 +1,9 @@
  /*jslint node: true */
 "use strict";
 
+const ONE_SECOND = 1000 ;
+const ONE_MINUTE = ONE_SECOND*60 ;
+
 const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
 
 const DEFAULT_INPUTS_FILE_PREFIX = "inputs";
@@ -51,6 +54,8 @@ let dbConnectionReadyInterval;
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+const SAVE_FILE_QUEUE_INTERVAL = 5*ONE_SECOND;
+
 const MAX_TEST_INPUTS = 1000;
 
 const DEFAULT_DOMINANT_MIN_STEP = 0.0015;
@@ -76,9 +81,6 @@ const DEFAULT_MAX_TOTAL_MIN = 1500;
 
 const DEFAULT_MIN_INPUTS_GENERATED = process.env.MIN_INPUTS_GENERATED || 1000 ;
 const DEFAULT_MAX_INPUTS_GENERATED = process.env.MAX_INPUTS_GENERATED || 1750 ;
-
-const ONE_SECOND = 1000 ;
-const ONE_MINUTE = ONE_SECOND*60 ;
 
 const DEFAULT_MAX_ITERATIONS = 50;
 
@@ -238,7 +240,7 @@ configuration.maxDominantMin = DEFAULT_MAX_DOMINANT_MIN;
 configuration.minTotalMin = DEFAULT_MIN_TOTAL_MIN;
 configuration.maxTotalMin = DEFAULT_MAX_TOTAL_MIN;
 
-configuration.saveFileQueueInterval = 2*ONE_SECOND;
+configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
 configuration.testMode = false;
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.quitOnComplete = true;
