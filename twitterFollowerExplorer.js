@@ -96,7 +96,7 @@ const DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE = 50;
 const TWITTER_DEFAULT_USER = "altthreecee00";
 
 const SAVE_CACHE_DEFAULT_TTL = 60;
-const SAVE_FILE_QUEUE_INTERVAL = ONE_SECOND;
+const SAVE_FILE_QUEUE_INTERVAL = 2*ONE_SECOND;
 
 const USER_PROFILE_PROPERTY_ARRAY = [
   "bannerImageUrl",
@@ -645,7 +645,7 @@ function initSlackRtmClient(params){
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.processName = process.env.TFE_PROCESS_NAME || "tfe_node";
 configuration.childPingAllInterval = DEFAULT_CHILD_PING_INTERVAL;
-configuration.saveFileQueueInterval = 1000;
+configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
 configuration.interruptFlag = false;
 
 configuration.initMainIntervalTime = DEFAULT_INIT_MAIN_INTERVAL;
@@ -3965,9 +3965,6 @@ function loadAllConfigFiles(){
 let saveFileQueueInterval;
 let saveFileQueue = [];
 let statsUpdateInterval;
-
-configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
-
 
 let saveCacheTtl = process.env.SAVE_CACHE_DEFAULT_TTL;
 
