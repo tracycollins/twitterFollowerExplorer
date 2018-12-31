@@ -797,6 +797,7 @@ function dropboxFileDelete(params){
           + " | STATUS: " + err.status
           + " | PATH: " + path
           + " | TOO MANY REQUESTS"
+          + " | response\n" + jsonPrint(response)
         ));
       }
       else {
@@ -4068,21 +4069,21 @@ function saveFile(params, callback){
             + " | ERROR: 413"
             + " | ERROR: FILE TOO LARGE"
           ));
-          if (callback !== undefined) { return callback(error.error_summary); }
+          if (callback !== undefined) { return callback(error); }
         }
         else if (error.status === 429){
           console.log(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: TOO MANY WRITES"
           ));
-          if (callback !== undefined) { return callback(error.error_summary); }
+          if (callback !== undefined) { return callback(error); }
         }
         else if (error.status === 500){
           console.log(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
             + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
             + " | ERROR: DROPBOX SERVER ERROR"
           ));
-          if (callback !== undefined) { return callback(error.error_summary); }
+          if (callback !== undefined) { return callback(error); }
         }
         else {
           console.log(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 

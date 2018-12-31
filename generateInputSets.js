@@ -238,7 +238,7 @@ configuration.maxDominantMin = DEFAULT_MAX_DOMINANT_MIN;
 configuration.minTotalMin = DEFAULT_MIN_TOTAL_MIN;
 configuration.maxTotalMin = DEFAULT_MAX_TOTAL_MIN;
 
-configuration.saveFileQueueInterval = 1000;
+configuration.saveFileQueueInterval = 2*ONE_SECOND;
 configuration.testMode = false;
 configuration.keepaliveInterval = 1*ONE_MINUTE+1;
 configuration.quitOnComplete = true;
