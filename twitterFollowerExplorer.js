@@ -28,6 +28,7 @@ const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 const CHILD_PREFIX = "tfe_node";
 
+const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
 const DEFAULT_MIN_TEST_CYCLES = 5;
 const DEFAULT_MIN_WORD_LENGTH = 3;
 const DEFAULT_RANDOM_UNTESTED_LIMIT = 10;
@@ -144,6 +145,7 @@ const DROPBOX_TIMEOUT = 30 * ONE_SECOND;
 
 
 let configuration = {};
+configuration.archiveNetworkOnInputsMiss = DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
 configuration.randomUntestedLimit = DEFAULT_RANDOM_UNTESTED_LIMIT;
 configuration.minWordLength = DEFAULT_MIN_WORD_LENGTH;
 configuration.minTestCycles = DEFAULT_MIN_TEST_CYCLES;
