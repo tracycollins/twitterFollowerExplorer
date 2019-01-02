@@ -46,7 +46,7 @@ let quitOnCompleteFlag = false;
 
 const FETCH_COUNT = 200;
 const TEST_FETCH_COUNT = 47;
-const TEST_TOTAL_FETCH = 147;
+const TEST_TOTAL_FETCH = 247;
 
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
@@ -239,7 +239,6 @@ let maxInputHashMap = {};
 
 let processUserQueue = [];
 let processUserQueueInterval;
-let processUserQueueReady = true;
 
 let randomNetworkTree;
 let randomNetworkTreeMessageRxQueueInterval;
@@ -252,7 +251,6 @@ let randomNetworkTreeMessageRxQueue = [];
 let randomNetworksObj = {};
 
 let activateNetworkQueue = [];
-let activateNetworkQueueReady = false;
 let activateNetworkQueueInterval;
 
 let langAnalyzer;
@@ -283,6 +281,21 @@ statsObj.status = "START";
 
 statsObj.serverConnected = false;
 
+statsObj.bestNetwork = {};
+statsObj.bestNetwork.networkId = null;
+statsObj.bestNetwork.numInputs = 0;
+statsObj.bestNetwork.successRate = 0;
+statsObj.bestNetwork.matchRate = 0;
+statsObj.bestNetwork.overallMatchRate = 0;
+statsObj.bestNetwork.testCycles = 0;
+statsObj.bestNetwork.testCycleHistory = [];
+statsObj.bestNetwork.network = {};
+statsObj.bestNetwork.networkType = null;
+statsObj.bestNetwork.input = [];
+statsObj.bestNetwork.inputsId = null;
+statsObj.bestNetwork.output = [];
+statsObj.bestNetwork.evolve = {};
+
 statsObj.analyzer = {};
 statsObj.analyzer.analyzed = 0;
 statsObj.analyzer.errors = 0;
@@ -298,9 +311,19 @@ statsObj.friends = {};
 statsObj.friends.raw = 0;
 statsObj.maxChildrenCreated = false; 
 statsObj.queues = {};
+statsObj.queues.randomNetworkTreeActivateQueue = {};
+statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
 statsObj.queues.saveFileQueue = {};
 statsObj.queues.saveFileQueue.busy = false;
 statsObj.queues.saveFileQueue.size = 0;
+statsObj.queues.activateNetworkQueue = {};
+statsObj.queues.activateNetworkQueue.busy = false;
+statsObj.queues.activateNetworkQueue.size = 0;
+statsObj.queues.processUserQueue = {};
+statsObj.queues.processUserQueue.busy = false;
+statsObj.queues.processUserQueue.size = 0;
+
 statsObj.twitterErrors = 0;
 statsObj.user = {};
 statsObj.userReadyAck = false;
@@ -427,10 +450,10 @@ function slackSendWebMessage(msgObj){
 
       console.log(chalkBlueBold("TNN | SLACK WEB | SEND\n" + jsonPrint(message)));
 
-      const sendResponse = await slackWebClient.chat.postMessage(message);
+      slackWebClient.chat.postMessage(message);
 
-      console.log(chalkLog("TNN | SLACK WEB | >T\n" + jsonPrint(sendResponse)));
-      resolve(sendResponse);
+      // console.log(chalkLog("TNN | SLACK WEB | >T\n" + jsonPrint(sendResponse)));
+      resolve();
     }
     catch(err){
       reject(err);
@@ -624,7 +647,7 @@ function initSlackRtmClient(params){
 
       slackRtmClient.on("ready", async function(){
         try {
-          if (configuration.verbose) { await slackSendRtmMessage(hostname + " | TNN | SLACK RTM READY"); }
+          if (configuration.verbose) { slackSendRtmMessage(hostname + " | TNN | SLACK RTM READY"); }
           resolve();
         }
         catch(err){
@@ -695,7 +718,8 @@ let statsPickArray = [
   "numChildren", 
   "userReadyAck", 
   "userReadyAckWait", 
-  "userReadyTransmitted"
+  "userReadyTransmitted",
+  "queues"
 ];
 
 statsObjSmall = pick(statsObj, statsPickArray);
@@ -1084,13 +1108,6 @@ function dropboxLoadInputsFolder(params){
 
       const inputTypes = Object.keys(inputsObj.inputs);
 
-      // let totalInputs = 0;
-
-      // inputTypes.forEach(function(inputType){
-      //   debug(MODULE_ID_PREFIX + " | " + inputsObj.inputsId + " | INPUT TYPE: " + inputType + " | " + inputsObj.inputs[inputType].length + " INPUTS");
-      //   totalInputs += inputsObj.inputs[inputType].length;
-      // });
-
       console.log(MODULE_ID_PREFIX + " | +++ INPUTS [" + inputsHashMap.size + " IN HM] | " + inputsObj.meta.numInputs + " INPUTS | " + inputsObj.inputsId);
 
       return;
@@ -1329,12 +1346,9 @@ function dropboxLoadBestNetworkFolders(params){
             }
 
             networkHashMap.set(nnDb.networkId, { entry: entry, networkObj: nnDb});
-            // printNetworkObj(MODULE_ID_PREFIX + " | >>> NN DB UPDATE [" + numNetworksLoaded + " LOADED / " + networkHashMap.size + " IN HM]", nnDb);
           }
           return;
         }
-
-        // printNetworkObj(MODULE_ID_PREFIX + " | 3 | DROPBOX NETWORK", networkObj);
 
         //========================
         // PURGE FAILING NETWORKS
@@ -1554,52 +1568,6 @@ function loadSeedNeuralNetwork(params){
   });
 }
 
-// function loadTrainingSet(params){
-
-//   return new Promise(async function(resolve, reject){
-
-//     statsObj.status = "LOAD TRAINING SET";
-
-//     let archiveFlagObj = await loadFileRetry({folder: configuration.defaultTrainingSetsFolder, file: configuration.defaultUserArchiveFlagFile});
-
-//     console.log(chalkLog(MODULE_ID_PREFIX + " | USER ARCHIVE FLAG FILE | PATH: " + archiveFlagObj.path + " | SIZE: " + archiveFlagObj.size));
-
-//     if (archiveFlagObj.path !== statsObj.archivePath) {
-
-//       let fullLocalPath;
-
-//       if (PRIMARY_HOST === "google"){
-//         fullLocalPath = "/home/tc/Dropbox/Apps/wordAssociation" + archiveFlagObj.path;
-//       }
-//       else
-//         fullLocalPath = "/Users/tc/Dropbox/Apps/wordAssociation" + archiveFlagObj.path;
-//       }
-
-//       try {
-//         await loadUsersArchive({path: fullLocalPath, size: archiveFlagObj.size});
-//         statsObj.archiveModified = getTimeStamp();
-//         statsObj.loadUsersArchiveBusy = false;
-//         statsObj.archivePath = archiveFlagObj.path;
-//         statsObj.trainingSetReady = true;
-//         runOnceFlag = true;
-//         resolve();
-//       }
-//       catch(err){
-//         statsObj.loadUsersArchiveBusy = false;
-//         statsObj.trainingSetReady = false;
-//         return reject(err);
-//       }
-//     }
-//     else {
-//       console.log(chalkLog(MODULE_ID_PREFIX + " | USERS ARCHIVE SAME ... SKIPPING | " + archiveFlagObj.path));
-//       statsObj.loadUsersArchiveBusy = false;
-//       statsObj.trainingSetReady = true;
-//       resolve();
-//     }
-
-//   });
-// }
-
 const networkDefaults = function (networkObj){
 
   if (networkObj.betterChild === undefined) { networkObj.betterChild = false; }
@@ -1759,109 +1727,6 @@ function sortedHashmap(params) {
       console.error("sortedHashmap ERROR | params\n" + jsonPrint(params));
       reject(new Error("sortedHashmap ERROR | keys UNDEFINED"));
     }
-
-  });
-}
-
-function printResultsHashmap(){
-
-  let tableArray = [];
-
-  tableArray.push([
-    MODULE_ID_PREFIX + " | NNID",
-    "STATUS",
-    "BETTER CH",
-    "SEED",
-    "RES %",
-    "INPTS",
-    "CLEAR",
-    "COST",
-    "GRWTH",
-    "EQUAL",
-    "M RATE",
-    "POP",
-    "ELITE",
-    "START",
-    "ELPSD",
-    "ITRNS",
-    "ERROR",
-    "RES %"
-  ]);
-
-  async.each(Object.keys(resultsHashmap), function(networkId, cb){
-
-    const networkObj = resultsHashmap[networkId];
-
-    if (networkObj === undefined) {
-      return cb("UNDEFINED");
-    }
-    
-    if (networkObj.numInputs === undefined) {
-      return cb("numInputs UNDEFINED");
-    }
-    
-    if (networkObj.evolve === undefined) {
-      networkObj.evolve.options.clear = "---";
-      networkObj.evolve.options.cost = "---";
-      networkObj.evolve.options.growth = "---";
-      networkObj.evolve.options.equal = "---";
-      networkObj.evolve.options.mutationRate = "---";
-      networkObj.evolve.options.popsize = "---";
-      networkObj.evolve.options.elitism = "---";
-    }
-
-    let status = "";
-    let snIdRes = "";
-    let iterations = "";
-    let error = "";
-    let successRate = "";
-    let elapsed = "";
-    let betterChild = "";
-    let seedNetworkId = "";
-
-    status = (networkObj.status && networkObj.status !== undefined) ? networkObj.status : "UNKNOWN";
-    snIdRes = (networkObj.seedNetworkId && networkObj.seedNetworkId !== undefined) ? networkObj.seedNetworkRes.toFixed(2) : "---";
-    betterChild = (networkObj.betterChild && networkObj.betterChild !== undefined) ? networkObj.betterChild : "---";
-    seedNetworkId = (networkObj.seedNetworkId && networkObj.seedNetworkId !== undefined) ? networkObj.seedNetworkId : "---";
-    iterations = (networkObj.evolve.results && networkObj.evolve.results !== undefined) ? networkObj.evolve.results.iterations : "---";
-
-    error = ((networkObj.evolve.results && networkObj.evolve.results !== undefined) 
-      && (networkObj.evolve.results.error !== undefined)
-      && networkObj.evolve.results.error)  ? networkObj.evolve.results.error.toFixed(5) : "---";
-
-    successRate = (networkObj.successRate && networkObj.successRate !== undefined) ? networkObj.successRate.toFixed(2) : "---";
-    elapsed = (networkObj.evolve.elapsed && networkObj.evolve.elapsed !== undefined) ? networkObj.evolve.elapsed : (moment().valueOf() - networkObj.evolve.startTime);
-
-    tableArray.push([
-      MODULE_ID_PREFIX + " | " + networkId,
-      status,
-      betterChild,
-      seedNetworkId,
-      snIdRes,
-      networkObj.numInputs,
-      networkObj.evolve.options.clear,
-      networkObj.evolve.options.cost,
-      networkObj.evolve.options.growth.toFixed(8),
-      networkObj.evolve.options.equal,
-      networkObj.evolve.options.mutationRate.toFixed(3),
-      networkObj.evolve.options.popsize,
-      networkObj.evolve.options.elitism,
-      getTimeStamp(networkObj.evolve.startTime),
-      msToTime(elapsed),
-      iterations,
-      error,
-      successRate
-    ]);
-
-    async.setImmediate(function() { cb(); });
-
-  }, function(){
-
-    const t = table(tableArray, { align: ["l", "l", "l", "l", "l", "r", "l", "l", "l", "l", "r", "r", "r", "l", "l", "r", "r", "r"] });
-
-    console.log(chalkLog(MODULE_ID_PREFIX + " | === NETWORK RESULTS ========================================================================================================================"));
-    console.log(chalkLog(t));
-    console.log(chalkLog(MODULE_ID_PREFIX + " | ============================================================================================================================================"));
 
   });
 }
@@ -4760,7 +4625,7 @@ function loadBestNetworksDropbox(params) {
               + " [" + bestNetworkHashMap.size + " NNs IN HM]"
               + " [" + skipLoadNetworkSet.size + " NNs SKIPPED]",
             networkObj,
-            chalkAlert
+            chalk.black.bold
           );
 
         }
@@ -4775,7 +4640,7 @@ function loadBestNetworksDropbox(params) {
           const nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
           if (skipLoadNetworkSet.has(networkObj.networkId)) {
 
-            console.log(chalkAlert(
+            console.log(chalk.black.bold(
               MODULE_ID_PREFIX 
                 + " | vvv ARCHIVE NN"
                 + " | " + folder + "/" + entry.name
@@ -4978,6 +4843,7 @@ function loadMaxInputDropbox(params) {
       maxInputHashMap = deepcopy(maxInputHashMapObj.maxInputHashMap);
 
       console.log(chalkBlue("TFE | LOADED DROPBOX MAX INPUT HASHMAP"
+        + " | KEYS (INPUT TYPES): " + Object.keys(maxInputHashMap)
       ));
 
       resolve();
@@ -5385,21 +5251,26 @@ function initActivateNetworkQueueInterval(interval) {
 
     let activateNetworkObj = {};
 
-    activateNetworkQueueReady = true;
+    statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
+    statsObj.queues.activateNetworkQueue.busy = false;
 
     console.log(chalkLog("TFE | INIT RANDOM NETWORK TREE QUEUE INTERVAL: " + interval + " ms"));
 
     activateNetworkQueueInterval = setInterval(function () {
 
-      if (randomNetworkTreeReadyFlag && activateNetworkQueueReady && (activateNetworkQueue.length > 0)) {
+      if (randomNetworkTreeReadyFlag && !statsObj.queues.activateNetworkQueue.busy && (statsObj.queues.activateNetworkQueue.size > 0)) {
 
-        activateNetworkQueueReady = false;
+        statsObj.queues.activateNetworkQueue.busy = true;
 
         activateNetworkObj = activateNetworkQueue.shift();
 
-        randomNetworkTree.send({op: "ACTIVATE", obj: activateNetworkObj}, function(){
-          activateNetworkQueueReady = true;
-        });
+        statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
+
+        // console.log(chalkAlert("TFE | RANDOM NETWORK TREE ACTIVATE: " + Object.keys(activateNetworkObj)));
+
+        randomNetworkTree.send({op: "ACTIVATE", obj: activateNetworkObj});
+
+        statsObj.queues.activateNetworkQueue.busy = false;
 
       }
 
@@ -5444,35 +5315,44 @@ function runEnable(displayArgs) {
   return true;
 }
 
-function updateBestNetworkStats(networkObj) {
+function updateBestNetworkStats(params) {
 
-  statsObj.status = "UPDATE BEST NN STATS";
+  return new Promise(function(resolve, reject){
 
-  if (statsObj.bestNetwork === undefined) { statsObj.bestNetwork = {}; }
+    const networkObj = params.networkObj;
 
-  statsObj.bestRuntimeNetworkId = networkObj.networkId;
-  statsObj.currentBestNetworkId = networkObj.networkId;
+    statsObj.status = "UPDATE BEST NN STATS";
 
-  statsObj.bestNetwork.networkId = networkObj.networkId;
-  statsObj.bestNetwork.network = networkObj.network;
-  statsObj.bestNetwork.networkType = networkObj.networkType;
-  statsObj.bestNetwork.successRate = networkObj.successRate || 0;
-  statsObj.bestNetwork.matchRate = networkObj.matchRate || 0;
-  statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate || 0;
-  statsObj.bestNetwork.testCycles = networkObj.testCycles || 0;
-  statsObj.bestNetwork.testCycleHistory = networkObj.testCycleHistory || [];
-  statsObj.bestNetwork.input = networkObj.network.input;
-  statsObj.bestNetwork.numInputs = networkObj.numInputs;
-  statsObj.bestNetwork.inputsId = networkObj.inputsId;
-  statsObj.bestNetwork.output = networkObj.network.output;
-  statsObj.bestNetwork.evolve = {};
+    if (statsObj.bestNetwork === undefined) { statsObj.bestNetwork = {}; }
 
-  if (networkObj.evolve !== undefined) {
-    statsObj.bestNetwork.evolve = networkObj.evolve;
-    if (statsObj.bestNetwork.evolve.options !== undefined) { 
-      statsObj.bestNetwork.evolve.options.networkObj = null;
+    statsObj.bestRuntimeNetworkId = networkObj.networkId;
+    statsObj.currentBestNetworkId = networkObj.networkId;
+
+    statsObj.bestNetwork.networkId = networkObj.networkId;
+    statsObj.bestNetwork.network = networkObj.network;
+    statsObj.bestNetwork.networkType = networkObj.networkType;
+    statsObj.bestNetwork.successRate = networkObj.successRate || 0;
+    statsObj.bestNetwork.matchRate = networkObj.matchRate || 0;
+    statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate || 0;
+    statsObj.bestNetwork.testCycles = networkObj.testCycles || 0;
+    statsObj.bestNetwork.testCycleHistory = networkObj.testCycleHistory || [];
+    statsObj.bestNetwork.input = networkObj.network.input;
+    statsObj.bestNetwork.numInputs = networkObj.numInputs;
+    statsObj.bestNetwork.inputsId = networkObj.inputsId;
+    statsObj.bestNetwork.output = networkObj.network.output;
+    statsObj.bestNetwork.evolve = {};
+
+    if (networkObj.evolve !== undefined) {
+      statsObj.bestNetwork.evolve = networkObj.evolve;
+      if (statsObj.bestNetwork.evolve.options !== undefined) { 
+        statsObj.bestNetwork.evolve.options.networkObj = null;
+      }
     }
-  }
+
+    resolve(statsObj.bestNetwork);
+
+  });
+
 }
 
 function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
@@ -5485,7 +5365,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
   console.log(chalkLog("TFE | INIT RANDOM NETWORK TREE QUEUE INTERVAL: " + interval + " ms"));
 
-  randomNetworkTreeMessageRxQueueInterval = setInterval(function () {
+  randomNetworkTreeMessageRxQueueInterval = setInterval(async function () {
 
     if (randomNetworkTreeMessageRxQueueReadyFlag && (randomNetworkTreeMessageRxQueue.length > 0)) {
 
@@ -5506,6 +5386,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
           randomNetworkTreeBusyFlag = false;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           runEnable();
           console.log(chalkLog("TFE | RNT IDLE "));
         break;
@@ -5528,6 +5409,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             }, 
             function() {
               randomNetworkTreeMessageRxQueueReadyFlag = true;
+              statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
             }
           );
 
@@ -5536,6 +5418,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
         case "NETWORK_READY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           debug(chalkInfo("RNT NETWORK_READY ..."));
           runEnable();
         break;
@@ -5544,13 +5427,15 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
           randomNetworkTreeBusyFlag = "NETWORK_BUSY";
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = true;
           debug(chalkInfo("RNT NETWORK_BUSY ..."));
         break;
 
         case "QUEUE_READY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeActivateQueueSize = m.queue;
-          statsObj.randomNetworkTreeActivateQueueSize = randomNetworkTreeActivateQueueSize;
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           randomNetworkTreeReadyFlag = true;
           debug(chalkInfo("RNT Q READY"));
 
@@ -5560,7 +5445,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
         case "QUEUE_EMPTY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeActivateQueueSize = m.queue;
-          statsObj.randomNetworkTreeActivateQueueSize = randomNetworkTreeActivateQueueSize;
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           randomNetworkTreeReadyFlag = true;
           debug(chalkInfo("RNT Q EMPTY"));
           runEnable();
@@ -5569,7 +5455,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
         case "QUEUE_FULL":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeActivateQueueSize = m.queue;
-          statsObj.randomNetworkTreeActivateQueueSize = randomNetworkTreeActivateQueueSize;
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = "QUEUE_FULL";
           randomNetworkTreeReadyFlag = false;
           randomNetworkTreeBusyFlag = "QUEUE_FULL";
           console.log(chalkError("TFE | *** RNT Q FULL"));
@@ -5578,6 +5465,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
         case "RNT_TEST_PASS":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           console.log(chalkTwitter("TFE | " + getTimeStamp() + " | RNT_TEST_PASS | RNT READY: " + randomNetworkTreeReadyFlag));
           runEnable();
         break;
@@ -5585,6 +5473,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
         case "RNT_TEST_FAIL":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           console.log(chalkAlert("TFE | " + getTimeStamp() + " | RNT_TEST_FAIL"));
           quit({source: "RNT", error: "RNT_TEST_FAIL"});
         break;
@@ -5607,7 +5496,14 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             currentBestNetwork.overallMatchRate = m.bestNetwork.overallMatchRate;
             currentBestNetwork.successRate = m.bestNetwork.successRate;
 
-            updateBestNetworkStats(currentBestNetwork);
+            try{
+              await updateBestNetworkStats({networkObj: currentBestNetwork});
+            }
+            catch(err){
+              console.log(chalkError(MODULE_ID_PREFIX
+                + " | *** ERROR update best network stats: " + err
+              ));
+            }
 
             bestNetworkHashMap.set(bestRuntimeNetworkId, currentBestNetwork);
 
@@ -5678,6 +5574,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             ));
           }
           randomNetworkTreeMessageRxQueueReadyFlag = true;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           runEnable();
         break;
 
@@ -5756,11 +5653,13 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             }
           }
           randomNetworkTreeMessageRxQueueReadyFlag = true;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           runEnable();
         break;
 
         default:
           randomNetworkTreeMessageRxQueueReadyFlag = true;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           console.log(chalkError("TFE | *** UNKNOWN RNT OP | " + m.op));
       }
     }
@@ -6065,6 +5964,7 @@ function initRandomNetworkTreeChild() {
         randomNetworkTreeBusyFlag = false;
         randomNetworkTreeReadyFlag = true;
         randomNetworkTreeActivateQueueSize = 0;
+        statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
         statsObj.randomNetworkTreeActivateQueueSize = randomNetworkTreeActivateQueueSize;
         randomNetworkTree = null;
         statsObj.status = "ERROR RNT";
@@ -6077,6 +5977,7 @@ function initRandomNetworkTreeChild() {
         randomNetworkTreeBusyFlag = false;
         randomNetworkTreeReadyFlag = true;
         randomNetworkTreeActivateQueueSize = 0;
+        statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
         statsObj.randomNetworkTreeActivateQueueSize = randomNetworkTreeActivateQueueSize;
         randomNetworkTree = null;
         console.log(chalkError("TFE | *** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
@@ -6087,6 +5988,7 @@ function initRandomNetworkTreeChild() {
         randomNetworkTreeBusyFlag = false;
         randomNetworkTreeReadyFlag = true;
         randomNetworkTreeActivateQueueSize = 0;
+        statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
         statsObj.randomNetworkTreeActivateQueueSize = randomNetworkTreeActivateQueueSize;
         randomNetworkTree = null;
         console.log(chalkError("TFE | *** randomNetworkTree CLOSE *** | " + code));
@@ -6999,6 +6901,7 @@ function generateAutoCategory(user, callback) {
     updateUserHistograms({user: user})
     .then(function(updatedUser){
       activateNetworkQueue.push({user: updatedUser, normalization: statsObj.normalization});
+      statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
       callback(null, updatedUser);
     })
     .catch(function(err){
@@ -7277,13 +7180,15 @@ function initProcessUserQueueInterval(interval) {
 
   processUserQueueInterval = setInterval(async function () {
 
-    if (processUserQueueReady && processUserQueue.length > 0) {
+    if (!statsObj.queues.processUserQueue.busy && statsObj.queues.processUserQueue.size > 0) {
 
       statsObj.status = "PROCESS USER";
 
-      processUserQueueReady = false;
+      statsObj.queues.processUserQueue.busy = true;
 
       mObj = processUserQueue.shift();
+
+      statsObj.queues.processUserQueue.size = processUserQueue.length;
 
       childId = mObj.childId;
       tcUser = mObj.threeceeUser;
@@ -7297,7 +7202,7 @@ function initProcessUserQueueInterval(interval) {
           + " | @" + mObj.friend.screen_name
         ));
 
-        processUserQueueReady = true;
+        statsObj.queues.processUserQueue.busy = false;
         return;
       }
 
@@ -7310,7 +7215,7 @@ function initProcessUserQueueInterval(interval) {
           + " | @" + mObj.friend.screen_name
         ));
 
-        processUserQueueReady = true;
+        statsObj.queues.processUserQueue.busy = false;
         return;
       }
 
@@ -7327,7 +7232,7 @@ function initProcessUserQueueInterval(interval) {
           + " | @" + mObj.friend.screen_name
         ));
 
-        processUserQueueReady = true;
+        statsObj.queues.processUserQueue.busy = false;
         return;
       }
 
@@ -7382,7 +7287,7 @@ function initProcessUserQueueInterval(interval) {
           // ));
 
           console.log(chalkBlue("TFE | <FRND PRCSSD"
-            + " [ Q: " + processUserQueue.length + " ]"
+            + " [ Q: " + statsObj.queues.processUserQueue.size + " ]"
             + " | @" + tcUser
             + " | S: " + statsObj.user[tcUser].friendsProcessStart.format(compactDateTimeFormat)
             + " | E: " + msToTime(statsObj.user[tcUser].friendsProcessElapsed)
@@ -7409,7 +7314,7 @@ function initProcessUserQueueInterval(interval) {
 
         user.save()
         .then(function() {
-          processUserQueueReady = true;
+          statsObj.queues.processUserQueue.busy = false;
         })
         .catch(function(err) {
           console.log(chalkError("TFE | *** ERROR processUser USER SAVE: @" + user.screenName + " | " + err));
@@ -7419,7 +7324,7 @@ function initProcessUserQueueInterval(interval) {
             + "\nmObj\n" + jsonPrint(user)
           ));
           // quit({cause:"TFE | *** ERROR processUser save"});
-          processUserQueueReady = true;
+          statsObj.queues.processUserQueue.busy = false;
         });
       }
       catch(err){
@@ -7429,7 +7334,7 @@ function initProcessUserQueueInterval(interval) {
           + "\nmObj\n" + jsonPrint(mObj)
         ));
         // quit({cause:"TFE | *** ERROR processUser"});
-        processUserQueueReady = true;
+        statsObj.queues.processUserQueue.busy = false;
       }
 
     }
@@ -7516,20 +7421,18 @@ function resetGlobalHistograms(params){
 
 statsObj.fsmState = "RESET";
 
-const processUserQueueEmpty = function() {
-  return (processUserQueue.length === 0);
-};
-
 const fetchAllReady = function(){
+
+  statsObj.queues.processUserQueue.size = processUserQueue.length;
 
   if (configuration.verbose) {
     console.log(chalkLog("fetchAllReady"
       + " | loadedNetworksFlag: " + loadedNetworksFlag
-      + " | processUserQueueReady: " + processUserQueueReady
-      + " | processUserQueueEmpty: " + processUserQueueEmpty()
+      + " | statsObj.queues.processUserQueue.busy: " + statsObj.queues.processUserQueue.busy
+      + " | statsObj.queues.processUserQueue.size: " + statsObj.queues.processUserQueue.size
     ));
   }
-  return (loadedNetworksFlag && processUserQueueReady && processUserQueueEmpty() );
+  return (loadedNetworksFlag && !statsObj.queues.processUserQueue.busy && (statsObj.queues.processUserQueue.size === 0) );
 };
 
 function reporter(event, oldState, newState) {
@@ -7710,8 +7613,8 @@ const fsmStates = {
       .then(function(allChildrenReady){
 
         debug("READY TICK"
-          + " | Q READY: " + processUserQueueReady
-          + " | Q EMPTY: " + processUserQueueEmpty()
+          + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
+          + " | Q SIZE: " + statsObj.queues.processUserQueue.size
           + " | ALL CHILDREN READY: " + allChildrenReady
         );
         if (!allChildrenReady) { childSendAll({op: "READY"}); }
@@ -7747,19 +7650,21 @@ const fsmStates = {
       childCheckState({checkState:"FETCH_END", noChildrenTrue: false})
       .then(function(allChildrenFetchEnd){
         debug("FETCH_END TICK"
-          + " | Q READY: " + processUserQueueReady
-          + " | Q EMPTY: " + processUserQueueEmpty()
+          + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
+          + " | Q SIZE: " + statsObj.queues.processUserQueue.size
           + " | ALL CHILDREN FETCH_END: " + allChildrenFetchEnd
         );
 
         statsObj.allChildrenFetchEnd = allChildrenFetchEnd;
 
-        if ((randomNetworkTreeActivateQueueSize === 0)
-          && activateNetworkQueueReady
-          && (activateNetworkQueue.length === 0)
+        if (
+          !statsObj.queues.randomNetworkTreeActivateQueue.busy
+          && (statsObj.queues.randomNetworkTreeActivateQueue.size === 0)
+          && !statsObj.queues.activateNetworkQueue.busy
+          && (statsObj.queues.activateNetworkQueue.size === 0)
           && allChildrenFetchEnd 
-          && processUserQueueReady 
-          && processUserQueueEmpty()
+          && !statsObj.queues.processUserQueue.busy
+          && (statsObj.queues.processUserQueue.size === 0)
           ) 
         { 
           fsm.fsm_fetchAllEnd(); 
@@ -8667,6 +8572,8 @@ function childCreate(params){
 
             processUserQueue.push(m);
 
+            statsObj.queues.processUserQueue.size = processUserQueue.length;
+
             if (configuration.verbose || saveRawFriendFlag) {
               console.log(chalkInfo("TFE | TEST DATA: FRIEND_RAW"
                 + " [ PUQ: " + processUserQueue.length + " ]"
@@ -8961,14 +8868,6 @@ function initChildPingAllInterval(params){
   });
 }
 
-
-//=========================================================================
-// SLACK
-//=========================================================================
-
-// ./lib/js/slackModule.js
-
-
 console.log(MODULE_ID_PREFIX + " | =================================");
 console.log(MODULE_ID_PREFIX + " | HOST:          " + hostname);
 console.log(MODULE_ID_PREFIX + " | PROCESS TITLE: " + process.title);
@@ -8993,8 +8892,8 @@ setTimeout(async function(){
 
     statsObj.status = "START";
 
-    await initSlackRtmClient();
-    await initSlackWebClient();
+    initSlackRtmClient();
+    initSlackWebClient();
 
     initSaveFileQueue(configuration);
 

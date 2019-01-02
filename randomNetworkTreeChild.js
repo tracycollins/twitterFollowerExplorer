@@ -41,6 +41,8 @@ let rxActivateNetworkQueue = [];
 let maxQueueFlag = false;
 let maxInputHashMap = {};
 
+let sortedNetworkResults = {};
+
 let loadNetworksBusy = false;
 let activateNetworkInterval;
 let activateNetworkIntervalBusy = false;
@@ -628,6 +630,55 @@ function activateNetwork(params){
   });
 }
 
+function printNetworkResults(params){
+
+  let statsTextArray = [];
+
+  return new Promise(function(resolve, reject){
+
+    async.eachOf(sortedNetworkResults.sortedKeys, function genStatsTextArray(nnId, index, cb0){
+
+      statsTextArray[index] = statsTextObj[nnId];
+
+      async.setImmediate(function() { cb0(); });
+
+    }, function(){
+
+      statsTextArray.unshift([
+        "RNT | NNID",
+        "INPUTSID",
+        "INPUTS",
+        "OAMR",
+        "SR",
+        "ATOT",
+        "AM",
+        "AMM",
+        "AMR",
+        "TCs",
+        "TCH",
+        "MFLAG",
+        "OUTPUT",
+        "TOT",
+        " M",
+        " MM",
+        " MR"
+      ]);
+
+      console.log(chalk.blue(
+          "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
+        + "\nRNT | " + params.title 
+        + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------\n"
+        + table(statsTextArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+        + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
+      ));
+
+      resolve();
+
+    });
+
+  });
+
+}
 
 const sum = (r, a) => r.map((b, i) => a[i] + b);
 
@@ -638,7 +689,6 @@ let generateNetworksOutputBusy = false;
 
 let arrayOfArrays = [];
 let bestNetworkOutput = [0,0,0];
-let statsTextArray = [];
 let statsTextObj = {};
 let nnIdArray = [];
 
@@ -646,13 +696,7 @@ function generateNetworksOutput(params){
 
   return new Promise(function(resolve, reject){
 
-    // console.log("generateNetworksOutput");
-
-
     let networkOutput = params.networkOutput;
-
-    // console.log("networkOutput keys: " + Object.keys(networkOutput));
-
     let expectedOutput = params.expectedOutput;
     let title = params.title;
 
@@ -660,7 +704,6 @@ function generateNetworksOutput(params){
 
     arrayOfArrays.length = 0;
     bestNetworkOutput = [0,0,0];
-    statsTextArray.length = 0;
     statsTextObj = {};
 
     nnIdArray = Object.keys(networkOutput);
@@ -781,7 +824,7 @@ function generateNetworksOutput(params){
 
       try {
 
-        const sortedNetworkResults = await sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: MAX_SORT_NETWORKS});
+        sortedNetworkResults = await sortedObjectValues({ sortKey: "matchRate", obj: statsObj.loadedNetworks, max: MAX_SORT_NETWORKS});
 
         if (!sortedNetworkResults) { 
           generateNetworksOutputBusy = false;
@@ -793,14 +836,9 @@ function generateNetworksOutput(params){
         
         statsObj.bestNetwork = {};
         statsObj.bestNetwork = statsObj.loadedNetworks[currentBestNetworkId];
-
-        // console.log(chalkAlert("sortedNetworkResults.sortedKeys\n" + jsonPrint(sortedNetworkResults.sortedKeys)));
-
         statsObj.bestNetwork.matchRate = (statsObj.bestNetwork.matchRate === undefined) ? 0 : statsObj.bestNetwork.matchRate;
         statsObj.bestNetwork.overallMatchRate = (statsObj.bestNetwork.overallMatchRate === undefined) ? 0 : statsObj.bestNetwork.overallMatchRate;
         statsObj.bestNetwork.testCycles = (statsObj.bestNetwork.testCycles === undefined) ? 0 : statsObj.bestNetwork.testCycles;
-
-        // console.log(chalkAlert("statsObj.bestNetwork keys: " + Object.keys(statsObj.bestNetwork)));
 
         debug(chalkLog("BEST NETWORK"
           + " | " + statsObj.bestNetwork.networkId
@@ -812,6 +850,10 @@ function generateNetworksOutput(params){
         ));
 
         bestNetworkOutput = statsObj.bestNetwork.output;
+
+        if (statsObj.categorize.grandTotal % 100 === 0) {
+          await printNetworkResults({title: title});
+        }
 
         if (previousBestNetworkId !== currentBestNetworkId) {
 
@@ -829,43 +871,7 @@ function generateNetworksOutput(params){
             + "\nRNT | ==================================================================\n"
           ));
 
-          async.eachOf(sortedNetworkResults.sortedKeys, function genStatsTextArray(nnId, index, cb0){
-
-            statsTextArray[index] = statsTextObj[nnId];
-
-            async.setImmediate(function() { cb0(); });
-
-          }, function(){
-
-            statsTextArray.unshift([
-              "RNT | NNID",
-              "INPUTSID",
-              "INPUTS",
-              "OAMR",
-              "SR",
-              "ATOT",
-              "AM",
-              "AMM",
-              "AMR",
-              "TCs",
-              "TCH",
-              "MFLAG",
-              "OUTPUT",
-              "TOT",
-              " M",
-              " MM",
-              " MR"
-            ]);
-
-            console.log(chalk.blue(
-                "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
-              + "\nRNT | " + title 
-              + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------\n"
-              + table(statsTextArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
-              + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
-            ));
-
-          });
+          await printNetworkResults({title: title});
 
           if (previousBestNetworkId) {
             previousBestNetworkMatchRate = statsObj.loadedNetworks[previousBestNetworkId].matchRate;
