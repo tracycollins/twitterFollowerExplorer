@@ -3069,7 +3069,7 @@ const localTrainingSetFolder = dropboxConfigHostFolder + "/trainingSets";
 const defaultTrainingSetUserArchive = defaultTrainingSetFolder + "/users/users.zip";
 
 const globalBestNetworkFolder = "/config/utility/best/neuralNetworks";
-const globalBestNetworkArchiveFolder = "/config/utility/archive/neuralNetworks";
+const globalBestNetworkArchiveFolder = globalBestNetworkFolder + "/archive";
 const localBestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
 let bestNetworkFolder = (hostname === PRIMARY_HOST) ? "/config/utility/best/neuralNetworks" : localBestNetworkFolder;
 
