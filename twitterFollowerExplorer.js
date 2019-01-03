@@ -6825,7 +6825,7 @@ function updateUserHistograms(params) {
 
               }
               else {
-                cb(null, null);
+                cb(null, user.profileHistograms);
               }
 
             },
@@ -6845,7 +6845,7 @@ function updateUserHistograms(params) {
 
               }
               else {
-                cb(null, null);
+                cb(null, user.tweetHistograms);
               }
             }
 
