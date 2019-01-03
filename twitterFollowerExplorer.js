@@ -4435,7 +4435,7 @@ function dropboxFileMove(params){
 
     dropboxClient.filesMoveV2({from_path: srcPath, to_path: dstPath})
     .then(function(response){
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | ->- DROPBOX FILE MOVE"
+      console.log(chalkBlueBold(MODULE_ID_PREFIX + " | ->- DROPBOX FILE MOVE"
         + " | " + srcPath
         + " > " + dstPath
         // + " | RESPONSE\n" + jsonPrint(response)
@@ -6161,14 +6161,14 @@ function checkUserProfileChanged(params) {
       + " | RST PREV PROP VALUES" 
       + " | @" + user.screenName 
     ));
-    user.previousScreenName = "";
-    user.previousName = "";
-    user.previousDescription = "";
-    user.previousLocation = "";
-    user.previousUrl = "";
-    user.previousExpandedUrl = "";
-    user.previousProfileUrl = "";
-    user.previousBannerImageUrl = "";
+    user.previousScreenName = null;
+    user.previousName = null;
+    user.previousDescription = null;
+    user.previousLocation = null;
+    user.previousUrl = null;
+    user.previousExpandedUrl = null;
+    user.previousProfileUrl = null;
+    user.previousBannerImageUrl = null;
   }
 
   if (user.name && (user.name !== undefined) && (user.name !== user.previousName)) { results.push("name"); }
@@ -6689,7 +6689,7 @@ function userProfileChangeHistogram(params) {
         case "url":
         case "expandedUrl":
 
-          domain = urlParse(userPropValue.toLowerCase()).hostname;
+          domain = btoa(urlParse(userPropValue.toLowerCase()).hostname);
           nodeId = btoa(userPropValue.toLowerCase());
 
           if (domain) { urlsHistogram.urls[domain] = (urlsHistogram.urls[domain] === undefined) ? 1 : urlsHistogram.urls[domain] + 1; }
@@ -6796,7 +6796,7 @@ function updateUserHistograms(params) {
     let user = params.user;
 
     user.profileHistograms = user.profileHistograms || {};
-    user.tweetHistogramChanges = user.tweetHistogramChanges || {};
+    user.tweetHistogram = user.tweetHistogram || {};
 
     userStatusChangeHistogram({user: user})
 
@@ -6849,7 +6849,7 @@ function updateUserHistograms(params) {
               }
             }
 
-          }, function(err, results){
+          }, async function(err, results){
             if (err) {
               return reject(err);
             }
@@ -6857,20 +6857,31 @@ function updateUserHistograms(params) {
             user.profileHistograms = results.profileHist;
             user.tweetHistograms = results.tweetHist;
 
-            userServerController.findOneUser(user, {lean: false, noInc: true}, function(err, updatedUser){
-              if (err) {
-                console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM FINDONEUSER ERROR: " + err));
-                return reject(err);
-              }
-              updateGlobalHistograms(params)
-              .then(function(){
-                resolve(updatedUser);
-              })
-              .catch(function(err){
-                console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR: " + err));
-                return reject(err);
-              });
-            });
+            try {
+              let updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: true, noInc: true});
+
+              await updateGlobalHistograms(params);
+              resolve(updatedUser);
+            }
+            catch(err){
+              console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM FINDONEUSER ERROR: " + err));
+              return reject(err);
+            }
+
+            // userServerController.findOneUser(user, {lean: false, noInc: true}, function(err, updatedUser){
+            //   if (err) {
+            //     console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM FINDONEUSER ERROR: " + err));
+            //     return reject(err);
+            //   }
+            //   updateGlobalHistograms(params)
+            //   .then(function(){
+            //     resolve(updatedUser);
+            //   })
+            //   .catch(function(err){
+            //     console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR: " + err));
+            //     return reject(err);
+            //   });
+            // });
 
           });
 
@@ -7018,8 +7029,8 @@ function processUser(params) {
               user.screenNameLower = userIn.screen_name.toLowerCase();
             }
 
-            if (user.name !== userIn.name) {
-              // user.previousName = user.name;
+            if (userIn.name && (user.name !== userIn.name)) {
+              // user.userIn.nameName = user.name;
               user.name = userIn.name;
             }
             
