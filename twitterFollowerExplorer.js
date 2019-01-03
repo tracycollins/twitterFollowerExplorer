@@ -6868,21 +6868,6 @@ function updateUserHistograms(params) {
               return reject(err);
             }
 
-            // userServerController.findOneUser(user, {lean: false, noInc: true}, function(err, updatedUser){
-            //   if (err) {
-            //     console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM FINDONEUSER ERROR: " + err));
-            //     return reject(err);
-            //   }
-            //   updateGlobalHistograms(params)
-            //   .then(function(){
-            //     resolve(updatedUser);
-            //   })
-            //   .catch(function(err){
-            //     console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR: " + err));
-            //     return reject(err);
-            //   });
-            // });
-
           });
 
         });
