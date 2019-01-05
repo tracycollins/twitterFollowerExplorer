@@ -6368,6 +6368,8 @@ function userStatusChangeHistogram(params) {
 
       })
       .catch(function(err){
+        console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
+        quit();
         return cb(err);
       });
 
