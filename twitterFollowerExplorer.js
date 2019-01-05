@@ -6589,6 +6589,8 @@ function userProfileChangeHistogram(params) {
           const name = userPropValue.trim().toLowerCase().replace(/\./gi, "");
           nodeId = btoa(name);
 
+          locationsHistogram.locations[nodeId] = (locationsHistogram.locations[nodeId] === undefined) ? 1 : locationsHistogram.locations[nodeId] + 1;
+
           try {
 
             let locationDoc = await global.Location.findOne({nodeId: nodeId});
@@ -6654,14 +6656,13 @@ function userProfileChangeHistogram(params) {
 
               }
 
-
               return;
 
             }
             else {
 
-              locationDoc.mentions += 1;
-              locationDoc.lastSeen = Date.now();
+              // locationDoc.mentions += 1;
+              // locationDoc.lastSeen = Date.now();
 
               await locationDoc.save();
 
@@ -6677,20 +6678,12 @@ function userProfileChangeHistogram(params) {
                 + " | A: " + locationDoc.formattedAddress
               ));
 
-
-              let locationObj = locationDoc.toObject();
-
-              delete locationObj._id;
-              return locationObj;
-
+              return;
             }
           }
           catch(err){
-
-            console.log(chalkError("TCS | *** GEOCODE ERROR: " + err
-            ));
-
-            return null;
+            console.log(chalkError("TCS | *** GEOCODE ERROR: " + err));
+            return ;
           }
 
 
