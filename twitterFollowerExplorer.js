@@ -6255,8 +6255,25 @@ function checkUserStatusChanged(params) {
 
   let results = [];
 
-  if (user.statusId !== user.previousStatusId) { results.push("statusId"); }
-  if (user.quotedStatusId !== user.previousQuotedStatusId) { results.push("quotedStatusId"); }
+  if (
+      user.statusId 
+      && user.statusId !== undefined 
+      && user.previousStatusId
+      && user.previousStatusId !== undefined 
+      && user.statusId !== user.previousStatusId
+    ) { 
+    results.push("statusId"); 
+  }
+
+  if (
+      user.quotedStatusId 
+      && user.quotedStatusId !== undefined 
+      && user.previousQuotedStatusId
+      && user.previousQuotedStatusId !== undefined 
+      && user.quotedStatusId !== user.previousQuotedStatusId
+    ) { 
+    results.push("quotedStatusId"); 
+  }
 
   if (results.length === 0) { return; }
   return results;    
@@ -6303,7 +6320,7 @@ function userStatusChangeHistogram(params) {
       tscParams.twitterEvents = configEvents;
       tscParams.tweetStatus = {};
 
-      if (user.statusId && userProp === "statusId"){
+      if (user.statusId && user.statusId !== undefined && userProp === "statusId"){
 
         let status = deepcopy(user.status);  // avoid circular references
 
@@ -6314,7 +6331,7 @@ function userStatusChangeHistogram(params) {
         tscParams.tweetStatus.user.isNotRaw = true;
       }
 
-      if (user.quotedStatusId && userProp === "quotedStatusId"){
+      if (user.quotedStatusId && user.quotedStatusId !== undefined && userProp === "quotedStatusId"){
 
         let quotedStatus = deepcopy(user.quotedStatus);  // avoid circular references
 
@@ -6476,6 +6493,7 @@ function parseImage(params){
 
   });
 }
+
 function geoCode(params) {
 
   return new Promise(function(resolve, reject){
