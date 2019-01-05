@@ -1334,7 +1334,7 @@ function dropboxLoadBestNetworkFolders(params){
           let nnDb;
 
           try {
-            nnDb = await updateDbNetwork({networkObj: networkObj, addToTestHistory: true});
+            nnDb = await updateDbNetwork({networkObj: networkObj, addToTestHistory: true, verbose: configuration.testMode});
           }
           catch(err){
             console.log(chalkError("*** ERROR: DB NN FIND ONE ERROR | "+ networkObj.networkId + " | " + err));
@@ -4650,8 +4650,8 @@ function loadBestNetworksDropbox(params) {
           const updateDbNetworkParams = {
             networkObj: networkObj,
             incrementTestCycles: false,
-            addToTestHistory: false
-            // verbose: true
+            addToTestHistory: false,
+            verbose: configuration.testMode
           };
           const nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
           if (skipLoadNetworkSet.has(networkObj.networkId)) {
@@ -5227,7 +5227,8 @@ function updateNetworkStats(params, callback) {
         networkObj: networkObj,
         incrementTestCycles: incrementTestCycles,
         testHistoryItem: testHistoryItem,
-        addToTestHistory: false
+        addToTestHistory: false,
+        verbose: configuration.testMode
       };
 
       let nnDbUpdated;
