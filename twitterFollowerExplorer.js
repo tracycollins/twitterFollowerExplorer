@@ -5185,13 +5185,20 @@ function updateNetworkStats(params, callback) {
 
   statsObj.status = "UPDATE DB NN STATS";
 
-  console.log(chalkTwitter("TFE | UPDATE NETWORK STATS"));
 
   const updateOverallMatchRate = (params.updateOverallMatchRate !== undefined) ? params.updateOverallMatchRate : false;
+  const saveImmediate = (params.saveImmediate !== undefined) ? params.saveImmediate : false;
   const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
   const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
 
   const nnIds = Object.keys(params.networkStatsObj);
+
+  console.log(chalkTwitter("TFE | UPDATE NETWORK STATS"
+    + " | " + nnIds.length + " | NETWORKS"
+    + " | UPDATE OAMR: " + updateOverallMatchRate
+    + " | UPDATE DB: " + updateDb
+    + " | INC TEST CYCs: " + incrementTestCycles
+  ));
 
   let newNnDb;
   let nnObj;
@@ -5248,7 +5255,7 @@ function updateNetworkStats(params, callback) {
     }
   }, function(err) {
 
-    saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: params.saveImmediate, updateDb: params.updateDb}, function() {
+    saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb}, function() {
 
       statsObj.status = statsObj.fsmState;
 
