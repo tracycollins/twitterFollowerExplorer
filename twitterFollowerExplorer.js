@@ -4599,8 +4599,20 @@ function loadBestNetworksDropbox(params) {
             })
             .catch(function(err){
               // console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(err)));
-              console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(JSONParse(err))));
-              return;
+              JSONParse(err, function(err, errObj){
+                if (err) {
+                  console.log(chalkError(getTimeStamp()
+                    + " | *** MOVE FILE FROM DROPBOX ERROR PARSE"
+                    + " | " + err
+                  ));
+                }
+                else {
+                  console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(errObj)));
+                }
+
+                return;
+
+              })
             });
 
           }
