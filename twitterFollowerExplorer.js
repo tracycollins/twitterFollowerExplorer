@@ -6265,6 +6265,7 @@ function userStatusChangeHistogram(params) {
 
         user.statusId = user.statusId.toString();
         tscParams.tweetStatus = status;
+        tscParams.tweetStatus.text = status.text || "";
         tscParams.tweetStatus.user = {};
         tscParams.tweetStatus.user = user;
         tscParams.tweetStatus.user.isNotRaw = true;
