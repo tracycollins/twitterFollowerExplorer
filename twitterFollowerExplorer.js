@@ -4450,7 +4450,7 @@ function dropboxFileMove(params){
           console.log(chalkAlert(MODULE_ID_PREFIX + " | ... DROPBOX FILE MOVE"
             + " | STATUS: " + err.status
             + " | " + srcPath
-            + " > " + dstPath
+            // + " > " + dstPath
             + " | DOES NOT EXIST"
           ));
           return resolve();
