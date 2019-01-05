@@ -298,6 +298,12 @@ statsObj.bestNetwork.inputsId = null;
 statsObj.bestNetwork.output = [];
 statsObj.bestNetwork.evolve = {};
 
+statsObj.geo = {};
+statsObj.geo.hits = 0;
+statsObj.geo.misses = 0;
+statsObj.geo.total = 0;
+statsObj.geo.hitRate = 0;
+
 statsObj.analyzer = {};
 statsObj.analyzer.analyzed = 0;
 statsObj.analyzer.errors = 0;
@@ -352,11 +358,6 @@ statsObj.users.totalPercentProcessed = 0;
 statsObj.users.unzipped = 0;
 statsObj.users.updatedCategorized = 0;
 statsObj.users.zipHashMapHit = 0;
-
-statsObj.geo = {};
-statsObj.geo.hashmap = {};
-statsObj.geo.hashmap.hits = 0;
-statsObj.geo.hashmap.misses = 0;
 
 //=========================================================================
 // TFE SPECIFIC
@@ -6583,95 +6584,116 @@ function userProfileChangeHistogram(params) {
 
         case "location":
 
+          // const lastSeen = new Date(moment(newTweet.created_at, twitterDateFormat, false).toISOString());
+
+          const name = userPropValue.trim().toLowerCase().replace(/\./gi, "");
+          nodeId = btoa(name);
 
           try {
 
-            // placeId: placeId, 
-            // formattedAddress: formattedAddress, 
-            // components: components, 
-            // raw: response.json 
+            let locationDoc = await global.Location.findOne({nodeId: nodeId});
 
-            if (!geoCodeHashMap[userPropValue]) {
-              geoCodeResults = await geoCode({address: userPropValue});
-              geoCodeHashMap[userPropValue] = {};
-              geoCodeHashMap[userPropValue] = geoCodeResults;
-              statsObj.geo.hashmap.size = Object.keys(geoCodeHashMap).length;
-              statsObj.geo.hashmap.misses += 1;
-            }
-            else {
-              geoCodeResults = geoCodeHashMap[userPropValue];
-              console.log(chalkLog(MODULE_ID_PREFIX
-                + " | +++ GEOCODE HASHMAP HIT"
-                + " [" + Object.keys(geoCodeHashMap).length + "]"
-                + " | " + userPropValue + " | " + geoCodeResults.placeId
+            if (!locationDoc) {
+
+              console.log(chalkInfo("TFE | --- LOC DB MISS"
+                + " | NID: " + nodeId
+                + " | N: " + name + " / " + userPropValue
               ));
-              statsObj.geo.hashmap.hits += 1;
-            }
 
+              locationDoc = new global.Location({
+                nodeId: nodeId,
+                name : name,
+                nameRaw : userPropValue,
+                geoValid: false,
+                mentions : 0
+              });
 
-            user.geoValid = geoCodeResults.geoValid;
-            user.geo = geoCodeResults;
+              let geoCodeResults = await geoCode({address: name});
 
-            // user.markModified("geo");
-            // user.markModified("geoValid");
+              if (geoCodeResults.placeId) {
 
-            console.log(chalkLog(MODULE_ID_PREFIX
-              + " | GEOCODE"
-                + " [" + Object.keys(geoCodeHashMap).length + "]"
-              + " | @" + user.screenName
-              + " | VALID: " + user.geo.geoValid
-              + " | PLACE ID: " + user.geo.placeId
-              + " | NAME: " + user.geo.address
-              + " | FORMATTED: " + user.geo.formattedAddress
-              // + "\n" + jsonPrint(locations[index].geo)
-            ));                    
+                locationDoc.geoValid = true;
+                locationDoc.placeId = geoCodeResults.placeId;
+                locationDoc.formattedAddress = geoCodeResults.formattedAddress;
 
-            if (geoCodeResults.placeId){
-              locationsHistogram.locations[geoCodeResults.placeId] = (locationsHistogram.locations[geoCodeResults.placeId] === undefined) 
-                ? 1 
-                : locationsHistogram.locations[geoCodeResults.placeId] + 1;
-            }
+                await locationDoc.save();
 
-            return;
-          }
-          catch(err){
-            console.log(chalkError(MODULE_ID_PREFIX + " | *** GEOCODE ERROR: " + err
-            ));
-            return err;                
-          }
+                statsObj.geo.hits += 1;
+                statsObj.geo.total += 1;
+                statsObj.geo.hitRate = 100*(statsObj.geo.hits/statsObj.geo.total);
 
+                console.log(chalk.blue("TFE | +++ LOC GEO HIT "
+                  + " | GEO: " + locationDoc.geoValid
+                  + "  H " + statsObj.geo.hits
+                  + "  M " + statsObj.geo.misses
+                  + "  T " + statsObj.geo.total
+                  + " HR: " + statsObj.geo.hitRate.toFixed(2)
+                  + " | PID: " + locationDoc.placeId 
+                  + " | NID: " + locationDoc.nodeId
+                  + " | N: " + locationDoc.name + " / " + locationDoc.nameRaw
+                  + " | A: " + locationDoc.formattedAddress
+                ));
 
+              } else {
 
-           try {
+                await locationDoc.save();
 
-            // placeId: placeId, 
-            // formattedAddress: formattedAddress, 
-            // components: components, 
-            // raw: response.json 
-  
-             const geoCodeResults = await geoCode({address: userPropValue});
+                statsObj.geo.misses += 1;
+                statsObj.geo.total += 1;
+                statsObj.geo.hitRate = 100*(statsObj.geo.hits/statsObj.geo.total);
 
-              user.geoValid = true;
-              user.geo = geoCodeResults;
+                console.log(chalkLog("TFE | --- LOC GEO MISS"
+                  + " | GEO: " + locationDoc.geoValid
+                  + "  H " + statsObj.geo.hits
+                  + "  M " + statsObj.geo.misses
+                  + "  T " + statsObj.geo.total
+                  + " HR: " + statsObj.geo.hitRate.toFixed(2)
+                  + " | NID: " + locationDoc.nodeId
+                  + " | N: " + locationDoc.name + " / " + locationDoc.nameRaw
+                ));
 
-              user.markModified("geo");
-              user.markModified("geoValid");
+              }
 
-              console.log(chalkLog(MODULE_ID_PREFIX
-                + " | GEOCODE"
-                + " | NODE ID: " + user.nodeId
-                + " | PLACE ID: " + user.geo.placeId
-                + " | FORMATTED: " + user.geo.formattedAddress
-                // + "\n" + jsonPrint(locations[index].geo)
-              ));                    
 
               return;
+
             }
-            catch(err){
-              console.log(chalkError("TCS | *** GEOCODE ERROR: " + err
+            else {
+
+              locationDoc.mentions += 1;
+              locationDoc.lastSeen = Date.now();
+
+              await locationDoc.save();
+
+              console.log(chalk.green("TFE | +++ LOC DB HIT "
+                + " | GEO: " + locationDoc.geoValid
+                + "  H " + statsObj.geo.hits
+                + "  M " + statsObj.geo.misses
+                + "  T " + statsObj.geo.total
+                + " HR: " + statsObj.geo.hitRate.toFixed(2)
+                + " | PID: " + locationDoc.placeId 
+                + " | NID: " + locationDoc.nodeId
+                + " | N: " + locationDoc.name + " / " + locationDoc.nameRaw
+                + " | A: " + locationDoc.formattedAddress
               ));
-              return err;                
+
+
+              let locationObj = locationDoc.toObject();
+
+              delete locationObj._id;
+              return locationObj;
+
             }
+          }
+          catch(err){
+
+            console.log(chalkError("TCS | *** GEOCODE ERROR: " + err
+            ));
+
+            return null;
+          }
+
+
         break;
 
         case "name":
