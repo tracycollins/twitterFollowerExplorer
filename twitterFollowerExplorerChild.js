@@ -2018,13 +2018,6 @@ function unfollowFriend(params, callback){
           // + "\nDATA\n" + jsonPrint(data)
         ));
 
-        // const userSmall = pick(
-        //   data, 
-        //   [ "id_str", "screen_name", "followers_count", "friends_count", "statuses_count"]
-        // );
-
-        // statsObj.users.unfollowed.push(userSmall);
-
         process.send(
           {
             op:"UNFOLLOWED", 
@@ -2036,7 +2029,7 @@ function unfollowFriend(params, callback){
         return callback(null, data);
       }
 
-      console.log(chalkInfo("TFC | miss UNFOLLOW"
+      debug(chalkInfo("TFC | miss UNFOLLOW"
         + " | 3C: @" + configuration.threeceeUser
         + " | UID: " + unfollowFriendParams.user_id
       ));
