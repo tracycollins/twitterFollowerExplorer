@@ -4598,7 +4598,8 @@ function loadBestNetworksDropbox(params) {
               return;
             })
             .catch(function(err){
-              console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", err));
+              console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(err)));
+              console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(JSONParse(err))));
               return;
             });
 
@@ -6817,6 +6818,10 @@ function updateUserHistograms(params) {
     }
 
     let user = params.user;
+
+    if (user._doc !== undefined) {
+      user = user.toObject();
+    }
 
     user.profileHistograms = user.profileHistograms || {};
     user.tweetHistogram = user.tweetHistogram || {};
