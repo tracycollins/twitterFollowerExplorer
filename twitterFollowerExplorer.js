@@ -6614,6 +6614,10 @@ function userProfileChangeHistogram(params) {
 
               if (geoCodeResults.placeId) {
 
+                locationsHistogram.locations[geoCodeResults.placeId] = (locationsHistogram.locations[geoCodeResults.placeId] === undefined) 
+                  ? 1 
+                  : locationsHistogram.locations[geoCodeResults.placeId] + 1;
+
                 locationDoc.geoValid = true;
                 locationDoc.placeId = geoCodeResults.placeId;
                 locationDoc.formattedAddress = geoCodeResults.formattedAddress;
@@ -6663,6 +6667,10 @@ function userProfileChangeHistogram(params) {
 
               // locationDoc.mentions += 1;
               // locationDoc.lastSeen = Date.now();
+
+              const key = (locationDoc.placeId && locationDoc.placeId !== undefined) ? locationDoc.placeId : locationDoc.nodeId;
+
+              locationsHistogram.locations[key] = (locationsHistogram.locations[key] === undefined) ? 1 : locationsHistogram.locations[key] + 1;
 
               await locationDoc.save();
 
