@@ -6784,6 +6784,8 @@ function userProfileChangeHistogram(params) {
 
             console.log(chalkAlert("TFE | TEXT: " + text));
 
+            quit();
+
             parseText({ category: user.category, text: text, updateGlobalHistograms: true })
             .then(function(textParseResults){
               cb(null, textParseResults);
