@@ -6751,9 +6751,6 @@ function userProfileChangeHistogram(params) {
         return reject(err);
       }
 
-      // console.log("text: " + text);
-      // console.log("urlsHistogram\n" + jsonPrint(urlsHistogram));
-
       async.parallel({
 
         imageHist: function(cb) {
@@ -6785,12 +6782,12 @@ function userProfileChangeHistogram(params) {
 
           if (text && (text !== undefined)){
 
-
             parseText({ category: user.category, text: text, updateGlobalHistograms: true })
             .then(function(textParseResults){
               cb(null, textParseResults);
             })
             .catch(function(err){
+              console.log(chalkError("TFE | *** PARSE TEXT ERROR: " + err));
               cb(err, null);
             });
           }
@@ -6807,7 +6804,7 @@ function userProfileChangeHistogram(params) {
           resolve(histogramsMerged);
         })
         .catch(function(err){
-          console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+          console.log(chalkError("TFE | *** USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
           return reject(err);
         });
 
