@@ -5410,7 +5410,7 @@ function saveBestNetworkFileCache(params) {
     saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
 
     resolve();
-    
+
   });
 }
 
@@ -6303,7 +6303,7 @@ function userStatusChangeHistogram(params) {
       tscParams.twitterEvents = configEvents;
       tscParams.tweetStatus = {};
 
-      if (userProp === "statusId"){
+      if (user.statusId && userProp === "statusId"){
 
         let status = deepcopy(user.status);  // avoid circular references
 
@@ -6314,7 +6314,7 @@ function userStatusChangeHistogram(params) {
         tscParams.tweetStatus.user.isNotRaw = true;
       }
 
-      if (userProp === "quotedStatusId"){
+      if (user.quotedStatusId && userProp === "quotedStatusId"){
 
         let quotedStatus = deepcopy(user.quotedStatus);  // avoid circular references
 
