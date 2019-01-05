@@ -1842,21 +1842,85 @@ let userWatchPropertyArray = [
   "verified"
 ];
 
+// function updateDbNetwork(params) {
+
+//   return new Promise(function(resolve, reject){
+
+//     statsObj.status = "UPDATE DB NETWORKS";
+
+//     const networkObj = params.networkObj;
+//     const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
+//     const testHistoryItem = (params.testHistoryItem !== undefined) ? params.testHistoryItem : false;
+//     const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : true;
+//     const verbose = params.verbose || false;
+
+//     const query = { networkId: networkObj.networkId };
+
+//     let update = {};
+
+//     update["$setOnInsert"] = { 
+//       seedNetworkId: networkObj.seedNetworkId,
+//       seedNetworkRes: networkObj.seedNetworkRes,
+//       network: networkObj.network,
+//       successRate: networkObj.successRate, 
+//       numInputs: networkObj.numInputs,
+//       numOutputs: networkObj.numOutputs,
+//       inputsId: networkObj.inputsId,
+//       inputsObj: networkObj.inputsObj,
+//       outputs: networkObj.outputs,
+//       evolve: networkObj.evolve,
+//       test: networkObj.test
+//     };
+
+//     update["$set"] = { 
+//       matchRate: networkObj.matchRate, 
+//       overallMatchRate: networkObj.overallMatchRate,
+//     };
+
+//     if (incrementTestCycles) { update["$inc"] = { testCycles: 1 }; }
+    
+//     if (testHistoryItem) { 
+//       update["$push"] = { testCycleHistory: testHistoryItem };
+//     }
+//     else if (addToTestHistory) {
+//       update["$addToSet"] = { testCycleHistory: { $each: networkObj.testCycleHistory } };
+//     }
+
+//     const options = {
+//       new: true,
+//       upsert: true,
+//       setDefaultsOnInsert: true,
+//     };
+
+//     global.NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
+
+//       if (err) {
+//         console.log(chalkError("TFE| *** updateDbNetwork | NETWORK FIND ONE ERROR: " + err));
+//         return reject(err);
+//       }
+
+//       if (verbose) { printNetworkObj("TFE | +++ NN DB UPDATED", nnDbUpdated); }
+
+//       resolve(nnDbUpdated);
+
+//     });
+
+//   });
+// }
+
 function updateDbNetwork(params) {
 
   return new Promise(function(resolve, reject){
 
     statsObj.status = "UPDATE DB NETWORKS";
 
-    if (configuration.verbose) {
-      printNetworkObj(MODULE_ID_PREFIX + " | [" + networkHashMap.size + "] >>> UPDATE NN DB", params.networkObj);
-    }
-
     const networkObj = params.networkObj;
     const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
     const testHistoryItem = (params.testHistoryItem !== undefined) ? params.testHistoryItem : false;
     const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : true;
     const verbose = params.verbose || false;
+
+    if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | >>> NN DB UPDATE ", params.networkObj, chalkInfo); }
 
     const query = { networkId: networkObj.networkId };
 
@@ -1903,7 +1967,7 @@ function updateDbNetwork(params) {
         return reject(err);
       }
 
-      if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated); }
+      if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated, chalkGreen); }
 
       resolve(nnDbUpdated);
     });
@@ -4947,72 +5011,6 @@ function updateGlobalHistograms(params) {
   });
 }
 
-function updateDbNetwork(params) {
-
-  return new Promise(function(resolve, reject){
-
-    statsObj.status = "UPDATE DB NETWORKS";
-
-    const networkObj = params.networkObj;
-    const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
-    const testHistoryItem = (params.testHistoryItem !== undefined) ? params.testHistoryItem : false;
-    const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : true;
-    const verbose = params.verbose || false;
-
-    const query = { networkId: networkObj.networkId };
-
-    let update = {};
-
-    update["$setOnInsert"] = { 
-      seedNetworkId: networkObj.seedNetworkId,
-      seedNetworkRes: networkObj.seedNetworkRes,
-      network: networkObj.network,
-      successRate: networkObj.successRate, 
-      numInputs: networkObj.numInputs,
-      numOutputs: networkObj.numOutputs,
-      inputsId: networkObj.inputsId,
-      inputsObj: networkObj.inputsObj,
-      outputs: networkObj.outputs,
-      evolve: networkObj.evolve,
-      test: networkObj.test
-    };
-
-    update["$set"] = { 
-      matchRate: networkObj.matchRate, 
-      overallMatchRate: networkObj.overallMatchRate,
-    };
-
-    if (incrementTestCycles) { update["$inc"] = { testCycles: 1 }; }
-    
-    if (testHistoryItem) { 
-      update["$push"] = { testCycleHistory: testHistoryItem };
-    }
-    else if (addToTestHistory) {
-      update["$addToSet"] = { testCycleHistory: { $each: networkObj.testCycleHistory } };
-    }
-
-    const options = {
-      new: true,
-      upsert: true,
-      setDefaultsOnInsert: true,
-    };
-
-    global.NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
-
-      if (err) {
-        console.log(chalkError("TFE| *** updateDbNetwork | NETWORK FIND ONE ERROR: " + err));
-        return reject(err);
-      }
-
-      if (verbose) { printNetworkObj("TFE | +++ NN DB UPDATED", nnDbUpdated); }
-
-      resolve(nnDbUpdated);
-
-    });
-
-  });
-}
-
 function initRandomNetworks(params){
 
   statsObj.status = "INIT RAN NNs";
@@ -5243,7 +5241,7 @@ function updateNetworkStats(params, callback) {
 
       bestNetworkHashMap.set(nnDbUpdated.networkId, nnDbUpdated);
 
-      printNetworkObj("TFE | UPDATE NN STATS", nnDbUpdated);
+      // printNetworkObj("TFE | UPDATE NN STATS", nnDbUpdated);
 
       return;
 
@@ -8506,12 +8504,16 @@ function childCreate(params){
 
             console.log(chalkError("TFE | *** CHILD QUIT | " + m.threeceeUser + " | CAUSE: " + m.cause));
 
-            childHashMap[childId].status = "QUIT";
+            if (childHashMap[childId]) { 
+              childHashMap[childId].status = "QUIT"; 
 
-            if (m.error) { 
-              childHashMap[childId].error = m.error;
-              console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
-            }
+              if (m.error) { 
+                childHashMap[childId].error = m.error;
+                console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
+              }
+
+          }
+
 
           break;
 
