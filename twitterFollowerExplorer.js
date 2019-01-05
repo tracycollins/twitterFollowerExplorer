@@ -6960,7 +6960,7 @@ function updateUserHistograms(params) {
             user.tweetHistograms = results.tweetHist;
 
             try {
-              let updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: true, noInc: true});
+              let updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: false, noInc: true});
 
               await updateGlobalHistograms(params);
               resolve(updatedUser);
