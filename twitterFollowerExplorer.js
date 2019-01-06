@@ -146,6 +146,7 @@ const DROPBOX_TIMEOUT = 30 * ONE_SECOND;
 
 
 let configuration = {};
+configuration.geoCodeEnabled = false;
 configuration.bestNetworkIncrementalUpdate = DEFAULT_BEST_INCREMENTAL_UPDATE;
 configuration.archiveNetworkOnInputsMiss = DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
 configuration.randomUntestedLimit = DEFAULT_RANDOM_UNTESTED_LIMIT;
@@ -6688,7 +6689,12 @@ function userProfileChangeHistogram(params) {
                 mentions : 0
               });
 
-              let geoCodeResults = await geoCode({address: name});
+              let geoCodeResults;
+
+              if (configuration.geoCodeEnabled) {
+                geoCodeResults = await geoCode({address: name});
+                locationDoc.geoSearch = true;
+              }
 
               if (geoCodeResults.placeId) {
 
@@ -6718,7 +6724,8 @@ function userProfileChangeHistogram(params) {
                   + " | A: " + locationDoc.formattedAddress
                 ));
 
-              } else {
+              } 
+              else {
 
                 await locationDoc.save();
 
