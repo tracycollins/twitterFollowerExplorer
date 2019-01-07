@@ -29,7 +29,7 @@ const MODULE_ID_PREFIX = "TFE";
 const CHILD_PREFIX = "tfe_node";
 
 const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
-const DEFAULT_MIN_TEST_CYCLES = 5;
+const DEFAULT_MIN_TEST_CYCLES = 3;
 const DEFAULT_MIN_WORD_LENGTH = 3;
 const DEFAULT_RANDOM_UNTESTED_LIMIT = 10;
 const DEFAULT_BEST_INCREMENTAL_UPDATE = true;
@@ -73,7 +73,7 @@ const PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const LANG_ANAL_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL;
 const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
-const FETCH_USER_INTERVAL = 5 * ONE_MINUTE;
+const FETCH_USER_INTERVAL = 2 * ONE_MINUTE;
 const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 
 const LANGUAGE_ANALYZE_INTERVAL = 100;
@@ -460,10 +460,7 @@ function slackSendWebMessage(msgObj){
       }
 
       console.log(chalkBlueBold("TNN | SLACK WEB | SEND\n" + jsonPrint(message)));
-
       slackWebClient.chat.postMessage(message);
-
-      // console.log(chalkLog("TNN | SLACK WEB | >T\n" + jsonPrint(sendResponse)));
       resolve();
     }
     catch(err){
@@ -1025,8 +1022,6 @@ function dropboxLoadInputsFolder(params){
 
           console.log(chalkNetwork(MODULE_ID_PREFIX + " | DROPBOX INPUTS CONTENT DIFF IN DIFF FOLDERS"
             + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
-            // + "\nCUR: " + entry.path_display
-            // + "\nOLD: " + curInputsObj.entry.path_display
           ));
 
             // LOAD FROM BEST FOLDER AND SAVE LOCALLY
@@ -1063,13 +1058,6 @@ function dropboxLoadInputsFolder(params){
             }
 
             const inputTypes = Object.keys(inputsObj.inputs);
-
-            // let totalInputs = 0;
-
-            // inputTypes.forEach(function(inputType){
-            //   debug(MODULE_ID_PREFIX + " | " + inputsObj.inputsId + " | INPUT TYPE: " + inputType + " | " + inputsObj.inputs[inputType].length + " INPUTS");
-            //   totalInputs += inputsObj.inputs[inputType].length;
-            // });
 
             console.log(MODULE_ID_PREFIX + " | +++ INPUTS [" + inputsHashMap.count() + " INs IN HM] | " + inputsObj.meta.numInputs + " INPUTS | " + inputsObj.inputsId);
 
@@ -1796,7 +1784,7 @@ function purgeNetwork(networkId){
   });
 }
 
-function purgeInputs(inputsId, callback){
+function purgeInputs(inputsId){
 
   return new Promise(function(resolve, reject){
 
@@ -1823,8 +1811,6 @@ function purgeInputs(inputsId, callback){
 
   });
 
-
-  if (callback !== undefined) { callback(); }
 }
 
 let userWatchPropertyArray = [
@@ -1846,72 +1832,6 @@ let userWatchPropertyArray = [
   "url",
   "verified"
 ];
-
-// function updateDbNetwork(params) {
-
-//   return new Promise(function(resolve, reject){
-
-//     statsObj.status = "UPDATE DB NETWORKS";
-
-//     const networkObj = params.networkObj;
-//     const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
-//     const testHistoryItem = (params.testHistoryItem !== undefined) ? params.testHistoryItem : false;
-//     const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : true;
-//     const verbose = params.verbose || false;
-
-//     const query = { networkId: networkObj.networkId };
-
-//     let update = {};
-
-//     update["$setOnInsert"] = { 
-//       seedNetworkId: networkObj.seedNetworkId,
-//       seedNetworkRes: networkObj.seedNetworkRes,
-//       network: networkObj.network,
-//       successRate: networkObj.successRate, 
-//       numInputs: networkObj.numInputs,
-//       numOutputs: networkObj.numOutputs,
-//       inputsId: networkObj.inputsId,
-//       inputsObj: networkObj.inputsObj,
-//       outputs: networkObj.outputs,
-//       evolve: networkObj.evolve,
-//       test: networkObj.test
-//     };
-
-//     update["$set"] = { 
-//       matchRate: networkObj.matchRate, 
-//       overallMatchRate: networkObj.overallMatchRate,
-//     };
-
-//     if (incrementTestCycles) { update["$inc"] = { testCycles: 1 }; }
-    
-//     if (testHistoryItem) { 
-//       update["$push"] = { testCycleHistory: testHistoryItem };
-//     }
-//     else if (addToTestHistory) {
-//       update["$addToSet"] = { testCycleHistory: { $each: networkObj.testCycleHistory } };
-//     }
-
-//     const options = {
-//       new: true,
-//       upsert: true,
-//       setDefaultsOnInsert: true,
-//     };
-
-//     global.NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
-
-//       if (err) {
-//         console.log(chalkError("TFE| *** updateDbNetwork | NETWORK FIND ONE ERROR: " + err));
-//         return reject(err);
-//       }
-
-//       if (verbose) { printNetworkObj("TFE | +++ NN DB UPDATED", nnDbUpdated); }
-
-//       resolve(nnDbUpdated);
-
-//     });
-
-//   });
-// }
 
 function updateDbNetwork(params) {
 
@@ -1997,7 +1917,6 @@ function validateNetwork(params){
         + " | " + params.networkId
       ));
       return resolve();
-      // return reject(new Error("NETWORK ID MISMATCH"));
     }
 
     if (networkObj.numInputs === undefined) {
@@ -2005,14 +1924,12 @@ function validateNetwork(params){
         + " | " + networkObj.networkId
       ));
       return resolve();
-      // return reject(new Error("NETWORK NUMBER OF INPUTS UNDEFINED"));
     }
 
     if (networkObj.inputsId === undefined) {
       console.log(chalkError(MODULE_ID_PREFIX + " | *** NETWORK INPUTS ID UNDEFINED"
         + " | " + networkObj.networkId));
       return resolve();
-      // return reject(new Error("NETWORK INPUTS ID UNDEFINED"));
     }
 
     let nnObj = networkDefaults(networkObj);
@@ -2078,10 +1995,6 @@ function checkNetworkHash(params){
 
       console.log(chalkNetwork(MODULE_ID_PREFIX + " | DROPBOX NETWORK CONTENT DIFF IN DIFF params.folders"
         + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
-        // + "\nCUR: " + entry.path_display
-        // + " | " + entry.content_hash
-        // + "\nOLD: " + networkObj.entry.path_display
-        // + " | " + networkObj.entry.content_hash
       ));
 
       return resolve("mismatch");
@@ -2091,8 +2004,6 @@ function checkNetworkHash(params){
     console.log(chalkLog(MODULE_ID_PREFIX + " | DROPBOX NETWORK CONTENT SAME  "
       + " | " + entry.name
       + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
-      // + "\nCUR HASH: " + entry.content_hash
-      // + "\nOLD HASH: " + oldContentHash
     ));
 
     resolve("same");
@@ -2189,7 +2100,6 @@ function loadUsersArchive(params){
     console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING USERS ARCHIVE | " + getTimeStamp() + " | " + params.path));
 
     try {
-      // const fileOpen = await checkFileOpen(params);
       await fileSize(params);
       const unzipSuccess = await unzipUsersToArray(params);
       await updateTrainingSet();
@@ -2230,9 +2140,7 @@ function loadInputsDropboxFile(params){
     }
 
     if (inputsHashMap.has(inputsObj.inputsId) && (params.entry === undefined)){
-
       params.entry = inputsHashMap.get(inputsObj.inputsId).entry;
-
     }
 
     inputsHashMap.set(inputsObj.inputsId, {entry: params.entry, inputsObj: inputsObj} );
@@ -2295,7 +2203,6 @@ function initWatchAllConfigFolders(params){
             await loadInputsDropboxFile({folder: defaultInputsFolder, file: file});
           }
         });
-
 
         monitorInputs.on("removed", function (f, stat) {
           const fileNameArray = f.split("/");
@@ -2842,7 +2749,6 @@ function connectDb(){
 
         console.log(chalk.green(MODULE_ID_PREFIX + " | MONGOOSE DEFAULT CONNECTION OPEN"));
 
-
         const emojiModel = require("@threeceelabs/mongoose-twitter/models/emoji.server.model");
         const hashtagModel = require("@threeceelabs/mongoose-twitter/models/hashtag.server.model");
         const locationModel = require("@threeceelabs/mongoose-twitter/models/location.server.model");
@@ -3302,30 +3208,6 @@ function loadFile(params) {
             return resolve(fileObj);
 
           });
-
-          // const fileObj = JSONParse(data);
-
-          // if (fileObj.value) {
-
-          //   const fileObjSizeMbytes = sizeof(fileObj)/ONE_MEGABYTE;
-
-          //   console.log(chalkInfo(getTimeStamp()
-          //     + " | LOADED FILE FROM DROPBOX"
-          //     + " | " + fileObjSizeMbytes.toFixed(2) + " MB"
-          //     + " | " + fullPath
-          //   ));
-
-          //   return resolve(fileObj.value);
-          // }
-
-          // console.log(chalkError(getTimeStamp()
-          //   + " | *** LOAD FILE FROM DROPBOX ERROR"
-          //   + " | " + fullPath
-          //   + " | " + fileObj.error
-          // ));
-
-          // return reject(fileObj.error);
-
         }
 
         console.log(chalkError(getTimeStamp()
@@ -3369,20 +3251,6 @@ function loadFile(params) {
 
           });
 
-          // try {
-
-          //   const fileObj = JSONParse(payload);
-
-          //   if (fileObj.value) {
-          //     return resolve(fileObj.value);
-          //   }
-          //   resolve();
-          // }
-          // catch(err){
-          //   console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX loadFile ERROR: " + fullPath));
-          //   return reject(fileObj.error);
-          // }
-
         }
         else {
           resolve();
@@ -3394,7 +3262,7 @@ function loadFile(params) {
         
         if ((err.status === 409) || (err.status === 404)) {
           if (noErrorNotFound) {
-            console.log(chalkAlert(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND"));
+            if (configuration.verbose) { console.log(chalkLog(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND")); }
             return resolve(new Error("NOT FOUND"));
           }
           console.log(chalkAlert(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND ... SKIPPING ..."));
@@ -3749,8 +3617,6 @@ function loadConfigFile(params) {
           newConfiguration.verbose = false;
         }
       }
-
-
 
       if (loadedConfigObj.TFE_FETCH_USER_INTERVAL !== undefined) {
         console.log("TFE | LOADED TFE_FETCH_USER_TIMEOUT: " + loadedConfigObj.TFE_FETCH_USER_INTERVAL);
@@ -4569,7 +4435,7 @@ function isBestNetwork(params){
     let minOverallMatchRate = params.minOverallMatchRate || (0.75*configuration.globalMinSuccessRate);
     let minTestCycles = params.minTestCycles || configuration.minTestCycles;
 
-    if (params.networkObj.testCycles === 0){
+    if (params.networkObj.testCycles < minTestCycles){
       return true;
     }
     else if (minTestCycles) {
@@ -4714,7 +4580,7 @@ function loadBestNetworksDropbox(params) {
               + " [" + bestNetworkHashMap.size + " NNs IN HM]"
               + " [" + skipLoadNetworkSet.size + " NNs SKIPPED]",
             networkObj,
-            chalk.black.bold
+            chalk.gray
           );
 
         }

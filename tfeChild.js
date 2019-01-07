@@ -768,10 +768,10 @@ function loadConfigFile(folder, file) {
               newConfiguration.socket.targetServer = loadedConfigObj.UTIL_TARGET_SERVER;
             }
 
-            if (newConfiguration.testMode) {
-              newConfiguration.fetchAllIntervalTime = TEST_MODE_FETCH_ALL_INTERVAL;
-              console.log(chalkAlert("TFC | " + configuration.childId + " | TEST MODE | fetchAllIntervalTime: " + newConfiguration.fetchAllIntervalTime));
-            }
+            // if (newConfiguration.testMode) {
+            //   newConfiguration.fetchAllIntervalTime = TEST_MODE_FETCH_ALL_INTERVAL;
+            //   console.log(chalkAlert("TFC | " + configuration.childId + " | TEST MODE | fetchAllIntervalTime: " + newConfiguration.fetchAllIntervalTime));
+            // }
 
             if (loadedConfigObj.TEST_MODE !== undefined) {
               console.log("TFC | " + configuration.childId + " | LOADED TEST_MODE: " + loadedConfigObj.TEST_MODE);
