@@ -1114,8 +1114,8 @@ function initActivateNetworkInterval(interval){
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
                   printActivateResult(
-                    // ☐ ☑ ☒
-                    "RNT | ☑☑☑ MATCH [" + rxActivateNetworkQueue.length + "]", 
+
+                    "RNT | ✔✔✔ MATCH [" + rxActivateNetworkQueue.length + "]", 
                     statsObj.bestNetwork, 
                     category, 
                     generateNetworksOutputObj.categoryAuto, 
@@ -1129,7 +1129,7 @@ function initActivateNetworkInterval(interval){
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
                   printActivateResult(
-                    "RNT | ☐☐☐  miss [" + rxActivateNetworkQueue.length + "]", 
+                    "RNT | OOO  miss [" + rxActivateNetworkQueue.length + "]", 
                     statsObj.bestNetwork, 
                     category, 
                     generateNetworksOutputObj.categoryAuto, 

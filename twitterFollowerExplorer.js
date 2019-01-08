@@ -3564,14 +3564,19 @@ function loadConfigFile(params) {
         newConfiguration.histogramParseTotalMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN;
       }
 
-      if (loadedConfigObj.TFE_MIN_SUCCESS_RATE !== undefined) {
-        console.log("TFE | LOADED TFE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_MIN_SUCCESS_RATE);
-        newConfiguration.minSuccessRate = loadedConfigObj.TFE_MIN_SUCCESS_RATE;
+      if (loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE !== undefined) {
+        console.log("TFE | LOADED TFE_LOCAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE);
+        newConfiguration.localMinSuccessRate = loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE;
       }
 
-      if (loadedConfigObj.TFE_MIN_MATCH_RATE !== undefined) {
-        console.log("TFE | LOADED TFE_MIN_MATCH_RATE: " + loadedConfigObj.TFE_MIN_MATCH_RATE);
-        newConfiguration.minMatchRate = loadedConfigObj.TFE_MIN_MATCH_RATE;
+      if (loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) {
+        console.log("TFE | LOADED TFE_GLOBAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE);
+        newConfiguration.globalMinSuccessRate = loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE;
+      }
+
+      if (loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE !== undefined) {
+        console.log("TFE | LOADED TFE_LOCAL_PURGE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE);
+        newConfiguration.localPurgeMinSuccessRate = loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE;
       }
 
       if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined) {
@@ -4358,22 +4363,26 @@ function isBestNetwork(params){
 
     let pass = false;
 
-    let minOverallMatchRate = params.minOverallMatchRate || (0.75*configuration.globalMinSuccessRate);
+    let minOverallMatchRate = params.minOverallMatchRate || configuration.globalMinSuccessRate;
     let minTestCycles = params.minTestCycles || configuration.minTestCycles;
 
     if (params.networkObj.testCycles < minTestCycles){
+      console.log("minTestCycles: " + params.networkObj.testCycles);
       return true;
     }
     else if (minTestCycles) {
       pass = (params.networkObj.testCycles >= minTestCycles) && (params.networkObj.overallMatchRate >= minOverallMatchRate);
+      console.log("minTestCycles: " + params.networkObj.testCycles + " | pass: " + pass);
       return pass;
     }
     else if (params.networkObj.overallMatchRate) {
       pass = (params.networkObj.overallMatchRate < 100) && (params.networkObj.overallMatchRate >= minOverallMatchRate);
+      console.log("overallMatchRate: " + params.networkObj.overallMatchRate + " | pass: " + pass);
       return pass;
     }
     else {
       pass = (params.networkObj.successRate < 100) && (params.networkObj.successRate >= minOverallMatchRate);
+      console.log("successRate: " + params.networkObj.successRate + " | pass: " + pass);
       return pass;
     }
 
@@ -6080,26 +6089,38 @@ function checkPropertyChange(user, prop){
 
 function allHistogramsZeroKeys(histogram){
 
-  Object.keys(histogram).forEach(function(histogramType){
-    if (Object.keys(histogram[histogramType]).length > 0) { return false; }
+  return new Promise(function(resolve, reject){
+
+    async.each(Object.keys(histogram), function(histogramType, cb){
+      if (Object.keys(histogram[histogramType]).length > 0) { 
+        return cb(true);
+      }
+      return cb();
+    }, function(keyFound){
+      if (keyFound) { return resolve(false); }
+      return resolve(true);
+    });
+
   });
 
-  return true;
 }
 
-function checkUserProfileChanged(params) {
+async function checkUserProfileChanged(params) {
 
   let user = params.user;
+
+  const emptyHistogram = await allHistogramsZeroKeys(user.profileHistograms);
 
   if (!user.profileHistograms 
     || (user.profileHistograms === undefined) 
     || (user.profileHistograms === {})
     || (Object.keys(user.profileHistograms).length === 0)
-    || allHistogramsZeroKeys(user.profileHistograms)
+    || emptyHistogram
   ){
 
     console.log(chalk.black.bold(
-      "TFE | USER PROFILE HISTOGRAMS UNDEFINED" 
+      "TFE | USER PROFILE HISTOGRAMS EMPTY/UNDEFINED" 
+      + " | MT HIST: " + emptyHistogram
       + " | RST PREV PROP VALUES" 
       + " | @" + user.screenName 
     ));
@@ -6129,19 +6150,22 @@ function checkUserProfileChanged(params) {
   return results;    
 }
 
-function checkUserStatusChanged(params) {
+async function checkUserStatusChanged(params) {
 
   let user = params.user;
+
+  const emptyHistogram = await allHistogramsZeroKeys(user.profileHistograms);
 
   if (!user.tweetHistograms 
     || (user.tweetHistograms === undefined) 
     || (user.tweetHistograms === {})
     || (Object.keys(user.tweetHistograms).length === 0)
-    || allHistogramsZeroKeys(user.tweetHistograms)
+    || emptyHistogram
   ){
 
     console.log(chalk.black.bold(
-      "TFE | USER TWEET HISTOGRAMS UNDEFINED" 
+      "TFE | USER TWEET HISTOGRAMS EMPTY/UNDEFINED" 
+      + " | MT HIST: " + emptyHistogram
       + " | RST PREV PROP VALUES" 
       + " | @" + user.screenName 
     ));
@@ -6310,7 +6334,7 @@ function userStatusChangeHistogram(params) {
       })
       .catch(function(err){
         console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
-        quit();
+        // quit();
         return cb(err);
       });
 
@@ -6318,8 +6342,8 @@ function userStatusChangeHistogram(params) {
 
       if (err) {
         console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
-        console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR : tscParams\n" + jsonPrint(tscParams)));
-        quit();
+        // console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR : tscParams\n" + jsonPrint(tscParams)));
+        // quit();
         return reject(err);
       }
 
@@ -6784,7 +6808,7 @@ function updateUserHistograms(params) {
     }
 
     user.profileHistograms = user.profileHistograms || {};
-    user.tweetHistogram = user.tweetHistogram || {};
+    user.tweetHistograms = user.tweetHistograms || {};
 
     userStatusChangeHistogram({user: user})
 
@@ -6862,7 +6886,12 @@ function updateUserHistograms(params) {
 
       })
       .catch(function(err){
-        console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR: " + err + "\nuser\n" + jsonPrint(user)));
+        debug(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR: " + err + "\nuser\n" + jsonPrint(user)));
+        console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR"
+          + " | NID: " + user.nodeId
+          + " | @" + user.screenName
+          + " | " + err
+        ));
         return reject(err);
       });
   });
@@ -6892,7 +6921,7 @@ function generateAutoCategory(user, callback) {
     })
     .catch(function(err){
       console.log(chalkError("TFE | *** USER CATEGORIZE ERROR: " + err));
-      console.error(err);
+      // console.error(err);
       callback(err, user);
     });
 }
@@ -7317,7 +7346,7 @@ function initProcessUserQueueInterval(interval) {
         console.log(chalkError("TFE | *** ERROR processUser"
           + " | USER @" + mObj.friend.screen_name 
           + " | " + err
-          + "\nmObj\n" + jsonPrint(mObj)
+          // + "\nmObj\n" + jsonPrint(mObj)
         ));
         // quit({cause:"TFE | *** ERROR processUser"});
         statsObj.queues.processUserQueue.busy = false;
