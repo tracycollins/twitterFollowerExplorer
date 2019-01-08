@@ -1113,14 +1113,16 @@ function initActivateNetworkInterval(interval){
                   statsObj.categorize.match += 1;
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                  printActivateResult(
+                  if (configuration.verbose || (statsObj.categorize.grandTotal % 100 === 0)) {
+                    printActivateResult(
 
-                    "RNT | ✔✔✔ MATCH [" + rxActivateNetworkQueue.length + "]", 
-                    statsObj.bestNetwork, 
-                    category, 
-                    generateNetworksOutputObj.categoryAuto, 
-                    activateNetworkObj.user.screenName
-                  );
+                      "RNT | ✔✔✔ MATCH [" + rxActivateNetworkQueue.length + "]", 
+                      statsObj.bestNetwork, 
+                      category, 
+                      generateNetworksOutputObj.categoryAuto, 
+                      activateNetworkObj.user.screenName
+                    );
+                  }
 
                 }
                 else {
@@ -1128,36 +1130,44 @@ function initActivateNetworkInterval(interval){
                   statsObj.categorize.mismatch += 1;
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                  printActivateResult(
-                    "RNT | OOO  miss [" + rxActivateNetworkQueue.length + "]", 
-                    statsObj.bestNetwork, 
-                    category, 
-                    generateNetworksOutputObj.categoryAuto, 
-                    activateNetworkObj.user.screenName
-                  );
+                  if (configuration.verbose || (statsObj.categorize.grandTotal % 100 === 0)) {
+                    printActivateResult(
+                      "RNT | ---  miss [" + rxActivateNetworkQueue.length + "]", 
+                      statsObj.bestNetwork, 
+                      category, 
+                      generateNetworksOutputObj.categoryAuto, 
+                      activateNetworkObj.user.screenName
+                    );
+                  }
 
                 }
               }
               else {
                 statsObj.categorize.skipped += 1;
+
+                if (configuration.verbose || (statsObj.categorize.grandTotal % 100 === 0)) {
+                  printActivateResult(
+                    "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
+                    statsObj.bestNetwork, 
+                    category, 
+                    generateNetworksOutputObj.categoryAuto, 
+                    activateNetworkObj.user.screenName
+                  );
+                }
+              }
+            }
+            else {
+              statsObj.categorize.skipped += 1;
+
+              if (configuration.verbose || (statsObj.categorize.grandTotal % 100 === 0)) {
                 printActivateResult(
-                  "RNT | ...  skip [" + rxActivateNetworkQueue.length + "]", 
+                  "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
                   statsObj.bestNetwork, 
                   category, 
                   generateNetworksOutputObj.categoryAuto, 
                   activateNetworkObj.user.screenName
                 );
               }
-            }
-            else {
-              statsObj.categorize.skipped += 1;
-              printActivateResult(
-                "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
-                statsObj.bestNetwork, 
-                category, 
-                generateNetworksOutputObj.categoryAuto, 
-                activateNetworkObj.user.screenName
-              );
             }
           }
 
