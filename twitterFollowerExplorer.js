@@ -6077,7 +6077,7 @@ async function checkUserStatusChanged(params) {
 
   let user = params.user;
 
-  const emptyHistogram = await allHistogramsZeroKeys(user.profileHistograms);
+  const emptyHistogram = await allHistogramsZeroKeys(user.tweetHistograms);
 
   if (!user.tweetHistograms 
     || (user.tweetHistograms === undefined) 
@@ -6099,8 +6099,12 @@ async function checkUserStatusChanged(params) {
 
   let results = [];
 
-  if (checkPropertyChange(user, "statusId")) { results.push("statusId"); }
-  if (checkPropertyChange(user, "quotedStatusId")) { results.push("quotedStatusId"); }
+  if (checkPropertyChange(user, "statusId")) { 
+    results.push("statusId");
+  }
+  if (checkPropertyChange(user, "quotedStatusId")) { 
+    results.push("quotedStatusId"); 
+  }
 
   if (results.length === 0) { return; }
   return results;    
@@ -6152,6 +6156,7 @@ function userStatusChangeHistogram(params) {
         let status = deepcopy(user.status);  // avoid circular references
 
         user.statusId = user.statusId.toString();
+
         tscParams.tweetStatus = status;
         tscParams.tweetStatus.user = {};
         tscParams.tweetStatus.user = user;
@@ -6163,6 +6168,7 @@ function userStatusChangeHistogram(params) {
         let quotedStatus = deepcopy(user.quotedStatus);  // avoid circular references
 
         user.quotedStatusId = user.quotedStatusId.toString();
+
         tscParams.tweetStatus = quotedStatus;
         tscParams.tweetStatus.user = {};
         tscParams.tweetStatus.user = user;
@@ -6276,6 +6282,7 @@ function userStatusChangeHistogram(params) {
 
   });
 }
+
 function parseText(params){
 
   return new Promise(async function(resolve, reject) {
@@ -6791,6 +6798,9 @@ function updateUserHistograms(params) {
 
             user.profileHistograms = results.profileHist;
             user.tweetHistograms = results.tweetHist;
+            
+            user.lastHistogramTweetId = user.statusId;
+            user.lastHistogramQuoteId = user.quotedStatusId;
 
             try {
               let updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: false, noInc: true});
