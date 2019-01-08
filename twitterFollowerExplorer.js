@@ -2388,80 +2388,6 @@ function initCategorizedUserHashmap(params){
   });
 }
 
-function archiveUsers(){
-
-  return new Promise(function(resolve, reject){
-
-    if (archive === undefined) { return reject(err); }
-
-    async.each(trainingSetUsersHashMap.values(), function(user, cb){
-      const userFile = "user_" + user.userId + ".json";
-      const userBuffer = Buffer.from(JSON.stringify(user));
-      archive.append(userBuffer, { name: userFile });
-      cb();
-    }, function(err){
-      resolve();
-    });
-
-
-  });
-}
-
-async function generateGlobalTrainingTestSet (userHashMap, maxInputHashMap, callback){
-
-  statsObj.status = "GENERATE TRAINING SET";
-
-  console.log(chalkBlueBold(MODULE_ID_PREFIX + " | ==================================================================="));
-  console.log(chalkBlueBold(MODULE_ID_PREFIX + " | GENERATE TRAINING SET | " + trainingSetUsersHashMap.size + " USERS | " + getTimeStamp()));
-  console.log(chalkBlueBold(MODULE_ID_PREFIX + " | ==================================================================="));
-
-  try {
-
-    await initArchiver({outputFile: configuration.defaultUserArchivePath});
-    await archiveUsers();
-
-    let mihmObj = {};
-
-    mihmObj.maxInputHashMap = {};
-    mihmObj.maxInputHashMap = maxInputHashMap;
-
-    mihmObj.normalization = {};
-    mihmObj.normalization = statsObj.normalization;
-
-    const buf = Buffer.from(JSON.stringify(mihmObj));
-
-    archive.append(buf, { name: "maxInputHashMap.json" });
-
-    archive.finalize();
-
-    let waitArchiveDoneInterval;
-
-    waitArchiveDoneInterval = setInterval(async function(){
-
-      if (!statsObj.archiveOpen) {
-
-        clearInterval(waitArchiveDoneInterval);
-
-        setTimeout(async function(){
-          console.log(chalkBlueBold(MODULE_ID_PREFIX + " | ARCHIVE | DONE"));
-          callback();
-        }, 30*ONE_SECOND);
-
-      }
-      else {
-        console.log(chalkLog(MODULE_ID_PREFIX + " | ARCHIVE | WAIT DONE"
-          + " | ARCHIVE OPEN: " + statsObj.archiveOpen
-        ));
-      }
-
-    }, 5000);
-
-  }
-  catch(err){
-    console.log(chalkLog(MODULE_ID_PREFIX + " | *** ARCHIVE ERROR: " + err));
-    throw err;
-  }
-}
 
 function allComplete(){
 
@@ -6069,50 +5995,137 @@ function checkUserIgnored(params){
   });
 }
 
+// function checkUserProfileChanged(params) {
+
+//   let user = params.user;
+
+//   let results = [];
+
+//   if (!user.profileHistograms 
+//     || (user.profileHistograms === undefined) 
+//     || (user.profileHistograms === {})
+//     || (Object.keys(user.profileHistograms).length === 0)
+//   ){
+//     console.log(chalkLog(
+//       MODULE_ID_PREFIX
+//       + " | USER PROFILE UNDEFINED" 
+//       + " | RST PREV PROP VALUES" 
+//       + " | @" + user.screenName 
+//     ));
+//     user.previousScreenName = null;
+//     user.previousName = null;
+//     user.previousDescription = null;
+//     user.previousLocation = null;
+//     user.previousUrl = null;
+//     user.previousExpandedUrl = null;
+//     user.previousProfileUrl = null;
+//     user.previousBannerImageUrl = null;
+//   }
+
+//   if (user.name && (user.name !== undefined) && (user.name !== user.previousName)) { results.push("name"); }
+//   if (user.screenName && (user.screenName !== undefined) && (user.screenName !== user.previousScreenName)) { results.push("screenName"); }
+//   if (user.description && (user.description !== undefined) && (user.description !== user.previousDescription)) { results.push("description"); }
+//   if (user.location && (user.location !== undefined) && (user.location !== user.previousLocation)) { results.push("location"); }
+//   if (user.url && (user.url !== undefined) && (user.url !== user.previousUrl)) { results.push("url"); }
+//   if (user.expandedUrl && (user.expandedUrl !== undefined) && (user.expandedUrl !== user.previousExpandedUrl)) { results.push("expandedUrl"); }
+//   if (user.profileUrl && (user.profileUrl !== undefined) && (user.profileUrl !== user.previousProfileUrl)) { results.push("profileUrl"); }
+//   if (user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl !== user.previousBannerImageUrl)) { results.push("bannerImageUrl"); }
+
+//   if (results.length === 0) { return; }
+
+//   // console.log(chalkLog(
+//   //   MODULE_ID_PREFIX
+//   //   + " | @" + user.screenName 
+//   //   + " | PROFILE CHANGE\n" + jsonPrint(results)
+//   // ));
+
+//   return results;    
+// }
+
+// function checkUserStatusChanged(params) {
+
+//   let user = params.user;
+
+//   let results = [];
+
+//   if (
+//       user.statusId 
+//       && user.statusId !== undefined 
+//       && user.previousStatusId
+//       && user.previousStatusId !== undefined 
+//       && user.statusId !== user.previousStatusId
+//     ) { 
+//     results.push("statusId"); 
+//   }
+
+//   if (
+//       user.quotedStatusId 
+//       && user.quotedStatusId !== undefined 
+//       && user.previousQuotedStatusId
+//       && user.previousQuotedStatusId !== undefined 
+//       && user.quotedStatusId !== user.previousQuotedStatusId
+//     ) { 
+//     results.push("quotedStatusId"); 
+//   }
+
+//   if (results.length === 0) { return; }
+//   return results;    
+// }
+
+function checkPropertyChange(user, prop){
+  const prevProp = "previous" + _.upperFirst(prop);
+  if (user[prop] && (user[prop] !== undefined) && (user[prevProp] !== user[prop])) { return true; }
+  return false;
+}
+
+function allHistogramsZeroKeys(histogram){
+
+  Object.keys(histogram).forEach(function(histogramType){
+    if (Object.keys(histogram[histogramType]).length > 0) { return false; }
+  });
+
+  return true;
+}
+
 function checkUserProfileChanged(params) {
 
   let user = params.user;
-
-  let results = [];
 
   if (!user.profileHistograms 
     || (user.profileHistograms === undefined) 
     || (user.profileHistograms === {})
     || (Object.keys(user.profileHistograms).length === 0)
+    || allHistogramsZeroKeys(user.profileHistograms)
   ){
-    console.log(chalkLog(
-      MODULE_ID_PREFIX
-      + " | USER PROFILE UNDEFINED" 
+
+    console.log(chalk.black.bold(
+      "TFE | USER PROFILE HISTOGRAMS UNDEFINED" 
       + " | RST PREV PROP VALUES" 
       + " | @" + user.screenName 
     ));
-    user.previousScreenName = null;
-    user.previousName = null;
-    user.previousDescription = null;
-    user.previousLocation = null;
-    user.previousUrl = null;
-    user.previousExpandedUrl = null;
-    user.previousProfileUrl = null;
+
     user.previousBannerImageUrl = null;
+    user.previousDescription = null;
+    user.previousExpandedUrl = null;
+    user.previousLocation = null;
+    user.previousName = null;
+    user.previousProfileUrl = null;
+    user.previousScreenName = null;
+    user.previousUrl = null;
   }
 
-  if (user.name && (user.name !== undefined) && (user.name !== user.previousName)) { results.push("name"); }
-  if (user.screenName && (user.screenName !== undefined) && (user.screenName !== user.previousScreenName)) { results.push("screenName"); }
-  if (user.description && (user.description !== undefined) && (user.description !== user.previousDescription)) { results.push("description"); }
-  if (user.location && (user.location !== undefined) && (user.location !== user.previousLocation)) { results.push("location"); }
-  if (user.url && (user.url !== undefined) && (user.url !== user.previousUrl)) { results.push("url"); }
-  if (user.expandedUrl && (user.expandedUrl !== undefined) && (user.expandedUrl !== user.previousExpandedUrl)) { results.push("expandedUrl"); }
-  if (user.profileUrl && (user.profileUrl !== undefined) && (user.profileUrl !== user.previousProfileUrl)) { results.push("profileUrl"); }
-  if (user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl !== user.previousBannerImageUrl)) { results.push("bannerImageUrl"); }
+  let results = [];
+
+  if (checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
+  if (checkPropertyChange(user, "description")) { results.push("description"); }
+  if (checkPropertyChange(user, "expandedUrl")) { results.push("expandedUrl"); }
+  if (checkPropertyChange(user, "location")) { results.push("location"); }
+  if (checkPropertyChange(user, "name")) { results.push("name"); }
+  if (checkPropertyChange(user, "profileUrl")) { results.push("profileUrl"); }
+  if (checkPropertyChange(user, "screenName")) { results.push("screenName"); }
+  if (checkPropertyChange(user, "url")) { results.push("url"); }
 
   if (results.length === 0) { return; }
-
-  // console.log(chalkLog(
-  //   MODULE_ID_PREFIX
-  //   + " | @" + user.screenName 
-  //   + " | PROFILE CHANGE\n" + jsonPrint(results)
-  // ));
-
   return results;    
 }
 
@@ -6120,27 +6133,27 @@ function checkUserStatusChanged(params) {
 
   let user = params.user;
 
+  if (!user.tweetHistograms 
+    || (user.tweetHistograms === undefined) 
+    || (user.tweetHistograms === {})
+    || (Object.keys(user.tweetHistograms).length === 0)
+    || allHistogramsZeroKeys(user.tweetHistograms)
+  ){
+
+    console.log(chalk.black.bold(
+      "TFE | USER TWEET HISTOGRAMS UNDEFINED" 
+      + " | RST PREV PROP VALUES" 
+      + " | @" + user.screenName 
+    ));
+
+    user.previousStatusId = null;
+    user.previousQuotedStatusId = null;
+  }
+
   let results = [];
 
-  if (
-      user.statusId 
-      && user.statusId !== undefined 
-      && user.previousStatusId
-      && user.previousStatusId !== undefined 
-      && user.statusId !== user.previousStatusId
-    ) { 
-    results.push("statusId"); 
-  }
-
-  if (
-      user.quotedStatusId 
-      && user.quotedStatusId !== undefined 
-      && user.previousQuotedStatusId
-      && user.previousQuotedStatusId !== undefined 
-      && user.quotedStatusId !== user.previousQuotedStatusId
-    ) { 
-    results.push("quotedStatusId"); 
-  }
+  if (checkPropertyChange(user, "statusId")) { results.push("statusId"); }
+  if (checkPropertyChange(user, "quotedStatusId")) { results.push("quotedStatusId"); }
 
   if (results.length === 0) { return; }
   return results;    
