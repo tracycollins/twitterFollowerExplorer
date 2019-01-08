@@ -6004,83 +6004,6 @@ function checkUserIgnored(params){
   });
 }
 
-// function checkUserProfileChanged(params) {
-
-//   let user = params.user;
-
-//   let results = [];
-
-//   if (!user.profileHistograms 
-//     || (user.profileHistograms === undefined) 
-//     || (user.profileHistograms === {})
-//     || (Object.keys(user.profileHistograms).length === 0)
-//   ){
-//     console.log(chalkLog(
-//       MODULE_ID_PREFIX
-//       + " | USER PROFILE UNDEFINED" 
-//       + " | RST PREV PROP VALUES" 
-//       + " | @" + user.screenName 
-//     ));
-//     user.previousScreenName = null;
-//     user.previousName = null;
-//     user.previousDescription = null;
-//     user.previousLocation = null;
-//     user.previousUrl = null;
-//     user.previousExpandedUrl = null;
-//     user.previousProfileUrl = null;
-//     user.previousBannerImageUrl = null;
-//   }
-
-//   if (user.name && (user.name !== undefined) && (user.name !== user.previousName)) { results.push("name"); }
-//   if (user.screenName && (user.screenName !== undefined) && (user.screenName !== user.previousScreenName)) { results.push("screenName"); }
-//   if (user.description && (user.description !== undefined) && (user.description !== user.previousDescription)) { results.push("description"); }
-//   if (user.location && (user.location !== undefined) && (user.location !== user.previousLocation)) { results.push("location"); }
-//   if (user.url && (user.url !== undefined) && (user.url !== user.previousUrl)) { results.push("url"); }
-//   if (user.expandedUrl && (user.expandedUrl !== undefined) && (user.expandedUrl !== user.previousExpandedUrl)) { results.push("expandedUrl"); }
-//   if (user.profileUrl && (user.profileUrl !== undefined) && (user.profileUrl !== user.previousProfileUrl)) { results.push("profileUrl"); }
-//   if (user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl !== user.previousBannerImageUrl)) { results.push("bannerImageUrl"); }
-
-//   if (results.length === 0) { return; }
-
-//   // console.log(chalkLog(
-//   //   MODULE_ID_PREFIX
-//   //   + " | @" + user.screenName 
-//   //   + " | PROFILE CHANGE\n" + jsonPrint(results)
-//   // ));
-
-//   return results;    
-// }
-
-// function checkUserStatusChanged(params) {
-
-//   let user = params.user;
-
-//   let results = [];
-
-//   if (
-//       user.statusId 
-//       && user.statusId !== undefined 
-//       && user.previousStatusId
-//       && user.previousStatusId !== undefined 
-//       && user.statusId !== user.previousStatusId
-//     ) { 
-//     results.push("statusId"); 
-//   }
-
-//   if (
-//       user.quotedStatusId 
-//       && user.quotedStatusId !== undefined 
-//       && user.previousQuotedStatusId
-//       && user.previousQuotedStatusId !== undefined 
-//       && user.quotedStatusId !== user.previousQuotedStatusId
-//     ) { 
-//     results.push("quotedStatusId"); 
-//   }
-
-//   if (results.length === 0) { return; }
-//   return results;    
-// }
-
 function checkPropertyChange(user, prop){
   const prevProp = "previous" + _.upperFirst(prop);
   if (user[prop] && (user[prop] !== undefined) && (user[prevProp] !== user[prop])) { return true; }
@@ -7288,18 +7211,13 @@ function initProcessUserQueueInterval(interval) {
 
         debug("PROCESSED USER\n" + jsonPrint(user));
 
-        // if (configuration.testMode || (statsObj.user[tcUser].friendsProcessed % 100 === 0)) {
-        if (statsObj.user[tcUser].friendsProcessed % 20 === 0) {
+        if (statsObj.user[tcUser].friendsProcessed % 100 === 0) {
 
           statsObj.user[tcUser].friendsProcessElapsed = moment().diff(statsObj.user[tcUser].friendsProcessStart);
 
           if (statsObj.user[tcUser].friendsCount < statsObj.user[tcUser].friendsProcessed) {
             statsObj.user[tcUser].friendsCount = statsObj.user[tcUser].friendsProcessed;
           }
-
-          // console.log(chalkAlert("TFE | processUser"
-          //   + "\nuser\n" + jsonPrint(user)
-          // ));
 
           console.log(chalkBlue("TFE | <FRND PRCSSD"
             + " [ Q: " + statsObj.queues.processUserQueue.size + " ]"
@@ -7338,7 +7256,6 @@ function initProcessUserQueueInterval(interval) {
             + " | " + err
             + "\nmObj\n" + jsonPrint(user)
           ));
-          // quit({cause:"TFE | *** ERROR processUser save"});
           statsObj.queues.processUserQueue.busy = false;
         });
       }
@@ -7346,9 +7263,7 @@ function initProcessUserQueueInterval(interval) {
         console.log(chalkError("TFE | *** ERROR processUser"
           + " | USER @" + mObj.friend.screen_name 
           + " | " + err
-          // + "\nmObj\n" + jsonPrint(mObj)
         ));
-        // quit({cause:"TFE | *** ERROR processUser"});
         statsObj.queues.processUserQueue.busy = false;
       }
 
@@ -7464,7 +7379,6 @@ function reporter(event, oldState, newState) {
     + "\nTFE | --------------------------------------------------------"
   ));
 }
-
 
 const fsmStates = {
 
@@ -7938,7 +7852,6 @@ function fsmStart(params) {
     resolve();
 
   });
-
 }
 
 
@@ -8896,7 +8809,6 @@ console.log(MODULE_ID_PREFIX + " | PROCESS ID:    " + process.pid);
 console.log(MODULE_ID_PREFIX + " | RUN ID:        " + statsObj.runId);
 console.log(MODULE_ID_PREFIX + " | PROCESS ARGS   " + util.inspect(process.argv, {showHidden: false, depth: 1}));
 console.log(MODULE_ID_PREFIX + " | =================================");
-
 
 console.log(chalkBlueBold(
     "\n=======================================================================\n"
