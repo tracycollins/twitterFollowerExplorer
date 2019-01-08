@@ -4456,6 +4456,7 @@ function loadBestNetworksDropbox(params) {
 
           if (configuration.archiveNetworkOnInputsMiss) {
 
+            const archiveFolder = folder + "/archive";
             const archivePath = folder + "/archive/" + entry.name;
 
             console.log(chalkLog("TFE | ARCHIVE NN ON INPUTS ID MISS"
@@ -4466,12 +4467,17 @@ function loadBestNetworksDropbox(params) {
               + " | TO: " + archivePath
             ));
 
-
-            dropboxClient.filesMove({ from_path: entry.path_display, to_path: archivePath, autorename: false })
-            .then(function(){
+            try{
+              await dropboxFileMove({
+                noErrorNotFound: true,
+                srcFolder: folder, 
+                srcFile: entry.name, 
+                dstFolder: globalBestNetworkArchiveFolder, 
+                dstFile: entry.name
+              });
               return;
-            })
-            .catch(function(err){
+            }
+            catch(err){
               // console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(err)));
               JSONParse(err, function(err, errObj){
                 if (err) {
@@ -4483,11 +4489,31 @@ function loadBestNetworksDropbox(params) {
                 else {
                   console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(errObj)));
                 }
-
                 return;
+              });
+            }
 
-              })
-            });
+            // dropboxClient.filesMoveV2({ from_path: entry.path_display, to_path: archivePath, autorename: false })
+            // .then(function(){
+            //   return;
+            // })
+            // .catch(function(err){
+            //   // console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(err)));
+            //   JSONParse(err, function(err, errObj){
+            //     if (err) {
+            //       console.log(chalkError(getTimeStamp()
+            //         + " | *** MOVE FILE FROM DROPBOX ERROR PARSE"
+            //         + " | " + err
+            //       ));
+            //     }
+            //     else {
+            //       console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(errObj)));
+            //     }
+
+            //     return;
+
+            //   })
+            // });
 
           }
         }
@@ -6798,7 +6824,7 @@ function updateUserHistograms(params) {
 
             user.profileHistograms = results.profileHist;
             user.tweetHistograms = results.tweetHist;
-            
+
             user.lastHistogramTweetId = user.statusId;
             user.lastHistogramQuoteId = user.quotedStatusId;
 
