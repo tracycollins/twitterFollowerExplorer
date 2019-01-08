@@ -6040,6 +6040,11 @@ function allHistogramsZeroKeys(histogram){
 
   return new Promise(function(resolve, reject){
 
+    if (typeof histogram !== "object") {
+      const typeofHistogram = typeof histogram;
+      return reject(new Error("histogram arg not an object: " + typeofHistogram));
+    }
+
     if (Object.keys(histogram).length === 0) {
       return resolve(true);
     }
@@ -6061,6 +6066,8 @@ function allHistogramsZeroKeys(histogram){
 async function checkUserProfileChanged(params) {
 
   let user = params.user;
+
+  user.profileHistograms = user.profileHistograms || {};
 
   const emptyHistogram = await allHistogramsZeroKeys(user.profileHistograms);
 
@@ -6106,6 +6113,8 @@ async function checkUserProfileChanged(params) {
 async function checkUserStatusChanged(params) {
 
   let user = params.user;
+
+  user.tweetHistograms = user.tweetHistograms || {};
 
   const emptyHistogram = await allHistogramsZeroKeys(user.tweetHistograms);
 
