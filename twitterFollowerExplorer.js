@@ -6040,6 +6040,11 @@ function allHistogramsZeroKeys(histogram){
 
   return new Promise(function(resolve, reject){
 
+    if (typeof histogram !== "object") {
+      const typeofHistogram = typeof histogram;
+      return reject(new Error("histogram arg not an object: " + typeofHistogram));
+    }
+
     async.each(Object.keys(histogram), function(histogramType, cb){
       if (Object.keys(histogram[histogramType]).length > 0) { 
         return cb(true);
