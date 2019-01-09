@@ -6007,321 +6007,6 @@ function initLangAnalyzer(callback) {
   // });
 }
 
-function checkUserIgnored(params){
-
-  return new Promise(function(resolve, reject){
-
-    if (!params.nodeId) {
-      return reject(new Error("nodeId UNDEFINED"));
-    }
-
-    global.User.findOne({nodeId: params.nodeId}, function(err, user){
-
-      if (err) { return reject(err); }
-
-      if (user && user.ignored) {
-        return resolve(true);
-      }
-
-      resolve(false);
-
-    });
-
-  });
-}
-
-function checkPropertyChange(user, prop){
-  const prevProp = "previous" + _.upperFirst(prop);
-  if (user[prop] && (user[prop] !== undefined) && (user[prevProp] !== user[prop])) { return true; }
-  return false;
-}
-
-function allHistogramsZeroKeys(histogram){
-
-  return new Promise(function(resolve, reject){
-
-    if (typeof histogram !== "object") {
-      const typeofHistogram = typeof histogram;
-      return reject(new Error("histogram arg not an object: " + typeofHistogram));
-    }
-
-    if (Object.keys(histogram).length === 0) {
-      return resolve(true);
-    }
-
-    async.each(Object.keys(histogram), function(histogramType, cb){
-      if (Object.keys(histogram[histogramType]).length > 0) { 
-        return cb(true);
-      }
-      return cb();
-    }, function(keyFound){
-      if (keyFound) { return resolve(false); }
-      return resolve(true);
-    });
-
-  });
-
-}
-
-async function checkUserProfileChanged(params) {
-
-  let user = params.user;
-
-  user.profileHistograms = user.profileHistograms || {};
-
-  const emptyHistogram = await allHistogramsZeroKeys(user.profileHistograms);
-
-  if (!user.profileHistograms 
-    || (user.profileHistograms === undefined) 
-    || (user.profileHistograms === {})
-    || (Object.keys(user.profileHistograms).length === 0)
-    || emptyHistogram
-  ){
-
-    console.log(chalk.black.bold(
-      "TFE | USER PROFILE HISTOGRAMS EMPTY/UNDEFINED" 
-      + " | MT HIST: " + emptyHistogram
-      + " | RST PREV PROP VALUES" 
-      + " | @" + user.screenName 
-    ));
-
-    user.previousBannerImageUrl = null;
-    user.previousDescription = null;
-    user.previousExpandedUrl = null;
-    user.previousLocation = null;
-    user.previousName = null;
-    user.previousProfileUrl = null;
-    user.previousScreenName = null;
-    user.previousUrl = null;
-  }
-
-  let results = [];
-
-  if (checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
-  if (checkPropertyChange(user, "description")) { results.push("description"); }
-  if (checkPropertyChange(user, "expandedUrl")) { results.push("expandedUrl"); }
-  if (checkPropertyChange(user, "location")) { results.push("location"); }
-  if (checkPropertyChange(user, "name")) { results.push("name"); }
-  if (checkPropertyChange(user, "profileUrl")) { results.push("profileUrl"); }
-  if (checkPropertyChange(user, "screenName")) { results.push("screenName"); }
-  if (checkPropertyChange(user, "url")) { results.push("url"); }
-
-  if (results.length === 0) { return; }
-  return results;    
-}
-
-async function checkUserStatusChanged(params) {
-
-  let user = params.user;
-
-  user.tweetHistograms = user.tweetHistograms || {};
-
-  const emptyHistogram = await allHistogramsZeroKeys(user.tweetHistograms);
-
-  if (!user.tweetHistograms 
-    || (user.tweetHistograms === undefined) 
-    || (user.tweetHistograms === {})
-    || (Object.keys(user.tweetHistograms).length === 0)
-    || emptyHistogram
-  ){
-
-    console.log(chalk.black.bold(
-      "TFE | USER TWEET HISTOGRAMS EMPTY/UNDEFINED" 
-      + " | MT HIST: " + emptyHistogram
-      + " | RST PREV PROP VALUES" 
-      + " | @" + user.screenName 
-    ));
-
-    user.previousStatusId = null;
-    user.previousQuotedStatusId = null;
-  }
-
-  let results = [];
-
-  if (checkPropertyChange(user, "statusId")) { 
-    results.push("statusId");
-  }
-  if (checkPropertyChange(user, "quotedStatusId")) { 
-    results.push("quotedStatusId"); 
-  }
-
-  if (results.length === 0) { return; }
-  return results;    
-}
-
-function userStatusChangeHistogram(params) {
-
-  return new Promise(function(resolve, reject){
-
-    let user = params.user;
-  
-    const userStatusChangeArray = checkUserStatusChanged(params);
-
-    if (!userStatusChangeArray) {
-      return resolve();
-    }
-
-    let tweetHistograms = {};
-    let text = "";
-
-    let tscParams = {};
-
-    async.eachSeries(userStatusChangeArray, function(userProp, cb){
-
-      // user = user.toObject();
-
-      delete user._id; // fix for UnhandledPromiseRejectionWarning: RangeError: Maximum call stack size exceeded
-
-      const prevUserProp = "previous" + _.upperFirst(userProp);
-
-      if (configuration.verbose) {
-        console.log(chalkLog("TFE | +++ USER STATUS CHANGE"
-          + " | NODE ID: " + user.nodeId 
-          + " | @" + user.screenName 
-          + " | " + userProp 
-          + " | " + user[userProp] + " <-- " + user[prevUserProp]
-          // + "\n" + jsonPrint(user) 
-        ));
-      }
-
-      tscParams.globalTestMode = configuration.globalTestMode;
-      tscParams.testMode = configuration.testMode;
-      tscParams.inc = false;
-      tscParams.twitterEvents = configEvents;
-      tscParams.tweetStatus = {};
-
-      if (user.statusId && user.statusId !== undefined && userProp === "statusId"){
-
-        let status = deepcopy(user.status);  // avoid circular references
-
-        user.statusId = user.statusId.toString();
-
-        tscParams.tweetStatus = status;
-        tscParams.tweetStatus.user = {};
-        tscParams.tweetStatus.user = user;
-        tscParams.tweetStatus.user.isNotRaw = true;
-      }
-
-      if (user.quotedStatusId && user.quotedStatusId !== undefined && userProp === "quotedStatusId"){
-
-        let quotedStatus = deepcopy(user.quotedStatus);  // avoid circular references
-
-        user.quotedStatusId = user.quotedStatusId.toString();
-
-        tscParams.tweetStatus = quotedStatus;
-        tscParams.tweetStatus.user = {};
-        tscParams.tweetStatus.user = user;
-        tscParams.tweetStatus.user.isNotRaw = true;
-      }
-
-      tweetServerController.createStreamTweet(tscParams)
-      .then(function(tweetObj){
-
-        async.eachSeries(DEFAULT_INPUT_TYPES, function(entityType, cb0){
-
-          if (!entityType || entityType === undefined) {
-            console.log(chalkAlert("TFE | ??? UNDEFINED TWEET entityType: ", entityType));
-            return cb0();
-          }
-
-          if (entityType === "user") { return cb0(); }
-          if (!tweetObj[entityType] || tweetObj[entityType] === undefined) { return cb0(); }
-          if (tweetObj[entityType].length === 0) { return cb0(); }
-
-          async.eachSeries(tweetObj[entityType], function(entityObj, cb1){
-
-            if (!entityObj) {
-              debug(chalkInfo("TFE | !!! NULL entity? | ENTITY TYPE: " + entityType + " | entityObj: " + entityObj));
-              return cb1();
-            }
-
-            let entity;
-
-            switch (entityType) {
-              case "hashtags":
-                entity = "#" + entityObj.nodeId.toLowerCase();
-              break;
-              case "mentions":
-              case "userMentions":
-                entity = "@" + entityObj.screenName.toLowerCase();
-              break;
-              case "locations":
-                entity = entityObj.nodeId;
-              break;
-              case "images":
-              case "media":
-                entity = entityObj.nodeId;
-              break;
-              case "emoji":
-                entity = entityObj.nodeId;
-              break;
-              case "urls":
-                // entity = (entityObj.expandedUrl && entityObj.expandedUrl !== undefined) ? entityObj.expandedUrl.toLowerCase() : entityObj.nodeId;
-                entity = entityObj.nodeId;
-              break;
-              case "words":
-                entity = entityObj.nodeId.toLowerCase();
-              break;
-              case "places":
-                entity = entityObj.nodeId;
-              break;
-            }
-
-            if (!tweetHistograms[entityType] || (tweetHistograms[entityType] === undefined)){
-              tweetHistograms[entityType] = {};
-              tweetHistograms[entityType][entity] = 1;
-            }
-
-            if (!tweetHistograms[entityType][entity] || (tweetHistograms[entityType][entity] === undefined)){
-              tweetHistograms[entityType][entity] = 1;
-            }
-
-            // if (configuration.verbose || entityType === "locations") {
-            if (configuration.verbose) {
-              console.log(chalkLog("TFE | +++ USER HIST"
-                + " @" + user.screenName
-                + " | " + entityType.toUpperCase()
-                + " | " + entity
-                + " | " + tweetHistograms[entityType][entity]
-              ));
-            }
-
-            async.setImmediate(function() { cb1(); });
-
-          }, function(){
-
-            async.setImmediate(function() { cb0(); });
-
-          });
-        }, function(err0){
-
-          async.setImmediate(function() { cb(); });
-
-        });
-
-      })
-      .catch(function(err){
-        console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
-        // quit();
-        return cb(err);
-      });
-
-    }, function(err){
-
-      if (err) {
-        console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
-        // console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR : tscParams\n" + jsonPrint(tscParams)));
-        // quit();
-        return reject(err);
-      }
-
-      resolve(tweetHistograms);
- 
-    });
-
-  });
-}
-
 function parseText(params){
 
   return new Promise(async function(resolve, reject) {
@@ -6491,6 +6176,446 @@ function mergeHistogramsArray(params) {
       }
       resolve(resultHistogram);
     })
+  });
+}
+
+
+function checkUserIgnored(params){
+
+  return new Promise(function(resolve, reject){
+
+    if (!params.nodeId) {
+      return reject(new Error("nodeId UNDEFINED"));
+    }
+
+    global.User.findOne({nodeId: params.nodeId}, function(err, user){
+
+      if (err) { return reject(err); }
+
+      if (user && user.ignored) {
+        return resolve(true);
+      }
+
+      resolve(false);
+
+    });
+
+  });
+}
+
+function checkPropertyChange(user, prop){
+  const prevProp = "previous" + _.upperFirst(prop);
+  if (user[prop] && (user[prop] !== undefined) && (user[prevProp] !== user[prop])) { return true; }
+  return false;
+}
+
+// function allHistogramsZeroKeys(histogram){
+
+//   return new Promise(function(resolve, reject){
+
+//     if (typeof histogram !== "object") {
+//       const typeofHistogram = typeof histogram;
+//       return reject(new Error("histogram arg not an object: " + typeofHistogram));
+//     }
+
+//     if (Object.keys(histogram).length === 0) {
+//       return resolve(true);
+//     }
+
+//     async.each(Object.keys(histogram), function(histogramType, cb){
+//       if (Object.keys(histogram[histogramType]).length > 0) { 
+//         return cb(true);
+//       }
+//       return cb();
+//     }, function(keyFound){
+//       if (keyFound) { return resolve(false); }
+//       return resolve(true);
+//     });
+
+//   });
+// }
+
+// async function checkUserProfileChanged(params) {
+
+//   let user = params.user;
+
+//   user.profileHistograms = user.profileHistograms || {};
+
+//   const emptyHistogram = await allHistogramsZeroKeys(user.profileHistograms);
+
+//   if (!user.profileHistograms 
+//     || (user.profileHistograms === undefined) 
+//     || (user.profileHistograms === {})
+//     || (Object.keys(user.profileHistograms).length === 0)
+//     || emptyHistogram
+//   ){
+
+//     console.log(chalk.black.bold(
+//       "TFE | USER PROFILE HISTOGRAMS EMPTY/UNDEFINED" 
+//       + " | MT HIST: " + emptyHistogram
+//       + " | RST PREV PROP VALUES" 
+//       + " | @" + user.screenName 
+//     ));
+
+//     user.previousBannerImageUrl = null;
+//     user.previousDescription = null;
+//     user.previousExpandedUrl = null;
+//     user.previousLocation = null;
+//     user.previousName = null;
+//     user.previousProfileUrl = null;
+//     user.previousScreenName = null;
+//     user.previousUrl = null;
+//   }
+
+//   let results = [];
+
+//   if (checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
+//   if (checkPropertyChange(user, "description")) { results.push("description"); }
+//   if (checkPropertyChange(user, "expandedUrl")) { results.push("expandedUrl"); }
+//   if (checkPropertyChange(user, "location")) { results.push("location"); }
+//   if (checkPropertyChange(user, "name")) { results.push("name"); }
+//   if (checkPropertyChange(user, "profileUrl")) { results.push("profileUrl"); }
+//   if (checkPropertyChange(user, "screenName")) { results.push("screenName"); }
+//   if (checkPropertyChange(user, "url")) { results.push("url"); }
+
+//   if (results.length === 0) { return; }
+//   return results;    
+// }
+
+// async function checkUserStatusChanged(params) {
+
+//   let user = params.user;
+
+//   user.tweetHistograms = user.tweetHistograms || {};
+
+//   const emptyHistogram = await allHistogramsZeroKeys(user.tweetHistograms);
+
+//   if (!user.tweetHistograms 
+//     || (user.tweetHistograms === undefined) 
+//     || (user.tweetHistograms === {})
+//     || (Object.keys(user.tweetHistograms).length === 0)
+//     || emptyHistogram
+//   ){
+
+//     console.log(chalk.black.bold(
+//       "TFE | USER TWEET HISTOGRAMS EMPTY/UNDEFINED" 
+//       + " | MT HIST: " + emptyHistogram
+//       + " | RST PREV PROP VALUES" 
+//       + " | @" + user.screenName 
+//     ));
+
+//     user.previousStatusId = null;
+//     user.previousQuotedStatusId = null;
+//   }
+
+//   let results = [];
+
+//   if (checkPropertyChange(user, "statusId")) { 
+//     results.push("statusId");
+//   }
+//   if (checkPropertyChange(user, "quotedStatusId")) { 
+//     results.push("quotedStatusId"); 
+//   }
+
+//   if (results.length === 0) { return; }
+//   return results;    
+// }
+
+
+function allHistogramsZeroKeys(histogram){
+
+  return new Promise(function(resolve, reject){
+
+    Object.keys(histogram).forEach(function(histogramType){
+      if (Object.keys(histogram[histogramType]).length > 0) { return resolve(false); }
+    });
+
+    resolve(true);
+
+  });
+}
+
+function checkUserProfileChanged(params) {
+
+  return new Promise(async function(resolve, reject){
+
+    let user = params.user;
+
+    let allHistogramsZero = false;
+
+    try{
+      allHistogramsZero = await allHistogramsZeroKeys(user.profileHistograms);
+    }
+    catch(err){
+      console.log(chalkError("WAS | TFC | *** ALL HISTOGRAMS ZERO ERROR: " + err));
+      return reject(err);
+    }
+
+    if (!user.profileHistograms 
+      || (user.profileHistograms === undefined) 
+      || (user.profileHistograms === {})
+      || (Object.keys(user.profileHistograms).length === 0)
+      || allHistogramsZero
+    ){
+
+      console.log(chalkLog(
+        "WAS | TFC | USER PROFILE HISTOGRAMS UNDEFINED" 
+        + " | RST PREV PROP VALUES" 
+        + " | @" + user.screenName 
+      ));
+
+      user.previousBannerImageUrl = null;
+      user.previousDescription = null;
+      user.previousExpandedUrl = null;
+      user.previousLocation = null;
+      user.previousName = null;
+      user.previousProfileUrl = null;
+      user.previousScreenName = null;
+      user.previousUrl = null;
+    }
+
+    let results = [];
+
+    if (checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
+    if (checkPropertyChange(user, "description")) { results.push("description"); }
+    if (checkPropertyChange(user, "expandedUrl")) { results.push("expandedUrl"); }
+    if (checkPropertyChange(user, "location")) { results.push("location"); }
+    if (checkPropertyChange(user, "name")) { results.push("name"); }
+    if (checkPropertyChange(user, "profileUrl")) { results.push("profileUrl"); }
+    if (checkPropertyChange(user, "screenName")) { results.push("screenName"); }
+    if (checkPropertyChange(user, "url")) { results.push("url"); }
+
+    if (results.length === 0) { return resolve(); }
+    resolve(results);    
+  });
+}
+
+function checkUserStatusChanged(params) {
+
+  return new Promise(async function(resolve, reject){
+
+    let user = params.user;
+
+    let allHistogramsZero = false;
+
+    try{
+      allHistogramsZero = await allHistogramsZeroKeys(user.tweetHistograms);
+    }
+    catch(err){
+      console.log(chalkError("WAS | TFC | *** ALL HISTOGRAMS ZERO ERROR: " + err));
+      return reject(err);
+    }
+
+    if (!user.tweetHistograms 
+      || (user.tweetHistograms === undefined) 
+      || (user.tweetHistograms === {})
+      || (Object.keys(user.tweetHistograms).length === 0)
+      || allHistogramsZero
+    ){
+
+      console.log(chalkLog(
+        "WAS | TFC | USER TWEET HISTOGRAMS UNDEFINED" 
+        + " | RST PREV PROP VALUES" 
+        + " | @" + user.screenName 
+      ));
+
+      user.previousStatusId = null;
+      user.previousQuotedStatusId = null;
+    }
+
+    let results = [];
+
+    if (checkPropertyChange(user, "statusId")) { results.push("statusId"); }
+    if (checkPropertyChange(user, "quotedStatusId")) { results.push("quotedStatusId"); }
+
+    if (results.length === 0) { return resolve(); }
+    resolve(results);    
+
+  });
+}
+
+function userStatusChangeHistogram(params) {
+
+  return new Promise(async function(resolve, reject){
+
+    let userStatusChanges = false;
+
+    try {
+      userStatusChanges = await checkUserStatusChanged(params);
+    }
+    catch(err){
+      return reject(err);
+    }
+
+    if (!userStatusChanges) {
+      return resolve();
+    }
+
+    let user = params.user;
+  
+
+    let tweetHistograms = {};
+    let text = "";
+
+    let tscParams = {};
+
+    async.eachSeries(userStatusChanges, function(userProp, cb){
+
+      // user = user.toObject();
+
+      delete user._id; // fix for UnhandledPromiseRejectionWarning: RangeError: Maximum call stack size exceeded
+
+      const prevUserProp = "previous" + _.upperFirst(userProp);
+
+      if (configuration.verbose) {
+        console.log(chalkLog("TFE | +++ USER STATUS CHANGE"
+          + " | NODE ID: " + user.nodeId 
+          + " | @" + user.screenName 
+          + " | " + userProp 
+          + " | " + user[userProp] + " <-- " + user[prevUserProp]
+          // + "\n" + jsonPrint(user) 
+        ));
+      }
+
+      tscParams.globalTestMode = configuration.globalTestMode;
+      tscParams.testMode = configuration.testMode;
+      tscParams.inc = false;
+      tscParams.twitterEvents = configEvents;
+      tscParams.tweetStatus = {};
+
+      if (user.statusId && user.statusId !== undefined && userProp === "statusId"){
+
+        let status = deepcopy(user.status);  // avoid circular references
+
+        user.statusId = user.statusId.toString();
+
+        tscParams.tweetStatus = status;
+        tscParams.tweetStatus.user = {};
+        tscParams.tweetStatus.user = user;
+        tscParams.tweetStatus.user.isNotRaw = true;
+      }
+
+      if (user.quotedStatusId && user.quotedStatusId !== undefined && userProp === "quotedStatusId"){
+
+        let quotedStatus = deepcopy(user.quotedStatus);  // avoid circular references
+
+        user.quotedStatusId = user.quotedStatusId.toString();
+
+        tscParams.tweetStatus = quotedStatus;
+        tscParams.tweetStatus.user = {};
+        tscParams.tweetStatus.user = user;
+        tscParams.tweetStatus.user.isNotRaw = true;
+      }
+
+      tweetServerController.createStreamTweet(tscParams)
+      .then(function(tweetObj){
+
+        async.eachSeries(DEFAULT_INPUT_TYPES, function(entityType, cb0){
+
+          if (!entityType || entityType === undefined) {
+            console.log(chalkAlert("TFE | ??? UNDEFINED TWEET entityType: ", entityType));
+            return cb0();
+          }
+
+          if (entityType === "user") { return cb0(); }
+          if (!tweetObj[entityType] || tweetObj[entityType] === undefined) { return cb0(); }
+          if (tweetObj[entityType].length === 0) { return cb0(); }
+
+          async.eachSeries(tweetObj[entityType], function(entityObj, cb1){
+
+            if (!entityObj) {
+              debug(chalkInfo("TFE | !!! NULL entity? | ENTITY TYPE: " + entityType + " | entityObj: " + entityObj));
+              return cb1();
+            }
+
+            let entity;
+
+            switch (entityType) {
+              case "hashtags":
+                entity = "#" + entityObj.nodeId.toLowerCase();
+              break;
+              case "mentions":
+              case "userMentions":
+                entity = "@" + entityObj.screenName.toLowerCase();
+              break;
+              case "locations":
+                entity = entityObj.nodeId;
+              break;
+              case "images":
+              case "media":
+                entity = entityObj.nodeId;
+              break;
+              case "emoji":
+                entity = entityObj.nodeId;
+              break;
+              case "urls":
+                if (entityObj.nodeId.includes(".")) { 
+                  entity = btoa(entityObj.nodeId);
+                }
+                else{
+                  entity = entityObj.nodeId;
+                }
+              break;
+              case "words":
+                entity = entityObj.nodeId.toLowerCase();
+                entity = entity.replace(/\./gi, "_")
+              break;
+              case "places":
+                entity = entityObj.nodeId;
+              break;
+            }
+
+            if (!tweetHistograms[entityType] || (tweetHistograms[entityType] === undefined)){
+              tweetHistograms[entityType] = {};
+              tweetHistograms[entityType][entity] = 1;
+            }
+
+            if (!tweetHistograms[entityType][entity] || (tweetHistograms[entityType][entity] === undefined)){
+              tweetHistograms[entityType][entity] = 1;
+            }
+
+            if (configuration.verbose) {
+              console.log(chalkLog("TFE | +++ USER HIST"
+                + " @" + user.screenName
+                + " | " + entityType.toUpperCase()
+                + " | " + entity
+                + " | " + tweetHistograms[entityType][entity]
+              ));
+            }
+
+            async.setImmediate(function() { cb1(); });
+
+          }, function(){
+
+            async.setImmediate(function() { cb0(); });
+
+          });
+        }, function(err0){
+
+          async.setImmediate(function() { cb(); });
+
+        });
+
+      })
+      .catch(function(err){
+        console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
+        // quit();
+        return cb(err);
+      });
+
+    }, function(err){
+
+      if (err) {
+        console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
+        // console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR : tscParams\n" + jsonPrint(tscParams)));
+        // quit();
+        return reject(err);
+      }
+
+      resolve(tweetHistograms);
+ 
+    });
+
   });
 }
 
