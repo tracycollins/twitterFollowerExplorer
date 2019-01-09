@@ -6209,119 +6209,6 @@ function checkPropertyChange(user, prop){
   return false;
 }
 
-// function allHistogramsZeroKeys(histogram){
-
-//   return new Promise(function(resolve, reject){
-
-//     if (typeof histogram !== "object") {
-//       const typeofHistogram = typeof histogram;
-//       return reject(new Error("histogram arg not an object: " + typeofHistogram));
-//     }
-
-//     if (Object.keys(histogram).length === 0) {
-//       return resolve(true);
-//     }
-
-//     async.each(Object.keys(histogram), function(histogramType, cb){
-//       if (Object.keys(histogram[histogramType]).length > 0) { 
-//         return cb(true);
-//       }
-//       return cb();
-//     }, function(keyFound){
-//       if (keyFound) { return resolve(false); }
-//       return resolve(true);
-//     });
-
-//   });
-// }
-
-// async function checkUserProfileChanged(params) {
-
-//   let user = params.user;
-
-//   user.profileHistograms = user.profileHistograms || {};
-
-//   const emptyHistogram = await allHistogramsZeroKeys(user.profileHistograms);
-
-//   if (!user.profileHistograms 
-//     || (user.profileHistograms === undefined) 
-//     || (user.profileHistograms === {})
-//     || (Object.keys(user.profileHistograms).length === 0)
-//     || emptyHistogram
-//   ){
-
-//     console.log(chalk.black.bold(
-//       "TFE | USER PROFILE HISTOGRAMS EMPTY/UNDEFINED" 
-//       + " | MT HIST: " + emptyHistogram
-//       + " | RST PREV PROP VALUES" 
-//       + " | @" + user.screenName 
-//     ));
-
-//     user.previousBannerImageUrl = null;
-//     user.previousDescription = null;
-//     user.previousExpandedUrl = null;
-//     user.previousLocation = null;
-//     user.previousName = null;
-//     user.previousProfileUrl = null;
-//     user.previousScreenName = null;
-//     user.previousUrl = null;
-//   }
-
-//   let results = [];
-
-//   if (checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
-//   if (checkPropertyChange(user, "description")) { results.push("description"); }
-//   if (checkPropertyChange(user, "expandedUrl")) { results.push("expandedUrl"); }
-//   if (checkPropertyChange(user, "location")) { results.push("location"); }
-//   if (checkPropertyChange(user, "name")) { results.push("name"); }
-//   if (checkPropertyChange(user, "profileUrl")) { results.push("profileUrl"); }
-//   if (checkPropertyChange(user, "screenName")) { results.push("screenName"); }
-//   if (checkPropertyChange(user, "url")) { results.push("url"); }
-
-//   if (results.length === 0) { return; }
-//   return results;    
-// }
-
-// async function checkUserStatusChanged(params) {
-
-//   let user = params.user;
-
-//   user.tweetHistograms = user.tweetHistograms || {};
-
-//   const emptyHistogram = await allHistogramsZeroKeys(user.tweetHistograms);
-
-//   if (!user.tweetHistograms 
-//     || (user.tweetHistograms === undefined) 
-//     || (user.tweetHistograms === {})
-//     || (Object.keys(user.tweetHistograms).length === 0)
-//     || emptyHistogram
-//   ){
-
-//     console.log(chalk.black.bold(
-//       "TFE | USER TWEET HISTOGRAMS EMPTY/UNDEFINED" 
-//       + " | MT HIST: " + emptyHistogram
-//       + " | RST PREV PROP VALUES" 
-//       + " | @" + user.screenName 
-//     ));
-
-//     user.previousStatusId = null;
-//     user.previousQuotedStatusId = null;
-//   }
-
-//   let results = [];
-
-//   if (checkPropertyChange(user, "statusId")) { 
-//     results.push("statusId");
-//   }
-//   if (checkPropertyChange(user, "quotedStatusId")) { 
-//     results.push("quotedStatusId"); 
-//   }
-
-//   if (results.length === 0) { return; }
-//   return results;    
-// }
-
-
 function allHistogramsZeroKeys(histogram){
 
   return new Promise(function(resolve, reject){
@@ -6621,28 +6508,33 @@ function userStatusChangeHistogram(params) {
 
 function userProfileChangeHistogram(params) {
 
-  let text = "";
+  return new Promise(async function(resolve, reject){
 
-  let urlsHistogram = {};
-  urlsHistogram.urls = {};
-  let profileUrl = false;
-  let bannerImageUrl = false;
+    let userProfileChanges = false;
 
-  let locationsHistogram = {};
-  locationsHistogram.locations = {};
-
-
-  let profileHistograms = {};
-
-  return new Promise(function(resolve, reject){
-
-    let user = params.user;
-  
-    const userProfileChanges = checkUserProfileChanged(params);
+    try {
+      userProfileChanges = await checkUserProfileChanged(params);
+    }
+    catch(err){
+      return reject(err);
+    }
 
     if (!userProfileChanges) {
       return resolve();
     }
+
+    let user = params.user;
+
+    let text = "";
+    let urlsHistogram = {};
+    urlsHistogram.urls = {};
+    let profileUrl = false;
+    let bannerImageUrl = false;
+
+    let locationsHistogram = {};
+    locationsHistogram.locations = {};
+
+    let profileHistograms = {};
 
     async.each(userProfileChanges, async function(userProp){
 
@@ -6651,16 +6543,17 @@ function userProfileChangeHistogram(params) {
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
       let domain;
+      let domainNodeId;
       let nodeId;
       let geoCodeResults;
 
-      user[prevUserProp] = (!user[prevUserProp] || (user[prevUserProp] === undefined)) ? {} : user[prevUserProp];
+      user[prevUserProp] = (!user[prevUserProp] || (user[prevUserProp] === undefined)) ? null : user[prevUserProp];
 
       switch (userProp) {
 
         case "location":
 
-          // const lastSeen = new Date(moment(newTweet.created_at, twitterDateFormat, false).toISOString());
+          const lastSeen = Date.now();
 
           const name = userPropValue.trim().toLowerCase().replace(/\./gi, "");
           nodeId = btoa(name);
@@ -6669,20 +6562,22 @@ function userProfileChangeHistogram(params) {
 
           try {
 
-            let locationDoc = await global.Location.findOne({nodeId: nodeId});
+            let locationDoc = await Location.findOne({nodeId: nodeId});
 
             if (!locationDoc) {
 
-              console.log(chalkInfo("TFE | --- LOC DB MISS"
+              debug(chalkInfo("WAS | TFC | --- LOC DB MISS"
                 + " | NID: " + nodeId
                 + " | N: " + name + " / " + userPropValue
               ));
 
-              locationDoc = new global.Location({
+              locationDoc = new Location({
                 nodeId: nodeId,
                 name : name,
                 nameRaw : userPropValue,
+                geoSearch: false,
                 geoValid: false,
+                lastSeen : lastSeen,
                 mentions : 0
               });
 
@@ -6693,13 +6588,10 @@ function userProfileChangeHistogram(params) {
                 locationDoc.geoSearch = true;
               }
 
-              if (geoCodeResults.placeId) {
-
-                locationsHistogram.locations[geoCodeResults.placeId] = (locationsHistogram.locations[geoCodeResults.placeId] === undefined) 
-                  ? 1 
-                  : locationsHistogram.locations[geoCodeResults.placeId] + 1;
+              if (geoCodeResults && geoCodeResults.placeId) {
 
                 locationDoc.geoValid = true;
+                locationDoc.geo = geoCodeResults;
                 locationDoc.placeId = geoCodeResults.placeId;
                 locationDoc.formattedAddress = geoCodeResults.formattedAddress;
 
@@ -6709,7 +6601,7 @@ function userProfileChangeHistogram(params) {
                 statsObj.geo.total += 1;
                 statsObj.geo.hitRate = 100*(statsObj.geo.hits/statsObj.geo.total);
 
-                console.log(chalk.blue("TFE | +++ LOC GEO HIT "
+                debug(chalk.blue("WAS | TFC | +++ LOC GEO HIT "
                   + " | GEO: " + locationDoc.geoValid
                   + "  H " + statsObj.geo.hits
                   + "  M " + statsObj.geo.misses
@@ -6721,8 +6613,19 @@ function userProfileChangeHistogram(params) {
                   + " | A: " + locationDoc.formattedAddress
                 ));
 
-              } 
-              else {
+                user.geoValid = geoCodeResults.geoValid;
+                user.geo = geoCodeResults;
+
+                locationsHistogram.locations[geoCodeResults.placeId] = (locationsHistogram.locations[geoCodeResults.placeId] === undefined) 
+                  ? 1 
+                  : locationsHistogram.locations[geoCodeResults.placeId] + 1;
+
+
+                user[prevUserProp] = user[userProp];
+
+                return;
+
+              } else {
 
                 await locationDoc.save();
 
@@ -6730,7 +6633,7 @@ function userProfileChangeHistogram(params) {
                 statsObj.geo.total += 1;
                 statsObj.geo.hitRate = 100*(statsObj.geo.hits/statsObj.geo.total);
 
-                console.log(chalkLog("TFE | --- LOC GEO MISS"
+                debug(chalkLog("WAS | TFC | --- LOC GEO MISS"
                   + " | GEO: " + locationDoc.geoValid
                   + "  H " + statsObj.geo.hits
                   + "  M " + statsObj.geo.misses
@@ -6740,23 +6643,20 @@ function userProfileChangeHistogram(params) {
                   + " | N: " + locationDoc.name + " / " + locationDoc.nameRaw
                 ));
 
-              }
+                user[prevUserProp] = user[userProp];
 
-              return;
+                return;
+
+              }
 
             }
             else {
 
-              // locationDoc.mentions += 1;
-              // locationDoc.lastSeen = Date.now();
+              locationDoc.mentions += 1;
+              locationDoc.lastSeen = lastSeen;
 
-              const key = (locationDoc.placeId && locationDoc.placeId !== undefined) ? locationDoc.placeId : locationDoc.nodeId;
 
-              locationsHistogram.locations[key] = (locationsHistogram.locations[key] === undefined) ? 1 : locationsHistogram.locations[key] + 1;
-
-              await locationDoc.save();
-
-              console.log(chalk.green("TFE | +++ LOC DB HIT "
+              debug(chalk.green("WAS | TFC | +++ LOC DB HIT "
                 + " | GEO: " + locationDoc.geoValid
                 + "  H " + statsObj.geo.hits
                 + "  M " + statsObj.geo.misses
@@ -6768,55 +6668,77 @@ function userProfileChangeHistogram(params) {
                 + " | A: " + locationDoc.formattedAddress
               ));
 
+              if (locationDoc.geoValid) {
+                if (configuration.geoCodeEnabled 
+                  && (!locationDoc.geoSearch || !locationDoc.geo || locationDoc.geo === undefined)) {
+                  locationDoc.geo = await geoCode({address: locationDoc.name});
+                }
+                user.geoValid = true;
+                user.geo = locationDoc.geo;
+              }
+
+              await locationDoc.save();
+
+              const key = (locationDoc.placeId && locationDoc.placeId !== undefined) ? locationDoc.placeId : locationDoc.nodeId;
+
+              locationsHistogram.locations[key] = (locationsHistogram.locations[key] === undefined) ? 1 : locationsHistogram.locations[key] + 1;
+
+              user[prevUserProp] = user[userProp];
+
               return;
             }
+
           }
           catch(err){
-            console.log(chalkError("TCS | *** GEOCODE ERROR: " + err));
-            return ;
+            console.log(chalkError("TCS | *** GEOCODE ERROR", err));
+            return;
           }
-
-
         break;
 
         case "name":
         case "description":
           text += userPropValue + "\n";
+
+          user[prevUserProp] = user[userProp];
+
           return;
         break;
 
         case "screenName":
           text += "@" + userPropValue + "\n";
+
+          user[prevUserProp] = user[userProp];
+
           return;
         break;
 
-        case "profileUrl":
         case "url":
+        case "profileUrl":
         case "expandedUrl":
+        case "bannerImageUrl":
 
-          domain = btoa(urlParse(userPropValue.toLowerCase()).hostname);
+          domain = urlParse(userPropValue.toLowerCase()).hostname;
           nodeId = btoa(userPropValue.toLowerCase());
 
-          if (domain) { urlsHistogram.urls[domain] = (urlsHistogram.urls[domain] === undefined) ? 1 : urlsHistogram.urls[domain] + 1; }
+          if (domain) { 
+            domainNodeId = btoa(domain);
+            urlsHistogram.urls[domainNodeId] = (urlsHistogram.urls[domainNodeId] === undefined) ? 1 : urlsHistogram.urls[domainNodeId] + 1; 
+          }
           urlsHistogram.urls[nodeId] = (urlsHistogram.urls[nodeId] === undefined) ? 1 : urlsHistogram.urls[nodeId] + 1;
 
+          user[prevUserProp] = user[userProp];
+
           return;
         break;
 
-        case "bannerImageUrl":
-          bannerImageUrl = userPropValue;
-          return;
-        break;
         default:
-          console.log(chalkError("TFE | UNKNOWN USER PROPERTY: " + userProp));
-          return new Error("UNKNOWN USER PROPERTY: " + userProp);
+          console.log(chalkError("WAS | TFC | UNKNOWN USER PROPERTY: " + userProp));
+          return (new Error("UNKNOWN USER PROPERTY: " + userProp));
       }
-
-
     }, function(err){
 
       if (err) {
-        console.log(chalkError("TFE | USER PROFILE HISTOGRAM ERROR: " + err));
+        console.log(chalkError("WAS | TFC | USER PROFILE HISTOGRAM ERROR: " + err));
         return reject(err);
       }
 
@@ -6830,14 +6752,14 @@ function userProfileChangeHistogram(params) {
               screenName: user.screenName, 
               category: user.category, 
               imageUrl: bannerImageUrl, 
-              histograms: user.histograms,
+              histograms: user.profileHistograms,
               updateGlobalHistograms: true
             })
             .then(function(imageParseResults){
-              // console.log(chalkLog("TFE | IMAGE PARSE imageParseResults\n" + jsonPrint(imageParseResults)));
               cb(null, imageParseResults);
             })
             .catch(function(err){
+              console.log(chalkError("WAS | TFC | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
               cb(err, null);
             });
 
@@ -6853,32 +6775,38 @@ function userProfileChangeHistogram(params) {
 
             parseText({ category: user.category, text: text, updateGlobalHistograms: true })
             .then(function(textParseResults){
+
               cb(null, textParseResults);
+
             })
             .catch(function(err){
-              console.log(chalkError("TFE | *** PARSE TEXT ERROR: " + err));
+              if (err) {
+                console.log(chalkError("WAS | TFC | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+              }
               cb(err, null);
             });
           }
           else {
-            // console.log(chalkLog("TFE | URLS urlsHistogram\n" + jsonPrint(urlsHistogram)));
             cb(null, null);
           }
         }
 
       }, function(err, results){
 
+        if (err) {
+          console.log(chalkError("WAS | TFC | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+          return reject(err);
+        }
+
         mergeHistogramsArray( {histogramArray: [ results.textHist, results.imageHist, urlsHistogram, locationsHistogram ]} )
         .then(function(histogramsMerged){
           resolve(histogramsMerged);
         })
         .catch(function(err){
-          console.log(chalkError("TFE | *** USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+          console.log(chalkError("WAS | TFC | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
           return reject(err);
         });
-
       });
-
     });
 
   });
