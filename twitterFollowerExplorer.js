@@ -6783,7 +6783,7 @@ function updateUserHistograms(params) {
 
       .then(function(tweetHistogramChanges){
 
-        userProfileChangeHistogram(params)
+        userProfileChangeHistogram({user:user})
         .then(function(profileHistogramChanges){
 
           // console.log(chalkAlert("user.profileHistograms\n" + jsonPrint(user.profileHistograms)));
