@@ -193,7 +193,6 @@ statsObj.elapsedMS = 0;
 statsObj.elapsed = getElapsedTimeStamp();
 
 statsObj.users = {};
-// statsObj.users.unfollowed = [];
 
 statsObj.queues = {};
 statsObj.queues.saveFileQueue = {};
@@ -269,7 +268,6 @@ async function showStats(options) {
     ));
   }
 }
-
 
 function initConfig(cnf) {
 
@@ -1569,6 +1567,157 @@ function resetTwitterUserState(){
   statsObj.threeceeUser.statusesCount = 0;
 }
 
+const DEFAULT_TWEET_FETCH_COUNT = 10;
+const DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES = true;
+const DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS = false;
+
+function fetchUserTweets(params){
+
+  return new Promise(async function(resolve, reject){
+
+    if (!twitClient || (twitClient === undefined)) {
+      console.log(chalkAlert("TFC | fetchUserTweets | twitClient UNDEFINED | @" + configuration.threeceeUser));
+      return reject(new Error("twitClient UNDEFINED"));
+    }
+
+    if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
+      console.log(chalkAlert("TFC | fetchUserTweets | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
+      return resolve(null);
+    }
+
+    let fetchUserTweetsParams = {};
+
+    fetchUserTweetsParams.user_id = params.userId;
+
+    if (params.trimUser) { fetchUserTweetsParams.trim_user = params.trimId; } 
+    if (params.maxId) { fetchUserTweetsParams.max_id = params.maxId; } 
+    if (params.sinceId) { fetchUserTweetsParams.since_id = params.sinceId; } 
+
+    fetchUserTweetsParams.count = params.count || DEFAULT_TWEET_FETCH_COUNT;
+    fetchUserTweetsParams.exclude_replies = params.excludeReplies || DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES;
+    fetchUserTweetsParams.include_rts = params.includeRetweets || DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS;
+
+
+    twitClient.get("statuses/user_timeline", fetchUserTweetsParams, function(err, userTweetsArray, response) {
+
+      if (err){
+
+        console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR"
+          + " | @" + configuration.threeceeUser 
+          + " | FETCH USER ID: " + params.userId
+          + " | " + getTimeStamp() 
+          + " | ERR CODE: " + err.code
+          + " | " + err.message
+        ));
+
+        if (err.code === 88){
+          fsm.fsm_rateLimitStart();
+          return reject(err);
+        }
+
+        if (err.code === 89){
+
+          console.log(chalkAlert("TFC | *** TWITTER FETCH USER TWEETS ERROR | INVALID OR EXPIRED TOKEN" 
+            + " | " + getTimeStamp() 
+            + " | @" + configuration.threeceeUser 
+          ));
+
+
+          statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+
+          statsObj.threeceeUser.err = err;
+
+          fsm.fsm_error();
+
+          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+          return reject(err);
+
+        }
+        
+        return reject(err);
+
+      }
+
+      console.log(chalkInfo("TFC | +++ FETCHED USER TWEETS" 
+        + " [" + userTweetsArray.length + "]"
+        + " | @" + configuration.threeceeUser 
+        + " | UID " + params.userId
+      ));
+
+
+      resolve(userTweetsArray);
+
+    });
+
+  });
+}
+
+function fetchUserFriendsIds(params){
+
+  return new Promise(async function(resolve, reject){
+
+    if (!twitClient || (twitClient === undefined)) {
+      console.log(chalkAlert("TFC | fetchUserFriendsIds | twitClient UNDEFINED | @" + configuration.threeceeUser));
+      return reject(new Error("twitClient UNDEFINED"));
+    }
+
+    if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
+      console.log(chalkAlert("TFC | fetchUserFriendsIds | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
+      return resolve(null);
+    }
+
+    twitClient.get("friends/ids", {screen_name: configuration.threeceeUser}, function(err, userFriendsIds, response) {
+
+      if (err){
+        console.log(chalkError("TFC | *** TWITTER USER FRIENDS IDS ERROR"
+          + " | @" + configuration.threeceeUser 
+          + " | " + getTimeStamp() 
+          + " | ERR CODE: " + err.code
+          + " | " + err.message
+        ));
+
+        if (err.code === 88) {
+          fsm.fsm_rateLimitStart();
+          return resolve();
+        }
+        return reject(err);
+      }
+
+      process.send({op:"FRIENDS_IDS", threeceeUser: configuration.threeceeUser, friendsIds: userFriendsIds.ids});
+
+      statsObj.threeceeUser.nextCursorValid = statsObj.threeceeUser.nextCursorValid || false;
+      statsObj.threeceeUser.nextCursor = statsObj.threeceeUser.nextCursor || -1;
+      statsObj.threeceeUser.prevCursorValid = statsObj.threeceeUser.prevCursorValid || false;
+      statsObj.threeceeUser.prevCursor = statsObj.threeceeUser.prevCursor || -1;
+
+      console.log(chalkLog("TFC | friends/ids"
+        + " | @" + configuration.threeceeUser 
+        + " | IDs: " + userFriendsIds.ids.length
+        + " | PREV CURSOR: " + userFriendsIds.previous_cursor_str
+        + " | NEXT CURSOR: " + userFriendsIds.next_cursor_str
+      ));
+
+      console.log(chalkTwitterBold("TFC | ====================================================================="
+        + "\nTFC | TWITTER USER"
+        + " | @" + statsObj.threeceeUser.screenName 
+        + " | " + statsObj.threeceeUser.name 
+        + "\nTFC | NEXT CURSOR VALID: " + statsObj.threeceeUser.nextCursorValid 
+        + " | NEXT CURSOR: " + statsObj.threeceeUser.nextCursor 
+        + "\nTFC | Ts: " + statsObj.threeceeUser.statusesCount 
+        + " | FLWRs: " + statsObj.threeceeUser.followersCount
+        + " | FRNDS: " + statsObj.threeceeUser.friendsCount 
+        + " | FRNDS IDs: " + userFriendsIds.ids.length 
+        + "\nTFC | ====================================================================="
+      ));
+
+      resolve();
+
+    });
+
+  });
+}
+
+
 function twitterUsersShow(params){
 
   return new Promise(async function(resolve, reject){
@@ -1652,6 +1801,8 @@ function twitterUserUpdate(params){
 
     try {
       await twitterUsersShow();
+      await fetchUserFriendsIds();
+      resolve();
     }
     catch(err){
       console.log(chalkError("TFC | *** TWITTER SHOW USER ERROR"
@@ -1667,54 +1818,6 @@ function twitterUserUpdate(params){
       }
       return reject(err);
     }
-
-    twitClient.get("friends/ids", {screen_name: configuration.threeceeUser}, function(err, userFriendsIds, response) {
-
-      if (err){
-        console.log(chalkError("TFC | *** TWITTER USER FRIENDS IDS ERROR"
-          + " | @" + configuration.threeceeUser 
-          + " | " + getTimeStamp() 
-          + " | ERR CODE: " + err.code
-          + " | " + err.message
-        ));
-
-        if (err.code === 88) {
-          fsm.fsm_rateLimitStart();
-          return resolve();
-        }
-        return reject(err);
-      }
-
-      process.send({op:"FRIENDS_IDS", threeceeUser: configuration.threeceeUser, friendsIds: userFriendsIds.ids});
-
-      statsObj.threeceeUser.nextCursorValid = statsObj.threeceeUser.nextCursorValid || false;
-      statsObj.threeceeUser.nextCursor = statsObj.threeceeUser.nextCursor || -1;
-      statsObj.threeceeUser.prevCursorValid = statsObj.threeceeUser.prevCursorValid || false;
-      statsObj.threeceeUser.prevCursor = statsObj.threeceeUser.prevCursor || -1;
-
-      console.log(chalkLog("TFC | friends/ids"
-        + " | @" + configuration.threeceeUser 
-        + " | IDs: " + userFriendsIds.ids.length
-        + " | PREV CURSOR: " + userFriendsIds.previous_cursor_str
-        + " | NEXT CURSOR: " + userFriendsIds.next_cursor_str
-      ));
-
-      console.log(chalkTwitterBold("TFC | ====================================================================="
-        + "\nTFC | TWITTER USER"
-        + " | @" + statsObj.threeceeUser.screenName 
-        + " | " + statsObj.threeceeUser.name 
-        + "\nTFC | NEXT CURSOR VALID: " + statsObj.threeceeUser.nextCursorValid 
-        + " | NEXT CURSOR: " + statsObj.threeceeUser.nextCursor 
-        + "\nTFC | Ts: " + statsObj.threeceeUser.statusesCount 
-        + " | FLWRs: " + statsObj.threeceeUser.followersCount
-        + " | FRNDS: " + statsObj.threeceeUser.friendsCount 
-        + " | FRNDS IDs: " + userFriendsIds.ids.length 
-        + "\nTFC | ====================================================================="
-      ));
-
-      resolve();
-
-    });
 
   });
 }
@@ -2137,6 +2240,8 @@ function fetchFriends(params) {
               + " | Ts: " + friend.statuses_count
             ));
 
+            friend.latestTweets = await fetchUserTweets({userId:friend.id_str});
+
             process.send(
               {
                 op: "FRIEND_RAW", 
@@ -2202,57 +2307,6 @@ function fetchFriends(params) {
 }
 
 let rateLimitTimeout;
-// function setRateLimitTimeout(params){
-
-//   const timeout = Math.max(statsObj.threeceeUser.twitterRateLimitRemainingTime, ONE_MINUTE);
-
-//   console.log(chalkAlert(MODULE_ID_PREFIX
-//     + " | *** RATE LIMIT TIMEOUT"
-//     + " | " + msToTime(timeout)
-//     + " | @" + configuration.threeceeUser
-//   ));
-
-//   return new Promise(async function(resolve, reject){
-
-//     try {
-
-//       await checkRateLimit();
-
-//       clearTimeout(rateLimitTimeout);
-
-//       if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
-//         return resolve();
-//       }
-
-//       console.log(chalkAlert(MODULE_ID_PREFIX
-//         + " | >>> SET RATE LIMIT TIMEOUT"
-//         + " | " + msToTime(timeout)
-//         + " | @" + configuration.threeceeUser
-//       ));
-
-//       rateLimitTimeout = setTimeout(function(){
-
-//         console.log(chalkAlert(MODULE_ID_PREFIX
-//           + " | --- RATE LIMIT TIMEOUT END"
-//           + " | @" + configuration.threeceeUser
-//         ));
-
-//         resolve();
-
-//       }, timeout);
-
-//     }
-//     catch(err){
-//       console.log(chalkAlert(MODULE_ID_PREFIX
-//         + " | @" + configuration.threeceeUser
-//         + " | *** SET RATE LIMIT TIMEOUT ERROR: " + err
-//       ));
-//       reject(err);
-//     }
-
-//   });
-
-// }
 
 //=========================================================================
 // FSM
@@ -2634,7 +2688,6 @@ function fsmStart(params) {
     resolve();
 
   });
-
 }
 
 reporter("START", "---", fsm.getMachineState());

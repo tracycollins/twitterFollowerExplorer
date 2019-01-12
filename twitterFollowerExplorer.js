@@ -1,5 +1,5 @@
 /*jslint node: true */
-/*jshint sub:true*/
+/*jshint esnext: true */
 "use strict";
 
 const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
@@ -170,6 +170,7 @@ const googleMapsClient = require("@google/maps").createClient({
   key: "AIzaSyDBxA6RmuBcyj-t7gfvK61yp8CDNnRLUlc"
 });
 
+const fetch = require("isomorphic-fetch"); // or another library of choice.
 const urlParse = require("url-parse");
 const path = require("path");
 const moment = require("moment");
@@ -183,7 +184,6 @@ const _ = require("lodash");
 const defaults = require("object.defaults");
 const treeify = require("treeify");
 const objectPath = require("object-path");
-const fetch = require("isomorphic-fetch"); // or another library of choice.
 const NodeCache = require("node-cache");
 const merge = require("deepmerge");
 const table = require("text-table");
@@ -340,7 +340,10 @@ statsObj.queues.processUserQueue = {};
 statsObj.queues.processUserQueue.busy = false;
 statsObj.queues.processUserQueue.size = 0;
 
-statsObj.twitterErrors = 0;
+statsObj.twitter = {};
+statsObj.twitter.errors = 0;
+statsObj.twitter.tweetsProcessed = 0;
+
 statsObj.user = {};
 statsObj.userReadyAck = false;
 statsObj.userReadyAckWait = 0;
@@ -2612,6 +2615,17 @@ global.dbConnection = false;
 const mongoose = require("mongoose");
 mongoose.set("useFindAndModify", false);
 
+const emojiModel = require("@threeceelabs/mongoose-twitter/models/emoji.server.model");
+const hashtagModel = require("@threeceelabs/mongoose-twitter/models/hashtag.server.model");
+const locationModel = require("@threeceelabs/mongoose-twitter/models/location.server.model");
+const mediaModel = require("@threeceelabs/mongoose-twitter/models/media.server.model");
+const neuralNetworkModel = require("@threeceelabs/mongoose-twitter/models/neuralNetwork.server.model");
+const placeModel = require("@threeceelabs/mongoose-twitter/models/place.server.model");
+const tweetModel = require("@threeceelabs/mongoose-twitter/models/tweet.server.model");
+const urlModel = require("@threeceelabs/mongoose-twitter/models/url.server.model");
+const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.model");
+const wordModel = require("@threeceelabs/mongoose-twitter/models/word.server.model");
+
 global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
 global.Emoji;
@@ -2675,16 +2689,16 @@ function connectDb(){
 
         console.log(chalk.green(MODULE_ID_PREFIX + " | MONGOOSE DEFAULT CONNECTION OPEN"));
 
-        const emojiModel = require("@threeceelabs/mongoose-twitter/models/emoji.server.model");
-        const hashtagModel = require("@threeceelabs/mongoose-twitter/models/hashtag.server.model");
-        const locationModel = require("@threeceelabs/mongoose-twitter/models/location.server.model");
-        const mediaModel = require("@threeceelabs/mongoose-twitter/models/media.server.model");
-        const neuralNetworkModel = require("@threeceelabs/mongoose-twitter/models/neuralNetwork.server.model");
-        const placeModel = require("@threeceelabs/mongoose-twitter/models/place.server.model");
-        const tweetModel = require("@threeceelabs/mongoose-twitter/models/tweet.server.model");
-        const urlModel = require("@threeceelabs/mongoose-twitter/models/url.server.model");
-        const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.model");
-        const wordModel = require("@threeceelabs/mongoose-twitter/models/word.server.model");
+        // const emojiModel = require("@threeceelabs/mongoose-twitter/models/emoji.server.model");
+        // const hashtagModel = require("@threeceelabs/mongoose-twitter/models/hashtag.server.model");
+        // const locationModel = require("@threeceelabs/mongoose-twitter/models/location.server.model");
+        // const mediaModel = require("@threeceelabs/mongoose-twitter/models/media.server.model");
+        // const neuralNetworkModel = require("@threeceelabs/mongoose-twitter/models/neuralNetwork.server.model");
+        // const placeModel = require("@threeceelabs/mongoose-twitter/models/place.server.model");
+        // const tweetModel = require("@threeceelabs/mongoose-twitter/models/tweet.server.model");
+        // const urlModel = require("@threeceelabs/mongoose-twitter/models/url.server.model");
+        // const userModel = require("@threeceelabs/mongoose-twitter/models/user.server.model");
+        // const wordModel = require("@threeceelabs/mongoose-twitter/models/word.server.model");
 
         global.Emoji = global.dbConnection.model("Emoji", emojiModel.EmojiSchema);
         global.Hashtag = global.dbConnection.model("Hashtag", hashtagModel.HashtagSchema);
@@ -6321,6 +6335,97 @@ function checkUserStatusChanged(params) {
   });
 }
 
+function processTweetObj(params){
+
+  return new Promise(async function(resolve, reject){
+
+    let tweetObj = params.tweetObj;
+    let histograms = params.histograms;
+
+    async.eachSeries(DEFAULT_INPUT_TYPES, function(entityType, cb0){
+
+      if (!entityType || entityType === undefined) {
+        console.log(chalkAlert("TFE | ??? UNDEFINED TWEET entityType: ", entityType));
+        return cb0();
+      }
+
+      if (entityType === "user") { return cb0(); }
+      if (!tweetObj[entityType] || tweetObj[entityType] === undefined) { return cb0(); }
+      if (tweetObj[entityType].length === 0) { return cb0(); }
+
+      async.eachSeries(tweetObj[entityType], function(entityObj, cb1){
+
+        if (!entityObj) {
+          debug(chalkInfo("TFE | !!! NULL entity? | ENTITY TYPE: " + entityType + " | entityObj: " + entityObj));
+          return cb1();
+        }
+
+        let entity;
+
+        switch (entityType) {
+          case "hashtags":
+            entity = "#" + entityObj.nodeId.toLowerCase();
+          break;
+          case "mentions":
+          case "userMentions":
+            entity = "@" + entityObj.screenName.toLowerCase();
+          break;
+          case "locations":
+            entity = entityObj.nodeId;
+          break;
+          case "images":
+          case "media":
+            entity = entityObj.nodeId;
+          break;
+          case "emoji":
+            entity = entityObj.nodeId;
+          break;
+          case "urls":
+            if (entityObj.nodeId.includes(".")) { 
+              entity = btoa(entityObj.nodeId);
+            }
+            else{
+              entity = entityObj.nodeId;
+            }
+          break;
+          case "words":
+            entity = entityObj.nodeId.toLowerCase();
+            entity = entity.replace(/\./gi, "_")
+          break;
+          case "places":
+            entity = entityObj.nodeId;
+          break;
+        }
+
+        if (!histograms[entityType] || (histograms[entityType] === undefined)){
+          histograms[entityType] = {};
+          histograms[entityType][entity] = 1;
+        }
+
+        if (!histograms[entityType][entity] || (histograms[entityType][entity] === undefined)){
+          histograms[entityType][entity] = 1;
+        }
+
+        async.setImmediate(function() { cb1(); });
+
+      }, function(){
+
+        async.setImmediate(function() { cb0(); });
+
+      });
+    }, function(err){
+
+      if (err) {
+        return reject(err);
+      }
+
+      resolve(histograms);
+
+    });
+
+  });
+}
+
 function userStatusChangeHistogram(params) {
 
   return new Promise(async function(resolve, reject){
@@ -6340,7 +6445,6 @@ function userStatusChangeHistogram(params) {
 
     let user = params.user;
   
-
     let tweetHistograms = {};
     let text = "";
 
@@ -6397,92 +6501,15 @@ function userStatusChangeHistogram(params) {
       tweetServerController.createStreamTweet(tscParams)
       .then(function(tweetObj){
 
-        async.eachSeries(DEFAULT_INPUT_TYPES, function(entityType, cb0){
-
-          if (!entityType || entityType === undefined) {
-            console.log(chalkAlert("TFE | ??? UNDEFINED TWEET entityType: ", entityType));
-            return cb0();
-          }
-
-          if (entityType === "user") { return cb0(); }
-          if (!tweetObj[entityType] || tweetObj[entityType] === undefined) { return cb0(); }
-          if (tweetObj[entityType].length === 0) { return cb0(); }
-
-          async.eachSeries(tweetObj[entityType], function(entityObj, cb1){
-
-            if (!entityObj) {
-              debug(chalkInfo("TFE | !!! NULL entity? | ENTITY TYPE: " + entityType + " | entityObj: " + entityObj));
-              return cb1();
-            }
-
-            let entity;
-
-            switch (entityType) {
-              case "hashtags":
-                entity = "#" + entityObj.nodeId.toLowerCase();
-              break;
-              case "mentions":
-              case "userMentions":
-                entity = "@" + entityObj.screenName.toLowerCase();
-              break;
-              case "locations":
-                entity = entityObj.nodeId;
-              break;
-              case "images":
-              case "media":
-                entity = entityObj.nodeId;
-              break;
-              case "emoji":
-                entity = entityObj.nodeId;
-              break;
-              case "urls":
-                if (entityObj.nodeId.includes(".")) { 
-                  entity = btoa(entityObj.nodeId);
-                }
-                else{
-                  entity = entityObj.nodeId;
-                }
-              break;
-              case "words":
-                entity = entityObj.nodeId.toLowerCase();
-                entity = entity.replace(/\./gi, "_")
-              break;
-              case "places":
-                entity = entityObj.nodeId;
-              break;
-            }
-
-            if (!tweetHistograms[entityType] || (tweetHistograms[entityType] === undefined)){
-              tweetHistograms[entityType] = {};
-              tweetHistograms[entityType][entity] = 1;
-            }
-
-            if (!tweetHistograms[entityType][entity] || (tweetHistograms[entityType][entity] === undefined)){
-              tweetHistograms[entityType][entity] = 1;
-            }
-
-            if (configuration.verbose) {
-              console.log(chalkLog("TFE | +++ USER HIST"
-                + " @" + user.screenName
-                + " | " + entityType.toUpperCase()
-                + " | " + entity
-                + " | " + tweetHistograms[entityType][entity]
-              ));
-            }
-
-            async.setImmediate(function() { cb1(); });
-
-          }, function(){
-
-            async.setImmediate(function() { cb0(); });
-
-          });
-        }, function(err0){
-
-          async.setImmediate(function() { cb(); });
-
+        processTweetObj({tweetObj: tweetObj, histograms: tweetHistograms})
+        .then(function(twHist){
+          tweetHistograms = twHist;
+          cb();
+        })
+        .catch(function(err){
+          console.log(chalkError("TFE | *** PROCESS TWEET OBJ ERROR: " + err));
+          return cb(err);
         });
-
       })
       .catch(function(err){
         console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
@@ -6825,10 +6852,6 @@ function updateUserHistograms(params) {
 
     let user = params.user;
 
-    if (user._doc !== undefined) {
-      user = user.toObject();
-    }
-
     user.profileHistograms = user.profileHistograms || {};
     user.tweetHistograms = user.tweetHistograms || {};
 
@@ -6951,6 +6974,97 @@ function generateAutoCategory(user, callback) {
     });
 }
 
+function updateUserTweets(params){
+
+  return new Promise(function(resolve, reject){
+
+    if (params.tweets.length === 0) { return resolve(params.user); }
+
+    let user = params.user;
+    if (user.tweetHistograms === undefined) { user.tweetHistograms = {}; }
+    if (user.tweets === undefined) { 
+      user.tweets = {};
+      user.tweets.maxId = "0";
+      user.tweets.sinceId = "0";
+      user.tweets.tweetIds = [];
+    }
+
+    user.tweets.maxId = user.tweets.maxId || "0";
+    user.tweets.sinceId = user.tweets.sinceId || "0";
+    user.tweets.tweetIds = user.tweets.tweetIds || [];
+
+    if (user.tweetHistograms === undefined) { user.tweetHistograms = {}; }
+
+    let tscParams = {};
+
+    tscParams.globalTestMode = configuration.globalTestMode;
+    tscParams.testMode = configuration.testMode;
+    tscParams.inc = false;
+    tscParams.twitterEvents = configEvents;
+    tscParams.tweetStatus = {};
+
+    async.eachSeries(params.tweets, async function(tweet){
+
+      tscParams.tweetStatus = tweet;
+      tscParams.tweetStatus.user = {};
+      tscParams.tweetStatus.user = user;
+      tscParams.tweetStatus.user.isNotRaw = true;
+
+      if (tweet.id_str > user.tweets.maxId) {
+        user.tweets.maxId = tweet.id_str;
+      }
+
+      if (tweet.id_str > user.tweets.sinceId) {
+        user.tweets.sinceId = tweet.id_str;
+      }
+
+      if (!user.tweets.tweetIds.includes(tweet.id_str)) { 
+
+        try {
+
+          const tweetObj = await tweetServerController.createStreamTweet(tscParams);
+
+          user.tweetHistograms = await processTweetObj({tweetObj: tweetObj, histograms: user.tweetHistograms});
+          user.tweets.tweetIds.push(tweet.id_str); 
+
+          statsObj.twitter.tweetsProcessed += 1;
+
+          console.log(chalkTwitter("TFE | +++ PROCESSED TWEET"
+            + " [" + statsObj.twitter.tweetsProcessed + "]"
+            + " | @" + user.screenName
+            + " | USR TW SINCE ID: " + user.tweets.sinceId
+            + " | USR TW IDs: " + user.tweets.tweetIds.length
+            + " | TW: " + tweet.id_str
+          ));
+          
+          return;
+        }
+        catch(err){
+          console.log(chalkError("TFE | updateUserTweets ERROR: " + err));
+          return err;
+        }
+      }
+      else {
+          console.log(chalkInfo("TFE | ... TWEET ALREADY PROCESSED"
+            + " [" + statsObj.twitter.tweetsProcessed + "]"
+            + " | @" + user.screenName
+            + " | USR TW IDs: " + user.tweets.tweetIds.length
+            + " | TW: " + tweet.id_str
+          ));
+        return;
+      }
+
+    }, function(err){
+      if (err) {
+        console.log(chalkError("TFE | updateUserTweets ERROR: " + err));
+        return reject(err);
+      }
+      resolve(user);
+    });
+
+  });
+}
+
 function processUser(params) {
 
   return new Promise(function(resolve, reject){
@@ -6971,7 +7085,7 @@ function processUser(params) {
     [
       function findUserInDb(cb) {
 
-        global.User.findOne({ nodeId: userIn.id_str }).exec(function(err, user) {
+        global.User.findOne({ nodeId: userIn.id_str }).exec(async function(err, user) {
 
           if (err) {
             console.log(chalkError("TFE | *** ERROR DB FIND ONE USER | " + err));
@@ -6993,7 +7107,7 @@ function processUser(params) {
               + " | @" + userIn.screen_name
             ));
 
-            userServerController.convertRawUser({user:userIn}, function(err, user) {
+            userServerController.convertRawUser({user:userIn}, async function(err, user) {
 
               if (err) {
 
@@ -7001,125 +7115,105 @@ function processUser(params) {
                   + " | " + err
                 ));
 
-                cb(err, null);
+                return cb(err, null);
 
               }
-              else {
 
-                // user = user.toObject();
+              if ((user.status !== undefined) && user.status) { 
+                user.lastSeen = user.status.created_at;
+                user.updateLastSeen = true;
+              }
 
-                if ((user.status !== undefined) && user.status) { 
-                  user.lastSeen = user.status.created_at;
-                  user.updateLastSeen = true;
-                }
-
+              try{
+                user = await updateUserTweets({user: user, tweets: userIn.latestTweets});
                 cb(null, user);
-
               }
+              catch(err){
+                console.log(chalkError("TFE | *** UPDATE USER TWEETS ERROR: " + err));
+                return cb(null, user);
+              }
+
+
             });
           }
           else {
 
-            if ((typeof user.threeceeFollowing === "object") || (typeof user.threeceeFollowing === "boolean")) {
-              console.log(chalkAlert("TFE | >>> CONVERT TO STRING | USER @" + user.screenName
-                + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
-                + " | threeceeFollowing: " + user.threeceeFollowing
-              ));
+            try{
+              user = await updateUserTweets({user: user, tweets: userIn.latestTweets});
+              let catObj = {};
 
-              let newUser = new global.User(user);
+              catObj.manual = user.category || false;
+              catObj.auto = user.categoryAuto || false;
 
-              newUser.threeceeFollowing = threeceeUser;
-
-              user = new global.User(newUser);
-
-              user = user.toObject();
-
-              console.log(chalkAlert("TFE | CONVERTED STRING | USER @" + user.screenName
-                + " | threeceeFollowing TYPE: " + typeof user.threeceeFollowing
-                + " | threeceeFollowing: " + user.threeceeFollowing
-              ));
-            }
-            else {
-
-              // user = user.toObject();
-              user.following = true;
-              user.threeceeFollowing = threeceeUser;
-            }
-
-            let catObj = {};
-
-            catObj.manual = user.category || false;
-            catObj.auto = user.categoryAuto || false;
-
-            if (userIn.screen_name && (userIn.screen_name !== undefined) && (user.screenName !== userIn.screen_name)) {
-              user.screenName = userIn.screen_name.toLowerCase();
-              user.screenNameLower = userIn.screen_name.toLowerCase();
-            }
-
-            if (userIn.name && (user.name !== userIn.name)) {
-              // user.userIn.nameName = user.name;
-              user.name = userIn.name;
-            }
-            
-            if (userIn.description && (userIn.description !== undefined) && (user.description !== userIn.description)) {
-              user.description = userIn.description;
-            }
-
-            if (userIn.location && (userIn.location !== undefined) && (user.location !== userIn.location)) {
-              user.location = userIn.location;
-            }
-
-            userIn.url = _.get(userIn, "entities.url.urls[0].expanded_url", userIn.url);
-
-            if (userIn.url && (userIn.url !== undefined) && (user.url !== userIn.url)) {
-              user.url = userIn.url;
-            }
-
-            if (userIn.profile_url && (userIn.profile_url !== undefined) && (user.profileUrl !== userIn.profile_url)) {
-              user.profileUrl = userIn.profile_url;
-            }
-
-            if (userIn.profile_banner_url && (userIn.profile_banner_url !== undefined) && (user.bannerImageUrl !== userIn.profile_banner_url)) {
-              user.bannerImageAnalyzed = false;
-              user.bannerImageUrl = userIn.profile_banner_url;
-            }
-
-            if (userIn.profile_image_url && (userIn.profile_image_url !== undefined) && (user.profileImageUrl !== userIn.profile_image_url)) {
-              user.profileImageUrl = userIn.profile_image_url;
-            }
-
-            // if ((userIn.status !== undefined) && userIn.status) { 
-            //   user.status = userIn.status;
-            //   user.lastSeen = userIn.status.created_at;
-            //   user.updateLastSeen = true;
-            // }
-
-            if (userIn.status && (userIn.status !== undefined)) {
-
-              user.status = userIn.status;
-              user.statusId = userIn.status.id_str;
-
-              if (user.statusId !== userIn.status.id_str) {
-                user.lastSeen = userIn.status.created_at;
-                user.updateLastSeen = true;
+              if (userIn.screen_name && (userIn.screen_name !== undefined) && (user.screenName !== userIn.screen_name)) {
+                user.screenName = userIn.screen_name.toLowerCase();
+                user.screenNameLower = userIn.screen_name.toLowerCase();
               }
+
+              if (userIn.name && (user.name !== userIn.name)) {
+                user.name = userIn.name;
+              }
+              
+              if (userIn.description && (userIn.description !== undefined) && (user.description !== userIn.description)) {
+                user.description = userIn.description;
+              }
+
+              if (userIn.location && (userIn.location !== undefined) && (user.location !== userIn.location)) {
+                user.location = userIn.location;
+              }
+
+              userIn.url = _.get(userIn, "entities.url.urls[0].expanded_url", userIn.url);
+
+              if (userIn.url && (userIn.url !== undefined) && (user.url !== userIn.url)) {
+                user.url = userIn.url;
+              }
+
+              if (userIn.profile_url && (userIn.profile_url !== undefined) && (user.profileUrl !== userIn.profile_url)) {
+                user.profileUrl = userIn.profile_url;
+              }
+
+              if (userIn.profile_banner_url && (userIn.profile_banner_url !== undefined) && (user.bannerImageUrl !== userIn.profile_banner_url)) {
+                user.bannerImageAnalyzed = false;
+                user.bannerImageUrl = userIn.profile_banner_url;
+              }
+
+              if (userIn.profile_image_url && (userIn.profile_image_url !== undefined) && (user.profileImageUrl !== userIn.profile_image_url)) {
+                user.profileImageUrl = userIn.profile_image_url;
+              }
+
+              if (userIn.status && (userIn.status !== undefined)) {
+
+                user.status = userIn.status;
+                user.statusId = userIn.status.id_str;
+
+                if (user.statusId !== userIn.status.id_str) {
+                  user.lastSeen = userIn.status.created_at;
+                  user.updateLastSeen = true;
+                }
+              }
+
+              if (userIn.quoted_status_id_str && (userIn.quoted_status_id_str !== undefined) && (user.quotedStatusId !== userIn.quoted_status_id_str)) {
+                user.quotedStatusId = userIn.quoted_status_id_str;
+                user.quotedStatus = userIn.quoted_status;
+              }
+
+              if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)) {
+                user.followersCount = userIn.followers_count;
+              }
+              if ((userIn.friends_count !== undefined) && (user.friendsCount !== userIn.friends_count)) {
+                user.friendsCount = userIn.friends_count;
+              }
+              if ((userIn.statuses_count !== undefined) && (user.statusesCount !== userIn.statuses_count)) {
+                user.statusesCount = userIn.statuses_count;
+              } 
+
+              cb(null, user);
+            }
+            catch(err){
+              console.log(chalkError("TFE | *** UPDATE USER TWEETS ERROR: " + err));
+              return cb(null, user);
             }
 
-            if (userIn.quoted_status_id_str && (userIn.quoted_status_id_str !== undefined) && (user.quotedStatusId !== userIn.quoted_status_id_str)) {
-              user.quotedStatusId = userIn.quoted_status_id_str;
-              user.quotedStatus = userIn.quoted_status;
-            }
-
-            if ((userIn.followers_count !== undefined) && (user.followersCount !== userIn.followers_count)) {
-              user.followersCount = userIn.followers_count;
-            }
-            if ((userIn.friends_count !== undefined) && (user.friendsCount !== userIn.friends_count)) {
-              user.friendsCount = userIn.friends_count;
-            }
-            if ((userIn.statuses_count !== undefined) && (user.statusesCount !== userIn.statuses_count)) {
-              user.statusesCount = userIn.statuses_count;
-            } 
-            cb(null, user);
           }
         });
       },
@@ -7169,37 +7263,39 @@ function updatePreviousUserProps(params){
       return reject(new Error("user UNDEFINED"));
     }
 
+    let user = params.user;
+
     async.each(USER_PROFILE_PROPERTY_ARRAY, function(userProp, cb){
 
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
-      if (params.user[userProp] && (params.user[userProp] !== undefined) && (params.user[prevUserProp] !== params.user[userProp])) {
+      if (user[userProp] && (user[userProp] !== undefined) && (user[prevUserProp] !== user[userProp])) {
         debug(chalkLog("TFE | updatePreviousUserProps"
-          + " | " + prevUserProp + ": " + params.user[prevUserProp] 
-          + " <- " + userProp + ": " + params.user[userProp]
+          + " | " + prevUserProp + ": " + user[prevUserProp] 
+          + " <- " + userProp + ": " + user[userProp]
         ));
 
-        params.user[prevUserProp] = params.user[userProp];
+        user[prevUserProp] = user[userProp];
 
-        params.user.markModified(prevUserProp);
+        user.markModified(prevUserProp);
 
       }
       cb();
 
     }, function(){
 
-      if (params.user.statusId && (params.user.statusId !== undefined) && (params.user.previousStatusId !== params.user.statusId)) {
-        params.user.previousStatusId = params.user.statusId;
-        params.user.markModified("previousStatusId");
+      if (user.statusId && (user.statusId !== undefined) && (user.previousStatusId !== user.statusId)) {
+        user.previousStatusId = user.statusId;
+        user.markModified("previousStatusId");
       }
 
-      if (params.user.quotedStatusId && (params.user.quotedStatusId !== undefined) && (params.user.previousQuotedStatusId !== params.user.quotedStatusId)) {
-        params.user.previousQuotedStatusId = params.user.quotedStatusId;
-        params.user.markModified("quotedStatusId");
-        params.user.markModified("quotedStatusId");
+      if (user.quotedStatusId && (user.quotedStatusId !== undefined) && (user.previousQuotedStatusId !== user.quotedStatusId)) {
+        user.previousQuotedStatusId = user.quotedStatusId;
+        user.markModified("quotedStatusId");
+        user.markModified("quotedStatusId");
       }
 
-      resolve(params.user);
+      resolve(user);
     });
 
   });
@@ -7342,24 +7438,18 @@ function initProcessUserQueueInterval(interval) {
           ));
         }
 
-        user.markModified("tweetHistograms");
-        user.markModified("profileHistograms");
+        let userUpdated = await updatePreviousUserProps({user: user});
+        let userUpdatedObj = userUpdated.toObject();
+        // userUpdatedObj.tweets = user.tweets;
 
-        user = await updatePreviousUserProps({user: user});
+        await global.User.deleteOne({nodeId: user.nodeId});
 
-        user.save()
-        .then(function() {
-          statsObj.queues.processUserQueue.busy = false;
-        })
-        .catch(function(err) {
-          console.log(chalkError("TFE | *** ERROR processUser USER SAVE: @" + user.screenName + " | " + err));
-          console.log(chalkError("TFE | *** ERROR processUser"
-            + " | USER @" + user.screenName 
-            + " | " + err
-            + "\nmObj\n" + jsonPrint(user)
-          ));
-          statsObj.queues.processUserQueue.busy = false;
-        });
+        let newUser = new global.User(userUpdatedObj);
+        let newUserObj = newUser.toObject();
+
+        let savedUser = await userServerController.findOneUserV2({user: newUserObj, mergeHistograms: false, noInc: true});
+
+        statsObj.queues.processUserQueue.busy = false;
       }
       catch(err){
         console.log(chalkError("TFE | *** ERROR processUser"
@@ -8618,6 +8708,7 @@ function childCreate(params){
                 + " | FLWRs: " + m.friend.followers_count
                 + " | FRNDs: " + m.friend.friends_count
                 + " | Ts: " + m.friend.statuses_count
+                + " | LATESTs: " + m.friend.latestTweets.length
               ));
 
               if (saveRawFriendFlag){
