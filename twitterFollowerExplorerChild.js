@@ -1853,7 +1853,6 @@ function checkRateLimit(params){
           fsm.fsm_error();
 
           process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
-
         }
 
         process.send({op:"ERROR", type: "RATE_LIMIT_STATUS", threeceeUser: configuration.threeceeUser, error: err});
@@ -1887,12 +1886,9 @@ function checkRateLimit(params){
         ));
       }
 
-      if (moment().isAfter(statsObj.threeceeUser.twitterRateLimitResetAt)){
-
-        // statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
-        // statsObj.threeceeUser.twitterRateLimitRemaining = data.resources.users["/users/show/:id"].remaining;
-        // statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
-        // statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
+      if (moment().isAfter(statsObj.threeceeUser.twitterRateLimitResetAt) 
+        || (statsObj.threeceeUser.twitterRateLimit === statsObj.threeceeUser.twitterRateLimitRemaining))
+      {
 
         clearTimeout(rateLimitTimeout);
 
@@ -1918,11 +1914,6 @@ function checkRateLimit(params){
         if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag || !statsObj.threeceeUser.twitterRateLimitException) {
           statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
         }
-
-        // statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
-        // statsObj.threeceeUser.twitterRateLimitRemaining = data.resources.users["/users/show/:id"].remaining;
-        // statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
-        // statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
         if (statsObj.fsmState !== "PAUSE_RATE_LIMIT"){
           console.log(chalkAlert("TFC | *** TWITTER SHOW USER ERROR | RATE LIMIT EXCEEDED" 
@@ -1952,11 +1943,6 @@ function checkRateLimit(params){
       }
       else if (statsObj.threeceeUser.twitterRateLimitExceptionFlag){
 
-        // statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
-        // statsObj.threeceeUser.twitterRateLimitRemaining = data.resources.users["/users/show/:id"].remaining;
-        // statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
-        // statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
-
         console.log(chalkLog("TFC | --- TWITTER RATE LIMIT"
           + " | @" + configuration.threeceeUser
           + " | CONTEXT: " + data.rate_limit_context.access_token
@@ -1969,11 +1955,6 @@ function checkRateLimit(params){
         ));
       }
       else {
-
-        // statsObj.threeceeUser.twitterRateLimit = data.resources.users["/users/show/:id"].limit;
-        // statsObj.threeceeUser.twitterRateLimitRemaining = data.resources.users["/users/show/:id"].remaining;
-        // statsObj.threeceeUser.twitterRateLimitResetAt = moment.unix(data.resources.users["/users/show/:id"].reset);
-        // statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
 
         if (configuration.verbose) {
           console.log(chalkInfo("TFC | ... NO TWITTER RATE LIMIT"

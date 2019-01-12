@@ -6964,13 +6964,15 @@ function updateUserTweets(params){
 
           statsObj.twitter.tweetsProcessed += 1;
 
-          console.log(chalkTwitter("TFE | +++ PROCESSED TWEET"
-            + " [" + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "]"
-            + " | @" + user.screenName
-            + " | USR TW SINCE ID: " + user.tweets.sinceId
-            + " | USR TW IDs: " + user.tweets.tweetIds.length
-            + " | TW: " + tweet.id_str
-          ));
+          if (configuration.verbose) {
+            console.log(chalkTwitter("TFE | +++ PROCESSED TWEET"
+              + " [" + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "]"
+              + " | @" + user.screenName
+              + " | USR TW SINCE ID: " + user.tweets.sinceId
+              + " | USR TW IDs: " + user.tweets.tweetIds.length
+              + " | TW: " + tweet.id_str
+            ));
+          }
 
           return;
         }
@@ -7000,6 +7002,14 @@ function updateUserTweets(params){
         console.log(chalkError("TFE | updateUserTweets ERROR: " + err));
         return reject(err);
       }
+
+      console.log(chalkTwitter("TFE | +++ PROCESSED TWEETS"
+        + " [" + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "]"
+        + " | @" + user.screenName
+        + " | USR TW SINCE ID: " + user.tweets.sinceId
+        + " | USR TW IDs: " + user.tweets.tweetIds.length
+      ));
+
       resolve(user);
     });
 
