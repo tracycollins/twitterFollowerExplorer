@@ -343,6 +343,7 @@ statsObj.queues.processUserQueue.size = 0;
 statsObj.twitter = {};
 statsObj.twitter.errors = 0;
 statsObj.twitter.tweetsProcessed = 0;
+statsObj.twitter.tweetsHits = 0;
 
 statsObj.user = {};
 statsObj.userReadyAck = false;
@@ -4381,22 +4382,22 @@ function isBestNetwork(params){
     let minTestCycles = params.minTestCycles || configuration.minTestCycles;
 
     if (params.networkObj.testCycles < minTestCycles){
-      console.log("minTestCycles: " + params.networkObj.testCycles);
+      debug("minTestCycles: " + params.networkObj.testCycles);
       return true;
     }
     else if (minTestCycles) {
       pass = (params.networkObj.testCycles >= minTestCycles) && (params.networkObj.overallMatchRate >= minOverallMatchRate);
-      console.log("minTestCycles: " + params.networkObj.testCycles + " | pass: " + pass);
+      debug("minTestCycles: " + params.networkObj.testCycles + " | pass: " + pass);
       return pass;
     }
     else if (params.networkObj.overallMatchRate) {
       pass = (params.networkObj.overallMatchRate < 100) && (params.networkObj.overallMatchRate >= minOverallMatchRate);
-      console.log("overallMatchRate: " + params.networkObj.overallMatchRate + " | pass: " + pass);
+      debug("overallMatchRate: " + params.networkObj.overallMatchRate + " | pass: " + pass);
       return pass;
     }
     else {
       pass = (params.networkObj.successRate < 100) && (params.networkObj.successRate >= minOverallMatchRate);
-      console.log("successRate: " + params.networkObj.successRate + " | pass: " + pass);
+      debug("successRate: " + params.networkObj.successRate + " | pass: " + pass);
       return pass;
     }
 
@@ -6426,112 +6427,112 @@ function processTweetObj(params){
   });
 }
 
-function userStatusChangeHistogram(params) {
+// function userStatusChangeHistogram(params) {
 
-  return new Promise(async function(resolve, reject){
+//   return new Promise(async function(resolve, reject){
 
-    let userStatusChanges = false;
+//     let userStatusChanges = false;
 
-    try {
-      userStatusChanges = await checkUserStatusChanged(params);
-    }
-    catch(err){
-      return reject(err);
-    }
+//     try {
+//       userStatusChanges = await checkUserStatusChanged(params);
+//     }
+//     catch(err){
+//       return reject(err);
+//     }
 
-    if (!userStatusChanges) {
-      return resolve();
-    }
+//     if (!userStatusChanges) {
+//       return resolve();
+//     }
 
-    let user = params.user;
+//     let user = params.user;
   
-    let tweetHistograms = {};
-    let text = "";
+//     let tweetHistograms = {};
+//     let text = "";
 
-    let tscParams = {};
+//     let tscParams = {};
 
-    async.eachSeries(userStatusChanges, function(userProp, cb){
+//     async.eachSeries(userStatusChanges, function(userProp, cb){
 
-      // user = user.toObject();
+//       // user = user.toObject();
 
-      delete user._id; // fix for UnhandledPromiseRejectionWarning: RangeError: Maximum call stack size exceeded
+//       delete user._id; // fix for UnhandledPromiseRejectionWarning: RangeError: Maximum call stack size exceeded
 
-      const prevUserProp = "previous" + _.upperFirst(userProp);
+//       const prevUserProp = "previous" + _.upperFirst(userProp);
 
-      if (configuration.verbose) {
-        console.log(chalkLog("TFE | +++ USER STATUS CHANGE"
-          + " | NODE ID: " + user.nodeId 
-          + " | @" + user.screenName 
-          + " | " + userProp 
-          + " | " + user[userProp] + " <-- " + user[prevUserProp]
-          // + "\n" + jsonPrint(user) 
-        ));
-      }
+//       if (configuration.verbose) {
+//         console.log(chalkLog("TFE | +++ USER STATUS CHANGE"
+//           + " | NODE ID: " + user.nodeId 
+//           + " | @" + user.screenName 
+//           + " | " + userProp 
+//           + " | " + user[userProp] + " <-- " + user[prevUserProp]
+//           // + "\n" + jsonPrint(user) 
+//         ));
+//       }
 
-      tscParams.globalTestMode = configuration.globalTestMode;
-      tscParams.testMode = configuration.testMode;
-      tscParams.inc = false;
-      tscParams.twitterEvents = configEvents;
-      tscParams.tweetStatus = {};
+//       tscParams.globalTestMode = configuration.globalTestMode;
+//       tscParams.testMode = configuration.testMode;
+//       tscParams.inc = false;
+//       tscParams.twitterEvents = configEvents;
+//       tscParams.tweetStatus = {};
 
-      if (user.statusId && user.statusId !== undefined && userProp === "statusId"){
+//       if (user.statusId && user.statusId !== undefined && userProp === "statusId"){
 
-        let status = deepcopy(user.status);  // avoid circular references
+//         let status = deepcopy(user.status);  // avoid circular references
 
-        user.statusId = user.statusId.toString();
+//         user.statusId = user.statusId.toString();
 
-        tscParams.tweetStatus = status;
-        tscParams.tweetStatus.user = {};
-        tscParams.tweetStatus.user = user;
-        tscParams.tweetStatus.user.isNotRaw = true;
-      }
+//         tscParams.tweetStatus = status;
+//         tscParams.tweetStatus.user = {};
+//         tscParams.tweetStatus.user = user;
+//         tscParams.tweetStatus.user.isNotRaw = true;
+//       }
 
-      if (user.quotedStatusId && user.quotedStatusId !== undefined && userProp === "quotedStatusId"){
+//       if (user.quotedStatusId && user.quotedStatusId !== undefined && userProp === "quotedStatusId"){
 
-        let quotedStatus = deepcopy(user.quotedStatus);  // avoid circular references
+//         let quotedStatus = deepcopy(user.quotedStatus);  // avoid circular references
 
-        user.quotedStatusId = user.quotedStatusId.toString();
+//         user.quotedStatusId = user.quotedStatusId.toString();
 
-        tscParams.tweetStatus = quotedStatus;
-        tscParams.tweetStatus.user = {};
-        tscParams.tweetStatus.user = user;
-        tscParams.tweetStatus.user.isNotRaw = true;
-      }
+//         tscParams.tweetStatus = quotedStatus;
+//         tscParams.tweetStatus.user = {};
+//         tscParams.tweetStatus.user = user;
+//         tscParams.tweetStatus.user.isNotRaw = true;
+//       }
 
-      tweetServerController.createStreamTweet(tscParams)
-      .then(function(tweetObj){
+//       tweetServerController.createStreamTweet(tscParams)
+//       .then(function(tweetObj){
 
-        processTweetObj({tweetObj: tweetObj, histograms: tweetHistograms})
-        .then(function(twHist){
-          tweetHistograms = twHist;
-          cb();
-        })
-        .catch(function(err){
-          console.log(chalkError("TFE | *** PROCESS TWEET OBJ ERROR: " + err));
-          return cb(err);
-        });
-      })
-      .catch(function(err){
-        console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
-        // quit();
-        return cb(err);
-      });
+//         processTweetObj({tweetObj: tweetObj, histograms: tweetHistograms})
+//         .then(function(twHist){
+//           tweetHistograms = twHist;
+//           cb();
+//         })
+//         .catch(function(err){
+//           console.log(chalkError("TFE | *** PROCESS TWEET OBJ ERROR: " + err));
+//           return cb(err);
+//         });
+//       })
+//       .catch(function(err){
+//         console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
+//         // quit();
+//         return cb(err);
+//       });
 
-    }, function(err){
+//     }, function(err){
 
-      if (err) {
-        console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
-        // console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR : tscParams\n" + jsonPrint(tscParams)));
-        // quit();
-        return reject(err);
-      }
+//       if (err) {
+//         console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
+//         // console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR : tscParams\n" + jsonPrint(tscParams)));
+//         // quit();
+//         return reject(err);
+//       }
 
-      resolve(tweetHistograms);
+//       resolve(tweetHistograms);
  
-    });
+//     });
 
-  });
-}
+//   });
+// }
 
 function userProfileChangeHistogram(params) {
 
@@ -6841,7 +6842,7 @@ function userProfileChangeHistogram(params) {
 
 function updateUserHistograms(params) {
 
-  return new Promise(function(resolve, reject){
+  return new Promise(async function(resolve, reject){
     
     if ((params.user === undefined) || !params.user) {
       console.log(chalkError("TFE | *** updateUserHistograms USER UNDEFINED"));
@@ -6855,93 +6856,28 @@ function updateUserHistograms(params) {
     user.profileHistograms = user.profileHistograms || {};
     user.tweetHistograms = user.tweetHistograms || {};
 
-    userStatusChangeHistogram({user: user})
+    try {
 
-      .then(function(tweetHistogramChanges){
+      let profileHistogramChanges = await userProfileChangeHistogram({user:user});
 
-        userProfileChangeHistogram({user:user})
-        .then(function(profileHistogramChanges){
+      if (profileHistogramChanges) {
+        user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: profileHistogramChanges });
+      }
 
-          // console.log(chalkAlert("user.profileHistograms\n" + jsonPrint(user.profileHistograms)));
-          // console.log(chalkAlert("profileHistogramChanges\n" + jsonPrint(profileHistogramChanges)));
+      user.lastHistogramTweetId = user.statusId;
+      user.lastHistogramQuoteId = user.quotedStatusId;
 
-          async.parallel({
+      let updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: false, noInc: true});
 
-            profileHist: function(cb){
+      await updateGlobalHistograms(params);
+      resolve(updatedUser);
 
-              if (profileHistogramChanges) {
+    }
+    catch(err){
+      console.log(chalkError("TFE | *** updateUserHistograms ERROR: " + err));
+      return reject(err);
+    }
 
-                mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: profileHistogramChanges })
-                .then(function(profileHist){
-                  cb(null, profileHist);
-                })
-                .catch(function(err){
-                  console.log(chalkError("TFE | *** MERGE HISTOGRAMS ERROR | PROFILE: " + err));
-                  return cb(err, null);
-                });
-
-              }
-              else {
-                cb(null, user.profileHistograms);
-              }
-
-            },
-
-            tweetHist: function(cb){
-
-              if (tweetHistogramChanges) {
-
-                mergeHistograms.merge({ histogramA: user.tweetHistograms, histogramB: tweetHistogramChanges })
-                .then(function(tweetHist){
-                  cb(null, tweetHist);
-                })
-                .catch(function(err){
-                  console.log(chalkError("TFE | *** MERGE HISTOGRAMS ERROR | TWEET: " + err));
-                  return cb(err, null);
-                });
-
-              }
-              else {
-                cb(null, user.tweetHistograms);
-              }
-            }
-
-          }, async function(err, results){
-            if (err) {
-              return reject(err);
-            }
-
-            user.profileHistograms = results.profileHist;
-            user.tweetHistograms = results.tweetHist;
-
-            user.lastHistogramTweetId = user.statusId;
-            user.lastHistogramQuoteId = user.quotedStatusId;
-
-            try {
-              let updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: false, noInc: true});
-
-              await updateGlobalHistograms(params);
-              resolve(updatedUser);
-            }
-            catch(err){
-              console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM FINDONEUSER ERROR: " + err));
-              return reject(err);
-            }
-
-          });
-
-        });
-
-      })
-      .catch(function(err){
-        debug(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR: " + err + "\nuser\n" + jsonPrint(user)));
-        console.log(chalkError("TFE | *** UPDATE USER HISTOGRAM ERROR"
-          + " | NID: " + user.nodeId
-          + " | @" + user.screenName
-          + " | " + err
-        ));
-        return reject(err);
-      });
   });
 }
 
@@ -6969,7 +6905,6 @@ function generateAutoCategory(user, callback) {
     })
     .catch(function(err){
       console.log(chalkError("TFE | *** USER CATEGORIZE ERROR: " + err));
-      // console.error(err);
       callback(err, user);
     });
 }
@@ -7030,13 +6965,13 @@ function updateUserTweets(params){
           statsObj.twitter.tweetsProcessed += 1;
 
           console.log(chalkTwitter("TFE | +++ PROCESSED TWEET"
-            + " [" + statsObj.twitter.tweetsProcessed + "]"
+            + " [" + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "]"
             + " | @" + user.screenName
             + " | USR TW SINCE ID: " + user.tweets.sinceId
             + " | USR TW IDs: " + user.tweets.tweetIds.length
             + " | TW: " + tweet.id_str
           ));
-          
+
           return;
         }
         catch(err){
@@ -7045,12 +6980,18 @@ function updateUserTweets(params){
         }
       }
       else {
+
+        statsObj.twitter.tweetsHits += 1;
+
+        if (configuration.verbose) {
           console.log(chalkInfo("TFE | ... TWEET ALREADY PROCESSED"
-            + " [" + statsObj.twitter.tweetsProcessed + "]"
+            + " [" + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "]"
             + " | @" + user.screenName
             + " | USR TW IDs: " + user.tweets.tweetIds.length
             + " | TW: " + tweet.id_str
           ));
+        }
+
         return;
       }
 
@@ -7240,6 +7181,7 @@ function processUser(params) {
           }
           cb(null, uObj);
         });
+
       }
     ], function (err, user) {
 

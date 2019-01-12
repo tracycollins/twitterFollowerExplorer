@@ -1582,7 +1582,7 @@ function fetchUserTweets(params){
 
     if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
       console.log(chalkAlert("TFC | fetchUserTweets | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
-      return resolve(null);
+      return resolve([]);
     }
 
     let fetchUserTweetsParams = {};
@@ -1638,11 +1638,13 @@ function fetchUserTweets(params){
 
       }
 
-      console.log(chalkInfo("TFC | +++ FETCHED USER TWEETS" 
-        + " [" + userTweetsArray.length + "]"
-        + " | @" + configuration.threeceeUser 
-        + " | UID " + params.userId
-      ));
+      if (configuration.verbose) {
+        console.log(chalkInfo("TFC | +++ FETCHED USER TWEETS" 
+          + " [" + userTweetsArray.length + "]"
+          + " | @" + configuration.threeceeUser 
+          + " | UID " + params.userId
+        ));
+      }
 
 
       resolve(userTweetsArray);
@@ -2241,6 +2243,14 @@ function fetchFriends(params) {
             ));
 
             friend.latestTweets = await fetchUserTweets({userId:friend.id_str});
+
+            if (configuration.verbose && (friend.latestTweets.length > 0)) {
+              console.log(chalkInfo("TFC | +++ FETCHED USER TWEETS" 
+                + " [" + friend.latestTweets.length + "]"
+                + " | @" + configuration.threeceeUser 
+                + " | UID " + friend.id_str
+              ));
+            }
 
             process.send(
               {
