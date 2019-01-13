@@ -6765,6 +6765,8 @@ function updateUserTweets(params){
     tscParams.twitterEvents = configEvents;
     tscParams.tweetStatus = {};
 
+    let tweetsProcessed = 0;
+
     async.eachSeries(params.tweets, async function(tweet){
 
       tscParams.tweetStatus = tweet;
@@ -6789,6 +6791,7 @@ function updateUserTweets(params){
           user.tweetHistograms = await processTweetObj({tweetObj: tweetObj, histograms: user.tweetHistograms});
           user.tweets.tweetIds.push(tweet.id_str); 
 
+          tweetsProcessed += 1;
           statsObj.twitter.tweetsProcessed += 1;
           statsObj.twitter.tweetsTotal += 1;
 
@@ -6832,12 +6835,15 @@ function updateUserTweets(params){
         return reject(err);
       }
 
-      console.log(chalkLog("TFE | +++ TWEETS"
-        + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + " ]"
-        + " | SINCE: " + user.tweets.sinceId
-        + " | Ts: " + user.tweets.tweetIds.length
-        + " | @" + user.screenName
-      ));
+      if (configuration.verbose || (tweetsProcessed > 0)) {
+        console.log(chalkLog("TFE | +++ TWEETS"
+          + " | NEW: " + tweetsProcessed
+          + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + " ]"
+          + " | SINCE: " + user.tweets.sinceId
+          + " | Ts: " + user.tweets.tweetIds.length
+          + " | @" + user.screenName
+        ));
+      }
 
       resolve(user);
     });
