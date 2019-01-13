@@ -6226,49 +6226,49 @@ function checkUserProfileChanged(params) {
   });
 }
 
-function checkUserStatusChanged(params) {
+// function checkUserStatusChanged(params) {
 
-  return new Promise(async function(resolve, reject){
+//   return new Promise(async function(resolve, reject){
 
-    let user = params.user;
+//     let user = params.user;
 
-    let allHistogramsZero = false;
+//     let allHistogramsZero = false;
 
-    try{
-      allHistogramsZero = await allHistogramsZeroKeys(user.tweetHistograms);
-    }
-    catch(err){
-      console.log(chalkError("WAS | TFC | *** ALL HISTOGRAMS ZERO ERROR: " + err));
-      return reject(err);
-    }
+//     try{
+//       allHistogramsZero = await allHistogramsZeroKeys(user.tweetHistograms);
+//     }
+//     catch(err){
+//       console.log(chalkError("WAS | TFC | *** ALL HISTOGRAMS ZERO ERROR: " + err));
+//       return reject(err);
+//     }
 
-    if (!user.tweetHistograms 
-      || (user.tweetHistograms === undefined) 
-      || (user.tweetHistograms === {})
-      || (Object.keys(user.tweetHistograms).length === 0)
-      || allHistogramsZero
-    ){
+//     if (!user.tweetHistograms 
+//       || (user.tweetHistograms === undefined) 
+//       || (user.tweetHistograms === {})
+//       || (Object.keys(user.tweetHistograms).length === 0)
+//       || allHistogramsZero
+//     ){
 
-      console.log(chalkLog(
-        "WAS | TFC | USER TWEET HISTOGRAMS UNDEFINED" 
-        + " | RST PREV PROP VALUES" 
-        + " | @" + user.screenName 
-      ));
+//       console.log(chalkLog(
+//         "WAS | TFC | USER TWEET HISTOGRAMS UNDEFINED" 
+//         + " | RST PREV PROP VALUES" 
+//         + " | @" + user.screenName 
+//       ));
 
-      user.previousStatusId = null;
-      user.previousQuotedStatusId = null;
-    }
+//       user.previousStatusId = null;
+//       user.previousQuotedStatusId = null;
+//     }
 
-    let results = [];
+//     let results = [];
 
-    if (checkPropertyChange(user, "statusId")) { results.push("statusId"); }
-    if (checkPropertyChange(user, "quotedStatusId")) { results.push("quotedStatusId"); }
+//     if (checkPropertyChange(user, "statusId")) { results.push("statusId"); }
+//     if (checkPropertyChange(user, "quotedStatusId")) { results.push("quotedStatusId"); }
 
-    if (results.length === 0) { return resolve(); }
-    resolve(results);    
+//     if (results.length === 0) { return resolve(); }
+//     resolve(results);    
 
-  });
-}
+//   });
+// }
 
 function processTweetObj(params){
 
