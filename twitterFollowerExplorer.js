@@ -6843,11 +6843,11 @@ function updateUserTweets(params){
         return reject(err);
       }
 
-      console.log(chalkTwitter("TFE | +++ PROCESSED TWEETS"
-        + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
+      console.log(chalkTwitter("TFE | +++ TWEETS"
+        + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + " ]"
+        + " | SINCE: " + user.tweets.sinceId
+        + " | Ts: " + user.tweets.tweetIds.length
         + " | @" + user.screenName
-        + " | USR TW SINCE ID: " + user.tweets.sinceId
-        + " | USR TW IDs: " + user.tweets.tweetIds.length
       ));
 
       resolve(user);
