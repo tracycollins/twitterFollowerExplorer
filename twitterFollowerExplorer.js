@@ -3611,11 +3611,6 @@ function loadConfigFile(params) {
         newConfiguration.loadNeuralNetworkID = loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID;
       }
 
-      if (loadedConfigObj.TFE_USER_DB_CRAWL !== undefined) {
-        console.log("TFE | LOADED TFE_USER_DB_CRAWL: " + loadedConfigObj.TFE_USER_DB_CRAWL);
-        newConfiguration.userDbCrawl = loadedConfigObj.TFE_USER_DB_CRAWL;
-      }
-
       if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER !== undefined) {
         console.log("TFE | LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER: "
           + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER));
