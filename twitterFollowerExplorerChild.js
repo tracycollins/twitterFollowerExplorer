@@ -265,7 +265,7 @@ async function showStats(options) {
   }
   else if (fsm.getMachineState() === "PAUSE_RATE_LIMIT"){
 
-    checkRateLimit()
+    checkRateLimit({})
     .then(function(){
 
       debug(chalkLog(MODULE_ID_PREFIX
@@ -284,6 +284,7 @@ async function showStats(options) {
               + " | @" + configuration.threeceeUser
               + " | FLAG | " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag
               + " | RESOURCE | " + resource
+              + " | END POINT | " + endPoint
               + " | FSM: " + fsm.getMachineState()
               + " | START: " + statsObj.startTime
               + " | ELAPSED: " + statsObj.elapsed
@@ -1919,7 +1920,7 @@ function checkEndPointRateLimit(params){
 
         statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag = false;
 
-        console.log(chalkAlert("TFC | XXX RESET TWITTER RATE LIMIT"
+        console.log(chalkInfo("TFC | XXX RESET TWITTER RATE LIMIT"
           + " | @" + configuration.threeceeUser
           + " | RESOURCE: " + resource
           + " | END POINT: " + endPoint

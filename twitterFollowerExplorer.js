@@ -58,7 +58,6 @@ const TEST_DROPBOX_NN_LOAD = 11;
 
 const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
-const TEST_MODE_FETCH_USER_TIMEOUT = 30*ONE_SECOND;
 
 const TEST_MODE_NUM_NN = 5;
 const TEST_FETCH_COUNT = 47;
@@ -82,7 +81,7 @@ const PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const LANG_ANAL_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL;
 const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
-const FETCH_USER_INTERVAL = 2 * ONE_MINUTE;
+const FETCH_USER_INTERVAL = 5 * ONE_MINUTE;
 const DEFAULT_NUM_NN = 20;  // TOP 100 NN's are loaded from DB
 
 const LANGUAGE_ANALYZE_INTERVAL = 100;
@@ -3548,13 +3547,8 @@ function loadConfigFile(params) {
       }
 
       if (loadedConfigObj.TFE_FETCH_USER_INTERVAL !== undefined) {
-        console.log("TFE | LOADED TFE_FETCH_USER_TIMEOUT: " + loadedConfigObj.TFE_FETCH_USER_INTERVAL);
+        console.log("TFE | LOADED TFE_FETCH_USER_INTERVAL: " + loadedConfigObj.TFE_FETCH_USER_INTERVAL);
         newConfiguration.fetchUserInterval = loadedConfigObj.TFE_FETCH_USER_INTERVAL;
-      }
-
-      if (loadedConfigObj.TFE_FETCH_USER_TIMEOUT !== undefined) {
-        console.log("TFE | LOADED TFE_FETCH_USER_TIMEOUT: " + loadedConfigObj.TFE_FETCH_USER_TIMEOUT);
-        newConfiguration.fetchUserTimeout = loadedConfigObj.TFE_FETCH_USER_TIMEOUT;
       }
 
       if (loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined) {
@@ -6843,7 +6837,7 @@ function updateUserTweets(params){
         return reject(err);
       }
 
-      console.log(chalkTwitter("TFE | +++ TWEETS"
+      console.log(chalkLog("TFE | +++ TWEETS"
         + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + " ]"
         + " | SINCE: " + user.tweets.sinceId
         + " | Ts: " + user.tweets.tweetIds.length
