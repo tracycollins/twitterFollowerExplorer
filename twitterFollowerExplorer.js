@@ -40,16 +40,6 @@ let neuralNetworkInitialized = false;
 const RNT_CHILD_ID = CHILD_PREFIX + "_child_rnt";
 const LAC_CHILD_ID = CHILD_PREFIX + "_child_lac";
 
-const TEST_MODE = false; // applies only to parent
-const CHILD_TEST_MODE = false; // applies only to children
-const GLOBAL_TEST_MODE = false;  // applies to parent and all children
-const QUIT_ON_COMPLETE = false;
-let quitOnCompleteFlag = false;
-
-const FETCH_COUNT = 200;
-const TEST_FETCH_COUNT = 47;
-const TEST_TOTAL_FETCH = 247;
-
 const ONE_SECOND = 1000 ;
 const ONE_MINUTE = ONE_SECOND*60 ;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
@@ -62,6 +52,26 @@ const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
 
 const OFFLINE_MODE = false;
+
+const TEST_MODE = false; // applies only to parent
+const TEST_DROPBOX_INPUTS_LOAD = 23;
+const TEST_DROPBOX_NN_LOAD = 11;
+
+const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
+const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
+const TEST_MODE_FETCH_USER_TIMEOUT = 30*ONE_SECOND;
+
+const TEST_MODE_NUM_NN = 5;
+const TEST_FETCH_COUNT = 47;
+const TEST_TOTAL_FETCH = 547;
+
+const CHILD_TEST_MODE = false; // applies only to children
+const GLOBAL_TEST_MODE = false;  // applies to parent and all children
+const QUIT_ON_COMPLETE = false;
+let quitOnCompleteFlag = false;
+
+const FETCH_COUNT = 200;
+
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const KEEPALIVE_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
@@ -74,7 +84,7 @@ const LANG_ANAL_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL;
 const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const FETCH_USER_INTERVAL = 2 * ONE_MINUTE;
-const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
+const DEFAULT_NUM_NN = 20;  // TOP 100 NN's are loaded from DB
 
 const LANGUAGE_ANALYZE_INTERVAL = 100;
 const RANDOM_NETWORK_TREE_INTERVAL = DEFAULT_MIN_INTERVAL;
@@ -86,10 +96,6 @@ let waitFileSaveInterval;
 const DEFAULT_ENABLE_IMAGE_ANALYSIS = false;
 const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
 
-const TEST_MODE_FETCH_USER_TIMEOUT = 30*ONE_SECOND;
-const DEFAULT_NUM_NN = 20;  // TOP 100 NN's are loaded from DB
-const TEST_MODE_NUM_NN = 5;
-const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
 
 const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 70;
 const DEFAULT_LOCAL_MIN_SUCCESS_RATE = 30;
@@ -344,6 +350,7 @@ statsObj.twitter = {};
 statsObj.twitter.errors = 0;
 statsObj.twitter.tweetsProcessed = 0;
 statsObj.twitter.tweetsHits = 0;
+statsObj.twitter.tweetsTotal = 0;
 
 statsObj.user = {};
 statsObj.userReadyAck = false;
@@ -6963,14 +6970,15 @@ function updateUserTweets(params){
           user.tweets.tweetIds.push(tweet.id_str); 
 
           statsObj.twitter.tweetsProcessed += 1;
+          statsObj.twitter.tweetsTotal += 1;
 
           if (configuration.verbose) {
             console.log(chalkTwitter("TFE | +++ PROCESSED TWEET"
-              + " [" + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "]"
-              + " | @" + user.screenName
-              + " | USR TW SINCE ID: " + user.tweets.sinceId
-              + " | USR TW IDs: " + user.tweets.tweetIds.length
+              + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
               + " | TW: " + tweet.id_str
+              + " | SINCE: " + user.tweets.sinceId
+              + " | TWs: " + user.tweets.tweetIds.length
+              + " | @" + user.screenName
             ));
           }
 
@@ -6984,13 +6992,14 @@ function updateUserTweets(params){
       else {
 
         statsObj.twitter.tweetsHits += 1;
+        statsObj.twitter.tweetsTotal += 1;
 
         if (configuration.verbose) {
           console.log(chalkInfo("TFE | ... TWEET ALREADY PROCESSED"
-            + " [" + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "]"
-            + " | @" + user.screenName
-            + " | USR TW IDs: " + user.tweets.tweetIds.length
+            + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
             + " | TW: " + tweet.id_str
+            + " | TWs: " + user.tweets.tweetIds.length
+            + " | @" + user.screenName
           ));
         }
 
@@ -7004,7 +7013,7 @@ function updateUserTweets(params){
       }
 
       console.log(chalkTwitter("TFE | +++ PROCESSED TWEETS"
-        + " [" + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "]"
+        + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
         + " | @" + user.screenName
         + " | USR TW SINCE ID: " + user.tweets.sinceId
         + " | USR TW IDs: " + user.tweets.tweetIds.length
@@ -8591,12 +8600,11 @@ function childCreate(params){
             console.log(chalkTwitter("TFE | CHILD " + m.op + " | " + m.threeceeUser));
             childHashMap[childId].status = m.op;
           break;
-     
 
           case "PAUSE_RATE_LIMIT":
-            console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT | " + m.threeceeUser + " | REMAIN: " + msToTime(m.remaining)));
+            console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT | " + m.threeceeUser + " | REMAIN: " + msToTime(m.remainingTime)));
             childHashMap[childId].status = "PAUSE_RATE_LIMIT";
-            childHashMap[childId].twitterRateLimitRemaining = m.remaining;
+            childHashMap[childId].twitterRateLimitRemaining = m.remainingTime;
             childHashMap[childId].twitterRateLimitResetAt = m.resetAt;
             // await childCheckState({checkState: "PAUSE_RATE_LIMIT", noChildrenTrue: false});
           break;
