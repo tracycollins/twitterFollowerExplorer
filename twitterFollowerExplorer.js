@@ -23,7 +23,6 @@ else {
   DROPBOX_ROOT_FOLDER = "/Users/tc/Dropbox/Apps/wordAssociation";
 }
 
-
 const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 const CHILD_PREFIX = "tfe_node";
@@ -95,8 +94,6 @@ let waitFileSaveInterval;
 
 const DEFAULT_ENABLE_IMAGE_ANALYSIS = false;
 const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
-
-
 const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 70;
 const DEFAULT_LOCAL_MIN_SUCCESS_RATE = 30;
 const DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE = 50;
@@ -145,11 +142,9 @@ let unfollowableUserFile = "unfollowableUser.json";
 let unfollowableUserSet = new Set();
 let ignoredUserSet = new Set();
 
-
 const DROPBOX_MAX_SAVE_NORMAL = 20 * ONE_MEGABYTE;
 const DROPBOX_LIST_FOLDER_LIMIT = 50;
 const DROPBOX_TIMEOUT = 30 * ONE_SECOND;
-
 
 let configuration = {};
 configuration.geoCodeEnabled = false;
@@ -203,10 +198,8 @@ const btoa = require("btoa");
 const https = require("follow-redirects").https;
 const MergeHistograms = require("@threeceelabs/mergehistograms");
 const mergeHistograms = new MergeHistograms();
-
 const writeJsonFile = require("write-json-file");
 const sizeof = require("object-sizeof");
-
 const fs = require("fs");
 const JSONParse = require("safe-json-parse");
 const debug = require("debug")("TFE");
@@ -242,9 +235,7 @@ const chalkInfo = chalk.black;
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
 let twitterUserHashMap = {};
-
 let bestNetworkHashMap = new HashMap();
-
 let geoCodeHashMap = {};
 let maxInputHashMap = {};
 
@@ -435,9 +426,7 @@ function slackSendRtmMessage(msg){
   return new Promise(async function(resolve, reject){
 
     try {
-
       console.log(chalkBlueBold("TNN | SLACK RTM | SEND: " + msg));
-
       const sendResponse = await slackRtmClient.sendMessage(msg, slackConversationId);
 
       console.log(chalkLog("TNN | SLACK RTM | >T\n" + jsonPrint(sendResponse)));
@@ -707,7 +696,6 @@ if (process.env.TFE_QUIT_ON_COMPLETE !== undefined) {
 configuration.globalMinSuccessRate = (process.env.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) 
   ? process.env.TFE_GLOBAL_MIN_SUCCESS_RATE 
   : DEFAULT_GLOBAL_MIN_SUCCESS_RATE;
-
 configuration.localMinSuccessRate = (process.env.TFE_LOCAL_MIN_SUCCESS_RATE !== undefined) 
   ? process.env.TFE_LOCAL_MIN_SUCCESS_RATE 
   : DEFAULT_LOCAL_MIN_SUCCESS_RATE;
@@ -716,7 +704,6 @@ configuration.localMinSuccessRate = (process.env.TFE_LOCAL_MIN_SUCCESS_RATE !== 
 configuration.localPurgeMinSuccessRate = (process.env.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE !== undefined) 
   ? process.env.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE 
   : DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE;
-
 
 configuration.DROPBOX = {};
 configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
@@ -902,7 +889,6 @@ function loadInputsDropbox(params) {
     }
   });
 }
-
 
 function dropboxLoadInputsFolder(params){
 
@@ -2399,7 +2385,6 @@ function initCategorizedUserHashmap(params){
   });
 }
 
-
 function allComplete(){
 
   getChildProcesses(function(err, childArray){
@@ -2545,8 +2530,6 @@ process.on("unhandledRejection", function(err, promise) {
   process.exit(1);
 });
 
-
-
 //=========================================================================
 // CONFIGURATION
 //=========================================================================
@@ -2649,7 +2632,6 @@ global.User;
 global.Word;
 
 let dbConnectionReady = false;
-// let dbConnectionReadyInterval;
 
 let UserServerController;
 let userServerController;
@@ -3016,7 +2998,6 @@ let  defaultInputsConfigFile = "default_networkInputsConfig.json";
 let  hostInputsConfigFile =  hostname + "_networkInputsConfig.json";
 
 let testDataUserFolder = dropboxConfigHostFolder + "/test/testData/user";
-
 
 let dropboxRemoteClient = new Dropbox({ 
   accessToken: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN,
@@ -3952,7 +3933,6 @@ function initSaveFileQueue(cnf) {
   }, cnf.saveFileQueueInterval);
 }
 
-
 //=========================================================================
 // INTERVALS
 //=========================================================================
@@ -4087,7 +4067,6 @@ async function quit(opts) {
     }
 
   }, QUIT_WAIT_INTERVAL);
-
 };
 
 //=========================================================================
@@ -4143,7 +4122,6 @@ const optionDefinitions = [
 const commandLineConfig = cla(optionDefinitions);
 
 console.log(chalkInfo(MODULE_ID_PREFIX + " | COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)));
-
 
 if (commandLineConfig.targetServer === "LOCAL"){
   commandLineConfig.targetServer = "http://127.0.0.1:9997/util";
@@ -4262,8 +4240,6 @@ function initStdIn() {
   });
 }
 
-
-
 //=========================================================================
 // FSM
 //=========================================================================
@@ -4275,8 +4251,6 @@ let fsmPreviousState = "RESET";
 let sentAllChildrenCompleteFlag = false;
 let createChildrenInProgress = false;
 let killAllInProgress = false;
-
-
 
 //=========================================================================
 // TWITTER
@@ -4339,10 +4313,9 @@ function dropboxFileMove(params){
     .catch(function(err){
       if (err.status === 409) {
         if (params.noErrorNotFound){
-          console.log(chalkAlert(MODULE_ID_PREFIX + " | ... DROPBOX FILE MOVE"
+          console.log(chalkInfo(MODULE_ID_PREFIX + " | ... DROPBOX FILE MOVE"
             + " | STATUS: " + err.status
             + " | " + srcPath
-            // + " > " + dstPath
             + " | DOES NOT EXIST"
           ));
           return resolve();
@@ -4379,36 +4352,32 @@ function dropboxFileMove(params){
 
 function isBestNetwork(params){
 
-  // return new Promise(async function(resolve, reject){
+  params = params || {};
 
-    params = params || {};
+  let pass = false;
 
-    let pass = false;
+  let minOverallMatchRate = params.minOverallMatchRate || configuration.globalMinSuccessRate;
+  let minTestCycles = params.minTestCycles || configuration.minTestCycles;
 
-    let minOverallMatchRate = params.minOverallMatchRate || configuration.globalMinSuccessRate;
-    let minTestCycles = params.minTestCycles || configuration.minTestCycles;
-
-    if (params.networkObj.testCycles < minTestCycles){
-      debug("minTestCycles: " + params.networkObj.testCycles);
-      return true;
-    }
-    else if (minTestCycles) {
-      pass = (params.networkObj.testCycles >= minTestCycles) && (params.networkObj.overallMatchRate >= minOverallMatchRate);
-      debug("minTestCycles: " + params.networkObj.testCycles + " | pass: " + pass);
-      return pass;
-    }
-    else if (params.networkObj.overallMatchRate) {
-      pass = (params.networkObj.overallMatchRate < 100) && (params.networkObj.overallMatchRate >= minOverallMatchRate);
-      debug("overallMatchRate: " + params.networkObj.overallMatchRate + " | pass: " + pass);
-      return pass;
-    }
-    else {
-      pass = (params.networkObj.successRate < 100) && (params.networkObj.successRate >= minOverallMatchRate);
-      debug("successRate: " + params.networkObj.successRate + " | pass: " + pass);
-      return pass;
-    }
-
-  // });
+  if (params.networkObj.testCycles < minTestCycles){
+    debug("minTestCycles: " + params.networkObj.testCycles);
+    return true;
+  }
+  else if (minTestCycles) {
+    pass = (params.networkObj.testCycles >= minTestCycles) && (params.networkObj.overallMatchRate >= minOverallMatchRate);
+    debug("minTestCycles: " + params.networkObj.testCycles + " | pass: " + pass);
+    return pass;
+  }
+  else if (params.networkObj.overallMatchRate) {
+    pass = (params.networkObj.overallMatchRate < 100) && (params.networkObj.overallMatchRate >= minOverallMatchRate);
+    debug("overallMatchRate: " + params.networkObj.overallMatchRate + " | pass: " + pass);
+    return pass;
+  }
+  else {
+    pass = (params.networkObj.successRate < 100) && (params.networkObj.successRate >= minOverallMatchRate);
+    debug("successRate: " + params.networkObj.successRate + " | pass: " + pass);
+    return pass;
+  }
 }
 
 function loadBestNetworksDropbox(params) {
@@ -4514,29 +4483,6 @@ function loadBestNetworksDropbox(params) {
                 return;
               });
             }
-
-            // dropboxClient.filesMoveV2({ from_path: entry.path_display, to_path: archivePath, autorename: false })
-            // .then(function(){
-            //   return;
-            // })
-            // .catch(function(err){
-            //   // console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(err)));
-            //   JSONParse(err, function(err, errObj){
-            //     if (err) {
-            //       console.log(chalkError(getTimeStamp()
-            //         + " | *** MOVE FILE FROM DROPBOX ERROR PARSE"
-            //         + " | " + err
-            //       ));
-            //     }
-            //     else {
-            //       console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(errObj)));
-            //     }
-
-            //     return;
-
-            //   })
-            // });
-
           }
         }
         else if (isBestNetwork({networkObj: networkObj}) && !bestNetworkHashMap.has(networkId)){
@@ -4661,8 +4607,6 @@ function loadBestNetworksDatabase(paramsIn) {
     }
 
     if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
-
-
 
     let nnArrayTopOverallMatchRate = [];
     let nnArrayRandomUntested = [];
@@ -5906,14 +5850,11 @@ function initRandomNetworkTreeChild() {
       });
 
       randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL, verbose: configuration.verbose }, function(err) {
-
         if (err) {
           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
           return reject(err);
         }
-
         console.log(chalkLog("TFE | RNT CHILD INITIALIZED"));
-
         resolve();
       });
     }
@@ -5924,9 +5865,7 @@ function initRandomNetworkTreeChild() {
           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
           return reject(err);
         }
-        
         console.log(chalkLog("TFE | RNT CHILD INITIALIZED"));
-
         resolve();
       });
     }
@@ -6201,7 +6140,6 @@ function mergeHistogramsArray(params) {
   });
 }
 
-
 function checkUserIgnored(params){
 
   return new Promise(function(resolve, reject){
@@ -6433,113 +6371,6 @@ function processTweetObj(params){
 
   });
 }
-
-// function userStatusChangeHistogram(params) {
-
-//   return new Promise(async function(resolve, reject){
-
-//     let userStatusChanges = false;
-
-//     try {
-//       userStatusChanges = await checkUserStatusChanged(params);
-//     }
-//     catch(err){
-//       return reject(err);
-//     }
-
-//     if (!userStatusChanges) {
-//       return resolve();
-//     }
-
-//     let user = params.user;
-  
-//     let tweetHistograms = {};
-//     let text = "";
-
-//     let tscParams = {};
-
-//     async.eachSeries(userStatusChanges, function(userProp, cb){
-
-//       // user = user.toObject();
-
-//       delete user._id; // fix for UnhandledPromiseRejectionWarning: RangeError: Maximum call stack size exceeded
-
-//       const prevUserProp = "previous" + _.upperFirst(userProp);
-
-//       if (configuration.verbose) {
-//         console.log(chalkLog("TFE | +++ USER STATUS CHANGE"
-//           + " | NODE ID: " + user.nodeId 
-//           + " | @" + user.screenName 
-//           + " | " + userProp 
-//           + " | " + user[userProp] + " <-- " + user[prevUserProp]
-//           // + "\n" + jsonPrint(user) 
-//         ));
-//       }
-
-//       tscParams.globalTestMode = configuration.globalTestMode;
-//       tscParams.testMode = configuration.testMode;
-//       tscParams.inc = false;
-//       tscParams.twitterEvents = configEvents;
-//       tscParams.tweetStatus = {};
-
-//       if (user.statusId && user.statusId !== undefined && userProp === "statusId"){
-
-//         let status = deepcopy(user.status);  // avoid circular references
-
-//         user.statusId = user.statusId.toString();
-
-//         tscParams.tweetStatus = status;
-//         tscParams.tweetStatus.user = {};
-//         tscParams.tweetStatus.user = user;
-//         tscParams.tweetStatus.user.isNotRaw = true;
-//       }
-
-//       if (user.quotedStatusId && user.quotedStatusId !== undefined && userProp === "quotedStatusId"){
-
-//         let quotedStatus = deepcopy(user.quotedStatus);  // avoid circular references
-
-//         user.quotedStatusId = user.quotedStatusId.toString();
-
-//         tscParams.tweetStatus = quotedStatus;
-//         tscParams.tweetStatus.user = {};
-//         tscParams.tweetStatus.user = user;
-//         tscParams.tweetStatus.user.isNotRaw = true;
-//       }
-
-//       tweetServerController.createStreamTweet(tscParams)
-//       .then(function(tweetObj){
-
-//         processTweetObj({tweetObj: tweetObj, histograms: tweetHistograms})
-//         .then(function(twHist){
-//           tweetHistograms = twHist;
-//           cb();
-//         })
-//         .catch(function(err){
-//           console.log(chalkError("TFE | *** PROCESS TWEET OBJ ERROR: " + err));
-//           return cb(err);
-//         });
-//       })
-//       .catch(function(err){
-//         console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
-//         // quit();
-//         return cb(err);
-//       });
-
-//     }, function(err){
-
-//       if (err) {
-//         console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR: " + err));
-//         // console.log(chalkError("TFE | USER STATUS HISTOGRAM ERROR : tscParams\n" + jsonPrint(tscParams)));
-//         // quit();
-//         return reject(err);
-//       }
-
-//       resolve(tweetHistograms);
- 
-//     });
-
-//   });
-// }
 
 function userProfileChangeHistogram(params) {
 
@@ -8006,7 +7837,6 @@ function fsmStart(params) {
 
   });
 }
-
 
 //=========================================================================
 // CHILD PROCESS
