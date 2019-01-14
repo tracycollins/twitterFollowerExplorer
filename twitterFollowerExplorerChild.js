@@ -1640,7 +1640,7 @@ function resetTwitterUserState(){
 
 }
 
-const DEFAULT_TWEET_FETCH_COUNT = 10;
+const DEFAULT_TWEET_FETCH_COUNT = 20;
 const DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES = true;
 const DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS = false;
 
@@ -2386,7 +2386,7 @@ function fetchFriends(params) {
 
 
             if (!statsObj.threeceeUser.twitterRateLimit.statuses.user_timeline.exceptionFlag) {
-              friend.latestTweets = await fetchUserTweets({userId:friend.id_str});
+              friend.latestTweets = await fetchUserTweets({ userId: friend.id_str });
             }
             else {
               friend.latestTweets = [];
