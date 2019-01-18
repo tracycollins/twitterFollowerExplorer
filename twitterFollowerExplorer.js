@@ -1579,6 +1579,7 @@ function printNetworkObj(title, networkObj, format) {
   networkObj = networkDefaults(networkObj);
 
   console.log(chalkFormat(title
+    + " | ARCHIVED: " + networkObj.archived
     + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
     + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
     + " | SR: " + networkObj.successRate.toFixed(2) + "%"
@@ -1862,6 +1863,7 @@ function updateDbNetwork(params) {
     };
 
     update["$set"] = { 
+      archived: networkObj.archived,
       matchRate: networkObj.matchRate, 
       overallMatchRate: networkObj.overallMatchRate,
     };
@@ -4505,14 +4507,12 @@ function loadBestNetworksDropbox(params) {
 
         try {
 
-          const updateDbNetworkParams = {
-            networkObj: networkObj,
-            incrementTestCycles: false,
-            addToTestHistory: false,
-            verbose: configuration.testMode
-          };
+          let updateDbNetworkParams = {};
 
-          const nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
+          updateDbNetworkParams.networkObj = networkObj;
+          updateDbNetworkParams.incrementTestCycles = false;
+          updateDbNetworkParams.addToTestHistory = false;
+          updateDbNetworkParams.verbose = configuration.testMode;
 
           if (skipLoadNetworkSet.has(networkObj.networkId) && !networkObj.archived) {
 
@@ -4531,11 +4531,17 @@ function loadBestNetworksDropbox(params) {
               dstFile: entry.name
             });
 
+            updateDbNetworkParams.networkObj.archived = true;
+
+            const nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
+
             return;
           }
           else {
             if (networkObj.archived) {
               console.log(chalkLog(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | " + networkObj.networkId));
+
+              const nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
             }
             return;
           }
