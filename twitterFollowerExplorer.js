@@ -8361,7 +8361,12 @@ function childCreate(params){
       statsObj.user[config.threeceeUser].friendsProcessStart = moment();
     }
 
-    options.cwd = params.cwd || "/Volumes/RAID1/projects/twitterFollowerExplorer";
+    if (hostname === "google") {
+      options.cwd = params.cwd || "/Volumes/RAID1/projects/twitterFollowerExplorer";
+    }
+    else {
+      options.cwd = params.cwd || "/home/tc/twitterFollowerExplorer";
+    }
 
     statsObj.status = "CHILD CREATE | CH ID: " + childId + " | APP: " + appPath;
 
