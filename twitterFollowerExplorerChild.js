@@ -2111,7 +2111,11 @@ function checkRateLimit(params){
 let checkRateLimitInterval;
 
 function getTwitterFriendsList(params){
+
   return new Promise(function(resolve, reject){
+
+    params.count = params.count || params.fetchCount;
+    
     twitClient.get("friends/list", params, function(err, data, response){
 
       if (err){
