@@ -9,6 +9,17 @@ const MODULE_ID_PREFIX = "TFC";
 
 const DEFAULT_INPUTS_BINARY_MODE = true;
 
+const DEFAULT_FETCH_COUNT = 200;
+const TEST_FETCH_COUNT = 27;
+const TEST_TOTAL_FETCH = 747;
+
+
+const DEFAULT_TWEET_FETCH_COUNT = 20;
+const TEST_TWEET_FETCH_COUNT = 3;
+const DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES = true;
+const DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS = false;
+
+
 const OFFLINE_MODE = false;
 const QUIT_ON_COMPLETE = false;
 let quitOnCompleteFlag = false;
@@ -19,10 +30,6 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const ONE_KILOBYTE = 1024;
 const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
-
-const FETCH_COUNT = 200;
-const TEST_FETCH_COUNT = 27;
-const TEST_TOTAL_FETCH = 747;
 
 const FETCH_USER_INTERVAL = 5 * ONE_MINUTE;
 const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
@@ -164,11 +171,14 @@ process.on("unhandledRejection", function(err, promise) {
 
 let configuration = {};
 
+configuration.threeceeUser = process.env.THREECEE_USER;
+
 configuration.checkRateLimitInterval = 10 * ONE_MINUTE;
 
 configuration.inputsBinaryMode = DEFAULT_INPUTS_BINARY_MODE;
 configuration.testMode = TEST_MODE;
-configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : FETCH_COUNT;
+configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : DEFAULT_TWEET_FETCH_COUNT;
+configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : DEFAULT_FETCH_COUNT;
 configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
 configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 configuration.fsmTickInterval = FSM_TICK_INTERVAL;
@@ -1499,7 +1509,7 @@ threeceeUserDefaults.statusesCount = 0;
 
 threeceeUserDefaults.error = false;
 
-threeceeUserDefaults.count = configuration.fetchCount;
+threeceeUserDefaults.fetchCount = configuration.fetchCount;
 threeceeUserDefaults.endFetch = false;
 threeceeUserDefaults.nextCursor = false;
 threeceeUserDefaults.nextCursorValid = false;
@@ -1640,10 +1650,6 @@ function resetTwitterUserState(){
 
 }
 
-const DEFAULT_TWEET_FETCH_COUNT = 20;
-const DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES = true;
-const DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS = false;
-
 function fetchUserTweets(params){
 
   return new Promise(async function(resolve, reject){
@@ -1666,7 +1672,7 @@ function fetchUserTweets(params){
     if (params.maxId) { fetchUserTweetsParams.max_id = params.maxId; } 
     if (params.sinceId) { fetchUserTweetsParams.since_id = params.sinceId; } 
 
-    fetchUserTweetsParams.count = params.count || DEFAULT_TWEET_FETCH_COUNT;
+    fetchUserTweetsParams.count = params.tweetFetchCount || DEFAULT_TWEET_FETCH_COUNT;
     fetchUserTweetsParams.exclude_replies = params.excludeReplies || DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES;
     fetchUserTweetsParams.include_rts = params.includeRetweets || DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS;
 
@@ -1859,7 +1865,7 @@ function twitterUsersShow(params){
       statsObj.threeceeUser.statusesCount = userShowData.statuses_count;
       statsObj.threeceeUser.friendsCount = userShowData.friends_count;
       statsObj.threeceeUser.followersCount = userShowData.followers_count;
-      statsObj.threeceeUser.count = configuration.fetchCount;
+      statsObj.threeceeUser.fetchCount = configuration.fetchCount;
 
       process.send({op:"THREECEE_USER", childId: configuration.childId, threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
 
@@ -2311,7 +2317,7 @@ function fetchFriends(params) {
         statsObj.threeceeUser.percentFetched = 100*(statsObj.threeceeUser.friendsFetched/statsObj.threeceeUser.friendsCount); 
 
         if (configuration.testMode 
-          && (statsObj.threeceeUser.friendsFetched >= TEST_TOTAL_FETCH)) {
+          && (statsObj.threeceeUser.friendsFetched >= configuration.totalFetchCount)) {
 
           statsObj.threeceeUser.nextCursorValid = false;
           statsObj.threeceeUser.endFetch = true;
@@ -2489,8 +2495,7 @@ function reporter(event, oldState, newState) {
   });
 
   console.log(chalkLog(MODULE_ID_PREFIX + " | --------------------------------------------------------\n"
-    + MODULE_ID_PREFIX + " | << FSM >> CHILD"
-    + " | " + configuration.childId
+    + MODULE_ID_PREFIX + " | << FSM >> CHILD " + configuration.childId
     + " | " + event
     + " | " + statsObj.fsmPreviousState
     + " -> " + newState
@@ -2639,7 +2644,8 @@ const fsmStates = {
 
         let params = {};
 
-        params.count = configuration.fetchCount;
+        params.fetchCount = configuration.fetchCount;
+        params.totalFetchCount = configuration.totalFetchCount;
         params.screen_name = configuration.threeceeUser;
         params.cursor = (statsObj.threeceeUser.nextCursorValid) ? statsObj.threeceeUser.nextCursor : -1;
 

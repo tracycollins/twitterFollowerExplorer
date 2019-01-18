@@ -60,8 +60,8 @@ const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
 
 const TEST_MODE_NUM_NN = 5;
-const TEST_FETCH_COUNT = 47;
-const TEST_TOTAL_FETCH = 547;
+const TEST_FETCH_COUNT = 17;
+const TEST_TOTAL_FETCH = 47;
 
 const CHILD_TEST_MODE = false; // applies only to children
 const GLOBAL_TEST_MODE = false;  // applies to parent and all children
@@ -6183,7 +6183,7 @@ function checkUserProfileChanged(params) {
       allHistogramsZero = await allHistogramsZeroKeys(user.profileHistograms);
     }
     catch(err){
-      console.log(chalkError("WAS | TFC | *** ALL HISTOGRAMS ZERO ERROR: " + err));
+      console.log(chalkError("TFE | *** ALL HISTOGRAMS ZERO ERROR: " + err));
       return reject(err);
     }
 
@@ -6195,7 +6195,7 @@ function checkUserProfileChanged(params) {
     ){
 
       console.log(chalkLog(
-        "WAS | TFC | USER PROFILE HISTOGRAMS UNDEFINED" 
+        "TFE | USER PROFILE HISTOGRAMS UNDEFINED" 
         + " | RST PREV PROP VALUES" 
         + " | @" + user.screenName 
       ));
@@ -6238,7 +6238,7 @@ function checkUserProfileChanged(params) {
 //       allHistogramsZero = await allHistogramsZeroKeys(user.tweetHistograms);
 //     }
 //     catch(err){
-//       console.log(chalkError("WAS | TFC | *** ALL HISTOGRAMS ZERO ERROR: " + err));
+//       console.log(chalkError("TFE | *** ALL HISTOGRAMS ZERO ERROR: " + err));
 //       return reject(err);
 //     }
 
@@ -6250,7 +6250,7 @@ function checkUserProfileChanged(params) {
 //     ){
 
 //       console.log(chalkLog(
-//         "WAS | TFC | USER TWEET HISTOGRAMS UNDEFINED" 
+//         "TFE | USER TWEET HISTOGRAMS UNDEFINED" 
 //         + " | RST PREV PROP VALUES" 
 //         + " | @" + user.screenName 
 //       ));
@@ -6421,7 +6421,7 @@ function userProfileChangeHistogram(params) {
 
             if (!locationDoc) {
 
-              debug(chalkInfo("WAS | TFC | --- LOC DB MISS"
+              debug(chalkInfo("TFE | --- LOC DB MISS"
                 + " | NID: " + nodeId
                 + " | N: " + name + " / " + userPropValue
               ));
@@ -6456,7 +6456,7 @@ function userProfileChangeHistogram(params) {
                 statsObj.geo.total += 1;
                 statsObj.geo.hitRate = 100*(statsObj.geo.hits/statsObj.geo.total);
 
-                debug(chalk.blue("WAS | TFC | +++ LOC GEO HIT "
+                debug(chalk.blue("TFE | +++ LOC GEO HIT "
                   + " | GEO: " + locationDoc.geoValid
                   + "  H " + statsObj.geo.hits
                   + "  M " + statsObj.geo.misses
@@ -6488,7 +6488,7 @@ function userProfileChangeHistogram(params) {
                 statsObj.geo.total += 1;
                 statsObj.geo.hitRate = 100*(statsObj.geo.hits/statsObj.geo.total);
 
-                debug(chalkLog("WAS | TFC | --- LOC GEO MISS"
+                debug(chalkLog("TFE | --- LOC GEO MISS"
                   + " | GEO: " + locationDoc.geoValid
                   + "  H " + statsObj.geo.hits
                   + "  M " + statsObj.geo.misses
@@ -6511,7 +6511,7 @@ function userProfileChangeHistogram(params) {
               locationDoc.lastSeen = lastSeen;
 
 
-              debug(chalk.green("WAS | TFC | +++ LOC DB HIT "
+              debug(chalk.green("TFE | +++ LOC DB HIT "
                 + " | GEO: " + locationDoc.geoValid
                 + "  H " + statsObj.geo.hits
                 + "  M " + statsObj.geo.misses
@@ -6587,13 +6587,13 @@ function userProfileChangeHistogram(params) {
         break;
 
         default:
-          console.log(chalkError("WAS | TFC | UNKNOWN USER PROPERTY: " + userProp));
+          console.log(chalkError("TFE | UNKNOWN USER PROPERTY: " + userProp));
           return (new Error("UNKNOWN USER PROPERTY: " + userProp));
       }
     }, function(err){
 
       if (err) {
-        console.log(chalkError("WAS | TFC | USER PROFILE HISTOGRAM ERROR: " + err));
+        console.log(chalkError("TFE | USER PROFILE HISTOGRAM ERROR: " + err));
         return reject(err);
       }
 
@@ -6614,7 +6614,7 @@ function userProfileChangeHistogram(params) {
               cb(null, imageParseResults);
             })
             .catch(function(err){
-              console.log(chalkError("WAS | TFC | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+              console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
               cb(err, null);
             });
 
@@ -6636,7 +6636,7 @@ function userProfileChangeHistogram(params) {
             })
             .catch(function(err){
               if (err) {
-                console.log(chalkError("WAS | TFC | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+                console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
               }
               cb(err, null);
             });
@@ -6649,7 +6649,7 @@ function userProfileChangeHistogram(params) {
       }, function(err, results){
 
         if (err) {
-          console.log(chalkError("WAS | TFC | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+          console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
           return reject(err);
         }
 
@@ -6658,7 +6658,7 @@ function userProfileChangeHistogram(params) {
           resolve(histogramsMerged);
         })
         .catch(function(err){
-          console.log(chalkError("WAS | TFC | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+          console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
           return reject(err);
         });
       });
@@ -8106,7 +8106,7 @@ function childCreateAll(params){
 
     let createParams = {};
 
-    createParams.args = {};
+    createParams.args = [];
     createParams.options = {};
     createParams.options.cwd = "/Volumes/RAID1/projects/twitterFollowerExplorer";
     createParams.options.env = {};
@@ -8138,6 +8138,7 @@ function childCreateAll(params){
         createParams.config.threeceeUser = threeceeUser;
         createParams.config.twitterConfig = await initTwitterConfig({threeceeUser: threeceeUser});
         createParams.options.env.CHILD_ID = childId;
+        createParams.options.env.THREECEE_USER = threeceeUser;
 
         if (configuration.verbose) {console.log("createParams\n" + jsonPrint(createParams));}
 
@@ -8422,7 +8423,7 @@ function childCreate(params){
           case "FETCH_START":
           case "FETCH":
           case "FETCH_END":
-            console.log(chalkTwitter("TFE | CHILD " + m.op + " | " + m.threeceeUser));
+            console.log(chalkTwitter("TFE | CHILD | OP: " + m.op + " | 3C @" + m.threeceeUser));
             childHashMap[childId].status = m.op;
           break;
 
