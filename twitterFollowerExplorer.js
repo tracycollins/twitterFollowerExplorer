@@ -8360,10 +8360,10 @@ function childCreate(params){
     }
 
     if (hostname === "google") {
-      options.cwd = params.cwd || "/Volumes/RAID1/projects/twitterFollowerExplorer";
+      options.cwd = params.cwd || "/home/tc/twitterFollowerExplorer";
     }
     else {
-      options.cwd = params.cwd || "/home/tc/twitterFollowerExplorer";
+      options.cwd = params.cwd || "/Volumes/RAID1/projects/twitterFollowerExplorer";
     }
 
     statsObj.status = "CHILD CREATE | CH ID: " + childId + " | APP: " + appPath;
@@ -8386,6 +8386,10 @@ function childCreate(params){
       childHashMap[childId] = {};
       childHashMap[childId].status = "NEW";
       childHashMap[childId].messageQueue = [];
+
+      console.log("CHILD FORK: appPath: " + appPath);
+      console.log("CHILD FORK: args: " + args);
+      console.log("CHILD FORK: options\n" + jsonPrint(options));
 
       child = cp.fork(appPath, args, options);
 
