@@ -4291,7 +4291,7 @@ function dropboxFileMove(params){
     const srcPath = params.srcFolder + "/" + params.srcFile;
     const dstPath = params.dstFolder + "/" + params.dstFile;
 
-    dropboxClient.filesMoveV2({from_path: srcPath, to_path: dstPath})
+    dropboxClient.filesMoveV2({from_path: srcPath, to_path: dstPath, allow_shared_folder: true})
     .then(function(response){
       console.log(chalkBlueBold(MODULE_ID_PREFIX + " | ->- DROPBOX FILE MOVE"
         + " | " + srcPath
@@ -4436,7 +4436,7 @@ function loadBestNetworksDropbox(params) {
             + " | INPUTS ID: " + networkObj.inputsId 
           ));
 
-          if (configuration.archiveNetworkOnInputsMiss) {
+          if (configuration.archiveNetworkOnInputsMiss && !networkObj.archived) {
 
             const archiveFolder = folder + "/archive";
             const archivePath = folder + "/archive/" + entry.name;
@@ -4528,6 +4528,7 @@ function loadBestNetworksDropbox(params) {
           updateDbNetworkParams.verbose = configuration.testMode;
 
           if (skipLoadNetworkSet.has(networkObj.networkId) && !networkObj.archived) {
+
 
             console.log(chalk.black.bold(
               MODULE_ID_PREFIX 
