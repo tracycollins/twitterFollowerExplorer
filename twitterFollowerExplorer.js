@@ -4504,14 +4504,17 @@ function loadBestNetworksDropbox(params) {
         }
 
         try {
+
           const updateDbNetworkParams = {
             networkObj: networkObj,
             incrementTestCycles: false,
             addToTestHistory: false,
             verbose: configuration.testMode
           };
+
           const nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
-          if (skipLoadNetworkSet.has(networkObj.networkId)) {
+
+          if (skipLoadNetworkSet.has(networkObj.networkId) && !networkObj.archived) {
 
             console.log(chalk.black.bold(
               MODULE_ID_PREFIX 
@@ -4527,9 +4530,13 @@ function loadBestNetworksDropbox(params) {
               dstFolder: globalBestNetworkArchiveFolder, 
               dstFile: entry.name
             });
+
             return;
           }
           else {
+            if (networkObj.archived) {
+              console.log(chalkLog(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | " + networkObj.networkId));
+            }
             return;
           }
         }
