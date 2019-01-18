@@ -4291,7 +4291,7 @@ function dropboxFileMove(params){
     const srcPath = params.srcFolder + "/" + params.srcFile;
     const dstPath = params.dstFolder + "/" + params.dstFile;
 
-    dropboxClient.filesMoveV2({from_path: srcPath, to_path: dstPath, allow_shared_folder: true})
+    dropboxClient.filesMoveV2({from_path: srcPath, to_path: dstPath, allow_ownership_transfer: true, allow_shared_folder: true})
     .then(function(response){
       console.log(chalkBlueBold(MODULE_ID_PREFIX + " | ->- DROPBOX FILE MOVE"
         + " | " + srcPath
