@@ -4438,15 +4438,12 @@ function loadBestNetworksDropbox(params) {
 
           if (configuration.archiveNetworkOnInputsMiss && !networkObj.archived) {
 
-            const archiveFolder = folder + "/archive";
-            const archivePath = folder + "/archive/" + entry.name;
-
             console.log(chalkLog("TFE | ARCHIVE NN ON INPUTS ID MISS"
               + " | IN: " + networkObj.numInputs
               + " | " + networkId 
               + " | INPUTS ID: " + networkObj.inputsId 
-              + "\nTFE | FROM: " + entry.path_display
-              + " | TO: " + archivePath
+              + "\nTFE | FROM: " + folder + "/" + entry.name
+              + " | TO: " + globalBestNetworkArchiveFolder
             ));
 
             try{
