@@ -4457,6 +4457,19 @@ function loadBestNetworksDropbox(params) {
                 dstFolder: globalBestNetworkArchiveFolder, 
                 dstFile: entry.name
               });
+
+              let updateDbNetworkParams = {};
+
+              updateDbNetworkParams.networkObj = networkObj;
+              updateDbNetworkParams.incrementTestCycles = false;
+              updateDbNetworkParams.addToTestHistory = false;
+              updateDbNetworkParams.verbose = configuration.testMode;
+
+              updateDbNetworkParams.networkObj.archived = true;
+
+              const nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
+
+
               return;
             }
             catch(err){
