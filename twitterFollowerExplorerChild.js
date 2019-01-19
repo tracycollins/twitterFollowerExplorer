@@ -14,7 +14,7 @@ const TEST_FETCH_COUNT = 27;
 const TEST_TOTAL_FETCH = 747;
 
 
-const DEFAULT_TWEET_FETCH_COUNT = 20;
+const DEFAULT_TWEET_FETCH_COUNT = 50;
 const TEST_TWEET_FETCH_COUNT = 3;
 const DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES = true;
 const DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS = false;
@@ -1509,6 +1509,7 @@ threeceeUserDefaults.statusesCount = 0;
 
 threeceeUserDefaults.error = false;
 
+threeceeUserDefaults.tweetFetchCount = configuration.tweetFetchCount;
 threeceeUserDefaults.fetchCount = configuration.fetchCount;
 threeceeUserDefaults.endFetch = false;
 threeceeUserDefaults.nextCursor = false;
@@ -1672,7 +1673,7 @@ function fetchUserTweets(params){
     if (params.maxId) { fetchUserTweetsParams.max_id = params.maxId; } 
     if (params.sinceId) { fetchUserTweetsParams.since_id = params.sinceId; } 
 
-    fetchUserTweetsParams.count = params.tweetFetchCount || DEFAULT_TWEET_FETCH_COUNT;
+    fetchUserTweetsParams.count = params.tweetFetchCount || configuration.tweetFetchCount;
     fetchUserTweetsParams.exclude_replies = params.excludeReplies || DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES;
     fetchUserTweetsParams.include_rts = params.includeRetweets || DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS;
 
@@ -1866,6 +1867,7 @@ function twitterUsersShow(params){
       statsObj.threeceeUser.friendsCount = userShowData.friends_count;
       statsObj.threeceeUser.followersCount = userShowData.followers_count;
       statsObj.threeceeUser.fetchCount = configuration.fetchCount;
+      statsObj.threeceeUser.tweetFetchCount = configuration.tweetFetchCount;
 
       process.send({op:"THREECEE_USER", childId: configuration.childId, threeceeUser: omit(statsObj.threeceeUser, ["friends"])});
 
@@ -2115,7 +2117,7 @@ function getTwitterFriendsList(params){
   return new Promise(function(resolve, reject){
 
     params.count = params.count || params.fetchCount;
-    
+
     twitClient.get("friends/list", params, function(err, data, response){
 
       if (err){

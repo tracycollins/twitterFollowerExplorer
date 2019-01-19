@@ -59,6 +59,11 @@ const TEST_DROPBOX_NN_LOAD = 11;
 const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
 
+const FETCH_COUNT = 200;
+const TWEET_FETCH_COUNT = 50;
+
+const TEST_TWEET_FETCH_COUNT = 11;
+
 const TEST_MODE_NUM_NN = 5;
 const TEST_FETCH_COUNT = 17;
 const TEST_TOTAL_FETCH = 47;
@@ -68,7 +73,6 @@ const GLOBAL_TEST_MODE = false;  // applies to parent and all children
 const QUIT_ON_COMPLETE = false;
 let quitOnCompleteFlag = false;
 
-const FETCH_COUNT = 200;
 
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const KEEPALIVE_INTERVAL = ONE_MINUTE;
@@ -155,6 +159,7 @@ configuration.minTestCycles = DEFAULT_MIN_TEST_CYCLES;
 configuration.testMode = TEST_MODE;
 configuration.globalTestMode = GLOBAL_TEST_MODE;
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
+configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : TEST_FETCH_COUNT;
 configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : FETCH_COUNT;
 configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
 configuration.fetchUserInterval = (TEST_MODE) ? TEST_FETCH_USER_INTERVAL : FETCH_USER_INTERVAL;
@@ -8144,6 +8149,7 @@ function childCreateAll(params){
 
     createParams.config = {};
     createParams.config.testMode = configuration.testMode;
+    createParams.config.tweetFetchCount = (configuration.testMode) ? TEST_TWEET_FETCH_COUNT : configuration.tweetFetchCount;
     createParams.config.fetchCount = (configuration.testMode) ? TEST_FETCH_COUNT : configuration.fetchCount;
     createParams.config.totalFetchCount = (configuration.testMode) ? TEST_TOTAL_FETCH : configuration.totalFetchCount;
     createParams.config.fetchUserInterval = (configuration.testMode) ? TEST_FETCH_USER_INTERVAL : configuration.fetchUserInterval;
