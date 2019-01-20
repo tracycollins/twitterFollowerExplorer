@@ -5692,7 +5692,7 @@ function initRandomNetworkTreeChild() {
         if (!quitFlag) { quit({source: "RNT", code: code }); }
       });
 
-      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL, verbose: configuration.verbose }, function(err) {
+      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL, testMode: configuration.testMode, verbose: configuration.verbose }, function(err) {
         if (err) {
           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
           return reject(err);

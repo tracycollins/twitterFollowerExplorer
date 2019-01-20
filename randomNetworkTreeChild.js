@@ -1490,6 +1490,8 @@ process.on("message", async function(m) {
     case "INIT":
 
       configuration.verbose = m.verbose || configuration.verbose;
+      configuration.testMode = m.testMode || configuration.testMode;
+      
       console.log(chalkLog("RNT | INIT | INTERVAL: " + m.interval + "\n" + jsonPrint(configuration)));
 
       await initActivateNetworkInterval(m.interval);
