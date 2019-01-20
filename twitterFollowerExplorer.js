@@ -4147,6 +4147,7 @@ function dropboxFileMove(params){
             + " | STATUS: " + err.status
             + " | " + srcPath
             + " | DOES NOT EXIST"
+            + " | SUMMARY: " + err.response.statusText
           ));
           return resolve();
         }
