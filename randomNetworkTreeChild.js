@@ -1161,7 +1161,7 @@ function initActivateNetworkInterval(interval){
                   statsObj.categorize.match += 1;
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                  if (configuration.verbose || (statsObj.categorize.grandTotal % 100 === 0)) {
+                  if (configuration.verbose || configuration.testMode || (statsObj.categorize.grandTotal % 100 === 0)) {
                     printActivateResult(
 
                       "RNT | ✔✔✔ MATCH [" + rxActivateNetworkQueue.length + "]", 
@@ -1178,7 +1178,7 @@ function initActivateNetworkInterval(interval){
                   statsObj.categorize.mismatch += 1;
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
-                  if (configuration.verbose || (statsObj.categorize.grandTotal % 100 === 0)) {
+                  if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                     printActivateResult(
                       "RNT | ---  miss [" + rxActivateNetworkQueue.length + "]", 
                       statsObj.bestNetwork, 
@@ -1193,7 +1193,7 @@ function initActivateNetworkInterval(interval){
               else {
                 statsObj.categorize.skipped += 1;
 
-                if (configuration.verbose || (statsObj.categorize.grandTotal % 100 === 0)) {
+                if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                   printActivateResult(
                     "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
                     statsObj.bestNetwork, 
@@ -1207,7 +1207,7 @@ function initActivateNetworkInterval(interval){
             else {
               statsObj.categorize.skipped += 1;
 
-              if (configuration.verbose || (statsObj.categorize.grandTotal % 100 === 0)) {
+              if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                 printActivateResult(
                   "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
                   statsObj.bestNetwork, 
