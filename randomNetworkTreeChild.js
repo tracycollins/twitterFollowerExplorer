@@ -917,7 +917,7 @@ function generateNetworksOutput(params){
         results.bestNetwork = {};
         results.currentBestNetwork = {};
 
-        results.bestNetworkId = statsObj.bestNetwork.bestNetworkId;
+        results.bestNetworkId = statsObj.bestNetwork.networkId;
         results.currentBestNetworkId = statsObj.currentBestNetwork.networkId;
 
 
@@ -1164,7 +1164,7 @@ function initActivateNetworkInterval(interval){
                   if (configuration.verbose || configuration.testMode || (statsObj.categorize.grandTotal % 100 === 0)) {
                     printActivateResult(
 
-                      "RNT | ✔✔✔ MATCH [" + rxActivateNetworkQueue.length + "]", 
+                      "RNT | ✔✔✔ MATCH ", 
                       statsObj.bestNetwork, 
                       category, 
                       generateNetworksOutputObj.bestNetwork.categoryAuto, 
@@ -1180,7 +1180,7 @@ function initActivateNetworkInterval(interval){
 
                   if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                     printActivateResult(
-                      "RNT | ---  miss [" + rxActivateNetworkQueue.length + "]", 
+                      "RNT | ---  miss ", 
                       statsObj.bestNetwork, 
                       category, 
                       generateNetworksOutputObj.bestNetwork.categoryAuto, 
@@ -1195,7 +1195,7 @@ function initActivateNetworkInterval(interval){
 
                 if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                   printActivateResult(
-                    "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
+                    "RNT |      skip ", 
                     statsObj.bestNetwork, 
                     category, 
                     generateNetworksOutputObj.bestNetwork.categoryAuto, 
@@ -1209,7 +1209,7 @@ function initActivateNetworkInterval(interval){
 
               if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                 printActivateResult(
-                  "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
+                  "RNT |      skip ", 
                   statsObj.bestNetwork, 
                   category, 
                   generateNetworksOutputObj.bestNetwork.categoryAuto, 
@@ -1297,28 +1297,28 @@ function loadNetwork(params){
 
     if (params.isBestNetwork) {
 
-      console.log(chalkError("RNT | LOAD BEST NETWORK: " + networkObj.networkId));
+      console.log(chalkLog("RNT | LOAD BEST NETWORK: " + networkObj.networkId));
 
-      statsObj.bestNetwork  = {};
-      statsObj.bestNetwork .networkId = networkObj.networkId;
-      statsObj.bestNetwork .inputsId = networkObj.inputsId;
-      statsObj.bestNetwork .numInputs = networkObj.numInputs;
-      statsObj.bestNetwork .output = [];
-      statsObj.bestNetwork .successRate = networkObj.successRate;
-      statsObj.bestNetwork .matchRate = networkObj.matchRate;
-      statsObj.bestNetwork .overallMatchRate = networkObj.overallMatchRate;
-      statsObj.bestNetwork .testCycles = networkObj.testCycles;
-      statsObj.bestNetwork .testCycleHistory = [];
-      statsObj.bestNetwork .testCycleHistory = networkObj.testCycleHistory;
-      statsObj.bestNetwork .total = 0;
-      statsObj.bestNetwork .match = 0;
-      statsObj.bestNetwork .mismatch = 0;
-      statsObj.bestNetwork .matchFlag = false;
-      statsObj.bestNetwork .left = 0;
-      statsObj.bestNetwork .neutral = 0;
-      statsObj.bestNetwork .right = 0;
-      statsObj.bestNetwork .positive = 0;
-      statsObj.bestNetwork .negative = 0;
+      statsObj.bestNetwork = {};
+      statsObj.bestNetwork.networkId = networkObj.networkId;
+      statsObj.bestNetwork.inputsId = networkObj.inputsId;
+      statsObj.bestNetwork.numInputs = networkObj.numInputs;
+      statsObj.bestNetwork.output = [];
+      statsObj.bestNetwork.successRate = networkObj.successRate;
+      statsObj.bestNetwork.matchRate = networkObj.matchRate;
+      statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate;
+      statsObj.bestNetwork.testCycles = networkObj.testCycles;
+      statsObj.bestNetwork.testCycleHistory = [];
+      statsObj.bestNetwork.testCycleHistory = networkObj.testCycleHistory;
+      statsObj.bestNetwork.total = 0;
+      statsObj.bestNetwork.match = 0;
+      statsObj.bestNetwork.mismatch = 0;
+      statsObj.bestNetwork.matchFlag = false;
+      statsObj.bestNetwork.left = 0;
+      statsObj.bestNetwork.neutral = 0;
+      statsObj.bestNetwork.right = 0;
+      statsObj.bestNetwork.positive = 0;
+      statsObj.bestNetwork.negative = 0;
     }
 
     if (statsObj.loadedNetworks[networkObj.networkId] === undefined) {
@@ -1491,7 +1491,7 @@ process.on("message", async function(m) {
 
       configuration.verbose = m.verbose || configuration.verbose;
       configuration.testMode = m.testMode || configuration.testMode;
-      
+
       console.log(chalkLog("RNT | INIT | INTERVAL: " + m.interval + "\n" + jsonPrint(configuration)));
 
       await initActivateNetworkInterval(m.interval);
@@ -1748,7 +1748,7 @@ function initialize(cnf, callback){
 
   cnf.verbose = process.env.RNT_VERBOSE_MODE || configuration.verbose ;
   cnf.globalTestMode = process.env.RNT_GLOBAL_TEST_MODE || false ;
-  cnf.testMode = process.env.RNT_TEST_MODE || false ;
+  cnf.testMode = process.env.RNT_TEST_MODE || configuration.testMode ;
   cnf.quitOnError = process.env.RNT_QUIT_ON_ERROR || false ;
 
   cnf.statsUpdateIntervalTime = process.env.RNT_STATS_UPDATE_INTERVAL || 1000;

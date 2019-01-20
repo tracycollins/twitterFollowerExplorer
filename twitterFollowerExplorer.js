@@ -81,7 +81,7 @@ const FSM_TICK_INTERVAL = ONE_SECOND;
 const STATS_UPDATE_INTERVAL = ONE_MINUTE;
 const DEFAULT_CHILD_PING_INTERVAL = ONE_MINUTE;
 
-const PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
+const PROCESS_USER_QUEUE_INTERVAL = 5;
 const LANG_ANAL_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL;
 const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
@@ -4683,7 +4683,7 @@ function initRandomNetworks(params){
       async.eachSeries(bestNetworkHashMap.values(), function(networkObj, cb){
 
         if (networkObj.networkId === bestNetwork.networkId) {
-          console.log(chalkAlert("TFE | LOAD_NETWORK BEST: " + networkObj.networkId));
+          console.log(chalkInfo("TFE | LOAD_NETWORK BEST: " + networkObj.networkId));
           isBestNetwork = true;
         }
         else {
@@ -5621,6 +5621,15 @@ function initRandomNetworkTreeChild() {
 
   return new Promise(function(resolve, reject){
 
+    const rntInitParams = { 
+      op: "INIT", 
+      childId: RNT_CHILD_ID, 
+      interval: RANDOM_NETWORK_TREE_INTERVAL, 
+      testMode: configuration.testMode, 
+      verbose: configuration.verbose 
+    };
+
+
     if (randomNetworkTree === undefined) {
 
       const childId = RNT_CHILD_ID;
@@ -5692,7 +5701,7 @@ function initRandomNetworkTreeChild() {
         if (!quitFlag) { quit({source: "RNT", code: code }); }
       });
 
-      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL, testMode: configuration.testMode, verbose: configuration.verbose }, function(err) {
+      randomNetworkTree.send(rntInitParams, function(err) {
         if (err) {
           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
           return reject(err);
@@ -5702,7 +5711,7 @@ function initRandomNetworkTreeChild() {
       });
     }
     else {
-      randomNetworkTree.send({ op: "INIT", interval: RANDOM_NETWORK_TREE_INTERVAL, verbose: configuration.verbose }, function(err) {
+      randomNetworkTree.send(rntInitParams, function(err) {
 
         if (err) {
           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
