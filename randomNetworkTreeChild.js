@@ -1297,7 +1297,7 @@ function loadNetwork(params){
 
     if (params.isBestNetwork) {
 
-      console.log(chalkLog("RNT | LOAD BEST NETWORK: " + networkObj.networkId));
+      console.log(chalk.green("RNT | LOAD BEST NETWORK: " + networkObj.networkId));
 
       statsObj.bestNetwork = {};
       statsObj.bestNetwork.networkId = networkObj.networkId;

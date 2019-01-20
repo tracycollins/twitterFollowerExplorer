@@ -4683,7 +4683,7 @@ function initRandomNetworks(params){
       async.eachSeries(bestNetworkHashMap.values(), function(networkObj, cb){
 
         if (networkObj.networkId === bestNetwork.networkId) {
-          console.log(chalkInfo("TFE | LOAD_NETWORK BEST: " + networkObj.networkId));
+          console.log(chalkGreen("TFE | LOAD_NETWORK BEST: " + networkObj.networkId));
           isBestNetwork = true;
         }
         else {
@@ -5314,6 +5314,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
                 overallMatchRate:  currentBestNetwork.overallMatchRate,
                 testCycles:  currentBestNetwork.testCycles,
                 testCycleHistory:  currentBestNetwork.testCycleHistory,
+                twitterStats: statsObj.twitter,
                 updatedAt: moment()
               };
 
@@ -7472,6 +7473,7 @@ const fsmStates = {
             overallMatchRate:  currentBestNetwork.overallMatchRate,
             testCycles:  currentBestNetwork.testCycles,
             testCycleHistory:  currentBestNetwork.testCycleHistory,
+            twitterStats: statsObj.twitter,
             updatedAt: moment()
           };
 
@@ -7505,6 +7507,7 @@ const fsmStates = {
           + "\nTFE |  OAMR:        " + statsObj.bestNetwork.overallMatchRate.toFixed(3) + "%"
           + "\nTFE |  TC:          " + statsObj.bestNetwork.testCycles
           + "\nTFE |  TCH:         " + statsObj.bestNetwork.testCycleHistory.length
+          + "\nTFE | TWITTER STATS\n" + jsonPrint(statsObj.twitter)
         ));
 
         console.log(chalk.bold.blue("TFE | ===================================================="));
