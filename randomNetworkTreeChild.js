@@ -934,7 +934,6 @@ function generateNetworksOutput(params){
     });
 
   });
-
 }
 
 function categoryToString(c) {
@@ -1497,8 +1496,6 @@ process.on("message", async function(m) {
     break;
 
     case "LOAD_NETWORK":
-
-      // console.log(chalkLog("RNT | LOAD_NETWORK | " + m.networkObj.networkId));
 
       try {
         await loadNetwork(m.networkObj);

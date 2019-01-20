@@ -31,7 +31,7 @@ const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
 const DEFAULT_MIN_TEST_CYCLES = 3;
 const DEFAULT_MIN_WORD_LENGTH = 3;
 const DEFAULT_RANDOM_UNTESTED_LIMIT = 10;
-const DEFAULT_BEST_INCREMENTAL_UPDATE = true;
+const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
 
 let saveRawFriendFlag = true;
 let neuralNetworkInitialized = false;
@@ -5382,34 +5382,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               && (statsObj.prevBestNetworkId !== statsObj.bestRuntimeNetworkId) 
               && configuration.bestNetworkIncrementalUpdate) 
             {
-
               statsObj.prevBestNetworkId = statsObj.bestRuntimeNetworkId;
-
               saveBestNetworkFileCache({network: m.bestNetwork});
-
-            //   console.log(chalkNetwork("TFE | SAVING NEW BEST NETWORK"
-            //     + " | " + currentBestNetwork.networkId
-            //     + " | SR: " + currentBestNetwork.successRate.toFixed(2)
-            //     + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
-            //     + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
-            //     + " | TEST CYCs: " + currentBestNetwork.testCycles
-            //     + " | TC HISTORY: " + currentBestNetwork.testCycleHistory.length
-            //   ));
-
-            //   fileObj = {
-            //     networkId: statsObj.bestRuntimeNetworkId,
-            //     successRate: m.bestNetwork.successRate,
-            //     matchRate:  m.bestNetwork.matchRate,
-            //     overallMatchRate:  m.bestNetwork.overallMatchRate,
-            //     testCycles:  m.bestNetwork.testCycles,
-            //     testCycleHistory:  m.bestNetwork.testCycleHistory,
-            //     updatedAt: moment()
-            //   };
-
-            //   file = statsObj.bestRuntimeNetworkId + ".json";
-            //   saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
-            //   saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
-            
             }
 
            debug(chalkAlert("NETWORK_OUTPUT"
@@ -5424,7 +5398,6 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             ));
 
             user = {};
-            // user = deepcopy(m.user);
             user = m.user;
             user.category = m.category;
             user.categoryAuto = m.categoryAuto;
@@ -5451,6 +5424,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
         break;
 
         case "BEST_MATCH_RATE":
+
           debug(chalkAlert("\n================================================================================================\n"
             + "*** RNT_BEST_MATCH_RATE"
             + " | " + m.networkId
@@ -5463,6 +5437,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             + " | PMR: " + m.previousBestMatchRate.toFixed(2) + "%"
             + "\n================================================================================================\n"
           ));
+
           if (bestNetworkHashMap.has(m.networkId)) {
 
             currentBestNetwork = bestNetworkHashMap.get(m.networkId);
@@ -5472,9 +5447,12 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
             bestNetworkHashMap.set(m.networkId, currentBestNetwork);
 
-            if ((hostname === PRIMARY_HOST) && (statsObj.prevBestNetworkId !== m.networkId)) {
+            if ((hostname === PRIMARY_HOST)
+              && configuration.bestNetworkIncrementalUpdate
+              && (statsObj.prevBestNetworkId !== m.networkId)) {
 
               statsObj.prevBestNetworkId = m.networkId;
+
               console.log(chalkBlue("TFE | SAVING NEW BEST NETWORK"
                 + " | " + currentBestNetwork.networkId
                 + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
@@ -7629,6 +7607,33 @@ const fsmStates = {
 
         reporter(event, oldState, newState);
 
+        if ((hostname === PRIMARY_HOST) || configuration.testMode) {
+        
+          const fileObj = {
+            networkId: currentBestNetwork.networkId,
+            successRate: currentBestNetwork.successRate,
+            matchRate:  currentBestNetwork.matchRate,
+            overallMatchRate:  currentBestNetwork.overallMatchRate,
+            testCycles:  currentBestNetwork.testCycles,
+            testCycleHistory:  currentBestNetwork.testCycleHistory,
+            updatedAt: moment()
+          };
+
+          const folder = (configuration.testMode) ? bestNetworkFolder + "/test" : bestNetworkFolder;
+          const file = currentBestNetwork.networkId + ".json";
+
+          console.log(chalkBlue("TFE | SAVING BEST NETWORK"
+            + " | " + currentBestNetwork.networkId
+            + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
+            + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
+            + " | TEST CYCs: " + currentBestNetwork.testCycles
+            + " | " + folder + "/" + file
+          ));
+
+          saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
+          saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
+        }
+
         console.log(chalk.bold.blue("TFE | ===================================================="));
         console.log(chalk.bold.blue("TFE | ================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("TFE | ===================================================="));
@@ -7653,8 +7658,6 @@ const fsmStates = {
         if (randomNetworkTree && (randomNetworkTree !== undefined)) {
           randomNetworkTree.send({op: "GET_STATS"});
         }
-
-        bestRuntimeNetworkFileName
 
         console.log(chalkLog("TFE | PAUSING FOR 60 SECONDS FOR RNT GET_STATS RESPONSE ..."));
 
