@@ -179,6 +179,21 @@ statsObj.bestNetwork.right = 0;
 statsObj.bestNetwork.positive = 0;
 statsObj.bestNetwork.negative = 0;
 
+statsObj.currentBestNetwork = {};
+statsObj.currentBestNetwork.networkId = false;
+statsObj.currentBestNetwork.successRate = 0;
+statsObj.currentBestNetwork.matchRate = 0;
+statsObj.currentBestNetwork.overallMatchRate = 0;
+statsObj.currentBestNetwork.testCycles = 0;
+statsObj.currentBestNetwork.total = 0;
+statsObj.currentBestNetwork.match = 0;
+statsObj.currentBestNetwork.mismatch = 0;
+statsObj.currentBestNetwork.left = 0;
+statsObj.currentBestNetwork.neutral = 0;
+statsObj.currentBestNetwork.right = 0;
+statsObj.currentBestNetwork.positive = 0;
+statsObj.currentBestNetwork.negative = 0;
+
 statsObj.categorizeHistory = [];
 
 statsObj.categorize = {};
@@ -688,7 +703,10 @@ let previousBestNetworkMatchRate = 0;
 let generateNetworksOutputBusy = false;
 
 let arrayOfArrays = [];
+
+let currentBestNetworkOutput = [0,0,0];
 let bestNetworkOutput = [0,0,0];
+
 let statsTextObj = {};
 let nnIdArray = [];
 
@@ -704,6 +722,7 @@ function generateNetworksOutput(params){
 
     arrayOfArrays.length = 0;
     bestNetworkOutput = [0,0,0];
+    currentBestNetworkOutput = [0,0,0];
     statsTextObj = {};
 
     nnIdArray = Object.keys(networkOutput);
@@ -834,22 +853,23 @@ function generateNetworksOutput(params){
 
         let currentBestNetworkId = sortedNetworkResults.sortedKeys[0];
         
-        statsObj.bestNetwork = {};
-        statsObj.bestNetwork = statsObj.loadedNetworks[currentBestNetworkId];
-        statsObj.bestNetwork.matchRate = (statsObj.bestNetwork.matchRate === undefined) ? 0 : statsObj.bestNetwork.matchRate;
-        statsObj.bestNetwork.overallMatchRate = (statsObj.bestNetwork.overallMatchRate === undefined) ? 0 : statsObj.bestNetwork.overallMatchRate;
-        statsObj.bestNetwork.testCycles = (statsObj.bestNetwork.testCycles === undefined) ? 0 : statsObj.bestNetwork.testCycles;
+        statsObj.currentBestNetwork = {};
+        statsObj.currentBestNetwork = statsObj.loadedNetworks[currentBestNetworkId];
+        statsObj.currentBestNetwork.matchRate = (statsObj.currentBestNetwork.matchRate === undefined) ? 0 : statsObj.currentBestNetwork.matchRate;
+        statsObj.currentBestNetwork.overallMatchRate = (statsObj.currentBestNetwork.overallMatchRate === undefined) ? 0 : statsObj.currentBestNetwork.overallMatchRate;
+        statsObj.currentBestNetwork.testCycles = (statsObj.currentBestNetwork.testCycles === undefined) ? 0 : statsObj.currentBestNetwork.testCycles;
 
-        debug(chalkLog("BEST NETWORK"
-          + " | " + statsObj.bestNetwork.networkId
-          + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
-          + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-          + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
-          + " | TOT: " + statsObj.bestNetwork.total
-          + " | MATCH: " + statsObj.bestNetwork.match
+        debug(chalkLog("CURRENT BEST NETWORK"
+          + " | " + statsObj.currentBestNetwork.networkId
+          + " | SR: " + statsObj.currentBestNetwork.successRate.toFixed(2) + "%"
+          + " | MR: " + statsObj.currentBestNetwork.matchRate.toFixed(2) + "%"
+          + " | OAMR: " + statsObj.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+          + " | TOT: " + statsObj.currentBestNetwork.total
+          + " | MATCH: " + statsObj.currentBestNetwork.match
         ));
 
-        bestNetworkOutput = statsObj.bestNetwork.output;
+        currentBestNetworkOutput = statsObj.currentBestNetwork.output;
+        bestNetworkOutput = statsObj.loadedNetworks[statsObj.bestNetwork.networkId].output;
 
         if (statsObj.categorize.grandTotal % 100 === 0) {
           await printNetworkResults({title: title});
@@ -858,15 +878,15 @@ function generateNetworksOutput(params){
         if (previousBestNetworkId !== currentBestNetworkId) {
 
           console.log(chalk.bold.blue("\nRNT | ==================================================================\n"
-            + "RNT | *** NEW BEST NETWORK ***"
-            + "\nRNT | NETWORK ID:   " + statsObj.bestNetwork.networkId
-            + "\nRNT | INPUTS ID:    " + statsObj.bestNetwork.inputsId
-            + "\nRNT | INPUTS:       " + statsObj.bestNetwork.numInputs
-            + "\nRNT | SR:           " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
-            + "\nRNT | MR:           " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
-            + "\nRNT | OAMR:         " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
-            + "\nRNT | TCs:          " + statsObj.bestNetwork.testCycles
-            + "\nRNT | TCH:          " + statsObj.bestNetwork.testCycleHistory.length
+            + "RNT | *** NEW CURRENT BEST NETWORK ***"
+            + "\nRNT | NETWORK ID:   " + statsObj.currentBestNetwork.networkId
+            + "\nRNT | INPUTS ID:    " + statsObj.currentBestNetwork.inputsId
+            + "\nRNT | INPUTS:       " + statsObj.currentBestNetwork.numInputs
+            + "\nRNT | SR:           " + statsObj.currentBestNetwork.successRate.toFixed(2) + "%"
+            + "\nRNT | MR:           " + statsObj.currentBestNetwork.matchRate.toFixed(2) + "%"
+            + "\nRNT | OAMR:         " + statsObj.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+            + "\nRNT | TCs:          " + statsObj.currentBestNetwork.testCycles
+            + "\nRNT | TCH:          " + statsObj.currentBestNetwork.testCycleHistory.length
             + "\nRNT | PREV BEST:    " + previousBestNetworkMatchRate.toFixed(2) + "%" + " | ID: " + previousBestNetworkId
             + "\nRNT | ==================================================================\n"
           ));
@@ -880,11 +900,11 @@ function generateNetworksOutput(params){
           process.send({
             op: "BEST_MATCH_RATE", 
             networkId: currentBestNetworkId, 
-            matchRate: statsObj.bestNetwork.matchRate,
-            overallMatchRate: statsObj.bestNetwork.overallMatchRate,
-            successRate: statsObj.bestNetwork.successRate, 
-            inputsId: statsObj.bestNetwork.inputsId,
-            numInputs: statsObj.bestNetwork.numInputs,
+            matchRate: statsObj.currentBestNetwork.matchRate,
+            overallMatchRate: statsObj.currentBestNetwork.overallMatchRate,
+            successRate: statsObj.currentBestNetwork.successRate, 
+            inputsId: statsObj.currentBestNetwork.inputsId,
+            numInputs: statsObj.currentBestNetwork.numInputs,
             previousBestNetworkId: previousBestNetworkId,
             previousBestMatchRate: previousBestNetworkMatchRate
           });
@@ -893,32 +913,60 @@ function generateNetworksOutput(params){
         }
 
         let results = {};
+
         results.bestNetwork = {};
-        results.bestNetworkId = statsObj.bestNetwork.networkId;
+        results.currentBestNetwork = {};
+
+        results.bestNetworkId = statsObj.bestNetwork.bestNetworkId;
+        results.currentBestNetworkId = statsObj.currentBestNetwork.networkId;
 
 
-        const maxOutputIndex = await indexOfMax(bestNetworkOutput);
+        let maxOutputIndex = await indexOfMax(currentBestNetworkOutput);
+
+        switch (maxOutputIndex) {
+          case 0:
+            if (params.enableLog) { console.log(chalk.blue("RNT | NAKW | L | " + currentBestNetworkOutput + " | " + maxOutputIndex)); }
+            results.currentBestNetwork.left = 100;
+            results.currentBestNetwork.categoryAuto = "left";
+          break;
+          case 1:
+            if (params.enableLog) { console.log(chalk.black("RNT | NAKW | N | " + currentBestNetworkOutput + " | " + maxOutputIndex)); }
+            results.currentBestNetwork.neutral = 100;
+            results.currentBestNetwork.categoryAuto = "neutral";
+          break;
+          case 2:
+            if (params.enableLog) { console.log(chalk.red("RNT | NAKW | R | " + currentBestNetworkOutput + " | " + maxOutputIndex)); }
+            results.currentBestNetwork.right = 100;
+            results.currentBestNetwork.categoryAuto = "right";
+          break;
+          default:
+            if (params.enableLog) { console.log(chalk.gray("RNT | NAKW | 0 | " + currentBestNetworkOutput + " | " + maxOutputIndex)); }
+            results.currentBestNetwork.none = 100;
+            results.currentBestNetwork.categoryAuto = "none";
+        }
+
+        maxOutputIndex = await indexOfMax(bestNetworkOutput);
 
         switch (maxOutputIndex) {
           case 0:
             if (params.enableLog) { console.log(chalk.blue("RNT | NAKW | L | " + bestNetworkOutput + " | " + maxOutputIndex)); }
             results.bestNetwork.left = 100;
-            results.categoryAuto = "left";
+            results.bestNetwork.categoryAuto = "left";
           break;
           case 1:
             if (params.enableLog) { console.log(chalk.black("RNT | NAKW | N | " + bestNetworkOutput + " | " + maxOutputIndex)); }
             results.bestNetwork.neutral = 100;
-            results.categoryAuto = "neutral";
+            results.bestNetwork.categoryAuto = "neutral";
           break;
           case 2:
             if (params.enableLog) { console.log(chalk.red("RNT | NAKW | R | " + bestNetworkOutput + " | " + maxOutputIndex)); }
             results.bestNetwork.right = 100;
-            results.categoryAuto = "right";
+            results.bestNetwork.categoryAuto = "right";
           break;
           default:
             if (params.enableLog) { console.log(chalk.gray("RNT | NAKW | 0 | " + bestNetworkOutput + " | " + maxOutputIndex)); }
             results.bestNetwork.none = 100;
-            results.categoryAuto = "none";
+            results.bestNetwork.categoryAuto = "none";
         }
 
         generateNetworksOutputBusy = false;
@@ -1008,6 +1056,7 @@ function initActivateNetworkInterval(interval){
     messageObj.queue = rxActivateNetworkQueue.length;
     messageObj.user;
     messageObj.bestNetwork;
+    messageObj.currentBestNetwork;
     messageObj.category = "none";
     messageObj.categoryAuto = "none";
     messageObj.output;
@@ -1101,13 +1150,13 @@ function initActivateNetworkInterval(interval){
 
             if (category) {
 
-              statsObj.categorize[generateNetworksOutputObj.categoryAuto] += 1;
+              statsObj.categorize[generateNetworksOutputObj.bestNetwork.categoryAuto] += 1;
 
               if ((category === "left") || (category === "neutral")|| (category === "right")) {
 
                 statsObj.categorize.total += 1;
 
-                if (category === generateNetworksOutputObj.categoryAuto) {
+                if (category === generateNetworksOutputObj.bestNetwork.categoryAuto) {
 
                   statsObj.categorize.match += 1;
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
@@ -1118,7 +1167,7 @@ function initActivateNetworkInterval(interval){
                       "RNT | ✔✔✔ MATCH [" + rxActivateNetworkQueue.length + "]", 
                       statsObj.bestNetwork, 
                       category, 
-                      generateNetworksOutputObj.categoryAuto, 
+                      generateNetworksOutputObj.bestNetwork.categoryAuto, 
                       activateNetworkObj.user.screenName
                     );
                   }
@@ -1134,7 +1183,7 @@ function initActivateNetworkInterval(interval){
                       "RNT | ---  miss [" + rxActivateNetworkQueue.length + "]", 
                       statsObj.bestNetwork, 
                       category, 
-                      generateNetworksOutputObj.categoryAuto, 
+                      generateNetworksOutputObj.bestNetwork.categoryAuto, 
                       activateNetworkObj.user.screenName
                     );
                   }
@@ -1149,7 +1198,7 @@ function initActivateNetworkInterval(interval){
                     "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
                     statsObj.bestNetwork, 
                     category, 
-                    generateNetworksOutputObj.categoryAuto, 
+                    generateNetworksOutputObj.bestNetwork.categoryAuto, 
                     activateNetworkObj.user.screenName
                   );
                 }
@@ -1163,7 +1212,7 @@ function initActivateNetworkInterval(interval){
                   "RNT |      skip [" + rxActivateNetworkQueue.length + "]", 
                   statsObj.bestNetwork, 
                   category, 
-                  generateNetworksOutputObj.categoryAuto, 
+                  generateNetworksOutputObj.bestNetwork.categoryAuto, 
                   activateNetworkObj.user.screenName
                 );
               }
@@ -1173,8 +1222,9 @@ function initActivateNetworkInterval(interval){
           messageObj.queue = rxActivateNetworkQueue.length;
           messageObj.user = activateNetworkResults.user;
           messageObj.bestNetwork = statsObj.bestNetwork;
+          messageObj.currentBestNetwork = statsObj.currentBestNetwork;
           messageObj.category = category;
-          messageObj.categoryAuto = generateNetworksOutputObj.categoryAuto;
+          messageObj.categoryAuto = generateNetworksOutputObj.bestNetwork.categoryAuto;
           messageObj.output = activateNetworkResults;
 
           process.send(messageObj, function(){
@@ -1221,16 +1271,16 @@ function getInputNames(nodes, callback){
   });
 }
 
-function loadNetwork(networkObj){
+function loadNetwork(params){
 
   return new Promise(function(resolve, reject){
+
+    let networkObj = params.networkObj;
 
     if (!networkObj || networkObj === undefined || networkObj.network === undefined) {
       console.log(chalkError("RNT | *** LOAD NETWORK UNDEFINED: " + networkObj));
       return reject(new Error("LOAD NETWORK UNDEFINED"));
     }
-
-    // console.log(chalkLog("RNT | LOAD NETWORK"));
 
     let network = neataptic.Network.fromJSON(networkObj.network);
 
@@ -1244,6 +1294,32 @@ function loadNetwork(networkObj){
     networkObj.overallMatchRate = (networkObj.overallMatchRate !== undefined) ? networkObj.overallMatchRate : 0 ;
 
     networksHashMap.set(networkObj.networkId, networkObj);
+
+    if (params.isBestNetwork) {
+
+      console.log(chalkError("RNT | LOAD BEST NETWORK: " + networkObj.networkId));
+
+      statsObj.bestNetwork  = {};
+      statsObj.bestNetwork .networkId = networkObj.networkId;
+      statsObj.bestNetwork .inputsId = networkObj.inputsId;
+      statsObj.bestNetwork .numInputs = networkObj.numInputs;
+      statsObj.bestNetwork .output = [];
+      statsObj.bestNetwork .successRate = networkObj.successRate;
+      statsObj.bestNetwork .matchRate = networkObj.matchRate;
+      statsObj.bestNetwork .overallMatchRate = networkObj.overallMatchRate;
+      statsObj.bestNetwork .testCycles = networkObj.testCycles;
+      statsObj.bestNetwork .testCycleHistory = [];
+      statsObj.bestNetwork .testCycleHistory = networkObj.testCycleHistory;
+      statsObj.bestNetwork .total = 0;
+      statsObj.bestNetwork .match = 0;
+      statsObj.bestNetwork .mismatch = 0;
+      statsObj.bestNetwork .matchFlag = false;
+      statsObj.bestNetwork .left = 0;
+      statsObj.bestNetwork .neutral = 0;
+      statsObj.bestNetwork .right = 0;
+      statsObj.bestNetwork .positive = 0;
+      statsObj.bestNetwork .negative = 0;
+    }
 
     if (statsObj.loadedNetworks[networkObj.networkId] === undefined) {
       statsObj.loadedNetworks[networkObj.networkId] = {};
@@ -1351,9 +1427,12 @@ function busy(){
 function resetStats(callback){
 
   networksHashMap.clear();
+
   maxInputHashMap = {};
+
   statsObj.loadedNetworks = {};
-  statsObj.loadedNetworks[statsObj.bestNetwork.networkId] = statsObj.bestNetwork;
+  // statsObj.loadedNetworks[statsObj.bestNetwork.networkId] = statsObj.bestNetwork;
+
   statsObj.allTimeLoadedNetworks = {};
 
   statsObj.categorize.endTime = moment().valueOf();
@@ -1498,7 +1577,7 @@ process.on("message", async function(m) {
     case "LOAD_NETWORK":
 
       try {
-        await loadNetwork(m.networkObj);
+        await loadNetwork({networkObj: m.networkObj, isBestNetwork: m.isBestNetwork});
       }
       catch(err){
         console.trace(chalkError("RNT | *** LOAD NETWORK ERROR | " + err));
