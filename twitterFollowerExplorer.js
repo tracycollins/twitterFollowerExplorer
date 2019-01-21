@@ -5207,14 +5207,15 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           debug(chalkAlert("RNT NETWORK_OUTPUT | " + m.bestNetwork.networkId));
 
           statsObj.bestRuntimeNetworkId = m.bestNetwork.networkId;
+          statsObj.currentBestNetworkId = m.currentBestNetwork.networkId
 
-          if (bestNetworkHashMap.has(statsObj.bestRuntimeNetworkId)) {
+          if (bestNetworkHashMap.has(statsObj.currentBestNetworkId)) {
 
-            currentBestNetwork = bestNetworkHashMap.get(statsObj.bestRuntimeNetworkId);
+            currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
 
-            currentBestNetwork.matchRate = m.bestNetwork.matchRate;
-            currentBestNetwork.overallMatchRate = m.bestNetwork.overallMatchRate;
-            currentBestNetwork.successRate = m.bestNetwork.successRate;
+            currentBestNetwork.matchRate = m.currentBestNetwork.matchRate;
+            currentBestNetwork.overallMatchRate = m.currentBestNetwork.overallMatchRate;
+            currentBestNetwork.successRate = m.currentBestNetwork.successRate;
 
             try{
               await updateBestNetworkStats({networkObj: currentBestNetwork});
@@ -5225,14 +5226,14 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               ));
             }
 
-            bestNetworkHashMap.set(statsObj.bestRuntimeNetworkId, currentBestNetwork);
+            bestNetworkHashMap.set(statsObj.currentBestNetworkId, currentBestNetwork);
 
             if ((hostname === PRIMARY_HOST) 
-              && (statsObj.prevBestNetworkId !== statsObj.bestRuntimeNetworkId) 
+              && (statsObj.prevBestNetworkId !== statsObj.currentBestNetworkId) 
               && configuration.bestNetworkIncrementalUpdate) 
             {
-              statsObj.prevBestNetworkId = statsObj.bestRuntimeNetworkId;
-              saveBestNetworkFileCache({network: m.bestNetwork});
+              statsObj.prevBestNetworkId = statsObj.currentBestNetworkId;
+              saveBestNetworkFileCache({network: m.currentBestNetwork});
             }
 
            debug(chalkAlert("NETWORK_OUTPUT"

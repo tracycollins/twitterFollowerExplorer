@@ -1431,8 +1431,6 @@ function resetStats(callback){
   maxInputHashMap = {};
 
   statsObj.loadedNetworks = {};
-  // statsObj.loadedNetworks[statsObj.bestNetwork.networkId] = statsObj.bestNetwork;
-
   statsObj.allTimeLoadedNetworks = {};
 
   statsObj.categorize.endTime = moment().valueOf();
