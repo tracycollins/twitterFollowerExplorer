@@ -8309,12 +8309,10 @@ function childCreate(params){
             }
 
             if (m.type === "INVALID_TOKEN") {
-              await disableChild({threeceeUser: m.threeceeUser});
               childHashMap[childId].status = "DISABLED";
             }
-            else {
-              await childInit({childId: childId, config: childHashMap[childId].config});
-            }
+
+            await childInit({childId: childId, config: childHashMap[childId].config});
           break;
 
           case "INIT":
