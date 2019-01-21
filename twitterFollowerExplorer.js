@@ -30,7 +30,7 @@ const CHILD_PREFIX = "tfe_node";
 const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
 const DEFAULT_MIN_TEST_CYCLES = 3;
 const DEFAULT_MIN_WORD_LENGTH = 3;
-const DEFAULT_RANDOM_UNTESTED_LIMIT = 10;
+const DEFAULT_RANDOM_UNTESTED_LIMIT = 25;
 const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
 
 let saveRawFriendFlag = true;
@@ -4465,13 +4465,16 @@ function loadBestNetworksDatabase(paramsIn) {
     let nnArray = [];
 
     try {
-      console.log(chalkBlueBold("TFE | LOADING " + limit + " BEST NNs (by OAMR) FROM DB ..."));
+      console.log(chalkBlue("TFE | LOADING " + limit + " BEST NNs (by OAMR) FROM DB ..."));
       nnArrayTopOverallMatchRate = await global.NeuralNetwork.find(query).lean().sort({"overallMatchRate": -1}).limit(limit).exec();
+      console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs (by OAMR) FROM DB ..."));
 
-      console.log(chalkBlueBold("TFE | LOADING " + randomUntestedLimit + " UNTESTED NNs FROM DB ..."));
+      console.log(chalkBlue("TFE | LOADING " + randomUntestedLimit + " UNTESTED NNs FROM DB ..."));
       nnArrayRandomUntested = await global.NeuralNetwork.find(randomUntestedQuery).lean().limit(randomUntestedLimit).exec();
+      console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
 
       nnArray = _.concat(nnArrayTopOverallMatchRate, nnArrayRandomUntested);
+      console.log(chalkBlueBold("TFE | LOADING " + nnArray.length + " NNs FROM DB ..."));
     }
     catch(err){
       console.log(chalkError("TFE | *** NEURAL NETWORK FIND ERROR: " + err));
@@ -4483,7 +4486,7 @@ function loadBestNetworksDatabase(paramsIn) {
       return resolve();
     }
 
-    console.log(chalkBlue("TFE | FOUND " + nnArray.length + " NNs IN INPUTS IDS ARRAY"));
+    console.log(chalkBlueBold("TFE | LOADING " + nnArray.length + " NNs FROM DB ..."));
 
     bestNetwork = nnArray[0];
     bestNetwork.isValid = true;
