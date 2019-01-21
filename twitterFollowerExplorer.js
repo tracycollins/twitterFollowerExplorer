@@ -4338,7 +4338,6 @@ function loadBestNetworksDropbox(params) {
             networkObj,
             chalkGreen
           );
-
         }
         else if (!isBestNetwork({networkObj: networkObj})) {
 
@@ -4441,14 +4440,14 @@ function loadBestNetworksDatabase(paramsIn) {
       query = {};
       query["$and"] = [
         { inputsId: { "$in": inputsIdArray } },
-        { testCycles: { "$gt": configuration.minTestCycles } }
+        { testCycles: { "$gte": configuration.minTestCycles } }
       ]
     }
 
     let randomUntestedQuery = {};
     randomUntestedQuery["$and"] = [
       { inputsId: { "$in": inputsIdArray } },
-      { testCycles: { "$eq": 0 } }
+      { testCycles: { "$lt": configuration.minTestCycles } }
     ];
  
     let limit = params.limit || configuration.networkDatabaseLoadLimit;
@@ -4474,7 +4473,6 @@ function loadBestNetworksDatabase(paramsIn) {
       console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
 
       nnArray = _.concat(nnArrayTopOverallMatchRate, nnArrayRandomUntested);
-      console.log(chalkBlueBold("TFE | LOADING " + nnArray.length + " NNs FROM DB ..."));
     }
     catch(err){
       console.log(chalkError("TFE | *** NEURAL NETWORK FIND ERROR: " + err));
