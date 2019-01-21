@@ -4469,7 +4469,7 @@ function loadBestNetworksDatabase(paramsIn) {
       console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs (by OAMR) FROM DB ..."));
 
       console.log(chalkBlue("TFE | LOADING " + randomUntestedLimit + " UNTESTED NNs FROM DB ..."));
-      nnArrayRandomUntested = await global.NeuralNetwork.find(randomUntestedQuery).lean().limit(randomUntestedLimit).exec();
+      nnArrayRandomUntested = await global.NeuralNetwork.find(randomUntestedQuery).lean().sort({"overallMatchRate": -1}).limit(randomUntestedLimit).exec();
       console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
 
       nnArray = _.concat(nnArrayTopOverallMatchRate, nnArrayRandomUntested);
