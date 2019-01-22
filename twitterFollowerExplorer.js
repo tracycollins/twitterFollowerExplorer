@@ -4440,6 +4440,7 @@ function loadBestNetworksDatabase(paramsIn) {
       query = {};
       query["$and"] = [
         { inputsId: { "$in": inputsIdArray } },
+        { successRate: { "$gte": configuration.globalMinSuccessRate } },
         { testCycles: { "$gte": configuration.minTestCycles } }
       ]
     }
@@ -4447,6 +4448,7 @@ function loadBestNetworksDatabase(paramsIn) {
     let randomUntestedQuery = {};
     randomUntestedQuery["$and"] = [
       { inputsId: { "$in": inputsIdArray } },
+      { successRate: { "$gte": configuration.globalMinSuccessRate } },
       { testCycles: { "$lt": configuration.minTestCycles } }
     ];
  
