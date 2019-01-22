@@ -4390,10 +4390,22 @@ function loadBestNetworksDropbox(params) {
           else {
             if (networkObj.archived) {
               console.log(chalkLog(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | " + networkObj.networkId));
-
               const nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
+              const deletePath = folder + "/" + entry.name;
+              console.log(chalkLog(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | DELETING: " + deletePath));
+              dropboxClient.filesDelete({path: deletePath}).
+              then(function(){
+                console.log(chalkAlert(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | DELETED: " + deletePath));
+                return;
+              }).
+              catch(function(err){
+                console.log(chalkError("TFE | *** LOAD DROPBOX NETWORK / NN DELETE ERROR: " + err));
+                return(err);
+              });
             }
-            return;
+            else {
+              return;
+            }
           }
         }
         catch(err){
