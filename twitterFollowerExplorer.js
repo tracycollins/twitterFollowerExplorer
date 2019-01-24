@@ -8191,16 +8191,18 @@ function childInit(params){
   params = params || {};
 
   const childId = params.childId;
+  const threeceeUser = params.threeceeUser;
   const config = params.config || {};
   const verbose = params.verbose || false;
 
-  statsObj.status = "INIT CHILD | CH ID: " + childId;
+  statsObj.status = "INIT CHILD | CH ID: " + childId + " | " + threeceeUser;
 
   return new Promise(async function(resolve, reject){
 
     const command = {
       op: "INIT",
       childId: childId,
+      threeceeUser: threeceeUser,
       verbose: verbose,
       config: config
     };
@@ -8348,7 +8350,6 @@ function childCreate(params){
             childHashMap[childId].status = "PAUSE_RATE_LIMIT";
             childHashMap[childId].twitterRateLimitRemaining = m.remainingTime;
             childHashMap[childId].twitterRateLimitResetAt = m.resetAt;
-            // await childCheckState({checkState: "PAUSE_RATE_LIMIT", noChildrenTrue: false});
           break;
 
           case "THREECEE_USER":

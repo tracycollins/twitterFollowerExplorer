@@ -1547,6 +1547,7 @@ function initTwitter(twitterConfig){
       ));
 
       twitClient = new Twit(twitterConfig);
+
     }
     else {
 

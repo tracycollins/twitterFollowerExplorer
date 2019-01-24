@@ -2114,7 +2114,7 @@ function initTwitter(twitterConfig){
 
       t.get("account/verify_credentials", { skip_status: true })
         .catch(function (err) {
-          console.log(chalkError("TFC | " + configuration.childId + " | INIT TWITTER ERROR", err.stack));
+          console.log(chalkError("TFC | " + configuration.childId + " | INIT TWITTER | VERIFY CREDS ERROR", err.stack));
           reject(err);
         })
         .then(function (result) {
