@@ -1572,6 +1572,23 @@ function initTwitter(twitterConfig){
           fsm.fsm_rateLimitStart();
           return resolve(err);
         }
+        else if (err.code === 89){
+
+          console.log(chalkAlert("TFC | *** TWITTER ACCOUNT SETTINGS ERROR | INVALID OR EXPIRED TOKEN" 
+            + " | @" + configuration.threeceeUser 
+            + " | " + getTimeStamp() 
+            + " | ERR CODE: " + err.code
+          ));
+
+          statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+          statsObj.threeceeUser.err = err;
+
+          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+          fsm.fsm_error();
+
+          return reject(err);
+        }
+
         else {
 
           console.log(chalkError("TFC | *** TWITTER ACCOUNT SETTINGS ERROR"
@@ -1710,9 +1727,9 @@ function fetchUserTweets(params){
 
           statsObj.threeceeUser.err = err;
 
+          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
           fsm.fsm_error();
 
-          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
           return reject(err);
 
         }
@@ -1767,6 +1784,24 @@ function fetchUserFriendsIds(params){
           fsm.fsm_rateLimitStart();
           return resolve();
         }
+
+        if (err.code === 89){
+
+          console.log(chalkAlert("TFC | *** TWITTER USER FRIENDS IDS ERROR | INVALID OR EXPIRED TOKEN" 
+            + " | " + getTimeStamp() 
+            + " | @" + configuration.threeceeUser 
+          ));
+
+          statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+          statsObj.threeceeUser.err = err;
+
+          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+          fsm.fsm_error();
+
+          return reject(err);
+
+        }
+
         return reject(err);
       }
 
@@ -1849,9 +1884,9 @@ function twitterUsersShow(params){
 
           statsObj.threeceeUser.err = err;
 
+          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
           fsm.fsm_error();
 
-          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
           return reject(err);
 
         }
@@ -2051,9 +2086,9 @@ function checkRateLimit(params){
 
           statsObj.threeceeUser.err = err;
 
+          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
           fsm.fsm_error();
 
-          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
         }
 
         process.send({op:"ERROR", type: "RATE_LIMIT_STATUS", threeceeUser: configuration.threeceeUser, error: err});
@@ -2145,15 +2180,15 @@ function getTwitterFriendsList(params){
           ));
 
           statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
-
           statsObj.threeceeUser.err = err;
 
+          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
           fsm.fsm_error();
 
-          process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
           return reject(err);
         }
         
+        process.send({op:"ERROR", threeceeUser: configuration.threeceeUser, error: err});
         return reject(err);
       }
 
@@ -2951,6 +2986,23 @@ process.on("message", async function(m) {
                 + " | " + err
               ));
 
+              if (err.code === 89){
+
+                console.log(chalkAlert("TFC | *** TWITTER FOLLOW ERROR | INVALID OR EXPIRED TOKEN" 
+                  + " | " + getTimeStamp() 
+                  + " | @" + configuration.threeceeUser 
+                ));
+
+                statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+                statsObj.threeceeUser.err = err;
+
+                process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+                fsm.fsm_error();
+
+                return reject(err);
+              }
+
+
               process.send({op:"ERROR", type: "TWITTER FOLLOW", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
             }
             else {
@@ -2977,6 +3029,22 @@ process.on("message", async function(m) {
               + " | 3C: @" + configuration.threeceeUser
               + "\nTFC | " + jsonPrint(m.user)
             ));
+            return;
+          }
+
+          if (err.code === 89){
+
+            console.log(chalkAlert("TFC | *** TWITTER UNFOLLOW ERROR | INVALID OR EXPIRED TOKEN" 
+              + " | " + getTimeStamp() 
+              + " | @" + configuration.threeceeUser 
+            ));
+
+            statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+            statsObj.threeceeUser.err = err;
+
+            process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+            fsm.fsm_error();
+
             return;
           }
 

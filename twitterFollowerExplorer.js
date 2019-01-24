@@ -7357,7 +7357,11 @@ const fsmStates = {
     },
     fsm_tick: function() {
 
-      childCheckState({checkState:"READY", noChildrenTrue: false, exceptionStates: ["PAUSE_RATE_LIMIT"]}).then(function(allChildrenReady){
+      childCheckState({
+        checkState:"READY", 
+        noChildrenTrue: false, 
+        exceptionStates: ["PAUSE_RATE_LIMIT", "ERROR"]
+      }).then(function(allChildrenReady){
 
         debug("READY INIT"
           + " | ALL CHILDREN READY: " + allChildrenReady
@@ -7386,7 +7390,11 @@ const fsmStates = {
 
         statsObj.status = "FSM READY";
 
-        childCheckState({checkState:"READY", noChildrenTrue: false}).then(function(allChildrenReady){
+        childCheckState({
+          checkState:"READY", 
+          noChildrenTrue: false, 
+          exceptionStates: ["PAUSE_RATE_LIMIT", "ERROR"]
+        }).then(function(allChildrenReady){
           console.log(MODULE_ID_PREFIX + " | ALL CHILDREN READY: " + allChildrenReady);
         })
         .catch(function(err){
@@ -7398,8 +7406,11 @@ const fsmStates = {
     },
     fsm_tick: function() {
 
-      childCheckState({checkState:"READY", noChildrenTrue: false})
-      .then(function(allChildrenReady){
+      childCheckState({
+        checkState:"READY", 
+        noChildrenTrue: false, 
+        exceptionStates: ["ERROR"]
+      }).then(function(allChildrenReady){
 
         debug("READY TICK"
           + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
@@ -7436,8 +7447,11 @@ const fsmStates = {
     },
     fsm_tick: function() {
 
-      childCheckState({checkState:"FETCH_END", noChildrenTrue: false})
-      .then(function(allChildrenFetchEnd){
+      childCheckState({
+        checkState:"FETCH_END", 
+        noChildrenTrue: false, 
+        exceptionStates: ["ERROR"]
+      }).then(function(allChildrenFetchEnd){
         debug("FETCH_END TICK"
           + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
           + " | Q SIZE: " + statsObj.queues.processUserQueue.size
@@ -8330,7 +8344,7 @@ function childCreate(params){
               childHashMap[childId].status = "DISABLED";
             }
 
-            await childInit({childId: childId, config: childHashMap[childId].config});
+            await childInit({childId: childId, threeceeUser: m.threeceeUser, config: childHashMap[childId].config});
           break;
 
           case "INIT":
@@ -8478,7 +8492,7 @@ function childCreate(params){
       childHashMap[childId].config = {};
       childHashMap[childId].config = config;
 
-      const initResponse = await childInit({ childId: childId, config: config });
+      const initResponse = await childInit({ childId: childId, threeceeUser: config.threeceeUser, config: config });
 
       const childPidFile = await touchChildPidFile({ childId: childId, pid: child.pid });
 
