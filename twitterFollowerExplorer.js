@@ -1342,7 +1342,7 @@ function dropboxLoadBestNetworkFolders(params){
           let nnDb;
 
           try {
-            nnDb = await updateDbNetwork({networkObj: networkObj, addToTestHistory: true, verbose: configuration.testMode});
+            nnDb = await updateDbNetwork({networkObj: networkObj, verbose: configuration.testMode});
           }
           catch(err){
             console.log(chalkError("*** ERROR: DB NN FIND ONE ERROR | "+ networkObj.networkId + " | " + err));
@@ -4351,7 +4351,6 @@ function loadBestNetworksDropbox(params) {
             networkObj,
             chalk.gray
           );
-
         }
 
         try {
@@ -4871,6 +4870,7 @@ function updateNetworkStats(params, callback) {
   const saveImmediate = (params.saveImmediate !== undefined) ? params.saveImmediate : false;
   const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
   const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
+  const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : false;
 
   const nnIds = Object.keys(params.networkStatsObj);
 
@@ -4879,6 +4879,7 @@ function updateNetworkStats(params, callback) {
     + " | UPDATE OAMR: " + updateOverallMatchRate
     + " | UPDATE DB: " + updateDb
     + " | INC TEST CYCs: " + incrementTestCycles
+    + " | ADD TEST HISTORY: " + addToTestHistory
   ));
 
   let newNnDb;
@@ -4908,7 +4909,7 @@ function updateNetworkStats(params, callback) {
         networkObj: networkObj,
         incrementTestCycles: incrementTestCycles,
         testHistoryItem: testHistoryItem,
-        addToTestHistory: false,
+        addToTestHistory: addToTestHistory,
         verbose: configuration.testMode
       };
 
@@ -4923,6 +4924,7 @@ function updateNetworkStats(params, callback) {
       }
 
       bestNetworkHashMap.set(nnDbUpdated.networkId, nnDbUpdated);
+
 
       // printNetworkObj("TFE | UPDATE NN STATS", nnDbUpdated);
 
@@ -5139,11 +5141,44 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               saveImmediate: true, 
               updateDb: true, 
               updateOverallMatchRate: true,
-              incrementTestCycles: true
+              incrementTestCycles: true,
+              addToTestHistory: true,
             }, 
             function() {
+
+              currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
+
+              if ((hostname === PRIMARY_HOST) || configuration.testMode) {
+
+                const fileObj = {
+                  networkId: currentBestNetwork.networkId,
+                  successRate: currentBestNetwork.successRate,
+                  matchRate:  currentBestNetwork.matchRate,
+                  overallMatchRate:  currentBestNetwork.overallMatchRate,
+                  testCycles:  currentBestNetwork.testCycles,
+                  testCycleHistory:  currentBestNetwork.testCycleHistory,
+                  twitterStats: statsObj.twitter,
+                  updatedAt: moment()
+                };
+
+                const folder = (configuration.testMode) ? bestNetworkFolder + "/test" : bestNetworkFolder;
+                const file = currentBestNetwork.networkId + ".json";
+
+                console.log(chalkBlue("TFE | SAVING BEST NETWORK"
+                  + " | " + currentBestNetwork.networkId
+                  + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
+                  + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
+                  + " | TEST CYCs: " + currentBestNetwork.testCycles
+                  + " | " + folder + "/" + file
+                ));
+
+                saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
+                saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
+              }
+
               randomNetworkTreeMessageRxQueueReadyFlag = true;
               statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+
             }
           );
 
@@ -7495,39 +7530,10 @@ const fsmStates = {
 
         reporter(event, oldState, newState);
 
-        if ((hostname === PRIMARY_HOST) || configuration.testMode) {
-        
-          const fileObj = {
-            networkId: currentBestNetwork.networkId,
-            successRate: currentBestNetwork.successRate,
-            matchRate:  currentBestNetwork.matchRate,
-            overallMatchRate:  currentBestNetwork.overallMatchRate,
-            testCycles:  currentBestNetwork.testCycles,
-            testCycleHistory:  currentBestNetwork.testCycleHistory,
-            twitterStats: statsObj.twitter,
-            updatedAt: moment()
-          };
-
-          const folder = (configuration.testMode) ? bestNetworkFolder + "/test" : bestNetworkFolder;
-          const file = currentBestNetwork.networkId + ".json";
-
-          console.log(chalkBlue("TFE | SAVING BEST NETWORK"
-            + " | " + currentBestNetwork.networkId
-            + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
-            + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
-            + " | TEST CYCs: " + currentBestNetwork.testCycles
-            + " | " + folder + "/" + file
-          ));
-
-          saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
-          saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
-        }
-
         console.log(chalk.bold.blue("TFE | ===================================================="));
         console.log(chalk.bold.blue("TFE | ================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("TFE | ===================================================="));
 
-        console.log(chalk.bold.blue("TFE | TOTAL USERS FETCHED:   " + statsObj.users.totalFriendsFetched));
         console.log(chalk.bold.blue("TFE | TOTAL USERS PROCESSED: " + statsObj.users.totalFriendsProcessed));
 
         console.log(chalk.bold.blue("\nTFE | ----------------------------------------------------"
