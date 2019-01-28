@@ -4998,10 +4998,19 @@ function updateNetworkStats(params) {
 
       try{
 
-        const query = {};
+        let query = {};
+
+        const inputsIdArray = [...inputsIdSet];
+
+        query["$and"] = [
+          { inputsId: { "$in": inputsIdArray } },
+          { testCycles: { "$gte": configuration.minTestCycles } }
+        ]
+
         let chalkVal = chalkLog;
 
-        const networkObjArray = await global.NeuralNetwork.find(query).
+        const networkObjArray = await global.NeuralNetwork.
+          find(query).
           lean().
           sort({"overallMatchRate": -1}).
           limit(100).
