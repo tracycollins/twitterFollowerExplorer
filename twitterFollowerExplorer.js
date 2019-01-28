@@ -4999,19 +4999,33 @@ function updateNetworkStats(params) {
       try{
 
         const query = {};
+        let chalkVal = chalkLog;
 
-        const inputsObjArray = await global.NeuralNetwork.find(query).
+        const networkObjArray = await global.NeuralNetwork.find(query).
           lean().
           sort({"overallMatchRate": -1}).
           limit(100).
-          select({ inputsId: 1 }).
+          select({ overallMatchRate: 1, successRate: 1, networkId: 1, inputsId: 1 }).
           exec();
 
-        inputsObjArray.forEach(function(inputsObj){
-          bestInputsSet.add(inputsObj.inputsId);
+        networkObjArray.forEach(function(networkObj){
+          if (networkObj.inputsId && (networkObj.inputsId !== undefined)) {
+
+            chalkVal = (bestInputsSet.has(networkObj.inputsId)) ? chalkLog : chalkGreen;
+
+            bestInputsSet.add(networkObj.inputsId);
+
+            console.log(chalkVal("TFE | +++ BEST INPUTS SET"
+              + " [" + bestInputsSet.size + "]"
+              + " | INPUTS ID: " + networkObj.inputsId
+              + " | NID: " + networkObj.networkId
+              + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+              + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+            ));
+          }
         });
 
-        console.log(chalkInfo("TFE | BEST INPUTS SET: " + bestInputsSet.size));
+        console.log(chalkInfo("TFE | BEST INPUTS SET: " + bestInputsSet.size + "\n" + jsonPrint([...bestInputsSet])));
 
         bestInputsConfigObj.INPUTS_IDS = [];
         bestInputsConfigObj.INPUTS_IDS = [...bestInputsSet];
