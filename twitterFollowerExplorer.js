@@ -4981,8 +4981,6 @@ function updateNetworkStats(params) {
 
         bestNetworkHashMap.set(nnDbUpdated.networkId, nnDbUpdated);
 
-        // bestInputsSet.add(nnDbUpdated.inputsId);
-
         // printNetworkObj("TFE | UPDATE NN STATS", nnDbUpdated);
 
         return;
@@ -5002,15 +5000,22 @@ function updateNetworkStats(params) {
 
         const query = {};
 
-        const inputsIdArray = await global.NeuralNetwork.find(query).
+        const inputsObjArray = await global.NeuralNetwork.find(query).
           lean().
           sort({"overallMatchRate": -1}).
           limit(100).
           select({ inputsId: 1 }).
           exec();
 
+        inputsObjArray.forEach(function(inputsObj){
+          bestInputsSet.add(inputsObj.inputsId);
+        });
+
+        console.log(chalkInfo("TFE | BEST INPUTS SET: " + bestInputsSet.size));
+
         bestInputsConfigObj.INPUTS_IDS = [];
-        bestInputsConfigObj.INPUTS_IDS = inputsIdArray;
+        bestInputsConfigObj.INPUTS_IDS = [...bestInputsSet];
+
 
         let folder = dropboxConfigDefaultFolder;
         let file = defaultBestInputsConfigFile;
