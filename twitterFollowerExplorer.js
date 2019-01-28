@@ -86,7 +86,7 @@ const LANG_ANAL_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL;
 const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const FETCH_USER_INTERVAL = 5 * ONE_MINUTE;
-const DEFAULT_NUM_NN = 20;  // TOP 100 NN's are loaded from DB
+const DEFAULT_NUM_NN = 50;  // TOP 100 NN's are loaded from DB
 
 const LANGUAGE_ANALYZE_INTERVAL = 100;
 const RANDOM_NETWORK_TREE_INTERVAL = DEFAULT_MIN_INTERVAL;
@@ -133,6 +133,7 @@ const DEFAULT_INPUT_TYPES = [
 DEFAULT_INPUT_TYPES.sort();
 
 let inputsIdSet = new Set();
+let bestInputsSet = new Set();
 let skipLoadNetworkSet = new Set();
 
 let globalHistograms = {};
@@ -220,6 +221,10 @@ const configEvents = new EventEmitter2({
   maxListeners: 20,
   verboseMemoryLeak: true
 });
+
+class MyEmitter extends EventEmitter {};
+
+const myEmitter = new MyEmitter();
 
 const chalk = require("chalk");
 const chalkConnect = chalk.green;
@@ -375,6 +380,9 @@ statsObj.users.updatedCategorized = 0;
 statsObj.users.zipHashMapHit = 0;
 
 const bestRuntimeNetworkFileName = "bestRuntimeNetwork.json";
+const defaultNetworkInputsConfigFile = "default_networkInputsConfig.json";
+const defaultBestInputsConfigFile = "default_bestInputsConfig.json";
+const hostBestInputsConfigFile = hostname + "_bestInputsConfig.json";
 
 let bestNetwork  = {};
 bestNetwork.networkId = "";
@@ -743,6 +751,7 @@ configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_
 configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
 configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
 configuration.DROPBOX.DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || "twitterFollowerExplorerStats.json";
+
 
 
 let statsPickArray = [
@@ -1993,6 +2002,36 @@ function loadInputsDropboxFile(params){
   });
 }
 
+function loadNetworkInputsConfig(params){
+
+  return new Promise(async function(resolve, reject){
+
+    statsObj.status = "LOAD NETWORK INPUTS CONFIG";
+
+    console.log(chalkLog(MODULE_ID_PREFIX
+      + " | LOAD NETWORK INPUTS CONFIG FILE: " + dropboxConfigDefaultFolder + "/" + defaultNetworkInputsConfigFile
+    ));
+
+    let networkInputsObj;
+
+    try{
+      networkInputsObj = await loadFileRetry({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile});
+
+      configuration.inputsIdArray = networkInputsObj.INPUTS_IDS;
+
+      console.log(chalkNetwork(MODULE_ID_PREFIX + " | LOADED NETWORK INPUTS ARRAY\n" + jsonPrint(configuration.inputsIdArray)));
+      statsObj.networkInputsSetReady = true;
+      resolve();
+    }
+    catch(err){
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** NETWORK INPUTS CONFIG FILE LOAD ERROR: " + err));
+      statsObj.networkInputsSetReady = false;
+      return reject(err);
+    }
+
+  });
+}
+
 let watchOptions = {
   ignoreDotFiles: true,
   ignoreUnreadableDir: true,
@@ -2124,8 +2163,6 @@ function initCategorizedUserHashmap(params){
   return new Promise(function(resolve, reject){
 
     statsObj.status = "INIT CATEGORIZED USER HASHMAP";
-
-    // const query = (params.query) ? params.query : { $or: [ { "category": { $nin: [ false, null ] } } , { "categoryAuto": { $nin: [ false, null ] } } ] };
 
     let p = {};
 
@@ -4396,7 +4433,7 @@ function loadBestNetworksDropbox(params) {
                   networkObj
                 );
 
-                
+
                 return;
 
               }
@@ -4879,90 +4916,125 @@ function printTestCycleHistory(nn){
   });
 }
 
-function updateNetworkStats(params, callback) {
+function updateNetworkStats(params) {
 
-  statsObj.status = "UPDATE DB NN STATS";
+  return new Promise(function(resolve, reject){
 
+    statsObj.status = "UPDATE DB NN STATS";
 
-  const updateOverallMatchRate = (params.updateOverallMatchRate !== undefined) ? params.updateOverallMatchRate : false;
-  const saveImmediate = (params.saveImmediate !== undefined) ? params.saveImmediate : false;
-  const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
-  const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
-  const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : false;
+    const updateOverallMatchRate = (params.updateOverallMatchRate !== undefined) ? params.updateOverallMatchRate : false;
+    const saveImmediate = (params.saveImmediate !== undefined) ? params.saveImmediate : false;
+    const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
+    const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
+    const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : false;
 
-  const nnIds = Object.keys(params.networkStatsObj);
+    const nnIds = Object.keys(params.networkStatsObj);
 
-  console.log(chalkTwitter("TFE | UPDATE NETWORK STATS"
-    + " | " + nnIds.length + " | NETWORKS"
-    + " | UPDATE OAMR: " + updateOverallMatchRate
-    + " | UPDATE DB: " + updateDb
-    + " | INC TEST CYCs: " + incrementTestCycles
-    + " | ADD TEST HISTORY: " + addToTestHistory
-  ));
+    console.log(chalkTwitter("TFE | UPDATE NETWORK STATS"
+      + " | " + nnIds.length + " | NETWORKS"
+      + " | UPDATE OAMR: " + updateOverallMatchRate
+      + " | UPDATE DB: " + updateDb
+      + " | INC TEST CYCs: " + incrementTestCycles
+      + " | ADD TEST HISTORY: " + addToTestHistory
+    ));
 
-  let newNnDb;
-  let nnObj;
+    let newNnDb;
+    let nnObj;
 
-  async.eachSeries(nnIds, async function(nnId) {
+    async.eachSeries(nnIds, async function(nnId) {
 
-    if (bestNetworkHashMap.has(nnId)) {
+      if (bestNetworkHashMap.has(nnId)) {
 
-      let networkObj = bestNetworkHashMap.get(nnId);
+        let networkObj = bestNetworkHashMap.get(nnId);
 
-      networkObj.incrementTestCycles = incrementTestCycles;
-      networkObj.matchRate = params.networkStatsObj[nnId].matchRate;
-      networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
+        networkObj.incrementTestCycles = incrementTestCycles;
+        networkObj.matchRate = params.networkStatsObj[nnId].matchRate;
+        networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
 
-      const testHistoryItem = {
-        testCycle: networkObj.testCycles,
-        match: params.networkStatsObj[nnId].match,
-        mismatch: params.networkStatsObj[nnId].mismatch,
-        total: params.networkStatsObj[nnId].total,
-        matchRate: params.networkStatsObj[nnId].matchRate,
-        timeStampString: moment().format(compactDateTimeFormat),
-        timeStamp: moment()
-      };
+        const testHistoryItem = {
+          testCycle: networkObj.testCycles,
+          match: params.networkStatsObj[nnId].match,
+          mismatch: params.networkStatsObj[nnId].mismatch,
+          total: params.networkStatsObj[nnId].total,
+          matchRate: params.networkStatsObj[nnId].matchRate,
+          timeStampString: moment().format(compactDateTimeFormat),
+          timeStamp: moment()
+        };
 
-      const updateDbNetworkParams = {
-        networkObj: networkObj,
-        incrementTestCycles: incrementTestCycles,
-        testHistoryItem: testHistoryItem,
-        addToTestHistory: addToTestHistory,
-        verbose: configuration.testMode
-      };
+        const updateDbNetworkParams = {
+          networkObj: networkObj,
+          incrementTestCycles: incrementTestCycles,
+          testHistoryItem: testHistoryItem,
+          addToTestHistory: addToTestHistory,
+          verbose: configuration.testMode
+        };
 
-      let nnDbUpdated;
+        let nnDbUpdated;
 
-      try {
-        nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
+        try {
+          nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
+        }
+        catch(err){
+          console.log(chalkError("TFE | *** NN DB UPDATE ERROR: " + err));
+          return(err);
+        }
+
+        bestNetworkHashMap.set(nnDbUpdated.networkId, nnDbUpdated);
+
+        // bestInputsSet.add(nnDbUpdated.inputsId);
+
+        // printNetworkObj("TFE | UPDATE NN STATS", nnDbUpdated);
+
+        return;
+
+      }
+      else {
+        console.log(chalkAlert("TFE | ??? NETWORK NOT IN BEST NETWORK HASHMAP ???"
+          + " | NNID: " + nnId
+        ));
+        return;
+      }
+    }, async function(err) {
+
+      let bestInputsConfigObj = {};
+
+      try{
+
+        const query = {};
+
+        const inputsIdArray = await global.NeuralNetwork.find(query).
+          lean().
+          sort({"overallMatchRate": -1}).
+          limit(100).
+          select({ inputsId: 1 }).
+          exec();
+
+        bestInputsConfigObj.INPUTS_IDS = [];
+        bestInputsConfigObj.INPUTS_IDS = inputsIdArray;
+
+        let folder = dropboxConfigDefaultFolder;
+        let file = defaultBestInputsConfigFile;
+
+        if (hostname !== "google") {
+          folder = dropboxConfigHostFolder;
+          file = hostBestInputsConfigFile;
+        }
+
+        saveFileQueue.push({folder: folder, file: file, obj: bestInputsConfigObj});
+
+        saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb}, function() {
+          statsObj.status = statsObj.fsmState;
+          resolve();
+        });
+
       }
       catch(err){
-        console.log(chalkError("TFE | *** NN DB UPDATE ERROR: " + err));
-        return(err);
+        console.log(chalkError("TFE | *** BEST INPUTS ERROR: " + err));
+        reject(err);
       }
 
-      bestNetworkHashMap.set(nnDbUpdated.networkId, nnDbUpdated);
-
-
-      // printNetworkObj("TFE | UPDATE NN STATS", nnDbUpdated);
-
-      return;
-
-    }
-    else {
-      console.log(chalkAlert("TFE | ??? NETWORK NOT IN BEST NETWORK HASHMAP ???"
-        + " | NNID: " + nnId
-      ));
-      return;
-    }
-  }, function(err) {
-
-    saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb}, function() {
-
-      statsObj.status = statsObj.fsmState;
-
-      if (callback !== undefined) { callback(err); }
     });
+
   });
 }
 
@@ -5153,52 +5225,55 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
           console.log(chalkBlue("TFE | RNT | UPDATING ALL NNs STATS IN DB ..."));
 
-          updateNetworkStats(
-            {
-              networkStatsObj: m.statsObj.loadedNetworks, 
-              saveImmediate: true, 
-              updateDb: true, 
-              updateOverallMatchRate: true,
-              incrementTestCycles: true,
-              addToTestHistory: true,
-            }, 
-            function() {
+          try {
+            await updateNetworkStats({
+                networkStatsObj: m.statsObj.loadedNetworks, 
+                saveImmediate: true, 
+                updateDb: true, 
+                updateOverallMatchRate: true,
+                incrementTestCycles: true,
+                addToTestHistory: true
+              });
 
-              currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
+            currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
 
-              if ((hostname === PRIMARY_HOST) || configuration.testMode) {
+            if ((hostname === PRIMARY_HOST) || configuration.testMode) {
 
-                const fileObj = {
-                  networkId: currentBestNetwork.networkId,
-                  successRate: currentBestNetwork.successRate,
-                  matchRate:  currentBestNetwork.matchRate,
-                  overallMatchRate:  currentBestNetwork.overallMatchRate,
-                  testCycles:  currentBestNetwork.testCycles,
-                  testCycleHistory:  currentBestNetwork.testCycleHistory,
-                  twitterStats: statsObj.twitter,
-                  updatedAt: moment()
-                };
+              const fileObj = {
+                networkId: currentBestNetwork.networkId,
+                successRate: currentBestNetwork.successRate,
+                matchRate:  currentBestNetwork.matchRate,
+                overallMatchRate:  currentBestNetwork.overallMatchRate,
+                testCycles:  currentBestNetwork.testCycles,
+                testCycleHistory:  currentBestNetwork.testCycleHistory,
+                twitterStats: statsObj.twitter,
+                updatedAt: moment()
+              };
 
-                const folder = (configuration.testMode) ? bestNetworkFolder + "/test" : bestNetworkFolder;
-                const file = currentBestNetwork.networkId + ".json";
+              const folder = (configuration.testMode) ? bestNetworkFolder + "/test" : bestNetworkFolder;
+              const file = currentBestNetwork.networkId + ".json";
 
-                console.log(chalkBlue("TFE | SAVING BEST NETWORK"
-                  + " | " + currentBestNetwork.networkId
-                  + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
-                  + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
-                  + " | TEST CYCs: " + currentBestNetwork.testCycles
-                  + " | " + folder + "/" + file
-                ));
+              console.log(chalkBlue("TFE | SAVING BEST NETWORK"
+                + " | " + currentBestNetwork.networkId
+                + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
+                + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
+                + " | TEST CYCs: " + currentBestNetwork.testCycles
+                + " | " + folder + "/" + file
+              ));
 
-                saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
-                saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
-              }
-
-              randomNetworkTreeMessageRxQueueReadyFlag = true;
-              statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-
+              saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
+              saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
             }
-          );
+
+            randomNetworkTreeMessageRxQueueReadyFlag = true;
+            statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+
+            myEmitter.emit("allNetworksUpdated");
+
+          }
+          catch(err){
+            console.log(chalkError("TFE | *** UPDATE NETWORK STATS ERROR: " + err));
+          }
 
         break;
 
@@ -7293,6 +7368,19 @@ function reporter(event, oldState, newState) {
   ));
 }
 
+function waitEvent(params) {
+  return new Promise(function(resolve, reject){
+
+    console.log(chalkInfo("TFE | ... WAIT EVENT: " + params.event));
+
+    myEmitter.on(params.event, function(){
+      console.log(chalkInfo("TFE | !!! WAIT EVENT FIRED: " + params.event));
+      resolve();
+    });
+
+  });
+}
+
 const fsmStates = {
 
   "RESET":{
@@ -7571,15 +7659,13 @@ const fsmStates = {
 
         if (randomNetworkTree && (randomNetworkTree !== undefined)) {
           randomNetworkTree.send({op: "GET_STATS"});
+          console.log(chalkLog("TFE | PAUSING FOR RNT GET_STATS RESPONSE ..."));
+          await waitEvent({ event: "allNetworksUpdated"});
         }
-
-        console.log(chalkLog("TFE | PAUSING FOR 60 SECONDS FOR RNT GET_STATS RESPONSE ..."));
-
-        await delay({period: 60*ONE_SECOND, verbose: true});
 
         let histogramsSavedFlag = false;
 
-        console.log(chalkLog("TFE | SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
+        console.log(chalkInfo("TFE | SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
 
         async.forEach(DEFAULT_INPUT_TYPES, function(type, cb){
 
@@ -7659,10 +7745,6 @@ const fsmStates = {
         });
 
         statsObj.loadedNetworksFlag = false;
-
-        // if (randomNetworkTree && (randomNetworkTree !== undefined)) {
-        //   randomNetworkTree.send({op: "GET_STATS"});
-        // }
 
         let slackText = "\n*END FETCH ALL*";
         slackText = slackText + " | " + hostname;
