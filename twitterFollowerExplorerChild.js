@@ -2229,111 +2229,111 @@ let unfollowQueueReady = false;
 let unfollowQueueIntervalTime = process.env.DEFAULT_UNFOLLOW_QUEUE_INTERVAL || 5*ONE_SECOND;
 let unfollowQueue = [];
 
-function unfollowFriend(params, callback){
+// function unfollowFriend(params, callback){
 
-  if (!twitClient || twitClient === undefined) {
-    console.log(chalkAlert("TFC | UNFOLLOW FRIEND | TWIT CLIENT UNDEFINED"
-      + " |  @" + configuration.threeceeUser
-      + " | UID: " + params.user.userId
-      + " | @" + params.user.screenName
-    ));
-    return callback(new Error("TWIT CLIENT UNDEFINED"), null);
-  }
+//   if (!twitClient || twitClient === undefined) {
+//     console.log(chalkAlert("TFC | UNFOLLOW FRIEND | TWIT CLIENT UNDEFINED"
+//       + " |  @" + configuration.threeceeUser
+//       + " | UID: " + params.user.userId
+//       + " | @" + params.user.screenName
+//     ));
+//     return callback(new Error("TWIT CLIENT UNDEFINED"), null);
+//   }
 
-  let unfollowFriendParams = {};
+//   let unfollowFriendParams = {};
 
-  if (params.user.user_id !== undefined) { 
-    unfollowFriendParams.user_id = params.user.user_id;
-  }
-  else if (params.user.userId !== undefined) { 
-    unfollowFriendParams.user_id = params.user.userId;
-  }
+//   if (params.user.user_id !== undefined) { 
+//     unfollowFriendParams.user_id = params.user.user_id;
+//   }
+//   else if (params.user.userId !== undefined) { 
+//     unfollowFriendParams.user_id = params.user.userId;
+//   }
 
-  if (params.user.screen_name !== undefined) { 
-    unfollowFriendParams.screen_name = params.user.screen_name;
-  }
-  else if (params.user.screenName !== undefined) { 
-    unfollowFriendParams.screen_name = params.user.screenName;
-  }
+//   if (params.user.screen_name !== undefined) { 
+//     unfollowFriendParams.screen_name = params.user.screen_name;
+//   }
+//   else if (params.user.screenName !== undefined) { 
+//     unfollowFriendParams.screen_name = params.user.screenName;
+//   }
 
-  if ((unfollowFriendParams.user_id === undefined)
-    && (unfollowFriendParams.screen_name === undefined)
-  ){
+//   if ((unfollowFriendParams.user_id === undefined)
+//     && (unfollowFriendParams.screen_name === undefined)
+//   ){
 
-    console.log(chalkAlert("TFC | UNFOLLOW FRIEND"
-      + "\nINVALID PARAMS"
-      + "\n" + jsonPrint(params)
-    ));
-    quit("UNFOLLOW FRIEND | INVALID PARAMS");
-    return callback(null, null);
-  }
+//     console.log(chalkAlert("TFC | UNFOLLOW FRIEND"
+//       + "\nINVALID PARAMS"
+//       + "\n" + jsonPrint(params)
+//     ));
+//     quit("UNFOLLOW FRIEND | INVALID PARAMS");
+//     return callback(null, null);
+//   }
 
-  twitClient.post(
+//   twitClient.post(
 
-    "friendships/destroy", unfollowFriendParams, 
+//     "friendships/destroy", unfollowFriendParams, 
 
-    function destroyFriend(err, data, response){  // if success, data = user
+//     function destroyFriend(err, data, response){  // if success, data = user
 
-      if (err) {
+//       if (err) {
 
-        console.log(chalkError("TFC | *** UNFOLLOW FRIEND ERROR"
-          + " | ERROR: " + err
-          + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
-        ));
+//         console.log(chalkError("TFC | *** UNFOLLOW FRIEND ERROR"
+//           + " | ERROR: " + err
+//           + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
+//         ));
 
-        return callback(err, unfollowFriendParams);
-      }
+//         return callback(err, unfollowFriendParams);
+//       }
 
-      if (_.isObject(response) 
-        && (response.statusCode !== undefined) 
-        && (response.statusCode !== 200)) {
+//       if (_.isObject(response) 
+//         && (response.statusCode !== undefined) 
+//         && (response.statusCode !== 200)) {
 
-        console.log(chalkError("TFC | *** UNFOLLOW FAIL"
-          + " | 3C: @" + configuration.threeceeUser
-          + " | RESPONSE CODE: " + response.statusCode
-          + "\nTFC | PARAMS\n" + jsonPrint(unfollowFriendParams)
-          + "\nTFC | RESPONSE\n" + jsonPrint(response)
-        ));
+//         console.log(chalkError("TFC | *** UNFOLLOW FAIL"
+//           + " | 3C: @" + configuration.threeceeUser
+//           + " | RESPONSE CODE: " + response.statusCode
+//           + "\nTFC | PARAMS\n" + jsonPrint(unfollowFriendParams)
+//           + "\nTFC | RESPONSE\n" + jsonPrint(response)
+//         ));
 
-        return callback(err, response);
-      }
+//         return callback(err, response);
+//       }
 
-      if (data.following) {
+//       if (data.following) {
 
-        console.log(chalkAlert("TFC | XXX UNFOLLOW"
-          + " | 3C: @" + configuration.threeceeUser
-          + " | UID: " + data.id_str
-          + " | @" + data.screen_name
-          + " | FLWRs: " + data.followers_count
-          + " | FRNDs: " + data.friends_count
-          + " | Ts: " + data.statuses_count
-          + " | FOLLOWING: " + data.following
-          // + " | RESPONSE CODE: " + response.statusCode
-          // + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
-          // + "\nDATA\n" + jsonPrint(data)
-        ));
+//         console.log(chalkAlert("TFC | XXX UNFOLLOW"
+//           + " | 3C: @" + configuration.threeceeUser
+//           + " | UID: " + data.id_str
+//           + " | @" + data.screen_name
+//           + " | FLWRs: " + data.followers_count
+//           + " | FRNDs: " + data.friends_count
+//           + " | Ts: " + data.statuses_count
+//           + " | FOLLOWING: " + data.following
+//           // + " | RESPONSE CODE: " + response.statusCode
+//           // + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
+//           // + "\nDATA\n" + jsonPrint(data)
+//         ));
 
-        process.send(
-          {
-            op:"UNFOLLOWED", 
-            threeceeUser: configuration.threeceeUser, 
-            user: data
-          }
-        );
+//         process.send(
+//           {
+//             op:"UNFOLLOWED", 
+//             threeceeUser: configuration.threeceeUser, 
+//             user: data
+//           }
+//         );
 
-        return callback(null, data);
-      }
+//         return callback(null, data);
+//       }
 
-      debug(chalkInfo("TFC | miss UNFOLLOW"
-        + " | 3C: @" + configuration.threeceeUser
-        + " | UID: " + unfollowFriendParams.user_id
-      ));
+//       debug(chalkInfo("TFC | miss UNFOLLOW"
+//         + " | 3C: @" + configuration.threeceeUser
+//         + " | UID: " + unfollowFriendParams.user_id
+//       ));
 
-      callback(null, null);
+//       callback(null, null);
 
-    }
-  );
-}
+//     }
+//   );
+// }
 
 function fetchFriends(params) {
 
@@ -2973,120 +2973,120 @@ process.on("message", async function(m) {
 
     case "FOLLOW":
 
-      if (twitClient && (twitClient !== undefined)) {
+      // if (twitClient && (twitClient !== undefined)) {
 
-        twitClient.post(
+      //   twitClient.post(
 
-          "friendships/create", {screen_name: m.user.screenName}, 
+      //     "friendships/create", {screen_name: m.user.screenName}, 
 
-          function createFriend(err, data, response){
-            if (err) {
-              console.log(chalkError("TFC | FOLLOW ERROR"
-                + " | @" + configuration.threeceeUser
-                + " | " + err
-              ));
+      //     function createFriend(err, data, response){
+      //       if (err) {
+      //         console.log(chalkError("TFC | FOLLOW ERROR"
+      //           + " | @" + configuration.threeceeUser
+      //           + " | " + err
+      //         ));
 
-              if (err.code === 89){
+      //         if (err.code === 89){
 
-                console.log(chalkAlert("TFC | *** TWITTER FOLLOW ERROR | INVALID OR EXPIRED TOKEN" 
-                  + " | " + getTimeStamp() 
-                  + " | @" + configuration.threeceeUser 
-                ));
+      //           console.log(chalkAlert("TFC | *** TWITTER FOLLOW ERROR | INVALID OR EXPIRED TOKEN" 
+      //             + " | " + getTimeStamp() 
+      //             + " | @" + configuration.threeceeUser 
+      //           ));
 
-                statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
-                statsObj.threeceeUser.err = err;
+      //           statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+      //           statsObj.threeceeUser.err = err;
 
-                process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
-                fsm.fsm_error();
+      //           process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+      //           fsm.fsm_error();
 
-                return reject(err);
-              }
+      //           return reject(err);
+      //         }
 
 
-              process.send({op:"ERROR", type: "TWITTER FOLLOW", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
-            }
-            else {
+      //         process.send({op:"ERROR", type: "TWITTER FOLLOW", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
+      //       }
+      //       else {
 
-              console.log(chalkInfo("TFC | +++ FOLLOW"
-                + " | 3C: @" + configuration.threeceeUser
-                + " | NID: " + m.user.userId
-                + " | @" + m.user.screenName.toLowerCase()
-              ));
-            }
-          }
-        );
-      }
+      //         console.log(chalkInfo("TFC | +++ FOLLOW"
+      //           + " | 3C: @" + configuration.threeceeUser
+      //           + " | NID: " + m.user.userId
+      //           + " | @" + m.user.screenName.toLowerCase()
+      //         ));
+      //       }
+      //     }
+      //   );
+      // }
     break;
 
     case "UNFOLLOW":
 
-      unfollowFriend({ user: m.user }, function(err, results){
+      // unfollowFriend({ user: m.user }, function(err, results){
 
-        if (err) {
+      //   if (err) {
 
-          if (err.code === 34){
-            console.log(chalkError("TFC | *** =X= UNFOLLOW ERROR | NON-EXISTENT USER"
-              + " | 3C: @" + configuration.threeceeUser
-              + "\nTFC | " + jsonPrint(m.user)
-            ));
-            return;
-          }
+      //     if (err.code === 34){
+      //       console.log(chalkError("TFC | *** =X= UNFOLLOW ERROR | NON-EXISTENT USER"
+      //         + " | 3C: @" + configuration.threeceeUser
+      //         + "\nTFC | " + jsonPrint(m.user)
+      //       ));
+      //       return;
+      //     }
 
-          if (err.code === 89){
+      //     if (err.code === 89){
 
-            console.log(chalkAlert("TFC | *** TWITTER UNFOLLOW ERROR | INVALID OR EXPIRED TOKEN" 
-              + " | " + getTimeStamp() 
-              + " | @" + configuration.threeceeUser 
-            ));
+      //       console.log(chalkAlert("TFC | *** TWITTER UNFOLLOW ERROR | INVALID OR EXPIRED TOKEN" 
+      //         + " | " + getTimeStamp() 
+      //         + " | @" + configuration.threeceeUser 
+      //       ));
 
-            statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
-            statsObj.threeceeUser.err = err;
+      //       statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+      //       statsObj.threeceeUser.err = err;
 
-            process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
-            fsm.fsm_error();
+      //       process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+      //       fsm.fsm_error();
 
-            return;
-          }
+      //       return;
+      //     }
 
-          console.log(chalkError("TFC | *** =X= UNFOLLOW ERROR"
-            + " | 3C: @" + configuration.threeceeUser
-            + "\nTFC | " + jsonPrint(m.user)
-          ));
+      //     console.log(chalkError("TFC | *** =X= UNFOLLOW ERROR"
+      //       + " | 3C: @" + configuration.threeceeUser
+      //       + "\nTFC | " + jsonPrint(m.user)
+      //     ));
 
-          process.send(
-            {
-              op:"ERROR",
-              type: "TWITTER UNFOLLOW", 
-              threeceeUser: configuration.threeceeUser, 
-              state: "UNFOLLOW_ERR", 
-              params: { user: m.user }, 
-              error: err
-            }
-          );
+      //     process.send(
+      //       {
+      //         op:"ERROR",
+      //         type: "TWITTER UNFOLLOW", 
+      //         threeceeUser: configuration.threeceeUser, 
+      //         state: "UNFOLLOW_ERR", 
+      //         params: { user: m.user }, 
+      //         error: err
+      //       }
+      //     );
 
-          return;
-        }
+      //     return;
+      //   }
 
-        if (!results) {
+      //   if (!results) {
 
-          debug(chalkInfo("TFC | UNFOLLOW MISS"
-            + " | 3C: @" + configuration.threeceeUser
-            + "\n" + jsonPrint(m.user)
-          ));
+      //     debug(chalkInfo("TFC | UNFOLLOW MISS"
+      //       + " | 3C: @" + configuration.threeceeUser
+      //       + "\n" + jsonPrint(m.user)
+      //     ));
 
-          return;
-        }
+      //     return;
+      //   }
 
-        console.log(chalkInfo("TFC | XXX UNFOLLOW"
-          + " | 3C: @" + configuration.threeceeUser
-          + " | " + results.id_str
-          + " | @" + results.screen_name
-          + " | FLWRs: " + results.followers_count
-          + " | FRNDs: " + results.friends_count
-          + " | Ts: " + results.statuses_count
-        ));
+      //   console.log(chalkInfo("TFC | XXX UNFOLLOW"
+      //     + " | 3C: @" + configuration.threeceeUser
+      //     + " | " + results.id_str
+      //     + " | @" + results.screen_name
+      //     + " | FLWRs: " + results.followers_count
+      //     + " | FRNDs: " + results.friends_count
+      //     + " | Ts: " + results.statuses_count
+      //   ));
 
-      });
+      // });
     break;
 
     case "QUIT":
