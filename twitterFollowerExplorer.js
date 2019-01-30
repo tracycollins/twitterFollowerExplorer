@@ -2169,9 +2169,11 @@ function initCategorizedUserHashmap(params){
     p.skip = 0;
     p.limit = DEFAULT_FIND_CAT_USER_CURSOR_LIMIT;
     p.batchSize = DEFAULT_CURSOR_BATCH_SIZE;
-    p.query = { 
-      "category": { "$nin": [ false, null ] } 
-    };
+    p.query["$and"] = [
+      { category: { "$in": [ "left", "right", "neutral" ] } },
+      { following: true },
+      { ignored: false }
+    ];
 
     let more = true;
     let totalCount = 0;
@@ -4508,7 +4510,7 @@ function loadBestNetworksDatabase(paramsIn) {
         { inputsId: { "$in": inputsIdArray } },
         { successRate: { "$gte": configuration.globalMinSuccessRate } },
         { testCycles: { "$gte": configuration.minTestCycles } }
-      ]
+      ];
     }
 
     let randomUntestedQuery = {};
