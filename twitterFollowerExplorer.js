@@ -2123,7 +2123,6 @@ function initCategorizedUserHashmap(){
     p.query = {};
     p.query.$and = [
       { category: { "$in": ["left", "right", "neutral"] } },
-      { following: true },
       { ignored: false }
     ];
 
@@ -6806,7 +6805,7 @@ function updateUserTweets(params){
       if (configuration.verbose || (tweetsProcessed > 0)) {
         console.log(chalkLog("TFE | +++ TWEETS"
           + " | NEW: " + tweetsProcessed
-          + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + " ]"
+          + " [ PRCSSD/HITS/TOT " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + " ]"
           + " | SINCE: " + user.tweets.sinceId
           + " | Ts: " + user.tweets.tweetIds.length
           + " | @" + user.screenName
