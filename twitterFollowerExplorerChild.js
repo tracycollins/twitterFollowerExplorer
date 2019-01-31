@@ -1717,6 +1717,16 @@ function fetchUserTweets(params){
           return reject(err);
         }
         
+        if (err.statusCode === 401){
+          console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR | NOT AUTHORIZED"
+            + " | " + getTimeStamp() 
+            + " | @" + configuration.threeceeUser 
+            + " | FETCH USER ID: " + params.userId
+          ));
+          process.send({op: "ERROR", type: "USER_NOT_AUTHORIZED", userId: params.userId, threeceeUser: configuration.threeceeUser, error: err});
+          return reject(err);
+        }
+        
         console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR"
           + " | " + getTimeStamp() 
           + " | @" + configuration.threeceeUser 
@@ -2548,7 +2558,7 @@ function initFetchUserTweets(p) {
     fetchUserTweetsQueueInterval = setInterval(async function(){
 
       if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag && fetchUserTweetsQueueReady && (fetchUserTweetsQueue.length === 0)) {
-        
+
         console.log(chalkBlueBold("TFC | ==========================="));
         console.log(chalkBlueBold("TFC | XXX FETCHED USER TWEETS END"));
         console.log(chalkBlueBold("TFC | ==========================="));

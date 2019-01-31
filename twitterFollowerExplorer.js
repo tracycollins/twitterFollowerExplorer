@@ -8358,6 +8358,11 @@ function childCreate(p){
 
           case "ERROR":
 
+            if (m.type === "USER_NOT_AUTHORIZED") {
+              console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT AUTHORIZED " + m.userId));
+              categorizedUserHashmap.delete(m.userId);
+              break;
+            }
 
             if (m.type === "USER_BLOCKED") {
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER BLOCKED " + m.userId));
