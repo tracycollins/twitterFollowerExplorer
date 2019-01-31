@@ -430,10 +430,10 @@ function slackSendRtmMessage(msg){
   return new Promise(async function(resolve, reject){
 
     try {
-      console.log(chalkBlueBold("TNN | SLACK RTM | SEND: " + msg));
+      console.log(chalkBlueBold("TFE | SLACK RTM | SEND: " + msg));
       const sendResponse = await slackRtmClient.sendMessage(msg, slackConversationId);
 
-      console.log(chalkLog("TNN | SLACK RTM | >T\n" + jsonPrint(sendResponse)));
+      console.log(chalkLog("TFE | SLACK RTM | >T\n" + jsonPrint(sendResponse)));
       resolve(sendResponse);
     }
     catch(err){
@@ -463,7 +463,7 @@ function slackSendWebMessage(msgObj){
         message.attachments = msgObj.attachments;
       }
 
-      console.log(chalkBlueBold("TNN | SLACK WEB | SEND\n" + jsonPrint(message)));
+      console.log(chalkBlueBold("TFE | SLACK WEB | SEND\n" + jsonPrint(message)));
       slackWebClient.chat.postMessage(message);
       resolve();
     }
@@ -479,7 +479,7 @@ function slackMessageHandler(message){
 
     try {
 
-      console.log(chalkInfo("TNN | MESSAGE | " + message.type + " | " + message.text));
+      console.log(chalkInfo("TFE | MESSAGE | " + message.type + " | " + message.text));
 
       if (message.type !== "message") {
         console.log(chalkAlert("Unhandled MESSAGE TYPE: " + message.type));
@@ -538,14 +538,14 @@ function slackMessageHandler(message){
           resolve();
         break;
         case "PING":
-          await slackSendWebMessage(hostname + " | TNN | PONG");
+          await slackSendWebMessage(hostname + " | TFE | PONG");
           resolve();
         break;
         case "NONE":
           resolve();
         break;
         default:
-          console.log(chalkAlert("TNN | *** UNDEFINED SLACK MESSAGE: " + message.text));
+          console.log(chalkAlert("TFE | *** UNDEFINED SLACK MESSAGE: " + message.text));
           // reject(new Error("UNDEFINED SLACK MESSAGE TYPE: " + message.text));
           resolve({text: "UNDEFINED SLACK MESSAGE", message: message});
       }
@@ -567,16 +567,16 @@ function initSlackWebClient(){
       slackWebClient = new WebClient(slackRtmToken);
 
       const testResponse = await slackWebClient.api.test();
-      console.log("TNN | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
+      console.log("TFE | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
 
       const botsInfoResponse = await slackWebClient.bots.info();
-      console.log("TNN | SLACK WEB BOTS INFO RESPONSE\n" + jsonPrint(botsInfoResponse));
+      console.log("TFE | SLACK WEB BOTS INFO RESPONSE\n" + jsonPrint(botsInfoResponse));
 
       const conversationsListResponse = await slackWebClient.conversations.list({token: slackOAuthAccessToken});
 
       conversationsListResponse.channels.forEach(async function(channel){
   
-        console.log(chalkLog("TNN | CHANNEL | " + channel.id + " | " + channel.name));
+        console.log(chalkLog("TFE | CHANNEL | " + channel.id + " | " + channel.name));
 
         if (channel.name === slackChannel) {
           configuration.slackChannel = channel;
@@ -599,7 +599,7 @@ function initSlackWebClient(){
           });
 
           const chatPostMessageResponse = await slackWebClient.chat.postMessage(message);
-          console.log("TNN | SLACK WEB CHAT POST MESSAGE RESPONSE\n" + jsonPrint(chatPostMessageResponse));
+          console.log("TFE | SLACK WEB CHAT POST MESSAGE RESPONSE\n" + jsonPrint(chatPostMessageResponse));
 
         }
 
@@ -611,7 +611,7 @@ function initSlackWebClient(){
 
     }
     catch(err){
-      console.log(chalkError("TNN | *** INIT SLACK WEB CLIENT ERROR: " + err));
+      console.log(chalkError("TFE | *** INIT SLACK WEB CLIENT ERROR: " + err));
       reject(err);
     }
 
@@ -628,34 +628,34 @@ function initSlackRtmClient(){
 
       const slackInfo = await slackRtmClient.start();
 
-      console.log(chalkInfo("TNN | SLACK RTM | INFO\n" + jsonPrint(slackInfo)));
+      console.log(chalkInfo("TFE | SLACK RTM | INFO\n" + jsonPrint(slackInfo)));
 
       slackRtmClient.on("slack_event", async function(eventType, event){
         switch (eventType) {
           case "pong":
-            debug(chalkLog("TNN | SLACK RTM PONG | " + getTimeStamp() + " | " + event.reply_to));
+            debug(chalkLog("TFE | SLACK RTM PONG | " + getTimeStamp() + " | " + event.reply_to));
           break;
-          default: debug(chalkInfo("TNN | SLACK RTM EVENT | " + getTimeStamp() + " | " + eventType + "\n" + jsonPrint(event)));
+          default: debug(chalkInfo("TFE | SLACK RTM EVENT | " + getTimeStamp() + " | " + eventType + "\n" + jsonPrint(event)));
         }
       });
 
 
       slackRtmClient.on("message", async function(message){
-        if (configuration.verbose) { console.log(chalkLog("TNN | RTM R<\n" + jsonPrint(message))); }
-        debug(`TNN | SLACK RTM MESSAGE | R< | CH: ${message.channel} | USER: ${message.user} | ${message.text}`);
+        if (configuration.verbose) { console.log(chalkLog("TFE | RTM R<\n" + jsonPrint(message))); }
+        debug(`TFE | SLACK RTM MESSAGE | R< | CH: ${message.channel} | USER: ${message.user} | ${message.text}`);
 
         try {
           await slackMessageHandler(message);
         }
         catch(err){
-          console.log(chalkError("TNN | *** SLACK RTM MESSAGE ERROR: " + err));
+          console.log(chalkError("TFE | *** SLACK RTM MESSAGE ERROR: " + err));
         }
 
       });
 
       slackRtmClient.on("ready", async function(){
         try {
-          if (configuration.verbose) { slackSendRtmMessage(hostname + " | TNN | SLACK RTM READY"); }
+          if (configuration.verbose) { slackSendRtmMessage(hostname + " | TFE | SLACK RTM READY"); }
           resolve();
         }
         catch(err){
@@ -666,7 +666,7 @@ function initSlackRtmClient(){
 
     }
     catch(err){
-      console.log(chalkError("TNN | *** INIT SLACK RTM CLIENT | " + err));
+      console.log(chalkError("TFE | *** INIT SLACK RTM CLIENT | " + err));
       reject(err);
     }
 
@@ -5060,9 +5060,10 @@ function initActivateNetworkQueueInterval(interval) {
 
         // console.log(chalkAlert("TFE | RANDOM NETWORK TREE ACTIVATE: " + Object.keys(activateNetworkObj)));
 
-        randomNetworkTree.send({op: "ACTIVATE", obj: activateNetworkObj});
+        randomNetworkTree.send({op: "ACTIVATE", obj: activateNetworkObj}, function(){
+          statsObj.queues.activateNetworkQueue.busy = false;
+        });
 
-        statsObj.queues.activateNetworkQueue.busy = false;
 
       }
 
@@ -5196,7 +5197,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
       const m = randomNetworkTreeMessageRxQueue.shift();
 
       let user = {};
-      let prevBestNnObj = {};
+      let prevBesTFEObj = {};
       let fileObj = {};
       let file;
 
@@ -5260,7 +5261,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             }
 
             randomNetworkTreeMessageRxQueueReadyFlag = true;
-            statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+            // statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
 
             myEmitter.emit("allNetworksUpdated");
 
@@ -5403,7 +5404,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             ));
           }
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+          // statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           runEnable();
         break;
 
@@ -5471,10 +5472,10 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           }
           if (m.previousBestNetworkId && bestNetworkHashMap.has(m.previousBestNetworkId)) {
 
-            prevBestNnObj = bestNetworkHashMap.get(m.previousBestNetworkId);
-            prevBestNnObj.matchRate = m.previousBestMatchRate;
+            prevBesTFEObj = bestNetworkHashMap.get(m.previousBestNetworkId);
+            prevBesTFEObj.matchRate = m.previousBestMatchRate;
 
-            bestNetworkHashMap.set(m.previousBestNetworkId, prevBestNnObj);
+            bestNetworkHashMap.set(m.previousBestNetworkId, prevBesTFEObj);
 
             if (hostname === PRIMARY_HOST) {
 
@@ -5484,7 +5485,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               ));
 
               file = m.previousBestNetworkId + ".json";
-              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: prevBestNnObj });
+              saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: prevBesTFEObj });
             }
           }
           randomNetworkTreeMessageRxQueueReadyFlag = true;
@@ -8357,8 +8358,20 @@ function childCreate(p){
 
           case "ERROR":
 
-            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
 
+            if (m.type === "USER_BLOCKED") {
+              console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER BLOCKED " + m.userId));
+              categorizedUserHashmap.delete(m.userId);
+              break;
+            }
+
+            if (m.type === "USER_NOT_FOUND") {
+              console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT FOUND " + m.userId));
+              categorizedUserHashmap.delete(m.userId);
+              break;
+            }
+
+            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
             childHashMap[childId].status = "ERROR";
 
             if (m.error) { 
@@ -8438,13 +8451,17 @@ function childCreate(p){
           case "USER_TWEETS":
 
             if (categorizedUserHashmap.has(m.userId)){
+
               processUserQueue.push(m);
               statsObj.queues.processUserQueue.size = processUserQueue.length;
-              console.log(chalkTwitter("TFE | USER_TWEETS"
-                + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
-                + " | UID: " + m.userId
-                + " | LTs: " + m.latestTweets.length
-              ));
+
+              if (configuration.verbose){
+                console.log(chalkTwitter("TFE | USER_TWEETS"
+                  + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
+                  + " | UID: " + m.userId
+                  + " | LTs: " + m.latestTweets.length
+                ));
+              }
             }
 
           break;

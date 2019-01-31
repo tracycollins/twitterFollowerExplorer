@@ -663,7 +663,7 @@ function printNetworkResults(params){
         "RNT | NNID",
         "INPUTSID",
         "INPUTS",
-        "OAMR",
+        "OMR",
         "SR",
         "ATOT",
         "AM",
@@ -863,7 +863,7 @@ function generateNetworksOutput(params){
           + " | " + statsObj.currentBestNetwork.networkId
           + " | SR: " + statsObj.currentBestNetwork.successRate.toFixed(2) + "%"
           + " | MR: " + statsObj.currentBestNetwork.matchRate.toFixed(2) + "%"
-          + " | OAMR: " + statsObj.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+          + " | OMR: " + statsObj.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
           + " | TOT: " + statsObj.currentBestNetwork.total
           + " | MATCH: " + statsObj.currentBestNetwork.match
         ));
@@ -884,7 +884,7 @@ function generateNetworksOutput(params){
             + "\nRNT | INPUTS:       " + statsObj.currentBestNetwork.numInputs
             + "\nRNT | SR:           " + statsObj.currentBestNetwork.successRate.toFixed(2) + "%"
             + "\nRNT | MR:           " + statsObj.currentBestNetwork.matchRate.toFixed(2) + "%"
-            + "\nRNT | OAMR:         " + statsObj.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+            + "\nRNT | OMR:         " + statsObj.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
             + "\nRNT | TCs:          " + statsObj.currentBestNetwork.testCycles
             + "\nRNT | TCH:          " + statsObj.currentBestNetwork.testCycleHistory.length
             + "\nRNT | PREV BEST:    " + previousBestNetworkMatchRate.toFixed(2) + "%" + " | ID: " + previousBestNetworkId
@@ -1025,10 +1025,12 @@ function categoryToString(c) {
 
 function printActivateResult(prefix, nn, category, categoryAuto, screenName){
   console.log(chalkInfo(prefix
-    + " | OAMR: " + nn.overallMatchRate.toFixed(2) + "%"
-    + " | MR: " + nn.matchRate.toFixed(2) + "%"
+    + " | MR: " + statsObj.categorize.matchRate.toFixed(2) + "%"
+    + " | MTCH: " + statsObj.categorize.match + " / TOT: " + statsObj.categorize.total 
+    + " [ " + statsObj.categorize.skipped + " SKP | " + statsObj.categorize.grandTotal + " GTOT ]"
+    + " | OMR: " + nn.overallMatchRate.toFixed(2) + "%"
     + " | SR: " + nn.successRate.toFixed(2) + "%"
-    + " | " + nn.match + " / " + nn.total + " [ " + statsObj.categorize.skipped + " SKP | " + statsObj.categorize.grandTotal + " GTOT ]"
+    // + " | " + nn.match + " / " + nn.total + " [ " + statsObj.categorize.skipped + " SKP | " + statsObj.categorize.grandTotal + " GTOT ]"
     + " | TC: " + nn.testCycles
     + " | TCH: " + nn.testCycleHistory.length
     + " | " + nn.networkId
@@ -1077,35 +1079,6 @@ function initActivateNetworkInterval(interval){
 
         statsObj.normalization = activateNetworkObj.normalization;
 
-        if (maxQueueFlag && (rxActivateNetworkQueue.length < MAX_Q_SIZE)) {
-          process.send({op: "QUEUE_READY", queue: rxActivateNetworkQueue.length}, function(err){
-            if (err) { 
-              console.trace(chalkError("RNT | SEND ERROR | QUEUE_READY | " + err));
-              quit("SEND QUEUE_READY ERROR");
-            }
-          });
-          maxQueueFlag = false;
-        }
-        else if (rxActivateNetworkQueue.length === 0){
-          process.send({op: "QUEUE_EMPTY", queue: rxActivateNetworkQueue.length}, function(err){
-            if (err) { 
-              console.trace(chalkError("RNT | SEND ERROR | QUEUE_EMPTY | " + err));
-              quit("SEND QUEUE_EMPTY ERROR");
-            }
-          });
-          maxQueueFlag = false;
-        }
-
-        if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
-          process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
-            if (err) { 
-              console.trace(chalkError("RNT | SEND ERROR | QUEUE_FULL | " + err));
-              quit("SEND QUEUE_FULL ERROR");
-            }
-          });
-          maxQueueFlag = true;
-        }
-
         try {
 
           const activateNetworkResults = await activateNetwork({ user: activateNetworkObj.user });
@@ -1151,15 +1124,20 @@ function initActivateNetworkInterval(interval){
             if (category) {
 
               statsObj.categorize[generateNetworksOutputObj.bestNetwork.categoryAuto] += 1;
+              statsObj.bestNetwork[generateNetworksOutputObj.bestNetwork.categoryAuto] += 1;
 
               if ((category === "left") || (category === "neutral")|| (category === "right")) {
 
                 statsObj.categorize.total += 1;
+                statsObj.bestNetwork.total += 1;
 
                 if (category === generateNetworksOutputObj.bestNetwork.categoryAuto) {
 
                   statsObj.categorize.match += 1;
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
+
+                  statsObj.bestNetwork.match += 1;
+                  statsObj.bestNetwork.matchRate = 100.0 * statsObj.bestNetwork.match / statsObj.bestNetwork.total;
 
                   if (configuration.verbose || configuration.testMode || (statsObj.categorize.grandTotal % 100 === 0)) {
                     printActivateResult(
@@ -1178,6 +1156,9 @@ function initActivateNetworkInterval(interval){
                   statsObj.categorize.mismatch += 1;
                   statsObj.categorize.matchRate = 100.0 * statsObj.categorize.match / statsObj.categorize.total;
 
+                  statsObj.bestNetwork.mismatch += 1;
+                  statsObj.bestNetwork.matchRate = 100.0 * statsObj.bestNetwork.match / statsObj.bestNetwork.total;
+
                   if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                     printActivateResult(
                       "RNT | ---  miss ", 
@@ -1192,6 +1173,8 @@ function initActivateNetworkInterval(interval){
               }
               else {
                 statsObj.categorize.skipped += 1;
+
+                statsObj.bestNetwork.skipped += 1;
 
                 if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                   printActivateResult(
@@ -1230,7 +1213,6 @@ function initActivateNetworkInterval(interval){
           process.send(messageObj, function(){
             activateNetworkIntervalBusy = false;
           });
-
         }
         catch(err){
 
@@ -1240,8 +1222,37 @@ function initActivateNetworkInterval(interval){
           ));
 
           activateNetworkIntervalBusy = false;
-
         }
+
+        if (maxQueueFlag && (rxActivateNetworkQueue.length < MAX_Q_SIZE)) {
+          process.send({op: "QUEUE_READY", queue: rxActivateNetworkQueue.length}, function(err){
+            if (err) { 
+              console.trace(chalkError("RNT | SEND ERROR | QUEUE_READY | " + err));
+              quit("SEND QUEUE_READY ERROR");
+            }
+          });
+          maxQueueFlag = false;
+        }
+        else if (rxActivateNetworkQueue.length === 0){
+          process.send({op: "QUEUE_EMPTY", queue: rxActivateNetworkQueue.length}, function(err){
+            if (err) { 
+              console.trace(chalkError("RNT | SEND ERROR | QUEUE_EMPTY | " + err));
+              quit("SEND QUEUE_EMPTY ERROR");
+            }
+          });
+          maxQueueFlag = false;
+        }
+
+        if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
+          process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
+            if (err) { 
+              console.trace(chalkError("RNT | SEND ERROR | QUEUE_FULL | " + err));
+              quit("SEND QUEUE_FULL ERROR");
+            }
+          });
+          maxQueueFlag = true;
+        }
+
 
       }
 
@@ -1379,7 +1390,7 @@ function loadNetwork(params){
       + " | [ " + networksHashMap.size + " NNs IN HM ]"
       + " | SR: " + networkObj.successRate.toFixed(2) + "%"
       + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
-      + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+      + " | OMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
       + " | TC: " + networkObj.testCycles
       + " | TCH: " + networkObj.testCycleHistory.length
       + " | " + networkObj.networkId
@@ -1400,9 +1411,9 @@ function printCategorizeHistory(){
       + "\nRNT | BEST: " + catStats.bestNetwork.networkId
       + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SR"
       + " - MR: " + catStats.bestNetwork.matchRate.toFixed(2) + "% MR"
-      + " - OAMR:" + catStats.bestNetwork.overallMatchRate.toFixed(2) + "% MR"
+      + " - OMR:" + catStats.bestNetwork.overallMatchRate.toFixed(2) + "% MR"
       + "\nRNT | MR: " + catStats.matchRate.toFixed(2) + "%"
-      + " | OAMR: " + catStats.overallMatchRate.toFixed(2) + "%"
+      + " | OMR: " + catStats.overallMatchRate.toFixed(2) + "%"
       + " | TOT: " + catStats.total
       + " | MATCH: " + catStats.match
       + " | L: " + catStats.left
@@ -1551,6 +1562,7 @@ process.on("message", async function(m) {
     break;
 
     case "GET_STATS":
+      await printNetworkResults({title: "GET STATS"});
       process.send({ op: "STATS", statsObj: statsObj }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
