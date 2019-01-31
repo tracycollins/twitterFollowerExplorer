@@ -597,7 +597,7 @@ function activateNetwork(params){
 
           const match = (categoryAuto === params.user.category) ? "MATCH" : "MISS";
 
-          if (configuration.verbose) {
+          // if (configuration.verbose) {
             printNetworkInput({
               title: networkObj.networkId
               + " | @" + params.user.screenName 
@@ -607,7 +607,7 @@ function activateNetwork(params){
               + "\n" + jsonPrint(userHistograms),
               inputsObj: networkInputObj
             });
-          }
+          // }
 
           return;
 
