@@ -1045,6 +1045,8 @@ function initActivateNetworkInterval(interval){
 
   return new Promise(function(resolve, reject){
 
+    const verbose = true;
+
     clearInterval(activateNetworkInterval);
 
     console.log(chalkConnect("RNT | START NETWORK ACTIVATE INTERVAL"
@@ -1140,7 +1142,7 @@ function initActivateNetworkInterval(interval){
                   statsObj.bestNetwork.match += 1;
                   statsObj.bestNetwork.matchRate = 100.0 * statsObj.bestNetwork.match / statsObj.bestNetwork.total;
 
-                  if (configuration.verbose || configuration.testMode || (statsObj.categorize.grandTotal % 100 === 0)) {
+                  if (verbose || configuration.testMode || (statsObj.categorize.grandTotal % 100 === 0)) {
                     printActivateResult(
 
                       "RNT | ✔✔✔ MATCH ", 
@@ -1160,7 +1162,7 @@ function initActivateNetworkInterval(interval){
                   statsObj.bestNetwork.mismatch += 1;
                   statsObj.bestNetwork.matchRate = 100.0 * statsObj.bestNetwork.match / statsObj.bestNetwork.total;
 
-                  if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
+                  if (verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                     printActivateResult(
                       "RNT | ---  miss ", 
                       statsObj.bestNetwork, 
@@ -1176,7 +1178,7 @@ function initActivateNetworkInterval(interval){
                 statsObj.categorize.skipped += 1;
                 statsObj.bestNetwork.skipped += 1;
 
-                if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
+                if (verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                   printActivateResult(
                     "RNT |      skip ", 
                     statsObj.bestNetwork, 
@@ -1191,7 +1193,7 @@ function initActivateNetworkInterval(interval){
               statsObj.categorize.skipped += 1;
               statsObj.bestNetwork.skipped += 1;
 
-              if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
+              if (verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                 printActivateResult(
                   "RNT |      skip ", 
                   statsObj.bestNetwork, 
