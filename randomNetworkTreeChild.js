@@ -1120,6 +1120,7 @@ function initActivateNetworkInterval(interval){
           if (Object.keys(generateNetworksOutputObj.bestNetwork).length > 0){
 
             statsObj.categorize.grandTotal += 1;
+            statsObj.bestNetwork.grandTotal += 1;
 
             if (category) {
 
@@ -1173,7 +1174,6 @@ function initActivateNetworkInterval(interval){
               }
               else {
                 statsObj.categorize.skipped += 1;
-
                 statsObj.bestNetwork.skipped += 1;
 
                 if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
@@ -1189,6 +1189,7 @@ function initActivateNetworkInterval(interval){
             }
             else {
               statsObj.categorize.skipped += 1;
+              statsObj.bestNetwork.skipped += 1;
 
               if (configuration.verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
                 printActivateResult(
