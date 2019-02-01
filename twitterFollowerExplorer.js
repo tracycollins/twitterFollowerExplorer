@@ -2479,20 +2479,6 @@ const wordModel = require("@threeceelabs/mongoose-twitter/models/word.server.mod
 
 global.globalWordAssoDb = require("@threeceelabs/mongoose-twitter");
 
-// global.globalEmoji;
-// global.globalHashtag;
-// global.globalLocation;
-// global.globalMedia;
-// global.globalNetworkInputs;
-// global.globalNeuralNetwork;
-// global.globalPlace;
-// global.globalTweet;
-// global.globalUrl;
-// global.globalUser;
-// global.globalWord;
-
-// let dbConnectionReady = false;
-
 const UserServerController = require("@threeceelabs/user-server-controller");
 let userServerController;
 let userServerControllerReady = false;
