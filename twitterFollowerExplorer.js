@@ -272,8 +272,6 @@ statsObj.elapsedMS = 0;
 statsObj.elapsed = getElapsedTimeStamp();
 statsObj.status = "START";
 
-statsObj.serverConnected = false;
-
 statsObj.bestNetwork = {};
 statsObj.bestNetwork.networkId = null;
 statsObj.bestNetwork.numInputs = 0;
@@ -339,24 +337,33 @@ statsObj.user = {};
 statsObj.userReadyAck = false;
 statsObj.userReadyAckWait = 0;
 statsObj.userReadyTransmitted = false;
+
 statsObj.users = {};
+statsObj.users.categorized = {};
+
+statsObj.users.categorized.total = 0;
+statsObj.users.categorized.manual = 0;
+statsObj.users.categorized.auto = 0;
+statsObj.users.categorized.matched = 0;
+statsObj.users.categorized.mismatched = 0;
+statsObj.users.categorized.matchRate = 0;
+
+statsObj.users.total = 0;
+statsObj.users.fetched = 0;
+statsObj.users.processed = 0;
+statsObj.users.totalUsersSkipped = 0;
+statsObj.users.percentFetched = 0;
+statsObj.users.percentProcessed = 0;
+
 statsObj.users.classified = 0;
 statsObj.users.classifiedAuto = 0;
-statsObj.users.grandTotalFriendsFetched = 0;
-statsObj.users.grandTotalFriendsProcessed = 0;
-statsObj.users.grandTotalPercentFetched = 0;
-statsObj.users.grandTotalPercentProcessed = 0;
+
 statsObj.users.imageParse = {};
 statsObj.users.imageParse.parsed = 0;
 statsObj.users.imageParse.skipped = 0;
 statsObj.users.notCategorized = 0;
 statsObj.users.notFound = 0;
 statsObj.users.screenNameUndefined = 0;
-statsObj.users.totalFriendsCount = 0;
-statsObj.users.totalFriendsFetched = 0;
-statsObj.users.totalFriendsProcessed = 0;
-statsObj.users.totalPercentFetched = 0;
-statsObj.users.totalPercentProcessed = 0;
 statsObj.users.unzipped = 0;
 statsObj.users.updatedCategorized = 0;
 statsObj.users.zipHashMapHit = 0;
@@ -567,7 +574,9 @@ function initSlackWebClient(){
       slackWebClient = new WebClient(slackRtmToken);
 
       const testResponse = await slackWebClient.api.test();
-      console.log("TFE | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
+      if (configuration.verbose) {
+        console.log("TFE | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
+      }
 
       const botsInfoResponse = await slackWebClient.bots.info();
       console.log("TFE | SLACK WEB BOTS INFO RESPONSE\n" + jsonPrint(botsInfoResponse));
@@ -599,7 +608,9 @@ function initSlackWebClient(){
           });
 
           const chatPostMessageResponse = await slackWebClient.chat.postMessage(message);
-          console.log("TFE | SLACK WEB CHAT POST MESSAGE RESPONSE\n" + jsonPrint(chatPostMessageResponse));
+          if (configuration.verbose) {
+            console.log("TFE | SLACK WEB CHAT POST MESSAGE RESPONSE\n" + jsonPrint(chatPostMessageResponse));
+          }
 
         }
 
@@ -628,7 +639,9 @@ function initSlackRtmClient(){
 
       const slackInfo = await slackRtmClient.start();
 
-      console.log(chalkInfo("TFE | SLACK RTM | INFO\n" + jsonPrint(slackInfo)));
+      if (configuration.verbose) {
+        console.log(chalkInfo("TFE | SLACK RTM | INFO\n" + jsonPrint(slackInfo)));
+      }
 
       slackRtmClient.on("slack_event", async function(eventType, event){
         switch (eventType) {
@@ -718,7 +731,7 @@ const statsPickArray = [
   "startTime", 
   "elapsed",
   "bestRuntimeNetworkId",
-  "serverConnected", 
+  "users",
   "status",
   "errors",
   "authenticated", 
@@ -2133,12 +2146,12 @@ function initCategorizedUserHashmap(){
     // p.projection = "userId nodeId screenName name lang description location tweets category categoryAuto mentions friendsCount followersCount statusesCount ignored profileHistograms tweetHistograms following threeceeFollowing";
 
     let more = true;
-    let totalCount = 0;
-    let totalManual = 0;
-    let totalAuto = 0;
-    let totalMatched = 0;
-    let totalMismatched = 0;
-    let totalMatchRate = 0;
+    statsObj.users.categorized.total = 0;
+    statsObj.users.categorized.manual = 0;
+    statsObj.users.categorized.auto = 0;
+    statsObj.users.categorized.matched = 0;
+    statsObj.users.categorized.mismatched = 0;
+    statsObj.users.categorized.matchRate = 0;
 
     const childParams = {};
     childParams.command = {};
@@ -2160,16 +2173,16 @@ function initCategorizedUserHashmap(){
             console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserHashmap: " + err));
             cb(err);
           }
-          else if ((!configuration.testMode && results) || (configuration.testMode && (totalCount < TEST_TOTAL_FETCH)) ) {
+          else if ((!configuration.testMode && results) || (configuration.testMode && (statsObj.users.categorized.total < TEST_TOTAL_FETCH)) ) {
 
             more = true;
-            totalCount += results.count;
-            totalManual += results.manual;
-            totalAuto += results.auto;
-            totalMatched += results.matched;
-            totalMismatched += results.mismatched;
+            statsObj.users.categorized.total += results.count;
+            statsObj.users.categorized.manual += results.manual;
+            statsObj.users.categorized.auto += results.auto;
+            statsObj.users.categorized.matched += results.matched;
+            statsObj.users.categorized.mismatched += results.mismatched;
 
-            totalMatchRate = 100*(totalMatched/totalCount);
+            statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
 
             Object.keys(results.obj).forEach(function(nodeId){
               categorizedUserHashmap.set(nodeId, results.obj[nodeId]);
@@ -2178,22 +2191,23 @@ function initCategorizedUserHashmap(){
 
             childSend(childParams).
             then(function(){
-              if (configuration.verbose || (totalCount % 1000 === 0)) {
+              if (configuration.verbose || (statsObj.users.categorized.total % 1000 === 0)) {
 
                 console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-                  + " | TOTAL CATEGORIZED: " + totalCount
+                  + " | TOTAL CATEGORIZED: " + statsObj.users.categorized.total
                   + " | LIMIT: " + p.limit
                   + " | SKIP: " + p.skip
-                  + " | " + totalManual + " MAN"
-                  + " | " + totalAuto + " AUTO"
-                  + " | " + totalMatched + " MATCHED"
-                  + " / " + totalMismatched + " MISMATCHED"
-                  + " | " + totalMatchRate.toFixed(2) + "% MATCHRATE"
+                  + " | " + statsObj.users.categorized.manual + " MAN"
+                  + " | " + statsObj.users.categorized.auto + " AUTO"
+                  + " | " + statsObj.users.categorized.matched + " MATCHED"
+                  + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+                  + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
                 ));
               }
 
               p.skip += results.count;
               cb();
+
             }).
             catch(function(e){
               console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: childSend FETCH_USER_TWEETS ERROR: " + e));
@@ -2204,15 +2218,13 @@ function initCategorizedUserHashmap(){
 
             more = false;
 
-            console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED CATEGORIZED USERS FROM DB"
-              + " | TOTAL CATEGORIZED: " + totalCount
-              + " | LIMIT: " + p.limit
-              + " | SKIP: " + p.skip
-              + " | " + totalManual + " MAN"
-              + " | " + totalAuto + " AUTO"
-              + " | " + totalMatched + " MATCHED"
-              + " / " + totalMismatched + " MISMATCHED"
-              + " | " + totalMatchRate.toFixed(2) + "% MATCHRATE"
+            console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
+              + " | TOTAL CATEGORIZED: " + statsObj.users.categorized.total
+              + " | " + statsObj.users.categorized.manual + " MAN"
+              + " | " + statsObj.users.categorized.auto + " AUTO"
+              + " | " + statsObj.users.categorized.matched + " MATCHED"
+              + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+              + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
             ));
 
             cb();
@@ -2731,6 +2743,17 @@ function showStats(options) {
         + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2)
         + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2)
         + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2)
+      ));
+
+      console.log(chalkLog(MODULE_ID_PREFIX + " | STATUS"
+        + " | TOTAL CATEGORIZED: " + statsObj.users.categorized.total
+        + " | PROCESSED: " + statsObj.users.processed + " / " + statsObj.users.categorized.total 
+        + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
+        + " | " + statsObj.users.categorized.manual + " MAN"
+        + " | " + statsObj.users.categorized.auto + " AUTO"
+        + " | " + statsObj.users.categorized.matched + " MATCHED"
+        + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+        + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
       ));
 
       resolve();
@@ -7035,72 +7058,11 @@ function initProcessUserQueueInterval(interval) {
 
       statsObj.queues.processUserQueue.size = processUserQueue.length;
 
-      // childId = mObj.childId;
-      // tcUser = mObj.threeceeUser;
-
-      // if (ignoredUserSet.has(mObj.friend.id_str)){
-
-      //   childHashMap[childId].child.send({op: "UNFOLLOW", user: {userId: mObj.friend.id_str} });
-
-      //   console.log(chalk.bold.black("TFE | UNFOLLOW IGNORED USER"
-      //     + " | ID: " + mObj.friend.id_str
-      //     + " | @" + mObj.friend.screen_name
-      //   ));
-
-      //   statsObj.queues.processUserQueue.busy = false;
-      //   return;
-      // }
-
-      // if (unfollowableUserSet.has(mObj.friend.id_str)){
-
-      //   childHashMap[childId].child.send({op: "UNFOLLOW", user: {userId: mObj.friend.id_str} });
-
-      //   console.log(chalk.bold.black("TFE | UNFOLLOW UNFOLLOWABLE USER"
-      //     + " | ID: " + mObj.friend.id_str
-      //     + " | @" + mObj.friend.screen_name
-      //   ));
-
-      //   statsObj.queues.processUserQueue.busy = false;
-      //   return;
-      // }
-
-      // ignoredFlag = await checkUserIgnored({nodeId: mObj.friend.id_str});
-
-      // if (ignoredFlag){
-
-      //   ignoredUserSet.add(mObj.friend.id_str);
-
-      //   childHashMap[childId].child.send({op: "UNFOLLOW", user: {userId: mObj.friend.id_str} });
-
-      //   console.log(chalk.bold.black("TFE | UNFOLLOW IGNORED USER"
-      //     + " | ID: " + mObj.friend.id_str
-      //     + " | @" + mObj.friend.screen_name
-      //   ));
-
-      //   statsObj.queues.processUserQueue.busy = false;
-      //   return;
-      // }
-
-      // twitterUserHashMap[tcUser].friends.add(mObj.friend.id_str);
-
-      // if (saveRawFriendFlag){
-      //   const file = "user_" + mObj.friend.id_str + ".json";
-      //   console.log(chalkLog("TFE | SAVE FRIEND_RAW FILE"
-      //     + " | " + testDataUserFolder + "/" + file
-      //   ));
-      //   debug(chalkAlert("TFE | SAVE FRIEND_RAW FILE"
-      //     + " | " + testDataUserFolder + "/" + file
-      //     + "\n" + jsonPrint(mObj.friend)
-      //   ));
-      //   statsObj.rawFriend = mObj.friend;
-      //   saveFileQueue.push({folder: testDataUserFolder, file: file, obj: mObj.friend });
-      //   saveRawFriendFlag = false;
-      // }
-
       try {
 
         if (!categorizedUserHashmap.has(mObj.userId)){
           console.log(chalkAlert("TFE | !!! USER ID NOT IN CATEGORIZED HASHMAP: " + mObj.userId));
+          statsObj.users.totalUsersSkipped += 1;
           statsObj.queues.processUserQueue.busy = false;
           return;
         }
@@ -7121,10 +7083,9 @@ function initProcessUserQueueInterval(interval) {
           ));
         }
 
-        statsObj.users.grandTotalFriendsProcessed += 1;
-        statsObj.users.totalFriendsProcessed += 1;
+        statsObj.users.processed += 1;
 
-        statsObj.users.totalPercentProcessed = 100*statsObj.users.totalFriendsProcessed/statsObj.users.totalFriendsCount;
+        statsObj.users.percentProcessed = 100*statsObj.users.processed/statsObj.users.categorized.total;
 
         if (statsObj.user[tcUser] === undefined) {
           statsObj.user[tcUser].friendsCount = 1;
@@ -7160,9 +7121,8 @@ function initProcessUserQueueInterval(interval) {
             + " | FLWRs: " + user.followersCount
             + " | FRNDs: " + user.friendsCount
             + " | Ts: " + user.statusesCount
-            + "\nTFE | <FRND PRCSSD | TOT PRCSSD: " + statsObj.users.totalFriendsProcessed + "/" + statsObj.users.totalFriendsCount
-            + " (" + statsObj.users.totalPercentProcessed.toFixed(2) + "%)"
-            + " | USR PRCSSD: " + statsObj.user[tcUser].friendsProcessed + "/" + statsObj.user[tcUser].friendsCount
+            + "\nTFE | <FRND PRCSSD | TOT PRCSSD: " + statsObj.users.processed + "/" + statsObj.users.total
+            + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
             + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
           ));
         }
@@ -7581,7 +7541,7 @@ const fsmStates = {
         console.log(chalk.bold.blue("TFE | ================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("TFE | ===================================================="));
 
-        console.log(chalk.bold.blue("TFE | TOTAL USERS PROCESSED: " + statsObj.users.totalFriendsProcessed));
+        console.log(chalk.bold.blue("TFE | TOTAL USERS PROCESSED: " + statsObj.users.processed));
 
         console.log(chalk.bold.blue("\nTFE | ----------------------------------------------------"
           + "\nTFE | BEST NETWORK: " + statsObj.bestNetwork.networkId
@@ -7691,8 +7651,8 @@ const fsmStates = {
         slackText = slackText + " | " + hostname;
         slackText = slackText + "\nSTART: " + statsObj.startTime;
         slackText = slackText + " | RUN: " + statsObj.elapsed;
-        slackText = slackText + "\nTOT: " + statsObj.users.totalFriendsProcessed;
-        slackText = slackText + " | GTOT: " + statsObj.users.grandTotalFriendsProcessed;
+        slackText = slackText + "\nTOT: " + statsObj.users.processed;
+        slackText = slackText + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
         slackText = slackText + "\nIN: " + statsObj.bestNetwork.numInputs;
         slackText = slackText + " | INPUTS ID: " + statsObj.bestNetwork.inputsId;
         slackText = slackText + "\nNN: " + statsObj.bestNetwork.networkId;
@@ -7727,13 +7687,13 @@ const fsmStates = {
               // await resetAllTwitterUserState();
               await resetGlobalHistograms({inputTypes: DEFAULT_INPUT_TYPES});
 
-              statsObj.users.totalFriendsCount = 0;
-              statsObj.users.totalFriendsProcessed = 0;
-              statsObj.users.totalFriendsFetched = 0;
-              statsObj.users.totalPercentProcessed = 0;
-              statsObj.users.totalPercentFetched = 0;
-              statsObj.users.classifiedAuto = 0;
+              statsObj.users.total = 0;
+              statsObj.users.processed = 0;
+              statsObj.users.percentProcessed = 0;
+              statsObj.users.fetched = 0;
+              statsObj.users.percentFetched = 0;
               statsObj.users.classified = 0;
+              statsObj.users.classifiedAuto = 0;
 
               maxInputHashMap = {};
 
@@ -8441,7 +8401,7 @@ function childCreate(p){
             statsObj.user[m.threeceeUser.screenName].friendsCount = m.threeceeUser.friendsCount;
             statsObj.user[m.threeceeUser.screenName].followersCount = m.threeceeUser.followersCount;
 
-            statsObj.users.totalFriendsCount = 0;
+            statsObj.users.total = 0;
 
             Object.keys(statsObj.user).forEach(function(tcUser) {
 
@@ -8451,7 +8411,7 @@ function childCreate(p){
                 && (childHashMap[m.childId].status !== "ERROR")
                 && (childHashMap[m.childId].status !== "RESET")
               ) { 
-                statsObj.users.totalFriendsCount += statsObj.user[tcUser].friendsCount;
+                statsObj.users.total += statsObj.user[tcUser].friendsCount;
               }
 
             });
