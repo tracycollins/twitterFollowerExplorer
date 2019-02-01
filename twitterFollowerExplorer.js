@@ -2123,6 +2123,7 @@ function initCategorizedUserHashmap(){
     p.query = {};
     p.query.$and = [
       { category: { "$in": ["left", "right", "neutral"] } },
+      { following: true },
       { ignored: false }
     ];
 
@@ -5725,19 +5726,23 @@ function initUserDbUpdateQueueInterval(interval) {
 
   clearInterval(userDbUpdateQueueInterval);
 
-  userDbUpdateQueueInterval = setInterval(function() {
+  userDbUpdateQueueInterval = setInterval(async function() {
+
     if (userDbUpdateQueueReadyFlag && (userDbUpdateQueue.length > 0)) {
+
       userDbUpdateQueueReadyFlag = false;
+
       const user = userDbUpdateQueue.shift();
-      userServerController.findOneUser(user, {noInc: true, updateCountHistory: true}, function(err, updatedUserObj) {
-        userDbUpdateQueueReadyFlag = true;
-        if (err) {
-          console.log(chalkError("TFE | *** ERROR DB UPDATE USER - updateUserDb"
-            + "\n" + err
-            // + "\n" + jsonPrint(user)
-          ));
-          return;
-        }
+
+      try {
+        
+        const updatedUserObj = await userServerController.findOneUserV2({
+          user: user, 
+          mergeHistograms: false, 
+          noInc: true, 
+          updateCountHistory: true
+        });
+
         debug(chalkInfo("TFE | US UPD<"
           + " | " + updatedUserObj.nodeId
           + " | TW: " + updatedUserObj.isTwitterUser
@@ -5749,7 +5754,16 @@ function initUserDbUpdateQueueInterval(interval) {
           + " | FRNDs: " + updatedUserObj.friendsCount
           + " | LAd: " + updatedUserObj.languageAnalyzed
         ));
-      });
+
+      }
+      catch(err){
+        console.log(chalkError("TFE | *** ERROR DB UPDATE USER - updateUserDb"
+          + "\n" + err
+        ));
+      }
+
+      userDbUpdateQueueReadyFlag = true;
+            
     }
   }, interval);
 }
