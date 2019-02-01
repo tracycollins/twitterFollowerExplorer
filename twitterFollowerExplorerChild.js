@@ -2140,13 +2140,14 @@ process.on("message", async function(m) {
     break;
 
     case "FETCH_USER_TWEETS":
-      console.log(chalkBlue(MODULE_ID_PREFIX
-        + " | FETCH_USER_TWEETS"
-        + " | USER ID ARRAY: " + m.userIdArray.length
-      ));
       m.userIdArray.forEach(function(userId){
         fetchUserTweetsQueue.push(userId);
       });
+      console.log(chalkBlue(MODULE_ID_PREFIX
+        + " | FETCH_USER_TWEETS"
+        + " | USER ID ARRAY: " + m.userIdArray.length
+        + " | FUTQ: " + fetchUserTweetsQueue.length
+      ));
 
     case "READY":
       fsm.fsm_ready();

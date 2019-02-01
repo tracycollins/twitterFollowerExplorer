@@ -2194,7 +2194,8 @@ function initCategorizedUserHashmap(){
               if (configuration.verbose || (statsObj.users.categorized.total % 1000 === 0)) {
 
                 console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-                  + " | TOTAL CATEGORIZED: " + statsObj.users.categorized.total
+                  + " | UIDs: " + childParams.command.userIdArray.length
+                  + " | TOT CAT: " + statsObj.users.categorized.total
                   + " | LIMIT: " + p.limit
                   + " | SKIP: " + p.skip
                   + " | " + statsObj.users.categorized.manual + " MAN"
@@ -2219,7 +2220,7 @@ function initCategorizedUserHashmap(){
             more = false;
 
             console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
-              + " | TOTAL CATEGORIZED: " + statsObj.users.categorized.total
+              + " | TOT CAT: " + statsObj.users.categorized.total
               + " | " + statsObj.users.categorized.manual + " MAN"
               + " | " + statsObj.users.categorized.auto + " AUTO"
               + " | " + statsObj.users.categorized.matched + " MATCHED"
