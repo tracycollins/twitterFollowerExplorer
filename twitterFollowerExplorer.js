@@ -2185,7 +2185,7 @@ function initCategorizedUserHashmap(){
             statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
 
             childParams.command.userIdArray = [];
-            
+
             Object.keys(results.obj).forEach(function(nodeId){
               categorizedUserHashmap.set(nodeId, results.obj[nodeId]);
               childParams.command.userIdArray.push(nodeId);
@@ -6201,10 +6201,11 @@ function checkUserProfileChanged(params) {
       || allHistogramsZero
     ){
 
-      console.log(chalkLog(
+      console.log(chalkInfo(
         "TFE | USER PROFILE HISTOGRAMS UNDEFINED" 
         + " | RST PREV PROP VALUES" 
         + " | @" + user.screenName 
+        + "\nTFE | PROFILE HISTOGRAMS\n" + jsonPrint(user.profileHistograms) 
       ));
 
       user.previousBannerImageUrl = null;
@@ -8322,7 +8323,11 @@ function childCreate(p){
           break;
 
           case "PAUSE_RATE_LIMIT":
-            console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT | " + m.threeceeUser + " | REMAIN: " + msToTime(m.remainingTime)));
+            console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT"
+              + " | " + m.threeceeUser 
+              + " | REMAIN raw: " + m.remainingTime
+              + " | REMAIN: " + msToTime(parseInt(m.remainingTime))
+            ));
             childHashMap[childId].status = "PAUSE_RATE_LIMIT";
             childHashMap[childId].twitterRateLimitRemaining = m.remainingTime;
             childHashMap[childId].twitterRateLimitResetAt = m.resetAt;

@@ -277,7 +277,7 @@ async function showStats(options) {
         TWITTER_RATE_LIMIT_RESOURCES[resource].forEach(function(endPoint) {
           if (statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag || configuration.verbose) {
             console.log(chalkInfo(MODULE_ID_PREFIX
-              + " | --- RATE LIMIT"
+              + " | -X- RATE LIMIT"
               + " | @" + configuration.threeceeUser
               + " | RLE: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag
               + " | RSRC: " + resource
