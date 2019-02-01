@@ -2184,6 +2184,8 @@ function initCategorizedUserHashmap(){
 
             statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
 
+            childParams.command.userIdArray = [];
+            
             Object.keys(results.obj).forEach(function(nodeId){
               categorizedUserHashmap.set(nodeId, results.obj[nodeId]);
               childParams.command.userIdArray.push(nodeId);
