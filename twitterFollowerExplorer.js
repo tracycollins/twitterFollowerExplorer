@@ -2732,14 +2732,15 @@ function showStats(options) {
       ));
 
       console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
-        + " | TOTAL CATEGORIZED: " + statsObj.users.categorized.total
+        + " | PUQ: " + processUserQueue.length 
+        + " | TOT CAT: " + statsObj.users.categorized.total
         + " | PROCESSED: " + statsObj.users.processed + " / " + statsObj.users.categorized.total 
         + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
         + " | " + statsObj.users.categorized.manual + " MAN"
         + " | " + statsObj.users.categorized.auto + " AUTO"
-        + " | " + statsObj.users.categorized.matched + " MATCHED"
-        + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-        + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+        + " | " + statsObj.users.categorized.matched + " MATCH"
+        + " / " + statsObj.users.categorized.mismatched + " MISMATCH"
+        + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "%"
       ));
 
       resolve();
@@ -5067,8 +5068,6 @@ function initActivateNetworkQueueInterval(interval) {
 
         statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
 
-        // console.log(chalkAlert("TFE | RANDOM NETWORK TREE ACTIVATE: " + Object.keys(activateNetworkObj)));
-
         randomNetworkTree.send({op: "ACTIVATE", obj: activateNetworkObj}, function(){
           statsObj.queues.activateNetworkQueue.busy = false;
         });
@@ -6941,7 +6940,6 @@ function processUser(params) {
 
       function(user, cb) {
         user.following = true;
-        // user.threeceeFollowing = threeceeUser;
         cb(null, user);
       },
 
@@ -8389,7 +8387,6 @@ function childCreate(p){
           break;
 
           case "FRIEND_RAW":
-
 
             processUserQueue.push(m);
 

@@ -1077,8 +1077,6 @@ function initActivateNetworkInterval(interval){
 
         messageObj.user = activateNetworkObj.user;
 
-        // console.log("activateNetworkObj.user keys: " + Object.keys(activateNetworkObj.user));
-
         statsObj.normalization = activateNetworkObj.normalization;
 
         try {

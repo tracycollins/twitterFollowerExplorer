@@ -7,13 +7,16 @@ const TEST_MODE = false; // applies only to parent
 const MODULE_NAME = "tfcChild";
 const MODULE_ID_PREFIX = "TFC";
 
+const ONE_SECOND = 1000;
+const ONE_MINUTE = ONE_SECOND*60;
+
 const DEFAULT_INPUTS_BINARY_MODE = true;
 
 const DEFAULT_FETCH_COUNT = 200;
 const TEST_FETCH_COUNT = 27;
 const TEST_TOTAL_FETCH = 747;
 
-
+const DEFAUT_TWITTER_FETCH_TWEETS_INTERVAL = 0.5*ONE_SECOND;
 const DEFAULT_TWEET_FETCH_COUNT = 50;
 const TEST_TWEET_FETCH_COUNT = 3;
 const DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES = true;
@@ -21,8 +24,6 @@ const DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS = false;
 
 const QUIT_ON_COMPLETE = false;
 
-const ONE_SECOND = 1000;
-const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const ONE_KILOBYTE = 1024;
@@ -352,13 +353,6 @@ function initConfig(cnf) {
   });
 }
 
-// function init(params){
-//   return new Promise(async function(resolve, reject){
-//     statsObj.status = "INIT";
-//     resolve();
-//   });
-// }
-
 //=========================================================================
 // MONGO DB
 //=========================================================================
@@ -537,42 +531,6 @@ function getTimeStamp(inputTime) {
   }
 }
 
-// function delay(p) {
-
-//   return new Promise(function(resolve){
-
-//     const params = p || {};
-
-//     const period = params.period || 10*ONE_SECOND;
-//     const verbose = params.verbose || false;
-
-//     if (verbose) {
-//       console.log(chalkLog(MODULE_ID_PREFIX 
-//         + " | @" + configuration.threeceeUser
-//         + " | +++ DELAY START | NOW: " + getTimeStamp() 
-//         + " | PERIOD: " + msToTime(period)
-//       ));
-//     }
-
-//     setTimeout(function(){
-//       if (verbose) {
-//         console.log(chalkLog(MODULE_ID_PREFIX 
-//           + " | @" + configuration.threeceeUser
-//           + " | --- DELAY END | NOW: " + getTimeStamp() 
-//           + " | PERIOD: " + msToTime(period)
-//         ));
-//       }
-//       resolve();
-//     }, period);
-//   });
-
-// }
-
-// function getElapsed(){
-//   statsObj.elapsedMS = moment().valueOf() - startTimeMoment.valueOf();
-//   return statsObj.elapsedMS;
-// }
-
 function getElapsedTimeStamp(){
   statsObj.elapsedMS = moment().valueOf() - startTimeMoment.valueOf();
   return msToTime(statsObj.elapsedMS);
@@ -595,16 +553,6 @@ configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_
 configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
 configuration.DROPBOX.DROPBOX_CONFIG_FILE = process.env.DROPBOX_CONFIG_FILE || MODULE_NAME + "Config.json";
 configuration.DROPBOX.DROPBOX_STATS_FILE = process.env.DROPBOX_STATS_FILE || MODULE_NAME + "Stats.json";
-
-// const dropboxConfigFolder = "/config/utility";
-// const dropboxConfigDefaultFolder = "/config/utility/default";
-// const dropboxConfigHostFolder = "/config/utility/" + hostname;
-
-// const dropboxConfigDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
-// const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
-
-// const statsFolder = "/stats/" + hostname;
-// const statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
 
 const dropboxRemoteClient = new Dropbox({ 
   accessToken: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN,
@@ -694,469 +642,6 @@ function filesGetMetadataLocal(options){
     });
   });
 }
-
-
-// function loadFile(params) {
-
-//   return new Promise(async function(resolve, reject){
-
-//     const noErrorNotFound = params.noErrorNotFound || false;
-
-//     let fullPath = params.folder + "/" + params.file
-
-//     debug(chalkInfo("LOAD FOLDER " + params.folder));
-//     debug(chalkInfo("LOAD FILE " + params.file));
-//     debug(chalkInfo("FULL PATH " + fullPath));
-
-
-//     if (configuration.offlineMode || params.loadLocalFile) {
-
-//       if (hostname === "google") {
-//         fullPath = "/home/tc/Dropbox/Apps/wordAssociation/" + fullPath;
-//         console.log(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
-//       }
-
-//       if ((hostname === "mbp3") || (hostname === "mbp2")) {
-//         fullPath = "/Users/tc/Dropbox/Apps/wordAssociation/" + fullPath;
-//         console.log(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
-//       }
-
-//       fs.readFile(fullPath, "utf8", function(err, data) {
-
-//         if (err) {
-//           console.log(chalkError("fs readFile ERROR: " + err));
-//           return reject(err);
-//         }
-
-//         console.log(chalkInfo(getTimeStamp()
-//           + " | LOADING FILE FROM DROPBOX"
-//           + " | " + fullPath
-//         ));
-
-//         if (params.file.match(/\.json$/gi)) {
-
-//           const fileObj = JSONParse(data);
-
-//           if (fileObj.value) {
-
-//             const fileObjSizeMbytes = sizeof(fileObj)/ONE_MEGABYTE;
-
-//             console.log(chalkInfo(getTimeStamp()
-//               + " | LOADED FILE FROM DROPBOX"
-//               + " | " + fileObjSizeMbytes.toFixed(2) + " MB"
-//               + " | " + fullPath
-//             ));
-
-//             return resolve(fileObj.value);
-//           }
-
-//           console.log(chalkError(getTimeStamp()
-//             + " | *** LOAD FILE FROM DROPBOX ERROR"
-//             + " | " + fullPath
-//             + " | " + fileObj.error
-//           ));
-
-//           return reject(fileObj.error);
-
-//         }
-
-//         console.log(chalkError(getTimeStamp()
-//           + " | ... SKIP LOAD FILE FROM DROPBOX"
-//           + " | " + fullPath
-//         ));
-//         resolve();
-
-//       });
-
-//      }
-//     else {
-
-//       dropboxClient.filesDownload({path: fullPath}).
-//       then(function(data) {
-
-//         debug(chalkLog(getTimeStamp()
-//           + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
-//         ));
-
-//         if (params.file.match(/\.json$/gi)) {
-
-//           const payload = data.fileBinary;
-
-//           if (!payload || (payload === undefined)) {
-//             return reject(new Error(MODULE_ID_PREFIX + " LOAD FILE PAYLOAD UNDEFINED"));
-//           }
-
-//           const fileObj = JSONParse(payload);
-
-//           if (fileObj.value) {
-//             return resolve(fileObj.value);
-//           }
-
-//           console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX loadFile ERROR: " + fullPath));
-//           return reject(fileObj.error);
-//         }
-//         else {
-//           resolve();
-//         }
-//       }).
-//       catch(function(err) {
-
-//         console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX loadFile ERROR: " + fullPath));
-        
-//         if ((err.status === 409) || (err.status === 404)) {
-//           if (noErrorNotFound) {
-//             console.log(chalkAlert(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND"));
-//             return resolve(new Error("NOT FOUND"));
-//           }
-//           console.log(chalkAlert(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND ... SKIPPING ..."));
-//           return resolve(err);
-//         }
-        
-//         if (err.status === 0) {
-//           console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX NO RESPONSE"
-//             + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
-//           return resolve(new Error("NO INTERNET"));
-//         }
-
-//         reject(err);
-
-//       });
-//     }
-//   });
-// }
-
-// function loadFileRetry(params){
-
-//   return new Promise(async function(resolve, reject){
-
-//     const resolveOnNotFound = params.resolveOnNotFound || false;
-//     const maxRetries = params.maxRetries || 5;
-//     let retryNumber;
-
-//     for (retryNumber = 0;retryNumber < maxRetries;retryNumber++) {
-//       try {
-        
-//         if (retryNumber > 0) { 
-//           console.log(chalkAlert(MODULE_ID_PREFIX + " | FILE LOAD RETRY"
-//             + " | " + folder + "/" + file
-//             + " | " + retryNumber + " OF " + maxRetries
-//           )); 
-//         }
-
-//         const fileObj = await loadFile(params);
-//         return resolve(fileObj);
-//         break;
-//       } 
-//       catch(err) {
-//       }
-//     }
-
-//     if (resolveOnNotFound) {
-//       console.log(chalkAlert(MODULE_ID_PREFIX + " | resolve FILE LOAD FAILED | RETRY: " + retryNumber + " OF " + maxRetries));
-//       return resolve(false);
-//     }
-//     console.log(chalkError(MODULE_ID_PREFIX + " | reject FILE LOAD FAILED | RETRY: " + retryNumber + " OF " + maxRetries));
-//     reject(new Error("FILE LOAD ERROR | RETRIES " + maxRetries));
-
-//   });
-// }
-
-// function getFileMetadata(params) {
-
-//   return new Promise(function(resolve, reject){
-
-//     const fullPath = params.folder + "/" + params.file;
-//     debug(chalkInfo("FOLDER " + params.folder));
-//     debug(chalkInfo("FILE " + params.file));
-//     debug(chalkInfo("getFileMetadata FULL PATH: " + fullPath));
-
-//     if (configuration.offlineMode) {
-//       dropboxClient = dropboxLocalClient;
-//     }
-//     else {
-//       dropboxClient = dropboxRemoteClient;
-//     }
-
-//     dropboxClient.filesGetMetadata({path: fullPath}).
-//     then(function(response) {
-//       debug(chalkInfo("FILE META\n" + jsonPrint(response)));
-//       resolve(response);
-//     }).
-//     catch(function(err) {
-//       console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX getFileMetadata ERROR: " + fullPath));
-
-//       if ((err.status === 404) || (err.status === 409)) {
-//         console.error(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND"));
-//       }
-//       if (err.status === 0) {
-//         console.error(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX NO RESPONSE"));
-//       }
-
-//       reject(err);
-
-//     });
-
-//   });
-// }
-
-// function listDropboxFolder(params){
-
-//   return new Promise(function(resolve, reject){
-
-//     try{
-
-//       statsObj.status = "LIST DROPBOX FOLDER: " + params.folder;
-
-//       console.log(chalkNetwork(MODULE_ID_PREFIX + " | LISTING DROPBOX FOLDER | " + params.folder));
-
-//       const results = {};
-//       results.entries = [];
-
-//       let cursor;
-//       let more = false;
-//       const limit = params.limit || DROPBOX_LIST_FOLDER_LIMIT;
-
-//       if (configuration.offlineMode) {
-//         dropboxClient = dropboxLocalClient;
-//       }
-//       else {
-//         dropboxClient = dropboxRemoteClient;
-//       }
-
-//       dropboxClient.filesListFolder({path: params.folder, limit: limit}).
-//       then(function(response){
-
-//         cursor = response.cursor;
-//         more = response.has_more;
-//         results.entries = response.entries;
-
-//         if (configuration.verbose) {
-//           console.log(chalkLog("DROPBOX LIST FOLDER"
-//             + " | FOLDER:" + params.folder
-//             + " | ENTRIES: " + response.entries.length
-//             + " | LIMIT: " + limit
-//             + " | MORE: " + more
-//           ));
-//         }
-
-//         async.whilst(
-
-//           function() {
-//             return more;
-//           },
-
-//           function(cb){
-
-//             setTimeout(function(){
-
-//               dropboxClient.filesListFolderContinue({cursor: cursor}).
-//               then(function(responseCont){
-
-//                 cursor = responseCont.cursor;
-//                 more = responseCont.has_more;
-//                 results.entries = results.entries.concat(responseCont.entries);
-
-//                 if (configuration.verbose) {
-//                   console.log(chalkLog("DROPBOX LIST FOLDER CONT"
-//                     + " | PATH:" + params.folder
-//                     + " | ENTRIES: " + responseCont.entries.length + "/" + results.entries.length
-//                     + " | LIMIT: " + limit
-//                     + " | MORE: " + more
-//                   ));
-//                 }
-
-//               }).
-//               catch(function(err){
-//                 console.trace(chalkError("TXX | *** DROPBOX filesListFolderContinue ERROR: ", err));
-//                 return reject(err);
-//               });
-
-//               async.setImmediate(function() { cb(); });
-
-//             }, 1000);
-//           },
-
-//           function(err){
-//             if (err) {
-//               console.log(chalkError("TXX | DROPBOX LIST FOLDERS: " + err + "\n" + jsonPrint(err)));
-//               return reject(err);
-//             }
-//             resolve(results);
-//           });
-//       }).
-//       catch(function(err){
-//         console.log(chalkError("TXX | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
-//         return reject(err);
-//       });
-
-//     }
-//     catch(err){
-//       console.log(chalkError("TXX | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
-//       return reject(err);
-//     }
-
-//   });
-// }
-
-// let prevConfigFileModifiedMoment;
-// let prevDefaultConfigFileModifiedMoment;
-
-// function loadConfigFile(params) {
-
-//   return new Promise(async function(resolve, reject){
-
-//     const fullPath = params.folder + "/" + params.file;
-
-//     try {
-
-//       if (params.file === dropboxConfigDefaultFile) {
-//         prevConfigFileModifiedMoment = moment(prevDefaultConfigFileModifiedMoment);
-//       }
-//       else {
-//         prevConfigFileModifiedMoment = moment(prevHostConfigFileModifiedMoment);
-//       }
-
-//       if (configuration.offlineMode) {
-//         await loadCommandLineArgs();
-//         return resolve();
-//       }
-
-//       try {
-
-//         const response = await getFileMetadata({folder: params.folder, file: params.file});
-
-//         const fileModifiedMoment = moment(new Date(response.client_modified));
-        
-//         if (fileModifiedMoment.isSameOrBefore(prevConfigFileModifiedMoment)){
-
-//           console.log(chalkInfo(MODULE_ID_PREFIX + " | CONFIG FILE BEFORE OR EQUAL"
-//             + " | " + fullPath
-//             + " | PREV: " + prevConfigFileModifiedMoment.format(compactDateTimeFormat)
-//             + " | " + fileModifiedMoment.format(compactDateTimeFormat)
-//           ));
-//           return resolve();
-//         }
-
-//         console.log(chalkLog(MODULE_ID_PREFIX + " | +++ CONFIG FILE AFTER ... LOADING"
-//           + " | " + fullPath
-//           + " | PREV: " + prevConfigFileModifiedMoment.format(compactDateTimeFormat)
-//           + " | " + fileModifiedMoment.format(compactDateTimeFormat)
-//         ));
-
-//         prevConfigFileModifiedMoment = moment(fileModifiedMoment);
-
-//         if (params.file === dropboxConfigDefaultFile) {
-//           prevDefaultConfigFileModifiedMoment = moment(fileModifiedMoment);
-//         }
-//         else {
-//           prevHostConfigFileModifiedMoment = moment(fileModifiedMoment);
-//         }
-
-//       }
-//       catch(err){
-
-//       }
-
-
-//       const loadedConfigObj = await loadFile({folder: params.folder, file: params.file, noErrorNotFound: true });
-
-//       if (loadedConfigObj === undefined) {
-//         console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX CONFIG LOAD FILE ERROR | JSON UNDEFINED ??? "));
-//         return reject(new Error("JSON UNDEFINED"));
-//       }
-
-//       if (loadedConfigObj instanceof Error) {
-//         console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX CONFIG LOAD FILE ERROR: " + loadedConfigObj));
-//       }
-
-//       console.log(chalkInfo(MODULE_ID_PREFIX + " | LOADED CONFIG FILE: " + params.file + "\n" + jsonPrint(loadedConfigObj)));
-
-//       const newConfiguration = {};
-//       newConfiguration.evolve = {};
-
-//       if (loadedConfigObj.TEST_MODE !== undefined) {
-//         console.log(MODULE_ID_PREFIX + " | LOADED TEST_MODE: " + loadedConfigObj.TEST_MODE);
-//         if ((loadedConfigObj.TEST_MODE === true) || (loadedConfigObj.TEST_MODE === "true")) {
-//           newConfiguration.testMode = true;
-//         }
-//         if ((loadedConfigObj.TEST_MODE === false) || (loadedConfigObj.TEST_MODE === "false")) {
-//           newConfiguration.testMode = false;
-//         }
-//       }
-
-//       if (loadedConfigObj.QUIT_ON_COMPLETE !== undefined) {
-//         console.log(MODULE_ID_PREFIX + " | LOADED QUIT_ON_COMPLETE: " + loadedConfigObj.QUIT_ON_COMPLETE);
-//         if ((loadedConfigObj.QUIT_ON_COMPLETE === true) || (loadedConfigObj.QUIT_ON_COMPLETE === "true")) {
-//           newConfiguration.quitOnComplete = true;
-//         }
-//         if ((loadedConfigObj.QUIT_ON_COMPLETE === false) || (loadedConfigObj.QUIT_ON_COMPLETE === "false")) {
-//           newConfiguration.quitOnComplete = false;
-//         }
-//       }
-
-//       if (loadedConfigObj.VERBOSE !== undefined) {
-//         console.log(MODULE_ID_PREFIX + " | LOADED VERBOSE: " + loadedConfigObj.VERBOSE);
-//         if ((loadedConfigObj.VERBOSE === true) || (loadedConfigObj.VERBOSE === "true")) {
-//           newConfiguration.verbose = true;
-//         }
-//         if ((loadedConfigObj.VERBOSE === false) || (loadedConfigObj.VERBOSE === "false")) {
-//           newConfiguration.verbose = false;
-//         }
-//       }
-
-//       if (loadedConfigObj.KEEPALIVE_INTERVAL !== undefined) {
-//         console.log(MODULE_ID_PREFIX + " | LOADED KEEPALIVE_INTERVAL: " + loadedConfigObj.KEEPALIVE_INTERVAL);
-//         newConfiguration.keepaliveInterval = loadedConfigObj.KEEPALIVE_INTERVAL;
-//       }
-
-//       resolve(newConfiguration);
-//     }
-//     catch(err){
-//       console.error(chalkError(MODULE_ID_PREFIX + " | ERROR LOAD DROPBOX CONFIG: " + fullPath
-//         + "\n" + jsonPrint(err)
-//       ));
-//       reject(err);
-//     }
-
-//   });
-// }
-
-// function loadAllConfigFiles(){
-
-//   return new Promise(async function(resolve, reject){
-
-//     try {
-
-//       statsObj.status = "LOAD CONFIG";
-
-//       const defaultConfig = await loadConfigFile({folder: dropboxConfigDefaultFolder, file: dropboxConfigDefaultFile});
-
-//       if (defaultConfig) {
-//         defaultConfiguration = defaultConfig;
-//         console.log(chalkLog(MODULE_ID_PREFIX + " | +++ RELOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
-//       }
-      
-//       const hostConfig = await loadConfigFile({folder: dropboxConfigHostFolder, file: dropboxConfigHostFile});
-
-//       if (hostConfig) {
-//         hostConfiguration = hostConfig;
-//         console.log(chalkLog(MODULE_ID_PREFIX + " | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
-//       }
-      
-//       const defaultAndHostConfig = merge(defaultConfiguration, hostConfiguration); // host settings override defaults
-//       const tempConfig = merge(configuration, defaultAndHostConfig); // any new settings override existing config
-
-//       configuration = tempConfig;
-
-//       resolve();
-
-//     }
-//     catch(err){
-//       reject(err);
-//     }
-//   });
-// }
-
 
 //=========================================================================
 // FILE SAVE
@@ -1402,9 +887,6 @@ function clearAllIntervals(){
 //=========================================================================
 // QUIT + EXIT
 //=========================================================================
-// const DEFAULT_QUIT_ON_COMPLETE = true;
-
-// let quitFlag = false;
 
 function readyToQuit() {
   const flag = true; // replace with function returns true when ready to quit
@@ -1525,7 +1007,6 @@ function initTwitter(twitterConfig){
       console.log(chalkLog("TFC | TWITTER ALREADY INITIALIZED" 
         + " | " + getTimeStamp() 
         + " | @" + configuration.threeceeUser 
-        // + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
       ));
 
       return resolve();
@@ -1567,7 +1048,6 @@ function initTwitter(twitterConfig){
             + " | " + getTimeStamp() 
             + " | ERR CODE: " + err.code
             + " | " + err.message
-            // + "\nRESPONSE\n" +jsonPrint(response)
           ));
 
           fsm.fsm_error();
@@ -1602,7 +1082,6 @@ function initTwitter(twitterConfig){
 
         return reject(e);
       }
-
     });
 
   });
@@ -1667,8 +1146,6 @@ function fetchUserTweets(params){
     fetchUserTweetsParams.exclude_replies = params.excludeReplies || DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES;
     fetchUserTweetsParams.include_rts = params.includeRetweets || DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS;
 
-    // console.log(chalkInfo("TFC | fetchUserTweets | UID: " + fetchUserTweetsParams.user_id));
-
     twitClient.get("statuses/user_timeline", fetchUserTweetsParams, function(err, userTweetsArray, response) {
 
       if (err){
@@ -1694,7 +1171,6 @@ function fetchUserTweets(params){
           fsm.fsm_error();
 
           return reject(err);
-
         }
 
         if (err.code === 34){
@@ -1739,14 +1215,6 @@ function fetchUserTweets(params){
         return reject(err);
 
       }
-
-      // if (configuration.verbose) {
-      //   console.log(chalkInfo("TFC | +++ FETCHED USER TWEETS" 
-      //     + " [" + userTweetsArray.length + "]"
-      //     + " | @" + configuration.threeceeUser 
-      //     + " | UID " + params.userId
-      //   ));
-      // }
 
       resolve(userTweetsArray);
 
@@ -2150,7 +1618,6 @@ function checkRateLimit(){
           + " | " + getTimeStamp() 
           + " | ERR CODE: " + err.code
           + " | " + err.message
-          // + "\nRESPONSE\n" + jsonPrint(response)
         ));
       }
 
@@ -2159,372 +1626,6 @@ function checkRateLimit(){
 
   });
 }
-
-// function getTwitterFriendsList(params){
-
-//   return new Promise(function(resolve, reject){
-
-//     params.count = params.count || params.fetchCount;
-
-//     twitClient.get("friends/list", params, function(err, data, response){
-
-//       if (err){
-
-//         console.log(chalkError("TFC | *** TWITTER GET FRIENDS LIST ERROR"
-//           + " | @" + configuration.threeceeUser 
-//           + " | " + getTimeStamp() 
-//           + " | ERR CODE: " + err.code
-//           + " | " + err.message
-//         ));
-
-//         if (err.code === 88){
-//           statsObj.threeceeUser.twitterRateLimit.friends.list.exceptionAt = moment();
-//           statsObj.threeceeUser.twitterRateLimit.friends.list.exceptionFlag = true;
-//           fsm.fsm_rateLimitStart();
-//           return reject(err);
-//         }
-
-//         if (err.code === 89){
-
-//           console.log(chalkAlert("TFC | *** TWITTER GET FRIENDS LIST ERROR | INVALID OR EXPIRED TOKEN" 
-//             + " | " + getTimeStamp() 
-//             + " | @" + configuration.threeceeUser 
-//           ));
-
-//           statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
-//           statsObj.threeceeUser.err = err;
-
-//           process.send({op: "ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
-//           fsm.fsm_error();
-
-//           return reject(err);
-//         }
-        
-//         process.send({op: "ERROR", threeceeUser: configuration.threeceeUser, error: err});
-//         return reject(err);
-//       }
-
-//       resolve(data);
-//     });
-
-//   });
-// }
-
-// function checkFriendMinimumProperties(params){
-
-//   return new Promise(function(resolve, reject){
-
-//     const unfollowFlag = (
-//       (params.friend.followers_count < configuration.minFollowersCount)
-//       || (params.friend.statuses_count < configuration.minStatusesCount)
-//     );
-
-//     debug(chalkAlert("checkFriendMinimumProperties"
-//       + " | UNFOLLOW: " + unfollowFlag
-//       + " | @" + params.friend.screen_name
-//       + " | FLWRs: " + params.friend.followers_count
-//       + " | MIN FLWRs: " + configuration.minFollowersCount
-//       // + " | FRNDs: " + params.friend.friends_count
-//       // + " | MIN FRNDs: " + configuration.minFriendsCount
-//       + " | Ts: " + params.friend.statuses_count
-//       + " | MIN Ts: " + configuration.minStatusesCount
-//     ));
-
-//     resolve(unfollowFlag);
-
-//   });
-// }
-
-
-// let unfollowQueueInterval;
-// intervalsSet.add("unfollowQueueInterval");
-
-// const unfollowQueueReady = false;
-// const unfollowQueueIntervalTime = process.env.DEFAULT_UNFOLLOW_QUEUE_INTERVAL || 5*ONE_SECOND;
-// const unfollowQueue = [];
-
-// function unfollowFriend(params, callback){
-
-//   if (!twitClient || twitClient === undefined) {
-//     console.log(chalkAlert("TFC | UNFOLLOW FRIEND | TWIT CLIENT UNDEFINED"
-//       + " |  @" + configuration.threeceeUser
-//       + " | UID: " + params.user.userId
-//       + " | @" + params.user.screenName
-//     ));
-//     return callback(new Error("TWIT CLIENT UNDEFINED"), null);
-//   }
-
-//   let unfollowFriendParams = {};
-
-//   if (params.user.user_id !== undefined) { 
-//     unfollowFriendParams.user_id = params.user.user_id;
-//   }
-//   else if (params.user.userId !== undefined) { 
-//     unfollowFriendParams.user_id = params.user.userId;
-//   }
-
-//   if (params.user.screen_name !== undefined) { 
-//     unfollowFriendParams.screen_name = params.user.screen_name;
-//   }
-//   else if (params.user.screenName !== undefined) { 
-//     unfollowFriendParams.screen_name = params.user.screenName;
-//   }
-
-//   if ((unfollowFriendParams.user_id === undefined)
-//     && (unfollowFriendParams.screen_name === undefined)
-//   ){
-
-//     console.log(chalkAlert("TFC | UNFOLLOW FRIEND"
-//       + "\nINVALID PARAMS"
-//       + "\n" + jsonPrint(params)
-//     ));
-//     quit("UNFOLLOW FRIEND | INVALID PARAMS");
-//     return callback(null, null);
-//   }
-
-//   twitClient.post(
-
-//     "friendships/destroy", unfollowFriendParams, 
-
-//     function destroyFriend(err, data, response){  // if success, data = user
-
-//       if (err) {
-
-//         console.log(chalkError("TFC | *** UNFOLLOW FRIEND ERROR"
-//           + " | ERROR: " + err
-//           + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
-//         ));
-
-//         return callback(err, unfollowFriendParams);
-//       }
-
-//       if (_.isObject(response) 
-//         && (response.statusCode !== undefined) 
-//         && (response.statusCode !== 200)) {
-
-//         console.log(chalkError("TFC | *** UNFOLLOW FAIL"
-//           + " | 3C: @" + configuration.threeceeUser
-//           + " | RESPONSE CODE: " + response.statusCode
-//           + "\nTFC | PARAMS\n" + jsonPrint(unfollowFriendParams)
-//           + "\nTFC | RESPONSE\n" + jsonPrint(response)
-//         ));
-
-//         return callback(err, response);
-//       }
-
-//       if (data.following) {
-
-//         console.log(chalkAlert("TFC | XXX UNFOLLOW"
-//           + " | 3C: @" + configuration.threeceeUser
-//           + " | UID: " + data.id_str
-//           + " | @" + data.screen_name
-//           + " | FLWRs: " + data.followers_count
-//           + " | FRNDs: " + data.friends_count
-//           + " | Ts: " + data.statuses_count
-//           + " | FOLLOWING: " + data.following
-//           // + " | RESPONSE CODE: " + response.statusCode
-//           // + "\nPARAMS\n" + jsonPrint(unfollowFriendParams)
-//           // + "\nDATA\n" + jsonPrint(data)
-//         ));
-
-//         process.send(
-//           {
-//             op:"UNFOLLOWED", 
-//             threeceeUser: configuration.threeceeUser, 
-//             user: data
-//           }
-//         );
-
-//         return callback(null, data);
-//       }
-
-//       debug(chalkInfo("TFC | miss UNFOLLOW"
-//         + " | 3C: @" + configuration.threeceeUser
-//         + " | UID: " + unfollowFriendParams.user_id
-//       ));
-
-//       callback(null, null);
-
-//     }
-//   );
-// }
-
-// function fetchFriends(params) {
-
-//   return new Promise(async function(resolve, reject){
-
-//     if (!twitClient || (twitClient === undefined)) {
-//       console.log(chalkAlert("TFC | FETCH FRIENDS | TWIT CLIENT UNDEFINED | @" + configuration.threeceeUser));
-//       return reject(new Error("FETCH FRIENDS | TWIT CLIENT UNDEFINED"));
-//     }
-
-//     if (configuration.testMode) { console.log(chalkInfo("TFC | FETCH FRIENDS params\n" + jsonPrint(params))); }
-
-//     const threeceeUser = configuration.threeceeUser;
-
-//     if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
-
-//       try {
-
-//         const data = await getTwitterFriendsList(params);
-
-//         statsObj.threeceeUser.friendsFetched += data.users.length;
-//         statsObj.threeceeUser.nextCursor = data.next_cursor_str;
-//         statsObj.threeceeUser.percentFetched = 100*(statsObj.threeceeUser.friendsFetched/statsObj.threeceeUser.friendsCount); 
-
-//         if (configuration.testMode 
-//           && (statsObj.threeceeUser.friendsFetched >= configuration.totalFetchCount)) {
-
-//           statsObj.threeceeUser.nextCursorValid = false;
-//           statsObj.threeceeUser.endFetch = true;
-
-//           console.log(chalkInfo("\nTFC | =====================================\n"
-//             + "*** TEST MODE END FETCH ***"
-//             + "\nTFC | @" + configuration.threeceeUser
-//             + "\nTFC | TEST_FETCH_COUNT: " + TEST_FETCH_COUNT
-//             + "\nTFC | TEST_TOTAL_FETCH: " + TEST_TOTAL_FETCH
-//             + "\nTFC | FRIENDS FETCHED: " + statsObj.threeceeUser.friendsFetched
-//             + "\nTFC | =====================================\n"
-//           ));
-//         }
-//         else if (data.next_cursor_str > 0) {
-//           statsObj.threeceeUser.nextCursorValid = true;
-//           statsObj.threeceeUser.endFetch = false;
-//         }
-//         else {
-//           statsObj.threeceeUser.nextCursorValid = false;
-//           statsObj.threeceeUser.endFetch = true;
-//         }
-
-//         console.log(chalkTwitter("TFC | ==========================================================="
-//           + "\nTFC | END FETCH"
-//           + " | " + getTimeStamp()
-//           + " | @" + statsObj.threeceeUser.screenName
-//           + "\nTFC | FRIENDS:       " + statsObj.threeceeUser.friendsCount
-//           + "\nTFC | FRNDs FETCHED: " + statsObj.threeceeUser.friendsFetched
-//           + " (" + statsObj.threeceeUser.percentFetched.toFixed(1) + "%)"
-//           + "\nTFC | COUNT:         " + configuration.fetchCount
-//           + "\nTFC | FETCHED:       " + data.users.length
-//           + "\nTFC | END FETCH:     " + statsObj.threeceeUser.endFetch
-//           + "\nTFC | MORE:          " + statsObj.threeceeUser.nextCursorValid
-//           + "\nTFC | ==========================================================="
-//         ));
-
-//         async.eachSeries(data.users, async function (friend){
-
-//           try {
-
-//             const unfollowFlag = await checkFriendMinimumProperties({friend: friend});
-
-//             if (unfollowFlag) {
-
-//               unfollowQueue.push(friend);
-
-//               console.log(chalkError("TFC | CHECK FRIEND | XXX UNFOLLOW"
-//                 + " [ UFQ: " + unfollowQueue.length + "]"
-//                 + " | UNFOLLOW: " + unfollowFlag
-//                 + " | ID: " + friend.id_str
-//                 + " | @" + friend.screen_name
-//                 + " | FLWRs: " + friend.followers_count
-//                 + " | FRNDs: " + friend.friends_count
-//                 + " | Ts: " + friend.statuses_count
-//               ));
-
-//               return;
-//             }
-
-//             friend.following = true;
-//             friend.threeceeFollowing = threeceeUser;
-
-//             debug(chalkError("TFC CHECK FRIEND | --- UNFOLLOW"
-//               + " [ UFQ: " + unfollowQueue.length + "]"
-//               + " | UNFOLLOW: " + unfollowFlag
-//               + " | ID: " + friend.id_str
-//               + " | @" + friend.screen_name
-//               + " | FLWRs: " + friend.followers_count
-//               + " | FRNDs: " + friend.friends_count
-//               + " | Ts: " + friend.statuses_count
-//             ));
-
-
-//             if (!statsObj.threeceeUser.twitterRateLimit.statuses.user_timeline.exceptionFlag) {
-//               friend.latestTweets = await fetchUserTweets({ userId: friend.id_str });
-//             }
-//             else {
-//               friend.latestTweets = [];
-//             }
-
-//             if (configuration.verbose && (friend.latestTweets.length > 0)) {
-//               console.log(chalkInfo("TFC | +++ FETCHED USER TWEETS" 
-//                 + " [" + friend.latestTweets.length + "]"
-//                 + " | @" + configuration.threeceeUser 
-//                 + " | UID " + friend.id_str
-//               ));
-//             }
-
-//             process.send(
-//               {
-//                 op: "FRIEND_RAW", 
-//                 follow: false, 
-//                 threeceeUser: configuration.threeceeUser, 
-//                 childId: configuration.childId, 
-//                 friend: friend
-//               }, 
-
-//               function(){ return; }
-//             );
-//           }
-//           catch(err){
-//             console.log(chalkError("TFC | @" + configuration.threeceeUser + " | *** CHECK FRIEND ERROR | " + err));
-//             return;
-//           }
-
-//         }, function subFriendsProcess(err){
-//           if (err) {
-//             console.trace("TFC | *** subFriendsProcess ERROR");
-//             return reject(err);
-//           }
-//           resolve();
-//         });
-//       }
-//       catch(err){
-//         console.log(chalkError("TFC | *** TWITTER FRIENDS LIST ERROR"
-//           + " | @" + configuration.threeceeUser 
-//           + " | " + getTimeStamp() 
-//           + " | ERR CODE: " + err.code
-//           + " | " + err.message
-//         ));
-
-//         return reject(err);
-//       }
-//     }
-//     else {
-
-//       if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) {
-
-//         statsObj.threeceeUser.twitterRateLimitRemainingTime = statsObj.threeceeUser.twitterRateLimitResetAt.diff(moment());
-
-//         console.log(chalkAlert("TFC | SKIP FETCH FRIENDS --- TWITTER RATE LIMIT"
-//           + " | @" + threeceeUser
-//           + " | LIM " + statsObj.threeceeUser.twitterRateLimit
-//           + " | REM: " + statsObj.threeceeUser.twitterRateLimitRemaining
-//           + " | EXP @: " + statsObj.threeceeUser.twitterRateLimitException.format(compactDateTimeFormat)
-//           + " | RST @: " + statsObj.threeceeUser.twitterRateLimitResetAt.format(compactDateTimeFormat)
-//           + " | NOW: " + moment().format(compactDateTimeFormat)
-//           + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimitRemainingTime)
-//         ));
-//       }
-
-//       console.log(chalkLog("TFC | fetchFriends"
-//         + " | CURRENT: @" + threeceeUser 
-//         + " | RATE LIMIT: " + statsObj.threeceeUser.twitterRateLimitExceptionFlag
-//       ));
-
-//       resolve([]);
-//     }
-
-//   });
-// }
 
 let fetchUserTweetsQueueInterval;
 intervalsSet.add("fetchUserTweetsQueueInterval");
@@ -2540,7 +1641,7 @@ function initFetchUserTweets(p) {
     fetchUserTweetsQueueReady = true;
 
     const params = p || {};
-    params.interval = params.interval || ONE_SECOND;
+    params.interval = params.interval || DEFAUT_TWITTER_FETCH_TWEETS_INTERVAL;
 
     if (!twitClient || (twitClient === undefined)) {
       console.log(chalkAlert("TFC | FETCH USER TWEETS | TWIT CLIENT UNDEFINED | @" + configuration.threeceeUser));
@@ -2646,7 +1747,6 @@ function reporter(event, oldState, newState) {
   process.send({
     op: newState, 
     threeceeUser: configuration.threeceeUser
-    // remaining: statsObj.threeceeUser.twitterRateLimitRemainingTime
   });
 
   console.log(chalkLog(MODULE_ID_PREFIX + " | --------------------------------------------------------\n"
@@ -2749,7 +1849,6 @@ const fsmStates = {
       }
     },
 
-
     "fsm_rateLimitStart": "PAUSE_RATE_LIMIT",
     "fsm_fetchUserEnd": "FETCH_END",
     "fsm_init": "INIT",
@@ -2768,10 +1867,6 @@ const fsmStates = {
       if (event !== "fsm_tick") {
 
         reporter(event, oldState, newState);
-
-        // if (statsObj.threeceeUser.friendsCount === 0){
-        //   twitterUsersShow(function(){});
-        // }
 
         try{
           await initFetchUserTweets();
@@ -2806,43 +1901,6 @@ const fsmStates = {
 
       if (event !== "fsm_tick") {
         reporter(event, oldState, newState);
-
-        // const params = {};
-
-        // params.fetchCount = configuration.fetchCount;
-        // params.totalFetchCount = configuration.totalFetchCount;
-        // params.screen_name = configuration.threeceeUser;
-        // params.cursor = (statsObj.threeceeUser.nextCursorValid) ? statsObj.threeceeUser.nextCursor : -1;
-
-        // if (statsObj.threeceeUser.friendsCount === 0){
-        //   twitterUsersShow(function(){});
-        // }
-
-        // try{
-
-          // await fetchFriends(params);
-
-          // if (statsObj.threeceeUser.nextCursorValid && !statsObj.threeceeUser.endFetch) {
-          //   await delay({period: configuration.fetchUserInterval, verbose: configuration.verbose});
-          //   fsm.fsm_fetchUserContinue();
-          // }
-
-          // if (!statsObj.threeceeUser.nextCursorValid && statsObj.threeceeUser.endFetch) {
-          //   fsm.fsm_fetchUserEnd();
-          // }
-          
-        // }
-        // catch(err){
-        //   console.log(chalkError("TFC | *** fetchFriends ERROR: " + err));
-
-        //   if (err.code === 88){
-
-        //     fsm.fsm_rateLimitStart();
-        //   }
-        //   else {
-        //     process.send({op: "ERROR", type: "FETCH FRIENDS", threeceeUser: configuration.threeceeUser, state: "FETCH", params: params, error: err });
-        //   }
-        // }
       }
 
     },
@@ -3102,121 +2160,9 @@ process.on("message", async function(m) {
     break;
 
     case "FOLLOW":
-
-      // if (twitClient && (twitClient !== undefined)) {
-
-      //   twitClient.post(
-
-      //     "friendships/create", {screen_name: m.user.screenName}, 
-
-      //     function createFriend(err, data, response){
-      //       if (err) {
-      //         console.log(chalkError("TFC | FOLLOW ERROR"
-      //           + " | @" + configuration.threeceeUser
-      //           + " | " + err
-      //         ));
-
-      //         if (err.code === 89){
-
-      //           console.log(chalkAlert("TFC | *** TWITTER FOLLOW ERROR | INVALID OR EXPIRED TOKEN" 
-      //             + " | " + getTimeStamp() 
-      //             + " | @" + configuration.threeceeUser 
-      //           ));
-
-      //           statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
-      //           statsObj.threeceeUser.err = err;
-
-      //           process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
-      //           fsm.fsm_error();
-
-      //           return reject(err);
-      //         }
-
-
-      //         process.send({op:"ERROR", type: "TWITTER FOLLOW", threeceeUser: configuration.threeceeUser, state: "FOLLOW", params: {screen_name: m.user.screenName}, error: err });
-      //       }
-      //       else {
-
-      //         console.log(chalkInfo("TFC | +++ FOLLOW"
-      //           + " | 3C: @" + configuration.threeceeUser
-      //           + " | NID: " + m.user.userId
-      //           + " | @" + m.user.screenName.toLowerCase()
-      //         ));
-      //       }
-      //     }
-      //   );
-      // }
     break;
 
     case "UNFOLLOW":
-
-      // unfollowFriend({ user: m.user }, function(err, results){
-
-      //   if (err) {
-
-      //     if (err.code === 34){
-      //       console.log(chalkError("TFC | *** =X= UNFOLLOW ERROR | NON-EXISTENT USER"
-      //         + " | 3C: @" + configuration.threeceeUser
-      //         + "\nTFC | " + jsonPrint(m.user)
-      //       ));
-      //       return;
-      //     }
-
-      //     if (err.code === 89){
-
-      //       console.log(chalkAlert("TFC | *** TWITTER UNFOLLOW ERROR | INVALID OR EXPIRED TOKEN" 
-      //         + " | " + getTimeStamp() 
-      //         + " | @" + configuration.threeceeUser 
-      //       ));
-
-      //       statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
-      //       statsObj.threeceeUser.err = err;
-
-      //       process.send({op:"ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
-      //       fsm.fsm_error();
-
-      //       return;
-      //     }
-
-      //     console.log(chalkError("TFC | *** =X= UNFOLLOW ERROR"
-      //       + " | 3C: @" + configuration.threeceeUser
-      //       + "\nTFC | " + jsonPrint(m.user)
-      //     ));
-
-      //     process.send(
-      //       {
-      //         op:"ERROR",
-      //         type: "TWITTER UNFOLLOW", 
-      //         threeceeUser: configuration.threeceeUser, 
-      //         state: "UNFOLLOW_ERR", 
-      //         params: { user: m.user }, 
-      //         error: err
-      //       }
-      //     );
-
-      //     return;
-      //   }
-
-      //   if (!results) {
-
-      //     debug(chalkInfo("TFC | UNFOLLOW MISS"
-      //       + " | 3C: @" + configuration.threeceeUser
-      //       + "\n" + jsonPrint(m.user)
-      //     ));
-
-      //     return;
-      //   }
-
-      //   console.log(chalkInfo("TFC | XXX UNFOLLOW"
-      //     + " | 3C: @" + configuration.threeceeUser
-      //     + " | " + results.id_str
-      //     + " | @" + results.screen_name
-      //     + " | FLWRs: " + results.followers_count
-      //     + " | FRNDs: " + results.friends_count
-      //     + " | Ts: " + results.statuses_count
-      //   ));
-
-      // });
     break;
 
     case "QUIT":
