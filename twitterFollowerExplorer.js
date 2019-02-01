@@ -2713,14 +2713,14 @@ function showStats(options) {
 
       Object.keys(childHashMap).forEach(function(childId) {
 
-        console.log(chalkLog(MODULE_ID_PREFIX + " | STATUS CHILD"
+        console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS CHILD"
           + " | CHILD ID: " + childId + " | CH FSM: " + childHashMap[childId].status
         ));
 
         objectPath.set(statsObj, ["children", childId, "status"], childHashMap[childId].status);
       });
 
-      console.log(chalkLog(MODULE_ID_PREFIX + " | STATUS"
+      console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
         + " | START: " + statsObj.startTime
         + " | NOW: " + getTimeStamp()
         + " | ELAPSED: " + statsObj.elapsed
@@ -2731,7 +2731,7 @@ function showStats(options) {
         + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2)
       ));
 
-      console.log(chalkLog(MODULE_ID_PREFIX + " | STATUS"
+      console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
         + " | TOTAL CATEGORIZED: " + statsObj.users.categorized.total
         + " | PROCESSED: " + statsObj.users.processed + " / " + statsObj.users.categorized.total 
         + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
@@ -7070,57 +7070,15 @@ function initProcessUserQueueInterval(interval) {
         }
 
         statsObj.users.processed += 1;
-
         statsObj.users.percentProcessed = 100*statsObj.users.processed/statsObj.users.categorized.total;
-
-        if (statsObj.user[tcUser] === undefined) {
-          statsObj.user[tcUser].friendsCount = 1;
-          statsObj.user[tcUser].friendsProcessed = 0;
-          statsObj.user[tcUser].percentProcessed = 0;
-          statsObj.user[tcUser].friendsProcessStart = moment();
-        }
-
-        statsObj.user[tcUser].friendsProcessed += 1;
-        statsObj.user[tcUser].percentProcessed = 100*statsObj.user[tcUser].friendsProcessed/statsObj.user[tcUser].friendsCount;
 
         debug("PROCESSED USER\n" + jsonPrint(user));
 
-        if (statsObj.user[tcUser].friendsProcessed % 100 === 0) {
-
-          statsObj.user[tcUser].friendsProcessElapsed = moment().diff(statsObj.user[tcUser].friendsProcessStart);
-
-          if (statsObj.user[tcUser].friendsCount < statsObj.user[tcUser].friendsProcessed) {
-            statsObj.user[tcUser].friendsCount = statsObj.user[tcUser].friendsProcessed;
-          }
-
-          console.log(chalkBlue("TFE | <FRND PRCSSD"
-            + " [ Q: " + statsObj.queues.processUserQueue.size + " ]"
-            + " | @" + tcUser
-            + " | S: " + statsObj.user[tcUser].friendsProcessStart.format(compactDateTimeFormat)
-            + " | E: " + msToTime(statsObj.user[tcUser].friendsProcessElapsed)
-            + "\nTFE | <FRND PRCSSD | @" + user.screenName
-            + " | NAME: " + user.name
-            + " | CR: " + moment(user.createdAt).format(compactDateTimeFormat)
-            + " | LS: " + moment(user.lastSeen).format(compactDateTimeFormat)
-            + " | FLWg: " + user.following
-            + " | 3CF: " + user.threeceeFollowing
-            + " | FLWRs: " + user.followersCount
-            + " | FRNDs: " + user.friendsCount
-            + " | Ts: " + user.statusesCount
-            + "\nTFE | <FRND PRCSSD | TOT PRCSSD: " + statsObj.users.processed + "/" + statsObj.users.total
-            + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
-            + " (" + statsObj.user[tcUser].percentProcessed.toFixed(2) + "%)"
-          ));
+        if (statsObj.users.processed % 100 === 0) {
+          showStats();
         }
 
         const userUpdated = await updatePreviousUserProps({user: user});
-        // const userUpdatedObj = userUpdated.toObject();
-        // userUpdatedObj.tweets = user.tweets;
-
-        // await global.globalUser.deleteOne({nodeId: user.nodeId});
-
-        // const newUser = new global.globalUser(userUpdated);
-        // const newUserObj = newUser.toObject();
 
         await userServerController.findOneUserV2({user: userUpdated, mergeHistograms: false, noInc: true});
 
