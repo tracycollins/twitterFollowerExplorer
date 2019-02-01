@@ -303,6 +303,7 @@ async function showStats(options) {
       + " | STATUS"
       + " | @" + configuration.threeceeUser
       + " | FSM: " + fsm.getMachineState()
+      + " | FUTQ: " + fetchUserTweetsQueue.length      
       + " | START: " + statsObj.startTime
       + " | NOW: " + getTimeStamp()
       + " | ELAPSED: " + statsObj.elapsed
