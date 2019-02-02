@@ -1716,9 +1716,11 @@ function initFetchUserTweets(p) {
             + " | " + err.message
           ));
 
-          fetchUserTweetsQueueReady = true; 
+          if (err.code === 88) {  // requeue on rate limit
+            fetchUserTweetsQueue.push(userId);
+          }
 
-          return reject(err);
+          fetchUserTweetsQueueReady = true; 
         }
       }
 
@@ -2168,6 +2170,10 @@ process.on("message", async function(m) {
     break;
 
     case "QUIT":
+      console.log(chalkError("TFC | *** TFE CHILD QUIT ON PARENT MESSAGE"
+        + " | CHILD ID: " + m.childId
+        + " | 3C: @" + m.threeceeUser
+      ));
       fsm.fsm_reset();
       quit("PARENT");
     break;
