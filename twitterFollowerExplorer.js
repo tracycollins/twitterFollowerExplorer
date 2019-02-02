@@ -8329,8 +8329,8 @@ function childCreate(p){
               + " | REMAIN: " + msToTime(parseInt(m.remainingTime))
             ));
             childHashMap[childId].status = "PAUSE_RATE_LIMIT";
-            childHashMap[childId].twitterRateLimitRemaining = m.remainingTime;
-            childHashMap[childId].twitterRateLimitResetAt = m.resetAt;
+            // childHashMap[childId].twitterRateLimitRemaining = m.remainingTime;
+            // childHashMap[childId].twitterRateLimitResetAt = m.resetAt;
           break;
 
           case "THREECEE_USER":

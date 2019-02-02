@@ -1154,6 +1154,12 @@ function fetchUserTweets(params){
         if (err.code === 88){
           statsObj.threeceeUser.twitterRateLimit.statuses.user_timeline.exceptionAt = moment();
           statsObj.threeceeUser.twitterRateLimit.statuses.user_timeline.exceptionFlag = true;
+
+          console.log(chalkAlert("TFC | *** TWITTER FETCH USER TWEETS ERROR | RATE LIMIT" 
+            + " | " + getTimeStamp() 
+            + " | @" + configuration.threeceeUser 
+          ));
+
           fsm.fsm_rateLimitStart();
           return reject(err);
         }
@@ -1708,16 +1714,28 @@ function initFetchUserTweets(p) {
         }
         catch(err){
 
-          console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR"
-            + " | @" + configuration.threeceeUser 
-            + " | " + getTimeStamp() 
-            + " | UID: " + userId
-            + " | ERR CODE: " + err.code
-            + " | " + err.message
-          ));
-
           if (err.code === 88) {  // requeue on rate limit
+
+            statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
+
             fetchUserTweetsQueue.push(userId);
+            
+            console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS | RATE LIMIT"
+              + " | @" + configuration.threeceeUser 
+              + " | " + getTimeStamp() 
+              + " | UID: " + userId
+              + " | ERR CODE: " + err.code
+              + " | " + err.message
+            ));
+          }
+          else {
+            console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR"
+              + " | @" + configuration.threeceeUser 
+              + " | " + getTimeStamp() 
+              + " | UID: " + userId
+              + " | ERR CODE: " + err.code
+              + " | " + err.message
+            ));
           }
 
           fetchUserTweetsQueueReady = true; 
