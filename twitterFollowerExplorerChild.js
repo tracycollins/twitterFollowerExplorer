@@ -479,6 +479,7 @@ function connectDb(){
 //=========================================================================
 // MISC FUNCTIONS (own module?)
 //=========================================================================
+
 function jsonPrint(obj) {
   if (obj) {
     return treeify.asTree(obj, true, true);
@@ -1719,7 +1720,7 @@ function initFetchUserTweets(p) {
             statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
 
             fetchUserTweetsQueue.push(userId);
-            
+
             console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS | RATE LIMIT"
               + " | @" + configuration.threeceeUser 
               + " | " + getTimeStamp() 
