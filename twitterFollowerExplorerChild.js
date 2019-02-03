@@ -899,6 +899,10 @@ async function quit(opts) {
 
   const options = opts || {};
 
+  if (options) {
+    console.log(MODULE_ID_PREFIX + " | QUIT INFO\n" + jsonPrint(options) );
+  }
+
   statsObj.elapsed = getElapsedTimeStamp();
   statsObj.timeStamp = getTimeStamp();
   statsObj.status = "QUIT";
@@ -908,10 +912,6 @@ async function quit(opts) {
   // quitFlag = true;
 
   fsm.fsm_exit();
-
-  if (options) {
-    console.log(MODULE_ID_PREFIX + " | QUIT INFO\n" + jsonPrint(options) );
-  }
 
   showStats(true);
 
