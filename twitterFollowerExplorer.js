@@ -6415,6 +6415,8 @@ function userProfileChangeHistogram(params) {
 
         case "location":
 
+          text += userPropValue + "\n";
+
           const lastSeen = Date.now();
 
           let name = userPropValue.trim().toLowerCase();
