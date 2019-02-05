@@ -1389,6 +1389,7 @@ function loadNetwork(params){
 
     console.log(chalkLog("RNT | LOAD NETWORK"
       + " | [ " + networksHashMap.size + " NNs IN HM ]"
+      + " | BEST NETWORK: " + params.isBestNetwork
       + " | SR: " + networkObj.successRate.toFixed(2) + "%"
       + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
       + " | OMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
