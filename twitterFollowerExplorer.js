@@ -3177,15 +3177,6 @@ function loadBestNeuralNetworks() {
 
     try {
       await loadBestNetworksDropbox({folder: bestNetworkFolder});
-      const bestNetworkObj = await loadBestNetworksDatabase();
-
-      // if (bestNetworkObj) { 
-      //   printNetworkObj(
-      //     "TFE | LOADED BEST NN FROM DB | MIN TEST CYCLES: " + configuration.minTestCycles, 
-      //     bestNetworkObj
-      //   ); 
-      // }
-
       resolve();
     }
     catch(err){
@@ -4389,28 +4380,28 @@ function mergeHistogramsArray(params) {
   });
 }
 
-function checkUserIgnored(params){
+// function checkUserIgnored(params){
 
-  return new Promise(function(resolve, reject){
+//   return new Promise(function(resolve, reject){
 
-    if (!params.nodeId) {
-      return reject(new Error("nodeId UNDEFINED"));
-    }
+//     if (!params.nodeId) {
+//       return reject(new Error("nodeId UNDEFINED"));
+//     }
 
-    global.globalUser.findOne({nodeId: params.nodeId}, function(err, user){
+//     global.globalUser.findOne({nodeId: params.nodeId}, function(err, user){
 
-      if (err) { return reject(err); }
+//       if (err) { return reject(err); }
 
-      if (user && user.ignored) {
-        return resolve(true);
-      }
+//       if (user && user.ignored) {
+//         return resolve(true);
+//       }
 
-      resolve(false);
+//       resolve(false);
 
-    });
+//     });
 
-  });
-}
+//   });
+// }
 
 function checkPropertyChange(user, prop){
   const prevProp = "previous" + _.upperFirst(prop);
