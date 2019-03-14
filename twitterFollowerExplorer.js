@@ -3099,17 +3099,15 @@ function loadBestNetworksDatabase(paramsIn) {
 
     try {
       console.log(chalkBlue("TFE | LOADING " + limit + " BEST NNs (by OAMR) FROM DB ..."));
+
       nnArrayTopOverallMatchRate = await global.globalNeuralNetwork.find(query).lean().
-sort({"overallMatchRate": -1}).
-limit(limit).
-exec();
+      sort({"overallMatchRate": -1}).limit(limit).exec();
       console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs (by OAMR) FROM DB ..."));
 
       console.log(chalkBlue("TFE | LOADING " + randomUntestedLimit + " UNTESTED NNs FROM DB ..."));
-      nnArrayRandomUntested = await global.globalNeuralNetwork.find(randomUntestedQuery).lean().
-sort({"overallMatchRate": -1}).
-limit(randomUntestedLimit).
-exec();
+
+      nnArrayRandomUntested = await global.globalNeuralNetwork.find(randomUntestedQuery).lean().sort({"overallMatchRate": -1}).limit(randomUntestedLimit).exec();
+
       console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
 
       nnArray = _.concat(nnArrayTopOverallMatchRate, nnArrayRandomUntested);
@@ -3177,6 +3175,7 @@ function loadBestNeuralNetworks() {
 
     try {
       await loadBestNetworksDropbox({folder: bestNetworkFolder});
+      const bestNetworkObj = await loadBestNetworksDatabase();
       resolve();
     }
     catch(err){
@@ -3304,6 +3303,8 @@ function initRandomNetworks(){
   statsObj.status = "INIT RAN NNs";
 
   return new Promise(async function(resolve, reject){
+
+    console.log(chalkGreen("TFE | INIT RANDOM NETWORKS"));
 
     statsObj.loadedNetworksFlag = false;
 

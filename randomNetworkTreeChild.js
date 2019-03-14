@@ -859,14 +859,23 @@ function generateNetworksOutput(params){
         statsObj.currentBestNetwork.overallMatchRate = (statsObj.currentBestNetwork.overallMatchRate === undefined) ? 0 : statsObj.currentBestNetwork.overallMatchRate;
         statsObj.currentBestNetwork.testCycles = (statsObj.currentBestNetwork.testCycles === undefined) ? 0 : statsObj.currentBestNetwork.testCycles;
 
-        debug(chalkLog("CURRENT BEST NETWORK"
-          + " | " + statsObj.currentBestNetwork.networkId
-          + " | SR: " + statsObj.currentBestNetwork.successRate.toFixed(2) + "%"
-          + " | MR: " + statsObj.currentBestNetwork.matchRate.toFixed(2) + "%"
-          + " | OMR: " + statsObj.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
-          + " | TOT: " + statsObj.currentBestNetwork.total
-          + " | MATCH: " + statsObj.currentBestNetwork.match
-        ));
+        // console.log(chalkLog("BEST NETWORK"
+        //   + " | " + statsObj.bestNetwork.networkId
+        //   + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2) + "%"
+        //   + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2) + "%"
+        //   + " | OMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2) + "%"
+        //   + " | TOT: " + statsObj.bestNetwork.total
+        //   + " | MATCH: " + statsObj.bestNetwork.match
+        // ));
+
+        // console.log(chalkLog("CURRENT BEST NETWORK"
+        //   + " | " + statsObj.currentBestNetwork.networkId
+        //   + " | SR: " + statsObj.currentBestNetwork.successRate.toFixed(2) + "%"
+        //   + " | MR: " + statsObj.currentBestNetwork.matchRate.toFixed(2) + "%"
+        //   + " | OMR: " + statsObj.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+        //   + " | TOT: " + statsObj.currentBestNetwork.total
+        //   + " | MATCH: " + statsObj.currentBestNetwork.match
+        // ));
 
         currentBestNetworkOutput = statsObj.currentBestNetwork.output;
         bestNetworkOutput = statsObj.loadedNetworks[statsObj.bestNetwork.networkId].output;
@@ -1286,6 +1295,8 @@ function getInputNames(nodes, callback){
 function loadNetwork(params){
 
   return new Promise(function(resolve, reject){
+
+    console.log(chalk.green("RNT | LOAD NETWORK: " + params.networkObj.networkId));
 
     let networkObj = params.networkObj;
 
