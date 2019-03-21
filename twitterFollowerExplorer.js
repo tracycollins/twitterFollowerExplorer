@@ -3471,6 +3471,7 @@ function updateNetworkStats(params) {
           mismatch: params.networkStatsObj[nnId].mismatch,
           total: params.networkStatsObj[nnId].total,
           matchRate: params.networkStatsObj[nnId].matchRate,
+          rank: params.networkStatsObj[nnId].rank,
           timeStampString: moment().format(compactDateTimeFormat),
           timeStamp: moment()
         };
