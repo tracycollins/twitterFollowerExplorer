@@ -3310,19 +3310,19 @@ function initRandomNetworks(){
 
     if (randomNetworkTree && (randomNetworkTree !== undefined)) {
 
-      let isBestNetwork = false;
+      let isBestNetworkFlag = false;
 
       async.eachSeries(bestNetworkHashMap.values(), function(networkObj, cb){
 
         if (networkObj.networkId === bestNetwork.networkId) {
           console.log(chalkGreen("TFE | LOAD_NETWORK BEST: " + networkObj.networkId));
-          isBestNetwork = true;
+          isBestNetworkFlag = true;
         }
         else {
-          isBestNetwork = false;
+          isBestNetworkFlag = false;
         }
 
-        randomNetworkTree.send({ op: "LOAD_NETWORK", networkObj: networkObj, isBestNetwork: isBestNetwork }, function(err) {
+        randomNetworkTree.send({ op: "LOAD_NETWORK", networkObj: networkObj, isBestNetwork: isBestNetworkFlag }, function(err) {
 
           if (err) { return cb(err); }
 
