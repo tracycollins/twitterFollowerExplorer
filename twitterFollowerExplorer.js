@@ -2787,31 +2787,25 @@ function dropboxFileMove(params){
 
 function isBestNetwork(p){
 
-  const params = p || {};
+  const params = (p !== undefined) ? p : {};
 
-  let pass = false;
-
-  const minOverallMatchRate = params.minOverallMatchRate || configuration.globalMinSuccessRate;
-  const minTestCycles = params.minTestCycles || configuration.minTestCycles;
+  const minOverallMatchRate = (params.minOverallMatchRate !== undefined) ? params.minOverallMatchRate : configuration.globalMinSuccessRate;
+  const minTestCycles = (params.minTestCycles !== undefined) ? params.minTestCycles : configuration.minTestCycles;
 
   if (params.networkObj.testCycles < minTestCycles){
     debug("minTestCycles: " + params.networkObj.testCycles);
     return true;
   }
-  else if (minTestCycles) {
-    pass = (params.networkObj.testCycles >= minTestCycles) && (params.networkObj.overallMatchRate >= minOverallMatchRate);
-    debug("minTestCycles: " + params.networkObj.testCycles + " | pass: " + pass);
-    return pass;
+  else if (params.networkObj.overallMatchRate && (params.networkObj.overallMatchRate >= minOverallMatchRate)) {
+    debug("overallMatchRate: " + params.networkObj.overallMatchRate.toFixed(2));
+    return true;
   }
-  else if (params.networkObj.overallMatchRate) {
-    pass = (params.networkObj.overallMatchRate < 100) && (params.networkObj.overallMatchRate >= minOverallMatchRate);
-    debug("overallMatchRate: " + params.networkObj.overallMatchRate + " | pass: " + pass);
-    return pass;
-  }
+  // else if (params.networkObj.successRate < 100) && (params.networkObj.successRate >= minOverallMatchRate) {
+  //   debug("successRate: " + params.networkObj.successRate);
+  //   return true;
+  // }
   else {
-    pass = (params.networkObj.successRate < 100) && (params.networkObj.successRate >= minOverallMatchRate);
-    debug("successRate: " + params.networkObj.successRate + " | pass: " + pass);
-    return pass;
+    return false;
   }
 }
 
