@@ -124,6 +124,7 @@ DEFAULT_INPUT_TYPES.sort();
 const inputsIdSet = new Set();
 const bestInputsSet = new Set();
 const skipLoadNetworkSet = new Set();
+const userErrorSet = new Set();
 
 let globalHistograms = {};
 
@@ -3835,6 +3836,11 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           debug(chalkInfo("RNT NETWORK_BUSY ..."));
         break;
 
+        case "QUEUE_STATS":
+          randomNetworkTreeActivateQueueSize = m.queue;
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+        break;
+
         case "QUEUE_READY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeActivateQueueSize = m.queue;
@@ -5612,6 +5618,11 @@ const fsmStates = {
     },
     fsm_tick: function() {
 
+      // console.log(chalkLog("FETCH_ALL | Q STATS\n" + jsonPrint(statsObj.queues)));
+
+      statsObj.queues.processUserQueue.size = processUserQueue.length;
+      statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
+
       childCheckState({
         checkState: "FETCH_END", 
         noChildrenTrue: false, 
@@ -5624,7 +5635,7 @@ const fsmStates = {
         );
 
         statsObj.allChildrenFetchEnd = allChildrenFetchEnd;
-
+// USER_TWEETS
         if (
           !statsObj.queues.randomNetworkTreeActivateQueue.busy
           && (statsObj.queues.randomNetworkTreeActivateQueue.size === 0)
@@ -5680,6 +5691,8 @@ const fsmStates = {
         console.log(chalk.bold.blue("TFE | ===================================================="));
         console.log(chalk.bold.blue("TFE | ================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("TFE | ===================================================="));
+
+        console.log(chalkLog("TFE | Q STATS\n" + jsonPrint(statsObj.queues)));
 
         if (randomNetworkTree && (randomNetworkTree !== undefined)) {
           randomNetworkTree.send({op: "GET_STATS"});
@@ -6426,18 +6439,21 @@ function childCreate(p){
 
             if (m.type === "USER_NOT_AUTHORIZED") {
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT AUTHORIZED " + m.userId));
+              userErrorSet.add(m.userId);
               categorizedUserHashmap.delete(m.userId);
               break;
             }
 
             if (m.type === "USER_BLOCKED") {
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER BLOCKED " + m.userId));
+              userErrorSet.add(m.userId);
               categorizedUserHashmap.delete(m.userId);
               break;
             }
 
             if (m.type === "USER_NOT_FOUND") {
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT FOUND " + m.userId));
+              userErrorSet.add(m.userId);
               categorizedUserHashmap.delete(m.userId);
               break;
             }

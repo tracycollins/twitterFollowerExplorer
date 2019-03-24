@@ -1256,8 +1256,7 @@ function initActivateNetworkInterval(interval){
           });
           maxQueueFlag = false;
         }
-
-        if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
+        else if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
           process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
             if (err) { 
               console.trace(chalkError("RNT | SEND ERROR | QUEUE_FULL | " + err));
@@ -1266,8 +1265,14 @@ function initActivateNetworkInterval(interval){
           });
           maxQueueFlag = true;
         }
-
-
+        else {
+          process.send({op: "QUEUE_STATS", queue: rxActivateNetworkQueue.length}, function(err){
+            if (err) { 
+              console.trace(chalkError("RNT | SEND ERROR | QUEUE_STATS | " + err));
+              quit("SEND QUEUE_STATS ERROR");
+            }
+          });
+        }
       }
 
     }, interval);
