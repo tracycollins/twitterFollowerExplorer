@@ -500,8 +500,6 @@ const localInputsFolder = dropboxConfigHostFolder + "/inputs";
 const dropboxConfigDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 
-// const defaultHistogramsFolder = dropboxConfigDefaultFolder + "/histograms";
-
 let defaultHistogramsFolder;
 
 if (hostname === PRIMARY_HOST && hostname === "google"){ 
@@ -643,19 +641,12 @@ statsObj.normalization.magnitude.max = -Infinity;
 
 statsObj.numLangAnalyzed = 0;
 
-DEFAULT_INPUT_TYPES.forEach(function(type){
-
-  statsObj.histograms[type] = {};
-
-});
-
 const histograms = {};
-histograms.words = {};
-histograms.urls = {};
-histograms.hashtags = {};
-histograms.mentions = {};
-histograms.emoji = {};
-histograms.images = {};
+
+DEFAULT_INPUT_TYPES.forEach(function(type){
+  statsObj.histograms[type] = {};
+  histograms[type] = {};
+});
 
 let statsUpdateInterval;
 
@@ -732,48 +723,6 @@ process.on("message", function(msg) {
 
   }
 });
-
-// // ==================================================================
-// // DROPBOX
-// // ==================================================================
-// const DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
-// const DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY;
-// const DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
-// const DROPBOX_GIS_CONFIG_FILE = process.env.DROPBOX_GIS_CONFIG_FILE || "generateInputSetsConfig.json";
-// const DROPBOX_GIS_STATS_FILE = process.env.DROPBOX_GIS_STATS_FILE || "generateInputSetsStats.json";
-
-// const dropboxConfigHostFolder = "/config/utility/" + hostname;
-// const dropboxConfigDefaultFolder = "/config/utility/default";
-
-// let defaultHistogramsFolder;
-
-// if (hostname === PRIMARY_HOST && hostname === "google"){ 
-//  defaultHistogramsFolder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
-// }
-// else if (hostname !== PRIMARY_HOST && hostname === "google"){ 
-//  defaultHistogramsFolder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/google/histograms";
-// }
-// else if (hostname === PRIMARY_HOST && hostname !== "google"){ 
-//  defaultHistogramsFolder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
-// }
-// else {
-//  defaultHistogramsFolder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms";
-// }
-
-
-// console.log("GIS | DROPBOX_GIS_CONFIG_FILE: " + DROPBOX_GIS_CONFIG_FILE);
-// console.log("GIS | DROPBOX_GIS_STATS_FILE : " + DROPBOX_GIS_STATS_FILE);
-// console.log("GIS | statsFolder : " + statsFolder);
-// console.log("GIS | statsFile : " + statsFile);
-
-// debug("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN);
-// debug("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
-// debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
-
-// const dropboxClient = new Dropbox({ 
-//   accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN,
-//   fetch: fetch
-// });
 
 function showStats(){
 
@@ -1583,22 +1532,6 @@ function connectDb(){
   });
 }
 
-// function initStatsUpdate(callback){
-
-//   console.log(chalkTwitter("GIS | INIT STATS UPDATE INTERVAL | " + configuration.statsUpdateIntervalTime + " MS"));
-
-//   clearInterval(statsUpdateInterval);
-
-//   statsUpdateInterval = setInterval(function () {
-
-//     statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
-//     statsObj.timeStamp = moment().format(compactDateTimeFormat);
-
-//   }, configuration.statsUpdateIntervalTime);
-
-//   callback(null);
-// }
-
 function getElapsedTimeStamp(){
   statsObj.elapsedMS = moment().valueOf() - statsObj.startTimeMoment.valueOf();
   return msToTime(statsObj.elapsedMS);
@@ -1675,7 +1608,6 @@ function initStdIn(){
     }
   });
 }
-
 
 function loadCommandLineArgs(){
 
@@ -2000,177 +1932,6 @@ function initConfig(cnf) {
   });
 }
 
-// function initialize(cnf){
-
-//   return new Promise(async function(resolve, reject){
-
-//     try {
-
-//       if (debug.enabled){
-//         console.log("\nGIS | %%%%%%%%%%%%%%\n DEBUG ENABLED \n%%%%%%%%%%%%%%\n");
-//       }
-
-//       cnf.processName = process.env.GIS_PROCESS_NAME || "generateInputSets";
-//       cnf.targetServer = process.env.GIS_UTIL_TARGET_SERVER || "http://127.0.0.1:9997/util" ;
-
-//       cnf.minDominantMin = process.env.GIS_MIN_DOMINANT_MIN || DEFAULT_MIN_DOMINANT_MIN ;
-//       cnf.maxDominantMin = process.env.GIS_MAX_DOMINANT_MIN || DEFAULT_MAX_DOMINANT_MIN ;
-
-//       cnf.minTotalMin = process.env.GIS_MIN_TOTAL_MIN || DEFAULT_MIN_TOTAL_MIN ;
-//       cnf.maxTotalMin = process.env.GIS_MAX_TOTAL_MIN || DEFAULT_MAX_TOTAL_MIN ;
-
-//       cnf.testMode = (process.env.GIS_TEST_MODE === "true") ? true : cnf.testMode;
-
-//       cnf.quitOnError = process.env.GIS_QUIT_ON_ERROR || false ;
-//       if (process.env.GIS_QUIT_ON_COMPLETE === "false") {
-//         cnf.quitOnComplete = false;
-//       }
-//       if (process.env.GIS_QUIT_ON_COMPLETE === "true") {
-//         cnf.quitOnComplete = true;
-//       }
-//       cnf.enableStdin = process.env.GIS_ENABLE_STDIN || true ;
-
-//       cnf.statsUpdateIntervalTime = process.env.GIS_STATS_UPDATE_INTERVAL || 10*ONE_SECOND;
-
-//       const loadedConfigObj = await loadFile({folder: dropboxConfigHostFolder, file: dropboxConfigFile});
-
-//       console.log(dropboxConfigFile + "\n" + jsonPrint(loadedConfigObj));
-
-//       if (loadedConfigObj.GIS_MAX_NUM_INPUTS_PER_TYPE !== undefined){
-//         console.log("GIS | LOADED GIS_MAX_NUM_INPUTS_PER_TYPE: " + loadedConfigObj.GIS_MAX_NUM_INPUTS_PER_TYPE);
-//         cnf.maxNumInputsPerType = loadedConfigObj.GIS_MAX_NUM_INPUTS_PER_TYPE;
-//       }
-
-//       if (loadedConfigObj.GIS_MIN_NUM_INPUTS_PER_TYPE !== undefined){
-//         console.log("GIS | LOADED GIS_MIN_NUM_INPUTS_PER_TYPE: " + loadedConfigObj.GIS_MIN_NUM_INPUTS_PER_TYPE);
-//         cnf.minNumInputsPerType = loadedConfigObj.GIS_MIN_NUM_INPUTS_PER_TYPE;
-//       }
-
-//       if (loadedConfigObj.GIS_INPUTS_FILE_PREFIX !== undefined){
-//         console.log("GIS | LOADED GIS_INPUTS_FILE_PREFIX: " + loadedConfigObj.GIS_INPUTS_FILE_PREFIX);
-//         cnf.inputsFilePrefix = loadedConfigObj.GIS_INPUTS_FILE_PREFIX;
-//       }
-
-//       if (loadedConfigObj.GIS_MAX_ITERATIONS !== undefined){
-//         console.log("GIS | LOADED GIS_MAX_ITERATIONS: " + loadedConfigObj.GIS_MAX_ITERATIONS);
-//         cnf.maxIterations = loadedConfigObj.GIS_MAX_ITERATIONS;
-//       }
-
-//       if (loadedConfigObj.GIS_MIN_INPUTS_GENERATED !== undefined){
-//         console.log("GIS | LOADED GIS_MIN_INPUTS_GENERATED: " + loadedConfigObj.GIS_MIN_INPUTS_GENERATED);
-//         cnf.minInputsGenerated = loadedConfigObj.GIS_MIN_INPUTS_GENERATED;
-//       }
-
-//       if (loadedConfigObj.GIS_MAX_INPUTS_GENERATED !== undefined){
-//         console.log("GIS | LOADED GIS_MAX_INPUTS_GENERATED: " + loadedConfigObj.GIS_MAX_INPUTS_GENERATED);
-//         cnf.maxInputsGenerated = loadedConfigObj.GIS_MAX_INPUTS_GENERATED;
-//       }
-
-//       if (loadedConfigObj.GIS_MIN_TOTAL_MIN !== undefined){
-//         console.log("GIS | LOADED GIS_MIN_TOTAL_MIN: " + loadedConfigObj.GIS_MIN_TOTAL_MIN);
-//         cnf.minTotalMin = loadedConfigObj.GIS_MIN_TOTAL_MIN;
-//       }
-
-//       if (loadedConfigObj.GIS_MAX_TOTAL_MIN !== undefined){
-//         console.log("GIS | LOADED GIS_MAX_TOTAL_MIN: " + loadedConfigObj.GIS_MAX_TOTAL_MIN);
-//         cnf.maxTotalMin = loadedConfigObj.GIS_MAX_TOTAL_MIN;
-//       }
-
-//       if (loadedConfigObj.GIS_MIN_DOMINANT_MIN !== undefined){
-//         console.log("LOADED GIS_MIN_DOMINANT_MIN: " + loadedConfigObj.GIS_MIN_DOMINANT_MIN);
-//         cnf.minDominantMin = loadedConfigObj.GIS_MIN_DOMINANT_MIN;
-//       }
-
-//       if (loadedConfigObj.GIS_MAX_DOMINANT_MIN !== undefined){
-//         console.log("GIS | LOADED GIS_MAX_DOMINANT_MIN: " + loadedConfigObj.GIS_MAX_DOMINANT_MIN);
-//         cnf.maxDominantMin = loadedConfigObj.GIS_MAX_DOMINANT_MIN;
-//       }
-
-//       if (loadedConfigObj.GIS_TEST_MODE !== undefined){
-//         console.log("GIS | LOADED GIS_TEST_MODE: " + loadedConfigObj.GIS_TEST_MODE);
-//         cnf.testMode = loadedConfigObj.GIS_TEST_MODE;
-//       }
-
-//       if (loadedConfigObj.GIS_QUIT_ON_COMPLETE !== undefined){
-//         console.log("GIS | LOADED GIS_QUIT_ON_COMPLETE: " + loadedConfigObj.GIS_QUIT_ON_COMPLETE);
-//         cnf.quitOnComplete = loadedConfigObj.GIS_QUIT_ON_COMPLETE;
-//       }
-
-//       if (loadedConfigObj.GIS_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined){
-//         console.log("GIS | LOADED GIS_HISTOGRAM_PARSE_DOMINANT_MIN: " + loadedConfigObj.GIS_HISTOGRAM_PARSE_DOMINANT_MIN);
-//         cnf.histogramParseDominantMin = loadedConfigObj.GIS_HISTOGRAM_PARSE_DOMINANT_MIN;
-//       }
-
-//       if (loadedConfigObj.GIS_HISTOGRAM_PARSE_TOTAL_MIN !== undefined){
-//         console.log("GIS | LOADED GIS_HISTOGRAM_PARSE_TOTAL_MIN: " + loadedConfigObj.GIS_HISTOGRAM_PARSE_TOTAL_MIN);
-//         cnf.histogramParseTotalMin = loadedConfigObj.GIS_HISTOGRAM_PARSE_TOTAL_MIN;
-//       }
-
-//       if (loadedConfigObj.GIS_ENABLE_STDIN !== undefined){
-//         console.log("GIS | LOADED GIS_ENABLE_STDIN: " + loadedConfigObj.GIS_ENABLE_STDIN);
-//         cnf.enableStdin = loadedConfigObj.GIS_ENABLE_STDIN;
-//       }
-
-//       if (loadedConfigObj.GIS_KEEPALIVE_INTERVAL !== undefined) {
-//         console.log("GIS | LOADED GIS_KEEPALIVE_INTERVAL: " + loadedConfigObj.GIS_KEEPALIVE_INTERVAL);
-//         cnf.keepaliveInterval = loadedConfigObj.GIS_KEEPALIVE_INTERVAL;
-//       }
-
-//       // OVERIDE CONFIG WITH COMMAND LINE ARGS
-
-//       commandLineArgs = Object.keys(commandLineConfig);
-
-//       commandLineArgs.forEach(function(arg){
-//         cnf[arg] = commandLineConfig[arg];
-//         console.log("GIS | --> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
-//       });
-
-//       console.log(chalkLog("USER\n" + jsonPrint(userObj)));
-
-//       configArgs = Object.keys(cnf);
-//       configArgs.forEach(function(arg){
-//         console.log("GIS | INITIALIZE FINAL CONFIG | " + arg + ": " + cnf[arg]);
-//       });
-
-//       if (cnf.enableStdin){ initStdIn(); }
-
-//       initStatsUpdate(function(err){
-//         return resolve(cnf);
-//       });
-
-//     }
-//     catch(err){
-
-//       console.log(chalkAlert("GIS | *** ERROR | DROPBOX CONFIG PATH " + dropboxConfigHostFolder + "/" + dropboxConfigFile + " | ERROR: " + err));
-
-//       console.log(chalkAlert("GIS | ??? DROPBOX CONFIG PATH " + dropboxConfigHostFolder + "/" + dropboxConfigFile + " NOT LOADED | USING DEFAULTS"));
-
-//       // OVERIDE CONFIG WITH COMMAND LINE ARGS
-
-//       commandLineArgs = Object.keys(commandLineConfig);
-
-//       commandLineArgs.forEach(function(arg){
-//         cnf[arg] = commandLineConfig[arg];
-//         console.log("GIS | --> COMMAND LINE CONFIG | " + arg + ": " + cnf[arg]);
-//       });
-
-//       console.log(chalkLog("USER\n" + jsonPrint(userObj)));
-
-//       configArgs = Object.keys(cnf);
-//       configArgs.forEach(function(arg){
-//         console.log("GIS | INITIALIZE FINAL CONFIG | " + arg + ": " + cnf[arg]);
-//       });
-
-//       if (cnf.enableStdin){ initStdIn(); }
-
-//       initStatsUpdate(function(){
-//         return resolve(cnf);
-//       });
-//     }
-
-//   });
-// }
-
 function runMain(){
   return new Promise(async function(resolve, reject){
 
@@ -2344,7 +2105,6 @@ function runMain(){
   });
 }
 
-
 setTimeout(async function(){
 
   try {
@@ -2389,210 +2149,3 @@ setTimeout(async function(){
     }
   }
 }, 1000);
-
-
-// async function main(){
-
-//   try {
-
-//     const cnf = await initialize(configuration);
-
-//     configuration = deepcopy(cnf);
-
-//     console.log(chalkTwitter(configuration.processName 
-//       + " STARTED " + getTimeStamp() 
-//     ));
-
-//     initSaveFileQueue(configuration);
-
-//     if (configuration.testMode) {
-//     }
-
-//     try {
-//       global.dbConnection = await connectDb();
-//     }
-//     catch(err){
-//       dbConnectionReady = false;
-//       console.log(chalkError("GIS | *** MONGO DB CONNECT ERROR: " + err + " | QUITTING ***"));
-//       quit("MONGO DB CONNECT ERROR");
-//     }
-
-
-//     console.log(chalkTwitter("GIS | " + configuration.processName + " CONFIGURATION\n" + jsonPrint(cnf)));
-
-//     // initSocket(configuration);
-
-//     console.log("LOAD " + defaultHistogramsFolder);
-
-//     async.eachSeries(DEFAULT_INPUT_TYPES, async function(type){
-
-//       let genInParams = {};
-
-//       genInParams.histogramsObj = {};
-//       genInParams.histogramsObj.histograms = {};
-//       genInParams.histogramsObj.maxTotalMin = {};
-//       genInParams.histogramsObj.histogramParseDominantMin = configuration.histogramParseDominantMin;
-//       genInParams.histogramsObj.histogramParseTotalMin = configuration.histogramParseTotalMin;
-
-//       const folder = defaultHistogramsFolder + "/types/" + type;
-//       const file = "histograms_" + type + ".json";
-
-//       try {
-
-//         let results;
-
-//         try {
-//           results = await loadFile({folder: folder, file: file, streamMode: true, type: type});
-//         }
-//         catch(err){
-//           console.log(chalkAlert("GIS | LOAD HISTOGRAM ERROR: " + err));
-//           return;
-//         }
-
-//         console.log(chalkBlue("\nGIS | +++ LOADED HISTOGRAM | " + type.toUpperCase()
-//           + "\nGIS | TOTAL ITEMS:          " + results.totalInputs
-//           + "\nGIS | MAX TOT CAT:          " + results.maxTotalCategorized
-//           + "\nGIS | MIN TOTAL MIN:        " + configuration.minTotalMin
-//           + "\nGIS | MORE THAN TOTAL MIN:  " + results.moreThanMin + " (" + (100*results.moreThanMin/results.totalInputs).toFixed(2) + "%)"
-//           + "\nGIS | LESS THAN TOTAL MIN:  " + results.lessThanMin + " (" + (100*results.lessThanMin/results.totalInputs).toFixed(2) + "%)"
-//         ));
-
-//         genInParams.histogramsObj.histograms[type] = {};
-//         genInParams.histogramsObj.histograms[type] = results.obj;
-
-//         const inputsObj = await generateInputSets(genInParams);
-
-//         globalInputsObj.inputs[type] = {};
-//         globalInputsObj.inputs[type] = inputsObj.inputs[type];
-//         globalInputsObj.meta.type[type] = {};
-//         globalInputsObj.meta.type[type] = inputsObj.meta.type[type];
-//         globalInputsObj.meta.type[type].totalInputs = results.totalInputs;
-//         globalInputsObj.meta.type[type].lessThanMin = results.lessThanMin;
-//         globalInputsObj.meta.type[type].moreThanMin = results.moreThanMin;
-//         globalInputsObj.meta.type[type].totalMin = globalInputsObj.meta.type[type].totalMin || 0;
-//         return;
-
-//       }
-//       catch(err){
-//         console.log(chalkError("GIS | LOAD HISTOGRAMS / GENERATE INPUT SETS ERROR: " + err));
-//         return(err);
-//       }
-
-//     }, function(err){
-
-//       if (err) {
-//         quit(err);
-//         return;
-//       }
-
-//       let inFolder = (hostname === PRIMARY_HOST) ? defaultInputsFolder : localInputsFolder;
-
-//       if (configuration.testMode) { 
-//         inFolder = inFolder + "_test";
-//       }
-
-//       let tableArray = [];
-
-//       tableArray.push([
-//         "GIS |",
-//         "TYPE",
-//         "DOM MIN",
-//         "TOT MIN",
-//         "TYPE TOT IN",
-//         "TYPE IN",
-//         "TYPE MTM",
-//         "TYPE LTM",
-//         "TOT IN"
-//       ]);
-
-//       globalInputsObj.meta.numInputs = 0;
-
-//       async.eachSeries(DEFAULT_INPUT_TYPES, function(type, cb){
-
-//         if (globalInputsObj.meta.type[type] === undefined) { return cb(); }
-
-//         globalInputsObj.meta.numInputs += globalInputsObj.meta.type[type].numInputs;
-
-//         tableArray.push([
-//           "GIS |",
-//           type.toUpperCase(),
-//           globalInputsObj.meta.type[type].dominantMin.toFixed(5),
-//           parseInt(globalInputsObj.meta.type[type].totalMin),
-//           globalInputsObj.meta.type[type].totalInputs,
-//           globalInputsObj.meta.type[type].numInputs,
-//           globalInputsObj.meta.type[type].moreThanMin,
-//           globalInputsObj.meta.type[type].lessThanMin,
-//           globalInputsObj.meta.numInputs
-//         ]);
-
-//         cb();
-
-//       }, function(err){
-
-//         if (err) {
-//           return quit(err);
-//         }
-
-
-//         globalInputsObj.inputsId = configuration.inputsFilePrefix + "_" + moment().format(compactDateTimeFormat) + "_" + globalInputsObj.meta.numInputs + "_" + hostname + "_" + process.pid;
-
-
-//         let networkInputsDoc = new NetworkInputs(globalInputsObj);
-
-//         networkInputsDoc.save(async function(err, savedNetworkInputsDoc){
-
-//           if (err) {
-//             console.log(chalkError("GIS | *** CREATE NETWORK INPUTS DB DOCUMENT: " + err));
-//           }
-//           else {
-//             printInputsObj("GIS | +++ SAVED NETWORK INPUTS DB DOCUMENT", savedNetworkInputsDoc);
-//             console.log(chalk.blue(
-//                 "\nGIS | ========================================================================================="
-//               + "\nGIS | INPUTS" 
-//               + "\nGIS | -----------------------------------------------------------------------------------------\n"
-//               + table(tableArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r"] })
-//               + "\nGIS | =========================================================================================\n"
-//             ));
-//           }
-
-//           const slackText = table(tableArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r"] });
-
-//           console.log("GIS | SLACK MESSAGE SENT");
-//           slackPostMessage(slackChannel, slackText);
-
-//           const inFile = globalInputsObj.inputsId + ".json";
-
-//           console.log(chalkInfo("GIS | ... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
-
-//           saveFileQueue.push({folder: inFolder, file: inFile, obj: globalInputsObj});
-
-//           console.log(chalkInfo("GIS | ... UPDATING INPUTS CONFIG FILE: " + dropboxConfigDefaultFolder + "/" + defaultNetworkInputsConfigFile));
-
-//           let networkInputsConfigObj = await loadFile({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, noErrorNotFound: true });
-
-//           networkInputsConfigObj.INPUTS_IDS.push(globalInputsObj.inputsId);
-//           networkInputsConfigObj.INPUTS_IDS = _.uniq(networkInputsConfigObj.INPUTS_IDS);
-
-//           saveFileQueue.push({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, obj: networkInputsConfigObj});
-
-//           quit();
-
-//         });
-
-//       });  
-
-//     });
-//   }
-//   catch(err){
-
-//     if (err.response && (err.response.status !== 404) && (err.response.status !== 409)){
-//       console.error(chalkError("GIS | *** INIT ERROR *** QUITING: ERROR: " + jsonPrint(err)));
-//       quit();
-//     }
-//     else {
-//       console.error(chalkError("GIS | *** INIT ERROR *** ERROR: CONFIG FILE NOT FOUND | ERROR CODE: " + err.status));
-//     }
-//   }
-// }
-
-// main();

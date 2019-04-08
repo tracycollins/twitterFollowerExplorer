@@ -758,7 +758,6 @@ function loadInputsDropbox(params) {
         + "\n" + jsonPrint([...inputsIdSet])
       ));
 
-
       resolve();
     }
     catch(err){
