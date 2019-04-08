@@ -38,7 +38,6 @@ let DROPBOX_ROOT_FOLDER;
 const defaultNetworkInputsConfigFile = "default_networkInputsConfig.json";
 const defaultBestInputsConfigFile = "default_bestInputsConfig.json";
 const hostBestInputsConfigFile = hostname + "_bestInputsConfig.json";
-const defaultInputsConfigFile = "default_networkInputsConfig.json";
 
 if (hostname === "google") {
   DROPBOX_ROOT_FOLDER = "/home/tc/Dropbox/Apps/wordAssociation";
