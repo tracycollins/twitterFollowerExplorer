@@ -774,12 +774,11 @@ function unionInputSets(params) {
 
         console.log(chalkInfo("UBI | ... UPDATING INPUTS CONFIG FILE: " + dropboxConfigDefaultFolder + "/" + defaultNetworkInputsConfigFile));
 
-        const networkInputsConfigObj = await loadFile({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, noErrorNotFound: true });
 
-        networkInputsConfigObj.INPUTS_IDS.push(newInputsObj.inputsId);
-        networkInputsConfigObj.INPUTS_IDS = _.uniq(networkInputsConfigObj.INPUTS_IDS);
+        // networkInputsConfigObj.INPUTS_IDS.push(newInputsObj.inputsId);
+        // networkInputsConfigObj.INPUTS_IDS = _.uniq(networkInputsConfigObj.INPUTS_IDS);
 
-        saveFileQueue.push({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, obj: networkInputsConfigObj});
+        // saveFileQueue.push({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, obj: networkInputsConfigObj});
 
         resolve(newInputsObj);
 
@@ -1751,14 +1750,37 @@ function initConfig(cnf) {
   });
 }
 
+function pairwise(list) {
+  // return new Promise(async function(resolve, reject){
+    if (list.length < 2) { return []; }
+    let first = list[0];
+    let rest  = list.slice(1);
+    let pairs = rest.map(function (x) { return [first, x]; });
+    return pairs.concat(pairwise(rest));
+  // });
+}
+
 function runMain(){
   return new Promise(async function(resolve, reject){
 
     try {
 
-      await unionInputSets({parents: ["inputs_20190116_055941_1371_google_17167", "inputs_20190126_105139_1392_google_14587"]});
       statsObj.status = "RUN MAIN";
-      resolve();
+
+      let networkInputsConfigObj = await loadFile({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, noErrorNotFound: true });
+
+      const parentPairs = pairwise([...inputsIdSet]);
+      console.log("PARENT PAIRS\n" + jsonPrint(parentPairs));
+
+      async.eachSeries(parentPairs, async function(parentPair){
+        const newInputsObj = await unionInputSets({parents: parentPair});
+        networkInputsConfigObj.INPUTS_IDS.push(newInputsObj.inputsId);
+        networkInputsConfigObj.INPUTS_IDS = _.uniq(networkInputsConfigObj.INPUTS_IDS);
+        return;
+      }, function(err){
+        console.log("INPUTS_IDS\n" + jsonPrint(networkInputsConfigObj.INPUTS_IDS));
+        resolve();
+      });
 
     }
     catch(err){
