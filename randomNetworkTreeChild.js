@@ -1224,9 +1224,9 @@ function initActivateNetworkInterval(interval){
           messageObj.categoryAuto = generateNetworksOutputObj.bestNetwork.categoryAuto;
           messageObj.output = activateNetworkResults;
 
-          process.send(messageObj, function(){
-            activateNetworkIntervalBusy = false;
-          });
+          process.send(messageObj);
+
+          activateNetworkIntervalBusy = false;
         }
         catch(err){
 
