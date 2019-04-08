@@ -1779,6 +1779,7 @@ function runMain(){
         return;
       }, function(err){
         console.log("INPUTS_IDS\n" + jsonPrint(networkInputsConfigObj.INPUTS_IDS));
+        saveFileQueue.push({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, obj: networkInputsConfigObj});
         resolve();
       });
 
