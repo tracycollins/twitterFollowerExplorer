@@ -67,7 +67,7 @@ const TEST_FETCH_COUNT = 47;
 const TEST_TOTAL_FETCH = 147;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
-const QUIT_ON_COMPLETE = false;
+const QUIT_ON_COMPLETE = true;
 
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
