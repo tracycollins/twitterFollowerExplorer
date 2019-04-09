@@ -919,7 +919,8 @@ function generateNetworksOutput(params){
             inputsId: statsObj.currentBestNetwork.inputsId,
             numInputs: statsObj.currentBestNetwork.numInputs,
             previousBestNetworkId: previousBestNetworkId,
-            previousBestMatchRate: previousBestNetworkMatchRate
+            previousBestMatchRate: previousBestNetworkMatchRate,
+            queue: rxActivateNetworkQueue.length
           });
 
           previousBestNetworkId = currentBestNetworkId;
@@ -1527,7 +1528,7 @@ process.on("message", async function(m) {
 
       await initActivateNetworkInterval(m.interval);
 
-      process.send({ op: "IDLE" }, function(err){
+      process.send({ op: "IDLE", queue: rxActivateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -1546,7 +1547,7 @@ process.on("message", async function(m) {
     case "GET_BUSY":
       cause = busy();
       if (cause) {
-        process.send({ op: "BUSY", cause: cause }, function(err){
+        process.send({ op: "BUSY", cause: cause, queue: rxActivateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | BUSY | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | BUSY | " + err);
@@ -1554,7 +1555,7 @@ process.on("message", async function(m) {
       });
       }
       else {
-        process.send({ op: "IDLE" }, function(err){
+        process.send({ op: "IDLE", queue: rxActivateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -1566,7 +1567,7 @@ process.on("message", async function(m) {
     case "STATS":
       showStats(m.options);
       if (busy()) {
-        process.send({ op: "BUSY", cause: busy() }, function(err){
+        process.send({ op: "BUSY", cause: busy(), queue: rxActivateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | BUSY | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | BUSY | " + err);
@@ -1574,7 +1575,7 @@ process.on("message", async function(m) {
       });
       }
       else {
-        process.send({ op: "IDLE" }, function(err){
+        process.send({ op: "IDLE", queue: rxActivateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -1585,7 +1586,7 @@ process.on("message", async function(m) {
 
     case "GET_STATS":
       await printNetworkResults({title: "GET STATS"});
-      process.send({ op: "STATS", statsObj: statsObj }, function(err){
+      process.send({ op: "STATS", statsObj: statsObj, queue: rxActivateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | STATS | " + err);
@@ -1598,7 +1599,7 @@ process.on("message", async function(m) {
     break;
 
     case "QUIT":
-      process.send({ op: "IDLE" }, function(err){
+      process.send({ op: "IDLE", queue: rxActivateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -1638,7 +1639,7 @@ process.on("message", async function(m) {
         ));
       }
 
-      process.send({op: "NETWORK_BUSY"}, function(err){
+      process.send({op: "NETWORK_BUSY", queue: rxActivateNetworkQueue.length}, function(err){
         if (err) { 
           console.error.bind(console, "RNT | *** SEND ERROR | NETWORK_BUSY | " + err);
         }
@@ -1759,10 +1760,10 @@ function initStatsUpdate(cnf){
     // saveFile(statsFolder, statsFile, statsObj);
 
     if (busy()) {
-      process.send({ op: "BUSY", cause: busy() });
+      process.send({ op: "BUSY", cause: busy(), queue: rxActivateNetworkQueue.length });
     }
     else {
-      process.send({ op: "IDLE" });
+      process.send({ op: "IDLE", queue: rxActivateNetworkQueue.length });
     }
 
   }, cnf.statsUpdateIntervalTime);

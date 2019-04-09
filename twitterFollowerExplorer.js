@@ -231,7 +231,6 @@ let processUserQueueInterval;
 let randomNetworkTree;
 let randomNetworkTreeMessageRxQueueReadyFlag = true;
 let randomNetworkTreeReadyFlag = false;
-let randomNetworkTreeActivateQueueSize = 0;
 const randomNetworkTreeMessageRxQueue = [];
 
 
@@ -3756,11 +3755,14 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
           statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
           runEnable();
           console.log(chalkLog("TFE | RNT IDLE "));
         break;
 
         case "STATS":
+
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
 
           console.log(chalkLog("TFE | R< RNT_STATS"
             // + "\n" + jsonPrint(Object.keys(m.statsObj))
@@ -3824,6 +3826,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
           statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
           debug(chalkInfo("RNT NETWORK_READY ..."));
           runEnable();
         break;
@@ -3832,17 +3835,16 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
           statsObj.queues.randomNetworkTreeActivateQueue.busy = true;
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
           debug(chalkInfo("RNT NETWORK_BUSY ..."));
         break;
 
         case "QUEUE_STATS":
-          randomNetworkTreeActivateQueueSize = m.queue;
           statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
         break;
 
         case "QUEUE_READY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          randomNetworkTreeActivateQueueSize = m.queue;
           statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
           statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           randomNetworkTreeReadyFlag = true;
@@ -3853,7 +3855,6 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
         case "QUEUE_EMPTY":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          randomNetworkTreeActivateQueueSize = m.queue;
           statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
           statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           randomNetworkTreeReadyFlag = true;
@@ -3863,7 +3864,6 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
         case "QUEUE_FULL":
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          randomNetworkTreeActivateQueueSize = m.queue;
           statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
           statsObj.queues.randomNetworkTreeActivateQueue.busy = "QUEUE_FULL";
           randomNetworkTreeReadyFlag = false;
@@ -3874,6 +3874,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = true;
           statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
           console.log(chalkTwitter("TFE | " + getTimeStamp() + " | RNT_TEST_PASS | RNT READY: " + randomNetworkTreeReadyFlag));
           runEnable();
         break;
@@ -3882,14 +3883,14 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           randomNetworkTreeReadyFlag = false;
           statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
           console.log(chalkAlert("TFE | " + getTimeStamp() + " | RNT_TEST_FAIL"));
           quit({source: "RNT", error: "RNT_TEST_FAIL"});
         break;
 
         case "NETWORK_OUTPUT":
 
-          randomNetworkTreeActivateQueueSize = m.queue;
-          statsObj.randomNetworkTreeActivateQueueSize = randomNetworkTreeActivateQueueSize;
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
 
           debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
           debug(chalkAlert("RNT NETWORK_OUTPUT | " + m.bestNetwork.networkId));
@@ -3964,6 +3965,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
         break;
 
         case "BEST_MATCH_RATE":
+
+          statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
 
           debug(chalkAlert("\n================================================================================================\n"
             + "*** RNT_BEST_MATCH_RATE"
@@ -4160,9 +4163,8 @@ function initRandomNetworkTreeChild() {
 
       randomNetworkTree.on("error", function(err) {
         randomNetworkTreeReadyFlag = true;
-        randomNetworkTreeActivateQueueSize = 0;
         statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-        statsObj.randomNetworkTreeActivateQueueSize = randomNetworkTreeActivateQueueSize;
+        statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
         randomNetworkTree = null;
         statsObj.status = "ERROR RNT";
         console.log(chalkError("TFE | *** randomNetworkTree ERROR *** : " + err));
@@ -4172,9 +4174,8 @@ function initRandomNetworkTreeChild() {
 
       randomNetworkTree.on("exit", function(err) {
         randomNetworkTreeReadyFlag = true;
-        randomNetworkTreeActivateQueueSize = 0;
         statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-        statsObj.randomNetworkTreeActivateQueueSize = randomNetworkTreeActivateQueueSize;
+        statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
         randomNetworkTree = null;
         console.log(chalkError("TFE | *** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
         if (!quitFlag) { quit({source: "RNT", error: err }); }
@@ -4182,9 +4183,8 @@ function initRandomNetworkTreeChild() {
 
       randomNetworkTree.on("close", function(code) {
         randomNetworkTreeReadyFlag = true;
-        randomNetworkTreeActivateQueueSize = 0;
         statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-        statsObj.randomNetworkTreeActivateQueueSize = randomNetworkTreeActivateQueueSize;
+        statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
         randomNetworkTree = null;
         console.log(chalkError("TFE | *** randomNetworkTree CLOSE *** | " + code));
         if (!quitFlag) { quit({source: "RNT", code: code }); }
