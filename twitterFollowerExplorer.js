@@ -63,8 +63,8 @@ const FETCH_COUNT = 200;
 const TEST_TWEET_FETCH_COUNT = 11;
 
 const TEST_MODE_NUM_NN = 5;
-const TEST_FETCH_COUNT = 17;
-const TEST_TOTAL_FETCH = 47;
+const TEST_FETCH_COUNT = 47;
+const TEST_TOTAL_FETCH = 147;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = false;
@@ -3770,13 +3770,13 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
           try {
             await updateNetworkStats({
-                networkStatsObj: m.statsObj.loadedNetworks, 
-                saveImmediate: true, 
-                updateDb: true, 
-                updateOverallMatchRate: true,
-                incrementTestCycles: true,
-                addToTestHistory: true
-              });
+              networkStatsObj: m.statsObj.loadedNetworks, 
+              saveImmediate: true, 
+              updateDb: true, 
+              updateOverallMatchRate: true,
+              incrementTestCycles: true,
+              addToTestHistory: true
+            });
 
             currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
 
@@ -3809,7 +3809,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
             }
 
             randomNetworkTreeMessageRxQueueReadyFlag = true;
-            // statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+            statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
 
             myEmitter.emit("allNetworksUpdated");
 
@@ -3956,9 +3956,11 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               + " | CA: " + m.categoryAuto
             ));
           }
+
           randomNetworkTreeMessageRxQueueReadyFlag = true;
-          // statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+          statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           runEnable();
+
         break;
 
         case "BEST_MATCH_RATE":
@@ -4023,6 +4025,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               + " | TCH: " + m.testCycleHistory.length
             ));
           }
+
           if (m.previousBestNetworkId && bestNetworkHashMap.has(m.previousBestNetworkId)) {
 
             prevBesTFEObj = bestNetworkHashMap.get(m.previousBestNetworkId);
@@ -4041,6 +4044,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
               saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: prevBesTFEObj });
             }
           }
+
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           runEnable();
