@@ -6444,37 +6444,65 @@ function childCreate(p){
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT AUTHORIZED " + m.userId));
               userErrorSet.add(m.userId);
               categorizedUserHashmap.delete(m.userId);
+              global.globalUser.deleteOne({nodeId: m.userId}, function(err){
+                if (err) {
+                  console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
+                }
+                else {
+                  console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
+                }
+              });
+
               break;
             }
-
-            if (m.type === "USER_BLOCKED") {
+            else if (m.type === "USER_BLOCKED") {
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER BLOCKED " + m.userId));
               userErrorSet.add(m.userId);
               categorizedUserHashmap.delete(m.userId);
+              global.globalUser.deleteOne({nodeId: m.userId}, function(err){
+                if (err) {
+                  console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
+                }
+                else {
+                  console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
+                }
+              });
+
               break;
             }
-
-            if (m.type === "USER_NOT_FOUND") {
+            else if (m.type === "USER_NOT_FOUND") {
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT FOUND " + m.userId));
               userErrorSet.add(m.userId);
               categorizedUserHashmap.delete(m.userId);
+              global.globalUser.deleteOne({nodeId: m.userId}, function(err){
+                if (err) {
+                  console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
+                }
+                else {
+                  console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
+                }
+              });
+
               break;
             }
+            else {
 
-            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
-            childHashMap[childId].status = "ERROR";
+              console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
+              childHashMap[childId].status = "ERROR";
 
-            if (m.error) { 
-              childHashMap[childId].error = m.error;
-              console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
+              if (m.error) { 
+                childHashMap[childId].error = m.error;
+                console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
+              }
+
+              if (m.type === "INVALID_TOKEN") {
+                childHashMap[childId].status = "DISABLED";
+              }
+
+              await childInit({childId: childId, threeceeUser: m.threeceeUser, config: childHashMap[childId].config});
+
+              break;
             }
-
-            if (m.type === "INVALID_TOKEN") {
-              childHashMap[childId].status = "DISABLED";
-            }
-
-            await childInit({childId: childId, threeceeUser: m.threeceeUser, config: childHashMap[childId].config});
-          break;
 
           case "INIT":
           case "INIT_COMPLETE":

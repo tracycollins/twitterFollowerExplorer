@@ -1041,10 +1041,8 @@ function printActivateResult(prefix, nn, category, categoryAuto, screenName){
   console.log(chalkInfo(prefix
     + " | MR: " + statsObj.categorize.matchRate.toFixed(2) + "%"
     + " | MTCH: " + statsObj.categorize.match + " / TOT: " + statsObj.categorize.total 
-    + " [ " + statsObj.categorize.skipped + " SKP | " + statsObj.categorize.grandTotal + " GTOT ]"
     + " | OMR: " + nn.overallMatchRate.toFixed(2) + "%"
     + " | SR: " + nn.successRate.toFixed(2) + "%"
-    // + " | " + nn.match + " / " + nn.total + " [ " + statsObj.categorize.skipped + " SKP | " + statsObj.categorize.grandTotal + " GTOT ]"
     + " | TC: " + nn.testCycles
     + " | TCH: " + nn.testCycleHistory.length
     + " | " + nn.networkId
