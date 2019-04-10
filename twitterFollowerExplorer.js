@@ -5638,11 +5638,11 @@ const fsmStates = {
         );
 
         statsObj.allChildrenFetchEnd = allChildrenFetchEnd;
-// USER_TWEETS
+
         if (
-          !statsObj.queues.randomNetworkTreeActivateQueue.busy
-          && (statsObj.queues.randomNetworkTreeActivateQueue.size === 0)
-          && !statsObj.queues.activateNetworkQueue.busy
+          // !statsObj.queues.randomNetworkTreeActivateQueue.busy
+          // && (statsObj.queues.randomNetworkTreeActivateQueue.size === 0)
+            !statsObj.queues.activateNetworkQueue.busy
           && (statsObj.queues.activateNetworkQueue.size === 0)
           && allChildrenFetchEnd 
           && !statsObj.queues.processUserQueue.busy
