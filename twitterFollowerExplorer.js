@@ -344,6 +344,7 @@ statsObj.users.totalUsersSkipped = 0;
 statsObj.users.percentFetched = 0;
 statsObj.users.percentProcessed = 0;
 statsObj.users.processRateMS = 0;
+statsObj.users.processRateSec = 0;
 statsObj.users.mumProcessed = 0;
 statsObj.users.numProcessRemaining = 0;
 
@@ -1323,6 +1324,7 @@ function showStats(options) {
     statsObj.users.numProcessRemaining = statsObj.users.categorized.total-statsObj.users.mumProcessed;
 
     statsObj.users.processRateMS = statsObj.elapsedMS/statsObj.users.mumProcessed; // ms/userProcessed
+    statsObj.users.processRateSec = statsObj.users.processRateMS/1000;
 
     statsObj.remainingTimeMs = statsObj.users.processRateMS * statsObj.users.numProcessRemaining;
 
@@ -1370,7 +1372,7 @@ function showStats(options) {
         + "/" + statsObj.users.numProcessRemaining 
         + "/" + statsObj.users.categorized.total 
         + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
-        + " | ETC (" + msToTime(statsObj.users.processRateMS) + " per user): " + msToTime(statsObj.remainingTimeMs) 
+        + " | ETC (" + statsObj.users.processRateSec.toFixed(3) + " SPU): " + msToTime(statsObj.remainingTimeMs) 
         + " / " + moment().add(statsObj.remainingTimeMs).format(compactDateTimeFormat)
         + " | " + statsObj.users.categorized.manual + " MAN"
         + " | " + statsObj.users.categorized.auto + " AUTO"
