@@ -2136,6 +2136,8 @@ function loadAllConfigFiles(){
 
       configuration = deepcopy(tempConfig);
 
+      configuration.twitterUsers = _.uniq(configuration.twitterUsers);
+
       resolve();
 
     }
@@ -6176,7 +6178,9 @@ function childCreateAll(p){
 
     createParams.config = merge(createParams.config, params.config);
 
-    async.eachSeries(configuration.twitterUsers, async function(threeceeUser){
+    console.log(chalkLog("TFE | CHILD CREATE ALL: " + configuration.twitterUsers));
+
+    async.each(configuration.twitterUsers, async function(threeceeUser){
 
       try{
 
