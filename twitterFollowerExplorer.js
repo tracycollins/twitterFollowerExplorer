@@ -62,9 +62,9 @@ const FETCH_COUNT = 200;
 
 const TEST_TWEET_FETCH_COUNT = 11;
 
-const TEST_MODE_NUM_NN = 5;
-const TEST_FETCH_COUNT = 47;
-const TEST_TOTAL_FETCH = 147;
+const TEST_MODE_NUM_NN = 10;
+const TEST_FETCH_COUNT = 200;
+const TEST_TOTAL_FETCH = 1000;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -335,6 +335,7 @@ statsObj.users.categorized.matchRate = 0;
 
 statsObj.users.total = 0;
 statsObj.users.fetched = 0;
+statsObj.users.fetchErrors = 0;
 statsObj.users.processed = 0;
 statsObj.users.totalUsersSkipped = 0;
 statsObj.users.percentFetched = 0;
@@ -918,7 +919,11 @@ function initCategorizedUserHashmap(){
             console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserHashmap: " + err));
             cb(err);
           }
-          else if ((!configuration.testMode && results) || (configuration.testMode && (statsObj.users.categorized.total < TEST_TOTAL_FETCH)) ) {
+          else if (
+            (!configuration.testMode && results) 
+            || (configuration.testMode && (statsObj.users.categorized.total < TEST_TOTAL_FETCH))
+            ) 
+          {
 
             more = true;
             statsObj.users.categorized.total += results.count;
@@ -1345,7 +1350,7 @@ function showStats(options) {
       console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
         + " | PUQ: " + processUserQueue.length 
         + " | TOT CAT: " + statsObj.users.categorized.total
-        + " | PROCESSED: " + statsObj.users.processed + " / " + statsObj.users.categorized.total 
+        + " | PRCSSD/ERROR/TOT: " + statsObj.users.processed + " / " + statsObj.users.fetchErrors + " / " + statsObj.users.categorized.total 
         + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
         + " | " + statsObj.users.categorized.manual + " MAN"
         + " | " + statsObj.users.categorized.auto + " AUTO"
@@ -3095,12 +3100,17 @@ function loadBestNetworksDatabase(paramsIn) {
       console.log(chalkBlue("TFE | LOADING " + limit + " BEST NNs (by OAMR) FROM DB ..."));
 
       nnArrayTopOverallMatchRate = await global.globalNeuralNetwork.find(query).lean().
-      sort({"overallMatchRate": -1}).limit(limit).exec();
+      sort({"overallMatchRate": -1}).
+limit(limit).
+exec();
       console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs (by OAMR) FROM DB ..."));
 
       console.log(chalkBlue("TFE | LOADING " + randomUntestedLimit + " UNTESTED NNs FROM DB ..."));
 
-      nnArrayRandomUntested = await global.globalNeuralNetwork.find(randomUntestedQuery).lean().sort({"overallMatchRate": -1}).limit(randomUntestedLimit).exec();
+      nnArrayRandomUntested = await global.globalNeuralNetwork.find(randomUntestedQuery).lean().
+sort({"overallMatchRate": -1}).
+limit(randomUntestedLimit).
+exec();
 
       console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
 
@@ -3169,7 +3179,7 @@ function loadBestNeuralNetworks() {
 
     try {
       await loadBestNetworksDropbox({folder: bestNetworkFolder});
-      const bestNetworkObj = await loadBestNetworksDatabase();
+      await loadBestNetworksDatabase();
       resolve();
     }
     catch(err){
@@ -3504,6 +3514,7 @@ function updateNetworkStats(params) {
         ));
         return;
       }
+      
     }, async function(err) {
 
       if (err) {
@@ -4614,6 +4625,8 @@ function userProfileChangeHistogram(params) {
       let domain;
       let domainNodeId;
       let nodeId;
+      let lastSeen;
+      let name;
 
       user[prevUserProp] = (!user[prevUserProp] || (user[prevUserProp] === undefined)) ? null : user[prevUserProp];
 
@@ -4623,9 +4636,9 @@ function userProfileChangeHistogram(params) {
 
           text += userPropValue + "\n";
 
-          const lastSeen = Date.now();
+          lastSeen = Date.now();
 
-          let name = userPropValue.trim().toLowerCase();
+          name = userPropValue.trim().toLowerCase();
           name = name.replace(/\./gi, "");
 
           nodeId = btoa(name);
@@ -5234,9 +5247,6 @@ function initProcessUserQueueInterval(interval) {
   statsObj.status = "INIT PROCESS USER QUEUE";
 
   let mObj = {};
-  // let childId;
-  const tcUser = "altthreecee00";
-  // const ignoredFlag = false;
 
   console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + PROCESS_USER_QUEUE_INTERVAL + " MS"));
 
@@ -5265,6 +5275,9 @@ function initProcessUserQueueInterval(interval) {
 
         const u = categorizedUserHashmap.get(mObj.userId);
 
+        u.friends = u.friends || [];
+        u.friends = _.union(u.friends, mObj.friends);
+
         u.latestTweets = u.latestTweets || [];
         u.latestTweets = _.union(u.latestTweets, mObj.latestTweets);
 
@@ -5280,7 +5293,7 @@ function initProcessUserQueueInterval(interval) {
         }
 
         statsObj.users.processed += 1;
-        statsObj.users.percentProcessed = 100*statsObj.users.processed/statsObj.users.categorized.total;
+        statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
 
         debug("PROCESSED USER\n" + jsonPrint(user));
 
@@ -5640,9 +5653,9 @@ const fsmStates = {
         statsObj.allChildrenFetchEnd = allChildrenFetchEnd;
 
         if (
-          // !statsObj.queues.randomNetworkTreeActivateQueue.busy
-          // && (statsObj.queues.randomNetworkTreeActivateQueue.size === 0)
-            !statsObj.queues.activateNetworkQueue.busy
+          !statsObj.queues.randomNetworkTreeActivateQueue.busy
+          && (statsObj.queues.randomNetworkTreeActivateQueue.size === 0)
+          && !statsObj.queues.activateNetworkQueue.busy
           && (statsObj.queues.activateNetworkQueue.size === 0)
           && allChildrenFetchEnd 
           && !statsObj.queues.processUserQueue.busy
@@ -5678,7 +5691,8 @@ const fsmStates = {
         console.log(chalk.bold.blue("TFE | ================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("TFE | ===================================================="));
 
-        console.log(chalk.bold.blue("TFE | TOTAL USERS PROCESSED: " + statsObj.users.processed));
+        console.log(chalk.bold.blue("TFE | TOTAL USERS PROCESSED:    " + statsObj.users.processed));
+        console.log(chalk.bold.blue("TFE | TOTAL USERS FETCH ERRORS: " + statsObj.users.fetchErrors));
 
         console.log(chalk.bold.blue("\nTFE | ----------------------------------------------------"
           + "\nTFE | BEST NETWORK: " + statsObj.bestNetwork.networkId
@@ -5790,7 +5804,7 @@ const fsmStates = {
         slackText = slackText + " | " + hostname;
         slackText = slackText + "\nSTART: " + statsObj.startTime;
         slackText = slackText + " | RUN: " + statsObj.elapsed;
-        slackText = slackText + "\nTOT: " + statsObj.users.processed;
+        slackText = slackText + "\nTOT: " + statsObj.users.processed + " | ERR: " + statsObj.users.fetchErrors;
         slackText = slackText + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
         slackText = slackText + "\nIN: " + statsObj.bestNetwork.numInputs;
         slackText = slackText + " | INPUTS ID: " + statsObj.bestNetwork.inputsId;
@@ -5828,6 +5842,8 @@ const fsmStates = {
 
               statsObj.users.total = 0;
               statsObj.users.processed = 0;
+              statsObj.users.fetchErrors = 0;
+              userErrorSet.clear();
               statsObj.users.percentProcessed = 0;
               statsObj.users.fetched = 0;
               statsObj.users.percentFetched = 0;
@@ -6443,6 +6459,7 @@ function childCreate(p){
             if (m.type === "USER_NOT_AUTHORIZED") {
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT AUTHORIZED " + m.userId));
               userErrorSet.add(m.userId);
+              statsObj.users.fetchErrors = userErrorSet.size;
               categorizedUserHashmap.delete(m.userId);
               global.globalUser.deleteOne({nodeId: m.userId}, function(err){
                 if (err) {
@@ -6458,6 +6475,7 @@ function childCreate(p){
             else if (m.type === "USER_BLOCKED") {
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER BLOCKED " + m.userId));
               userErrorSet.add(m.userId);
+              statsObj.users.fetchErrors = userErrorSet.size;
               categorizedUserHashmap.delete(m.userId);
               global.globalUser.deleteOne({nodeId: m.userId}, function(err){
                 if (err) {
@@ -6473,6 +6491,7 @@ function childCreate(p){
             else if (m.type === "USER_NOT_FOUND") {
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT FOUND " + m.userId));
               userErrorSet.add(m.userId);
+              statsObj.users.fetchErrors = userErrorSet.size;
               categorizedUserHashmap.delete(m.userId);
               global.globalUser.deleteOne({nodeId: m.userId}, function(err){
                 if (err) {
@@ -6568,6 +6587,24 @@ function childCreate(p){
               + " | 3C: @" + m.threeceeUser
               + " | " + twitterUserHashMap[m.threeceeUser].friends.size + " FRIENDS"
             ));
+          break;
+
+          case "USER_FRIENDS":
+
+            if (categorizedUserHashmap.has(m.userId)){
+
+              processUserQueue.push(m);
+              statsObj.queues.processUserQueue.size = processUserQueue.length;
+
+              if (configuration.verbose){
+                console.log(chalkTwitter("TFE | USER_FRIENDS"
+                  + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
+                  + " | UID: " + m.userId
+                  + " | FRNDs: " + m.friendsIds.length
+                ));
+              }
+            }
+
           break;
 
           case "USER_TWEETS":

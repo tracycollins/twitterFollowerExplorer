@@ -1,5 +1,5 @@
 /*jslint node: true */
-"use strict";
+// "use strict";
 
 const DEFAULT_INPUT_TYPES = [
   "emoji", 
@@ -17,19 +17,19 @@ const DEFAULT_INPUT_TYPES = [
 
 DEFAULT_INPUT_TYPES.sort();
 
-let start = process.hrtime();
+// let start = process.hrtime();
 
-let elapsed_time = function(note){
-    const precision = 3; // 3 decimal places
-    const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
-    console.log("RNT | " + process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
-    start = process.hrtime(); // reset the timer
-};
+// let elapsed_time = function(note){
+//     const precision = 3; // 3 decimal places
+//     const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
+//     console.log("RNT | " + process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
+//     start = process.hrtime(); // reset the timer
+// };
 
 const DEFAULT_INPUTS_BINARY_MODE = false;
 
 const MAX_SORT_NETWORKS = 500;
-const ONE_SECOND = 1000;
+const ONE_SECOND = Number(1000);
 const MAX_Q_SIZE = 2000;
 
 const defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
@@ -37,19 +37,19 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const HashMap = require("hashmap").HashMap;
 const networksHashMap = new HashMap();
-let rxActivateNetworkQueue = [];
+const rxActivateNetworkQueue = [];
 let maxQueueFlag = false;
 let maxInputHashMap = {};
 
 let sortedNetworkResults = {};
 
-let loadNetworksBusy = false;
+// let loadNetworksBusy = false;
 let activateNetworkInterval;
 let activateNetworkIntervalBusy = false;
 
 let statsUpdateInterval;
 
-let configuration = {};
+const configuration = {};
 configuration.inputsBinaryMode = DEFAULT_INPUTS_BINARY_MODE;
 configuration.verbose = false;
 configuration.globalTestMode = false;
@@ -62,16 +62,10 @@ const moment = require("moment");
 const treeify = require("treeify");
 const MergeHistograms = require("@threeceelabs/mergehistograms");
 const mergeHistograms = new MergeHistograms();
-
-const fetch = require("isomorphic-fetch");
-
-const Dropbox = require("dropbox").Dropbox;
-
 const async = require("async");
 const debug = require("debug")("rnt");
 const debugCache = require("debug")("cache");
 const arrayNormalize = require("array-normalize");
-const deepcopy = require("deep-copy");
 const table = require("text-table");
 
 const neataptic = require("neataptic");
@@ -88,14 +82,10 @@ hostname = hostname.replace(/word/g, "google");
 
 const chalk = require("chalk");
 const chalkAlert = chalk.red;
-// const chalkRed = chalk.red;
 const chalkError = chalk.bold.red;
-const chalkWarn = chalk.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 const chalkConnect = chalk.blue;
-const chalkMiss = chalk.keyword("orange");
-
 
 const jsonPrint = function (obj){
   if (obj) {
@@ -107,9 +97,9 @@ const jsonPrint = function (obj){
 };
 
 function getTimeStamp(inputTime) {
-  let currentTimeStamp ;
+  let currentTimeStamp;
 
-  if (inputTime  === undefined) {
+  if (inputTime === undefined) {
     currentTimeStamp = moment().format(defaultDateTimeFormat);
     return currentTimeStamp;
   }
@@ -123,9 +113,11 @@ function getTimeStamp(inputTime) {
   }
 }
 
-function msToTime(duration) {
+function msToTime(d) {
 
   let sign = 1;
+
+  let duration = d;
 
   if (duration < 0) {
     sign = -1;
@@ -155,7 +147,7 @@ console.log("RNT | =================================");
 
 let initializeBusy = false;
 
-let statsObj = {};
+const statsObj = {};
 
 statsObj.networksLoaded = false;
 statsObj.normalization = {};
@@ -286,7 +278,7 @@ function indexOfMax (arr) {
 
     }, function(){
 
-      resolve(maxIndex) ; 
+      resolve(maxIndex); 
 
     });
 
@@ -332,14 +324,11 @@ function printNetworkInput(params){
     const columns = params.columns || 100;
 
     let col = 0;
-    let row = 0;
-
     let hitRowArray = [];
 
     let inputText = ".";
     let text = "";
     let textRow = "";
-    let index = 0;
     let hits = 0;
     let hitRate = 0;
     const inputArraySize = inputArray.length;
@@ -358,7 +347,6 @@ function printNetworkInput(params){
 
       textRow += inputText;
       col += 1;
-      index += 1;
 
       if ((col === columns) || (index === inputArraySize)){
 
@@ -368,13 +356,16 @@ function printNetworkInput(params){
 
         textRow = "";
         col = 0;
-        row += 1;
         hitRowArray = [];
       }
 
       cb();
 
     }, function(err){
+      if (err) {
+        console.log(chalkError("RNT | *** printNetworkInput ERROR: " + err));
+        return reject(err);
+      }
       resolve();
       console.log(chalkLog(
         "______________________________________________________________________________________________________________________________________"
@@ -393,8 +384,8 @@ function generateNetworkInputIndexed(params){
     generateNetworkInputBusy = true;
 
     const inputTypes = Object.keys(params.inputsObj.inputs).sort();
-    let networkInput = [];
-    let networkInputName = [];
+    const networkInput = [];
+    const networkInputName = [];
 
     let indexOffset = 0;
 
@@ -415,8 +406,6 @@ function generateNetworkInputIndexed(params){
             networkInput[indexOffset + index] = 1;
             return cb1();
           }
-
-          let inputValue = 0;
 
           if (maxInputHashMap[inputType] === undefined) {
 
@@ -474,13 +463,9 @@ function generateNetworkInputIndexed(params){
               ));
             }
 
-            // let inputValue = 0;
-
             networkInput[indexOffset + index] = (maxInputHashMap[inputType][inputName] > 0) 
               ? histogramObj[inputName]/maxInputHashMap[inputType][inputName] 
               : 1;
-
-            // networkInput[indexOffset + index] = inputValue;
 
             async.setImmediate(function() {
               cb1();
@@ -498,6 +483,8 @@ function generateNetworkInputIndexed(params){
         }
 
       }, function(err){
+
+        if (err) { return cb0(err); }
 
         async.setImmediate(function() { 
           indexOffset += networkInputTypeNames.length;
@@ -524,12 +511,12 @@ function activateNetwork(params){
 
     activateNetworkBusy = true;
 
-    let networkOutput = {};
+    const networkOutput = {};
 
     try {
-      let userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
+      const userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
 
-      let languageAnalysis = params.user.languageAnalysis;
+      const languageAnalysis = params.user.languageAnalysis;
 
       async.each(networksHashMap.keys(), async function(nnId){
 
@@ -647,11 +634,11 @@ function activateNetwork(params){
 
 function printNetworkResults(params){
 
-  let statsTextArray = [];
+  const statsTextArray = [];
 
   return new Promise(function(resolve, reject){
 
-    async.eachOf(sortedNetworkResults.sortedKeys, function genStatsTextArray(nnId, index, cb0){
+    async.eachOf(sortedNetworkResults.sortedKeys, function(nnId, index, cb0){
 
       statsObj.loadedNetworks[nnId].rank = index;
 
@@ -659,7 +646,12 @@ function printNetworkResults(params){
 
       async.setImmediate(function() { cb0(); });
 
-    }, function(){
+    }, function(err){
+
+      if (err) {
+        console.log(chalkError("RNT | *** printNetworkResults ERROR: " + err));
+        return reject(err);
+      }
 
       statsTextArray.unshift([
         "RNT | NNID",
@@ -685,7 +677,7 @@ function printNetworkResults(params){
           "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
         + "\nRNT | " + params.title 
         + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------\n"
-        + table(statsTextArray, { align: [ "l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+        + table(statsTextArray, { align: ["l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
         + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
       ));
 
@@ -697,14 +689,14 @@ function printNetworkResults(params){
 
 }
 
-const sum = (r, a) => r.map((b, i) => a[i] + b);
+// const sum = (r, a) => r.map((b, i) => a[i] + b);
 
 let previousBestNetworkId = false;
 let previousBestNetworkMatchRate = 0;
 
 let generateNetworksOutputBusy = false;
 
-let arrayOfArrays = [];
+const arrayOfArrays = [];
 
 let currentBestNetworkOutput = [0,0,0];
 let bestNetworkOutput = [0,0,0];
@@ -716,9 +708,9 @@ function generateNetworksOutput(params){
 
   return new Promise(function(resolve, reject){
 
-    let networkOutput = params.networkOutput;
-    let expectedOutput = params.expectedOutput;
-    let title = params.title;
+    const networkOutput = params.networkOutput;
+    const expectedOutput = params.expectedOutput;
+    const title = params.title;
 
     generateNetworksOutputBusy = true;
 
@@ -734,7 +726,7 @@ function generateNetworksOutput(params){
       arrayOfArrays[index] = networkOutput[nnId].output;
 
       const nnOutput = networkOutput[nnId].output;
-      let nn = networksHashMap.get(nnId);
+      const nn = networksHashMap.get(nnId);
 
       if (!nn || nn === undefined) {
         quit();
@@ -843,7 +835,7 @@ function generateNetworksOutput(params){
 
       cb();
 
-    }, async function generateNetworksOutputAsyncCallback(){
+    }, async function(){
 
       try {
 
@@ -855,7 +847,7 @@ function generateNetworksOutput(params){
           return reject(new Error("NO RESULTS"));
         }
 
-        let currentBestNetworkId = sortedNetworkResults.sortedKeys[0];
+        const currentBestNetworkId = sortedNetworkResults.sortedKeys[0];
         
         statsObj.currentBestNetwork = {};
         statsObj.currentBestNetwork = statsObj.loadedNetworks[currentBestNetworkId];
@@ -926,7 +918,7 @@ function generateNetworksOutput(params){
           previousBestNetworkId = currentBestNetworkId;
         }
 
-        let results = {};
+        const results = {};
 
         results.bestNetwork = {};
         results.currentBestNetwork = {};
@@ -991,7 +983,7 @@ function generateNetworksOutput(params){
         console.trace(chalkError("RNT | *** generateNetworksOutput ERROR: " + err));
         generateNetworksOutputBusy = false;
         reject(err);
-      };
+      }
 
     });
 
@@ -1055,7 +1047,7 @@ function printActivateResult(prefix, nn, category, categoryAuto, screenName){
 
 function initActivateNetworkInterval(interval){
 
-  return new Promise(function(resolve, reject){
+  return new Promise(function(resolve){
 
     const verbose = true;
 
@@ -1067,15 +1059,15 @@ function initActivateNetworkInterval(interval){
 
     activateNetworkIntervalBusy = false;
 
-    let messageObj = {};
+    const messageObj = {};
     messageObj.op = "NETWORK_OUTPUT";
     messageObj.queue = rxActivateNetworkQueue.length;
-    messageObj.user;
-    messageObj.bestNetwork;
-    messageObj.currentBestNetwork;
+    messageObj.user = null;
+    messageObj.bestNetwork = null;
+    messageObj.currentBestNetwork = null;
     messageObj.category = "none";
     messageObj.categoryAuto = "none";
-    messageObj.output;
+    messageObj.output = null;
 
     let generateNetworksOutputParams = {};
 
@@ -1103,20 +1095,20 @@ function initActivateNetworkInterval(interval){
 
           if (category == "left") {
             expectedOutput = [1,0,0];
-            title = title + " | MKW: LEFT";
+            title += " | MKW: LEFT";
           }
           else if (category == "neutral") {
             expectedOutput = [0,1,0];
-            title = title + " | MKW: NEUTRAL";
+            title += " | MKW: NEUTRAL";
           }
           else if (category == "right") {
             expectedOutput = [0,0,1];
-            title = title + " | MKW: RIGHT";
+            title += " | MKW: RIGHT";
           }
           else {
             category = false;
             expectedOutput = [0,0,0];
-            title = title + " | MKW: ---";
+            title += " | MKW: ---";
             enableLog = false;
           }
 
@@ -1172,7 +1164,7 @@ function initActivateNetworkInterval(interval){
                   statsObj.bestNetwork.mismatch += 1;
                   statsObj.bestNetwork.matchRate = 100.0 * statsObj.bestNetwork.match / statsObj.bestNetwork.total;
 
-                  if (verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
+                  if (verbose || configuration.testMode || (statsObj.categorize.grandTotal % 100 === 0)) {
                     printActivateResult(
                       "RNT | ---  miss ", 
                       statsObj.bestNetwork, 
@@ -1188,7 +1180,7 @@ function initActivateNetworkInterval(interval){
                 statsObj.categorize.skipped += 1;
                 statsObj.bestNetwork.skipped += 1;
 
-                if (verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
+                if (verbose || configuration.testMode || (statsObj.categorize.grandTotal % 100 === 0)) {
                   printActivateResult(
                     "RNT |      skip ", 
                     statsObj.bestNetwork, 
@@ -1203,7 +1195,7 @@ function initActivateNetworkInterval(interval){
               statsObj.categorize.skipped += 1;
               statsObj.bestNetwork.skipped += 1;
 
-              if (verbose || configuration.testMode  || (statsObj.categorize.grandTotal % 100 === 0)) {
+              if (verbose || configuration.testMode || (statsObj.categorize.grandTotal % 100 === 0)) {
                 printActivateResult(
                   "RNT |      skip ", 
                   statsObj.bestNetwork, 
@@ -1273,30 +1265,10 @@ function initActivateNetworkInterval(interval){
           });
         }
       }
-
     }, interval);
 
-  });
-}
+    resolve();
 
-function getInputNames(nodes, callback){
-
-  let inputNames = [];
-
-  async.eachSeries(nodes, function(node, cb){
-    if (node.type === "input") {
-      if (node.name === undefined) {
-        console.log(chalkError("RNT | *** NODE NAME UNDEFINED"));
-        return cb("NODE NAME UNDEFINED");
-      }
-      inputNames.push(node.name);
-      async.setImmediate(function() { cb(); });
-    }
-    else {
-      async.setImmediate(function() { cb(); });
-    }
-  }, function(err){
-    callback(err, inputNames);
   });
 }
 
@@ -1306,23 +1278,23 @@ function loadNetwork(params){
 
     console.log(chalk.green("RNT | LOAD NETWORK: " + params.networkObj.networkId));
 
-    let networkObj = params.networkObj;
+    const networkObj = params.networkObj;
 
     if (!networkObj || networkObj === undefined || networkObj.network === undefined) {
       console.log(chalkError("RNT | *** LOAD NETWORK UNDEFINED: " + networkObj));
       return reject(new Error("LOAD NETWORK UNDEFINED"));
     }
 
-    let network = neataptic.Network.fromJSON(networkObj.network);
+    const network = neataptic.Network.fromJSON(networkObj.network);
 
     networkObj.network = {};
     networkObj.network = network;
 
-    networkObj.testCycles = (networkObj.testCycles !== undefined) ? networkObj.testCycles : 0 ;
-    networkObj.testCycleHistory = (networkObj.testCycleHistory !== undefined) ? networkObj.testCycleHistory : [] ;
-    networkObj.successRate = (networkObj.successRate !== undefined) ? networkObj.successRate : 0 ;
-    networkObj.matchRate = (networkObj.matchRate !== undefined) ? networkObj.matchRate : 0 ;
-    networkObj.overallMatchRate = (networkObj.overallMatchRate !== undefined) ? networkObj.overallMatchRate : 0 ;
+    networkObj.testCycles = (networkObj.testCycles !== undefined) ? networkObj.testCycles : 0;
+    networkObj.testCycleHistory = (networkObj.testCycleHistory !== undefined) ? networkObj.testCycleHistory : [];
+    networkObj.successRate = (networkObj.successRate !== undefined) ? networkObj.successRate : 0;
+    networkObj.matchRate = (networkObj.matchRate !== undefined) ? networkObj.matchRate : 0;
+    networkObj.overallMatchRate = (networkObj.overallMatchRate !== undefined) ? networkObj.overallMatchRate : 0;
 
     networksHashMap.set(networkObj.networkId, networkObj);
 
@@ -1445,7 +1417,7 @@ function printCategorizeHistory(){
 }
 
 function busy(){
-  if (loadNetworksBusy) { return "loadNetworksBusy"; }
+  // if (loadNetworksBusy) { return "loadNetworksBusy"; }
   if (initializeBusy) { return "initializeBusy"; }
   if (generateNetworksOutputBusy) { return "generateNetworksOutputBusy"; }
   if (activateNetworkBusy) { return "activateNetworkBusy"; }
@@ -1663,8 +1635,8 @@ process.on("message", async function(m) {
 });
 
 
-const DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
-const DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY ;
+const DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
+const DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY;
 const DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
 const DROPBOX_RNT_CONFIG_FILE = process.env.DROPBOX_RNT_CONFIG_FILE || "randomNetworkTreeConfig.json";
 const DROPBOX_RNT_STATS_FILE = process.env.DROPBOX_RNT_STATS_FILE || "randomNetworkTreeStats.json";
@@ -1687,63 +1659,6 @@ debug("DROPBOX_WORD_ASSO_ACCESS_TOKEN :" + DROPBOX_WORD_ASSO_ACCESS_TOKEN);
 debug("DROPBOX_WORD_ASSO_APP_KEY :" + DROPBOX_WORD_ASSO_APP_KEY);
 debug("DROPBOX_WORD_ASSO_APP_SECRET :" + DROPBOX_WORD_ASSO_APP_SECRET);
 
-const dropboxClient = new Dropbox({ 
-  accessToken: DROPBOX_WORD_ASSO_ACCESS_TOKEN,
-  fetch: fetch
-});
-
-function saveFile (path, file, jsonObj, callback){
-
-  const fullPath = path + "/" + file;
-
-  debug(chalkInfo("LOAD FOLDER " + path));
-  debug(chalkInfo("LOAD FILE " + file));
-  debug(chalkInfo("FULL PATH " + fullPath));
-
-  let options = {};
-
-  options.contents = JSON.stringify(jsonObj, null, 2);
-  options.path = fullPath;
-  options.mode = "overwrite";
-  options.autorename = false;
-
-  dropboxClient.filesUpload(options)
-    .then(function(response){
-      debug(chalkLog("... SAVED DROPBOX JSON | " + options.path));
-      if (callback !== undefined) { callback(null, response); }
-    })
-    .catch(function(error){
-      if (error.status === 413){
-        console.log(chalkError("RNT | " + moment().format(compactDateTimeFormat) 
-          + " | *** ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          + " | ERROR: 413"
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-      else if (error.status === 429){
-        console.log(chalkError("RNT | " + moment().format(compactDateTimeFormat) 
-          + " | *** ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          + " | ERROR: TOO MANY WRITES"
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-      else if (error.status === 500){
-        console.log(chalkError("RNT | " + moment().format(compactDateTimeFormat) 
-          + " | *** ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          + " | ERROR: DROPBOX SERVER ERROR"
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-      else {
-        console.log(chalkError("RNT | " + moment().format(compactDateTimeFormat) 
-          + " | *** ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          + " | ERROR: " + error
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-    });
-}
-
 function initStatsUpdate(cnf){
 
   clearInterval(statsUpdateInterval);
@@ -1754,8 +1669,6 @@ function initStatsUpdate(cnf){
 
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
     statsObj.timeStamp = moment().format(defaultDateTimeFormat);
-
-    // saveFile(statsFolder, statsFile, statsObj);
 
     if (busy()) {
       process.send({ op: "BUSY", cause: busy(), queue: rxActivateNetworkQueue.length });
@@ -1777,10 +1690,10 @@ function initialize(cnf, callback){
 
   cnf.processName = process.env.RNT_PROCESS_NAME || "randomNetworkTree";
 
-  cnf.verbose = process.env.RNT_VERBOSE_MODE || configuration.verbose ;
-  cnf.globalTestMode = process.env.RNT_GLOBAL_TEST_MODE || false ;
-  cnf.testMode = process.env.RNT_TEST_MODE || configuration.testMode ;
-  cnf.quitOnError = process.env.RNT_QUIT_ON_ERROR || false ;
+  cnf.verbose = process.env.RNT_VERBOSE_MODE || configuration.verbose;
+  cnf.globalTestMode = process.env.RNT_GLOBAL_TEST_MODE || false;
+  cnf.testMode = process.env.RNT_TEST_MODE || configuration.testMode;
+  cnf.quitOnError = process.env.RNT_QUIT_ON_ERROR || false;
 
   cnf.statsUpdateIntervalTime = process.env.RNT_STATS_UPDATE_INTERVAL || 1000;
 
@@ -1803,4 +1716,4 @@ setTimeout(function(){
     console.log(chalkInfo("RNT | " + cnf.processName + " STARTED " + getTimeStamp() + "\n" + jsonPrint(cnf)));
     initStatsUpdate(cnf);
   });
-}, 1 * ONE_SECOND);
+}, Number(ONE_SECOND));
