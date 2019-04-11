@@ -63,8 +63,8 @@ const FETCH_COUNT = 200;
 const TEST_TWEET_FETCH_COUNT = 11;
 
 const TEST_MODE_NUM_NN = 10;
-const TEST_FETCH_COUNT = 200;
-const TEST_TOTAL_FETCH = 1000;
+const TEST_FETCH_COUNT = 47;
+const TEST_TOTAL_FETCH = 147;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -257,6 +257,8 @@ statsObj.elapsedMS = 0;
 statsObj.elapsed = getElapsedTimeStamp();
 statsObj.remainingTimeMs = 0;
 statsObj.status = "START";
+statsObj.timeStamp = getTimeStamp();
+statsObj.remainingTimeMs = 0;
 
 statsObj.bestNetwork = {};
 statsObj.bestNetwork.networkId = null;
@@ -341,7 +343,9 @@ statsObj.users.processed = 0;
 statsObj.users.totalUsersSkipped = 0;
 statsObj.users.percentFetched = 0;
 statsObj.users.percentProcessed = 0;
-statsObj.users.processRate = 0;
+statsObj.users.processRateMS = 0;
+statsObj.users.mumProcessed = 0;
+statsObj.users.numProcessRemaining = 0;
 
 statsObj.users.classified = 0;
 statsObj.users.classifiedAuto = 0;
@@ -1361,9 +1365,13 @@ function showStats(options) {
 
       console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
         + " | PUQ: " + processUserQueue.length 
-        + " | PRCSSD/ERROR/TOT: " + statsObj.users.processed + " / " + statsObj.users.fetchErrors + " / " + statsObj.users.categorized.total 
+        + " | PRCSSD/ERROR/REM/TOT: " + statsObj.users.processed 
+        + "/" + statsObj.users.fetchErrors 
+        + "/" + statsObj.users.numProcessRemaining 
+        + "/" + statsObj.users.categorized.total 
         + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
-        + " | ETC: " + msToTime(statsObj.remainingTimeMs) + " / " + moment().add(statsObj.remainingTimeMs).format(compactDateTimeFormat)
+        + " | ETC (" + msToTime(statsObj.users.processRateMS) + " per user): " + msToTime(statsObj.remainingTimeMs) 
+        + " / " + moment().add(statsObj.remainingTimeMs).format(compactDateTimeFormat)
         + " | " + statsObj.users.categorized.manual + " MAN"
         + " | " + statsObj.users.categorized.auto + " AUTO"
         + " | " + statsObj.users.categorized.matched + " MATCH"
@@ -5301,6 +5309,7 @@ function initProcessUserQueueInterval(interval) {
           console.log(chalkAlert("TFE | PROCESSED USER"
             + " | UID: " + user.userId
             + " | @" + user.screenName
+            + " | FRNDs: " + u.friends.length
             + " | LTs: " + u.latestTweets.length
             // + " | Ts: " + user.tweets.length
           ));

@@ -1254,7 +1254,7 @@ function fetchUserFriendsIds(params){
 
     if (statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag) {
       console.log(chalkAlert("TFC | fetchUserFriendsIds | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
-      return resolve(null);
+      return reject({code: 88, message: "RATE LIMIT"});
     }
 
     const fetchUserFriendsIdsParams = {};
@@ -1278,7 +1278,7 @@ function fetchUserFriendsIds(params){
           statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag = true;
           statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionAt = moment();
           fsm.fsm_rateLimitStart();
-          return resolve();
+          return reject(err);
         }
 
         if (err.code === 89){
@@ -1328,7 +1328,7 @@ function fetchUserFriendsIds(params){
         + "\nTFC | ====================================================================="
       ));
 
-      resolve();
+      resolve(userFriendsIdsObj);
 
     });
 
@@ -1894,20 +1894,11 @@ function initfetchUserFriendsIds(p) {
     ));
 
     let userId;
-    let userFriendsIds = [];
+    let userFriendsIdsObj = {};
 
     fetchUserFriendsIdsQueueInterval = setInterval(async function(){
 
-      if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag && fetchUserFriendsIdsQueueReady && (fetchUserFriendsIdsQueue.length === 0)) {
-
-        console.log(chalkBlueBold("TFC | ==========================="));
-        console.log(chalkBlueBold("TFC | XXX FETCHED USER FRIENDS IDS END"));
-        console.log(chalkBlueBold("TFC | ==========================="));
-        
-        fetchUserFriendsIdsQueueReady = false;
-        // fsm.fsm_fetchUserEnd();
-      }
-      else if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag && fetchUserFriendsIdsQueueReady && (fetchUserFriendsIdsQueue.length > 0)) {
+      if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag && fetchUserFriendsIdsQueueReady && (fetchUserFriendsIdsQueue.length > 0)) {
 
         fetchUserFriendsIdsQueueReady = false;
 
@@ -1915,18 +1906,18 @@ function initfetchUserFriendsIds(p) {
 
         try {
 
-          userFriendsIds = await fetchUserFriendsIds({ userId: userId });
+          userFriendsIdsObj = await fetchUserFriendsIds({ userId: userId });
 
           // if (configuration.verbose) {
-            if (userFriendsIds.length > 0) {
+            if (userFriendsIdsObj.ids.length > 0) {
               console.log(chalk.black("TFC | +++ FETCHED USER FRIENDS IDS" 
-                + " [" + userFriendsIds.length + "]"
+                + " [" + userFriendsIdsObj.ids.length + "]"
                 + " | " + userId
               ));
             }
             else {
               console.log(chalk.gray("TFC | --- FETCHED USER FRIENDS IDS" 
-                + " [" + userFriendsIds.length + "]"
+                + " [" + userFriendsIdsObj.ids.length + "]"
                 + " | " + userId
               ));
             }
@@ -1936,7 +1927,7 @@ function initfetchUserFriendsIds(p) {
             {
               op: "USER_FRIENDS",
               userId: userId,
-              friends: userFriendsIds
+              friends: userFriendsIdsObj.ids
             }, 
 
             function(){ 
