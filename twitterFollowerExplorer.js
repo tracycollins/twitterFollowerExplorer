@@ -255,6 +255,7 @@ statsObj.hostname = hostname;
 statsObj.startTime = getTimeStamp();
 statsObj.elapsedMS = 0;
 statsObj.elapsed = getElapsedTimeStamp();
+statsObj.remainingTimeMs = 0;
 statsObj.status = "START";
 
 statsObj.bestNetwork = {};
@@ -340,6 +341,7 @@ statsObj.users.processed = 0;
 statsObj.users.totalUsersSkipped = 0;
 statsObj.users.percentFetched = 0;
 statsObj.users.percentProcessed = 0;
+statsObj.users.processRate = 0;
 
 statsObj.users.classified = 0;
 statsObj.users.classifiedAuto = 0;
@@ -1311,6 +1313,14 @@ function showStats(options) {
   return new Promise(async function(resolve, reject){
 
     statsObj.elapsed = getElapsedTimeStamp();
+    statsObj.timeStamp = getTimeStamp();
+    statsObj.elapsedMS = moment().valueOf() - startTimeMoment.valueOf();
+    statsObj.users.mumProcessed = statsObj.users.processed + statsObj.users.fetchErrors;
+    statsObj.users.numProcessRemaining = statsObj.users.categorized.total-statsObj.users.mumProcessed;
+
+    statsObj.users.processRateMS = statsObj.elapsedMS/statsObj.users.mumProcessed; // ms/userProcessed
+
+    statsObj.remainingTimeMs = statsObj.users.processRateMS * statsObj.users.numProcessRemaining;
 
     try{
       await childStatsAll();
@@ -1318,6 +1328,7 @@ function showStats(options) {
     catch(err){
       return reject(err);
     }
+
 
     statsObjSmall = pick(statsObj, statsPickArray);
 
@@ -1336,9 +1347,10 @@ function showStats(options) {
         objectPath.set(statsObj, ["children", childId, "status"], childHashMap[childId].status);
       });
 
+
       console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
         + " | START: " + statsObj.startTime
-        + " | NOW: " + getTimeStamp()
+        + " | NOW: " + statsObj.timeStamp
         + " | ELAPSED: " + statsObj.elapsed
         + " || FSM: " + fsm.getMachineState()
         + " || BEST NN: " + statsObj.bestNetwork.networkId
@@ -1349,9 +1361,9 @@ function showStats(options) {
 
       console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
         + " | PUQ: " + processUserQueue.length 
-        + " | TOT CAT: " + statsObj.users.categorized.total
         + " | PRCSSD/ERROR/TOT: " + statsObj.users.processed + " / " + statsObj.users.fetchErrors + " / " + statsObj.users.categorized.total 
         + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
+        + " | ETC: " + msToTime(statsObj.remainingTimeMs) + " / " + moment().add(statsObj.remainingTimeMs).format(compactDateTimeFormat)
         + " | " + statsObj.users.categorized.manual + " MAN"
         + " | " + statsObj.users.categorized.auto + " AUTO"
         + " | " + statsObj.users.categorized.matched + " MATCH"

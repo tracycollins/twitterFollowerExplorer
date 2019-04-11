@@ -37,7 +37,7 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const HashMap = require("hashmap").HashMap;
 const networksHashMap = new HashMap();
-const rxActivateNetworkQueue = [];
+const activateNetworkQueue = [];
 let maxQueueFlag = false;
 let maxInputHashMap = {};
 
@@ -912,7 +912,7 @@ function generateNetworksOutput(params){
             numInputs: statsObj.currentBestNetwork.numInputs,
             previousBestNetworkId: previousBestNetworkId,
             previousBestMatchRate: previousBestNetworkMatchRate,
-            queue: rxActivateNetworkQueue.length
+            queue: activateNetworkQueue.length
           });
 
           previousBestNetworkId = currentBestNetworkId;
@@ -1031,6 +1031,7 @@ function categoryToString(c) {
 
 function printActivateResult(prefix, nn, category, categoryAuto, screenName){
   console.log(chalkInfo(prefix
+    + " | ANQ: " + activateNetworkQueue.length
     + " | MR: " + statsObj.categorize.matchRate.toFixed(2) + "%"
     + " | MTCH: " + statsObj.categorize.match + " / TOT: " + statsObj.categorize.total 
     + " | OMR: " + nn.overallMatchRate.toFixed(2) + "%"
@@ -1061,7 +1062,7 @@ function initActivateNetworkInterval(interval){
 
     const messageObj = {};
     messageObj.op = "NETWORK_OUTPUT";
-    messageObj.queue = rxActivateNetworkQueue.length;
+    messageObj.queue = activateNetworkQueue.length;
     messageObj.user = null;
     messageObj.bestNetwork = null;
     messageObj.currentBestNetwork = null;
@@ -1073,11 +1074,11 @@ function initActivateNetworkInterval(interval){
 
     activateNetworkInterval = setInterval(async function(){ 
 
-      if (statsObj.networksLoaded && (rxActivateNetworkQueue.length > 0) && !activateNetworkIntervalBusy) {
+      if (statsObj.networksLoaded && (activateNetworkQueue.length > 0) && !activateNetworkIntervalBusy) {
 
         activateNetworkIntervalBusy = true;
 
-        const activateNetworkObj = rxActivateNetworkQueue.shift();
+        const activateNetworkObj = activateNetworkQueue.shift();
 
         messageObj.user = activateNetworkObj.user;
 
@@ -1207,7 +1208,7 @@ function initActivateNetworkInterval(interval){
             }
           }
 
-          messageObj.queue = rxActivateNetworkQueue.length;
+          messageObj.queue = activateNetworkQueue.length;
           messageObj.user = activateNetworkResults.user;
           messageObj.bestNetwork = statsObj.bestNetwork;
           messageObj.currentBestNetwork = statsObj.currentBestNetwork;
@@ -1229,8 +1230,8 @@ function initActivateNetworkInterval(interval){
           activateNetworkIntervalBusy = false;
         }
 
-        if (maxQueueFlag && (rxActivateNetworkQueue.length < MAX_Q_SIZE)) {
-          process.send({op: "QUEUE_READY", queue: rxActivateNetworkQueue.length}, function(err){
+        if (maxQueueFlag && (activateNetworkQueue.length < MAX_Q_SIZE)) {
+          process.send({op: "QUEUE_READY", queue: activateNetworkQueue.length}, function(err){
             if (err) { 
               console.trace(chalkError("RNT | SEND ERROR | QUEUE_READY | " + err));
               quit("SEND QUEUE_READY ERROR");
@@ -1238,8 +1239,8 @@ function initActivateNetworkInterval(interval){
           });
           maxQueueFlag = false;
         }
-        else if (rxActivateNetworkQueue.length === 0){
-          process.send({op: "QUEUE_EMPTY", queue: rxActivateNetworkQueue.length}, function(err){
+        else if (activateNetworkQueue.length === 0){
+          process.send({op: "QUEUE_EMPTY", queue: activateNetworkQueue.length}, function(err){
             if (err) { 
               console.trace(chalkError("RNT | SEND ERROR | QUEUE_EMPTY | " + err));
               quit("SEND QUEUE_EMPTY ERROR");
@@ -1247,8 +1248,8 @@ function initActivateNetworkInterval(interval){
           });
           maxQueueFlag = false;
         }
-        else if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
-          process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
+        else if (!maxQueueFlag && (activateNetworkQueue.length >= MAX_Q_SIZE)) {
+          process.send({op: "QUEUE_FULL", queue: activateNetworkQueue.length}, function(err){
             if (err) { 
               console.trace(chalkError("RNT | SEND ERROR | QUEUE_FULL | " + err));
               quit("SEND QUEUE_FULL ERROR");
@@ -1257,7 +1258,7 @@ function initActivateNetworkInterval(interval){
           maxQueueFlag = true;
         }
         else {
-          process.send({op: "QUEUE_STATS", queue: rxActivateNetworkQueue.length}, function(err){
+          process.send({op: "QUEUE_STATS", queue: activateNetworkQueue.length}, function(err){
             if (err) { 
               console.trace(chalkError("RNT | SEND ERROR | QUEUE_STATS | " + err));
               quit("SEND QUEUE_STATS ERROR");
@@ -1423,7 +1424,7 @@ function busy(){
   if (activateNetworkBusy) { return "activateNetworkBusy"; }
   if (activateNetworkIntervalBusy) { return "activateNetworkIntervalBusy"; }
   if (generateNetworkInputBusy) { return "generateNetworkInputBusy"; }
-  if (rxActivateNetworkQueue.length > MAX_Q_SIZE) { return "rxActivateNetworkQueue"; }
+  if (activateNetworkQueue.length > MAX_Q_SIZE) { return "activateNetworkQueue"; }
 
   return false;
 }
@@ -1498,7 +1499,7 @@ process.on("message", async function(m) {
 
       await initActivateNetworkInterval(m.interval);
 
-      process.send({ op: "IDLE", queue: rxActivateNetworkQueue.length }, function(err){
+      process.send({ op: "IDLE", queue: activateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -1517,7 +1518,7 @@ process.on("message", async function(m) {
     case "GET_BUSY":
       cause = busy();
       if (cause) {
-        process.send({ op: "BUSY", cause: cause, queue: rxActivateNetworkQueue.length }, function(err){
+        process.send({ op: "BUSY", cause: cause, queue: activateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | BUSY | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | BUSY | " + err);
@@ -1525,7 +1526,7 @@ process.on("message", async function(m) {
       });
       }
       else {
-        process.send({ op: "IDLE", queue: rxActivateNetworkQueue.length }, function(err){
+        process.send({ op: "IDLE", queue: activateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -1537,7 +1538,7 @@ process.on("message", async function(m) {
     case "STATS":
       showStats(m.options);
       if (busy()) {
-        process.send({ op: "BUSY", cause: busy(), queue: rxActivateNetworkQueue.length }, function(err){
+        process.send({ op: "BUSY", cause: busy(), queue: activateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | BUSY | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | BUSY | " + err);
@@ -1545,7 +1546,7 @@ process.on("message", async function(m) {
       });
       }
       else {
-        process.send({ op: "IDLE", queue: rxActivateNetworkQueue.length }, function(err){
+        process.send({ op: "IDLE", queue: activateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -1556,7 +1557,7 @@ process.on("message", async function(m) {
 
     case "GET_STATS":
       await printNetworkResults({title: "GET STATS"});
-      process.send({ op: "STATS", statsObj: statsObj, queue: rxActivateNetworkQueue.length }, function(err){
+      process.send({ op: "STATS", statsObj: statsObj, queue: activateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | STATS | " + err);
@@ -1569,7 +1570,7 @@ process.on("message", async function(m) {
     break;
 
     case "QUIT":
-      process.send({ op: "IDLE", queue: rxActivateNetworkQueue.length }, function(err){
+      process.send({ op: "IDLE", queue: activateNetworkQueue.length }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -1597,11 +1598,11 @@ process.on("message", async function(m) {
     
     case "ACTIVATE":
 
-      rxActivateNetworkQueue.push(m.obj);
+      activateNetworkQueue.push(m.obj);
 
       if (configuration.verbose) {
         console.log(chalkInfo("### ACTIVATE"
-          + " [" + rxActivateNetworkQueue.length + "]"
+          + " [" + activateNetworkQueue.length + "]"
           + " | " + getTimeStamp()
           + " | " + m.obj.user.nodeId
           + " | @" + m.obj.user.screenName
@@ -1609,14 +1610,14 @@ process.on("message", async function(m) {
         ));
       }
 
-      process.send({op: "NETWORK_BUSY", queue: rxActivateNetworkQueue.length}, function(err){
+      process.send({op: "NETWORK_BUSY", queue: activateNetworkQueue.length}, function(err){
         if (err) { 
           console.error.bind(console, "RNT | *** SEND ERROR | NETWORK_BUSY | " + err);
         }
       });
 
-      if (!maxQueueFlag && (rxActivateNetworkQueue.length >= MAX_Q_SIZE)) {
-        process.send({op: "QUEUE_FULL", queue: rxActivateNetworkQueue.length}, function(err){
+      if (!maxQueueFlag && (activateNetworkQueue.length >= MAX_Q_SIZE)) {
+        process.send({op: "QUEUE_FULL", queue: activateNetworkQueue.length}, function(err){
           if (err) { 
             console.error.bind(console, "RNT | *** SEND ERROR | QUEUE_FULL | " + err);
           }
@@ -1671,10 +1672,10 @@ function initStatsUpdate(cnf){
     statsObj.timeStamp = moment().format(defaultDateTimeFormat);
 
     if (busy()) {
-      process.send({ op: "BUSY", cause: busy(), queue: rxActivateNetworkQueue.length });
+      process.send({ op: "BUSY", cause: busy(), queue: activateNetworkQueue.length });
     }
     else {
-      process.send({ op: "IDLE", queue: rxActivateNetworkQueue.length });
+      process.send({ op: "IDLE", queue: activateNetworkQueue.length });
     }
 
   }, cnf.statsUpdateIntervalTime);
