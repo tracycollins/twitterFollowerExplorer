@@ -3803,7 +3803,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
 
           try {
             await updateNetworkStats({
-              networkStatsObj: m.statsObj.loadedNetworks, 
+              networkStatsObj: m.loadedNetworks, 
               saveImmediate: true, 
               updateDb: true, 
               updateOverallMatchRate: true,
@@ -3849,8 +3849,8 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           }
           catch(err){
             console.log(chalkError("TFE | *** UPDATE NETWORK STATS ERROR: " + err));
+            randomNetworkTreeMessageRxQueueReadyFlag = true;
           }
-
         break;
 
         case "NETWORK_READY":
@@ -3871,6 +3871,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
         break;
 
         case "QUEUE_STATS":
+          randomNetworkTreeMessageRxQueueReadyFlag = true;
           statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
         break;
 
@@ -3992,7 +3993,6 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval, callback) {
           randomNetworkTreeMessageRxQueueReadyFlag = true;
           statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
           runEnable();
-
         break;
 
         case "BEST_MATCH_RATE":
