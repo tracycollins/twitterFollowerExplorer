@@ -1530,7 +1530,7 @@ process.on("message", async function(m) {
       else {
         process.send({ op: "IDLE", queue: activateNetworkQueue.length }, function(err){
         if (err) { 
-          console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
+          console.log(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
         }
       });
@@ -1542,7 +1542,7 @@ process.on("message", async function(m) {
         await printNetworkResults({title: "GET STATS"});
         process.send({ op: "STATS", loadedNetworks: statsObj.loadedNetworks, queue: activateNetworkQueue.length }, function(err){
           if (err) { 
-            console.trace(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
+            console.log(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
             console.error.bind(console, "RNT | *** SEND ERROR | STATS | " + err);
           }
         });
