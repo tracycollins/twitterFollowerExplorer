@@ -5677,16 +5677,17 @@ const fsmStates = {
 
         statsObj.allChildrenFetchEnd = allChildrenFetchEnd;
 
-        if (
-          !statsObj.queues.randomNetworkTreeActivateQueue.busy
-          && (statsObj.queues.randomNetworkTreeActivateQueue.size === 0)
-          && !statsObj.queues.activateNetworkQueue.busy
-          && (statsObj.queues.activateNetworkQueue.size === 0)
-          && allChildrenFetchEnd 
-          && !statsObj.queues.processUserQueue.busy
-          && (statsObj.queues.processUserQueue.size === 0)
+        if (allChildrenFetchEnd
+          // !statsObj.queues.randomNetworkTreeActivateQueue.busy
+          // && (statsObj.queues.randomNetworkTreeActivateQueue.size === 0)
+          // && !statsObj.queues.activateNetworkQueue.busy
+          // && (statsObj.queues.activateNetworkQueue.size === 0)
+          // && allChildrenFetchEnd 
+          // && !statsObj.queues.processUserQueue.busy
+          // && (statsObj.queues.processUserQueue.size === 0)
           ) 
         { 
+          console.log(chalkAlert("FSM | allChildrenFetchEnd | STATS QUEUES\n" + jsonPrint(statsObj.queues)));
           fsm.fsm_fetchAllEnd(); 
         }
 
