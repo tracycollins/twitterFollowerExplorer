@@ -1,6 +1,7 @@
 /*jslint node: true */
 /*jshint esnext: true */
 
+const DEFAULT_MAX_USER_TWEETIDS = 500;
 
 const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
 
@@ -5007,6 +5008,15 @@ function updateUserTweets(params){
       tscParams.tweetStatus.user = {};
       tscParams.tweetStatus.user = user;
       tscParams.tweetStatus.user.isNotRaw = true;
+
+      if (user.tweets.tweetIds.length > DEFAULT_MAX_USER_TWEETIDS) {
+        console.log(chalkAlert("WAS | TFC | !!! USER TWEETS > DEFAULT_MAX_USER_TWEETIDS"
+          + " | " + user.nodeId
+          + " | @" + user.screenName
+          + " | " + user.tweets.tweetIds.length + " TWEETS"
+        ));
+        user.tweets.tweetIds.shift();
+      }
 
       if (tweet.id_str > user.tweets.maxId) {
         user.tweets.maxId = tweet.id_str;
