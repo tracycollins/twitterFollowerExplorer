@@ -5010,7 +5010,7 @@ function updateUserTweets(params){
       tscParams.tweetStatus.user.isNotRaw = true;
 
       if (user.tweets.tweetIds.length > DEFAULT_MAX_USER_TWEETIDS) {
-        console.log(chalkAlert("WAS | TFC | !!! USER TWEETS > DEFAULT_MAX_USER_TWEETIDS"
+        console.log(chalkAlert("TFE | !!! USER TWEETS > DEFAULT_MAX_USER_TWEETIDS"
           + " | " + user.nodeId
           + " | @" + user.screenName
           + " | " + user.tweets.tweetIds.length + " TWEETS"
