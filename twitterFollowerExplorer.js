@@ -5009,13 +5009,21 @@ function updateUserTweets(params){
       tscParams.tweetStatus.user = user;
       tscParams.tweetStatus.user.isNotRaw = true;
 
-      if (user.tweets.tweetIds.length > DEFAULT_MAX_USER_TWEETIDS) {
+      const length = user.tweets.tweetIds.length;
+
+      if (length > DEFAULT_MAX_USER_TWEETIDS) {
+
+        const removeNumber = length - DEFAULT_MAX_USER_TWEETIDS;
+
         console.log(chalkAlert("TFE | !!! USER TWEETS > DEFAULT_MAX_USER_TWEETIDS"
           + " | " + user.nodeId
           + " | @" + user.screenName
-          + " | " + user.tweets.tweetIds.length + " TWEETS"
+          + " | " + length + " TWEETS"
+          + " | REMOVE: " + removeNumber
         ));
-        user.tweets.tweetIds.shift();
+
+        // DEFAULT_MAX_USER_TWEETIDS = length - 
+        user.tweets.tweetIds.splice(0,removeNumber);
       }
 
       if (tweet.id_str > user.tweets.maxId) {
