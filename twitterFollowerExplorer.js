@@ -5002,6 +5002,20 @@ function updateUserTweets(params){
 
     let tweetsProcessed = 0;
 
+    if (length > DEFAULT_MAX_USER_TWEETIDS) {
+
+      const removeNumber = length - DEFAULT_MAX_USER_TWEETIDS;
+
+      console.log(chalkAlert("TFE | !!! USER TWEETS > DEFAULT_MAX_USER_TWEETIDS"
+        + " | " + user.nodeId
+        + " | @" + user.screenName
+        + " | " + length + " TWEETS"
+        + " | REMOVE: " + removeNumber
+      ));
+
+      user.tweets.tweetIds.splice(0,removeNumber);
+    }
+
     async.eachSeries(params.tweets, async function(tweet){
 
       tscParams.tweetStatus = tweet;
@@ -5010,21 +5024,6 @@ function updateUserTweets(params){
       tscParams.tweetStatus.user.isNotRaw = true;
 
       const length = user.tweets.tweetIds.length;
-
-      if (length > DEFAULT_MAX_USER_TWEETIDS) {
-
-        const removeNumber = length - DEFAULT_MAX_USER_TWEETIDS;
-
-        console.log(chalkAlert("TFE | !!! USER TWEETS > DEFAULT_MAX_USER_TWEETIDS"
-          + " | " + user.nodeId
-          + " | @" + user.screenName
-          + " | " + length + " TWEETS"
-          + " | REMOVE: " + removeNumber
-        ));
-
-        // DEFAULT_MAX_USER_TWEETIDS = length - 
-        user.tweets.tweetIds.splice(0,removeNumber);
-      }
 
       if (tweet.id_str > user.tweets.maxId) {
         user.tweets.maxId = tweet.id_str;
