@@ -5002,14 +5002,14 @@ function updateUserTweets(params){
 
     let tweetsProcessed = 0;
 
-    if (length > DEFAULT_MAX_USER_TWEETIDS) {
+    if (user.tweets.tweetIds.length > DEFAULT_MAX_USER_TWEETIDS) {
 
-      const removeNumber = length - DEFAULT_MAX_USER_TWEETIDS;
+      const removeNumber = user.tweets.tweetIds.length - DEFAULT_MAX_USER_TWEETIDS;
 
       console.log(chalkAlert("TFE | !!! USER TWEETS > DEFAULT_MAX_USER_TWEETIDS"
         + " | " + user.nodeId
         + " | @" + user.screenName
-        + " | " + length + " TWEETS"
+        + " | " + user.tweets.tweetIds.length + " TWEETS"
         + " | REMOVE: " + removeNumber
       ));
 
@@ -5023,7 +5023,6 @@ function updateUserTweets(params){
       tscParams.tweetStatus.user = user;
       tscParams.tweetStatus.user.isNotRaw = true;
 
-      const length = user.tweets.tweetIds.length;
 
       if (tweet.id_str > user.tweets.maxId) {
         user.tweets.maxId = tweet.id_str;
