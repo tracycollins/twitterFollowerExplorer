@@ -33,7 +33,7 @@
     "event-stream": "^4.0.1",
     "eventemitter2": "^5.0.1",
     "eventemitter3": "^3.1.0",
-    "get-urls": "^9.0.0",
+    "get-urls": "^9.1.0",
     "google-gax": "^0.25.6",
     "grpc": "^1.19.0",
     "hashmap": "^2.3.0",
