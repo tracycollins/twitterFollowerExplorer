@@ -97,6 +97,13 @@ hostname = hostname.replace(/word/g, "google");
 
 const MODULE_ID = MODULE_ID_PREFIX + "_" + hostname;
 
+const EventEmitter = require("eventemitter3");
+
+class ChildEvents extends EventEmitter {}
+
+const childEvents = new ChildEvents();
+
+
 //=========================================================================
 // PROCESS EVENT HANDLERS
 //=========================================================================
@@ -951,6 +958,31 @@ async function quit(opts) {
   }, QUIT_WAIT_INTERVAL);
 }
 
+function delayEvent(p) {
+
+  const params = p || {};
+  const delayEventName = params.delayEventName;
+  const period = params.period || 10*ONE_SECOND;
+  const verbose = params.verbose || false;
+
+  if (verbose) {
+    console.log(chalkLog(MODULE_ID_PREFIX + " | +++ DELAY START | NOW: " + getTimeStamp() + " | PERIOD: " + msToTime(period)));
+  }
+
+  const delayTimout = setTimeout(function(){
+
+    if (verbose) {
+      console.log(chalkLog(MODULE_ID_PREFIX + " | XXX DELAY END | NOW: " + getTimeStamp() + " | PERIOD: " + msToTime(period)));
+    }
+
+    childEvents.emit(delayEventName); 
+
+  }, period);
+
+  return(delayTimout);
+
+}
+
 //=========================================================================
 // TWITTER
 //=========================================================================
@@ -1277,7 +1309,7 @@ function fetchUserFriendsIds(params){
         if (err.code === 88) {
           statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag = true;
           statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionAt = moment();
-          // fsm.fsm_rateLimitStart();
+          fsm.fsm_rateLimitStart();
           return reject(err);
         }
 
@@ -2190,22 +2222,50 @@ const fsmStates = {
               resetAt: statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt
             });
 
-            console.log(chalkAlert(MODULE_ID_PREFIX
-              + " | >>> SET RATE LIMIT TIMEOUT"
-              + " | " + msToTime(timeout)
-              + " | @" + configuration.threeceeUser
-            ));
 
-            rateLimitTimeout = setTimeout(function(){
+            if ((resource === "friends") && (endPoint === "ids")) {
 
               console.log(chalkAlert(MODULE_ID_PREFIX
-                + " | --- RATE LIMIT TIMEOUT END"
+                + " | >>> SET RATE LIMIT TIMEOUT FRIENDS_IDS"
+                + " | " + msToTime(timeout)
                 + " | @" + configuration.threeceeUser
               ));
 
-              fsm.fsm_rateLimitEnd();
+              // const delayEventName = params.delayEventName;
+              // const period = params.period || 10*ONE_SECOND;
+              // const verbose = params.verbose || false;
+              childEvents.once("fetchUserFriendsIdsRateLimitExpired", function(){
 
-            }, timeout);
+                statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag = false;
+
+                console.log(chalkGreen(MODULE_ID_PREFIX
+                  + " | XXX RATE LIMIT END FRIENDS_IDS"
+                ));
+                
+              });
+
+              delayEvent({delayEventName: "fetchUserFriendsIdsRateLimitExpired", period: timeout, verbose: true});
+
+            }
+            else {
+
+              console.log(chalkAlert(MODULE_ID_PREFIX
+                + " | >>> SET RATE LIMIT TIMEOUT"
+                + " | " + msToTime(timeout)
+                + " | @" + configuration.threeceeUser
+              ));
+
+              rateLimitTimeout = setTimeout(function(){
+
+                console.log(chalkAlert(MODULE_ID_PREFIX
+                  + " | --- RATE LIMIT TIMEOUT END"
+                  + " | @" + configuration.threeceeUser
+                ));
+
+                fsm.fsm_rateLimitEnd();
+              }, timeout);
+            }
+
           }
 
         }).

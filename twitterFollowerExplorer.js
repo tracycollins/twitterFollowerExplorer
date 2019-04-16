@@ -4971,6 +4971,83 @@ function generateAutoCategory(user, callback) {
     });
 }
 
+function updateUserFriends(params){
+
+  return new Promise(function(resolve, reject){
+
+    if (params.friends.length === 0) { return resolve(params.user); }
+
+    const user = params.user;
+    if (user.friends === undefined) { 
+      user.friends = [];
+    }
+
+    user.friends = user.friends || [];
+
+    let friendsMisses = 0; // added to user.friends
+    let friendsHits = 0; // already in user.friends
+
+    async.each(params.friends, async function(friend){
+
+      if (!user.friends.includes(friend)) { 
+
+        try {
+
+          user.friends.push(friend); 
+
+          friendsMisses++;
+
+          if (configuration.verbose) {
+            console.log(chalkTwitter("TFE | +++ PROCESSED FRIEND"
+              + " | UID: " + user.userId
+              + " | @" + user.screenName
+              + " | " + user.friends.length + " FRIENDS IN DB"
+            ));
+          } 
+
+          return;
+        }
+        catch(err){
+          console.log(chalkError("TFE | updateUserFriends ERROR: " + err));
+          return err;
+        }
+      }
+      else {
+
+        friendsHits++;
+
+        if (configuration.verbose) {
+          console.log(chalkTwitter("TFE | ... FRIEND ALREAD IN DB"
+            + " | UID: " + user.userId
+            + " | @" + user.screenName
+            + " | FRND ID: " + friend
+            + " | " + user.friends.length + " FRIENDS IN DB"
+          ));
+        }
+
+        return;
+      }
+
+    }, function(err){
+      if (err) {
+        console.log(chalkError("TFE | updateUserFriends ERROR: " + err));
+        return reject(err);
+      }
+
+      console.log(chalkTwitter("TFE | UPDATED USER FRIENDS"
+        + " | UID: " + user.userId
+        + " | @" + user.screenName
+        + " | " + user.friends.length + " FRIENDS IN DB"
+        + " | " + friendsHits + " FRIENDS HITS"
+        + " | " + friendsMisses + " FRIENDS MISSES"
+      ));
+
+      resolve(user);
+    });
+
+  });
+}
+
 function updateUserTweets(params){
 
   return new Promise(function(resolve, reject){
@@ -5023,15 +5100,6 @@ function updateUserTweets(params){
       tscParams.tweetStatus.user = {};
       tscParams.tweetStatus.user = user;
       tscParams.tweetStatus.user.isNotRaw = true;
-
-      // if (user.tweets.tweetIds.length > DEFAULT_MAX_USER_TWEETIDS) {
-      //   console.log(chalkAlert("TF | !!! USER TWEETS > DEFAULT_MAX_USER_TWEETIDS"
-      //     + " | " + user.nodeId
-      //     + " | @" + user.screenName
-      //     + " | " + user.tweets.tweetIds.length + " TWEETS"
-      //   ));
-      //   user.tweets.tweetIds.shift();
-      // }
 
       if (tweet.id_str > user.tweets.maxId) {
         user.tweets.maxId = tweet.id_str;
@@ -5130,6 +5198,7 @@ function processUser(params) {
 
     try {
       user = await updateUserTweets({user: userIn, tweets: userIn.latestTweets});
+      user = await updateUserFriends({user: user, friends: userIn.latestFriends});
     }
     catch(err) {
       console.log(chalkError("TFE | *** processUser updateUserTweets ERROR: " + err));
@@ -5320,8 +5389,8 @@ function initProcessUserQueueInterval(interval) {
 
         const u = categorizedUserHashmap.get(mObj.userId);
 
-        u.friends = u.friends || [];
-        u.friends = _.union(u.friends, mObj.friends);
+        u.latestFriends = u.latestFriends || [];
+        u.latestFriends = _.union(u.latestFriends, mObj.friends);
 
         u.latestTweets = u.latestTweets || [];
         u.latestTweets = _.union(u.latestTweets, mObj.latestTweets);
@@ -5332,7 +5401,7 @@ function initProcessUserQueueInterval(interval) {
           console.log(chalkAlert("TFE | PROCESSED USER"
             + " | UID: " + user.userId
             + " | @" + user.screenName
-            + " | FRNDs: " + u.friends.length
+            + " | FRNDs: " + u.latestFriends.length
             + " | LTs: " + u.latestTweets.length
             // + " | Ts: " + user.tweets.length
           ));
@@ -6649,7 +6718,7 @@ function childCreate(p){
                 console.log(chalkTwitter("TFE | USER_FRIENDS"
                   + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
                   + " | UID: " + m.userId
-                  + " | FRNDs: " + m.friendsIds.length
+                  + " | FRNDs: " + m.friends.length
                 ));
               }
             }
