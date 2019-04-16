@@ -306,7 +306,11 @@ async function showStats(options) {
           }
         });
       });
-
+    }).
+    catch(function(err){
+      console.log(chalkError(MODULE_ID_PREFIX
+        + " | CHECK RATE LIMIT ERROR: " + err
+      ));
     });
 
   }
@@ -1704,6 +1708,8 @@ function checkRateLimit(){
       }
       else if (err && (err.code === 88)) {
 
+        results.anyRateLimitFlag = true;        
+
         statsObj.threeceeUser.twitterRateLimit.application.rate_limit_status.exceptionAt = moment();
         statsObj.threeceeUser.twitterRateLimit.application.rate_limit_status.exceptionFlag = true;
 
@@ -1743,7 +1749,10 @@ function checkRateLimit(){
 
           const flag = await checkEndPointRateLimit({resource: resource, endPoint: endPoint, dataResources: data.resources});
 
-          if (flag) { objectPath.set(results, "flags." + resource + "." + endPoint, flag); }
+          if (flag) { 
+            results.anyRateLimitFlag = true;
+            objectPath.set(results, "flags." + resource + "." + endPoint, flag);
+          }
 
         });
       });
@@ -1910,7 +1919,51 @@ function initfetchUserFriendsIds(p) {
 
     fetchUserFriendsIdsQueueInterval = setInterval(async function(){
 
-      if (!statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag 
+      if (statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag 
+        && fetchUserFriendsIdsQueueReady 
+        && (fetchUserFriendsIdsQueue.length > 0)) {
+
+        checkRateLimit({}).
+        then(function(){
+
+          debug(chalkLog(MODULE_ID_PREFIX
+            + " | RATE LIMIT"
+            + " | @" + configuration.threeceeUser
+            + " | FSM: " + fsm.getMachineState()
+            + " | START: " + statsObj.startTime
+            + " | ELAPSED: " + statsObj.elapsed
+          ));
+
+          Object.keys(TWITTER_RATE_LIMIT_RESOURCES).forEach(function(resource){
+            TWITTER_RATE_LIMIT_RESOURCES[resource].forEach(function(endPoint) {
+              if (statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag || configuration.verbose) {
+                console.log(chalkInfo(MODULE_ID_PREFIX
+                  + " | -X- RATE LIMIT"
+                  + " | @" + configuration.threeceeUser
+                  + " | RLE: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag
+                  + " | RSRC: " + resource
+                  + " | END: " + endPoint
+                  + " | FSM: " + fsm.getMachineState()
+                  + " | LIM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].limit
+                  + " | REM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remaining
+                  + " | STRT: " + statsObj.startTime
+                  + " | ELPSD: " + statsObj.elapsed
+                  + " | NOW: " + moment().format(compactDateTimeFormat)
+                  + " | RST: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt.format(compactDateTimeFormat)
+                  + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remainingTime)
+                ));
+              }
+            });
+          });
+        }).
+        catch(function(err){
+          console.log(chalkError(MODULE_ID_PREFIX
+            + " | CHECK RATE LIMIT ERROR: " + err
+          ));
+        });
+
+      }
+      else if (!statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag 
         && fetchUserFriendsIdsQueueReady 
         && (fetchUserFriendsIdsQueue.length > 0)) {
 
@@ -2241,7 +2294,7 @@ const fsmStates = {
                 console.log(chalkGreen(MODULE_ID_PREFIX
                   + " | XXX RATE LIMIT END FRIENDS_IDS"
                 ));
-                
+
               });
 
               delayEvent({delayEventName: "fetchUserFriendsIdsRateLimitExpired", period: timeout, verbose: true});
@@ -2267,7 +2320,6 @@ const fsmStates = {
             }
 
           }
-
         }).
         catch(function(err){
           console.log(chalkError(MODULE_ID_PREFIX
