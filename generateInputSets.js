@@ -99,7 +99,8 @@ const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
 
 
 const DEFAULT_INPUT_TYPES = [
-  "emoji", 
+  "emoji",
+  "friends",
   "hashtags",  
   "images", 
   "locations", 
