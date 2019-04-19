@@ -2,7 +2,8 @@
 // "use strict";
 
 const DEFAULT_INPUT_TYPES = [
-  "emoji", 
+  "emoji",
+  "friends",
   "hashtags",  
   "images", 
   "locations", 
@@ -503,6 +504,26 @@ function generateNetworkInputIndexed(params){
   });
 }
 
+function generateObjFromArray(params){
+
+  return new Promise(async function(resolve, reject){
+
+    const keys = params.keys;
+    const value = params.value;
+    let result = {};
+
+    async.each(keys, function(key, cb){
+      result[key.toString()] = value;
+      cb();
+    }, function(){
+      resolve(result);
+    });
+
+  });
+}
+
+
+
 let activateNetworkBusy = false;
 
 function activateNetwork(params){
@@ -512,9 +533,11 @@ function activateNetwork(params){
     activateNetworkBusy = true;
 
     const networkOutput = {};
+    let userHistograms = {};
 
     try {
-      const userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
+       userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
+       userHistograms.friends = generateObjFromArray({ keys: params.user.friends, value:1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
 
       const languageAnalysis = params.user.languageAnalysis;
 
@@ -1063,6 +1086,9 @@ function initActivateNetworkInterval(interval){
         const activateNetworkObj = activateNetworkQueue.shift();
 
         messageObj.user = activateNetworkObj.user;
+        if (!messageObj.user.friends || (messageObj.user.friends === undefined)){
+          messageObj.user.friends = [];
+        }
 
         statsObj.normalization = activateNetworkObj.normalization;
 

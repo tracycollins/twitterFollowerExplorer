@@ -65,7 +65,7 @@ const TEST_TWEET_FETCH_COUNT = 11;
 
 const TEST_MODE_NUM_NN = 10;
 const TEST_FETCH_COUNT = 47;
-const TEST_TOTAL_FETCH = 147;
+const TEST_TOTAL_FETCH = 87;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -108,6 +108,7 @@ const USER_PROFILE_PROPERTY_ARRAY = [
 
 const DEFAULT_INPUT_TYPES = [
   "emoji", 
+  "friends", 
   "hashtags",  
   "images", 
   "locations", 
@@ -164,6 +165,7 @@ const googleMapsClient = require("@google/maps").createClient({
   key: "AIzaSyDBxA6RmuBcyj-t7gfvK61yp8CDNnRLUlc"
 });
 
+const randomInt = require("random-int");
 const fetch = require("isomorphic-fetch"); // or another library of choice.
 const urlParse = require("url-parse");
 const moment = require("moment");
@@ -3249,6 +3251,24 @@ function loadMaxInputDropbox(params) {
   });
 }
 
+function generateObjFromArray(params){
+
+  return new Promise(async function(resolve, reject){
+
+    const keys = params.keys || [];
+    const value = params.value || 0;
+    let result = {};
+
+    async.each(keys, function(key, cb){
+      result[key.toString()] = value;
+      cb();
+    }, function(){
+      resolve(result);
+    });
+
+  });
+}
+
 function updateGlobalHistograms(params) {
 
   return new Promise(async function(resolve, reject){
@@ -3259,6 +3279,7 @@ function updateGlobalHistograms(params) {
 
     try {
       mergedHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
+      mergedHistograms.friends = await generateObjFromArray({ keys: params.user.friends, value:1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
     }
     catch(err){
       console.log(chalkError("TFE | *** UPDATE GLOBAL HISTOGRAMS ERROR: " + err));
@@ -4902,9 +4923,12 @@ function userProfileChangeHistogram(params) {
   });
 }
 
-function updateUserHistograms(params) {
+function updateUserHistograms(p) {
 
   return new Promise(async function(resolve, reject){
+
+    let params = {};
+    params = p;
     
     if ((params.user === undefined) || !params.user) {
       console.log(chalkError("TFE | *** updateUserHistograms USER UNDEFINED"));
@@ -4931,7 +4955,26 @@ function updateUserHistograms(params) {
 
       const updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: false, noInc: true});
 
+      params.user = updatedUser;
+
+      if (!params.user.friends || (params.user.friends === undefined)){ 
+        params.user.friends = [];
+      }
+
+      if (configuration.testMode && params.user.friends.length === 0) {
+
+        params.user.friends = Array.from({ length: randomInt(1,47) }, () => (Math.floor(Math.random() * 123456789).toString()));
+
+        console.log(chalkLog("TFE | TEST MODE | ADD RANDOM FRNDs IDs"
+          + " | " + params.user.userId
+          + " | @" + params.user.screenName
+          + " | " + params.user.friends.length + "FRNDs"
+          + "\n" + params.user.friends
+        ));
+      }
+
       await updateGlobalHistograms(params);
+
       resolve(updatedUser);
 
     }
