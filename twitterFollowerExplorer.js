@@ -4984,6 +4984,7 @@ function updateUserFriends(params){
 
     user.friends = user.friends || [];
 
+    const friendsPrevious = user.friends.length;
     let friendsMisses = 0; // added to user.friends
     let friendsHits = 0; // already in user.friends
 
@@ -5038,6 +5039,7 @@ function updateUserFriends(params){
         + " | UID: " + user.userId
         + " | @" + user.screenName
         + " | " + user.friends.length + " FRIENDS IN DB"
+        + " | " + friendsPrevious + " FRIENDS PREVIOUS"
         + " | " + friendsHits + " FRIENDS HITS"
         + " | " + friendsMisses + " FRIENDS MISSES"
       ));
