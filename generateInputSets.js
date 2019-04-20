@@ -2146,7 +2146,7 @@ setTimeout(async function(){
 
   }
   catch(err){
-    console.log(chalkError(MODULE_ID_PREFIX + " | **** INIT CONFIG ERROR *****\n" + jsonPrint(err)));
+    console.log(chalkError(MODULE_ID_PREFIX + " | **** INIT CONFIG ERROR *****\n", err));
     if (err.code !== 404) {
       quit({cause: new Error("INIT CONFIG ERROR")});
     }
