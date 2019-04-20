@@ -1091,7 +1091,7 @@ function quit(cause){
 
   quitWaitInterval = setInterval(function () {
 
-    if quit(cause === "Q"){
+    if (cause === "Q"){
       statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
 
       clearInterval(statsUpdateInterval);
