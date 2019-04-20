@@ -962,7 +962,7 @@ function generateInputSets(params) {
                   if (configuration.testMode || configuration.verbose) {
                     printGisStatus(type);
                   }
-                  return cb1(true);
+                  // return cb1(true);
                 }
               }
               else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
