@@ -1663,7 +1663,10 @@ function getFileMetadata(params) {
       resolve(response);
     }).
     catch(function(err) {
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX getFileMetadata ERROR: " + fullPath));
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX getFileMetadata ERROR" 
+        + " | " + " ERROR STATUS: " + err.status
+        + " | " + fullPath
+      ));
 
       if ((err.status === 404) || (err.status === 409)) {
         console.error(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND"));
