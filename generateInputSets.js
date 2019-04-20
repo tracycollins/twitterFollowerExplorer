@@ -135,7 +135,7 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const MAX_TEST_INPUTS = 1000;
 
 
-let enableMinNumInputsPerTypeMultiplier = false;
+let enableMinNumInputsPerTypeMultiplier = true;
 
 
 const INIT_DOM_MIN = 0.99999;
@@ -1091,7 +1091,22 @@ function quit(cause){
 
   quitWaitInterval = setInterval(function () {
 
-    if (!saveFileBusy 
+    if quit(cause === "Q"){
+      statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+
+      clearInterval(statsUpdateInterval);
+      clearInterval(quitWaitInterval);
+
+      console.log(chalkAlert("\nGIS | FORCE QUITTING"
+       + " | SAVE FILE BUSY: " + saveFileBusy
+       + " | SAVE FILE Q: " + saveFileQueue.length
+      ));
+
+      setTimeout(function(){
+        process.exit();      
+      }, 1000);
+    }
+    else if (!saveFileBusy 
       && (saveFileQueue.length === 0)
       ){
 
@@ -1594,7 +1609,7 @@ function initStdIn(){
       break;
       case "q":
       case "Q":
-        quit();
+        quit(key);
       break;
       case "s":
         showStats();
@@ -1897,7 +1912,7 @@ function initConfig(cnf) {
 
     cnf.processName = process.env.PROCESS_NAME || MODULE_ID;
     cnf.testMode = (process.env.TEST_MODE === "true") ? true : cnf.testMode;
-    cnf.quitOnError = process.env.QUIT_ON_ERROR || false;
+    cnf.fOnError = process.env.QUIT_ON_ERROR || false;
     cnf.enableStdin = process.env.ENABLE_STDIN || true;
 
     if (process.env.QUIT_ON_COMPLETE === "false") { cnf.quitOnComplete = false; }
