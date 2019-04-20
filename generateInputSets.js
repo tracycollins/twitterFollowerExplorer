@@ -645,6 +645,8 @@ statsObj.normalization.magnitude.min = 0;
 statsObj.normalization.magnitude.max = -Infinity;
 
 statsObj.numLangAnalyzed = 0;
+statsObj.queues = {};
+statsObj.queues.saveFileQueue = 0;
 
 const histograms = {};
 
