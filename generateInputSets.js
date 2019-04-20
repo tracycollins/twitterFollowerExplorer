@@ -1,5 +1,7 @@
  /*jslint node: true */
 
+ const DEFAULT_VERBOSE_MODE = true;
+
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 
@@ -34,6 +36,8 @@ const DEFAULT_MAX_ITERATIONS = 50;
 const SAVE_FILE_QUEUE_INTERVAL = 5*ONE_SECOND;
 
 let configuration = {};
+
+configuration.verbose = DEFAULT_VERBOSE_MODE;
 
 configuration.inputsFilePrefix = DEFAULT_INPUTS_FILE_PREFIX;
 
@@ -931,14 +935,10 @@ function generateInputSets(params) {
                 newInputsObj.meta.type[type].overMaxNumInputs = newInputsObj.meta.type[type].numInputs;
               }
 
-              // if (iteration % 100 === 0){
-              //   console.log(chalkLog("\n" + spinner.text));
-              // }
-
               if ((newInputsObj.meta.type[type].numInputs > configuration.maxNumInputsPerType) 
                 && (prevNumInputs < configuration.maxNumInputsPerType)) {
 
-                spinner.info("GIS | GEN TYPE"
+                console.log("GIS | GEN TYPE"
                   + " [" + iteration + "]"
                   + " " + type.toUpperCase()
                   + " | " + newInputsObj.meta.type[type].numInputs
@@ -1010,7 +1010,7 @@ function generateInputSets(params) {
                     + " | DOM MIN: " + dominantMin.toFixed(5)
                   ));
 
-                  return cb1(true);
+                  return cb1(new Error("GIVE UP"));
                 }
 
               }
