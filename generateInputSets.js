@@ -974,6 +974,7 @@ function generateInputSets(params) {
                     prevDomMin = dominantMin;
                     dominantMin -= dominantMinStep;
                   }
+                  console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6));
                 }
               }
               else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
