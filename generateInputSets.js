@@ -1068,6 +1068,7 @@ function generateInputSets(params) {
 
             spinner.succeed();
 
+            prevNumInputs = 0;
             totalMin = parseInt(INIT_TOT_MIN);
             prevDomMin = INIT_DOM_MIN;
             dominantMin = INIT_DOM_MIN;
