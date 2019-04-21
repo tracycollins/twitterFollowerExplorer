@@ -832,6 +832,7 @@ function generateInputSets(params) {
       function(type, cb0){
 
         currentType = type;
+        enableMinNumInputsPerTypeMultiplier = true  ;
 
         iteration = 0;
 
@@ -980,6 +981,8 @@ function generateInputSets(params) {
                   dominantMin -= dominantMinStep;
                 }
 
+                console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6));
+
               }
               else if (dominantMin - dominantMinStep <= configuration.minDominantMin) {
 
@@ -987,6 +990,8 @@ function generateInputSets(params) {
 
                   prevDomMin = dominantMin;
                   dominantMin = INIT_DOM_MIN;
+
+                  console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6));
 
                   prevTotalMin = totalMin; 
 
