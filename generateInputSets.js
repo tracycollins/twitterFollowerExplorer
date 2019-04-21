@@ -138,7 +138,7 @@ const MAX_TEST_INPUTS = 1000;
 let enableMinNumInputsPerTypeMultiplier = true;
 
 
-const INIT_DOM_MIN = 0.99999;
+const INIT_DOM_MIN = 0.999999;
 const INIT_TOT_MIN = 50;
 
 
