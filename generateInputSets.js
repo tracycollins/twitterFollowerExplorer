@@ -14,6 +14,8 @@ const STATS_UPDATE_INTERVAL = ONE_MINUTE;
 
 const DEFAULT_INPUTS_FILE_PREFIX = "inputs";
 
+const DEFAULT_DOM_MIN = 0.35;
+
 const DEFAULT_MIN_TOTAL_MIN = 5;
 const DEFAULT_MAX_TOTAL_MIN = 1500;
 
@@ -412,7 +414,6 @@ function initSlackRtmClient(){
   });
 }
 
-
 const saveFileQueue = [];
 let saveFileQueueInterval;
 let saveFileBusy = false;
@@ -807,11 +808,42 @@ function generateInputSets(params) {
       let results = {};
 
       try {
-        results = await sortedHashmap({ sortKey: "total", hashmap: params.histogramsObj.histograms[type], max: configuration.minNumInputsPerType});
-        newInputsObj.inputs[type] = results.sortedKeys.sort();
-        newInputsObj.meta.type[type].numInputs = newInputsObj.inputs[type].length;
-        console.log(chalkBlue("GIS | " + type.toUpperCase() + " | " + newInputsObj.meta.type[type].numInputs + " INPUTS"));
-        return;
+        results = await sortedHashmap({ sortKey: "total", hashmap: params.histogramsObj.histograms[type], max: 10000});
+
+        async.eachSeries(results.sortedKeys, function(input, cb){
+
+          // "total": 2,
+          // "left": 2,
+          // "leftRatio": 1,
+          // "neutral": 0,
+          // "neutralRatio": 0,
+          // "right": 0,
+          // "rightRatio": 0,
+          // "positive": 0,
+          // "positiveRatio": 0,
+          // "negative": 0,
+          // "negativeRatio": 0,
+          // "none": 0,
+          // "uncategorized": 0
+
+          if (
+               (params.histogramsObj.histograms[type][input].leftRatio >= DEFAULT_DOM_MIN)
+            || (params.histogramsObj.histograms[type][input].neutralRatio >= DEFAULT_DOM_MIN)
+            || (params.histogramsObj.histograms[type][input].rightRatio >= DEFAULT_DOM_MIN)
+            ) 
+          {
+            newInputsObj.inputs[type].push(input);
+          }
+
+          cb();
+
+        }, function(err){
+          newInputsObj.inputs[type].sort();
+          newInputsObj.meta.type[type].numInputs = newInputsObj.inputs[type].length;
+          console.log(chalkBlue("GIS | " + type.toUpperCase() + " | " + newInputsObj.meta.type[type].numInputs + " INPUTS"));
+          return;
+        });
+
       }
       catch(err){
         console.log(chalkError("GIS | *** SORTED HASHMAP ERROR:", err));
