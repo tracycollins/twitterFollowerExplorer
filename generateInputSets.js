@@ -960,6 +960,7 @@ function generateInputSets(params) {
 
 
                 if (newInputsObj.meta.type[type].numInputs === 0){
+                  console.log("NO INPUTS: " + dominantMin.toFixed(6) + " | PREV DOM MIN: " + prevDomMin.toFixed(6));
                 }
                 else {
                   if (configuration.testMode || configuration.verbose) {
