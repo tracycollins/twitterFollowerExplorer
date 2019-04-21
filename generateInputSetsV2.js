@@ -13,8 +13,6 @@ const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const STATS_UPDATE_INTERVAL = ONE_MINUTE;
 
 const DEFAULT_INPUTS_FILE_PREFIX = "inputs";
-const DEFAULT_MIN_DOMINANT_MIN = 0.350;
-const DEFAULT_MAX_DOMINANT_MIN = 0.999999;
 
 const DEFAULT_MIN_TOTAL_MIN = 5;
 const DEFAULT_MAX_TOTAL_MIN = 1500;
@@ -22,16 +20,7 @@ const DEFAULT_MAX_TOTAL_MIN = 1500;
 const DEFAULT_MIN_INPUTS_GENERATED = 1500;
 const DEFAULT_MAX_INPUTS_GENERATED = 2000;
 const DEFAULT_MAX_NUM_INPUTS_PER_TYPE = 400;
-const DEFAULT_MIN_NUM_INPUTS_PER_TYPE = 300;
-const DEFAULT_TOTAL_MIN_STEP = 0.5;
-
-const DEFAULT_DOMINANT_MIN_STEP = 0.0001;
-
-const DEFAULT_MIN_INPUTS_PER_TYPE_MULTIPLIER = 0.3;
-const DEFAULT_DOMINANT_MIN_STEP_MULTIPLIER = 3.0;
-const DEFAULT_TOTAL_MIN_STEP_MULTIPLIER = 0.35;
-
-const DEFAULT_MAX_ITERATIONS = 50;
+const DEFAULT_MIN_NUM_INPUTS_PER_TYPE = 200;
 
 const SAVE_FILE_QUEUE_INTERVAL = 5*ONE_SECOND;
 
@@ -44,18 +33,10 @@ configuration.inputsFilePrefix = DEFAULT_INPUTS_FILE_PREFIX;
 configuration.testMode = GLOBAL_TEST_MODE;
 configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 
-configuration.maxIterations = DEFAULT_MAX_ITERATIONS;
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
 configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
 configuration.minNumInputsPerType = DEFAULT_MIN_NUM_INPUTS_PER_TYPE;
 configuration.maxNumInputsPerType = DEFAULT_MAX_NUM_INPUTS_PER_TYPE;
-
-configuration.minNumInputsPerTypeMultiplier = DEFAULT_MIN_INPUTS_PER_TYPE_MULTIPLIER;
-configuration.dominantMinStepMultiplier = DEFAULT_DOMINANT_MIN_STEP_MULTIPLIER;
-configuration.totalMinStepMultiplier = DEFAULT_TOTAL_MIN_STEP_MULTIPLIER;
-
-configuration.minDominantMin = DEFAULT_MIN_DOMINANT_MIN;
-configuration.maxDominantMin = DEFAULT_MAX_DOMINANT_MIN;
 
 configuration.minTotalMin = DEFAULT_MIN_TOTAL_MIN;
 configuration.maxTotalMin = DEFAULT_MAX_TOTAL_MIN;
@@ -131,11 +112,7 @@ let NetworkInputs;
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
-
-const MAX_TEST_INPUTS = 1000;
-
-
-let enableMinNumInputsPerTypeMultiplier = true;
+const MAX_TEST_INPUTS = 10000
 
 
 const INIT_DOM_MIN = 0.999999;
@@ -144,11 +121,11 @@ const INIT_TOT_MIN = 100;
 
 const OFFLINE_MODE = false;
 
-const histogramParser = require("@threeceelabs/histogram-parser");
 const merge = require("deepmerge");
 const util = require("util");
 const _ = require("lodash");
 const treeify = require("treeify");
+const dot = require("dot-object");
 
 const JSONStream = require("JSONStream");
 const async = require("async");
@@ -157,7 +134,6 @@ const debug = require("debug")("gis");
 const deepcopy = require("deep-copy");
 const fs = require("fs");
 const table = require("text-table");
-const ora = require("ora");
 
 const chalk = require("chalk");
 const chalkBlue = chalk.blue;
@@ -756,343 +732,101 @@ function printInputsObj(title, iObj) {
   ));
 }
 
+function sortedHashmap(params) {
+
+  return new Promise(function(resolve, reject) {
+
+    const keys = Object.keys(params.hashmap);
+
+    const sortedKeys = keys.sort(function(a,b){
+      // const objA = params.hashmap.get(a);
+      // const objB = params.hashmap.get(b);
+      const objAvalue = dot.pick(params.sortKey, params.hashmap[a]);
+      const objBvalue = dot.pick(params.sortKey, params.hashmap[b]);
+      return objBvalue - objAvalue;
+    });
+
+    if (keys !== undefined) {
+      if (sortedKeys !== undefined) { 
+        resolve({sortKey: params.sortKey, sortedKeys: sortedKeys.slice(0,params.max)});
+      }
+      else {
+        console.log(chalkAlert("sortedHashmap NO SORTED KEYS? | SORT KEY: " + params.sortKey 
+          + " | KEYS: " + keys.length 
+          + " | SORTED KEYS: " + sortedKeys.length
+        ));
+        resolve({sortKey: params.sortKey, sortedKeys: []});
+      }
+
+    }
+    else {
+      console.error("sortedHashmap ERROR | params\n" + jsonPrint(params));
+      reject(new Error("sortedHashmap ERROR | keys UNDEFINED"));
+    }
+
+  });
+}
 
 function generateInputSets(params) {
 
   return new Promise(function(resolve, reject){
-
-    let iteration = 0;
-    let currentType;
-
-    /*
-    pseudo code
-
-    MIN_NUM_INPUTS_PER_TYPE = 150 (6 types * MIN_NUM_INPUTS_PER_TYPE = MAX_INPUTS: 900)
-    MAX_NUM_INPUTS_PER_TYPE = 250 (6 types * MAX_NUM_INPUTS_PER_TYPE = MAX_INPUTS: 1500)
-    totalMin = 1
-    initial dominantMin = 1.0
-
-    for each inputs type
-      while (number of inputs of type < MIN_NUM_INPUTS_PER_TYPE)
-        dominantMin -= DOM_MIN_STEP
-    */
-
-    let totalMin = INIT_TOT_MIN;
-    let dominantMin = INIT_DOM_MIN;
 
     const newInputsObj = {};
     newInputsObj.inputsId = hostname + "_" + process.pid + "_" + moment().format(compactDateTimeFormat);
     newInputsObj.meta = {};
     newInputsObj.meta.type = {};
     newInputsObj.meta.numInputs = 0;
-    newInputsObj.meta.histogramParseTotalMin = totalMin;
-    newInputsObj.meta.histogramParseDominantMin = dominantMin;
     newInputsObj.inputs = {};
     newInputsObj.inputsMinimum = {};
 
     const inTypes = Object.keys(params.histogramsObj.histograms);
     inTypes.sort();
 
-    const DOM_MIN_STEP = DEFAULT_DOMINANT_MIN_STEP; // 0.1
-    const TOT_MIN_STEP = DEFAULT_TOTAL_MIN_STEP; // 0.9;
+    async.eachSeries(inTypes, async function(type){
 
-    let dominantMinStep = DOM_MIN_STEP;
-    const totalMinStep = TOT_MIN_STEP;
+      const typeInputs = Object.keys(params.histogramsObj.histograms[type]);
+      const totalTypeInputs = Object.keys(params.histogramsObj.histograms[type]).length;
 
-    let prevDomMin = dominantMin;
-    let prevTotalMin = totalMin;
-    const prevDomMinStep = dominantMinStep;
-    let prevTotalMinStep = totalMinStep;
+      console.log("TYPE | " + type.toUpperCase() + " | " + totalTypeInputs);
 
-    let prevNumInputs = 0;
+      newInputsObj.meta.type[type] = {};
 
-    function printGisStatus(type){
-      console.log(chalkBlue(
-        "\nGIS | GEN TYPE"
-        + " [" + iteration + "]"
-        + " " + currentType.toUpperCase()
-        + " | " + newInputsObj.meta.type[currentType].numInputs
-        + " / " + Object.keys(params.histogramsObj.histograms[currentType]).length + " INPUTS"
-        + " | UNDER MIN: " + newInputsObj.meta.type[type].underMinNumInputs
-        + " | OVER MAX: " + newInputsObj.meta.type[type].overMaxNumInputs
-        + " | PREV NUM INPUTS: " + prevNumInputs
-        + " | DOM MIN: " + dominantMin.toFixed(6)
-        + " | PREV DOM MIN: " + prevDomMin.toFixed(6)
-        + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
-        + " | TOT MIN: " + parseInt(totalMin)
-        + " | PREV TOT MIN: " + parseInt(prevTotalMin)
-        + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(6)
-      ));
-    }
+      // start with zero inputs of type if more than configuration.minNumInputsPerType
+      newInputsObj.meta.type[type].numInputs = (totalTypeInputs > configuration.minNumInputsPerType) ? 0 : totalTypeInputs;
+      newInputsObj.meta.type[type].underMinNumInputs = null;
+      newInputsObj.meta.type[type].overMaxNumInputs = null;
+      newInputsObj.meta.type[type].currentMaxNumInputs = 0;
 
-    async.eachSeries(
+      newInputsObj.inputs[type] = [];
+      newInputsObj.inputsMinimum[type] = [];
 
-      inTypes, 
-
-      function(type, cb0){
-
-        currentType = type;
-        enableMinNumInputsPerTypeMultiplier = true  ;
-
-        iteration = 0;
-
-        const spinner = ora("GEN TYPE" + " | " + type.toUpperCase()).start();
-
-        dominantMinStep = DOM_MIN_STEP;
-
-        const totalTypeInputs = Object.keys(params.histogramsObj.histograms[type]).length;
-
-        newInputsObj.meta.type[type] = {};
-
-        // start with zero inputs of type if more than configuration.minNumInputsPerType
-        newInputsObj.meta.type[type].numInputs = (totalTypeInputs > configuration.minNumInputsPerType) ? 0 : totalTypeInputs;
-        newInputsObj.meta.type[type].dominantMin = dominantMin;
-        newInputsObj.meta.type[type].underMinNumInputs = null;
-        newInputsObj.meta.type[type].overMaxNumInputs = null;
-        newInputsObj.meta.type[type].currentMaxNumInputs = 0;
-
-
-        newInputsObj.inputs[type] = Object.keys(params.histogramsObj.histograms[type]).sort();
-        newInputsObj.inputsMinimum[type] = [];
-
-        const hpParams = {};
-        // hpParams.verbose = true;
-        hpParams.histogram = {};
-        hpParams.histogram[type] = {};
-        hpParams.histogram[type] = params.histogramsObj.histograms[type];
-
-        hpParams.options = {};
-        hpParams.options.globalTotalMin = totalMin;
-        hpParams.options.globalDominantMin = dominantMin;
-
-        async.whilst(
-
-          function() {
-
-            debug("whilst"
-              + " | TYPE: " + type
-              + " | MIN_NUM_INPUTS_PER_TYPE: " + configuration.minNumInputsPerType
-              + " | totalTypeInputs: " + totalTypeInputs
-              + " | Object.keys(params.histogramsObj.histograms[type]).length: " + Object.keys(params.histogramsObj.histograms[type]).length
-              + " | newInputsObj.meta.type[type].numInputs: " + newInputsObj.meta.type[type].numInputs
-            );
-
-            return (
-              ((newInputsObj.meta.type[type].numInputs > configuration.maxNumInputsPerType) 
-                || ((newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerType) 
-                  && (totalTypeInputs > configuration.minNumInputsPerType))
-              )
-
-            );
-          },
-
-          function(cb1){
-
-            hpParams.options.globalTotalMin = totalMin;
-            hpParams.options.globalDominantMin = dominantMin;
-
-            histogramParser.parse(hpParams, function(err, histResults){
-
-              if (err){
-                console.log(chalkError("GIS | *** HISTOGRAM PARSE ERROR: " + err));
-                return cb1(err);
-              }
-
-              iteration += 1;
-
-              newInputsObj.inputs[type] = Object.keys(histResults.entries[type].dominantEntries).sort();
-              newInputsObj.meta.type[type].numInputs = newInputsObj.inputs[type].length;
-              newInputsObj.meta.type[type].dominantMin = dominantMin;
-              newInputsObj.meta.type[type].totalMin = parseInt(totalMin);
-              newInputsObj.meta.type[type].totalMinStep = totalMinStep;
-              newInputsObj.meta.type[type].dominantMinStep = dominantMinStep;
-              newInputsObj.meta.type[type].currentMaxNumInputs = Math.max(newInputsObj.meta.type[type].numInputs, newInputsObj.meta.type[type].currentMaxNumInputs);
-
-              if (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerType) {
-                newInputsObj.inputsMinimum[type] = _.union(newInputsObj.inputsMinimum[type], newInputsObj.inputs[type]);
-              }
-
-              // inputsHistory.push(newInputsObj.meta.type[type]);
-
-              spinner.text = "GIS | GEN TYPE"
-                + " [" + iteration + "]"
-                + " " + type.toUpperCase()
-                + " | " + newInputsObj.meta.type[type].numInputs
-                + " / " + Object.keys(params.histogramsObj.histograms[type]).length + " INPUTS"
-                + " | CUR MAX IN: " + newInputsObj.meta.type[type].currentMaxNumInputs
-                + " | UNDER MIN: " + newInputsObj.meta.type[type].underMinNumInputs
-                + " | OVER MAX: " + newInputsObj.meta.type[type].overMaxNumInputs
-                + " | PREV NUM INPUTS: " + prevNumInputs
-                + " | DOM MIN: " + dominantMin.toFixed(5)
-                + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
-                + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
-                + " | TOT MIN: " + parseInt(totalMin)
-                + " | PREV TOT MIN: " + parseInt(prevTotalMin)
-                + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5);
-
-              if (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerType) {
-                newInputsObj.meta.type[type].underMinNumInputs = newInputsObj.meta.type[type].numInputs;
-              }
-
-              if (newInputsObj.meta.type[type].numInputs > configuration.maxNumInputsPerType) {
-                newInputsObj.meta.type[type].overMaxNumInputs = newInputsObj.meta.type[type].numInputs;
-              }
-
-              if ((newInputsObj.meta.type[type].numInputs > configuration.maxNumInputsPerType) 
-                && (prevNumInputs < configuration.maxNumInputsPerType)) {
-
-                console.log("GIS | GEN TYPE"
-                  + " [" + iteration + "]"
-                  + " " + type.toUpperCase()
-                  + " | " + newInputsObj.meta.type[type].numInputs
-                  + " / " + Object.keys(params.histogramsObj.histograms[type]).length + " INPUTS"
-                  + " | CUR MAX IN: " + newInputsObj.meta.type[type].currentMaxNumInputs
-                  + " | UNDER MIN: " + newInputsObj.meta.type[type].underMinNumInputs
-                  + " | OVER MAX: " + newInputsObj.meta.type[type].overMaxNumInputs
-                  + " | PREV NUM INPUTS: " + prevNumInputs
-                  + " | DOM MIN: " + dominantMin.toFixed(5)
-                  + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
-                  + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
-                  + " | TOT MIN: " + parseInt(totalMin)
-                  + " | PREV TOT MIN: " + parseInt(prevTotalMin)
-                  + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
-                );
-
-
-                if (newInputsObj.meta.type[type].numInputs === 0){
-                  console.log("NO INPUTS: " + dominantMin.toFixed(6) + " | PREV DOM MIN: " + prevDomMin.toFixed(6));
-                }
-                else {
-                  if (configuration.testMode || configuration.verbose) {
-                    printGisStatus(type);
-                    }
-                  if (enableMinNumInputsPerTypeMultiplier 
-                    && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * configuration.minNumInputsPerType)) { // 0.1
-                    prevDomMin = dominantMin;
-                    dominantMin -= (configuration.dominantMinStepMultiplier * dominantMinStep);
-                  }
-                  else {
-                    prevDomMin = dominantMin;
-                    dominantMin -= dominantMinStep;
-                  }
-                  console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6) + " | PREV DOM MIN: " + prevDomMin.toFixed(6));
-                }
-              }
-              else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
-                && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerType)) {
-
-                if (enableMinNumInputsPerTypeMultiplier 
-                  && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * configuration.minNumInputsPerType)) { // 0.1
-                  prevDomMin = dominantMin;
-                  dominantMin -= (configuration.dominantMinStepMultiplier * dominantMinStep);
-                }
-                else {
-                  prevDomMin = dominantMin;
-                  dominantMin -= dominantMinStep;
-                }
-
-                console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6) + " | PREV DOM MIN: " + prevDomMin.toFixed(6));
-
-              }
-              else if (dominantMin - dominantMinStep <= configuration.minDominantMin) {
-
-                if (totalMin >= configuration.minTotalMin){
-
-                  prevDomMin = dominantMin;
-                  dominantMin = INIT_DOM_MIN;
-
-                  console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6) + " | PREV DOM MIN: " + prevDomMin.toFixed(6));
-
-                  prevTotalMin = totalMin; 
-
-                  if (enableMinNumInputsPerTypeMultiplier 
-                    && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * configuration.minNumInputsPerType)) {
-                    totalMin = Math.min(
-                      parseInt(configuration.totalMinStepMultiplier * totalMinStep * totalMin), 
-                      parseInt(totalMin-1.0)
-                    );
-                  }
-                  else {
-                    totalMin = Math.min(parseInt(totalMinStep * totalMin), parseInt(totalMin-1.0));
-                  }
-                }
-                else {
-                  newInputsObj.inputs[type] = newInputsObj.inputsMinimum[type];
-                  newInputsObj.meta.type[type].numInputs = newInputsObj.inputs[type].length;
-
-                  console.log(chalkAlert("\nGIS | XXX GIVE UP"
-                    + " | " + type.toUpperCase()
-                    + " | NUM IN: " + newInputsObj.meta.type[type].numInputs 
-                    + " | TOT MIN: " + totalMin 
-                    + " | PREV DOM MIN: " + prevDomMin.toFixed(6)
-                    + " | DOM MIN: " + dominantMin.toFixed(6)
-                  ));
-
-                  return cb1(new Error("GIVE UP"));
-                }
-
-              }
-
-              prevNumInputs = newInputsObj.meta.type[type].numInputs;
-              prevTotalMinStep = (prevTotalMin === totalMin) ? prevTotalMinStep : totalMin - prevTotalMin; 
-
-              async.setImmediate(function() { cb1(); });
-
-            });
-          }, 
-
-          function(err){
-
-            if (err) {
-              console.log(chalkError(MODULE_ID_PREFIX + " | *** generateInputSets ERROR: " + err));
-              return cb0(err);
-            }
-
-            enableMinNumInputsPerTypeMultiplier = false;
-
-            newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
-
-            spinner.text = "GIS | +++ END TYPE"
-              + " [" + iteration + "]"
-              + " " + type.toUpperCase()
-              + " | " + newInputsObj.meta.type[type].numInputs
-              + " / " + Object.keys(params.histogramsObj.histograms[type]).length + " INPUTS"
-              + " | CUR MAX IN: " + newInputsObj.meta.type[type].currentMaxNumInputs
-              + " | UNDER MIN: " + newInputsObj.meta.type[type].underMinNumInputs
-              + " | OVER MAX: " + newInputsObj.meta.type[type].overMaxNumInputs
-              + " | PREV NUM INPUTS: " + prevNumInputs
-              + " | DOM MIN: " + dominantMin.toFixed(5)
-              + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
-              + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
-              + " | TOT MIN: " + parseInt(totalMin)
-              + " | PREV TOT MIN: " + parseInt(prevTotalMin)
-              + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5);
-
-            spinner.succeed();
-
-            prevNumInputs = 0;
-            totalMin = parseInt(INIT_TOT_MIN);
-            prevDomMin = INIT_DOM_MIN;
-            dominantMin = INIT_DOM_MIN;
-
-            if (newInputsObj.meta.type[type].numInputs === 0) {
-              // quit("ZERO INPUTS");
-              console.log(chalkAlert("GIS | ZERO INPUTS | " + type));
-              cb0();
-            }
-            else{
-              cb0();
-            }
-          }
-        );
-      },
-
-      function(err){
-        if (err) { return reject(err); }
-        // showStats();
-        resolve(newInputsObj);
+      if (totalTypeInputs === 0) {
+        return;
       }
-    );
+
+      let results = {};
+
+      try {
+        results = await sortedHashmap({ sortKey: "total", hashmap: params.histogramsObj.histograms[type], max: configuration.minNumInputsPerType});
+        newInputsObj.inputs[type] = results.sortedKeys.sort();
+        newInputsObj.meta.type[type].numInputs = newInputsObj.inputs[type].length;
+        console.log(chalkBlue("GIS | " + type.toUpperCase() + " | " + newInputsObj.meta.type[type].numInputs + " INPUTS"));
+        return;
+      }
+      catch(err){
+        console.log(chalkError("GIS | *** SORTED HASHMAP ERROR:", err));
+        return err;
+      }
+
+
+    }, function(err){
+      if (err) { 
+        console.log("GIS | ERROR:", err);
+        return reject(err); 
+      }
+      resolve(newInputsObj);
+    });
+
   });
 }
 
@@ -1438,7 +1172,7 @@ function loadFile(params) {
 
         debug("data: " + jsonPrint(obj));
 
-        if (configuration.verbose && totalInputs % 10000 === 0) {
+        if (configuration.verbose && totalInputs % 50000 === 0) {
           console.log(chalkLog("GIS | STREAM INPUTS | " + fullPath + " | INPUTS: " + totalInputs));
         }
 
@@ -2049,12 +1783,8 @@ function runMain(){
         tableArray.push([
           "GIS |",
           "TYPE",
-          "DOM MIN",
-          "TOT MIN",
           "TYPE TOT IN",
           "TYPE IN",
-          "TYPE MTM",
-          "TYPE LTM",
           "TOT IN"
         ]);
 
@@ -2069,12 +1799,8 @@ function runMain(){
           tableArray.push([
             "GIS |",
             type.toUpperCase(),
-            globalInputsObj.meta.type[type].dominantMin.toFixed(5),
-            parseInt(globalInputsObj.meta.type[type].totalMin),
             globalInputsObj.meta.type[type].totalInputs,
             globalInputsObj.meta.type[type].numInputs,
-            globalInputsObj.meta.type[type].moreThanMin,
-            globalInputsObj.meta.type[type].lessThanMin,
             globalInputsObj.meta.numInputs
           ]);
 
@@ -2087,7 +1813,11 @@ function runMain(){
           }
 
 
-          globalInputsObj.inputsId = configuration.inputsFilePrefix + "_" + moment().format(compactDateTimeFormat) + "_" + globalInputsObj.meta.numInputs + "_" + hostname + "_" + process.pid;
+          globalInputsObj.inputsId = configuration.inputsFilePrefix 
+            + "_" + moment().format(compactDateTimeFormat) 
+            + "_" + globalInputsObj.meta.numInputs 
+            + "_" + hostname 
+            + "_" + process.pid;
 
 
           const networkInputsDoc = new NetworkInputs(globalInputsObj);
@@ -2103,7 +1833,7 @@ function runMain(){
                   "\nGIS | ========================================================================================="
                 + "\nGIS | INPUTS" 
                 + "\nGIS | -----------------------------------------------------------------------------------------\n"
-                + table(tableArray, { align: ["l", "l", "r", "r", "r", "r", "r", "r", "r"] })
+                + table(tableArray, { align: ["l", "l", "r", "r", "r"] })
                 + "\nGIS | =========================================================================================\n"
               ));
             }
