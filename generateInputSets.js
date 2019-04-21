@@ -21,8 +21,8 @@ const DEFAULT_MAX_TOTAL_MIN = 1500;
 
 const DEFAULT_MIN_INPUTS_GENERATED = 1500;
 const DEFAULT_MAX_INPUTS_GENERATED = 2000;
-const DEFAULT_MAX_NUM_INPUTS_PER_TYPE = 400;
-const DEFAULT_MIN_NUM_INPUTS_PER_TYPE = 200;
+const DEFAULT_MAX_NUM_INPUTS_PER_TYPE = 200;
+const DEFAULT_MIN_NUM_INPUTS_PER_TYPE = 100;
 
 const SAVE_FILE_QUEUE_INTERVAL = 5*ONE_SECOND;
 
@@ -833,11 +833,19 @@ function generateInputSets(params) {
             ) 
           {
             newInputsObj.inputs[type].push(input);
+            if (newInputsObj.inputs[type].length >= configuration.maxNumInputsPerType) {
+              console.log(chalkBlue("GIS | " + type.toUpperCase() + " | MAX INPUTS REACHED " + newInputsObj.inputs[type].length));
+              return cb("MAX");
+            }
           }
 
           cb();
 
         }, function(err){
+          if (err && (err !== "MAX")){
+            console.log(chalkError("GIS | *** SORTED HASHMAP ERROR:", err));
+            return err;
+          }
           newInputsObj.inputs[type].sort();
           newInputsObj.meta.type[type].numInputs = newInputsObj.inputs[type].length;
           console.log(chalkBlue("GIS | " + type.toUpperCase() + " | " + newInputsObj.meta.type[type].numInputs + " INPUTS"));
