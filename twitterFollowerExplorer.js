@@ -3301,10 +3301,15 @@ function updateGlobalHistograms(params) {
           globalHistograms[inputType][item] = {};
           globalHistograms[inputType][item].total = 0;
           globalHistograms[inputType][item].left = 0;
+          globalHistograms[inputType][item].leftRatio = 0;
           globalHistograms[inputType][item].neutral = 0;
+          globalHistograms[inputType][item].neutralRatio = 0;
           globalHistograms[inputType][item].right = 0;
+          globalHistograms[inputType][item].rightRatio = 0;
           globalHistograms[inputType][item].positive = 0;
+          globalHistograms[inputType][item].positiveRatio = 0;
           globalHistograms[inputType][item].negative = 0;
+          globalHistograms[inputType][item].negativeRatio = 0;
           globalHistograms[inputType][item].none = 0;
           globalHistograms[inputType][item].uncategorized = 0;
         }
@@ -3322,6 +3327,12 @@ function updateGlobalHistograms(params) {
         else {
           globalHistograms[inputType][item].uncategorized += 1;
         }
+
+        globalHistograms[inputType][item].leftRatio = globalHistograms[inputType][item].left/globalHistograms[inputType][item].total;
+        globalHistograms[inputType][item].neutralRatio = globalHistograms[inputType][item].neutral/globalHistograms[inputType][item].total;
+        globalHistograms[inputType][item].rightRatio = globalHistograms[inputType][item].right/globalHistograms[inputType][item].total;
+        globalHistograms[inputType][item].positiveRatio = globalHistograms[inputType][item].positive/globalHistograms[inputType][item].total;
+        globalHistograms[inputType][item].negativeRatio = globalHistograms[inputType][item].negative/globalHistograms[inputType][item].total;
 
         cb1();
 
