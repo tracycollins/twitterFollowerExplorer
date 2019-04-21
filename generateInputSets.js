@@ -974,7 +974,7 @@ function generateInputSets(params) {
                     prevDomMin = dominantMin;
                     dominantMin -= dominantMinStep;
                   }
-                  console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6));
+                  console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6) + " | PREV DOM MIN: " + prevDomMin.toFixed(6));
                 }
               }
               else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
@@ -990,7 +990,7 @@ function generateInputSets(params) {
                   dominantMin -= dominantMinStep;
                 }
 
-                console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6));
+                console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6) + " | PREV DOM MIN: " + prevDomMin.toFixed(6));
 
               }
               else if (dominantMin - dominantMinStep <= configuration.minDominantMin) {
@@ -1000,7 +1000,7 @@ function generateInputSets(params) {
                   prevDomMin = dominantMin;
                   dominantMin = INIT_DOM_MIN;
 
-                  console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6));
+                  console.log("UPDATE DOM MIN: " + dominantMin.toFixed(6) + " | PREV DOM MIN: " + prevDomMin.toFixed(6));
 
                   prevTotalMin = totalMin; 
 
@@ -1023,7 +1023,8 @@ function generateInputSets(params) {
                     + " | " + type.toUpperCase()
                     + " | NUM IN: " + newInputsObj.meta.type[type].numInputs 
                     + " | TOT MIN: " + totalMin 
-                    + " | DOM MIN: " + dominantMin.toFixed(5)
+                    + " | PREV DOM MIN: " + prevDomMin.toFixed(6)
+                    + " | DOM MIN: " + dominantMin.toFixed(6)
                   ));
 
                   return cb1(new Error("GIVE UP"));
