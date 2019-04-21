@@ -964,8 +964,16 @@ function generateInputSets(params) {
                 else {
                   if (configuration.testMode || configuration.verbose) {
                     printGisStatus(type);
+                    }
+                  if (enableMinNumInputsPerTypeMultiplier 
+                    && (newInputsObj.meta.type[type].numInputs < configuration.minNumInputsPerTypeMultiplier * configuration.minNumInputsPerType)) { // 0.1
+                    prevDomMin = dominantMin;
+                    dominantMin -= (configuration.dominantMinStepMultiplier * dominantMinStep);
                   }
-                  // return cb1(true);
+                  else {
+                    prevDomMin = dominantMin;
+                    dominantMin -= dominantMinStep;
+                  }
                 }
               }
               else if ((dominantMin - dominantMinStep > configuration.minDominantMin) 
