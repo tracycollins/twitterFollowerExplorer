@@ -816,12 +816,12 @@ function generateInputSets(params) {
         + " | UNDER MIN: " + newInputsObj.meta.type[type].underMinNumInputs
         + " | OVER MAX: " + newInputsObj.meta.type[type].overMaxNumInputs
         + " | PREV NUM INPUTS: " + prevNumInputs
-        + " | DOM MIN: " + dominantMin.toFixed(5)
-        + " | PREV DOM MIN: " + prevDomMin.toFixed(5)
+        + " | DOM MIN: " + dominantMin.toFixed(6)
+        + " | PREV DOM MIN: " + prevDomMin.toFixed(6)
         + " | PREV DOM MIN STEP: " + prevDomMinStep.toFixed(8)
         + " | TOT MIN: " + parseInt(totalMin)
         + " | PREV TOT MIN: " + parseInt(prevTotalMin)
-        + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(5)
+        + " | PREV TOT MIN STEP: " + prevTotalMinStep.toFixed(6)
       ));
     }
 
