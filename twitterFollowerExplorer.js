@@ -5140,7 +5140,7 @@ function updateUserTweets(params){
       const length = user.tweets.tweetIds.length;
       const removeNumber = length - DEFAULT_MAX_USER_TWEETIDS;
 
-      console.log(chalkAlert("WAS | TFC | !!! USER TWEETS > DEFAULT_MAX_USER_TWEETIDS"
+      console.log(chalkLog("TFE | TFC | ---  TWEETS > MAX TWEETIDS"
         + " | " + user.nodeId
         + " | @" + user.screenName
         + " | " + length + " TWEETS"
