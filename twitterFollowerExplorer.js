@@ -392,7 +392,6 @@ currentBestNetwork.overallMatchRate = 0;
 currentBestNetwork.testCycles = 0;
 currentBestNetwork.testCycleHistory = [];
 
-
 //=========================================================================
 // TFE SPECIFIC
 //=========================================================================
@@ -487,8 +486,6 @@ function slackMessageHandler(message){
       const text = message.text.trim();
       const textArray = text.split("|");
 
-      // console.log(chalkAlert("textArray: " + textArray));
-
       const sourceMessage = (textArray[2]) ? textArray[2].trim() : "NONE";
 
       switch (sourceMessage) {
@@ -561,7 +558,6 @@ function initSlackWebClient(){
 
     try {
 
-      // const { WebClient } = require("@slack/client");
       slackWebClient = new WebClient(slackRtmToken);
 
       const testResponse = await slackWebClient.api.test();
@@ -580,7 +576,6 @@ function initSlackWebClient(){
 
         if (channel.name === slackChannel) {
           configuration.slackChannel = channel;
-          // const conversationsJoinResponse = await slackWebClient.conversations.join({token: slackOAuthAccessToken, channel: configuration.slackChannel.id });
 
           const message = {
             token: slackOAuthAccessToken, 
