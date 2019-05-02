@@ -4975,7 +4975,7 @@ function updateUserHistograms(p) {
           + " | " + params.user.userId
           + " | @" + params.user.screenName
           + " | " + params.user.friends.length + "FRNDs"
-          + "\n" + params.user.friends
+          // + "\n" + params.user.friends
         ));
       }
 
