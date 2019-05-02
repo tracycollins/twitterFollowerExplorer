@@ -5105,8 +5105,14 @@ function updateUserTweets(params){
 
     if (params.tweets.length === 0) { return resolve(params.user); }
 
-    const user = params.user;
-    if (user.tweetHistograms === undefined) { user.tweetHistograms = {}; }
+    let user = {};
+    
+    user = params.user;
+
+    if (user.tweetHistograms === undefined) { 
+      user.tweetHistograms = {};
+    }
+
     if (user.tweets === undefined) { 
       user.tweets = {};
       user.tweets.maxId = "0";
