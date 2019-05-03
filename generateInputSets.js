@@ -1,6 +1,6 @@
  /*jslint node: true */
 
- const DEFAULT_VERBOSE_MODE = true;
+ const DEFAULT_VERBOSE_MODE = false;
 
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
@@ -1212,7 +1212,7 @@ function loadFile(params) {
 
         debug("data: " + jsonPrint(obj));
 
-        if (configuration.verbose && totalInputs % 50000 === 0) {
+        if (totalInputs % 50000 === 0) {
           console.log(chalkLog("GIS | STREAM INPUTS | " + fullPath + " | INPUTS: " + totalInputs));
         }
 
