@@ -775,7 +775,7 @@ function unionInputSets(params) {
 
         saveFileQueue.push({folder: inFolder, file: inFile, obj: newInputsObj});
 
-        console.log(chalkInfo("UBI | ... UPDATING INPUTS CONFIG FILE: " + dropboxConfigDefaultFolder + "/" + defaultNetworkInputsConfigFile));
+        // console.log(chalkInfo("UBI | ... UPDATING INPUTS CONFIG FILE: " + dropboxConfigDefaultFolder + "/" + defaultNetworkInputsConfigFile));
 
 
         // networkInputsConfigObj.INPUTS_IDS.push(newInputsObj.inputsId);
@@ -833,7 +833,7 @@ function quit(cause){
       ));
     }
 
-  }, 1000);
+  }, 5000);
 }
 
 process.on( "SIGINT", function() {
