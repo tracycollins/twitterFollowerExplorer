@@ -35,6 +35,7 @@ hostname = hostname.replace(/word/g, "google");
 
 let DROPBOX_ROOT_FOLDER;
 
+const defaultUnionInputsConfigFile = "default_unionInputsConfig.json";
 const defaultNetworkInputsConfigFile = "default_networkInputsConfig.json";
 const defaultBestInputsConfigFile = "default_bestInputsConfig.json";
 const hostBestInputsConfigFile = hostname + "_bestInputsConfig.json";
@@ -63,6 +64,7 @@ const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
 
 const DEFAULT_INPUT_TYPES = [
   "emoji", 
+  "friends", 
   "hashtags",  
   "images", 
   "locations", 
@@ -744,7 +746,8 @@ function unionInputSets(params) {
         + "_" + moment().format(compactDateTimeFormat) 
         + "_" + newInputsObj.meta.numInputs 
         + "_" + hostname 
-        + "_" + process.pid;
+        + "_" + process.pid
+        + "_" + "union";
 
       console.log(chalkBlue("UBI | NEW INPUT SETS"
         + " | " + newInputsObj.inputsId
@@ -1767,7 +1770,7 @@ function runMain(){
 
       statsObj.status = "RUN MAIN";
 
-      let networkInputsConfigObj = await loadFile({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, noErrorNotFound: true });
+      let networkInputsConfigObj = await loadFile({folder: dropboxConfigDefaultFolder, file: defaultBestInputsConfigFile, noErrorNotFound: true });
 
       const parentPairs = pairwise([...inputsIdSet]);
       console.log("PARENT PAIRS\n" + jsonPrint(parentPairs));
@@ -1779,7 +1782,7 @@ function runMain(){
         return;
       }, function(err){
         console.log("INPUTS_IDS\n" + jsonPrint(networkInputsConfigObj.INPUTS_IDS));
-        saveFileQueue.push({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, obj: networkInputsConfigObj});
+        saveFileQueue.push({folder: dropboxConfigDefaultFolder, file: defaultUnionInputsConfigFile, obj: networkInputsConfigObj});
         resolve();
       });
 
