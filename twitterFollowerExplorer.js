@@ -5087,6 +5087,7 @@ function updateUserFriends(params){
       console.log(chalkTwitter("TFE | UPDATED USER FRIENDS"
         + " | UID: " + user.userId
         + " | @" + user.screenName
+        + " | " + user.friendsCount + " TOTAL FRIENDS"
         + " | " + user.friends.length + " FRIENDS IN DB"
         + " | " + friendsPrevious + " FRIENDS PREVIOUS"
         + " | " + friendsHits + " FRIENDS HITS"
