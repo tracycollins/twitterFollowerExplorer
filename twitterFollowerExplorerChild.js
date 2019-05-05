@@ -208,6 +208,10 @@ statsObj.queues.saveFileQueue = {};
 statsObj.queues.saveFileQueue.busy = false;
 statsObj.queues.saveFileQueue.size = 0;
 
+statsObj.queues.fetchUserFriendsIdsQueue = {};
+statsObj.queues.fetchUserFriendsIdsQueue.busy = false;
+statsObj.queues.fetchUserFriendsIdsQueue.size = 0;
+
 statsObj.errors = {};
 
 statsObj.status = "START";
@@ -1838,6 +1842,7 @@ function initFetchUserTweets(p) {
           }
 
           fetchUserFriendsIdsQueue.push(userId);
+          statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
 
           process.send(
             {
@@ -1901,6 +1906,9 @@ function initfetchUserFriendsIds(p) {
     clearInterval(fetchUserFriendsIdsQueueInterval);
     fetchUserFriendsIdsQueueReady = true;
 
+    statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserTweetsQueueReady;
+    statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
+
     const params = p || {};
     params.interval = params.interval || DEFAUT_TWITTER_FETCH_FRIENDS_IDS_INTERVAL;
 
@@ -1922,6 +1930,9 @@ function initfetchUserFriendsIds(p) {
       if (statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag 
         && fetchUserFriendsIdsQueueReady 
         && (fetchUserFriendsIdsQueue.length > 0)) {
+
+        statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserTweetsQueueReady;
+        statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
 
         checkRateLimit({}).
         then(function(){
@@ -1971,34 +1982,39 @@ function initfetchUserFriendsIds(p) {
 
         userId = fetchUserFriendsIdsQueue.shift();
 
+        statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserTweetsQueueReady;
+        statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
+
         try {
 
           userFriendsIdsObj = await fetchUserFriendsIds({ userId: userId });
 
-          // if (configuration.verbose) {
-            if (userFriendsIdsObj.ids.length > 0) {
-              console.log(chalk.black("TFC | +++ FETCHED USER FRIENDS IDS" 
-                + " [" + userFriendsIdsObj.ids.length + "]"
-                + " | " + userId
-              ));
-            }
-            else {
-              console.log(chalk.gray("TFC | --- FETCHED USER FRIENDS IDS" 
-                + " [" + userFriendsIdsObj.ids.length + "]"
-                + " | " + userId
-              ));
-            }
-          // }
+          if (userFriendsIdsObj.ids.length > 0) {
+            console.log(chalk.black("TFC | +++ FETCHED USER FRIENDS IDS" 
+              + " [ FUFIQ: " + fetchUserFriendsIdsQueue.length + " ]"
+              + " | " + userFriendsIdsObj.ids.length + " FRIENDS"
+              + " | " + userId
+            ));
+          }
+          else {
+            console.log(chalk.gray("TFC | --- FETCHED USER FRIENDS IDS" 
+              + " [ FUFIQ: " + fetchUserFriendsIdsQueue.length + " ]"
+              + " | " + userFriendsIdsObj.ids.length + " FRIENDS"
+              + " | " + userId
+            ));
+          }
 
           process.send(
             {
               op: "USER_FRIENDS",
               userId: userId,
-              friends: userFriendsIdsObj.ids
+              friends: userFriendsIdsObj.ids,
+              queue: fetchUserFriendsIdsQueue.length
             }, 
 
             function(){ 
               fetchUserFriendsIdsQueueReady = true; 
+              statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserTweetsQueueReady;
             }
           );
 
@@ -2028,6 +2044,9 @@ function initfetchUserFriendsIds(p) {
           }
 
           fetchUserFriendsIdsQueueReady = true; 
+
+          statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserTweetsQueueReady;
+          statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
         }
       }
 

@@ -5255,8 +5255,8 @@ function processUser(params) {
     let user;
 
     try {
-      user = await updateUserTweets({user: userIn, tweets: userIn.latestTweets});
-      user = await updateUserFriends({user: user, friends: userIn.latestFriends});
+      const userTemp = await updateUserTweets({user: userIn, tweets: userIn.latestTweets});
+      user = await updateUserFriends({user: userTemp, friends: userIn.latestFriends});
     }
     catch(err) {
       console.log(chalkError("TFE | *** processUser updateUserTweets ERROR: " + err));
@@ -5816,7 +5816,8 @@ const fsmStates = {
         checkState: "FETCH_END", 
         noChildrenTrue: false, 
         exceptionStates: ["ERROR"]
-      }).then(function(allChildrenFetchEnd){
+      }).
+      then(function(allChildrenFetchEnd){
         debug("FETCH_END TICK"
           + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
           + " | Q SIZE: " + statsObj.queues.processUserQueue.size
