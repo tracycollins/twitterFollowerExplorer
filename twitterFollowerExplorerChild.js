@@ -222,6 +222,9 @@ statsObj.threeceeUser.nextCursor = false;
 statsObj.threeceeUser.nextCursorValid = false;
 statsObj.threeceeUser.friendsFetched = 0;
 
+let fetchUserFriendsIdsQueueReady = true;
+let fetchUserFriendsIdsQueue = [];
+
 const TWITTER_RATE_LIMIT_RESOURCES = {
   application: ["rate_limit_status"],
   friends: ["ids", "list"],
@@ -1895,9 +1898,6 @@ function initFetchUserTweets(p) {
 
 let fetchUserFriendsIdsQueueInterval;
 intervalsSet.add("fetchUserFriendsIdsQueueInterval");
-
-let fetchUserFriendsIdsQueueReady = true;
-const fetchUserFriendsIdsQueue = [];
 
 function initfetchUserFriendsIds(p) {
 
