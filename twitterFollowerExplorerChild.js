@@ -1936,7 +1936,6 @@ function initfetchUserFriendsIds(p) {
 
         checkRateLimit({}).
         then(function(){
-
           debug(chalkLog(MODULE_ID_PREFIX
             + " | RATE LIMIT"
             + " | @" + configuration.threeceeUser
@@ -1944,7 +1943,6 @@ function initfetchUserFriendsIds(p) {
             + " | START: " + statsObj.startTime
             + " | ELAPSED: " + statsObj.elapsed
           ));
-
           Object.keys(TWITTER_RATE_LIMIT_RESOURCES).forEach(function(resource){
             TWITTER_RATE_LIMIT_RESOURCES[resource].forEach(function(endPoint) {
               if (statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag || configuration.verbose) {
@@ -1979,6 +1977,8 @@ function initfetchUserFriendsIds(p) {
         && (fetchUserFriendsIdsQueue.length > 0)) {
 
         fetchUserFriendsIdsQueueReady = false;
+
+        fetchUserFriendsIdsQueue = _.shuffle(fetchUserFriendsIdsQueue);
 
         userId = fetchUserFriendsIdsQueue.shift();
 
