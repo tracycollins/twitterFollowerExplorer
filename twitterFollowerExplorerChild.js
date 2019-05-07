@@ -1906,7 +1906,7 @@ function initfetchUserFriendsIds(p) {
     clearInterval(fetchUserFriendsIdsQueueInterval);
     fetchUserFriendsIdsQueueReady = true;
 
-    statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserTweetsQueueReady;
+    statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserFriendsIdsQueueReady;
     statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
 
     const params = p || {};
@@ -1931,7 +1931,7 @@ function initfetchUserFriendsIds(p) {
         && fetchUserFriendsIdsQueueReady 
         && (fetchUserFriendsIdsQueue.length > 0)) {
 
-        statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserTweetsQueueReady;
+        statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserFriendsIdsQueueReady;
         statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
 
         checkRateLimit({}).
@@ -1982,7 +1982,7 @@ function initfetchUserFriendsIds(p) {
 
         userId = fetchUserFriendsIdsQueue.shift();
 
-        statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserTweetsQueueReady;
+        statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserFriendsIdsQueueReady;
         statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
 
         try {
@@ -2014,7 +2014,7 @@ function initfetchUserFriendsIds(p) {
 
             function(){ 
               fetchUserFriendsIdsQueueReady = true; 
-              statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserTweetsQueueReady;
+              statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserFriendsIdsQueueReady;
             }
           );
 
@@ -2045,7 +2045,7 @@ function initfetchUserFriendsIds(p) {
 
           fetchUserFriendsIdsQueueReady = true; 
 
-          statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserTweetsQueueReady;
+          statsObj.queues.fetchUserFriendsIdsQueue.busy = !fetchUserFriendsIdsQueueReady;
           statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
         }
       }
