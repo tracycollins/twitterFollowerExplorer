@@ -88,9 +88,9 @@ const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 5; // ms
 let waitFileSaveInterval;
 let randomNetworkTreeMessageRxQueueInterval;
 
-const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 70;
-const DEFAULT_LOCAL_MIN_SUCCESS_RATE = 30;
-const DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE = 50;
+const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 69;
+const DEFAULT_LOCAL_MIN_SUCCESS_RATE = 60;
+const DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE = 65;
 
 
 const SAVE_CACHE_DEFAULT_TTL = 60;
@@ -3093,7 +3093,7 @@ function loadBestNetworksDatabase(paramsIn) {
       query = {};
       query.$and = [
         { inputsId: { "$in": inputsIdArray } },
-        { successRate: { "$gte": configuration.globalMinSuccessRate } },
+        { overallMatchRate: { "$gte": configuration.globalMinSuccessRate } },
         { testCycles: { "$gte": configuration.minTestCycles } }
       ];
     }
