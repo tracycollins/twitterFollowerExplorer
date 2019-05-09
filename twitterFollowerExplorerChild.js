@@ -1876,6 +1876,18 @@ function initFetchUserTweets(p) {
               + " | " + err.message
             ));
           }
+          else if (err.code === 130) { // twitter over capacity
+
+            fetchUserTweetsQueue.push(userId);
+
+            console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS | OVER CAPACITY"
+              + " | @" + configuration.threeceeUser 
+              + " | " + getTimeStamp() 
+              + " | UID: " + userId
+              + " | ERR CODE: " + err.code
+              + " | " + err.message
+            ));
+          }
           else {
             console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR"
               + " | @" + configuration.threeceeUser 
