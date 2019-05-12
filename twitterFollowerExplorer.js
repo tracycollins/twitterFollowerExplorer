@@ -2,6 +2,7 @@
 /*jshint esnext: true */
 
 const DEFAULT_MAX_USER_TWEETIDS = 500;
+const DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL = 10;
 
 const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
 
@@ -2226,8 +2227,8 @@ function saveFile(params, callback){
 
     const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
 
-    showStats().then(function(){
-
+    showStats().
+    then(function(){
     }).
     catch(function(err){
       console.log(chalkError(MODULE_ID_PREFIX + " | *** SHOW STATS ERROR: " + err));
@@ -3259,6 +3260,67 @@ function generateObjFromArray(params){
       cb();
     }, function(){
       resolve(result);
+    });
+
+  });
+}
+
+function pruneGlobalHistograms(params) {
+
+  return new Promise(async function(resolve, reject){
+
+    statsObj.status = "PRUNE GLOBAL HISTOGRAMS";
+
+    let prunedItems = {};
+
+    async.eachSeries(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
+
+      if (!globalHistograms[inputType] || (globalHistograms[inputType] === undefined)){
+        return cb0();
+      }
+
+      prunedItems[inputType] = [];
+
+      async.eachSeries(Object.keys(globalHistograms[inputType]), function(item, cb1) {
+
+        if (globalHistograms[inputType][item].total < DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL) {
+
+          prunedItems[inputType].push(globalHistograms[inputType][item]);
+
+          if (configuration.verbose) {
+            console.log(chalkLog(MODULE_ID_PREFIX
+              + " | HISTOGRAM ITEM LESS THAN MIN (" + DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL + ") ... DELETING"
+              + " | " + inputType.toUpperCase()
+              + " | TOTAL: " + globalHistograms[inputType][item].total
+              + " | " + item
+            ));
+          }
+
+          delete globalHistograms[inputType][item];
+        }
+
+        cb1();
+
+      }, function(err) {
+
+        if (err) { return reject(err); }
+
+        console.log(chalkAlert(MODULE_ID_PREFIX
+          + " | PRUNED"
+          + " | " + inputType.toUpperCase()
+          + " | " + prunedItems[inputType].length + " ITEMS"
+        ));
+
+        cb0();
+
+      });
+
+    }, function(err) {
+
+      if (err) { return reject(err); }
+
+      resolve();
+
     });
 
   });
@@ -5889,7 +5951,19 @@ const fsmStates = {
         if (randomNetworkTree && (randomNetworkTree !== undefined)) {
           randomNetworkTree.send({op: "GET_STATS"});
           console.log(chalkLog("TFE | PAUSING FOR RNT GET_STATS RESPONSE ..."));
-          await waitEvent({ event: "allNetworksUpdated"});
+          try{
+            await waitEvent({ event: "allNetworksUpdated"});
+          }
+          catch(err){
+            console.log(chalkError("TFE | *** WAIT EVENT ERROR: " + err));
+          }
+        }
+
+        try{
+          await pruneGlobalHistograms();
+        }
+        catch(err){
+          console.log(chalkError("TFE | *** PRUNE GLOBAL HISTOGRAMS ERROR: " + err));
         }
 
         let histogramsSavedFlag = false;
@@ -5931,7 +6005,7 @@ const fsmStates = {
           console.log(chalk.bold.blue("TFE | SAVING HISTOGRAM"
             + " | TYPE: " + type
             + " | ID: " + histObj.histogramsId
-            + " | ENTRIES: " + Object.keys(histObj.histograms[type]).length
+            + " | ENTRIES: " + histObj.meta.numEntries
             + " | SIZE: " + sizeInMBs.toFixed(3) + " MB"
             + " | PATH: " + folder + "/" + file
           ));
@@ -5962,13 +6036,13 @@ const fsmStates = {
             }
 
             saveFileQueue.push({folder: folder, file: file, obj: histObj, localFlag: true });
-
           }
           else {
             saveFileQueue.push({folder: folder, file: file, obj: histObj });
           }
 
           cb();
+
         }, function(){
           histogramsSavedFlag = true;
         });
