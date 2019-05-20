@@ -913,9 +913,7 @@ function initCategorizedUserHashmap(){
 
     async.whilst(
 
-      function() {
-        return more;
-      },
+      function test(cbTest) { cbTest(null, more); },
 
       function(cb){
 
@@ -1804,19 +1802,9 @@ function listDropboxFolder(params){
         more = response.has_more;
         results.entries = response.entries;
 
-        // console.log(chalkLog(MODULE_ID_PREFIX
-        //   + " | DROPBOX LIST FOLDER"
-        //   + " | FOLDER:" + params.folder
-        //   + " | ENTRIES: " + response.entries.length
-        //   + " | LIMIT: " + limit
-        //   + " | MORE: " + more
-        // ));
-
         async.whilst(
 
-          function() {
-            return more;
-          },
+          function test(cbTest) { cbTest(null, more); },
 
           function(cb){
 
