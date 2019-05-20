@@ -5070,86 +5070,6 @@ function generateAutoCategory(user, callback) {
     });
 }
 
-// function updateUserFriends(params){
-
-//   return new Promise(function(resolve, reject){
-
-//     if (params.friends.length === 0) { return resolve(params.user); }
-
-//     const user = params.user;
-//     if (user.friends === undefined) { 
-//       user.friends = [];
-//     }
-
-//     user.friends = user.friends || [];
-
-//     const friendsPrevious = user.friends.length;
-//     let friendsMisses = 0; // added to user.friends
-//     let friendsHits = 0; // already in user.friends
-
-//     async.each(params.friends, async function(friend){
-
-//       if (!user.friends.includes(friend)) { 
-
-//         try {
-
-//           user.friends.push(friend); 
-
-//           friendsMisses++;
-
-//           if (configuration.verbose) {
-//             console.log(chalkTwitter("TFE | +++ PROCESSED FRIEND"
-//               + " | UID: " + user.userId
-//               + " | @" + user.screenName
-//               + " | " + user.friends.length + " FRIENDS IN DB"
-//             ));
-//           } 
-
-//           return;
-//         }
-//         catch(err){
-//           console.log(chalkError("TFE | updateUserFriends ERROR: " + err));
-//           return err;
-//         }
-//       }
-//       else {
-
-//         friendsHits++;
-
-//         if (configuration.verbose) {
-//           console.log(chalkTwitter("TFE | ... FRIEND ALREAD IN DB"
-//             + " | UID: " + user.userId
-//             + " | @" + user.screenName
-//             + " | FRND ID: " + friend
-//             + " | " + user.friends.length + " FRIENDS IN DB"
-//           ));
-//         }
-
-//         return;
-//       }
-
-//     }, function(err){
-//       if (err) {
-//         console.log(chalkError("TFE | updateUserFriends ERROR: " + err));
-//         return reject(err);
-//       }
-
-//       console.log(chalkTwitter("TFE | UPDATED USER FRIENDS"
-//         + " | UID: " + user.userId
-//         + " | @" + user.screenName
-//         + " | " + user.friendsCount + " TOTAL FRIENDS"
-//         + " | " + user.friends.length + " FRIENDS IN DB"
-//         + " | " + friendsPrevious + " FRIENDS PREVIOUS"
-//         + " | " + friendsHits + " FRIENDS HITS"
-//         + " | " + friendsMisses + " FRIENDS MISSES"
-//       ));
-
-//       resolve(user);
-//     });
-
-//   });
-// }
-
 function updateUserTweets(params){
 
   return new Promise(function(resolve, reject){
@@ -5440,8 +5360,6 @@ function updatePreviousUserProps(params){
 
         user[prevUserProp] = user[userProp];
 
-        // user.markModified(prevUserProp);
-
       }
       cb();
 
@@ -5449,13 +5367,10 @@ function updatePreviousUserProps(params){
 
       if (user.statusId && (user.statusId !== undefined) && (user.previousStatusId !== user.statusId)) {
         user.previousStatusId = user.statusId;
-        // user.markModified("previousStatusId");
       }
 
       if (user.quotedStatusId && (user.quotedStatusId !== undefined) && (user.previousQuotedStatusId !== user.quotedStatusId)) {
         user.previousQuotedStatusId = user.quotedStatusId;
-        // user.markModified("quotedStatusId");
-        // user.markModified("quotedStatusId");
       }
 
       resolve(user);
@@ -6207,9 +6122,7 @@ function getChildProcesses(){
 
       console.log("SHELL: childPidFileName: " + childPidFileName);
 
-      // wa_node_child_dbu=46633
       const childPidStringArray = childPidFileName.split("=");
-
       const childId = childPidStringArray[0];
       const childPid = parseInt(childPidStringArray[1]);
 
