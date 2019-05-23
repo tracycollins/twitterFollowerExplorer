@@ -5794,8 +5794,8 @@ const fsmStates = {
           // && !statsObj.queues.activateNetworkQueue.busy
           // && (statsObj.queues.activateNetworkQueue.size === 0)
           // && allChildrenFetchEnd 
-          // && !statsObj.queues.processUserQueue.busy
-          // && (statsObj.queues.processUserQueue.size === 0)
+          && !statsObj.queues.processUserQueue.busy
+          && (statsObj.queues.processUserQueue.size === 0)
           ) 
         { 
           console.log(chalkAlert("FSM | allChildrenFetchEnd | STATS QUEUES\n" + jsonPrint(statsObj.queues)));
