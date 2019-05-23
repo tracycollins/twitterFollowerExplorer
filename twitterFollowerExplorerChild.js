@@ -74,7 +74,7 @@ const chalk = require("chalk");
 // const chalkNetwork = chalk.blue;
 const chalkBlueBold = chalk.blue.bold;
 const chalkTwitter = chalk.blue;
-const chalkTwitterBold = chalk.bold.blue;
+// const chalkTwitterBold = chalk.bold.blue;
 const chalkGreen = chalk.green;
 const chalkBlue = chalk.blue;
 const chalkError = chalk.bold.red;
@@ -222,8 +222,8 @@ statsObj.threeceeUser.nextCursor = false;
 statsObj.threeceeUser.nextCursorValid = false;
 statsObj.threeceeUser.friendsFetched = 0;
 
-let fetchUserFriendsIdsQueueReady = true;
-let fetchUserFriendsIdsQueue = [];
+// let fetchUserFriendsIdsQueueReady = true;
+// let fetchUserFriendsIdsQueue = [];
 
 const TWITTER_RATE_LIMIT_RESOURCES = {
   application: ["rate_limit_status"],
@@ -1286,169 +1286,168 @@ function fetchUserTweets(params){
   });
 }
 
-function fetchUserFriendsIds(params){
+// function fetchUserFriendsIds(params){
 
-  return new Promise(async function(resolve, reject){
+//   return new Promise(async function(resolve, reject){
 
-    if (!twitClient || (twitClient === undefined)) {
-      console.log(chalkAlert("TFC | fetchUserFriendsIds | twitClient UNDEFINED | @" + configuration.threeceeUser));
-      return reject(new Error("twitClient UNDEFINED"));
-    }
+//     if (!twitClient || (twitClient === undefined)) {
+//       console.log(chalkAlert("TFC | fetchUserFriendsIds | twitClient UNDEFINED | @" + configuration.threeceeUser));
+//       return reject(new Error("twitClient UNDEFINED"));
+//     }
 
-    if (statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag) {
-      console.log(chalkAlert("TFC | fetchUserFriendsIds | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
-      return reject({code: 88, message: "RATE LIMIT"});
-    }
+//     if (statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag) {
+//       console.log(chalkAlert("TFC | fetchUserFriendsIds | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
+//       return reject({code: 88, message: "RATE LIMIT"});
+//     }
 
-    const fetchUserFriendsIdsParams = {};
+//     const fetchUserFriendsIdsParams = {};
 
-    fetchUserFriendsIdsParams.user_id = params.userId;
-    fetchUserFriendsIdsParams.stringify_ids = true;
+//     fetchUserFriendsIdsParams.user_id = params.userId;
+//     fetchUserFriendsIdsParams.stringify_ids = true;
 
-    if (params.cursor) { fetchUserFriendsIdsParams.cursor = params.cursor; } 
+//     if (params.cursor) { fetchUserFriendsIdsParams.cursor = params.cursor; } 
 
-    fetchUserFriendsIdsParams.count = params.count || configuration.userFriendsIdsCount;
+//     fetchUserFriendsIdsParams.count = params.count || configuration.userFriendsIdsCount;
 
-    twitClient.get("friends/ids", fetchUserFriendsIdsParams, function(err, userFriendsIdsObj, response) {
+//     twitClient.get("friends/ids", fetchUserFriendsIdsParams, function(err, userFriendsIdsObj, response) {
 
-      if (configuration.verbose) {
-        console.log("TFC | TWITTER FRIENDS IDS response\n" + jsonPrint(response));
-      }
+//       if (configuration.verbose) {
+//         console.log("TFC | TWITTER FRIENDS IDS response\n" + jsonPrint(response));
+//       }
 
-      if (err){
+//       if (err){
 
-        if (err.code === 88) {
-          statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag = true;
-          statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionAt = moment();
-          fsm.fsm_rateLimitStart();
-          return reject(err);
-        }
+//         if (err.code === 88) {
+//           statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag = true;
+//           statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionAt = moment();
+//           fsm.fsm_rateLimitStart();
+//           return reject(err);
+//         }
 
-        if (err.code === 89){
+//         if (err.code === 89){
 
-          console.log(chalkAlert("TFC | *** TWITTER USER FRIENDS IDS ERROR | INVALID OR EXPIRED TOKEN" 
-            + " | " + getTimeStamp() 
-            + " | @" + configuration.threeceeUser 
-          ));
+//           console.log(chalkAlert("TFC | *** TWITTER USER FRIENDS IDS ERROR | INVALID OR EXPIRED TOKEN" 
+//             + " | " + getTimeStamp() 
+//             + " | @" + configuration.threeceeUser 
+//           ));
 
-          statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
-          statsObj.threeceeUser.err = err;
+//           statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+//           statsObj.threeceeUser.err = err;
 
-          process.send({op: "ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
-          fsm.fsm_error();
+//           process.send({op: "ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+//           fsm.fsm_error();
 
-          return reject(err);
-        }
+//           return reject(err);
+//         }
 
-        console.log(chalkError("TFC | *** TWITTER USER FRIENDS IDS ERROR"
-          + " | @" + configuration.threeceeUser 
-          + " | " + getTimeStamp() 
-          + " | ERR CODE: " + err.code
-          + " | " + err.message
-          // + "\nRESPONSE\n" + jsonPrint(response)
-        ));
+//         console.log(chalkError("TFC | *** TWITTER USER FRIENDS IDS ERROR"
+//           + " | @" + configuration.threeceeUser 
+//           + " | " + getTimeStamp() 
+//           + " | ERR CODE: " + err.code
+//           + " | " + err.message
+//           // + "\nRESPONSE\n" + jsonPrint(response)
+//         ));
 
-        return reject(err);
-      }
+//         return reject(err);
+//       }
 
-      console.log(chalkLog("TFC | FRIENDS IDS"
-        + " | UID: " + fetchUserFriendsIdsParams.user_id 
-        + " | IDs: " + userFriendsIdsObj.ids.length
-        + " | PREV CURSOR: " + userFriendsIdsObj.previous_cursor_str
-        + " | NEXT CURSOR: " + userFriendsIdsObj.next_cursor_str
-      ));
+//       console.log(chalkLog("TFC | FRIENDS IDS"
+//         + " | UID: " + fetchUserFriendsIdsParams.user_id 
+//         + " | IDs: " + userFriendsIdsObj.ids.length
+//         + " | PREV CURSOR: " + userFriendsIdsObj.previous_cursor_str
+//         + " | NEXT CURSOR: " + userFriendsIdsObj.next_cursor_str
+//       ));
 
-      resolve(userFriendsIdsObj);
+//       resolve(userFriendsIdsObj);
 
-    });
+//     });
 
-  });
-}
+//   });
+// }
 
-function fetch3cUserFriendsIds(){
+// function fetch3cUserFriendsIds(){
 
-  return new Promise(async function(resolve, reject){
+//   return new Promise(async function(resolve, reject){
 
-    if (!twitClient || (twitClient === undefined)) {
-      console.log(chalkAlert("TFC | fetch3cUserFriendsIds | twitClient UNDEFINED | @" + configuration.threeceeUser));
-      return reject(new Error("twitClient UNDEFINED"));
-    }
+//     if (!twitClient || (twitClient === undefined)) {
+//       console.log(chalkAlert("TFC | fetch3cUserFriendsIds | twitClient UNDEFINED | @" + configuration.threeceeUser));
+//       return reject(new Error("twitClient UNDEFINED"));
+//     }
 
-    if (statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag) {
-      console.log(chalkAlert("TFC | fetch3cUserFriendsIds | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
-      return resolve(null);
-    }
+//     if (statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag) {
+//       console.log(chalkAlert("TFC | fetch3cUserFriendsIds | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
+//       return resolve(null);
+//     }
 
-    twitClient.get("friends/ids", {screen_name: configuration.threeceeUser}, function(err, userFriendsIds, response) {
+//     twitClient.get("friends/ids", {screen_name: configuration.threeceeUser}, function(err, userFriendsIds, response) {
 
-      if (configuration.verbose) {
-        console.log("TFC | TWITTER FRIENDS IDS response\n" + jsonPrint(response));
-      }
+//       if (configuration.verbose) {
+//         console.log("TFC | TWITTER FRIENDS IDS response\n" + jsonPrint(response));
+//       }
 
-      if (err){
+//       if (err){
 
-        if (err.code === 88) {
-          statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag = true;
-          statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionAt = moment();
-          fsm.fsm_rateLimitStart();
-          return resolve();
-        }
+//         if (err.code === 88) {
+//           statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag = true;
+//           statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionAt = moment();
+//           fsm.fsm_rateLimitStart();
+//           return resolve();
+//         }
 
-        if (err.code === 89){
+//         if (err.code === 89){
 
-          console.log(chalkAlert("TFC | *** TWITTER USER FRIENDS IDS ERROR | INVALID OR EXPIRED TOKEN" 
-            + " | " + getTimeStamp() 
-            + " | @" + configuration.threeceeUser 
-          ));
+//           console.log(chalkAlert("TFC | *** TWITTER USER FRIENDS IDS ERROR | INVALID OR EXPIRED TOKEN" 
+//             + " | " + getTimeStamp() 
+//             + " | @" + configuration.threeceeUser 
+//           ));
 
-          statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
-          statsObj.threeceeUser.err = err;
+//           statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+//           statsObj.threeceeUser.err = err;
 
-          process.send({op: "ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
-          fsm.fsm_error();
+//           process.send({op: "ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+//           fsm.fsm_error();
 
-          return reject(err);
+//           return reject(err);
 
-        }
+//         }
 
-        console.log(chalkError("TFC | *** TWITTER USER FRIENDS IDS ERROR"
-          + " | @" + configuration.threeceeUser 
-          + " | " + getTimeStamp() 
-          + " | ERR CODE: " + err.code
-          + " | " + err.message
-          // + "\nRESPONSE\n" + jsonPrint(response)
-        ));
+//         console.log(chalkError("TFC | *** TWITTER USER FRIENDS IDS ERROR"
+//           + " | @" + configuration.threeceeUser 
+//           + " | " + getTimeStamp() 
+//           + " | ERR CODE: " + err.code
+//           + " | " + err.message
+//           // + "\nRESPONSE\n" + jsonPrint(response)
+//         ));
 
-        return reject(err);
-      }
+//         return reject(err);
+//       }
 
-      process.send({op: "FRIENDS_IDS", threeceeUser: configuration.threeceeUser, friendsIds: userFriendsIds.ids});
+//       process.send({op: "FRIENDS_IDS", threeceeUser: configuration.threeceeUser, friendsIds: userFriendsIds.ids});
 
-      statsObj.threeceeUser.nextCursorValid = statsObj.threeceeUser.nextCursorValid || false;
-      statsObj.threeceeUser.nextCursor = statsObj.threeceeUser.nextCursor || -1;
-      statsObj.threeceeUser.prevCursorValid = statsObj.threeceeUser.prevCursorValid || false;
-      statsObj.threeceeUser.prevCursor = statsObj.threeceeUser.prevCursor || -1;
+//       statsObj.threeceeUser.nextCursorValid = statsObj.threeceeUser.nextCursorValid || false;
+//       statsObj.threeceeUser.nextCursor = statsObj.threeceeUser.nextCursor || -1;
+//       statsObj.threeceeUser.prevCursorValid = statsObj.threeceeUser.prevCursorValid || false;
+//       statsObj.threeceeUser.prevCursor = statsObj.threeceeUser.prevCursor || -1;
 
-      debug(chalkTwitterBold("TFC | ====================================================================="
-        + "\nTFC | TWITTER USER"
-        + " | @" + statsObj.threeceeUser.screenName 
-        + " | " + statsObj.threeceeUser.name 
-        + "\nTFC | NEXT CURSOR VALID: " + statsObj.threeceeUser.nextCursorValid 
-        + " | NEXT CURSOR: " + statsObj.threeceeUser.nextCursor 
-        + "\nTFC | Ts: " + statsObj.threeceeUser.statusesCount 
-        + " | FLWRs: " + statsObj.threeceeUser.followersCount
-        + " | FRNDS: " + statsObj.threeceeUser.friendsCount 
-        + " | FRNDS IDs: " + userFriendsIds.ids.length 
-        + "\nTFC | ====================================================================="
-      ));
+//       debug(chalkTwitterBold("TFC | ====================================================================="
+//         + "\nTFC | TWITTER USER"
+//         + " | @" + statsObj.threeceeUser.screenName 
+//         + " | " + statsObj.threeceeUser.name 
+//         + "\nTFC | NEXT CURSOR VALID: " + statsObj.threeceeUser.nextCursorValid 
+//         + " | NEXT CURSOR: " + statsObj.threeceeUser.nextCursor 
+//         + "\nTFC | Ts: " + statsObj.threeceeUser.statusesCount 
+//         + " | FLWRs: " + statsObj.threeceeUser.followersCount
+//         + " | FRNDS: " + statsObj.threeceeUser.friendsCount 
+//         + " | FRNDS IDs: " + userFriendsIds.ids.length 
+//         + "\nTFC | ====================================================================="
+//       ));
 
-      resolve();
+//       resolve();
 
-    });
+//     });
 
-  });
-}
-
+//   });
+// }
 
 function twitterUsersShow(){
 
@@ -1540,7 +1539,7 @@ function twitterUserUpdate(){
 
     try {
       await twitterUsersShow();
-      await fetch3cUserFriendsIds();
+      // await fetch3cUserFriendsIds();
       resolve();
     }
     catch(err){
@@ -1844,8 +1843,8 @@ function initFetchUserTweets(p) {
             }
           }
 
-          fetchUserFriendsIdsQueue.push(userId);
-          statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
+          // fetchUserFriendsIdsQueue.push(userId);
+          // statsObj.queues.fetchUserFriendsIdsQueue.size = fetchUserFriendsIdsQueue.length;
 
           process.send(
             {
@@ -2508,16 +2507,16 @@ process.on("message", async function(m) {
       fsm.fsm_idle();
     break;
 
-    case "FETCH_USER_FRIENDS":
-      m.userIdArray.forEach(function(userId){
-        fetchUserFriendsIdsQueue.push(userId);
-      });
-      console.log(chalkBlue(MODULE_ID_PREFIX
-        + " | FETCH_USER_FRIENDS"
-        + " | USER ID ARRAY: " + m.userIdArray.length
-        + " | FUFIQ: " + fetchUserFriendsIdsQueue.length
-      ));
-    break;
+    // case "FETCH_USER_FRIENDS":
+    //   m.userIdArray.forEach(function(userId){
+    //     fetchUserFriendsIdsQueue.push(userId);
+    //   });
+    //   console.log(chalkBlue(MODULE_ID_PREFIX
+    //     + " | FETCH_USER_FRIENDS"
+    //     + " | USER ID ARRAY: " + m.userIdArray.length
+    //     + " | FUFIQ: " + fetchUserFriendsIdsQueue.length
+    //   ));
+    // break;
 
     case "FETCH_USER_TWEETS":
       m.userIdArray.forEach(function(userId){

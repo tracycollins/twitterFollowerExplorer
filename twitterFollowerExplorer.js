@@ -1,6 +1,3 @@
-/*jslint node: true */
-/*jshint esnext: true */
-
 const DEFAULT_MAX_USER_TWEETIDS = 500;
 const DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL = 10;
 
@@ -223,7 +220,7 @@ const chalkInfo = chalk.black;
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
-const twitterUserHashMap = {};
+// const twitterUserHashMap = {};
 const bestNetworkHashMap = new HashMap();
 let maxInputHashMap = {};
 
@@ -6732,14 +6729,17 @@ function childCreate(p){
             });
           break;
 
-          case "FRIENDS_IDS":
-            if (twitterUserHashMap[m.threeceeUser] === undefined) { twitterUserHashMap[m.threeceeUser] = {}; }
-            twitterUserHashMap[m.threeceeUser].friends = new Set(m.friendsIds);
-            console.log(chalkTwitter("TFE | FRIENDS_IDS"
-              + " | 3C: @" + m.threeceeUser
-              + " | " + twitterUserHashMap[m.threeceeUser].friends.size + " FRIENDS"
-            ));
-          break;
+          // case "FRIENDS_IDS":
+
+          //   if (twitterUserHashMap[m.threeceeUser] === undefined) { twitterUserHashMap[m.threeceeUser] = {}; }
+          //   twitterUserHashMap[m.threeceeUser].friends = new Set(m.friendsIds);
+
+          //   console.log(chalkTwitter("TFE | FRIENDS_IDS"
+          //     + " | 3C: @" + m.threeceeUser
+          //     + " | " + m.friendsIds.length + " FRIENDS"
+          //   ));
+
+          // break;
 
           case "USER_FRIENDS":
 
