@@ -5202,11 +5202,10 @@ function updateUserTweets(params){
         return reject(err);
       }
 
-      if (configuration.verbose || (tweetsProcessed > 0)) {
+      if (configuration.verbose) {
         console.log(chalkLog("TFE | +++ Ts"
           + " | " + tweetsProcessed
           + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + " ]"
-          // + " | SINCE: " + user.tweets.sinceId
           + " | Ts: " + user.tweets.tweetIds.length
           + " | @" + user.screenName
         ));
