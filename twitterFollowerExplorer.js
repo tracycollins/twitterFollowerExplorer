@@ -1,5 +1,6 @@
 const DEFAULT_MAX_USER_TWEETIDS = 500;
 const DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL = 10;
+const DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL = 100;
 
 const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
 
@@ -3257,6 +3258,7 @@ function pruneGlobalHistograms(params) {
     statsObj.status = "PRUNE GLOBAL HISTOGRAMS";
 
     let prunedItems = {};
+    let inputTypeMin = DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
 
     async.eachSeries(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
 
@@ -3266,15 +3268,23 @@ function pruneGlobalHistograms(params) {
 
       prunedItems[inputType] = [];
 
+      switch (inputType) {
+        case "friends":
+          inputTypeMin = DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL;
+        break;
+        default:
+          inputTypeMin = DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
+      }
+
       async.eachSeries(Object.keys(globalHistograms[inputType]), function(item, cb1) {
 
-        if (globalHistograms[inputType][item].total < DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL) {
+        if (globalHistograms[inputType][item].total < inputTypeMin) {
 
           prunedItems[inputType].push(globalHistograms[inputType][item]);
 
           if (configuration.verbose) {
             console.log(chalkLog(MODULE_ID_PREFIX
-              + " | HISTOGRAM ITEM LESS THAN MIN (" + DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL + ") ... DELETING"
+              + " | HISTOGRAM ITEM LESS THAN MIN (" + inputTypeMin + ") ... DELETING"
               + " | " + inputType.toUpperCase()
               + " | TOTAL: " + globalHistograms[inputType][item].total
               + " | " + item
