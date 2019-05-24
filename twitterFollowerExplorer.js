@@ -3244,7 +3244,10 @@ function generateObjFromArray(params){
     async.each(keys, function(key, cb){
       result[key.toString()] = value;
       cb();
-    }, function(){
+    }, function(err){
+      if (err) {
+        return reject(err);
+      }
       resolve(result);
     });
 
