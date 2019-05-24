@@ -3239,7 +3239,7 @@ function generateObjFromArray(params){
 
     const keys = params.keys || [];
     const value = params.value || 0;
-    let result = {};
+    const result = {};
 
     async.each(keys, function(key, cb){
       result[key.toString()] = value;
@@ -3254,14 +3254,16 @@ function generateObjFromArray(params){
   });
 }
 
-function pruneGlobalHistograms(params) {
+function pruneGlobalHistograms(p) {
 
   return new Promise(async function(resolve, reject){
 
+    const params = p || {};
+
     statsObj.status = "PRUNE GLOBAL HISTOGRAMS";
 
-    let prunedItems = {};
-    let inputTypeMin = DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
+    const prunedItems = {};
+    let inputTypeMin = params.defaultInputTypeMin || DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
 
     async.eachSeries(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
 
