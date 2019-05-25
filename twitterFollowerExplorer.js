@@ -3271,6 +3271,8 @@ function pruneGlobalHistograms(p) {
         return cb0();
       }
 
+      const initialNumberOfItems = Object.keys(globalHistograms[inputType]).length;
+
       prunedItems[inputType] = [];
 
       switch (inputType) {
@@ -3305,10 +3307,13 @@ function pruneGlobalHistograms(p) {
 
         if (err) { return reject(err); }
 
+        const percent = 100 * prunedItems[inputType].length/initialNumberOfItems;
+
         console.log(chalkAlert(MODULE_ID_PREFIX
-          + " | PRUNED"
           + " | " + inputType.toUpperCase()
-          + " | " + prunedItems[inputType].length + " ITEMS"
+          + " | " + inputTypeMin + " MIN"
+          + " | PRUNED " + prunedItems[inputType].length 
+          + "/" + initialNumberOfItems + " ITEMS (" + percent.toFixed(2) + "%)"
         ));
 
         cb0();

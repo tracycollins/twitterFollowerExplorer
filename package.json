@@ -36,7 +36,7 @@
     "eventemitter3": "^3.1.2",
     "get-urls": "^9.1.0",
     "google-gax": "^1.1.1",
-    "grpc": "^1.21.0",
+    "grpc": "^1.21.1",
     "hashmap": "^2.3.0",
     "hashtag-regex": "^2.0.0",
     "intervalometer": "^1.0.5",
@@ -85,7 +85,7 @@
     "url-parse": "^1.4.7",
     "url-regex": "^5.0.0",
     "valid-url": "^1.0.9",
-    "write-json-file": "^4.0.0",
+    "write-json-file": "^4.1.0",
     "yamljs": "^0.3.0",
     "yauzl": "^2.10.0"
   },
