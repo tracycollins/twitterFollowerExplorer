@@ -18,15 +18,6 @@ const DEFAULT_INPUT_TYPES = [
 
 DEFAULT_INPUT_TYPES.sort();
 
-// let start = process.hrtime();
-
-// let elapsed_time = function(note){
-//     const precision = 3; // 3 decimal places
-//     const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
-//     console.log("RNT | " + process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
-//     start = process.hrtime(); // reset the timer
-// };
-
 const DEFAULT_INPUTS_BINARY_MODE = false;
 
 const MAX_SORT_NETWORKS = 500;
@@ -44,7 +35,6 @@ let maxInputHashMap = {};
 
 let sortedNetworkResults = {};
 
-// let loadNetworksBusy = false;
 let activateNetworkInterval;
 let activateNetworkIntervalBusy = false;
 
@@ -70,7 +60,6 @@ const arrayNormalize = require("array-normalize");
 const table = require("text-table");
 
 const neataptic = require("neataptic");
-// const neataptic = require("./js/neataptic");
 
 let hostname = os.hostname();
 hostname = hostname.replace(/\.example\.com/g, "");

@@ -534,7 +534,7 @@ function slackMessageHandler(message){
           resolve();
         break;
         case "PING":
-          await slackSendWebMessage(hostname + " | TFE | PONG");
+          // await slackSendWebMessage(hostname + " | TFE | PONG");
           resolve();
         break;
         case "NONE":
@@ -6839,7 +6839,7 @@ function childCreate(p){
 
             if (m.follow) {
               try { 
-                slackSendWebMessage("FOLLOW | @" + m.threeceeUser + " | " + m.userId + " | @" + m.screenName);
+                // slackSendWebMessage("FOLLOW | @" + m.threeceeUser + " | " + m.userId + " | @" + m.screenName);
               }
               catch(err){
                 console.log(chalkError("TFE | *** SLACK FOLLOW MESSAGE ERROR: " + err));
