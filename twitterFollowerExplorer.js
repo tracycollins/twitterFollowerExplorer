@@ -1,3 +1,4 @@
+const DEFAULT_ENABLE_IMAGE_ANALYSIS = true;
 const DEFAULT_MAX_USER_TWEETIDS = 500;
 const DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL = 10;
 const DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL = 100;
@@ -139,6 +140,7 @@ let unfollowableUserSet = new Set();
 const DROPBOX_LIST_FOLDER_LIMIT = 50;
 
 let configuration = {};
+configuration.enableImageAnalysis = DEFAULT_ENABLE_IMAGE_ANALYSIS;
 configuration.geoCodeEnabled = false;
 configuration.bestNetworkIncrementalUpdate = DEFAULT_BEST_INCREMENTAL_UPDATE;
 configuration.archiveNetworkOnInputsMiss = DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
