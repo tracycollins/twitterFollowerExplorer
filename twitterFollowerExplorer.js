@@ -4936,7 +4936,10 @@ function userProfileChangeHistogram(params) {
           if (configuration.enableImageAnalysis 
             && (
               bannerImageUrl 
-              || (!user.bannerImageAnalyzed && user.bannerImageUrl && (user.bannerImageUrl !== undefined))
+              || (
+                (!user.bannerImageAnalyzed || (user.bannerImageAnalyzed === undefined)) 
+                && user.bannerImageUrl && (user.bannerImageUrl !== undefined)
+              )
             )
           ){
 
@@ -5435,9 +5438,6 @@ function initProcessUserQueueInterval(interval) {
         }
 
         const u = categorizedUserHashmap.get(mObj.userId);
-
-        // u.latestFriends = u.latestFriends || [];
-        // u.latestFriends = _.union(u.latestFriends, mObj.friends);
 
         u.latestTweets = u.latestTweets || [];
         u.latestTweets = _.union(u.latestTweets, mObj.latestTweets);
