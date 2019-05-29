@@ -5101,11 +5101,13 @@ function updateUserTweets(params){
 
   return new Promise(function(resolve, reject){
 
-    if (params.tweets.length === 0) { return resolve(params.user); }
+    if (params.user.latestTweets.length === 0) { return resolve(params.user); }
 
     let user = {};
+    const latestTweets = params.user.latestTweets;
     
     user = params.user;
+    delete user.latestTweets;
 
     if (user.tweetHistograms === undefined) { 
       user.tweetHistograms = {};
@@ -5149,7 +5151,7 @@ function updateUserTweets(params){
       user.tweets.tweetIds.splice(0,removeNumber);
     }
 
-    async.eachSeries(params.tweets, async function(tweet){
+    async.eachSeries(latestTweets, async function(tweet){
 
       tscParams.tweetStatus = tweet;
       tscParams.tweetStatus.user = {};
@@ -5251,8 +5253,8 @@ function processUser(params) {
     let user;
 
     try {
-      user = await updateUserTweets({user: userIn, tweets: userIn.latestTweets});
-      // user = await updateUserFriends({user: userTemp, friends: userIn.latestFriends});
+      // user = await updateUserTweets({user: userIn, tweets: userIn.latestTweets});
+      user = await updateUserTweets({user: userIn});
     }
     catch(err) {
       console.log(chalkError("TFE | *** processUser updateUserTweets ERROR: " + err));

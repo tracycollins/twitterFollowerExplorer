@@ -11,15 +11,10 @@ const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 
 const DEFAULT_INPUTS_BINARY_MODE = true;
-
-// const DEFAULT_FRIENDS_IDS_COUNT = 5000;
-// const TEST_FRIENDS_IDS_COUNT = 100;
-
 const DEFAULT_FETCH_COUNT = 200;
 const TEST_FETCH_COUNT = 27;
 const TEST_TOTAL_FETCH = 747;
 
-// const DEFAUT_TWITTER_FETCH_FRIENDS_IDS_INTERVAL = ONE_MINUTE;
 const DEFAUT_TWITTER_FETCH_TWEETS_INTERVAL = ONE_SECOND;
 const DEFAULT_TWEET_FETCH_COUNT = 50;
 const TEST_TWEET_FETCH_COUNT = 3;
@@ -63,7 +58,6 @@ const writeJsonFile = require("write-json-file");
 const sizeof = require("object-sizeof");
 
 const fs = require("fs");
-// const JSONParse = require("json-parse-safe");
 const debug = require("debug")("tfe");
 const util = require("util");
 const deepcopy = require("deep-copy");
@@ -71,10 +65,8 @@ const async = require("async");
 const omit = require("object.omit");
 
 const chalk = require("chalk");
-// const chalkNetwork = chalk.blue;
 const chalkBlueBold = chalk.blue.bold;
 const chalkTwitter = chalk.blue;
-// const chalkTwitterBold = chalk.bold.blue;
 const chalkGreen = chalk.green;
 const chalkBlue = chalk.blue;
 const chalkError = chalk.bold.red;
@@ -175,7 +167,6 @@ let configuration = {};
 configuration.threeceeUser = process.env.THREECEE_USER;
 configuration.inputsBinaryMode = DEFAULT_INPUTS_BINARY_MODE;
 configuration.testMode = TEST_MODE;
-// configuration.userFriendsIdsCount = (TEST_MODE) ? TEST_FRIENDS_IDS_COUNT : DEFAULT_FRIENDS_IDS_COUNT;
 configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : DEFAULT_TWEET_FETCH_COUNT;
 configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : DEFAULT_FETCH_COUNT;
 configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
@@ -221,9 +212,6 @@ statsObj.threeceeUser.endFetch = false;
 statsObj.threeceeUser.nextCursor = false;
 statsObj.threeceeUser.nextCursorValid = false;
 statsObj.threeceeUser.friendsFetched = 0;
-
-// let fetchUserFriendsIdsQueueReady = true;
-// let fetchUserFriendsIdsQueue = [];
 
 const TWITTER_RATE_LIMIT_RESOURCES = {
   application: ["rate_limit_status"],
@@ -673,21 +661,16 @@ function filesGetMetadataLocal(options){
 //=========================================================================
 let saveFileQueueInterval;
 const saveFileQueue = [];
-// let statsUpdateInterval;
 
 configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
 
-
 let saveCacheTtl = process.env.SAVE_CACHE_DEFAULT_TTL;
-
-if (saveCacheTtl === undefined) { saveCacheTtl = SAVE_CACHE_DEFAULT_TTL; }
-
-console.log(MODULE_ID_PREFIX + " | SAVE CACHE TTL: " + saveCacheTtl + " SECONDS");
-
 let saveCacheCheckPeriod = process.env.SAVE_CACHE_CHECK_PERIOD;
 
+if (saveCacheTtl === undefined) { saveCacheTtl = SAVE_CACHE_DEFAULT_TTL; }
 if (saveCacheCheckPeriod === undefined) { saveCacheCheckPeriod = 10; }
 
+console.log(MODULE_ID_PREFIX + " | SAVE CACHE TTL: " + saveCacheTtl + " SECONDS");
 console.log(MODULE_ID_PREFIX + " | SAVE CACHE CHECK PERIOD: " + saveCacheCheckPeriod + " SECONDS");
 
 const saveCache = new NodeCache({
@@ -889,7 +872,6 @@ function initSaveFileQueue(cnf) {
   }, cnf.saveFileQueueInterval);
 }
 
-
 //=========================================================================
 // INTERVALS
 //=========================================================================
@@ -931,8 +913,6 @@ async function quit(opts) {
   statsObj.status = "QUIT";
 
   const forceQuitFlag = options.force || false;
-
-  // quitFlag = true;
 
   fsm.fsm_exit();
 
@@ -1171,7 +1151,6 @@ function resetTwitterUserState(){
       statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt = moment();
     });
   });
-
 }
 
 function fetchUserTweets(params){
@@ -1663,7 +1642,7 @@ function initFetchUserTweets(p) {
 
         try {
 
-          latestTweets = await fetchUserTweets({ userId: userId, excludeUser: false });
+          latestTweets = await fetchUserTweets({ userId: userId, excludeUser: true });
 
           if (configuration.verbose) {
             if (latestTweets.length > 0) {
