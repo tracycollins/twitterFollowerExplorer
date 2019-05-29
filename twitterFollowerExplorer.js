@@ -4376,10 +4376,11 @@ function parseImage(params){
 
     twitterImageParser.parseImage(params).
     then(function(hist){
+      console.log(chalkLog("TFE | +++ IMAGE PARSE\n" + jsonPrint(hist)));
       resolve(hist);
     }).
     catch(function(err){
-      console.log(chalkError("*** TWITTER IMAGE PARSER ERROR: " + err));
+      console.log(chalkError("TFE | *** TWITTER IMAGE PARSER ERROR: " + err));
       console.error(err);
       reject(err);
     });
@@ -4932,12 +4933,17 @@ function userProfileChangeHistogram(params) {
 
         imageHist: function(cb) {
 
-          if (configuration.enableImageAnalysis && bannerImageUrl){
+          if (configuration.enableImageAnalysis 
+            && (
+              bannerImageUrl 
+              || (!user.bannerImageAnalyzed && user.bannerImageUrl && (user.bannerImageUrl !== undefined))
+            )
+          ){
 
             parseImage({
               screenName: user.screenName, 
               category: user.category, 
-              imageUrl: bannerImageUrl, 
+              imageUrl: user.bannerImageUrl, 
               histograms: user.profileHistograms,
               updateGlobalHistograms: true
             }).
