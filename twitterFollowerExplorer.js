@@ -895,7 +895,6 @@ function initCategorizedUserHashmap(){
     p.skip = 0;
     p.limit = DEFAULT_FIND_CAT_USER_CURSOR_LIMIT;
     p.batchSize = DEFAULT_CURSOR_BATCH_SIZE;
-    // p.projection = "userId nodeId screenName name lang description location tweets category categoryAuto mentions friendsCount followersCount statusesCount ignored profileHistograms tweetHistograms following threeceeFollowing";
 
     let more = true;
     statsObj.users.categorized.total = 0;
