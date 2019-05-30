@@ -2791,8 +2791,8 @@ function dropboxFileMove(params){
           + " | " + srcPath
           + " > " + dstPath
           + " | SUMMARY: " + err.response.statusText
-          + "\n" + jsonPrint(err)
         ));
+        console.log(err);
       }
       return reject(err);
     });

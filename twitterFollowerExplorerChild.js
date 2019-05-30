@@ -1642,7 +1642,7 @@ function initFetchUserTweets(p) {
 
         try {
 
-          latestTweets = await fetchUserTweets({ userId: userId, excludeUser: true });
+          latestTweets = await fetchUserTweets({ userId: userId, excludeUser: false });
 
           if (configuration.verbose) {
             if (latestTweets.length > 0) {
