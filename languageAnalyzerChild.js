@@ -1,10 +1,9 @@
 /*jslint node: true */
-"use strict";
 
 let maxQueueFlag = false;
 
 const MAX_Q_SIZE = 100;
-const ONE_SECOND = 1000 ;
+const ONE_SECOND = 1000;
 
 const defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
@@ -13,19 +12,19 @@ let analyzeLanguageReady = true;
 let analyzeLanguageInterval;
 let statsUpdateInterval;
 
-const Language = require("@google-cloud/language").v1beta2;
+// const Language = require("@google-cloud/language").v1beta2;
+const Language = require("@google-cloud/language");
 const languageClient = new Language.LanguageServiceClient();
-// const languageClient = new Language.v1.LanguageServiceClient();
 
-let rxLangObjQueue = [];
-let rxWordQueue = [];
+const rxLangObjQueue = [];
+const rxWordQueue = [];
 
-let configuration = {};
+const configuration = {};
 configuration.verbose = false;
 configuration.globalTestMode = false;
 configuration.testMode = false; // 
 configuration.keepaliveInterval = 30*ONE_SECOND;
-configuration.rxQueueInterval = 1*ONE_SECOND;
+configuration.rxQueueInterval = Number(ONE_SECOND);
 
 const os = require("os");
 const util = require("util");
@@ -68,7 +67,9 @@ const jsonPrint = function (obj){
   }
 };
 
-function msToTime(duration) {
+function msToTime(d) {
+
+  let duration = d;
 
   let sign = 1;
 
@@ -99,7 +100,7 @@ console.log("LAC | PROCESS ARGS:  " + util.inspect(process.argv, {showHidden: fa
 console.log("LAC | =================================");
 
 
-let statsObj = {};
+const statsObj = {};
 
 statsObj.hostname = hostname;
 statsObj.pid = process.pid;
@@ -120,6 +121,7 @@ statsObj.analyzer.errors = 0;
 const wordCache = new NodeCache();
 
 function showStats(options){
+
   statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
   statsObj.heap = process.memoryUsage().heapUsed/(1024*1024);
   statsObj.maxHeap = Math.max(statsObj.maxHeap, statsObj.heap);
@@ -156,43 +158,52 @@ function quit(message) {
   process.exit();
 }
 
-function analyzeLanguage(langObj, callback){
+function analyzeLanguage(langObj){
 
-  debug(chalkAlert("analyzeLanguage\n" + jsonPrint(langObj)));
+  return new Promise(async function(resolve, reject){
 
-  const document = {
-    "content": langObj.text,
-    type: "PLAIN_TEXT"
-  };
+    debug(chalkAlert("analyzeLanguage\n" + jsonPrint(langObj)));
 
-  let results = {};
-  results.text = langObj.text;
-  results.sentiment = {};
-  results.entities = {};
+    const document = {
+      "content": langObj.text,
+      type: "PLAIN_TEXT"
+    };
 
-  languageClient.analyzeSentiment({document: document}).then(function(responses) {
+    const results = {};
+    results.text = langObj.text;
+    results.sentiment = {};
+    results.entities = {};
 
-    const sentiment = responses[0].documentSentiment;
+    let responses;
 
-    results.sentiment.score = sentiment.score;
-    results.sentiment.magnitude = sentiment.magnitude;
-    results.sentiment.comp = 100*sentiment.score*sentiment.magnitude;
+    try {
 
-    debug(chalkRed(
-      "M: " + 10*sentiment.magnitude.toFixed(1)
-      + " | S: " + 10*sentiment.score.toFixed(1)
-      + " | C: " + results.sentiment.comp.toFixed(2)
-      + " | KWs: " + jsonPrint(results.keywords)
-      + " | " + langObj.text
-    ));
+      responses = await languageClient.analyzeSentiment({document: document});
 
-    if (callback !== undefined) { callback(null, results); }
-  })
-  .catch(function(err) {
-    debug(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
-    debug(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
-    if (callback !== undefined) { callback(err, results); }
+      const sentiment = responses[0].documentSentiment;
+
+      results.sentiment.score = sentiment.score;
+      results.sentiment.magnitude = sentiment.magnitude;
+      results.sentiment.comp = 100*sentiment.score*sentiment.magnitude;
+
+      debug(chalkRed(
+        "M: " + 10*sentiment.magnitude.toFixed(1)
+        + " | S: " + 10*sentiment.score.toFixed(1)
+        + " | C: " + results.sentiment.comp.toFixed(2)
+        + " | KWs: " + jsonPrint(results.keywords)
+        + " | " + langObj.text
+      ));
+
+      resolve(results);
+
+    }
+    catch(err){
+      debug(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
+      reject(err);
+    }
+
   });
+
 }
 
 function initAnalyzeLanguageInterval(interval){
@@ -206,8 +217,9 @@ function initAnalyzeLanguageInterval(interval){
   analyzeLanguageReady = true;
 
   let messageObj;
+  let results;
 
-  analyzeLanguageInterval = setInterval(function(){ // TX KEEPALIVE
+  analyzeLanguageInterval = setInterval(async function(){ // TX KEEPALIVE
 
     if ((rxLangObjQueue.length > 0) && analyzeLanguageReady) {
 
@@ -234,86 +246,88 @@ function initAnalyzeLanguageInterval(interval){
         maxQueueFlag = true;
       }
 
-      analyzeLanguage(langObj, function(err, results){
+      try{
 
-        if (err){
-          statsObj.analyzer.total += 1;
-          statsObj.analyzer.analyzed += 1;
-          statsObj.analyzer.errors += 1;
+        results = await analyzeLanguage(langObj);
 
-          if (err.code === 3) {
-            debug(chalkLog("LAC [RXLQ: " + rxLangObjQueue.length + "]"
-              + " | UNSUPPORTED LANG"
-              + " | " + langObj.obj.nodeId
-              + " | @" + langObj.obj.screenName
-              + " | " + err
-            ));
+        statsObj.analyzer.total += 1;
+        statsObj.analyzer.analyzed += 1;
+
+        debug(chalkLog("LANGUAGE RESULTS\n" + jsonPrint(results)));
+
+        debug(chalkInfo("==> LANG RESULTS [RXLQ: " + rxLangObjQueue.length + "]"
+          + " | @" + langObj.obj.screenName
+          + " | NID: " + langObj.obj.nodeId
+          + " | M " + 10*results.sentiment.magnitude.toFixed(2)
+          + " | S " + 10*results.sentiment.score.toFixed(1)
+          + " | C " + results.sentiment.comp.toFixed(2)
+          // + " | TEXT: " + results.text
+        ));
+
+        messageObj.op = "LANG_RESULTS";
+        messageObj.obj = langObj.obj;
+        messageObj.results = results;
+        messageObj.stats = statsObj;
+
+        process.send(messageObj, function(){
+          debug(chalkInfo("SENT LANG_RESULTS"));
+          analyzeLanguageReady = true;
+          if (rxLangObjQueue.length === 0){
+            process.send({op: "IDLE", queue: rxLangObjQueue.length});
           }
-          else if (err.code === 8) {
-            console.error(chalkAlert("LAC | *** [RXLQ: " + rxLangObjQueue.length + "]"
-              + " | LANGUAGE QUOTA"
-              + " | " + langObj.obj.nodeId
-              + " | @" + langObj.obj.screenName
-              + " | RESOURCE_EXHAUSTED"
-            ));
-            rxLangObjQueue.push(langObj);
-          }
-          else {
-            console.error(chalkError("LAC | *** [RXLQ: " + rxLangObjQueue.length + "]"
-              + " | LANGUAGE TEXT ERROR"
-              + " | " + langObj.obj.nodeId
-              + " | @" + langObj.obj.screenName
-              + " | " + err
-              + "\nLAC | " + jsonPrint(err)
-            ));
-          }
+        });
+      }
+      catch(err){
 
-          messageObj.op = "LANG_RESULTS";
-          messageObj.obj = langObj.obj;
-          messageObj.error = err;
-          messageObj.results = results;
-          messageObj.stats = statsObj;
+        statsObj.analyzer.total += 1;
+        statsObj.analyzer.analyzed += 1;
+        statsObj.analyzer.errors += 1;
 
-          process.send(messageObj, function(){
-            debug(chalkInfo("LAC | SENT LANG_RESULTS"));
-            analyzeLanguageReady = true;
-            if (rxLangObjQueue.length === 0){
-              process.send({op: "IDLE", queue: rxLangObjQueue.length});
-            }
-          });
-
+        if (err.code === 3) {
+          debug(chalkLog("LAC [RXLQ: " + rxLangObjQueue.length + "]"
+            + " | UNSUPPORTED LANG"
+            + " | " + langObj.obj.nodeId
+            + " | @" + langObj.obj.screenName
+            + " | " + err
+          ));
+        }
+        else if (err.code === 8) {
+          console.error(chalkAlert("LAC | *** [RXLQ: " + rxLangObjQueue.length + "]"
+            + " | LANGUAGE QUOTA"
+            + " | " + langObj.obj.nodeId
+            + " | @" + langObj.obj.screenName
+            + " | RESOURCE_EXHAUSTED"
+          ));
+          rxLangObjQueue.push(langObj);
         }
         else {
-
-          statsObj.analyzer.total += 1;
-          statsObj.analyzer.analyzed += 1;
-
-          debug(chalkLog("LANGUAGE RESULTS\n" + jsonPrint(results)));
-
-          debug(chalkInfo("==> LANG RESULTS [RXLQ: " + rxLangObjQueue.length + "]"
+          console.error(chalkError("LAC | *** [RXLQ: " + rxLangObjQueue.length + "]"
+            + " | LANGUAGE TEXT ERROR"
+            + " | " + langObj.obj.nodeId
             + " | @" + langObj.obj.screenName
-            + " | NID: " + langObj.obj.nodeId
-            + " | M " + 10*results.sentiment.magnitude.toFixed(2)
-            + " | S " + 10*results.sentiment.score.toFixed(1)
-            + " | C " + results.sentiment.comp.toFixed(2)
-            // + " | TEXT: " + results.text
+            + " | " + err
+            + "\nLAC | " + jsonPrint(err)
           ));
-
-          messageObj.op = "LANG_RESULTS";
-          messageObj.obj = langObj.obj;
-          messageObj.results = results;
-          messageObj.stats = statsObj;
-
-          process.send(messageObj, function(){
-            debug(chalkInfo("SENT LANG_RESULTS"));
-            analyzeLanguageReady = true;
-            if (rxLangObjQueue.length === 0){
-              process.send({op: "IDLE", queue: rxLangObjQueue.length});
-            }
-          });
-
         }
-      });
+
+        messageObj.op = "LANG_RESULTS";
+        messageObj.obj = langObj.obj;
+        messageObj.error = err;
+        messageObj.results = results;
+        messageObj.stats = statsObj;
+
+        process.send(messageObj, function(){
+
+          debug(chalkInfo("LAC | SENT LANG_RESULTS"));
+
+          analyzeLanguageReady = true;
+
+          if (rxLangObjQueue.length === 0){
+            process.send({op: "IDLE", queue: rxLangObjQueue.length});
+          }
+
+        });
+      }
     }
     else if ((rxWordQueue.length > 0) && analyzeLanguageReady) {
 
@@ -323,53 +337,68 @@ function initAnalyzeLanguageInterval(interval){
 
       debug(chalkLog("RXWQ< | " + rxWordObj.wordCacheIndex));
 
-      wordCache.get(rxWordObj.wordCacheIndex, function(err, wordHit){
+      wordCache.get(rxWordObj.wordCacheIndex, async function(err, wordHit){
+
         if (err) {
+
           console.log(chalkInfo("LAC | WORD CACHE ERROR"
             + " | " + rxWordObj.wordCacheIndex
             + "\n" + jsonPrint(err)
           ));
           analyzeLanguageReady = true;
+
         }
         else if (wordHit) {
+
           debugLang(chalkLog("LAC | WORD CACHE HIT ... SKIP | " + wordHit.wordCacheIndex));
-          analyzeLanguageReady = true;
           statsObj.analyzer.total += 1;
           statsObj.analyzer.skipped += 1;
+
+          analyzeLanguageReady = true;
         }
         else {
+
           debug(chalkLog("LAC | WORD CACHE MISS | " + rxWordObj.wordCacheIndex));
 
           let wordObj = {};
           wordObj = rxWordObj;
           wordObj.sentiment = {};
 
-          analyzeLanguage({text: wordObj.wordCacheIndex}, function(err, results){
+          try {
+            results = await analyzeLanguage({text: wordObj.wordCacheIndex});
+
+            statsObj.analyzer.total += 1;
+            statsObj.analyzer.analyzed += 1;
+
+            wordObj.sentiment = results.sentiment;
+
+            wordCache.set(wordObj.wordCacheIndex, wordObj);
+
+            debugLang(chalkInfo(
+              "LAC | MAG: " + 10*results.sentiment.magnitude.toFixed(1)
+              + " | SCORE: " + 10*results.sentiment.score.toFixed(1)
+              + " | C: " + results.sentiment.comp.toFixed(2)
+              + " | " + results.text
+            ));
 
             analyzeLanguageReady = true;
-            if (err){
-              statsObj.analyzer.total += 1;
-              statsObj.analyzer.errors += 1;
-              wordObj.sentiment = {};
-              wordCache.set(wordObj.wordCacheIndex, wordObj);
-              console.log(chalkError("LAC | WORD ERROR"
-                + " | " + wordObj.wordCacheIndex
-                + " | " + err
-              ));
-            }
-            else {
-              statsObj.analyzer.total += 1;
-              statsObj.analyzer.analyzed += 1;
-              wordObj.sentiment = results.sentiment;
-              wordCache.set(wordObj.wordCacheIndex, wordObj);
-              debugLang(chalkInfo(
-                "LAC | MAG: " + 10*results.sentiment.magnitude.toFixed(1)
-                + " | SCORE: " + 10*results.sentiment.score.toFixed(1)
-                + " | C: " + results.sentiment.comp.toFixed(2)
-                + " | " + results.text
-              ));
-            }
-          });
+
+          }
+          catch(e){
+
+            statsObj.analyzer.total += 1;
+            statsObj.analyzer.errors += 1;
+
+            wordObj.sentiment = {};
+            wordCache.set(wordObj.wordCacheIndex, wordObj);
+
+            console.log(chalkError("LAC | WORD ERROR"
+              + " | " + wordObj.wordCacheIndex
+              + " | " + e
+            ));
+
+            analyzeLanguageReady = true;
+          }
         }
       });
     }
@@ -399,41 +428,44 @@ const testDocument = {
 };
 
 
-process.on("message", function(m) {
+process.on("message", async function(m) {
 
   debug(chalkAlert("LANG ANAL RX MESSAGE"
     + " | OP: " + m.op
     + "\n" + jsonPrint(m)
   ));
 
+  let responses;
+
   switch (m.op) {
 
     case "INIT":
+
       console.log(chalkInfo("LAC | INIT"
         + " | INTERVAL: " + m.interval
       ));
 
       initAnalyzeLanguageInterval(m.interval);
 
-      languageClient.analyzeSentiment({document: testDocument}).then(function(responses) {
-          const response = responses[0];
-          console.log(chalkInfo("LAC | =========================\nLAC\n" + jsonPrint(response)));
-          process.send({op: "LANG_TEST_PASS", results: response});
-          process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
-      })
-      .catch(function(err) {
-          console.error(chalkError("LAC | *** LANGUAGE TEST ERROR: " + err));
-          process.send({op: "LANG_TEST_FAIL", err: err});
-          process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
-      });
-
+      try{
+        responses = await languageClient.analyzeSentiment({document: testDocument});
+        const response = responses[0];
+        console.log(chalkInfo("LAC | =========================\nLAC\n" + jsonPrint(response)));
+        process.send({op: "LANG_TEST_PASS", results: response});
+        process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
+      }
+      catch(err){
+        console.error(chalkError("LAC | *** LANGUAGE TEST ERROR: " + err));
+        process.send({op: "LANG_TEST_FAIL", err: err});
+        process.send({op: "QUEUE_READY", queue: rxLangObjQueue.length});
+      }
     break;
 
     case "STATS":
       showStats(m.options);
     break;
 
-    case "LANG_ANALIZE":
+    case "ANALYZE":
       rxLangObjQueue.push(m);
       debugLang(chalkInfo("LANG_ANALIZE"
         + " [" + rxLangObjQueue.length + "]"
@@ -475,7 +507,7 @@ wordCache.on("expired", function(word, wordObj) {
   }
 });
 
-const DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN ;
+const DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
 const DROPBOX_LA_CONFIG_FILE = process.env.DROPBOX_LA_CONFIG_FILE || "languageAnalyzerConfig.json";
 const DROPBOX_LA_STATS_FILE = process.env.DROPBOX_LA_STATS_FILE || "languageAnalyzerStats.json";
 
@@ -499,9 +531,9 @@ const dropboxClient = new Dropbox({
 });
 
 function getTimeStamp(inputTime) {
-  let currentTimeStamp ;
+  let currentTimeStamp;
 
-  if (inputTime  === undefined) {
+  if (inputTime === undefined) {
     currentTimeStamp = moment().format(defaultDateTimeFormat);
     return currentTimeStamp;
   }
@@ -523,19 +555,19 @@ function saveFile (path, file, jsonObj, callback){
   debug(chalkInfo("LOAD FILE " + file));
   debug(chalkInfo("FULL PATH " + fullPath));
 
-  let options = {};
+  const options = {};
 
   options.contents = JSON.stringify(jsonObj, null, 2);
   options.path = fullPath;
   options.mode = "overwrite";
   options.autorename = false;
 
-  dropboxClient.filesUpload(options)
-    .then(function(response){
+  dropboxClient.filesUpload(options).
+    then(function(response){
       debug(chalkLog("... SAVED DROPBOX JSON | " + options.path));
       if (callback !== undefined) { callback(null, response); }
-    })
-    .catch(function(error){
+    }).
+    catch(function(error){
       if (error.status === 413){
         console.error(chalkError("LAC | *** " + moment().format(compactDateTimeFormat) 
           + " | ERROR DROBOX JSON WRITE | FILE: " + fullPath 
@@ -595,11 +627,11 @@ function initialize(cnf, callback){
 
   cnf.processName = process.env.LA_PROCESS_NAME || "languageAnalyzer";
 
-  cnf.verbose = process.env.LA_VERBOSE_MODE || false ;
-  cnf.globalTestMode = process.env.LA_GLOBAL_TEST_MODE || false ;
-  cnf.testMode = process.env.LA_TEST_MODE || false ;
-  cnf.quitOnError = process.env.LA_QUIT_ON_ERROR || false ;
-  cnf.targetServer = process.env.LA_UTIL_TARGET_SERVER || "http://localhost:9997/util" ;
+  cnf.verbose = process.env.LA_VERBOSE_MODE || false;
+  cnf.globalTestMode = process.env.LA_GLOBAL_TEST_MODE || false;
+  cnf.testMode = process.env.LA_TEST_MODE || false;
+  cnf.quitOnError = process.env.LA_QUIT_ON_ERROR || false;
+  cnf.targetServer = process.env.LA_UTIL_TARGET_SERVER || "http://localhost:9997/util";
 
   cnf.statsUpdateIntervalTime = process.env.LA_STATS_UPDATE_INTERVAL || 120000;
 
@@ -621,6 +653,6 @@ setTimeout(function(){
     console.log(chalkInfo("LAC | " + cnf.processName + " STARTED " + getTimeStamp() + "\n"));
     initStatsUpdate(cnf);
   });
-}, 1 * ONE_SECOND);
+}, Number(ONE_SECOND));
 
 
