@@ -918,7 +918,7 @@ function initCategorizedUserHashmap(){
     childParams.command = {};
     childParams.command.childId = "tfe_node_child_altthreecee00"
     childParams.command.op = "FETCH_USER_TWEETS";
-    childParams.command.userIdArray = [];
+    childParams.command.userArray = [];
 
     async.whilst(
 
@@ -947,11 +947,16 @@ function initCategorizedUserHashmap(){
 
             statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
 
-            childParams.command.userIdArray = [];
+            childParams.command.userArray = [];
 
             Object.keys(results.obj).forEach(function(nodeId){
               categorizedUserHashmap.set(nodeId, results.obj[nodeId]);
-              childParams.command.userIdArray.push(nodeId);
+              const u = {
+                userId: results.obj[nodeId].userId,
+                screenName: results.obj[nodeId].screenName,
+                tweets: { sinceId: results.obj[nodeId].tweets.sinceId }
+              }
+              childParams.command.userArray.push(results.obj[nodeId]);
             });
 
             childSend(childParams).
@@ -959,7 +964,7 @@ function initCategorizedUserHashmap(){
               if (configuration.verbose || (statsObj.users.categorized.total % 1000 === 0)) {
 
                 console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-                  + " | UIDs: " + childParams.command.userIdArray.length
+                  + " | UIDs: " + childParams.command.userArray.length
                   + " | TOT CAT: " + statsObj.users.categorized.total
                   + " | LIMIT: " + p.limit
                   + " | SKIP: " + p.skip

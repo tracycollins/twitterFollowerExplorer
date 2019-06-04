@@ -1169,12 +1169,12 @@ function fetchUserTweets(params){
 
     const fetchUserTweetsParams = {};
 
-    fetchUserTweetsParams.user_id = params.userId;
+    fetchUserTweetsParams.user_id = params.user.userId;
     fetchUserTweetsParams.trim_user = false;
 
     if (params.excludeUser) { fetchUserTweetsParams.trim_user = true; } 
-    if (params.maxId) { fetchUserTweetsParams.max_id = params.maxId; } 
-    if (params.sinceId) { fetchUserTweetsParams.since_id = params.sinceId; } 
+    if (params.user.maxId) { fetchUserTweetsParams.max_id = params.user.maxId; } 
+    if (params.user.sinceId) { fetchUserTweetsParams.since_id = params.user.sinceId; } 
 
     fetchUserTweetsParams.count = params.tweetFetchCount || configuration.tweetFetchCount;
     fetchUserTweetsParams.exclude_replies = params.excludeReplies || DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES;
@@ -1221,9 +1221,10 @@ function fetchUserTweets(params){
           console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR | USER NOT FOUND"
             + " | " + getTimeStamp() 
             + " | @" + configuration.threeceeUser 
-            + " | FETCH USER ID: " + params.userId
+            + " | UID: " + params.user.userId
+            + " | @" + params.user.screenName
           ));
-          process.send({op: "ERROR", type: "USER_NOT_FOUND", userId: params.userId, threeceeUser: configuration.threeceeUser, error: err});
+          process.send({op: "ERROR", type: "USER_NOT_FOUND", userId: params.user.userId, threeceeUser: configuration.threeceeUser, error: err});
           return reject(err);
         }
         
@@ -1231,9 +1232,10 @@ function fetchUserTweets(params){
           console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR | USER BLOCKED"
             + " | " + getTimeStamp() 
             + " | @" + configuration.threeceeUser 
-            + " | FETCH USER ID: " + params.userId
+            + " | UID: " + params.user.userId
+            + " | @" + params.user.screenName
           ));
-          process.send({op: "ERROR", type: "USER_BLOCKED", userId: params.userId, threeceeUser: configuration.threeceeUser, error: err});
+          process.send({op: "ERROR", type: "USER_BLOCKED", userId: params.user.userId, threeceeUser: configuration.threeceeUser, error: err});
           return reject(err);
         }
         
@@ -1241,16 +1243,18 @@ function fetchUserTweets(params){
           console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR | NOT AUTHORIZED"
             + " | " + getTimeStamp() 
             + " | @" + configuration.threeceeUser 
-            + " | FETCH USER ID: " + params.userId
+            + " | UID: " + params.user.userId
+            + " | @" + params.user.screenName
           ));
-          process.send({op: "ERROR", type: "USER_NOT_AUTHORIZED", userId: params.userId, threeceeUser: configuration.threeceeUser, error: err});
+          process.send({op: "ERROR", type: "USER_NOT_AUTHORIZED", userId: params.user.userId, threeceeUser: configuration.threeceeUser, error: err});
           return reject(err);
         }
         
         console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR"
           + " | " + getTimeStamp() 
-          + " | @" + configuration.threeceeUser 
-          + " | FETCH USER ID: " + params.userId
+          + " | 3C @" + configuration.threeceeUser 
+          + " | UID: " + params.user.userId
+          + " | @" + params.user.screenName
           + " | ERR CODE: " + err.code
           + " | " + err.message
           + "\n" + jsonPrint(err)
@@ -1639,23 +1643,25 @@ function initFetchUserTweets(p) {
 
         fetchUserTweetsQueueReady = false;
 
-        userId = fetchUserTweetsQueue.shift();
+        const user = fetchUserTweetsQueue.shift();
 
         try {
 
-          latestTweets = await fetchUserTweets({ userId: userId, excludeUser: false });
+          latestTweets = await fetchUserTweets({ user: user, excludeUser: false });
 
           // if (configuration.verbose) {
             if (latestTweets.length > 0) {
               console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
                 + " [" + latestTweets.length + "]"
-                + " | " + userId
+                + " | " + user.userId
+                + " | @" + user.screenName
+                + " | SINCE: " + user.tweets.sinceId
               ));
             }
             // else {
             //   console.log(chalk.gray("TFC | --- FETCHED USER TWEETS" 
             //     + " [" + latestTweets.length + "]"
-            //     + " | " + userId
+            //     + " | " + user.userId
             //   ));
             // }
           // }
@@ -1663,7 +1669,7 @@ function initFetchUserTweets(p) {
           process.send(
             {
               op: "USER_TWEETS",
-              userId: userId,
+              userId: user.userId,
               latestTweets: latestTweets
             }, 
 
@@ -1679,24 +1685,24 @@ function initFetchUserTweets(p) {
 
             statsObj.threeceeUser.twitterRateLimitExceptionFlag = true;
 
-            fetchUserTweetsQueue.push(userId);
+            fetchUserTweetsQueue.push(user);
 
             console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS | RATE LIMIT"
               + " | @" + configuration.threeceeUser 
               + " | " + getTimeStamp() 
-              + " | UID: " + userId
+              + " | UID: " + user.userId
               + " | ERR CODE: " + err.code
               + " | " + err.message
             ));
           }
           else if (err.code === 130) { // twitter over capacity
 
-            fetchUserTweetsQueue.push(userId);
+            fetchUserTweetsQueue.push(user);
 
             console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS | OVER CAPACITY"
               + " | @" + configuration.threeceeUser 
               + " | " + getTimeStamp() 
-              + " | UID: " + userId
+              + " | UID: " + user.userId
               + " | ERR CODE: " + err.code
               + " | " + err.message
             ));
@@ -1705,7 +1711,7 @@ function initFetchUserTweets(p) {
             console.log(chalkError("TFC | *** TWITTER FETCH USER TWEETS ERROR"
               + " | @" + configuration.threeceeUser 
               + " | " + getTimeStamp() 
-              + " | UID: " + userId
+              + " | UID: " + user.userId
               + " | ERR CODE: " + err.code
               + " | " + err.message
             ));
@@ -2173,12 +2179,12 @@ process.on("message", async function(m) {
     // break;
 
     case "FETCH_USER_TWEETS":
-      m.userIdArray.forEach(function(userId){
-        fetchUserTweetsQueue.push(userId);
+      m.userArray.forEach(function(user){
+        fetchUserTweetsQueue.push(user);
       });
       console.log(chalkBlue(MODULE_ID_PREFIX
         + " | FETCH_USER_TWEETS"
-        + " | USER ID ARRAY: " + m.userIdArray.length
+        + " | USER ARRAY: " + m.userArray.length
         + " | FUTQ: " + fetchUserTweetsQueue.length
       ));
     break;
