@@ -50,7 +50,7 @@
     "mentions-regex": "^2.0.3",
     "minimatch": "^3.0.4",
     "moment": "^2.24.0",
-    "mongodb": "^3.2.6",
+    "mongodb": "^3.2.7",
     "mongoose": "^5.5.12",
     "mongoose-paginate": "^5.0.3",
     "neataptic": "^1.4.7",

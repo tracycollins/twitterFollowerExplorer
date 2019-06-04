@@ -1170,6 +1170,7 @@ function fetchUserTweets(params){
     const fetchUserTweetsParams = {};
 
     fetchUserTweetsParams.user_id = params.userId;
+    fetchUserTweetsParams.trim_user = false;
 
     if (params.excludeUser) { fetchUserTweetsParams.trim_user = true; } 
     if (params.maxId) { fetchUserTweetsParams.max_id = params.maxId; } 
@@ -1644,20 +1645,20 @@ function initFetchUserTweets(p) {
 
           latestTweets = await fetchUserTweets({ userId: userId, excludeUser: false });
 
-          if (configuration.verbose) {
+          // if (configuration.verbose) {
             if (latestTweets.length > 0) {
-              console.log(chalk.black("TFC | +++ FETCHED USER TWEETS" 
+              console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
                 + " [" + latestTweets.length + "]"
                 + " | " + userId
               ));
             }
-            else {
-              console.log(chalk.gray("TFC | --- FETCHED USER TWEETS" 
-                + " [" + latestTweets.length + "]"
-                + " | " + userId
-              ));
-            }
-          }
+            // else {
+            //   console.log(chalk.gray("TFC | --- FETCHED USER TWEETS" 
+            //     + " [" + latestTweets.length + "]"
+            //     + " | " + userId
+            //   ));
+            // }
+          // }
 
           process.send(
             {

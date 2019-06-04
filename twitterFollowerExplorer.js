@@ -5290,8 +5290,6 @@ function updateUserTweets(params){
     tscParams.twitterEvents = configEvents;
     tscParams.tweetStatus = {};
 
-    let tweetsProcessed = 0;
-
     if (user.tweets.tweetIds.length > DEFAULT_MAX_USER_TWEETIDS) {
 
       const length = user.tweets.tweetIds.length;
@@ -5314,36 +5312,35 @@ function updateUserTweets(params){
       tscParams.tweetStatus.user = user;
       tscParams.tweetStatus.user.isNotRaw = true;
 
-      if (tweet.id_str > user.tweets.maxId) {
-        user.tweets.maxId = tweet.id_str;
+      if (tweet.id_str.toString() > user.tweets.maxId.toString()) {
+        user.tweets.maxId = tweet.id_str.toString();
       }
 
-      if (tweet.id_str > user.tweets.sinceId) {
-        user.tweets.sinceId = tweet.id_str;
+      if (tweet.id_str.toString() > user.tweets.sinceId.toString()) {
+        user.tweets.sinceId = tweet.id_str.toString();
       }
 
-      if (!user.tweets.tweetIds.includes(tweet.id_str)) { 
+      if (!user.tweets.tweetIds.includes(tweet.id_str.toString())) { 
 
         try {
 
           const tweetObj = await tweetServerController.createStreamTweet(tscParams);
 
           user.tweetHistograms = await processTweetObj({tweetObj: tweetObj, histograms: user.tweetHistograms});
-          user.tweets.tweetIds.push(tweet.id_str); 
+          user.tweets.tweetIds.push(tweet.id_str.toString()); 
 
-          tweetsProcessed += 1;
           statsObj.twitter.tweetsProcessed += 1;
           statsObj.twitter.tweetsTotal += 1;
 
-          if (configuration.verbose) {
+          // if (configuration.verbose) {
             console.log(chalkTwitter("TFE | +++ PROCESSED TWEET"
-              + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
+              + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
               + " | TW: " + tweet.id_str
               + " | SINCE: " + user.tweets.sinceId
               + " | TWs: " + user.tweets.tweetIds.length
               + " | @" + user.screenName
             ));
-          }
+          // }
 
           return;
         }
@@ -5359,7 +5356,7 @@ function updateUserTweets(params){
 
         if (configuration.verbose) {
           console.log(chalkInfo("TFE | ... TWEET ALREADY PROCESSED"
-            + " [ H/P/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
+            + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
             + " | TW: " + tweet.id_str
             + " | TWs: " + user.tweets.tweetIds.length
             + " | @" + user.screenName
@@ -5377,8 +5374,7 @@ function updateUserTweets(params){
 
       if (configuration.verbose) {
         console.log(chalkLog("TFE | +++ Ts"
-          + " | " + tweetsProcessed
-          + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + " ]"
+          + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
           + " | Ts: " + user.tweets.tweetIds.length
           + " | @" + user.screenName
         ));
