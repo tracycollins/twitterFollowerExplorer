@@ -4747,7 +4747,7 @@ function checkUserProfileChanged(params) {
         "TFE | USER PROFILE HISTOGRAMS UNDEFINED" 
         + " | RST PREV PROP VALUES" 
         + " | @" + user.screenName 
-        + "\nTFE | PROFILE HISTOGRAMS\n" + jsonPrint(user.profileHistograms) 
+        // + "\nTFE | PROFILE HISTOGRAMS\n" + jsonPrint(user.profileHistograms) 
       ));
 
       user.previousBannerImageUrl = null;
