@@ -65,8 +65,8 @@ const FETCH_COUNT = 200;
 const TEST_TWEET_FETCH_COUNT = 11;
 
 const TEST_MODE_NUM_NN = 10;
-const TEST_FETCH_COUNT = 47;
-const TEST_TOTAL_FETCH = 87;
+const TEST_FETCH_COUNT = 57;
+const TEST_TOTAL_FETCH = 117;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -297,6 +297,9 @@ statsObj.geo.hits = 0;
 statsObj.geo.misses = 0;
 statsObj.geo.total = 0;
 statsObj.geo.hitRate = 0;
+
+statsObj.imageParser = {};
+statsObj.imageParser.rateLimitFlag = false;
 
 statsObj.analyzer = {};
 statsObj.analyzer.analyzed = 0;
@@ -750,6 +753,29 @@ const statsPickArray = [
 ];
 
 statsObjSmall = pick(statsObj, statsPickArray);
+
+let imageParserRateTimitTimeout;
+
+function startImageParserRateTimitTimeout(p) {
+
+  const params = p || {};
+  const period = params.period || 30*ONE_SECOND;
+  const verbose = params.verbose || true;
+
+  clearTimeout(imageParserRateTimitTimeout);
+
+  if (verbose) {
+    console.log(chalkLog(MODULE_ID_PREFIX + " | +++ RATE LIMIT TIMEOUT START | NOW: " + getTimeStamp() + " | PERIOD: " + msToTime(period)));
+  }
+
+  imageParserRateTimitTimeout = setTimeout(function(){
+    if (verbose) {
+      console.log(chalkLog(MODULE_ID_PREFIX + " | XXX RATE LIMIT TIMEOUT END | NOW: " + getTimeStamp() + " | PERIOD: " + msToTime(period)));
+      statsObj.imageParser.rateLimitFlag = false;
+    }
+  }, period);
+
+}
 
 function loadInputsDropbox(params) {
 
@@ -4657,10 +4683,14 @@ function parseImage(params){
     catch(function(err){
 
       if (err.code === 8){
-        console.log(chalkError("TFE | *** TWITTER IMAGE PARSER | RATE LIMIT: " + err));
+        console.log(chalkError("TFE | *** IMAGE PARSER | RATE LIMIT: " + err));
+        statsObj.imageParser.rateLimitFlag = true;
+
+        startImageParserRateTimitTimeout();
+
         return resolve();
       }
-      console.log(chalkError("TFE | *** TWITTER IMAGE PARSER ERROR: " + err));
+      console.log(chalkError("TFE | *** IMAGE PARSER ERROR: " + err));
       console.error(err);
       reject(err);
     });
@@ -5202,6 +5232,11 @@ function userProfileChangeHistogram(params) {
       async.parallel({
 
         imageHist: function(cb) {
+
+          if(statsObj.imageParser.rateLimitFlag){
+            console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
+            return cb(null);
+          }
 
           if (
               (configuration.enableImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl !== user.bannerImageAnalyzed)
