@@ -4655,6 +4655,11 @@ function parseImage(params){
       resolve(hist);
     }).
     catch(function(err){
+
+      if (err.code === 8){
+        console.log(chalkError("TFE | *** TWITTER IMAGE PARSER | RATE LIMIT: " + err));
+        return resolve();
+      }
       console.log(chalkError("TFE | *** TWITTER IMAGE PARSER ERROR: " + err));
       console.error(err);
       reject(err);
@@ -5214,8 +5219,11 @@ function userProfileChangeHistogram(params) {
             then(function(imageParseResults){
               if (imageParseResults) { 
                 bannerImageAnalyzedFlag = true;
+                cb(null, imageParseResults);
               }
-              cb(null, imageParseResults);
+              else{
+                cb(null, {});
+              }
             }).
             catch(function(err){
               console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
