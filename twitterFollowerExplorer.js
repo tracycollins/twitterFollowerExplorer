@@ -5302,11 +5302,11 @@ function updateUserHistograms(p) {
 
       const results = await userProfileChangeHistogram({user: user});
 
-      if (results.profileHistogramChanges) {
+      if (results && results.profileHistogramChanges) {
         user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.profileHistogramChanges });
       }
 
-      if (results.bannerImageAnalyzedFlag) {
+      if (results && results.bannerImageAnalyzedFlag) {
         user.bannerImageAnalyzed = user.bannerImageUrl;
       }
 
