@@ -905,6 +905,9 @@ function initCategorizedUserHashmap(){
     p.skip = 0;
     p.limit = DEFAULT_FIND_CAT_USER_CURSOR_LIMIT;
     p.batchSize = DEFAULT_CURSOR_BATCH_SIZE;
+    p.toObject = true;
+
+    p.projection = "bannerImageAnalyzed bannerImageUrl category categoryAuto description expandedUrl followersCount following friends friendsCount ignored lang location mentions name nodeId previousBannerImageUrl previousDescription previousExpandedUrl previousLocation previousName previousProfileUrl previousScreenName previousStatusId previousUrl profileHistograms profileImageUrl screenName statusesCount statusId threeceeFollowing tweetHistograms tweets url userId";
 
     let more = true;
     statsObj.users.categorized.total = 0;
@@ -4925,7 +4928,7 @@ function userProfileChangeHistogram(params) {
 
           try {
 
-            let locationDoc = await Location.findOne({nodeId: nodeId});
+            let locationDoc = await global.globalLocation.findOne({nodeId: nodeId});
 
             if (!locationDoc) {
 
@@ -4934,7 +4937,7 @@ function userProfileChangeHistogram(params) {
                 + " | N: " + name + " / " + userPropValue
               ));
 
-              locationDoc = new Location({
+              locationDoc = new global.globalLocation({
                 nodeId: nodeId,
                 name: name,
                 nameRaw: userPropValue,
@@ -5199,7 +5202,7 @@ function updateUserHistograms(p) {
 
       const updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: false, noInc: true});
 
-      params.user = updatedUser;
+      params.user = updatedUser.toObject();
 
       if (!params.user.friends || (params.user.friends === undefined)){ 
         params.user.friends = [];
@@ -5219,7 +5222,7 @@ function updateUserHistograms(p) {
 
       await updateGlobalHistograms(params);
 
-      resolve(updatedUser);
+      resolve(params.user);
 
     }
     catch(err){
@@ -5285,7 +5288,6 @@ function updateUserTweets(params){
     user.tweets.sinceId = user.tweets.sinceId || "0";
     user.tweets.tweetIds = user.tweets.tweetIds || [];
 
-    if (user.tweetHistograms === undefined) { user.tweetHistograms = {}; }
 
     const tscParams = {};
 
@@ -5599,7 +5601,8 @@ function initProcessUserQueueInterval(interval) {
 
           const u = categorizedUserHashmap.get(mObj.userId);
 
-          u.latestTweets = u.latestTweets || [];
+          if (u.latestTweets === undefined) { u.latestTweets = []; }
+
           u.latestTweets = _.union(u.latestTweets, mObj.latestTweets);
 
           const user = await processUser({user: u});
