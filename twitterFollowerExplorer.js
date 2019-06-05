@@ -1,3 +1,4 @@
+const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
 const DEFAULT_ENABLE_IMAGE_ANALYSIS = true;
 const DEFAULT_MAX_USER_TWEETIDS = 500;
 const DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL = 10;
@@ -144,6 +145,7 @@ const DROPBOX_LIST_FOLDER_LIMIT = 50;
 
 let configuration = {};
 configuration.enableImageAnalysis = DEFAULT_ENABLE_IMAGE_ANALYSIS;
+configuration.forceImageAnalysis = DEFAULT_FORCE_IMAGE_ANALYSIS;
 configuration.geoCodeEnabled = false;
 configuration.bestNetworkIncrementalUpdate = DEFAULT_BEST_INCREMENTAL_UPDATE;
 configuration.archiveNetworkOnInputsMiss = DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
@@ -169,6 +171,8 @@ const googleMapsClient = require("@google/maps").createClient({
   key: "AIzaSyDBxA6RmuBcyj-t7gfvK61yp8CDNnRLUlc"
 });
 
+const path = require("path");
+const watch = require("watch");
 const randomInt = require("random-int");
 const fetch = require("isomorphic-fetch"); // or another library of choice.
 const urlParse = require("url-parse");
@@ -321,12 +325,18 @@ statsObj.queues.langAnalyzerQueue.size = false;
 statsObj.queues.saveFileQueue = {};
 statsObj.queues.saveFileQueue.busy = false;
 statsObj.queues.saveFileQueue.size = 0;
+
 statsObj.queues.activateNetworkQueue = {};
 statsObj.queues.activateNetworkQueue.busy = false;
 statsObj.queues.activateNetworkQueue.size = 0;
+
 statsObj.queues.processUserQueue = {};
 statsObj.queues.processUserQueue.busy = false;
 statsObj.queues.processUserQueue.size = 0;
+
+statsObj.queues.userDbUpdateQueue = {};
+statsObj.queues.userDbUpdateQueue.busy = false;
+statsObj.queues.userDbUpdateQueue.size = 0;
 
 statsObj.twitter = {};
 statsObj.twitter.errors = 0;
@@ -954,11 +964,6 @@ function initCategorizedUserHashmap(){
 
             Object.keys(results.obj).forEach(function(nodeId){
               categorizedUserHashmap.set(nodeId, results.obj[nodeId]);
-              const u = {
-                userId: results.obj[nodeId].userId,
-                screenName: results.obj[nodeId].screenName,
-                tweets: { sinceId: results.obj[nodeId].tweets.sinceId }
-              }
               childParams.command.userArray.push(results.obj[nodeId]);
             });
 
@@ -1387,7 +1392,8 @@ function showStats(options) {
         + "/" + statsObj.users.categorized.total 
         + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
         + " | ETC (" + statsObj.users.processRateSec.toFixed(3) + " SPU): " + msToTime(statsObj.remainingTimeMs) 
-        + " / " + moment().add(statsObj.remainingTimeMs).format(compactDateTimeFormat)
+        + " / " + moment().add(statsObj.remainingTimeMs).
+format(compactDateTimeFormat)
         + " | " + statsObj.users.categorized.manual + " MAN"
         + " | " + statsObj.users.categorized.auto + " AUTO"
         + " | " + statsObj.users.categorized.matched + " MATCH"
@@ -2144,14 +2150,14 @@ function loadAllConfigFiles(){
 
       if (defaultConfig) {
         defaultConfiguration = defaultConfig;
-        console.log(chalkLog(MODULE_ID_PREFIX + " | +++ RELOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | +++ RELOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
       }
       
       const hostConfig = await loadConfigFile({folder: dropboxConfigHostFolder, file: dropboxConfigHostFile});
 
       if (hostConfig) {
         hostConfiguration = hostConfig;
-        console.log(chalkLog(MODULE_ID_PREFIX + " | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
       }
 
       await loadInputsDropbox({folder: dropboxConfigDefaultFolder, file: defaultInputsConfigFile});
@@ -3128,13 +3134,17 @@ function loadBestNetworksDatabase(paramsIn) {
       console.log(chalkBlue("TFE | LOADING " + limit + " BEST NNs (by OAMR) FROM DB ..."));
 
       nnArrayTopOverallMatchRate = await global.globalNeuralNetwork.find(query).lean().
-      sort({"overallMatchRate": -1}).limit(limit).exec();
+      sort({"overallMatchRate": -1}).
+limit(limit).
+exec();
       console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs (by OAMR) FROM DB ..."));
 
       console.log(chalkBlue("TFE | LOADING " + randomUntestedLimit + " UNTESTED NNs FROM DB ..."));
 
       nnArrayRandomUntested = await global.globalNeuralNetwork.find(randomUntestedQuery).lean().
-      sort({"overallMatchRate": -1}).limit(randomUntestedLimit).exec();
+      sort({"overallMatchRate": -1}).
+limit(randomUntestedLimit).
+exec();
 
       console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
 
@@ -3252,6 +3262,76 @@ function loadMaxInputDropbox(params) {
   });
 }
 
+const watchOptions = {
+  ignoreDotFiles: true,
+  ignoreUnreadableDir: true,
+  ignoreNotPermitted: true,
+}
+
+function initWatchConfig(params){
+
+  statsObj.status = "INIT WATCH CONFIG";
+
+  return new Promise(async function(resolve){
+
+    console.log(chalkLog(MODULE_ID_PREFIX + " | INIT WATCH\n" + jsonPrint(params)));
+
+    const loadConfig = async function(f){
+
+      try{
+
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | +++ FILE CREATED or CHANGED | " + getTimeStamp() + " | " + f));
+
+        if (f.endsWith("twitterFollowerExplorerConfig.json")){
+
+          await loadAllConfigFiles();
+
+          const configArgs = Object.keys(configuration);
+
+          configArgs.forEach(function(arg){
+            if (_.isObject(configuration[arg])) {
+              console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + "\n" + jsonPrint(configuration[arg]));
+            }
+            else {
+              console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + ": " + configuration[arg]);
+            }
+          });
+        }
+
+      }
+      catch(err){
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** LOAD ALL CONFIGS ON CREATE ERROR: " + err));
+      }
+    }
+
+    watch.createMonitor(path.join(DROPBOX_ROOT_FOLDER, dropboxConfigDefaultFolder), watchOptions, function (monitor) {
+
+      monitor.on("created", loadConfig);
+
+      monitor.on("changed", loadConfig);
+
+      monitor.on("removed", function (f) {
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
+      });
+    });
+
+    watch.createMonitor(path.join(DROPBOX_ROOT_FOLDER, dropboxConfigHostFolder), watchOptions, function (monitor) {
+
+      monitor.on("created", loadConfig);
+
+      monitor.on("changed", loadConfig);
+
+      monitor.on("removed", function (f) {
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
+      });
+    });
+
+    resolve();
+
+  });
+}
+
+
 function generateObjFromArray(params){
 
   return new Promise(async function(resolve, reject){
@@ -3360,7 +3440,7 @@ function updateGlobalHistograms(params) {
 
     try {
       mergedHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
-      mergedHistograms.friends = await generateObjFromArray({ keys: params.user.friends, value:1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
+      mergedHistograms.friends = await generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
     }
     catch(err){
       console.log(chalkError("TFE | *** UPDATE GLOBAL HISTOGRAMS ERROR: " + err));
@@ -4089,6 +4169,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval) {
               user.category = m.category;
               user.categoryAuto = m.categoryAuto;
               userDbUpdateQueue.push(user);
+              statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
             }
             else {
               console.log(chalkError("TFE | *** ERROR:  NETWORK_OUTPUT | BEST NN NOT IN HASHMAP???"
@@ -4268,6 +4349,9 @@ function initUserDbUpdateQueueInterval(interval) {
 
     clearInterval(userDbUpdateQueueInterval);
 
+    statsObj.queues.userDbUpdateQueue.busy = false;
+    userDbUpdateQueueReadyFlag = true;
+
     userDbUpdateQueueInterval = setInterval(async function() {
 
       if (userDbUpdateQueueReadyFlag && (userDbUpdateQueue.length > 0)) {
@@ -4275,6 +4359,9 @@ function initUserDbUpdateQueueInterval(interval) {
         userDbUpdateQueueReadyFlag = false;
 
         const user = userDbUpdateQueue.shift();
+
+        statsObj.queues.userDbUpdateQueue.busy = true;
+        statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
 
         try {
           
@@ -4305,7 +4392,7 @@ function initUserDbUpdateQueueInterval(interval) {
         }
 
         userDbUpdateQueueReadyFlag = true;
-              
+        statsObj.queues.userDbUpdateQueue.busy = false;
       }
     }, interval);
 
@@ -4555,14 +4642,16 @@ function parseImage(params){
   return new Promise(function(resolve, reject) {
 
     params.updateGlobalHistograms = (params.updateGlobalHistograms !== undefined) ? params.updateGlobalHistograms : false;
-    params.category = params.user.category || "none";
-    params.imageUrl = params.user.bannerImageUrl;
-    params.histograms = params.user.histograms;
-    params.screenName = params.user.screenName;
+    params.category = params.category || "none";
 
     twitterImageParser.parseImage(params).
     then(function(hist){
-      console.log(chalkLog("TFE | +++ IMAGE PARSE\n" + jsonPrint(hist)));
+      console.log(chalkLog("TFE | +++ IMAGE PARSE" 
+        + " | CAT: " + params.category
+        + " | @" + params.screenName
+        + " | " + params.imageUrl
+        + "\n" + jsonPrint(hist)
+      ));
       resolve(hist);
     }).
     catch(function(err){
@@ -4762,7 +4851,7 @@ function checkUserProfileChanged(params) {
 
     const results = [];
 
-    if (checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
+    if (!user.bannerImageAnalyzed || checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
     if (checkPropertyChange(user, "description")) { results.push("description"); }
     if (checkPropertyChange(user, "expandedUrl")) { results.push("expandedUrl"); }
     if (checkPropertyChange(user, "location")) { results.push("location"); }
@@ -4875,6 +4964,7 @@ function userProfileChangeHistogram(params) {
   return new Promise(async function(resolve, reject){
 
     let userProfileChanges = false;
+    let bannerImageAnalyzedFlag = false;
 
     try {
       userProfileChanges = await checkUserProfileChanged(params);
@@ -4892,14 +4982,19 @@ function userProfileChangeHistogram(params) {
     let text = "";
     const urlsHistogram = {};
     urlsHistogram.urls = {};
-    const bannerImageUrl = false;
+    // const bannerImageUrl = false;
 
     const locationsHistogram = {};
     locationsHistogram.locations = {};
 
     async.each(userProfileChanges, async function(userProp){
 
-      const userPropValue = user[userProp].toLowerCase();
+      let userPropValue = false;
+
+      if (user[userProp] && (user[userProp] !== undefined)) {
+        userPropValue = user[userProp].toLowerCase();
+      }
+
 
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
@@ -4909,7 +5004,14 @@ function userProfileChangeHistogram(params) {
       let lastSeen;
       let name;
 
-      user[prevUserProp] = (!user[prevUserProp] || (user[prevUserProp] === undefined)) ? null : user[prevUserProp];
+      // user[prevUserProp] = (!user[prevUserProp] || (user[prevUserProp] === undefined)) ? null : user[prevUserProp];
+      user[prevUserProp] = (user[prevUserProp] === undefined) ? null : user[prevUserProp];
+
+      if (!userPropValue) {
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | ??? userProfileChangeHistogram USER PROP VALUE FALSE | @" + user.screenName + " | PROP: " + userProp));
+        user[prevUserProp] = user[userProp];
+        return;
+      }
 
       switch (userProp) {
 
@@ -5071,7 +5173,7 @@ function userProfileChangeHistogram(params) {
           domain = urlParse(userPropValue.toLowerCase()).hostname;
           nodeId = btoa(userPropValue.toLowerCase());
 
-          if (domain) { 
+          if (userPropValue && domain) { 
             domainNodeId = btoa(domain);
             urlsHistogram.urls[domainNodeId] = (urlsHistogram.urls[domainNodeId] === undefined) ? 1 : urlsHistogram.urls[domainNodeId] + 1; 
           }
@@ -5088,7 +5190,7 @@ function userProfileChangeHistogram(params) {
     }, function(err){
 
       if (err) {
-        console.log(chalkError("TFE | USER PROFILE HISTOGRAM ERROR: " + err));
+        console.trace(chalkError("TFE | USER PROFILE HISTOGRAM ERROR: " + err));
         return reject(err);
       }
 
@@ -5096,13 +5198,9 @@ function userProfileChangeHistogram(params) {
 
         imageHist: function(cb) {
 
-          if (configuration.enableImageAnalysis 
-            && (
-              bannerImageUrl 
-              || (
-                (!user.bannerImageAnalyzed || (user.bannerImageAnalyzed === undefined)) 
-                && user.bannerImageUrl && (user.bannerImageUrl !== undefined)
-              )
+          if (
+              (configuration.enableImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl !== user.bannerImageAnalyzed)
+            || (configuration.forceImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined))
             )
           ){
 
@@ -5114,6 +5212,9 @@ function userProfileChangeHistogram(params) {
               updateGlobalHistograms: true
             }).
             then(function(imageParseResults){
+              if (imageParseResults) { 
+                bannerImageAnalyzedFlag = true;
+              }
               cb(null, imageParseResults);
             }).
             catch(function(err){
@@ -5158,7 +5259,7 @@ function userProfileChangeHistogram(params) {
 
         mergeHistogramsArray( {histogramArray: [results.textHist, results.imageHist, urlsHistogram, locationsHistogram]} ).
         then(function(histogramsMerged){
-          resolve(histogramsMerged);
+          resolve({ histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag });
         }).
         catch(function(err){
           console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
@@ -5191,10 +5292,14 @@ function updateUserHistograms(p) {
 
     try {
 
-      const profileHistogramChanges = await userProfileChangeHistogram({user: user});
+      const results = await userProfileChangeHistogram({user: user});
 
-      if (profileHistogramChanges) {
-        user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: profileHistogramChanges });
+      if (results.profileHistogramChanges) {
+        user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.profileHistogramChanges });
+      }
+
+      if (results.bannerImageAnalyzedFlag) {
+        user.bannerImageAnalyzed = user.bannerImageUrl;
       }
 
       user.lastHistogramTweetId = user.statusId;
@@ -7188,6 +7293,7 @@ setTimeout(async function(){
 
         neuralNetworkInitialized = true;
 
+        await initWatchConfig();
         await fsmStart();
 
       }
