@@ -1,8 +1,13 @@
+const ONE_SECOND = 1000;
+const ONE_MINUTE = ONE_SECOND*60;
+const compactDateTimeFormat = "YYYYMMDD_HHmmss";
+
 const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
 const DEFAULT_ENABLE_IMAGE_ANALYSIS = true;
 const DEFAULT_MAX_USER_TWEETIDS = 500;
 const DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL = 10;
 const DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL = 250;
+const DEFAULT_IMAGE_PARSE_RATE_LIMIT_TIMEOUT = ONE_MINUTE;
 
 const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
 
@@ -43,10 +48,6 @@ let neuralNetworkInitialized = false;
 
 const RNT_CHILD_ID = CHILD_PREFIX + "_child_rnt";
 const LAC_CHILD_ID = CHILD_PREFIX + "_child_lac";
-
-const ONE_SECOND = 1000;
-const ONE_MINUTE = ONE_SECOND*60;
-const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const DEFAULT_MIN_INTERVAL = 2;
 
@@ -700,6 +701,7 @@ configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.processName = process.env.TFE_PROCESS_NAME || "tfe_node";
 configuration.childPingAllInterval = DEFAULT_CHILD_PING_INTERVAL;
 configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
+configuration.imageParserRateTimitTimeout = DEFAULT_IMAGE_PARSE_RATE_LIMIT_TIMEOUT;
 configuration.interruptFlag = false;
 
 configuration.initMainIntervalTime = DEFAULT_INIT_MAIN_INTERVAL;
@@ -759,7 +761,7 @@ let imageParserRateTimitTimeout;
 function startImageParserRateTimitTimeout(p) {
 
   const params = p || {};
-  const period = params.period || 30*ONE_SECOND;
+  const period = params.period || configuration.imageParserRateTimitTimeout;
   const verbose = params.verbose || true;
 
   clearTimeout(imageParserRateTimitTimeout);
@@ -2063,6 +2065,11 @@ function loadConfigFile(params) {
       if (loadedConfigObj.TFE_FETCH_USER_INTERVAL !== undefined) {
         console.log("TFE | LOADED TFE_FETCH_USER_INTERVAL: " + loadedConfigObj.TFE_FETCH_USER_INTERVAL);
         newConfiguration.fetchUserInterval = loadedConfigObj.TFE_FETCH_USER_INTERVAL;
+      }
+
+      if (loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT !== undefined) {
+        console.log("TFE | LOADED TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT: " + loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT);
+        newConfiguration.imageParserRateTimitTimeout = loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT;
       }
 
       if (loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined) {
@@ -4686,7 +4693,7 @@ function parseImage(params){
         console.log(chalkError("TFE | *** IMAGE PARSER | RATE LIMIT: " + err));
         statsObj.imageParser.rateLimitFlag = true;
 
-        startImageParserRateTimitTimeout();
+        startImageParserRateTimitTimeout(configuration.imageParserRateTimitTimeout);
 
         return resolve();
       }

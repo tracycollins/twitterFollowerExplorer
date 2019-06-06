@@ -4,7 +4,7 @@
   "description": "twitter user follower explorer",
   "main": "twitterFollowerExplorer.js",
   "dependencies": {
-    "@google-cloud/language": "^3.0.0",
+    "@google-cloud/language": "^3.1.0",
     "@google/maps": "^0.5.5",
     "@slack/client": "^5.0.1",
     "@threeceelabs/histogram-parser": "^1.0.20",
