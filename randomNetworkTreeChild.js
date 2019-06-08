@@ -379,14 +379,17 @@ function generateNetworkInputIndexed(params){
 
     let indexOffset = 0;
 
+    let histogramObj = {};
+    let networkInputTypeNames = [];
+
     async.eachSeries(inputTypes, function(inputType, cb0){
 
       debug("RNT | GENERATE NET INPUT | TYPE: " + inputType);
 
-      const histogramObj = params.histograms[inputType];
-      const networkInputTypeNames = params.inputsObj.inputs[inputType];
+      histogramObj = params.histograms[inputType];
+      networkInputTypeNames = params.inputsObj.inputs[inputType];
 
-      async.eachOf(networkInputTypeNames, function(inputName, index, cb1){
+      async.eachOfSeries(networkInputTypeNames, function(inputName, index, cb1){
 
         if (histogramObj && (histogramObj[inputName] !== undefined)) {
 
@@ -438,19 +441,18 @@ function generateNetworkInputIndexed(params){
             }
             else if (histogramObj[inputName] > maxInputHashMap[inputType][inputName]) {
 
-              const previousMaxInput = maxInputHashMap[inputType][inputName]; 
-
-              maxInputHashMap[inputType][inputName] = histogramObj[inputName];
-
               console.log(chalkLog("RNT | MAX INPUT VALUE UPDATED"
                 + " | IN ID: " + params.inputsObj.inputsId
                 + " | CURR IN INDEX: " + networkInput.length + "/" + params.inputsObj.meta.numInputs
                 + " | @" + params.userScreenName
                 + " | TYPE: " + inputType
                 + " | " + inputName
-                + " | PREV MAX: " + previousMaxInput
-                + " | CURR MAX: " + maxInputHashMap[inputType][inputName]
+                + " | PREV MAX: " + maxInputHashMap[inputType][inputName]
+                + " | CURR MAX: " + histogramObj[inputName]
               ));
+
+              maxInputHashMap[inputType][inputName] = histogramObj[inputName];
+
             }
 
             networkInput[indexOffset + index] = (maxInputHashMap[inputType][inputName] > 0) 
@@ -495,11 +497,11 @@ function generateNetworkInputIndexed(params){
 
 function generateObjFromArray(params){
 
-  return new Promise(async function(resolve, reject){
+  return new Promise(async function(resolve){
 
     const keys = params.keys;
     const value = params.value;
-    let result = {};
+    const result = {};
 
     async.each(keys, function(key, cb){
       result[key.toString()] = value;
@@ -521,16 +523,23 @@ function activateNetwork(params){
 
     const networkOutput = {};
     let userHistograms = {};
+    let networkObj;
+    let networkInputObj = {};
+    let output = [];
+    let maxOutputIndex;
+    let categoryAuto;
+    let match;
 
     try {
+
        userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
-       userHistograms.friends = generateObjFromArray({ keys: params.user.friends, value:1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
+       userHistograms.friends = generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
 
       const languageAnalysis = params.user.languageAnalysis;
 
       async.each(networksHashMap.keys(), async function(nnId){
 
-        const networkObj = networksHashMap.get(nnId);
+        networkObj = networksHashMap.get(nnId);
 
         networkOutput[nnId] = {};
         networkOutput[nnId].output = [];
@@ -546,19 +555,17 @@ function activateNetwork(params){
           return ("UNDEFINED NETWORK INPUTS OBJ");
         }
 
-        const generateNetworkInputIndexedParams = {
-          networkId: networkObj.networkId,
-          userScreenName: params.user.screenName,
-          histograms: userHistograms,
-          languageAnalysis: languageAnalysis,
-          inputsObj: networkObj.inputsObj
-        };
-
         try {
 
-          const networkInputObj = await generateNetworkInputIndexed(generateNetworkInputIndexedParams);
+          networkInputObj = await generateNetworkInputIndexed({
+            networkId: networkObj.networkId,
+            userScreenName: params.user.screenName,
+            histograms: userHistograms,
+            languageAnalysis: languageAnalysis,
+            inputsObj: networkObj.inputsObj
+          });
 
-          const output = networkObj.network.activate(networkInputObj.input);
+          output = networkObj.network.activate(networkInputObj.input);
 
           if (output.length !== 3) {
             console.log(chalkError("RNT | *** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
@@ -566,9 +573,7 @@ function activateNetwork(params){
             return("ZERO LENGTH NETWORK OUTPUT");
           }
 
-          const maxOutputIndex = await indexOfMax(output);
-
-          let categoryAuto;
+          maxOutputIndex = await indexOfMax(output);
 
           switch (maxOutputIndex) {
             case 0:
@@ -592,7 +597,7 @@ function activateNetwork(params){
               networkOutput[nnId].none += 1;
           }
 
-          const match = (categoryAuto === params.user.category) ? "MATCH" : "MISS";
+          match = (categoryAuto === params.user.category) ? "MATCH" : "MISS";
 
           if (configuration.verbose) {
             await printNetworkInput({
