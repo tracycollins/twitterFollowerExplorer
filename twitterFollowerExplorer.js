@@ -66,8 +66,8 @@ const FETCH_COUNT = 200;
 const TEST_TWEET_FETCH_COUNT = 11;
 
 const TEST_MODE_NUM_NN = 10;
-const TEST_FETCH_COUNT = 57;
-const TEST_TOTAL_FETCH = 117;
+const TEST_FETCH_COUNT = 27;
+const TEST_TOTAL_FETCH = 47;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -235,7 +235,8 @@ const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 const bestNetworkHashMap = new HashMap();
 let maxInputHashMap = {};
 
-const categorizedUserHashmap = new HashMap();
+// const categorizedUserHashmap = new HashMap();
+const categorizedUserIdSet = new Set();
 
 const processUserQueue = [];
 let processUserQueueInterval;
@@ -926,11 +927,11 @@ function updateDbNetwork(params) {
   });
 }
 
-function initCategorizedUserHashmap(){
+function initCategorizedUserIdSet(){
 
   return new Promise(function(resolve, reject){
 
-    statsObj.status = "INIT CATEGORIZED USER HASHMAP";
+    statsObj.status = "INIT CATEGORIZED USER ID SET";
 
     const p = {};
     p.query = {};
@@ -970,7 +971,7 @@ function initCategorizedUserHashmap(){
         userServerController.findCategorizedUsersCursor(p, function(err, results){
 
           if (err) {
-            console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserHashmap: " + err));
+            console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserIdSet: " + err));
             cb(err);
           }
           else if (
@@ -991,7 +992,8 @@ function initCategorizedUserHashmap(){
             childParams.command.userArray = [];
 
             Object.keys(results.obj).forEach(function(nodeId){
-              categorizedUserHashmap.set(nodeId, results.obj[nodeId]);
+              // categorizedUserHashmap.set(nodeId, results.obj[nodeId]);
+              categorizedUserIdSet.add(nodeId);
               childParams.command.userArray.push(results.obj[nodeId]);
             });
 
@@ -5746,14 +5748,24 @@ function initProcessUserQueueInterval(interval) {
 
         try {
 
-          if (!categorizedUserHashmap.has(mObj.userId)){
-            console.log(chalkAlert("TFE | !!! USER ID NOT IN CATEGORIZED HASHMAP: " + mObj.userId));
+          // if (!categorizedUserHashmap.has(mObj.userId)){
+          //   console.log(chalkAlert("TFE | !!! USER ID NOT IN CATEGORIZED HASHMAP: " + mObj.userId));
+          //   statsObj.users.totalUsersSkipped += 1;
+          //   statsObj.queues.processUserQueue.busy = false;
+          //   return;
+          // }
+
+          // const u = categorizedUserHashmap.get(mObj.userId);
+
+          if (!categorizedUserIdSet.has(mObj.userId)){
+            console.log(chalkAlert("TFE | !!! USER ID NOT IN CATEGORIZED SET: " + mObj.userId));
             statsObj.users.totalUsersSkipped += 1;
             statsObj.queues.processUserQueue.busy = false;
             return;
           }
 
-          const u = categorizedUserHashmap.get(mObj.userId);
+
+          const u = await global.globalUser.findOne({nodeId: mObj.userId});
 
           if (u.latestTweets === undefined) { u.latestTweets = []; }
 
@@ -6104,7 +6116,7 @@ const fsmStates = {
         statsObj.status = "FSM FETCH_ALL";
 
         try{
-          await initCategorizedUserHashmap();
+          await initCategorizedUserIdSet();
           childSendAll({op: "FETCH_START"});
           console.log("TFE | FETCH_ALL | onEnter | " + event);
         }
@@ -6211,7 +6223,7 @@ const fsmStates = {
 
         console.log(chalkInfo("TFE | SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
 
-        async.forEach(DEFAULT_INPUT_TYPES, function(type, cb){
+        async.eachSeries(DEFAULT_INPUT_TYPES, function(type, cb){
 
           if (!globalHistograms[type] || (globalHistograms[type] === undefined)){
             globalHistograms[type] = {};
@@ -6944,9 +6956,15 @@ function childCreate(p){
 
             if (m.type === "USER_NOT_AUTHORIZED") {
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT AUTHORIZED " + m.userId));
+
               userErrorSet.add(m.userId);
+
               statsObj.users.fetchErrors = userErrorSet.size;
-              categorizedUserHashmap.delete(m.userId);
+
+              // categorizedUserHashmap.delete(m.userId);
+
+              categorizedUserIdSet.delete(m.userId);
+
               global.globalUser.deleteOne({nodeId: m.userId}, function(err){
                 if (err) {
                   console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
@@ -6959,10 +6977,16 @@ function childCreate(p){
               break;
             }
             else if (m.type === "USER_BLOCKED") {
+
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER BLOCKED " + m.userId));
+
               userErrorSet.add(m.userId);
+
               statsObj.users.fetchErrors = userErrorSet.size;
-              categorizedUserHashmap.delete(m.userId);
+
+              // categorizedUserHashmap.delete(m.userId);
+              categorizedUserIdSet.delete(m.userId);
+
               global.globalUser.deleteOne({nodeId: m.userId}, function(err){
                 if (err) {
                   console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
@@ -6975,10 +6999,16 @@ function childCreate(p){
               break;
             }
             else if (m.type === "USER_NOT_FOUND") {
+
               console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT FOUND " + m.userId));
+
               userErrorSet.add(m.userId);
+
               statsObj.users.fetchErrors = userErrorSet.size;
-              categorizedUserHashmap.delete(m.userId);
+
+              // categorizedUserHashmap.delete(m.userId);
+              categorizedUserIdSet.delete(m.userId);
+
               global.globalUser.deleteOne({nodeId: m.userId}, function(err){
                 if (err) {
                   console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
@@ -7066,7 +7096,8 @@ function childCreate(p){
 
           case "USER_FRIENDS":
 
-            if (categorizedUserHashmap.has(m.userId)){
+            // if (categorizedUserHashmap.has(m.userId)){
+            if (categorizedUserIdSet.has(m.userId)){
 
               processUserQueue.push(m);
               statsObj.queues.processUserQueue.size = processUserQueue.length;
@@ -7084,7 +7115,8 @@ function childCreate(p){
 
           case "USER_TWEETS":
 
-            if (categorizedUserHashmap.has(m.userId)){
+            // if (categorizedUserHashmap.has(m.userId)){
+            if (categorizedUserIdSet.has(m.userId)){
 
               processUserQueue.push(m);
               statsObj.queues.processUserQueue.size = processUserQueue.length;

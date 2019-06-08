@@ -2169,17 +2169,6 @@ process.on("message", async function(m) {
       fsm.fsm_idle();
     break;
 
-    // case "FETCH_USER_FRIENDS":
-    //   m.userIdArray.forEach(function(userId){
-    //     fetchUserFriendsIdsQueue.push(userId);
-    //   });
-    //   console.log(chalkBlue(MODULE_ID_PREFIX
-    //     + " | FETCH_USER_FRIENDS"
-    //     + " | USER ID ARRAY: " + m.userIdArray.length
-    //     + " | FUFIQ: " + fetchUserFriendsIdsQueue.length
-    //   ));
-    // break;
-
     case "FETCH_USER_TWEETS":
       m.userArray.forEach(function(user){
         fetchUserTweetsQueue.push(user);
