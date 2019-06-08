@@ -595,7 +595,7 @@ function activateNetwork(params){
           const match = (categoryAuto === params.user.category) ? "MATCH" : "MISS";
 
           if (configuration.verbose) {
-            printNetworkInput({
+            await printNetworkInput({
               title: networkObj.networkId
               + " | @" + params.user.screenName 
               + " | C: " + params.user.category 
