@@ -1212,24 +1212,23 @@ function connectDb(){
         if (err) {
           console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR: " + err));
           statsObj.status = "MONGO CONNECTION ERROR";
-          // dbConnectionReady = false;
           quit({cause: "MONGO DB ERROR: " + err});
           return reject(err);
         }
 
+        db.on("close", async function(){
+          statsObj.status = "MONGO CLOSED";
+          console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED"));
+        });
+
         db.on("error", async function(){
           statsObj.status = "MONGO ERROR";
           console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR"));
-          db.close();
-          // dbConnectionReady = false;
-          quit({cause: "MONGO DB ERROR: " + err});
         });
 
         db.on("disconnected", async function(){
           statsObj.status = "MONGO DISCONNECTED";
           console.log(chalkAlert(MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED"));
-          // dbConnectionReady = false;
-          quit({cause: "MONGO DB DISCONNECTED"});
         });
 
 

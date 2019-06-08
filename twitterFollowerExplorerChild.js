@@ -413,20 +413,22 @@ function connectDb(){
           return reject(err);
         }
 
+        db.on("close", async function(){
+          statsObj.status = "MONGO CLOSED";
+          console.error.bind(console, MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED");
+          console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED"));
+        });
+
         db.on("error", async function(){
           statsObj.status = "MONGO ERROR";
           console.error.bind(console, MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR");
           console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR"));
-          db.close();
-          quit({cause: "MONGO DB ERROR: " + err});
         });
 
         db.on("disconnected", async function(){
           statsObj.status = "MONGO DISCONNECTED";
           console.error.bind(console, MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED");
-          // slackSendMessage(hostname + " | TFE | " + statsObj.status);
           console.log(chalkAlert(MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED"));
-          quit({cause: "MONGO DB DISCONNECTED"});
         });
 
 

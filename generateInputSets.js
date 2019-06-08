@@ -1318,17 +1318,23 @@ function connectDb(){
         return reject(err);
       }
 
+      db.on("close", function(){
+        statsObj.status = "MONGO CONNECTION CLOSED";
+        console.error.bind(console, "*** GIS | MONGO DB CONNECTION CLOSED ***\n");
+        console.log(chalkError("*** GIS | MONGO DB CONNECTION CLOSED ***\n"));
+      });
+
       db.on("error", function(){
+        statsObj.status = "MONGO CONNECTION ERROR";
         console.error.bind(console, "*** GIS | MONGO DB CONNECTION ERROR ***\n");
         console.log(chalkError("*** GIS | MONGO DB CONNECTION ERROR ***\n"));
-        db.close();
       });
 
       db.on("disconnected", function(){
+        statsObj.status = "MONGO DISCONNECTED";
         console.error.bind(console, "*** GIS | MONGO DB DISCONNECTED ***\n");
         console.log(chalkAlert("*** GIS | MONGO DB DISCONNECTED ***\n"));
       });
-
 
       console.log(chalkBlue("GIS | MONGOOSE DEFAULT CONNECTION OPEN"));
 

@@ -511,8 +511,6 @@ function generateObjFromArray(params){
   });
 }
 
-
-
 let activateNetworkBusy = false;
 
 function activateNetwork(params){
