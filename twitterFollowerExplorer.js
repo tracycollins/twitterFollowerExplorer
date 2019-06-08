@@ -5729,6 +5729,9 @@ function initProcessUserQueueInterval(interval) {
     statsObj.status = "INIT PROCESS USER QUEUE";
 
     let mObj = {};
+    let user;
+    let processedUser;
+    let userUpdated;
 
     console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + PROCESS_USER_QUEUE_INTERVAL + " MS"));
 
@@ -5748,15 +5751,6 @@ function initProcessUserQueueInterval(interval) {
 
         try {
 
-          // if (!categorizedUserHashmap.has(mObj.userId)){
-          //   console.log(chalkAlert("TFE | !!! USER ID NOT IN CATEGORIZED HASHMAP: " + mObj.userId));
-          //   statsObj.users.totalUsersSkipped += 1;
-          //   statsObj.queues.processUserQueue.busy = false;
-          //   return;
-          // }
-
-          // const u = categorizedUserHashmap.get(mObj.userId);
-
           if (!categorizedUserIdSet.has(mObj.userId)){
             console.log(chalkAlert("TFE | !!! USER ID NOT IN CATEGORIZED SET: " + mObj.userId));
             statsObj.users.totalUsersSkipped += 1;
@@ -5764,35 +5758,39 @@ function initProcessUserQueueInterval(interval) {
             return;
           }
 
+          user = await global.globalUser.findOne({nodeId: mObj.userId});
 
-          const u = await global.globalUser.findOne({nodeId: mObj.userId});
+          if (!user) {
+            console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB\n" + jsonPrint(mObj)));
+            statsObj.users.totalUsersSkipped += 1;
+            statsObj.queues.processUserQueue.busy = false;
+            return;
+          }
 
-          if (u.latestTweets === undefined) { u.latestTweets = []; }
+          if (user.latestTweets === undefined) { user.latestTweets = []; }
 
-          u.latestTweets = _.union(u.latestTweets, mObj.latestTweets);
+          user.latestTweets = _.union(user.latestTweets, mObj.latestTweets);
 
-          const user = await processUser({user: u});
+          processedUser = await processUser({user: user});
 
           if (configuration.verbose) {
             console.log(chalkAlert("TFE | PROCESSED USER"
-              + " | UID: " + user.userId
-              + " | @" + user.screenName
-              // + " | FRNDs: " + u.latestFriends.length
-              + " | LTs: " + u.latestTweets.length
-              // + " | Ts: " + user.tweets.length
+              + " | UID: " + processedUser.userId
+              + " | @" + processedUser.screenName
+              + " | LTs: " + user.latestTweets.length
             ));
           }
 
           statsObj.users.processed += 1;
           statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
 
-          debug("PROCESSED USER\n" + jsonPrint(user));
+          debug("PROCESSED USER\n" + jsonPrint(processedUser));
 
           if (statsObj.users.processed % 100 === 0) {
             showStats();
           }
 
-          const userUpdated = await updatePreviousUserProps({user: user});
+          userUpdated = await updatePreviousUserProps({user: processedUser});
 
           await userServerController.findOneUserV2({user: userUpdated, mergeHistograms: false, noInc: true});
 
