@@ -521,25 +521,27 @@ function activateNetwork(params){
 
     activateNetworkBusy = true;
 
-    const networkOutput = {};
-    let userHistograms = {};
-    let networkObj;
-    let networkInputObj = {};
-    let output = [];
-    let maxOutputIndex;
-    let categoryAuto;
-    let match;
+    // const networkOutput = {};
+    // let userHistograms = {};
+    // let networkObj;
+    // let networkInputObj = {};
+    // let output = [];
+    // let maxOutputIndex;
+    // let categoryAuto;
+    // let match;
 
     try {
 
-       userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
-       userHistograms.friends = generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
+      const userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
+      userHistograms.friends = generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
 
       const languageAnalysis = params.user.languageAnalysis;
 
+      const networkOutput = {};
+
       async.each(networksHashMap.keys(), async function(nnId){
 
-        networkObj = networksHashMap.get(nnId);
+        const networkObj = networksHashMap.get(nnId);
 
         networkOutput[nnId] = {};
         networkOutput[nnId].output = [];
@@ -557,7 +559,7 @@ function activateNetwork(params){
 
         try {
 
-          networkInputObj = await generateNetworkInputIndexed({
+          const networkInputObj = await generateNetworkInputIndexed({
             networkId: networkObj.networkId,
             userScreenName: params.user.screenName,
             histograms: userHistograms,
@@ -565,7 +567,7 @@ function activateNetwork(params){
             inputsObj: networkObj.inputsObj
           });
 
-          output = networkObj.network.activate(networkInputObj.input);
+          const output = networkObj.network.activate(networkInputObj.input);
 
           if (output.length !== 3) {
             console.log(chalkError("RNT | *** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
@@ -573,7 +575,9 @@ function activateNetwork(params){
             return("ZERO LENGTH NETWORK OUTPUT");
           }
 
-          maxOutputIndex = await indexOfMax(output);
+          const maxOutputIndex = await indexOfMax(output);
+
+          let categoryAuto;
 
           switch (maxOutputIndex) {
             case 0:
@@ -597,7 +601,7 @@ function activateNetwork(params){
               networkOutput[nnId].none += 1;
           }
 
-          match = (categoryAuto === params.user.category) ? "MATCH" : "MISS";
+          const match = (categoryAuto === params.user.category) ? "MATCH" : "MISS";
 
           if (configuration.verbose) {
             await printNetworkInput({

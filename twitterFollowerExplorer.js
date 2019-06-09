@@ -66,8 +66,8 @@ const FETCH_COUNT = 200;
 const TEST_TWEET_FETCH_COUNT = 11;
 
 const TEST_MODE_NUM_NN = 10;
-const TEST_FETCH_COUNT = 27;
-const TEST_TOTAL_FETCH = 47;
+const TEST_FETCH_COUNT = 51;
+const TEST_TOTAL_FETCH = 147;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
