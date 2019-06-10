@@ -5051,7 +5051,9 @@ function userProfileChangeHistogram(params) {
       user[prevUserProp] = (user[prevUserProp] === undefined) ? null : user[prevUserProp];
 
       if (!userPropValue) {
-        console.log(chalkLog(MODULE_ID_PREFIX + " | ??? userProfileChangeHistogram USER PROP VALUE FALSE | @" + user.screenName + " | PROP: " + userProp));
+        if (configuration.verbose) {
+          console.log(chalkLog(MODULE_ID_PREFIX + " | ??? userProfileChangeHistogram USER PROP VALUE FALSE | @" + user.screenName + " | PROP: " + userProp));
+        }
         user[prevUserProp] = user[userProp];
         return;
       }
