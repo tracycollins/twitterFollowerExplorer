@@ -29,7 +29,7 @@
     "deep-copy": "^1.4.2",
     "deepmerge": "^3.2.0",
     "dot-object": "^1.7.1",
-    "dropbox": "^4.0.17",
+    "dropbox": "^4.0.26",
     "emoji-regex": "^8.0.0",
     "event-stream": "^4.0.1",
     "eventemitter2": "^5.0.1",
