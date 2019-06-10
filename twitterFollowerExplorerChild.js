@@ -194,6 +194,9 @@ statsObj.elapsed = getElapsedTimeStamp();
 
 statsObj.users = {};
 
+statsObj.tweets = {};
+statsObj.tweets.fetched = 0;
+
 statsObj.queues = {};
 statsObj.queues.saveFileQueue = {};
 statsObj.queues.saveFileQueue.busy = false;
@@ -1651,22 +1654,21 @@ function initFetchUserTweets(p) {
 
           latestTweets = await fetchUserTweets({ user: user, excludeUser: false });
 
-          // if (configuration.verbose) {
             if (latestTweets.length > 0) {
-              console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
-                + " [" + latestTweets.length + "]"
-                + " | " + user.userId
-                + " | @" + user.screenName
-                + " | SINCE: " + user.tweets.sinceId
-              ));
+
+              statsObj.tweets.fetched += latestTweets.length;
+
+              if (statsObj.tweets.fetched % 100 === 0) {
+
+                console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
+                  + " [ " + latestTweets.length + " LATEST / " + statsObj.tweets.fetched + " TOT FETCHED ]"
+                  + " | " + user.userId
+                  + " | @" + user.screenName
+                  + " | SINCE: " + user.tweets.sinceId
+                ));
+              }
+
             }
-            // else {
-            //   console.log(chalk.gray("TFC | --- FETCHED USER TWEETS" 
-            //     + " [" + latestTweets.length + "]"
-            //     + " | " + user.userId
-            //   ));
-            // }
-          // }
 
           process.send(
             {
