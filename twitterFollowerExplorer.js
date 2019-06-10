@@ -3314,7 +3314,7 @@ function initWatchConfig(params){
 
       try{
 
-        console.log(chalkAlert(MODULE_ID_PREFIX + " | +++ FILE CREATED or CHANGED | " + getTimeStamp() + " | " + f));
+        console.log(chalkInfo(MODULE_ID_PREFIX + " | +++ FILE CREATED or CHANGED | " + getTimeStamp() + " | " + f));
 
         if (f.endsWith("twitterFollowerExplorerConfig.json")){
 
