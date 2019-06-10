@@ -5495,7 +5495,7 @@ function updateUserTweets(params){
           statsObj.twitter.tweetsProcessed += 1;
           statsObj.twitter.tweetsTotal += 1;
 
-          // if (configuration.verbose) {
+          if (configuration.verbose || (statsObj.twitter.tweetsTotal % 100 === 0)) {
             console.log(chalkTwitter("TFE | +++ PROCESSED TWEET"
               + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
               + " | TW: " + tweet.id_str
@@ -5503,7 +5503,7 @@ function updateUserTweets(params){
               + " | TWs: " + user.tweets.tweetIds.length
               + " | @" + user.screenName
             ));
-          // }
+          }
 
           return;
         }
