@@ -659,7 +659,7 @@ function printNetworkResults(params){
 
     async.eachOf(sortedNetworkResults.sortedKeys, function(nnId, index, cb0){
 
-      statsObj.loadedNetworks[nnId].rank = index;
+      // statsObj.loadedNetworks[nnId].rank = index;
 
       statsTextArray[index] = statsTextObj[nnId];
 
@@ -673,7 +673,9 @@ function printNetworkResults(params){
       }
 
       statsTextArray.unshift([
-        "RNT | NNID",
+        "RNT | ",
+        "RANK",
+        "NNID",
         "INPUTSID",
         "INPUTS",
         "OMR",
@@ -696,7 +698,7 @@ function printNetworkResults(params){
           "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
         + "\nRNT | " + params.title 
         + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------\n"
-        + table(statsTextArray, { align: ["l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+        + table(statsTextArray, { align: ["l", "r", "l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
         + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
       ));
 
@@ -706,6 +708,26 @@ function printNetworkResults(params){
 
   });
 
+}
+
+function updateNetworkRank(){
+  return new Promise(function(resolve){
+    async.eachOf(sortedNetworkResults.sortedKeys, function(nnId, index, cb){
+
+      statsObj.loadedNetworks[nnId].rank = index;
+
+      if (statsTextObj[nnId]) {
+        statsTextObj[nnId][1] = index;
+      }
+
+      async.setImmediate(function() { cb(); });
+
+    }, function(){
+
+      resolve();
+
+    });
+  });
 }
 
 // const sum = (r, a) => r.map((b, i) => a[i] + b);
@@ -761,7 +783,7 @@ function generateNetworksOutput(params){
         statsObj.loadedNetworks[nnId].successRate = nn.successRate;
         statsObj.loadedNetworks[nnId].matchRate = nn.matchRate;
         statsObj.loadedNetworks[nnId].overallMatchRate = nn.overallMatchRate;
-        statsObj.loadedNetworks[nnId].rank = Infinity;
+        statsObj.loadedNetworks[nnId].rank = "";
         statsObj.loadedNetworks[nnId].total = 0;
         statsObj.loadedNetworks[nnId].match = 0;
         statsObj.loadedNetworks[nnId].mismatch = 0;
@@ -783,7 +805,7 @@ function generateNetworksOutput(params){
         statsObj.allTimeLoadedNetworks[nnId].successRate = nn.successRate;
         statsObj.allTimeLoadedNetworks[nnId].matchRate = nn.matchRate;
         statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = nn.overallMatchRate;
-        statsObj.allTimeLoadedNetworks[nnId].rank = Infinity;
+        statsObj.allTimeLoadedNetworks[nnId].rank = "";
         statsObj.allTimeLoadedNetworks[nnId].total = 0;
         statsObj.allTimeLoadedNetworks[nnId].match = 0;
         statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
@@ -833,7 +855,9 @@ function generateNetworksOutput(params){
 
       statsTextObj[nnId] = {};
       statsTextObj[nnId] = [
-        "RNT | " + nnId,
+        "RNT | ",
+        statsObj.loadedNetworks[nnId].rank,
+        nnId,
         statsObj.allTimeLoadedNetworks[nnId].inputsId,
         statsObj.allTimeLoadedNetworks[nnId].numInputs,
         statsObj.allTimeLoadedNetworks[nnId].overallMatchRate.toFixed(2),
@@ -865,6 +889,8 @@ function generateNetworksOutput(params){
           console.log(chalkAlert("RNT | *** ERROR NO sortedNetworkResults??"));
           return reject(new Error("NO RESULTS"));
         }
+
+        await updateNetworkRank();
 
         const currentBestNetworkId = sortedNetworkResults.sortedKeys[0];
         
@@ -1315,6 +1341,7 @@ function loadNetwork(params){
       statsObj.bestNetwork.successRate = networkObj.successRate;
       statsObj.bestNetwork.matchRate = networkObj.matchRate;
       statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate;
+      statsObj.bestNetwork.rank = networkObj.rank || "";
       statsObj.bestNetwork.testCycles = networkObj.testCycles;
       statsObj.bestNetwork.testCycleHistory = [];
       statsObj.bestNetwork.testCycleHistory = networkObj.testCycleHistory;
@@ -1338,6 +1365,7 @@ function loadNetwork(params){
       statsObj.loadedNetworks[networkObj.networkId].successRate = networkObj.successRate;
       statsObj.loadedNetworks[networkObj.networkId].matchRate = networkObj.matchRate;
       statsObj.loadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+      statsObj.loadedNetworks[networkObj.networkId].rank = networkObj.rank || "";
       statsObj.loadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
       statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = [];
       statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
@@ -1365,6 +1393,7 @@ function loadNetwork(params){
       statsObj.allTimeLoadedNetworks[networkObj.networkId].successRate = networkObj.successRate;
       statsObj.allTimeLoadedNetworks[networkObj.networkId].matchRate = networkObj.matchRate;
       statsObj.allTimeLoadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+      statsObj.allTimeLoadedNetworks[networkObj.networkId].rank = networkObj.rank || "";
       statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
       statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = [];
       statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
@@ -1380,6 +1409,7 @@ function loadNetwork(params){
     }
 
     statsObj.allTimeLoadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+    statsObj.allTimeLoadedNetworks[networkObj.networkId].rank = networkObj.rank || "";
     statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
     statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
 
@@ -1389,6 +1419,7 @@ function loadNetwork(params){
       + " | SR: " + networkObj.successRate.toFixed(2) + "%"
       + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
       + " | OMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+      + " | RANK: " + networkObj.rank
       + " | TC: " + networkObj.testCycles
       + " | TCH: " + networkObj.testCycleHistory.length
       + " | " + networkObj.networkId

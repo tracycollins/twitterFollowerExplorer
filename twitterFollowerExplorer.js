@@ -845,6 +845,7 @@ function printNetworkObj(title, nObj, format) {
   const networkObj = networkDefaults(nObj);
 
   console.log(chalkFormat(title
+    + " | RANK: " + networkObj.rank
     + " | ARCHIVED: " + networkObj.archived
     + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
     + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
@@ -894,6 +895,7 @@ function updateDbNetwork(params) {
       archived: networkObj.archived,
       matchRate: networkObj.matchRate, 
       overallMatchRate: networkObj.overallMatchRate,
+      rank: networkObj.rank
     };
 
     if (incrementTestCycles) { update.$inc = { testCycles: 1 }; }
@@ -3971,6 +3973,7 @@ function saveBestNetworkFileCache(params) {
       overallMatchRate: params.network.overallMatchRate,
       testCycles: params.network.testCycles,
       testCycleHistory: params.network.testCycleHistory,
+      rank: params.network.rank,
       updatedAt: getTimeStamp()
     };
 
@@ -4052,6 +4055,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval) {
                   overallMatchRate: currentBestNetwork.overallMatchRate,
                   testCycles: currentBestNetwork.testCycles,
                   testCycleHistory: currentBestNetwork.testCycleHistory,
+                  rank: currentBestNetwork.rank,
                   twitterStats: statsObj.twitter,
                   updatedAt: moment()
                 };
@@ -4272,6 +4276,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval) {
                   overallMatchRate: currentBestNetwork.overallMatchRate,
                   testCycles: currentBestNetwork.testCycles,
                   testCycleHistory: currentBestNetwork.testCycleHistory,
+                  rank: currentBestNetwork.rank,
                   twitterStats: statsObj.twitter,
                   updatedAt: moment()
                 };
