@@ -692,7 +692,9 @@ function unionInputSets(params) {
       let inputsObj = {};
 
       try{
+
         inputsObj = await NetworkInputs.findOne({inputsId: inputsId}).lean(true).exec();
+        
         if (inputsObj) {
           console.log(chalkLog("UBI | UNION INPUT SET FOUND\n" + jsonPrint(inputsObj.meta)));
         }
