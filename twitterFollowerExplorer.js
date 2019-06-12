@@ -1,3 +1,7 @@
+const MODULE_NAME = "twitterFollowerExplorer";
+const MODULE_ID_PREFIX = "TFE";
+const CHILD_PREFIX = "tfe_node";
+
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
@@ -21,6 +25,8 @@ hostname = hostname.replace(/\.fios-router\.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 hostname = hostname.replace(/word/g, "google");
 
+const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
+
 let DROPBOX_ROOT_FOLDER;
 
 if (hostname === "google") {
@@ -29,10 +35,6 @@ if (hostname === "google") {
 else {
   DROPBOX_ROOT_FOLDER = "/Users/tc/Dropbox/Apps/wordAssociation";
 }
-
-const MODULE_NAME = "twitterFollowerExplorer";
-const MODULE_ID_PREFIX = "TFE";
-const CHILD_PREFIX = "tfe_node";
 
 const DEFAULT_FIND_CAT_USER_CURSOR_LIMIT = 100;
 const DEFAULT_CURSOR_BATCH_SIZE = 100;
@@ -228,14 +230,9 @@ const chalkAlert = chalk.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 
-
-const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
-
-// const twitterUserHashMap = {};
 const bestNetworkHashMap = new HashMap();
 let maxInputHashMap = {};
 
-// const categorizedUserHashmap = new HashMap();
 const categorizedUserIdSet = new Set();
 
 const processUserQueue = [];
@@ -994,7 +991,6 @@ function initCategorizedUserIdSet(){
             childParams.command.userArray = [];
 
             Object.keys(results.obj).forEach(function(nodeId){
-              // categorizedUserHashmap.set(nodeId, results.obj[nodeId]);
               categorizedUserIdSet.add(nodeId);
               childParams.command.userArray.push(results.obj[nodeId]);
             });
@@ -5563,7 +5559,6 @@ function processUser(params) {
     statsObj.status = "PROCESS USER";
 
     const userIn = params.user;
-    // const threeceeUser = params.threeceeUser || "altthreecee00";
 
     debug(chalkInfo("PROCESS USER\n" + jsonPrint(userIn)));
 
@@ -5575,7 +5570,6 @@ function processUser(params) {
     let user;
 
     try {
-      // user = await updateUserTweets({user: userIn, tweets: userIn.latestTweets});
       user = await updateUserTweets({user: userIn});
     }
     catch(err) {
@@ -5607,8 +5601,6 @@ function processUser(params) {
         if (userIn.location && (userIn.location !== undefined) && (user.location !== userIn.location)) {
           user.location = userIn.location;
         }
-
-        // userIn.url = _.get(userIn, "entities.url.urls[0].expanded_url", userIn.url);
 
         if (userIn.url && (userIn.url !== undefined) && (user.url !== userIn.url)) {
           user.url = userIn.url;
@@ -6966,8 +6958,6 @@ function childCreate(p){
 
               statsObj.users.fetchErrors = userErrorSet.size;
 
-              // categorizedUserHashmap.delete(m.userId);
-
               categorizedUserIdSet.delete(m.userId);
 
               global.globalUser.deleteOne({nodeId: m.userId}, function(err){
@@ -6989,7 +6979,6 @@ function childCreate(p){
 
               statsObj.users.fetchErrors = userErrorSet.size;
 
-              // categorizedUserHashmap.delete(m.userId);
               categorizedUserIdSet.delete(m.userId);
 
               global.globalUser.deleteOne({nodeId: m.userId}, function(err){
@@ -7011,7 +7000,6 @@ function childCreate(p){
 
               statsObj.users.fetchErrors = userErrorSet.size;
 
-              // categorizedUserHashmap.delete(m.userId);
               categorizedUserIdSet.delete(m.userId);
 
               global.globalUser.deleteOne({nodeId: m.userId}, function(err){
@@ -7101,7 +7089,6 @@ function childCreate(p){
 
           case "USER_FRIENDS":
 
-            // if (categorizedUserHashmap.has(m.userId)){
             if (categorizedUserIdSet.has(m.userId)){
 
               processUserQueue.push(m);
@@ -7120,7 +7107,6 @@ function childCreate(p){
 
           case "USER_TWEETS":
 
-            // if (categorizedUserHashmap.has(m.userId)){
             if (categorizedUserIdSet.has(m.userId)){
 
               processUserQueue.push(m);
