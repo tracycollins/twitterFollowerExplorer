@@ -783,7 +783,7 @@ function generateNetworksOutput(params){
         statsObj.loadedNetworks[nnId].successRate = nn.successRate;
         statsObj.loadedNetworks[nnId].matchRate = nn.matchRate;
         statsObj.loadedNetworks[nnId].overallMatchRate = nn.overallMatchRate;
-        statsObj.loadedNetworks[nnId].rank = "";
+        statsObj.loadedNetworks[nnId].rank = Infinity;
         statsObj.loadedNetworks[nnId].total = 0;
         statsObj.loadedNetworks[nnId].match = 0;
         statsObj.loadedNetworks[nnId].mismatch = 0;
@@ -805,7 +805,7 @@ function generateNetworksOutput(params){
         statsObj.allTimeLoadedNetworks[nnId].successRate = nn.successRate;
         statsObj.allTimeLoadedNetworks[nnId].matchRate = nn.matchRate;
         statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = nn.overallMatchRate;
-        statsObj.allTimeLoadedNetworks[nnId].rank = "";
+        statsObj.allTimeLoadedNetworks[nnId].rank = Infinity;
         statsObj.allTimeLoadedNetworks[nnId].total = 0;
         statsObj.allTimeLoadedNetworks[nnId].match = 0;
         statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;

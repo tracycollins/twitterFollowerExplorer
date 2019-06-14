@@ -3393,7 +3393,7 @@ function pruneGlobalHistograms(p) {
 
     statsObj.status = "PRUNE GLOBAL HISTOGRAMS";
 
-    const prunedItems = {};
+    let prunedItems = 0;
     let inputTypeMin = params.defaultInputTypeMin || DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
 
     async.eachSeries(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
@@ -3404,7 +3404,7 @@ function pruneGlobalHistograms(p) {
 
       const initialNumberOfItems = Object.keys(globalHistograms[inputType]).length;
 
-      prunedItems[inputType] = [];
+      prunedItems = 0;
 
       switch (inputType) {
         case "friends":
@@ -3414,11 +3414,11 @@ function pruneGlobalHistograms(p) {
           inputTypeMin = DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
       }
 
-      async.eachSeries(Object.keys(globalHistograms[inputType]), function(item, cb1) {
+      async.each(Object.keys(globalHistograms[inputType]), function(item, cb1) {
 
         if (globalHistograms[inputType][item].total < inputTypeMin) {
 
-          prunedItems[inputType].push(globalHistograms[inputType][item]);
+          prunedItems += 1;
 
           if (configuration.verbose) {
             console.log(chalkLog(MODULE_ID_PREFIX
@@ -3438,12 +3438,12 @@ function pruneGlobalHistograms(p) {
 
         if (err) { return reject(err); }
 
-        const percent = 100 * prunedItems[inputType].length/initialNumberOfItems;
+        const percent = 100 * prunedItems/initialNumberOfItems;
 
         console.log(chalkAlert(MODULE_ID_PREFIX
           + " | " + inputType.toUpperCase()
           + " | " + inputTypeMin + " MIN"
-          + " | PRUNED " + prunedItems[inputType].length 
+          + " | PRUNED " + prunedItems
           + "/" + initialNumberOfItems + " ITEMS (" + percent.toFixed(2) + "%)"
         ));
 
@@ -3718,6 +3718,7 @@ function updateNetworkStats(params) {
         const networkObj = bestNetworkHashMap.get(nnId);
 
         networkObj.incrementTestCycles = incrementTestCycles;
+        networkObj.rank = params.networkStatsObj[nnId].rank;
         networkObj.matchRate = params.networkStatsObj[nnId].matchRate;
         networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
 
