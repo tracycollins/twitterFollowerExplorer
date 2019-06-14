@@ -3393,7 +3393,6 @@ function pruneGlobalHistograms(p) {
 
     statsObj.status = "PRUNE GLOBAL HISTOGRAMS";
 
-    let prunedItems = 0;
     let inputTypeMin = params.defaultInputTypeMin || DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
 
     async.eachSeries(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
@@ -3404,7 +3403,7 @@ function pruneGlobalHistograms(p) {
 
       const initialNumberOfItems = Object.keys(globalHistograms[inputType]).length;
 
-      prunedItems = 0;
+      let prunedItems = 0;
 
       switch (inputType) {
         case "friends":
