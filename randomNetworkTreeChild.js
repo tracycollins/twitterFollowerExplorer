@@ -1058,17 +1058,15 @@ function categoryToString(c) {
 
 function printActivateResult(prefix, nn, category, categoryAuto, screenName){
   console.log(chalkInfo(prefix
-    + " | ANQ: " + activateNetworkQueue.length
-    + " | MR: " + statsObj.categorize.matchRate.toFixed(2) + "%"
-    + " | MTCH: " + statsObj.categorize.match + " / TOT: " + statsObj.categorize.total 
-    + " | OMR: " + nn.overallMatchRate.toFixed(2) + "%"
-    + " | SR: " + nn.successRate.toFixed(2) + "%"
-    + " | TC: " + nn.testCycles
-    + " | TCH: " + nn.testCycleHistory.length
+    // + " | ANQ: " + activateNetworkQueue.length
+    + " | MR " + statsObj.categorize.matchRate.toFixed(2) + "% (" + statsObj.categorize.match + "/" + statsObj.categorize.total + ")"
+    + " | OMR " + nn.overallMatchRate.toFixed(2) + "%"
+    + " | SR " + nn.successRate.toFixed(2) + "%"
+    + " | TC " + nn.testCycles
+    // + " | TCH: " + nn.testCycleHistory.length
     + " | " + nn.networkId
     + " | " + nn.numInputs + " IN"
-    + " | C: " + categoryToString(category)
-    + " | CA: " + categoryToString(categoryAuto)
+    + " | C M:" + categoryToString(category) + " A: " + categoryToString(categoryAuto)
     + " | @" + screenName
   ));
 }
