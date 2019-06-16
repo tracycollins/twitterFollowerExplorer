@@ -33,7 +33,6 @@ const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 
 const KEEPALIVE_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = ONE_SECOND;
-const STATS_UPDATE_INTERVAL = 30*ONE_SECOND;
 
 const SAVE_CACHE_DEFAULT_TTL = 60;
 const SAVE_FILE_QUEUE_INTERVAL = 5*ONE_SECOND;
@@ -170,7 +169,6 @@ configuration.testMode = TEST_MODE;
 configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : DEFAULT_TWEET_FETCH_COUNT;
 configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : DEFAULT_FETCH_COUNT;
 configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
-configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 configuration.fsmTickInterval = FSM_TICK_INTERVAL;
 configuration.fetchUserInterval = (TEST_MODE) ? TEST_FETCH_USER_INTERVAL : FETCH_USER_INTERVAL;
 
