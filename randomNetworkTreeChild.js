@@ -1075,7 +1075,7 @@ function initActivateNetworkInterval(interval){
 
   return new Promise(function(resolve){
 
-    const verbose = true;
+    const verbose = false;
 
     clearInterval(activateNetworkInterval);
 
