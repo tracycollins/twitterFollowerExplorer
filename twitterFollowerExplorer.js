@@ -5760,7 +5760,10 @@ function initProcessUserQueueInterval(interval) {
           user = await global.globalUser.findOne({nodeId: mObj.userId});
 
           if (!user) {
-            console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB\n" + jsonPrint(mObj)));
+            console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
+              + " | UID: " + mObj.userId
+              + " | @" + mObj.screenName
+            ));
             statsObj.users.totalUsersSkipped += 1;
             statsObj.queues.processUserQueue.busy = false;
             return;
