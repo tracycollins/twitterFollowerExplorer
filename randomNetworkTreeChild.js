@@ -678,12 +678,8 @@ function printNetworkResults(params){
         "NNID",
         "INPUTSID",
         "INPUTS",
-        "OMR",
+        "OAMR",
         "SR",
-        "ATOT",
-        "AM",
-        "AMM",
-        "AMR",
         "TCs",
         "TCH",
         "MFLAG",
@@ -698,7 +694,7 @@ function printNetworkResults(params){
           "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
         + "\nRNT | " + params.title 
         + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------\n"
-        + table(statsTextArray, { align: ["l", "r", "l", "l", "r", "r", "r", "r", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
+        + table(statsTextArray, { align: ["l", "r", "l", "l", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
         + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
       ));
 
@@ -801,20 +797,8 @@ function generateNetworksOutput(params){
         statsObj.allTimeLoadedNetworks[nnId].networkId = nnId;
         statsObj.allTimeLoadedNetworks[nnId].inputsId = nn.inputsId;
         statsObj.allTimeLoadedNetworks[nnId].numInputs = nn.numInputs;
-        statsObj.allTimeLoadedNetworks[nnId].output = [];
         statsObj.allTimeLoadedNetworks[nnId].successRate = nn.successRate;
-        statsObj.allTimeLoadedNetworks[nnId].matchRate = nn.matchRate;
         statsObj.allTimeLoadedNetworks[nnId].overallMatchRate = nn.overallMatchRate;
-        statsObj.allTimeLoadedNetworks[nnId].rank = Infinity;
-        statsObj.allTimeLoadedNetworks[nnId].total = 0;
-        statsObj.allTimeLoadedNetworks[nnId].match = 0;
-        statsObj.allTimeLoadedNetworks[nnId].mismatch = 0;
-        statsObj.allTimeLoadedNetworks[nnId].matchFlag = false;
-        statsObj.allTimeLoadedNetworks[nnId].left = 0;
-        statsObj.allTimeLoadedNetworks[nnId].neutral = 0;
-        statsObj.allTimeLoadedNetworks[nnId].right = 0;
-        statsObj.allTimeLoadedNetworks[nnId].positive = 0;
-        statsObj.allTimeLoadedNetworks[nnId].negative = 0;
       }
 
       statsObj.loadedNetworks[nnId].output = nnOutput;
@@ -822,7 +806,6 @@ function generateNetworksOutput(params){
       if (expectedOutput[0] === 1 || expectedOutput[1] === 1 || expectedOutput[2] === 1) {
 
         statsObj.loadedNetworks[nnId].total += 1;
-        statsObj.allTimeLoadedNetworks[nnId].total += 1;
         nn.total = statsObj.loadedNetworks[nnId].total;
 
         if ((nnOutput[0] === expectedOutput[0])
@@ -831,18 +814,15 @@ function generateNetworksOutput(params){
 
           statsObj.loadedNetworks[nnId].match += 1;
           statsObj.loadedNetworks[nnId].matchFlag = true;
-          statsObj.allTimeLoadedNetworks[nnId].match += 1;
           nn.match = statsObj.loadedNetworks[nnId].match;
 
         }
         else {
           statsObj.loadedNetworks[nnId].mismatch += 1;
-          statsObj.allTimeLoadedNetworks[nnId].mismatch += 1;
           statsObj.loadedNetworks[nnId].matchFlag = false;
         }
 
         statsObj.loadedNetworks[nnId].matchRate = 100.0 * statsObj.loadedNetworks[nnId].match / statsObj.loadedNetworks[nnId].total;
-        statsObj.allTimeLoadedNetworks[nnId].matchRate = 100.0 * statsObj.allTimeLoadedNetworks[nnId].match / statsObj.allTimeLoadedNetworks[nnId].total;
 
         nn.matchRate = statsObj.loadedNetworks[nnId].matchRate;
         
@@ -862,10 +842,6 @@ function generateNetworksOutput(params){
         statsObj.allTimeLoadedNetworks[nnId].numInputs,
         statsObj.allTimeLoadedNetworks[nnId].overallMatchRate.toFixed(2),
         statsObj.allTimeLoadedNetworks[nnId].successRate.toFixed(2),
-        statsObj.allTimeLoadedNetworks[nnId].total,
-        statsObj.allTimeLoadedNetworks[nnId].match,
-        statsObj.allTimeLoadedNetworks[nnId].mismatch,
-        statsObj.allTimeLoadedNetworks[nnId].matchRate.toFixed(2),
         statsObj.allTimeLoadedNetworks[nnId].testCycles,
         statsObj.allTimeLoadedNetworks[nnId].testCycleHistory.length,
         statsObj.loadedNetworks[nnId].matchFlag,
@@ -1387,27 +1363,14 @@ function loadNetwork(params){
       statsObj.allTimeLoadedNetworks[networkObj.networkId].networkId = networkObj.networkId;
       statsObj.allTimeLoadedNetworks[networkObj.networkId].inputsId = networkObj.inputsId;
       statsObj.allTimeLoadedNetworks[networkObj.networkId].numInputs = networkObj.numInputs;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].output = [];
       statsObj.allTimeLoadedNetworks[networkObj.networkId].successRate = networkObj.successRate;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].matchRate = networkObj.matchRate;
       statsObj.allTimeLoadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].rank = networkObj.rank || "";
       statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
       statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = [];
       statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].total = 0;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].match = 0;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].mismatch = 0;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].matchFlag = false;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].left = 0;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].neutral = 0;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].right = 0;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].positive = 0;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].negative = 0;
     }
 
     statsObj.allTimeLoadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
-    statsObj.allTimeLoadedNetworks[networkObj.networkId].rank = networkObj.rank || "";
     statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
     statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
 
