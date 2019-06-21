@@ -109,6 +109,7 @@ const USER_PROFILE_PROPERTY_ARRAY = [
   "location",
   "name",
   "profileUrl",
+  "profileImageUrl",
   "screenName",
   "url"
 ];
@@ -945,7 +946,7 @@ function initCategorizedUserIdSet(){
     p.batchSize = DEFAULT_CURSOR_BATCH_SIZE;
     p.toObject = true;
 
-    p.projection = "bannerImageAnalyzed bannerImageUrl category categoryAuto description expandedUrl followersCount following friends friendsCount ignored lang location mentions name nodeId previousBannerImageUrl previousDescription previousExpandedUrl previousLocation previousName previousProfileUrl previousScreenName previousStatusId previousUrl profileHistograms profileImageUrl screenName statusesCount statusId threeceeFollowing tweetHistograms tweets url userId";
+    p.projection = "bannerImageAnalyzed bannerImageUrl category categoryAuto description expandedUrl followersCount following friends friendsCount ignored lang location mentions name nodeId previousBannerImageUrl previousDescription previousExpandedUrl previousLocation previousName previousProfileImageUrl previousProfileUrl previousScreenName previousStatusId previousUrl profileHistograms profileImageAnalyzed profileImageUrl screenName statusesCount statusId threeceeFollowing tweetHistograms tweets url userId";
 
     let more = true;
     statsObj.users.categorized.total = 0;
@@ -4884,6 +4885,8 @@ function checkUserProfileChanged(params) {
       ));
 
       user.previousBannerImageUrl = null;
+      user.previousProfileImageUrl = null;
+
       user.previousDescription = null;
       user.previousExpandedUrl = null;
       user.previousLocation = null;
@@ -4896,6 +4899,8 @@ function checkUserProfileChanged(params) {
     const results = [];
 
     if (!user.bannerImageAnalyzed || checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
+    if (!user.profileImageAnalyzed || checkPropertyChange(user, "profileImageUrl")) { results.push("profileImageUrl"); }
+
     if (checkPropertyChange(user, "description")) { results.push("description"); }
     if (checkPropertyChange(user, "expandedUrl")) { results.push("expandedUrl"); }
     if (checkPropertyChange(user, "location")) { results.push("location"); }
@@ -5009,6 +5014,7 @@ function userProfileChangeHistogram(params) {
 
     let userProfileChanges = false;
     let bannerImageAnalyzedFlag = false;
+    let profileImageAnalyzedFlag = false;
 
     try {
       userProfileChanges = await checkUserProfileChanged(params);
@@ -5026,7 +5032,6 @@ function userProfileChangeHistogram(params) {
     let text = "";
     const urlsHistogram = {};
     urlsHistogram.urls = {};
-    // const bannerImageUrl = false;
 
     const locationsHistogram = {};
     locationsHistogram.locations = {};
@@ -5215,6 +5220,7 @@ function userProfileChangeHistogram(params) {
         case "profileUrl":
         case "expandedUrl":
         case "bannerImageUrl":
+        case "profileImageUrl":
 
           domain = urlParse(userPropValue.toLowerCase()).hostname;
           nodeId = btoa(userPropValue.toLowerCase());
@@ -5242,7 +5248,7 @@ function userProfileChangeHistogram(params) {
 
       async.parallel({
 
-        imageHist: function(cb) {
+        bannerImageHist: function(cb) {
 
           if(statsObj.imageParser.rateLimitFlag){
             console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
@@ -5265,6 +5271,46 @@ function userProfileChangeHistogram(params) {
             then(function(imageParseResults){
               if (imageParseResults) { 
                 bannerImageAnalyzedFlag = true;
+                cb(null, imageParseResults);
+              }
+              else{
+                cb(null, {});
+              }
+            }).
+            catch(function(err){
+              console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+              cb(err, null);
+            });
+
+          }
+          else {
+            cb(null, null);
+          }
+        }, 
+
+        profileImageHist: function(cb) {
+
+          if(statsObj.imageParser.rateLimitFlag){
+            console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
+            return cb(null);
+          }
+
+          if (
+              (configuration.enableImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined) && (user.profileImageUrl !== user.profileImageAnalyzed)
+            || (configuration.forceImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined))
+            )
+          ){
+
+            parseImage({
+              screenName: user.screenName, 
+              category: user.category, 
+              imageUrl: user.profileImageUrl, 
+              histograms: user.profileHistograms,
+              updateGlobalHistograms: true
+            }).
+            then(function(imageParseResults){
+              if (imageParseResults) { 
+                profileImageAnalyzedFlag = true;
                 cb(null, imageParseResults);
               }
               else{
@@ -5311,9 +5357,9 @@ function userProfileChangeHistogram(params) {
           return reject(err);
         }
 
-        mergeHistogramsArray( {histogramArray: [results.textHist, results.imageHist, urlsHistogram, locationsHistogram]} ).
+        mergeHistogramsArray( {histogramArray: [results.textHist, results.bannerImageHist, results.profileImageHist, urlsHistogram, locationsHistogram]} ).
         then(function(histogramsMerged){
-          resolve({ histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag });
+          resolve({ histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, profileImageAnalyzedFlag: profileImageAnalyzedFlag });
         }).
         catch(function(err){
           console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
@@ -5354,6 +5400,10 @@ function updateUserHistograms(p) {
 
       if (results && results.bannerImageAnalyzedFlag) {
         user.bannerImageAnalyzed = user.bannerImageUrl;
+      }
+
+      if (results && results.profileImageAnalyzedFlag) {
+        user.profileImageAnalyzed = user.profileImageUrl;
       }
 
       user.lastHistogramTweetId = user.statusId;
@@ -5616,6 +5666,7 @@ function processUser(params) {
         }
 
         if (userIn.profileImageUrl && (userIn.profileImageUrl !== undefined) && (user.profileImageUrl !== userIn.profileImageUrl)) {
+          user.profileImageAnalyzed = false;
           user.profileImageUrl = userIn.profileImageUrl;
         }
 
