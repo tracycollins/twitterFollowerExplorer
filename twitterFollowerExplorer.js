@@ -5397,7 +5397,7 @@ function updateUserHistograms(p) {
       // resolve({ histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, profileImageAnalyzedFlag: profileImageAnalyzedFlag });
 
       if (results && results.userProfileChanges) {
-        user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.profileHistogramChanges });
+        user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.histogramsMerged });
       }
 
       if (results && results.bannerImageAnalyzedFlag) {
