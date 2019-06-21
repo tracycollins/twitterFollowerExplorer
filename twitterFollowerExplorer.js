@@ -5359,7 +5359,7 @@ function userProfileChangeHistogram(params) {
 
         mergeHistogramsArray( {histogramArray: [results.textHist, results.bannerImageHist, results.profileImageHist, urlsHistogram, locationsHistogram]} ).
         then(function(histogramsMerged){
-          resolve({ histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, profileImageAnalyzedFlag: profileImageAnalyzedFlag });
+          resolve({ userProfileChanges: userProfileChanges, histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, profileImageAnalyzedFlag: profileImageAnalyzedFlag });
         }).
         catch(function(err){
           console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
@@ -5394,7 +5394,9 @@ function updateUserHistograms(p) {
 
       const results = await userProfileChangeHistogram({user: user});
 
-      if (results && results.profileHistogramChanges) {
+      // resolve({ histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, profileImageAnalyzedFlag: profileImageAnalyzedFlag });
+
+      if (results && results.userProfileChanges) {
         user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.profileHistogramChanges });
       }
 
