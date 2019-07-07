@@ -4375,6 +4375,8 @@ function initLanguageAnalyzerMessageRxQueueInterval(interval) {
 
               user.profileHistograms.sentiment = m.results.sentiment;
 
+              user.markmodified("profileHistograms");
+
               await user.save();
 
               console.log(chalkLog("TFE | LAC | SENTIMENT"
