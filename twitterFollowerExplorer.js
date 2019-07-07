@@ -4371,6 +4371,7 @@ function initLanguageAnalyzerMessageRxQueueInterval(interval) {
             if (user) { 
 
               if (user.profileHistograms === undefined) { user.profileHistograms = {}; }
+              if (user.profileHistograms.sentiment === undefined) { user.profileHistograms.sentiment = {}; }
 
               user.profileHistograms.sentiment = m.results.sentiment;
 
@@ -4380,9 +4381,9 @@ function initLanguageAnalyzerMessageRxQueueInterval(interval) {
                 // + "\n" + jsonPrint(m)
                 + " | NID: " + user.nodeId
                 + " | @" + user.screenName
-                + " | SCORE: " + m.results.sentiment.score
-                + " | MAG: " + m.results.sentiment.magnitude
-                + " | COMP: " + m.results.sentiment.comp
+                + " | SCORE: " + user.profileHistograms.sentiment.score
+                + " | MAG: " + user.profileHistograms.sentiment.magnitude
+                + " | COMP: " + user.profileHistograms.sentiment.comp
               ));
 
               languageAnalyzerMessageRxQueueReadyFlag = true;
