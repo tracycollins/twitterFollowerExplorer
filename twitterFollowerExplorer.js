@@ -4484,8 +4484,8 @@ function initLanguageAnalyzerChild() {
 
           case "LANG_RESULTS":
             languageAnalyzerMessageRxQueue.push(m);
-            debug(chalkAlert("TFE | <== LAC RX"
-              + " [" + languageAnalyzerMessageRxQueue.length + "]"
+            console.log(chalkLog("TFE | <== LAC RX"
+              + " [LRMQ: " + languageAnalyzerMessageRxQueue.length + "]"
               + " | " + m.op
             ));
           break;
@@ -5050,7 +5050,6 @@ function userProfileChangeHistogram(params) {
         userPropValue = user[userProp].toLowerCase();
       }
 
-
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
       let domain;
@@ -5059,7 +5058,6 @@ function userProfileChangeHistogram(params) {
       let lastSeen;
       let name;
 
-      // user[prevUserProp] = (!user[prevUserProp] || (user[prevUserProp] === undefined)) ? null : user[prevUserProp];
       user[prevUserProp] = (user[prevUserProp] === undefined) ? null : user[prevUserProp];
 
       if (!userPropValue) {
@@ -5338,8 +5336,8 @@ function userProfileChangeHistogram(params) {
 
           if (text && (text !== undefined)){
 
-            if (configuration.enableLanguageAnalysis) {
-              languageAnalyzerChild.send({op: "ANALYZE", nodeId: user.nodeId, text: text});
+            if (languageAnalyzerChild && configuration.enableLanguageAnalysis) {
+              languageAnalyzerChild.send({op: "ANALYZE", nodeId: user.nodeId, screenName: user.screenName, text: text});
             }
 
             parseText({ category: user.category, text: text, updateGlobalHistograms: true }).

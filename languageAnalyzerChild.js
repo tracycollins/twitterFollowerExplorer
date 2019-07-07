@@ -171,6 +171,7 @@ function analyzeLanguage(langObj){
 
     const results = {};
     results.nodeId = langObj.nodeId;
+    results.screenName = langObj.screenName;
     results.text = langObj.text;
     results.sentiment = {};
     results.entities = {};
@@ -189,6 +190,7 @@ function analyzeLanguage(langObj){
 
       console.log(chalkInfo("LAC"
         + " | NID: " + langObj.nodeId
+        + " | @" + langObj.screenName
         + " | M: " + 10*sentiment.magnitude.toFixed(1)
         + " | S: " + 10*sentiment.score.toFixed(1)
         + " | C: " + results.sentiment.comp.toFixed(2)
@@ -258,8 +260,8 @@ function initAnalyzeLanguageInterval(interval){
         debug(chalkLog("LANGUAGE RESULTS\n" + jsonPrint(results)));
 
         debug(chalkInfo("==> LANG RESULTS [RXLQ: " + rxLangObjQueue.length + "]"
-          + " | @" + langObj.obj.screenName
-          + " | NID: " + langObj.obj.nodeId
+          + " | @" + langObj.screenName
+          + " | NID: " + langObj.nodeId
           + " | M " + 10*results.sentiment.magnitude.toFixed(2)
           + " | S " + 10*results.sentiment.score.toFixed(1)
           + " | C " + results.sentiment.comp.toFixed(2)
@@ -267,7 +269,7 @@ function initAnalyzeLanguageInterval(interval){
         ));
 
         messageObj.op = "LANG_RESULTS";
-        messageObj.obj = langObj.obj;
+        messageObj.obj = langObj;
         messageObj.results = results;
         messageObj.stats = statsObj;
 
@@ -288,16 +290,16 @@ function initAnalyzeLanguageInterval(interval){
         if (err.code === 3) {
           debug(chalkLog("LAC [RXLQ: " + rxLangObjQueue.length + "]"
             + " | UNSUPPORTED LANG"
-            + " | " + langObj.obj.nodeId
-            + " | @" + langObj.obj.screenName
+            + " | " + langObj.nodeId
+            + " | @" + langObj.screenName
             + " | " + err
           ));
         }
         else if (err.code === 8) {
           console.error(chalkAlert("LAC | *** [RXLQ: " + rxLangObjQueue.length + "]"
             + " | LANGUAGE QUOTA"
-            + " | " + langObj.obj.nodeId
-            + " | @" + langObj.obj.screenName
+            + " | " + langObj.nodeId
+            + " | @" + langObj.screenName
             + " | RESOURCE_EXHAUSTED"
           ));
           rxLangObjQueue.push(langObj);
@@ -305,15 +307,15 @@ function initAnalyzeLanguageInterval(interval){
         else {
           console.error(chalkError("LAC | *** [RXLQ: " + rxLangObjQueue.length + "]"
             + " | LANGUAGE TEXT ERROR"
-            + " | " + langObj.obj.nodeId
-            + " | @" + langObj.obj.screenName
+            + " | " + langObj.nodeId
+            + " | @" + langObj.screenName
             + " | " + err
             + "\nLAC | " + jsonPrint(err)
           ));
         }
 
         messageObj.op = "LANG_RESULTS";
-        messageObj.obj = langObj.obj;
+        messageObj.obj = langObj;
         messageObj.error = err;
         messageObj.results = results;
         messageObj.stats = statsObj;
@@ -468,16 +470,21 @@ process.on("message", async function(m) {
     break;
 
     case "ANALYZE":
+
       rxLangObjQueue.push(m);
-      debugLang(chalkInfo("LANG_ANALIZE"
-        + " [" + rxLangObjQueue.length + "]"
+
+      console.log(chalkInfo("LAC | R> LANG_ANALIZE"
+        + " [RLQ: " + rxLangObjQueue.length + "]"
         + " | " + m.text
       ));
+
       if (!maxQueueFlag && (rxLangObjQueue.length >= MAX_Q_SIZE)) {
         process.send({op: "QUEUE_FULL", queue: rxLangObjQueue.length});
         maxQueueFlag = true;
       }
+
     break;
+
     default:
       console.log(chalkError("LAC | *** UNKNOWN OP ERROR"
         + " | " + m.op
