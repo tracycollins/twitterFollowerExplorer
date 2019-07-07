@@ -393,10 +393,6 @@ const UserServerController = require("@threeceelabs/user-server-controller");
 let userServerController;
 let userServerControllerReady = false;
 
-const TweetServerController = require("@threeceelabs/tweet-server-controller");
-let tweetServerController;
-let tweetServerControllerReady = false;
-
 function connectDb(){
 
   return new Promise(async function(resolve, reject){
@@ -451,19 +447,6 @@ function connectDb(){
         const uscChildName = MODULE_ID_PREFIX + "_USC";
         userServerController = new UserServerController(uscChildName);
 
-        const tscChildName = MODULE_ID_PREFIX + "_TSC";
-        tweetServerController = new TweetServerController(tscChildName);
-
-        tweetServerController.on("ready", function(appname){
-          tweetServerControllerReady = true;
-          console.log(chalk.green(MODULE_ID_PREFIX + " | " + tscChildName + " READY | " + appname));
-        });
-
-        tweetServerController.on("error", function(err){
-          tweetServerControllerReady = false;
-          console.trace(chalkError(MODULE_ID_PREFIX + " | *** " + tscChildName + " ERROR | " + err));
-        });
-
         userServerController.on("ready", function(appname){
           userServerControllerReady = true;
           console.log(chalkLog(MODULE_ID_PREFIX + " | " + uscChildName + " READY | " + appname));
@@ -471,7 +454,7 @@ function connectDb(){
 
         dbConnectionReadyInterval = setInterval(function(){
 
-          if (userServerControllerReady && tweetServerControllerReady) {
+          if (userServerControllerReady) {
 
             console.log(chalkGreen(MODULE_ID_PREFIX + " | MONGO DB READY"));
 
