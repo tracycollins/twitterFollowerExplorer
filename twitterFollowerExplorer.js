@@ -4376,7 +4376,7 @@ function initLanguageAnalyzerMessageRxQueueInterval(interval) {
 
               await user.save();
 
-              console.log(chalkLog("TFE | >>> LAC RESULTS | SENTIMENT"
+              console.log(chalkLog("TFE | LAC | SENTIMENT"
                 // + "\n" + jsonPrint(m)
                 + " | NID: " + user.nodeId
                 + " | @" + user.screenName
@@ -4518,7 +4518,7 @@ function initLanguageAnalyzerChild() {
 
           case "LANG_RESULTS":
             languageAnalyzerMessageRxQueue.push(m);
-            console.log(chalkLog("TFE | <== LAC RX"
+            debug(chalkLog("TFE | <== LAC RX"
               + " [LRMQ: " + languageAnalyzerMessageRxQueue.length + "]"
               + " | " + m.op
             ));

@@ -277,7 +277,7 @@ function initAnalyzeLanguageInterval(interval){
 
         debug(chalkLog("LANGUAGE RESULTS\n" + jsonPrint(results)));
 
-        console.log(chalkInfo("==> LANG RESULTS [RXLQ: " + rxLangObjQueue.length + "]"
+        debug(chalkInfo("==> LANG RESULTS [RXLQ: " + rxLangObjQueue.length + "]"
           + " | @" + langObj.screenName
           + " | NID: " + langObj.nodeId
           + " | M " + 10*results.sentiment.magnitude.toFixed(2)
