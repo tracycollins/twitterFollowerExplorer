@@ -5029,11 +5029,29 @@ function userProfileChangeHistogram(params) {
       return reject(err);
     }
 
+    const user = params.user;
+
     if (!userProfileChanges) {
+
+      if (languageAnalyzerChild 
+        && configuration.enableLanguageAnalysis
+        && (user.profileHistograms.sentiment === undefined)
+      ) {
+
+        const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
+
+        languageAnalyzerChild.send({
+          op: "ANALYZE", 
+          nodeId: user.nodeId, 
+          screenName: user.screenName, 
+          text: profileText
+        });
+
+      }
+
       return resolve();
     }
 
-    const user = params.user;
 
     let text = "";
     const urlsHistogram = {};
