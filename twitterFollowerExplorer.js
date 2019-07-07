@@ -4367,14 +4367,19 @@ function initLanguageAnalyzerMessageRxQueueInterval(interval) {
           case "LANG_RESULTS":
 
             console.log(chalkLog("TFE | >>> LAC RESULTS | SENTIMENT"
-              + " | MAG: " + m.results.sentiment.magnitude
-              + " | SCORE: " + m.results.sentiment.score
-              + " | COMP: " + m.results.sentiment.comp
+              + "\n" + jsonPrint(m)
+              // + " | MAG: " + m.results.sentiment.magnitude
+              // + " | SCORE: " + m.results.sentiment.score
+              // + " | COMP: " + m.results.sentiment.comp
             ));
 
             const user = await global.globalUser.findOne({nodeId: m.obj.nodeId});
 
-            if (user.profileHistograms === undefined) { user.profileHistograms = {}; }
+            if (user) { 
+              if (user.profileHistograms === undefined) { user.profileHistograms = {}; }
+              user.profileHistograms = {};
+            }
+
             
             user.profileHistograms.sentiment = m.results.sentiment;
 

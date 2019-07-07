@@ -4,6 +4,7 @@ let maxQueueFlag = false;
 
 const MAX_Q_SIZE = 100;
 const ONE_SECOND = 1000;
+const ONE_MINUTE = 60*ONE_SECOND;
 
 const defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
@@ -25,6 +26,7 @@ configuration.globalTestMode = false;
 configuration.testMode = false; // 
 configuration.keepaliveInterval = 30*ONE_SECOND;
 configuration.rxQueueInterval = Number(ONE_SECOND);
+configuration.quotaTimoutDuration = 1*ONE_MINUTE;
 
 const os = require("os");
 const util = require("util");
@@ -117,6 +119,7 @@ statsObj.analyzer.total = 0;
 statsObj.analyzer.analyzed = 0;
 statsObj.analyzer.skipped = 0;
 statsObj.analyzer.errors = 0;
+statsObj.analyzer.quotaFlag = false;
 
 const wordCache = new NodeCache();
 
@@ -209,6 +212,20 @@ function analyzeLanguage(langObj){
 
 }
 
+let startQuotaTimeOut;
+
+function startQuotaTimeOutTimer(){
+
+  clearTimeout(startQuotaTimeOut);
+
+  startQuotaTimeOut = setTimeout(function(){
+
+    statsObj.analyzer.quotaFlag = false;
+
+  }, configuration.quotaTimoutDuration);
+
+}
+
 function initAnalyzeLanguageInterval(interval){
 
   clearInterval(initAnalyzeLanguageInterval);
@@ -224,7 +241,7 @@ function initAnalyzeLanguageInterval(interval){
 
   analyzeLanguageInterval = setInterval(async function(){ // TX KEEPALIVE
 
-    if ((rxLangObjQueue.length > 0) && analyzeLanguageReady) {
+    if ((rxLangObjQueue.length > 0) && analyzeLanguageReady && !statsObj.analyzer.quotaFlag) {
 
       messageObj = {};
       messageObj.obj = {};
@@ -258,7 +275,7 @@ function initAnalyzeLanguageInterval(interval){
 
         debug(chalkLog("LANGUAGE RESULTS\n" + jsonPrint(results)));
 
-        debug(chalkInfo("==> LANG RESULTS [RXLQ: " + rxLangObjQueue.length + "]"
+        console.log(chalkInfo("==> LANG RESULTS [RXLQ: " + rxLangObjQueue.length + "]"
           + " | @" + langObj.screenName
           + " | NID: " + langObj.nodeId
           + " | M " + 10*results.sentiment.magnitude.toFixed(2)
@@ -301,6 +318,8 @@ function initAnalyzeLanguageInterval(interval){
             + " | @" + langObj.screenName
             + " | RESOURCE_EXHAUSTED"
           ));
+          statsObj.analyzer.quotaFlag = true;
+          startQuotaTimeOutTimer();
           rxLangObjQueue.push(langObj);
         }
         else {
@@ -332,6 +351,7 @@ function initAnalyzeLanguageInterval(interval){
         });
       }
     }
+
     else if ((rxWordQueue.length > 0) && analyzeLanguageReady) {
 
       analyzeLanguageReady = false;
