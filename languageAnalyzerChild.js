@@ -310,6 +310,8 @@ function initAnalyzeLanguageInterval(interval){
             + " | @" + langObj.screenName
             + " | " + err
           ));
+          analyzeLanguageReady = true;
+          return;
         }
         else if (err.code === 8) {
           console.error(chalkAlert("LAC | *** [RXLQ: " + rxLangObjQueue.length + "]"
@@ -321,6 +323,8 @@ function initAnalyzeLanguageInterval(interval){
           statsObj.analyzer.quotaFlag = true;
           startQuotaTimeOutTimer();
           rxLangObjQueue.push(langObj);
+          analyzeLanguageReady = true;
+          return;
         }
         else {
           console.error(chalkError("LAC | *** [RXLQ: " + rxLangObjQueue.length + "]"
@@ -330,6 +334,8 @@ function initAnalyzeLanguageInterval(interval){
             + " | " + err
             + "\nLAC | " + jsonPrint(err)
           ));
+          analyzeLanguageReady = true;
+          return;
         }
 
         messageObj.op = "LANG_RESULTS";
