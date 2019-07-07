@@ -4375,7 +4375,7 @@ function initLanguageAnalyzerMessageRxQueueInterval(interval) {
 
               user.profileHistograms.sentiment = m.results.sentiment;
 
-              user.markmodified("profileHistograms");
+              user.markModified("profileHistograms");
 
               await user.save();
 
