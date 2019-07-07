@@ -191,7 +191,7 @@ function analyzeLanguage(langObj){
       results.sentiment.magnitude = sentiment.magnitude;
       results.sentiment.comp = 100*sentiment.score*sentiment.magnitude;
 
-      console.log(chalkInfo("LAC"
+      debug(chalkInfo("LAC"
         + " | NID: " + langObj.nodeId
         + " | @" + langObj.screenName
         + " | M: " + 10*sentiment.magnitude.toFixed(1)
