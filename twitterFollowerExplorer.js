@@ -5140,7 +5140,7 @@ function userProfileChangeHistogram(params) {
     if (!userProfileChanges) {
 
       if (configuration.enableLanguageAnalysis
-        && !statsObj.languageAnalyzerChild.quotaFlag
+        && !statsObj.languageQuotaFlag
         && (user.profileHistograms.sentiment === undefined)
       ) {
 
@@ -5479,7 +5479,7 @@ function userProfileChangeHistogram(params) {
 
           if (text && (text !== undefined)){
 
-            if (configuration.enableLanguageAnalysis && !statsObj.languageAnalyzerChild.quotaFlag) {
+            if (configuration.enableLanguageAnalysis && !statsObj.languageQuotaFlag) {
               try {
                 sentimentHistogram = await analyzeLanguage({text: text});
               }
