@@ -5475,15 +5475,17 @@ function userProfileChangeHistogram(params) {
           }
         }, 
 
-        textHist: async function(cb){
+        textHist: function(cb){
 
           if (text && (text !== undefined)){
 
             if (configuration.enableLanguageAnalysis && !statsObj.languageQuotaFlag) {
-              try {
-                sentimentHistogram = await analyzeLanguage({text: text});
-              }
-              catch(e){
+
+              analyzeLanguage({text: text})
+              .then(function(sentHist){
+                sentimentHistogram = sentHist;
+              })
+              .catch(function(e){
                 if (e.code === 3) {
                   console.log(chalkLog("TFE | UNSUPPORTED LANG"
                     + " | " + e
@@ -5503,7 +5505,8 @@ function userProfileChangeHistogram(params) {
                     + "\n" + jsonPrint(e)
                   ));
                 }
-              }
+              });
+
             }
 
             parseText({ category: user.category, text: text, updateGlobalHistograms: true }).
