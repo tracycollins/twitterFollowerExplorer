@@ -6,8 +6,12 @@ const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+const DEFAULT_FORCE_LANG_ANALYSIS = false;
+const DEFAULT_ENABLE_LANG_ANALYSIS = true;
+
 const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
 const DEFAULT_ENABLE_IMAGE_ANALYSIS = true;
+
 const DEFAULT_MAX_USER_TWEETIDS = 500;
 const DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL = 10;
 const DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL = 250;
@@ -148,6 +152,8 @@ let unfollowableUserSet = new Set();
 const DROPBOX_LIST_FOLDER_LIMIT = 50;
 
 let configuration = {};
+configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
+configuration.forceLanguageAnalysis = DEFAULT_FORCE_LANG_ANALYSIS;
 configuration.enableImageAnalysis = DEFAULT_ENABLE_IMAGE_ANALYSIS;
 configuration.forceImageAnalysis = DEFAULT_FORCE_IMAGE_ANALYSIS;
 configuration.geoCodeEnabled = false;
@@ -5331,6 +5337,10 @@ function userProfileChangeHistogram(params) {
         textHist: function(cb){
 
           if (text && (text !== undefined)){
+
+            if (configuration.enableLanguageAnalysis) {
+              languageAnalyzerChild.send({op: "ANALYZE", text: text});
+            }
 
             parseText({ category: user.category, text: text, updateGlobalHistograms: true }).
             then(function(textParseResults){
