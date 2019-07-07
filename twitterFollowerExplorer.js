@@ -4366,26 +4366,40 @@ function initLanguageAnalyzerMessageRxQueueInterval(interval) {
 
           case "LANG_RESULTS":
 
-            console.log(chalkLog("TFE | >>> LAC RESULTS | SENTIMENT"
-              + "\n" + jsonPrint(m)
-              // + " | MAG: " + m.results.sentiment.magnitude
-              // + " | SCORE: " + m.results.sentiment.score
-              // + " | COMP: " + m.results.sentiment.comp
-            ));
-
             const user = await global.globalUser.findOne({nodeId: m.obj.nodeId});
 
             if (user) { 
+
               if (user.profileHistograms === undefined) { user.profileHistograms = {}; }
-              user.profileHistograms = {};
+
+              user.profileHistograms.sentiment = m.results.sentiment;
+
+              await user.save();
+
+              console.log(chalkLog("TFE | >>> LAC RESULTS | SENTIMENT"
+                // + "\n" + jsonPrint(m)
+                + " | NID: " + user.nodeId
+                + " | @" + user.screenName
+                + " | SCORE: " + m.results.sentiment.score
+                + " | MAG: " + m.results.sentiment.magnitude
+                + " | COMP: " + m.results.sentiment.comp
+              ));
+
+              languageAnalyzerMessageRxQueueReadyFlag = true;
+            }
+            else {
+
+              console.log(chalkAlert("TFE | ??? LAC RESULTS | USER NOT FOUND"
+                // + "\n" + jsonPrint(m)
+                + " | NID: " + m.obj.nodeId
+                + " | @" + m.obj.screenName
+                + " | SCORE: " + m.results.sentiment.score
+                + " | MAG: " + m.results.sentiment.magnitude
+                + " | COMP: " + m.results.sentiment.comp
+              ));
             }
 
             
-            user.profileHistograms.sentiment = m.results.sentiment;
-
-            await user.save();
-
-            languageAnalyzerMessageRxQueueReadyFlag = true;
 
           break;
 
