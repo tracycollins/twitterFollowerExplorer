@@ -4443,7 +4443,7 @@ function initUserDbUpdateQueueInterval(interval) {
   });
 }
 
-let languageAnalyzer;
+let languageAnalyzerChild;
 
 function initLanguageAnalyzerChild() {
 
@@ -4459,13 +4459,13 @@ function initLanguageAnalyzerChild() {
       verbose: configuration.verbose 
     };
 
-    if (languageAnalyzer === undefined) {
+    if (languageAnalyzerChild === undefined) {
 
       console.log(chalkBlue("TFE | INIT LANG ANALYZER CHILD PROCESS"));
 
-      languageAnalyzer = cp.fork(`languageAnalyzerChild.js`);
+      languageAnalyzerChild = cp.fork(`languageAnalyzerChild.js`);
 
-      languageAnalyzer.on("message", function(m) {
+      languageAnalyzerChild.on("message", function(m) {
 
         switch (m.op) {
 
@@ -4483,6 +4483,11 @@ function initLanguageAnalyzerChild() {
           break;
 
           case "LANG_RESULTS":
+            languageAnalyzerMessageRxQueue.push(m);
+            debug(chalkAlert("TFE | <== LAC RX"
+              + " [" + languageAnalyzerMessageRxQueue.length + "]"
+              + " | " + m.op
+            ));
           break;
 
           case "QUEUE_READY":
@@ -4500,41 +4505,36 @@ function initLanguageAnalyzerChild() {
           break;
 
           default:
-            languageAnalyzerMessageRxQueue.push(m);
-            debug(chalkAlert("TFE | <== LAC RX"
-              + " [" + languageAnalyzerMessageRxQueue.length + "]"
-              + " | " + m.op
-            ));
         }
       });
 
-      languageAnalyzer.on("error", function(err) {
+      languageAnalyzerChild.on("error", function(err) {
         statsObj.queues.langAnalyzerQueue.busy = false;
         statsObj.queues.langAnalyzerQueue.size = 0;
-        languageAnalyzer = null;
+        languageAnalyzerChild = null;
         statsObj.status = "ERROR LAC";
-        console.log(chalkError("TFE | *** languageAnalyzer ERROR *** : " + err));
-        console.log(chalkError("TFE | *** languageAnalyzer ERROR ***\n" + jsonPrint(err)));
+        console.log(chalkError("TFE | *** languageAnalyzerChild ERROR *** : " + err));
+        console.log(chalkError("TFE | *** languageAnalyzerChild ERROR ***\n" + jsonPrint(err)));
         if (!quitFlag) { quit({source: "LAC", error: err }); }
       });
 
-      languageAnalyzer.on("exit", function(err) {
+      languageAnalyzerChild.on("exit", function(err) {
         statsObj.queues.langAnalyzerQueue.busy = false;
         statsObj.queues.langAnalyzerQueue.size = 0;
-        languageAnalyzer = null;
-        console.log(chalkError("TFE | *** languageAnalyzer EXIT ***\n" + jsonPrint(err)));
+        languageAnalyzerChild = null;
+        console.log(chalkError("TFE | *** languageAnalyzerChild EXIT ***\n" + jsonPrint(err)));
         if (!quitFlag) { quit({source: "LAC", error: err }); }
       });
 
-      languageAnalyzer.on("close", function(code) {
+      languageAnalyzerChild.on("close", function(code) {
         statsObj.queues.langAnalyzerQueue.busy = false;
         statsObj.queues.langAnalyzerQueue.size = 0;
-        languageAnalyzer = null;
-        console.log(chalkError("TFE | *** languageAnalyzer CLOSE *** | " + code));
+        languageAnalyzerChild = null;
+        console.log(chalkError("TFE | *** languageAnalyzerChild CLOSE *** | " + code));
         if (!quitFlag) { quit({source: "LAC", code: code }); }
       });
 
-      languageAnalyzer.send(initParams, function(err) {
+      languageAnalyzerChild.send(initParams, function(err) {
         if (err) {
           console.log(chalkError("TFE | *** LAC SEND INIT ERROR: " + err));
           return reject(err);
@@ -4544,7 +4544,7 @@ function initLanguageAnalyzerChild() {
       });
     }
     else {
-      languageAnalyzer.send(initParams, function(err) {
+      languageAnalyzerChild.send(initParams, function(err) {
 
         if (err) {
           console.log(chalkError("TFE | *** LAC SEND INIT ERROR: " + err));
@@ -5339,7 +5339,7 @@ function userProfileChangeHistogram(params) {
           if (text && (text !== undefined)){
 
             if (configuration.enableLanguageAnalysis) {
-              languageAnalyzerChild.send({op: "ANALYZE", text: text});
+              languageAnalyzerChild.send({op: "ANALYZE", nodeId: user.nodeId, text: text});
             }
 
             parseText({ category: user.category, text: text, updateGlobalHistograms: true }).

@@ -51,7 +51,7 @@ hostname = hostname.replace(/word/g, "google");
 
 const chalk = require("chalk");
 const chalkAlert = chalk.red;
-const chalkRed = chalk.red;
+// const chalkRed = chalk.red;
 const chalkError = chalk.bold.red;
 const chalkWarn = chalk.red;
 const chalkLog = chalk.gray;
@@ -170,6 +170,7 @@ function analyzeLanguage(langObj){
     };
 
     const results = {};
+    results.nodeId = langObj.nodeId;
     results.text = langObj.text;
     results.sentiment = {};
     results.entities = {};
@@ -186,12 +187,13 @@ function analyzeLanguage(langObj){
       results.sentiment.magnitude = sentiment.magnitude;
       results.sentiment.comp = 100*sentiment.score*sentiment.magnitude;
 
-      debug(chalkRed(
-        "M: " + 10*sentiment.magnitude.toFixed(1)
+      console.log(chalkInfo("LAC"
+        + " | NID: " + langObj.nodeId
+        + " | M: " + 10*sentiment.magnitude.toFixed(1)
         + " | S: " + 10*sentiment.score.toFixed(1)
         + " | C: " + results.sentiment.comp.toFixed(2)
-        + " | KWs: " + jsonPrint(results.keywords)
         + " | " + langObj.text
+        + "\nKWs: " + jsonPrint(results.keywords)
       ));
 
       resolve(results);
