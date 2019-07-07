@@ -90,8 +90,8 @@ const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const FETCH_USER_INTERVAL = 5 * ONE_MINUTE;
 const DEFAULT_NUM_NN = 50; // TOP 100 NN's are loaded from DB
 
-const LANG_ANALYZER_INTERVAL = DEFAULT_MIN_INTERVAL;
-const LANG_ANALYZER_MSG_Q_INTERVAL = 5;
+// const LANG_ANALYZER_INTERVAL = DEFAULT_MIN_INTERVAL;
+// const LANG_ANALYZER_MSG_Q_INTERVAL = 5;
 
 const RANDOM_NETWORK_TREE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = 5; // ms
@@ -152,6 +152,7 @@ let unfollowableUserSet = new Set();
 const DROPBOX_LIST_FOLDER_LIMIT = 50;
 
 let configuration = {};
+configuration.languageQuotaTimoutDuration = ONE_MINUTE;
 configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
 configuration.forceLanguageAnalysis = DEFAULT_FORCE_LANG_ANALYSIS;
 configuration.enableImageAnalysis = DEFAULT_ENABLE_IMAGE_ANALYSIS;
@@ -180,6 +181,9 @@ configuration.networkDatabaseLoadLimit = (TEST_MODE) ? TEST_MODE_NUM_NN : DEFAUL
 const googleMapsClient = require("@google/maps").createClient({
   key: "AIzaSyDBxA6RmuBcyj-t7gfvK61yp8CDNnRLUlc"
 });
+
+const Language = require("@google-cloud/language");
+const languageClient = new Language.LanguageServiceClient();
 
 const path = require("path");
 const watch = require("watch");
@@ -4336,89 +4340,89 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval) {
   });
 }
 
-let languageAnalyzerMessageRxQueueReadyFlag = false;
-const languageAnalyzerMessageRxQueue = [];
-let languageAnalyzerMessageRxQueueInterval;
+// let languageAnalyzerMessageRxQueueReadyFlag = false;
+// const languageAnalyzerMessageRxQueue = [];
+// let languageAnalyzerMessageRxQueueInterval;
 
-function initLanguageAnalyzerMessageRxQueueInterval(interval) {
+// function initLanguageAnalyzerMessageRxQueueInterval(interval) {
 
-  return new Promise(function(resolve){
+//   return new Promise(function(resolve){
 
-    statsObj.status = "INIT LAC RX MSG QUEUE INTERVAL";
+//     statsObj.status = "INIT LAC RX MSG QUEUE INTERVAL";
 
-    clearInterval(languageAnalyzerMessageRxQueueInterval);
+//     clearInterval(languageAnalyzerMessageRxQueueInterval);
 
-    languageAnalyzerMessageRxQueueReadyFlag = true;
+//     languageAnalyzerMessageRxQueueReadyFlag = true;
 
-    console.log(chalkLog("TFE | INIT LANG ANALYZER MSG QUEUE INTERVAL: " + interval + " ms"));
+//     console.log(chalkLog("TFE | INIT LANG ANALYZER MSG QUEUE INTERVAL: " + interval + " ms"));
 
-    languageAnalyzerMessageRxQueueInterval = setInterval(async function () {
+//     languageAnalyzerMessageRxQueueInterval = setInterval(async function () {
 
-      if (languageAnalyzerMessageRxQueueReadyFlag && (languageAnalyzerMessageRxQueue.length > 0)) {
+//       if (languageAnalyzerMessageRxQueueReadyFlag && (languageAnalyzerMessageRxQueue.length > 0)) {
 
-        languageAnalyzerMessageRxQueueReadyFlag = false;
+//         languageAnalyzerMessageRxQueueReadyFlag = false;
 
-        const m = languageAnalyzerMessageRxQueue.shift();
+//         const m = languageAnalyzerMessageRxQueue.shift();
 
-        statsObj.languageAnalyzerOp = m.op;
+//         statsObj.languageAnalyzerOp = m.op;
 
-        switch (m.op) {
+//         switch (m.op) {
 
-          case "LANG_RESULTS":
+//           case "LANG_RESULTS":
 
-            const user = await global.globalUser.findOne({nodeId: m.obj.nodeId});
+//             const user = await global.globalUser.findOne({nodeId: m.obj.nodeId});
 
-            if (user) { 
+//             if (user) { 
 
-              if (user.profileHistograms === undefined) { user.profileHistograms = {}; }
-              if (user.profileHistograms.sentiment === undefined) { user.profileHistograms.sentiment = {}; }
+//               if (user.profileHistograms === undefined) { user.profileHistograms = {}; }
+//               if (user.profileHistograms.sentiment === undefined) { user.profileHistograms.sentiment = {}; }
 
-              user.profileHistograms.sentiment = m.results.sentiment;
+//               user.profileHistograms.sentiment = m.results.sentiment;
 
-              user.markModified("profileHistograms");
+//               user.markModified("profileHistograms");
 
-              const updatedUser = await user.save();
+//               const updatedUser = await user.save();
 
-              console.log(chalkLog("TFE | LAC | SENTIMENT"
-                // + "\n" + jsonPrint(m)
-                + " | NID: " + updatedUser.nodeId
-                + " | @" + updatedUser.screenName
-                + " | SCORE: " + updatedUser.profileHistograms.sentiment.score
-                + " | MAG: " + updatedUser.profileHistograms.sentiment.magnitude
-                + " | COMP: " + updatedUser.profileHistograms.sentiment.comp
-              ));
+//               console.log(chalkLog("TFE | LAC | SENTIMENT"
+//                 // + "\n" + jsonPrint(m)
+//                 + " | NID: " + updatedUser.nodeId
+//                 + " | @" + updatedUser.screenName
+//                 + " | SCORE: " + updatedUser.profileHistograms.sentiment.score
+//                 + " | MAG: " + updatedUser.profileHistograms.sentiment.magnitude
+//                 + " | COMP: " + updatedUser.profileHistograms.sentiment.comp
+//               ));
 
-              languageAnalyzerMessageRxQueueReadyFlag = true;
-            }
-            else {
+//               languageAnalyzerMessageRxQueueReadyFlag = true;
+//             }
+//             else {
 
-              console.log(chalkAlert("TFE | ??? LAC RESULTS | USER NOT FOUND"
-                // + "\n" + jsonPrint(m)
-                + " | NID: " + m.obj.nodeId
-                + " | @" + m.obj.screenName
-                + " | SCORE: " + m.results.sentiment.score
-                + " | MAG: " + m.results.sentiment.magnitude
-                + " | COMP: " + m.results.sentiment.comp
-              ));
+//               console.log(chalkAlert("TFE | ??? LAC RESULTS | USER NOT FOUND"
+//                 // + "\n" + jsonPrint(m)
+//                 + " | NID: " + m.obj.nodeId
+//                 + " | @" + m.obj.screenName
+//                 + " | SCORE: " + m.results.sentiment.score
+//                 + " | MAG: " + m.results.sentiment.magnitude
+//                 + " | COMP: " + m.results.sentiment.comp
+//               ));
 
-              languageAnalyzerMessageRxQueueReadyFlag = true;
-            }
+//               languageAnalyzerMessageRxQueueReadyFlag = true;
+//             }
 
             
 
-          break;
+//           break;
 
-          default:
-            languageAnalyzerMessageRxQueueReadyFlag = true;
-            console.log(chalkError("TFE | *** UNKNOWN LAC OP | " + m.op));
-        }
-      }
-    }, interval);
+//           default:
+//             languageAnalyzerMessageRxQueueReadyFlag = true;
+//             console.log(chalkError("TFE | *** UNKNOWN LAC OP | " + m.op));
+//         }
+//       }
+//     }, interval);
 
-    resolve();
+//     resolve();
 
-  });
-}
+//   });
+// }
 
 function initUserDbUpdateQueueInterval(interval) {
 
@@ -4482,120 +4486,120 @@ function initUserDbUpdateQueueInterval(interval) {
   });
 }
 
-let languageAnalyzerChild;
+// let languageAnalyzerChild;
 
-function initLanguageAnalyzerChild() {
+// function initLanguageAnalyzerChild() {
 
-  statsObj.status = "INIT LANG CHILD";
+//   statsObj.status = "INIT LANG CHILD";
 
-  return new Promise(function(resolve, reject){
+//   return new Promise(function(resolve, reject){
 
-    const initParams = { 
-      op: "INIT", 
-      childId: LAC_CHILD_ID, 
-      interval: LANG_ANALYZER_INTERVAL, 
-      testMode: configuration.testMode, 
-      verbose: configuration.verbose 
-    };
+//     const initParams = { 
+//       op: "INIT", 
+//       childId: LAC_CHILD_ID, 
+//       interval: LANG_ANALYZER_INTERVAL, 
+//       testMode: configuration.testMode, 
+//       verbose: configuration.verbose 
+//     };
 
-    if (languageAnalyzerChild === undefined) {
+//     if (languageAnalyzerChild === undefined) {
 
-      console.log(chalkBlue("TFE | INIT LANG ANALYZER CHILD PROCESS"));
+//       console.log(chalkBlue("TFE | INIT LANG ANALYZER CHILD PROCESS"));
 
-      languageAnalyzerChild = cp.fork(`languageAnalyzerChild.js`);
+//       languageAnalyzerChild = cp.fork(`languageAnalyzerChild.js`);
 
-      languageAnalyzerChild.on("message", function(m) {
+//       languageAnalyzerChild.on("message", function(m) {
 
-        switch (m.op) {
+//         switch (m.op) {
 
-          case "IDLE":
-            debug(chalkAlert("TFE | <== LAC RX"
-              + " [" + languageAnalyzerMessageRxQueue.length + "]"
-              + " | " + m.op
-            ));
-          break;
+//           case "IDLE":
+//             debug(chalkAlert("TFE | <== LAC RX"
+//               + " [" + languageAnalyzerMessageRxQueue.length + "]"
+//               + " | " + m.op
+//             ));
+//           break;
 
-          case "LANG_TEST_PASS":
-          break;
+//           case "LANG_TEST_PASS":
+//           break;
           
-          case "LANG_TEST_FAIL":
-          break;
+//           case "LANG_TEST_FAIL":
+//           break;
 
-          case "LANG_RESULTS":
-            languageAnalyzerMessageRxQueue.push(m);
-            debug(chalkLog("TFE | <== LAC RX"
-              + " [LRMQ: " + languageAnalyzerMessageRxQueue.length + "]"
-              + " | " + m.op
-            ));
-          break;
+//           case "LANG_RESULTS":
+//             languageAnalyzerMessageRxQueue.push(m);
+//             debug(chalkLog("TFE | <== LAC RX"
+//               + " [LRMQ: " + languageAnalyzerMessageRxQueue.length + "]"
+//               + " | " + m.op
+//             ));
+//           break;
 
-          case "QUEUE_READY":
-          break;
+//           case "QUEUE_READY":
+//           break;
           
-          case "QUEUE_FULL":
-          break;
+//           case "QUEUE_FULL":
+//           break;
           
-          case "BUSY":
-            debug(chalkAlert("TFE | <== LAC RX BUSY"
-              + " [" + languageAnalyzerMessageRxQueue.length + "]"
-              + " | " + m.op
-              + " | " + m.cause
-            ));
-          break;
+//           case "BUSY":
+//             debug(chalkAlert("TFE | <== LAC RX BUSY"
+//               + " [" + languageAnalyzerMessageRxQueue.length + "]"
+//               + " | " + m.op
+//               + " | " + m.cause
+//             ));
+//           break;
 
-          default:
-        }
-      });
+//           default:
+//         }
+//       });
 
-      languageAnalyzerChild.on("error", function(err) {
-        statsObj.queues.langAnalyzerQueue.busy = false;
-        statsObj.queues.langAnalyzerQueue.size = 0;
-        languageAnalyzerChild = null;
-        statsObj.status = "ERROR LAC";
-        console.log(chalkError("TFE | *** languageAnalyzerChild ERROR *** : " + err));
-        console.log(chalkError("TFE | *** languageAnalyzerChild ERROR ***\n" + jsonPrint(err)));
-        if (!quitFlag) { quit({source: "LAC", error: err }); }
-      });
+//       languageAnalyzerChild.on("error", function(err) {
+//         statsObj.queues.langAnalyzerQueue.busy = false;
+//         statsObj.queues.langAnalyzerQueue.size = 0;
+//         languageAnalyzerChild = null;
+//         statsObj.status = "ERROR LAC";
+//         console.log(chalkError("TFE | *** languageAnalyzerChild ERROR *** : " + err));
+//         console.log(chalkError("TFE | *** languageAnalyzerChild ERROR ***\n" + jsonPrint(err)));
+//         if (!quitFlag) { quit({source: "LAC", error: err }); }
+//       });
 
-      languageAnalyzerChild.on("exit", function(err) {
-        statsObj.queues.langAnalyzerQueue.busy = false;
-        statsObj.queues.langAnalyzerQueue.size = 0;
-        languageAnalyzerChild = null;
-        console.log(chalkError("TFE | *** languageAnalyzerChild EXIT ***\n" + jsonPrint(err)));
-        if (!quitFlag) { quit({source: "LAC", error: err }); }
-      });
+//       languageAnalyzerChild.on("exit", function(err) {
+//         statsObj.queues.langAnalyzerQueue.busy = false;
+//         statsObj.queues.langAnalyzerQueue.size = 0;
+//         languageAnalyzerChild = null;
+//         console.log(chalkError("TFE | *** languageAnalyzerChild EXIT ***\n" + jsonPrint(err)));
+//         if (!quitFlag) { quit({source: "LAC", error: err }); }
+//       });
 
-      languageAnalyzerChild.on("close", function(code) {
-        statsObj.queues.langAnalyzerQueue.busy = false;
-        statsObj.queues.langAnalyzerQueue.size = 0;
-        languageAnalyzerChild = null;
-        console.log(chalkError("TFE | *** languageAnalyzerChild CLOSE *** | " + code));
-        if (!quitFlag) { quit({source: "LAC", code: code }); }
-      });
+//       languageAnalyzerChild.on("close", function(code) {
+//         statsObj.queues.langAnalyzerQueue.busy = false;
+//         statsObj.queues.langAnalyzerQueue.size = 0;
+//         languageAnalyzerChild = null;
+//         console.log(chalkError("TFE | *** languageAnalyzerChild CLOSE *** | " + code));
+//         if (!quitFlag) { quit({source: "LAC", code: code }); }
+//       });
 
-      languageAnalyzerChild.send(initParams, function(err) {
-        if (err) {
-          console.log(chalkError("TFE | *** LAC SEND INIT ERROR: " + err));
-          return reject(err);
-        }
-        console.log(chalkLog("TFE | LAC CHILD INITIALIZED"));
-        resolve();
-      });
-    }
-    else {
-      languageAnalyzerChild.send(initParams, function(err) {
+//       languageAnalyzerChild.send(initParams, function(err) {
+//         if (err) {
+//           console.log(chalkError("TFE | *** LAC SEND INIT ERROR: " + err));
+//           return reject(err);
+//         }
+//         console.log(chalkLog("TFE | LAC CHILD INITIALIZED"));
+//         resolve();
+//       });
+//     }
+//     else {
+//       languageAnalyzerChild.send(initParams, function(err) {
 
-        if (err) {
-          console.log(chalkError("TFE | *** LAC SEND INIT ERROR: " + err));
-          return reject(err);
-        }
-        console.log(chalkLog("TFE | LAC CHILD INITIALIZED"));
-        resolve();
-      });
-    }
+//         if (err) {
+//           console.log(chalkError("TFE | *** LAC SEND INIT ERROR: " + err));
+//           return reject(err);
+//         }
+//         console.log(chalkLog("TFE | LAC CHILD INITIALIZED"));
+//         resolve();
+//       });
+//     }
 
-  });
-}
+//   });
+// }
 
 function initRandomNetworkTreeChild() {
 
@@ -5053,6 +5057,66 @@ function processTweetObj(params){
   });
 }
 
+function analyzeLanguage(params){
+
+  return new Promise(async function(resolve, reject){
+
+    debug(chalkAlert("analyzeLanguage\n" + jsonPrint(params)));
+
+    const document = {
+      "content": params.text,
+      type: "PLAIN_TEXT"
+    };
+
+    const results = {};
+    results.sentiment = {};
+
+    let responses;
+
+    try {
+
+      responses = await languageClient.analyzeSentiment({document: document});
+
+      const sentiment = responses[0].documentSentiment;
+
+      results.sentiment.score = sentiment.score;
+      results.sentiment.magnitude = sentiment.magnitude;
+      results.sentiment.comp = 100*sentiment.score*sentiment.magnitude;
+
+      debug(chalkInfo("LAC"
+        + " | M: " + 10*sentiment.magnitude.toFixed(1)
+        + " | S: " + 10*sentiment.score.toFixed(1)
+        + " | C: " + results.sentiment.comp.toFixed(2)
+        // + " | " + params.text
+      ));
+
+      resolve(results);
+
+    }
+    catch(err){
+      debug(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
+      reject(err);
+    }
+
+  });
+}
+
+let startQuotaTimeOut;
+
+function startQuotaTimeOutTimer(){
+
+  clearTimeout(startQuotaTimeOut);
+
+  startQuotaTimeOut = setTimeout(function(){
+
+    statsObj.languageQuotaFlag = false;
+
+    console.log(chalkAlert("TFE | XXX CLEAR QUOTA FLAG"));
+
+  }, configuration.languageQuotaTimoutDuration);
+}
+
+
 function userProfileChangeHistogram(params) {
 
   return new Promise(async function(resolve, reject){
@@ -5070,25 +5134,44 @@ function userProfileChangeHistogram(params) {
 
     const user = params.user;
 
+    let sentimentHistogram = {};
+    sentimentHistogram.sentiment = {};
+
     if (!userProfileChanges) {
 
-      if (languageAnalyzerChild 
-        && configuration.enableLanguageAnalysis
+      if (configuration.enableLanguageAnalysis
+        && !statsObj.languageAnalyzerChild.quotaFlag
         && (user.profileHistograms.sentiment === undefined)
       ) {
 
         const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
 
-        languageAnalyzerChild.send({
-          op: "ANALYZE", 
-          nodeId: user.nodeId, 
-          screenName: user.screenName, 
-          text: profileText
-        });
-
+        try{
+          sentimentHistogram = await analyzeLanguage({text: profileText});
+        }
+        catch(err){
+          if (err.code === 3) {
+            console.log(chalkLog("TFE | UNSUPPORTED LANG"
+              + " | " + err
+            ));
+          }
+          else if (err.code === 8) {
+            console.error(chalkAlert("TFE"
+              + " | LANGUAGE QUOTA"
+              + " | RESOURCE_EXHAUSTED"
+            ));
+            statsObj.languageQuotaFlag = moment().valueOf();
+            startQuotaTimeOutTimer();
+          }
+          else {
+            console.error(chalkError("TFE | *** LANGUAGE TEXT ERROR"
+              + " | " + err
+              + "\n" + jsonPrint(err)
+            ));
+          }
+        }
       }
 
-      return resolve();
     }
 
 
@@ -5126,6 +5209,9 @@ function userProfileChangeHistogram(params) {
       }
 
       switch (userProp) {
+
+        case "sentiment":
+        break;
 
         case "location":
 
@@ -5389,12 +5475,35 @@ function userProfileChangeHistogram(params) {
           }
         }, 
 
-        textHist: function(cb){
+        textHist: async function(cb){
 
           if (text && (text !== undefined)){
 
-            if (languageAnalyzerChild && configuration.enableLanguageAnalysis) {
-              languageAnalyzerChild.send({op: "ANALYZE", nodeId: user.nodeId, screenName: user.screenName, text: text});
+            if (configuration.enableLanguageAnalysis && !statsObj.languageAnalyzerChild.quotaFlag) {
+              try {
+                sentimentHistogram = await analyzeLanguage({text: text});
+              }
+              catch(e){
+                if (e.code === 3) {
+                  console.log(chalkLog("TFE | UNSUPPORTED LANG"
+                    + " | " + e
+                  ));
+                }
+                else if (e.code === 8) {
+                  console.error(chalkAlert("TFE"
+                    + " | LANGUAGE QUOTA"
+                    + " | RESOURCE_EXHAUSTED"
+                  ));
+                  statsObj.languageQuotaFlag = moment().valueOf();
+                  startQuotaTimeOutTimer();
+                }
+                else {
+                  console.error(chalkError("TFE | *** LANGUAGE TEXT ERROR"
+                    + " | " + e
+                    + "\n" + jsonPrint(e)
+                  ));
+                }
+              }
             }
 
             parseText({ category: user.category, text: text, updateGlobalHistograms: true }).
@@ -5422,7 +5531,16 @@ function userProfileChangeHistogram(params) {
           return reject(err);
         }
 
-        mergeHistogramsArray( {histogramArray: [results.textHist, results.bannerImageHist, results.profileImageHist, urlsHistogram, locationsHistogram]} ).
+        mergeHistogramsArray( {
+          histogramArray: [
+            results.textHist, 
+            results.bannerImageHist, 
+            results.profileImageHist, 
+            urlsHistogram,
+            locationsHistogram,
+            sentimentHistogram
+          ]
+        } ).
         then(function(histogramsMerged){
           resolve({ userProfileChanges: userProfileChanges, histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, profileImageAnalyzedFlag: profileImageAnalyzedFlag });
         }).
@@ -7476,12 +7594,12 @@ setTimeout(async function(){
         await initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
         await initUserDbUpdateQueueInterval(USER_DB_UPDATE_QUEUE_INTERVAL);
         await initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
-        await initLanguageAnalyzerMessageRxQueueInterval(LANG_ANALYZER_MSG_Q_INTERVAL);
+        // await initLanguageAnalyzerMessageRxQueueInterval(LANG_ANALYZER_MSG_Q_INTERVAL);
 
         await initUnfollowableUserSet();
         await initActivateNetworkQueueInterval(ACTIVATE_NETWORK_QUEUE_INTERVAL);
 
-        await initLanguageAnalyzerChild();
+        // await initLanguageAnalyzerChild();
         await initRandomNetworkTreeChild();
 
         neuralNetworkInitialized = true;

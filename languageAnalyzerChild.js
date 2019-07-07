@@ -209,7 +209,6 @@ function analyzeLanguage(langObj){
     }
 
   });
-
 }
 
 let startQuotaTimeOut;
@@ -225,7 +224,6 @@ function startQuotaTimeOutTimer(){
     console.log(chalkAlert("LAC | XXX CLEAR QUOTA FLAG"));
 
   }, configuration.quotaTimoutDuration);
-
 }
 
 function initAnalyzeLanguageInterval(interval){
