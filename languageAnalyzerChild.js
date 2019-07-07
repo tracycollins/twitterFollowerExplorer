@@ -222,6 +222,8 @@ function startQuotaTimeOutTimer(){
 
     statsObj.analyzer.quotaFlag = false;
 
+    console.log(chalkAlert("LAC | XXX CLEAR QUOTA FLAG"));
+
   }, configuration.quotaTimoutDuration);
 
 }
