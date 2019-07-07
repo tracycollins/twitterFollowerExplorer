@@ -4377,15 +4377,15 @@ function initLanguageAnalyzerMessageRxQueueInterval(interval) {
 
               user.markModified("profileHistograms");
 
-              await user.save();
+              const updatedUser = await user.save();
 
               console.log(chalkLog("TFE | LAC | SENTIMENT"
                 // + "\n" + jsonPrint(m)
-                + " | NID: " + user.nodeId
-                + " | @" + user.screenName
-                + " | SCORE: " + user.profileHistograms.sentiment.score
-                + " | MAG: " + user.profileHistograms.sentiment.magnitude
-                + " | COMP: " + user.profileHistograms.sentiment.comp
+                + " | NID: " + updatedUser.nodeId
+                + " | @" + updatedUser.screenName
+                + " | SCORE: " + updatedUser.profileHistograms.sentiment.score
+                + " | MAG: " + updatedUser.profileHistograms.sentiment.magnitude
+                + " | COMP: " + updatedUser.profileHistograms.sentiment.comp
               ));
 
               languageAnalyzerMessageRxQueueReadyFlag = true;
@@ -4400,6 +4400,8 @@ function initLanguageAnalyzerMessageRxQueueInterval(interval) {
                 + " | MAG: " + m.results.sentiment.magnitude
                 + " | COMP: " + m.results.sentiment.comp
               ));
+
+              languageAnalyzerMessageRxQueueReadyFlag = true;
             }
 
             
