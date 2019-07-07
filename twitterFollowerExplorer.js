@@ -4365,8 +4365,23 @@ function initLanguageAnalyzerMessageRxQueueInterval(interval) {
         switch (m.op) {
 
           case "LANG_RESULTS":
+
+            console.log(chalkLog("TFE | >>> LAC RESULTS | SENTIMENT"
+              + " | MAG: " + m.results.sentiment.magnitude
+              + " | SCORE: " + m.results.sentiment.score
+              + " | COMP: " + m.results.sentiment.comp
+            ));
+
+            const user = await global.globalUser.findOne({nodeId: m.obj.nodeId});
+
+            if (user.profileHistograms === undefined) { user.profileHistograms = {}; }
+            
+            user.profileHistograms.sentiment = m.results.sentiment;
+
+            await user.save();
+
             languageAnalyzerMessageRxQueueReadyFlag = true;
-            console.log(chalkError("TFE | >>> LAC RESULTS"));
+
           break;
 
           default:

@@ -194,8 +194,7 @@ function analyzeLanguage(langObj){
         + " | M: " + 10*sentiment.magnitude.toFixed(1)
         + " | S: " + 10*sentiment.score.toFixed(1)
         + " | C: " + results.sentiment.comp.toFixed(2)
-        + " | " + langObj.text
-        + "\nKWs: " + jsonPrint(results.keywords)
+        // + " | " + langObj.text
       ));
 
       resolve(results);
@@ -473,7 +472,7 @@ process.on("message", async function(m) {
 
       rxLangObjQueue.push(m);
 
-      console.log(chalkInfo("LAC | R> LANG_ANALIZE"
+      debug(chalkInfo("LAC | R> LANG_ANALIZE"
         + " [RLQ: " + rxLangObjQueue.length + "]"
         + " | " + m.text
       ));
