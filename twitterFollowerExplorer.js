@@ -5084,10 +5084,10 @@ function analyzeLanguage(params){
       results.sentiment.comp = 100*sentiment.score*sentiment.magnitude;
 
       console.log(chalkInfo("TFE | LANG SENTIMENT"
-        + " | @" + params.screenName
-        + " | M: " + sentiment.magnitude.toFixed(5)
-        + " | S: " + sentiment.score.toFixed(5)
+        + " | M: " + results.sentiment.magnitude.toFixed(5)
+        + " | S: " + results.sentiment.score.toFixed(5)
         + " | C: " + results.sentiment.comp.toFixed(5)
+        + " | @" + params.screenName
       ));
 
       resolve(results);
