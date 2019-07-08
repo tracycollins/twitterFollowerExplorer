@@ -5084,9 +5084,10 @@ function analyzeLanguage(params){
       results.sentiment.comp = 100*sentiment.score*sentiment.magnitude;
 
       console.log(chalkInfo("TFE | LANG SENTIMENT"
-        + " | M: " + sentiment.magnitude
-        + " | S: " + sentiment.score
-        + " | C: " + results.sentiment.comp
+        + " | @" + params.screenName
+        + " | M: " + sentiment.magnitude.toFixed(5)
+        + " | S: " + sentiment.score.toFixed(5)
+        + " | C: " + results.sentiment.comp.toFixed(5)
       ));
 
       resolve(results);
@@ -5149,7 +5150,7 @@ function userProfileChangeHistogram(params) {
         const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
 
         try{
-          sentimentHistogram = await analyzeLanguage({text: profileText});
+          sentimentHistogram = await analyzeLanguage({screenName: user.screenName, text: profileText});
           statsObj.languageQuotaFlag = false;
         }
         catch(err){
@@ -5488,7 +5489,7 @@ function userProfileChangeHistogram(params) {
 
             if (configuration.enableLanguageAnalysis && !statsObj.languageQuotaFlag) {
 
-              analyzeLanguage({text: text})
+              analyzeLanguage({screenName: user.screenName, text: text})
               .then(function(sentHist){
                 sentimentHistogram = sentHist;
                 statsObj.languageQuotaFlag = false;
