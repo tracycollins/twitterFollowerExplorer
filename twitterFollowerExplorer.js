@@ -3908,7 +3908,6 @@ function runEnable(displayArgs) {
   runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
   runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
   runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
-  // runEnableArgs.langAnalyzerMessageRxQueueReadyFlag = langAnalyzerMessageRxQueueReadyFlag;
 
   const runEnableKeys = Object.keys(runEnableArgs);
   if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
@@ -4466,7 +4465,6 @@ function initUserDbUpdateQueueInterval(interval) {
             + " | Ts: " + updatedUserObj.statusesCount
             + " | FLWRs: " + updatedUserObj.followersCount
             + " | FRNDs: " + updatedUserObj.friendsCount
-            + " | LAd: " + updatedUserObj.languageAnalyzed
           ));
 
         }
@@ -5090,11 +5088,16 @@ function analyzeLanguage(params){
         + " | @" + params.screenName
       ));
 
+      statsObj.analyzer.analyzed += 1;
+      statsObj.analyzer.total += 1;
+
       resolve(results);
 
     }
     catch(err){
       debug(chalkError("*** LANGUAGE ANALYZER ERROR: " + err));
+      statsObj.analyzer.errors += 1;
+      statsObj.analyzer.total += 1;
       reject(err);
     }
 
