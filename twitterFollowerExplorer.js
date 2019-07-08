@@ -5151,6 +5151,8 @@ function userProfileChangeHistogram(params) {
         const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
 
         try{
+          userProfileChanges = [];
+          userProfileChanges.push("sentiment");
           sentimentHistogram = await analyzeLanguage({screenName: user.screenName, text: profileText});
           languageAnalyzedFlag = true;
           statsObj.languageQuotaFlag = false;
@@ -5559,7 +5561,7 @@ function userProfileChangeHistogram(params) {
         then(function(histogramsMerged){
           resolve({ 
             userProfileChanges: userProfileChanges, 
-            histogram: histogramsMerged, 
+            histograms: histogramsMerged, 
             languageAnalyzedFlag: languageAnalyzedFlag, 
             bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, 
             profileImageAnalyzedFlag: profileImageAnalyzedFlag
@@ -5601,7 +5603,7 @@ function updateUserHistograms(p) {
       // resolve({ histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, profileImageAnalyzedFlag: profileImageAnalyzedFlag });
 
       if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
-        user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.histogramsMerged });
+        user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.histograms });
       }
 
       if (results && results.bannerImageAnalyzedFlag) {
