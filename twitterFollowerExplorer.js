@@ -5123,6 +5123,7 @@ function userProfileChangeHistogram(params) {
 
     let userProfileChanges = false;
     let bannerImageAnalyzedFlag = false;
+    let languageAnalyzedFlag = false;
     let profileImageAnalyzedFlag = false;
 
     try {
@@ -5151,6 +5152,7 @@ function userProfileChangeHistogram(params) {
 
         try{
           sentimentHistogram = await analyzeLanguage({screenName: user.screenName, text: profileText});
+          languageAnalyzedFlag = true;
           statsObj.languageQuotaFlag = false;
         }
         catch(err){
@@ -5492,6 +5494,7 @@ function userProfileChangeHistogram(params) {
               analyzeLanguage({screenName: user.screenName, text: text})
               .then(function(sentHist){
                 sentimentHistogram = sentHist;
+                languageAnalyzedFlag = true;
                 statsObj.languageQuotaFlag = false;
               })
               .catch(function(e){
@@ -5554,7 +5557,13 @@ function userProfileChangeHistogram(params) {
           ]
         } ).
         then(function(histogramsMerged){
-          resolve({ userProfileChanges: userProfileChanges, histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, profileImageAnalyzedFlag: profileImageAnalyzedFlag });
+          resolve({ 
+            userProfileChanges: userProfileChanges, 
+            histogram: histogramsMerged, 
+            languageAnalyzedFlag: languageAnalyzedFlag, 
+            bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, 
+            profileImageAnalyzedFlag: profileImageAnalyzedFlag
+          });
         }).
         catch(function(err){
           console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
@@ -5591,7 +5600,7 @@ function updateUserHistograms(p) {
 
       // resolve({ histogram: histogramsMerged, bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, profileImageAnalyzedFlag: profileImageAnalyzedFlag });
 
-      if (results && results.userProfileChanges) {
+      if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
         user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.histogramsMerged });
       }
 
