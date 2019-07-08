@@ -5141,7 +5141,10 @@ function userProfileChangeHistogram(params) {
 
       if (configuration.enableLanguageAnalysis
         && !statsObj.languageQuotaFlag
-        && (!user.profileHistograms.sentiment || (user.profileHistograms.sentiment === undefined))
+        && (!user.profileHistograms.sentiment 
+          || (user.profileHistograms.sentiment === undefined)
+          || (Object.keys(user.profileHistograms.sentiment).length === 0)
+          )
       ) {
 
         const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
@@ -5152,7 +5155,9 @@ function userProfileChangeHistogram(params) {
         }
         catch(err){
           if (err.code === 3) {
-            console.log(chalkLog("TFE | UNSUPPORTED LANG"
+            console.log(chalkAlert("TFE | UNSUPPORTED LANG"
+              + " | NID: " + user.nodeId
+              + " | @" + user.screenName
               + " | " + err
             ));
           }
@@ -5160,6 +5165,8 @@ function userProfileChangeHistogram(params) {
             console.error(chalkAlert("TFE"
               + " | LANGUAGE QUOTA"
               + " | RESOURCE_EXHAUSTED"
+              + " | NID: " + user.nodeId
+              + " | @" + user.screenName
             ));
             statsObj.languageQuotaFlag = moment().valueOf();
             startQuotaTimeOutTimer();
