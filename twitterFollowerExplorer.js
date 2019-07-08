@@ -5111,7 +5111,7 @@ function startQuotaTimeOutTimer(){
 
     statsObj.languageQuotaFlag = false;
 
-    console.log(chalkAlert("TFE | XXX CLEAR QUOTA FLAG"));
+    console.log(chalkAlert("TFE | XXX LANG CLEAR QUOTA FLAG"));
 
   }, configuration.languageQuotaTimoutDuration);
 }
@@ -5141,13 +5141,14 @@ function userProfileChangeHistogram(params) {
 
       if (configuration.enableLanguageAnalysis
         && !statsObj.languageQuotaFlag
-        && (user.profileHistograms.sentiment === undefined)
+        && (!user.profileHistograms.sentiment || (user.profileHistograms.sentiment === undefined))
       ) {
 
         const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
 
         try{
           sentimentHistogram = await analyzeLanguage({text: profileText});
+          statsObj.languageQuotaFlag = false;
         }
         catch(err){
           if (err.code === 3) {
@@ -5484,6 +5485,7 @@ function userProfileChangeHistogram(params) {
               analyzeLanguage({text: text})
               .then(function(sentHist){
                 sentimentHistogram = sentHist;
+                statsObj.languageQuotaFlag = false;
               })
               .catch(function(e){
                 if (e.code === 3) {
