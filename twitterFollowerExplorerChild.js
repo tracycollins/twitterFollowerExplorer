@@ -163,6 +163,7 @@ process.on("unhandledRejection", function(err, promise) {
 
 let configuration = {};
 
+configuration.verbose =false;
 configuration.threeceeUser = process.env.THREECEE_USER;
 configuration.inputsBinaryMode = DEFAULT_INPUTS_BINARY_MODE;
 configuration.testMode = TEST_MODE;
@@ -1031,7 +1032,7 @@ function initTwitter(twitterConfig){
     twitClient.get("account/settings", async function(err, accountSettings, response) {
 
       if (configuration.verbose) {
-        console.log("TFC | TWITTER ACCOUNT SETTINGS response\n" + jsonPrint(response));
+        debug("TFC | TWITTER ACCOUNT SETTINGS response\n", + response);
       }
 
       if (err){
@@ -1169,7 +1170,7 @@ function fetchUserTweets(params){
     twitClient.get("statuses/user_timeline", fetchUserTweetsParams, function(err, userTweetsArray, response) {
 
       if (configuration.verbose) {
-        console.log("TFC | TWITTER USER TIMELINE response\n" + jsonPrint(response));
+        debug("TFC | TWITTER USER TIMELINE response\n", response);
       }
 
       if (err){
@@ -1273,7 +1274,7 @@ function twitterUsersShow(){
     twitClient.get("users/show", {screen_name: configuration.threeceeUser}, function(err, userShowData, response) {
 
       if (configuration.verbose) {
-        console.log("TFC | TWITTER USER SHOW response\n" + jsonPrint(response));
+        debug("TFC | TWITTER USER SHOW response\n", response);
       }
 
       if (err){
@@ -1309,7 +1310,7 @@ function twitterUsersShow(){
           + " | " + getTimeStamp() 
           + " | ERR CODE: " + err.code
           + " | " + err.message
-          // + "\nRESPONSE\n" + jsonPrint(response)
+          // + "\nRESPONSE\n", response
         ));
 
         return reject(err);
@@ -1495,7 +1496,7 @@ function checkRateLimit(){
     twitClient.get("application/rate_limit_status", function(err, data, response) {
 
       if (configuration.verbose) {
-        console.log("TFC | TWITTER RATE LIMIT STATUS response\n" + jsonPrint(response));
+        debug("TFC | TWITTER RATE LIMIT STATUS response\n", response);
       }
 
       if (err && (err.code !== 88)){
@@ -1569,15 +1570,6 @@ function checkRateLimit(){
 
         });
       });
-
-      if (configuration.verbose) {
-        console.log(chalkError("TFC | *** TWITTER RATE LIMIT STATUS ERROR"
-          + " | @" + configuration.threeceeUser 
-          + " | " + getTimeStamp() 
-          + " | ERR CODE: " + err.code
-          + " | " + err.message
-        ));
-      }
 
       resolve(results);
     });

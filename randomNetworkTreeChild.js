@@ -32,6 +32,7 @@ const networksHashMap = new HashMap();
 const activateNetworkQueue = [];
 let maxQueueFlag = false;
 let maxInputHashMap = {};
+let normalization = {};
 
 let sortedNetworkResults = {};
 
@@ -140,7 +141,7 @@ let initializeBusy = false;
 const statsObj = {};
 
 statsObj.networksLoaded = false;
-statsObj.normalization = {};
+// statsObj.normalization = {};
 
 statsObj.loadedNetworks = {};
 
@@ -302,12 +303,26 @@ const sortedObjectValues = function(params) {
   });
 };
 
-let generateNetworkInputBusy = false;
+// let generateNetworkInputBusy = false;
 
+let previousPrintedNetworkObj = {};
+
+function outputNetworkInputText(params){
+  console.log(chalkLog(
+    "______________________________________________________________________________________________________________________________________"
+    + "\n" + params.hits + " / " + params.inputArraySize + " | HIT RATE: " + params.hitRate.toFixed(2) + "% | " + params.title
+    + "\n" + params.text
+  ));
+}
 
 function printNetworkInput(params){
 
   return new Promise(function(resolve, reject){
+
+    if (!params.inputsObj.input || params.inputsObj.input === undefined){
+      console.log(chalkError("RNT | *** printNetworkInput ERROR | inputsObj.input UNDEFINED"));
+      return reject();
+    }
 
     const inputArray = params.inputsObj.input;
     const nameArray = params.inputsObj.name;
@@ -322,6 +337,11 @@ function printNetworkInput(params){
     let hits = 0;
     let hitRate = 0;
     const inputArraySize = inputArray.length;
+
+    if (previousPrintedNetworkObj.inputsId === params.inputsObj.inputsId) {
+      previousPrintedNetworkObj.title = params.title;
+      outputNetworkInputText(previousPrintedNetworkObj);
+    }
 
     async.eachOfSeries(inputArray, function(input, index, cb){
 
@@ -356,144 +376,157 @@ function printNetworkInput(params){
         console.log(chalkError("RNT | *** printNetworkInput ERROR: " + err));
         return reject(err);
       }
+
+      previousPrintedNetworkObj = {
+        text: text,
+        hits: hits,
+        inputArraySize: inputArraySize,
+        hitRate: hitRate,
+        title: title
+      };
+
+      outputNetworkInputText(previousPrintedNetworkObj);
+
       resolve();
-      console.log(chalkLog(
-        "______________________________________________________________________________________________________________________________________"
-        + "\n" + hits + " / " + inputArraySize + " | HIT RATE: " + hitRate.toFixed(2) + "% | " + params.title
-        + "\n" + text
-        ));
+
+      // console.log(chalkLog(
+      //   "______________________________________________________________________________________________________________________________________"
+      //   + "\n" + hits + " / " + inputArraySize + " | HIT RATE: " + hitRate.toFixed(2) + "% | " + params.title
+      //   + "\n" + text
+      // ));
+
     });
 
   });
 }
 
-function generateNetworkInputIndexed(params){
+// function generateNetworkInputIndexed(params){
 
-  return new Promise(function(resolve, reject){
+//   return new Promise(function(resolve, reject){
 
-    generateNetworkInputBusy = true;
+//     generateNetworkInputBusy = true;
 
-    const inputTypes = Object.keys(params.inputsObj.inputs).sort();
-    const networkInput = [];
-    const networkInputName = [];
+//     const inputTypes = Object.keys(params.inputsObj.inputs).sort();
+//     const networkInput = [];
+//     const networkInputName = [];
 
-    let indexOffset = 0;
+//     let indexOffset = 0;
 
-    let histogramObj = {};
-    let networkInputTypeNames = [];
+//     let histogramObj = {};
+//     let networkInputTypeNames = [];
 
-    async.eachSeries(inputTypes, function(inputType, cb0){
+//     async.eachSeries(inputTypes, function(inputType, cb0){
 
-      debug("RNT | GENERATE NET INPUT | TYPE: " + inputType);
+//       debug("RNT | GENERATE NET INPUT | TYPE: " + inputType);
 
-      histogramObj = params.histograms[inputType];
-      networkInputTypeNames = params.inputsObj.inputs[inputType];
+//       histogramObj = params.histograms[inputType];
+//       networkInputTypeNames = params.inputsObj.inputs[inputType];
 
-      async.eachOfSeries(networkInputTypeNames, function(inputName, index, cb1){
+//       async.eachOfSeries(networkInputTypeNames, function(inputName, index, cb1){
 
-        if (histogramObj && (histogramObj[inputName] !== undefined)) {
+//         if (histogramObj && (histogramObj[inputName] !== undefined)) {
 
-          networkInputName[indexOffset + index] = inputName;
+//           networkInputName[indexOffset + index] = inputName;
 
-          if (configuration.inputsBinaryMode) {
-            networkInput[indexOffset + index] = 1;
-            return cb1();
-          }
+//           if (configuration.inputsBinaryMode) {
+//             networkInput[indexOffset + index] = 1;
+//             return cb1();
+//           }
 
-          if (maxInputHashMap[inputType] === undefined) {
+//           if (maxInputHashMap[inputType] === undefined) {
 
-            maxInputHashMap[inputType] = {};
-            maxInputHashMap[inputType][inputName] = histogramObj[inputName];
+//             maxInputHashMap[inputType] = {};
+//             maxInputHashMap[inputType][inputName] = histogramObj[inputName];
 
-            networkInput[indexOffset + index] = 1;
+//             networkInput[indexOffset + index] = 1;
 
-            console.log(chalkLog("RNT | MAX INPUT TYPE UNDEFINED"
-              + " | IN ID: " + params.inputsObj.inputsId
-              + " | IN LENGTH: " + networkInput.length
-              + " | @" + params.userScreenName
-              + " | TYPE: " + inputType
-              + " | " + inputName
-              + " | " + histogramObj[inputName]
-            ));
+//             console.log(chalkLog("RNT | MAX INPUT TYPE UNDEFINED"
+//               + " | IN ID: " + params.inputsObj.inputsId
+//               + " | IN LENGTH: " + networkInput.length
+//               + " | @" + params.userScreenName
+//               + " | TYPE: " + inputType
+//               + " | " + inputName
+//               + " | " + histogramObj[inputName]
+//             ));
 
-            async.setImmediate(function() { 
-              cb1(); 
-            });
+//             async.setImmediate(function() { 
+//               cb1(); 
+//             });
 
-          }
-          else {
+//           }
+//           else {
 
-            // generate maxInputHashMap on the fly if needed
-            // should backfill previous input values when new max is found
+//             // generate maxInputHashMap on the fly if needed
+//             // should backfill previous input values when new max is found
 
-            if (maxInputHashMap[inputType][inputName] === undefined) {
+//             if (maxInputHashMap[inputType][inputName] === undefined) {
 
-              maxInputHashMap[inputType][inputName] = histogramObj[inputName];
+//               maxInputHashMap[inputType][inputName] = histogramObj[inputName];
 
-              console.log(chalkLog("RNT | MAX INPUT NAME UNDEFINED"
-                + " | IN ID: " + params.inputsObj.inputsId
-                + " | IN LENGTH: " + networkInput.length
-                + " | @" + params.userScreenName
-                + " | TYPE: " + inputType
-                + " | " + inputName
-                + " | " + histogramObj[inputName]
-              ));
-            }
-            else if (histogramObj[inputName] > maxInputHashMap[inputType][inputName]) {
+//               console.log(chalkLog("RNT | MAX INPUT NAME UNDEFINED"
+//                 + " | IN ID: " + params.inputsObj.inputsId
+//                 + " | IN LENGTH: " + networkInput.length
+//                 + " | @" + params.userScreenName
+//                 + " | TYPE: " + inputType
+//                 + " | " + inputName
+//                 + " | " + histogramObj[inputName]
+//               ));
+//             }
+//             else if (histogramObj[inputName] > maxInputHashMap[inputType][inputName]) {
 
-              console.log(chalkLog("RNT | MAX INPUT VALUE UPDATED"
-                + " | IN ID: " + params.inputsObj.inputsId
-                + " | CURR IN INDEX: " + networkInput.length + "/" + params.inputsObj.meta.numInputs
-                + " | @" + params.userScreenName
-                + " | TYPE: " + inputType
-                + " | " + inputName
-                + " | PREV MAX: " + maxInputHashMap[inputType][inputName]
-                + " | CURR MAX: " + histogramObj[inputName]
-              ));
+//               console.log(chalkLog("RNT | MAX INPUT VALUE UPDATED"
+//                 + " | IN ID: " + params.inputsObj.inputsId
+//                 + " | CURR IN INDEX: " + networkInput.length + "/" + params.inputsObj.meta.numInputs
+//                 + " | @" + params.userScreenName
+//                 + " | TYPE: " + inputType
+//                 + " | " + inputName
+//                 + " | PREV MAX: " + maxInputHashMap[inputType][inputName]
+//                 + " | CURR MAX: " + histogramObj[inputName]
+//               ));
 
-              maxInputHashMap[inputType][inputName] = histogramObj[inputName];
+//               maxInputHashMap[inputType][inputName] = histogramObj[inputName];
 
-            }
+//             }
 
-            networkInput[indexOffset + index] = (maxInputHashMap[inputType][inputName] > 0) 
-              ? histogramObj[inputName]/maxInputHashMap[inputType][inputName] 
-              : 1;
+//             networkInput[indexOffset + index] = (maxInputHashMap[inputType][inputName] > 0) 
+//               ? histogramObj[inputName]/maxInputHashMap[inputType][inputName] 
+//               : 1;
 
-            async.setImmediate(function() {
-              cb1();
-            });
-          }
-        }
-        else {
+//             async.setImmediate(function() {
+//               cb1();
+//             });
+//           }
+//         }
+//         else {
 
-          networkInputName[indexOffset + index] = false;
-          networkInput[indexOffset + index] = 0;
+//           networkInputName[indexOffset + index] = false;
+//           networkInput[indexOffset + index] = 0;
    
-          async.setImmediate(function() { 
-            cb1(); 
-          });
-        }
+//           async.setImmediate(function() { 
+//             cb1(); 
+//           });
+//         }
 
-      }, function(err){
+//       }, function(err){
 
-        if (err) { return cb0(err); }
+//         if (err) { return cb0(err); }
 
-        async.setImmediate(function() { 
-          indexOffset += networkInputTypeNames.length;
-          cb0(); 
-        });
+//         async.setImmediate(function() { 
+//           indexOffset += networkInputTypeNames.length;
+//           cb0(); 
+//         });
 
-      });
+//       });
 
-    }, function(err){
+//     }, function(err){
 
-      if (err) { return reject(err); }
-      generateNetworkInputBusy = false;
-      resolve({ name: networkInputName, input: networkInput });
-    });
+//       if (err) { return reject(err); }
+//       generateNetworkInputBusy = false;
+//       resolve({ name: networkInputName, input: networkInput });
+//     });
 
-  });
-}
+//   });
+// }
 
 function generateObjFromArray(params){
 
@@ -509,6 +542,206 @@ function generateObjFromArray(params){
     }, function(){
       resolve(result);
     });
+
+  });
+}
+
+function convertDatum(params){
+
+  const datum = params.datum;
+  const generateInputRaw = params.generateInputRaw;
+
+  const compRange = normalization.comp.max - normalization.comp.min;
+
+  return new Promise(async function(resolve, reject){
+
+    try {
+
+      const inputTypes = Object.keys(params.inputsObj.inputs).sort();
+
+      if (!datum.tweetHistograms || (datum.tweetHistograms === undefined)){
+        console.log(chalkError("RNT | *** USER TWEET HISTOGRAMS UNDEFINED\nDATUM\n" + jsonPrint(datum)));
+        return reject(new Error("USER TWEET HISTOGRAMS UNDEFINED"));
+      }
+
+      if (!datum.profileHistograms || (datum.profileHistograms === undefined)){
+        console.log(chalkError("RNT | *** USER PROFILE HISTOGRAMS UNDEFINED\nDATUM\n" + jsonPrint(datum)));
+        return reject(new Error("USER PROFILE HISTOGRAMS UNDEFINED"));
+      }
+
+      const mergedHistograms = await mergeHistograms.merge({ histogramA: datum.tweetHistograms, histogramB: datum.profileHistograms });
+
+      const convertedDatum = {};
+
+      convertedDatum.screenName = datum.screenName;
+      convertedDatum.name = [];
+      convertedDatum.input = [];
+      convertedDatum.output = [];
+      convertedDatum.inputRaw = [];
+
+      switch (datum.category) {
+        case "left":
+        convertedDatum.output = [1, 0, 0];
+        break;
+        case "neutral":
+        convertedDatum.output = [0, 1, 0];
+        break;
+        case "right":
+        convertedDatum.output = [0, 0, 1];
+        break;
+        default:
+        console.log(chalkError("RNT | *** CATEGORY ERROR"
+          + " | " + datum.category 
+          + " | @" + datum.screenName
+        ));
+        return reject(new Error("UNKNOWN CATEGORY: " + datum.category));
+      }
+
+      async.eachSeries(inputTypes, function(inputType, cb0){
+
+        const inNames = params.inputsObj.inputs[inputType].sort();
+
+        async.eachSeries(inNames, function(inName, cb1){
+
+          const inputName = inName;
+
+          if (generateInputRaw) {
+            convertedDatum.inputRaw.push(inputName);
+          }
+
+          if (inputType === "sentiment") {
+
+            if (
+              mergedHistograms.sentiment 
+              && (mergedHistograms.sentiment !== undefined) 
+              && (mergedHistograms.sentiment[inputName] !== undefined)
+            ){
+
+              // "normalization": {
+              //   "score": {
+              //     "min": -0.8999999761581421,
+              //     "max": 1
+              //   },
+              //   "comp": {
+              //     "min": -264.00000011920923,
+              //     "max": 308.00000143051136
+              //   },
+              //   "magnitude": {
+              //     "min": 0,
+              //     "max": 4.400000095367432
+              //   }
+              // }
+
+              let inputValue;
+
+              switch (inputName) {
+                case "score": // range = 0,1
+                  inputValue = 0.5*(mergedHistograms.sentiment.score + 1);
+                  if ((inputValue > 1) || (inputValue < -1)){
+                    console.log(chalkAlert("TNC | ??? NORMALIZATION SCORE RANGE ERROR"
+                      + " | SCORE: " + inputValue + " | RAW SCORE: " + mergedHistograms.sentiment.score
+                      + " | @" + datum.screenName
+                    ));
+                  }
+                break;
+                case "magnitude": // range = 0,+Infinity
+                  if (normalization.magnitude.max > 0){
+                    inputValue = mergedHistograms.sentiment.magnitude/normalization.magnitude.max;
+                  }
+                  else {
+                    console.log(chalkAlert("TNC | ??? NORMALIZATION MAGNITUDE MAX === 0 | @" + datum.screenName));
+                    inputValue = 0;
+                  }
+                break;
+                case "comp":  // range = -Infinity,+Infinity
+                  if (compRange > 0){
+                    inputValue = (mergedHistograms.sentiment.comp - normalization.comp.min)/compRange;
+                  }
+                  else{
+                    console.log(chalkAlert("TNC | ??? NORMALIZATION COMP RANGE === 0 | @" + datum.screenName));
+                    inputValue = 0;
+                  }
+                break;
+              }
+
+              convertedDatum.input.push(inputValue);
+              convertedDatum.name.push(inputName);
+
+              async.setImmediate(function() {
+                cb1();
+              });
+            }
+          }
+          else if (inputType === "friends"){
+
+            if ((datum.friends !== undefined) && (datum.friends.length > 0) && (datum.friends.includes(inputName))){
+              convertedDatum.input.push(1);
+              convertedDatum.name.push(inputName);
+              debug(chalkLog("TNC | +++ FRIEND INPUT | @" + datum.screenName + " | " + inputName));
+            }
+            else {
+              convertedDatum.input.push(0);
+              convertedDatum.name.push(inputName);
+            }
+
+            async.setImmediate(function() {
+              cb1();
+            });
+
+          }
+          else if (
+            mergedHistograms[inputType] 
+            && (mergedHistograms[inputType] !== undefined) 
+            && (mergedHistograms[inputType][inputName] !== undefined)
+          ){
+
+            if (configuration.inputsBinaryMode) {
+              convertedDatum.input.push(1);
+              convertedDatum.name.push(inputName);
+            }
+            else if ((maxInputHashMap === undefined) 
+              || (maxInputHashMap[inputType] === undefined)) {
+              debug(chalkAlert("UNDEFINED??? maxInputHashMap." + inputType + " | " + inputName));
+              convertedDatum.input.push(1);
+              convertedDatum.name.push(inputName);
+            }
+            else {
+              const inputValue = (
+                maxInputHashMap[inputType] 
+                && maxInputHashMap[inputType][inputName] 
+                && (maxInputHashMap[inputType][inputName] > 0)
+              ) 
+                ? mergedHistograms[inputType][inputName]/maxInputHashMap[inputType][inputName] 
+                : 1;
+              convertedDatum.input.push(inputValue);
+              convertedDatum.name.push(inputName);
+            }
+
+            async.setImmediate(function() {
+              cb1();
+            });
+          }
+          else {
+            convertedDatum.input.push(0);
+            convertedDatum.name.push(inputName);
+            async.setImmediate(function() {
+              cb1();
+            });
+          }
+
+        }, function(){
+          cb0();
+        });
+
+      }, function(){
+        resolve(convertedDatum);
+      });
+
+    }
+    catch(err){
+      console.log(chalkError("RNT | *** CONVERT TRAINING DATUM ERROR: " + err));
+      return reject(err);
+    }
 
   });
 }
@@ -532,10 +765,28 @@ function activateNetwork(params){
 
     try {
 
+      if (params.user.profileHistograms === undefined) {
+        console.log(chalkError("RNT | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
+        params.user.profileHistograms = {};
+        // return reject(new Error("UNDEFINED USER PROFILE HISTOGRAMS"));
+      }
+
+      if (params.user.tweetHistograms === undefined) {
+        console.log(chalkError("RNT | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
+        params.user.tweetHistograms = {};
+        // return reject(new Error("UNDEFINED USER TWEET HISTOGRAMS"));
+      }
+
+      if (params.user.friends === undefined) {
+        console.log(chalkError("RNT | UNDEFINED USER FRIENDS | @" + params.user.screenName));
+        params.user.friends = [];
+        // return reject(new Error("UNDEFINED USER FRIENDS"));
+      }
+
       const userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
       userHistograms.friends = generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
 
-      const languageAnalysis = params.user.languageAnalysis;
+      // const languageAnalysis = params.user.languageAnalysis;
 
       const networkOutput = {};
 
@@ -559,13 +810,15 @@ function activateNetwork(params){
 
         try {
 
-          const networkInputObj = await generateNetworkInputIndexed({
-            networkId: networkObj.networkId,
-            userScreenName: params.user.screenName,
-            histograms: userHistograms,
-            languageAnalysis: languageAnalysis,
-            inputsObj: networkObj.inputsObj
-          });
+          // const networkInputObj = await generateNetworkInputIndexed({
+          //   networkId: networkObj.networkId,
+          //   userScreenName: params.user.screenName,
+          //   histograms: userHistograms,
+          //   // languageAnalysis: languageAnalysis,
+          //   inputsObj: networkObj.inputsObj
+          // });
+
+          const networkInputObj = await convertDatum({datum: params.user, inputsObj: networkObj.inputsObj, generateInputRaw: false});
 
           const output = networkObj.network.activate(networkInputObj.input);
 
@@ -606,11 +859,12 @@ function activateNetwork(params){
           if (configuration.verbose) {
             await printNetworkInput({
               title: networkObj.networkId
+              + " | INPUT: " + networkObj.inputsId 
               + " | @" + params.user.screenName 
               + " | C: " + params.user.category 
               + " | A: " + categoryAuto
-              + " | MATCH: " + match
-              + "\n" + jsonPrint(userHistograms),
+              + " | MATCH: " + match,
+              // + "\n" + jsonPrint(userHistograms),
               inputsObj: networkInputObj
             });
           }
@@ -619,14 +873,14 @@ function activateNetwork(params){
 
         }
         catch(err){
-          console.log(chalkError("RNT | *** ERROR ACTIVATE NETWORK: " + err));
+          console.log(chalkError("RNT | *** ERROR ACTIVATE NETWORK", err));
           activateNetworkBusy = false;
           return reject(err);
         }
       }, function(err){
 
         if (err) {
-          console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR: " + err));
+          console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR", err));
           return reject(err);
         }
 
@@ -644,7 +898,7 @@ function activateNetwork(params){
 
       activateNetworkBusy = false;
 
-      console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR: " + err));
+      console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR", err));
       reject(err);
     }
 
@@ -1086,7 +1340,7 @@ function initActivateNetworkInterval(interval){
           messageObj.user.friends = [];
         }
 
-        statsObj.normalization = activateNetworkObj.normalization;
+        // normalization = activateNetworkObj.normalization;
 
         try {
 
@@ -1228,7 +1482,7 @@ function initActivateNetworkInterval(interval){
 
           console.trace(chalkError("RNT | *** ACTIVATE NETWORK ERROR"
             + " | @" + activateNetworkObj.user.screenName
-            + " | " + err
+            + " | ", err
           ));
 
           activateNetworkIntervalBusy = false;
@@ -1419,7 +1673,7 @@ function busy(){
   if (generateNetworksOutputBusy) { return "generateNetworksOutputBusy"; }
   if (activateNetworkBusy) { return "activateNetworkBusy"; }
   if (activateNetworkIntervalBusy) { return "activateNetworkIntervalBusy"; }
-  if (generateNetworkInputBusy) { return "generateNetworkInputBusy"; }
+  // if (generateNetworkInputBusy) { return "generateNetworkInputBusy"; }
   if (activateNetworkQueue.length > MAX_Q_SIZE) { return "activateNetworkQueue"; }
 
   return false;
@@ -1430,6 +1684,7 @@ function resetStats(callback){
   networksHashMap.clear();
 
   maxInputHashMap = {};
+  normalization = {};
 
   statsObj.loadedNetworks = {};
   statsObj.allTimeLoadedNetworks = {};
@@ -1503,11 +1758,24 @@ process.on("message", async function(m) {
       });
     break;
 
+    case "VERBOSE":
+      console.log(chalkAlert("RNT | SET VERBOSE: " + m.verbose));
+      configuration.verbose = m.verbose;
+    break;
+
     case "LOAD_MAX_INPUTS_HASHMAP":
       maxInputHashMap = {};
       maxInputHashMap = m.maxInputHashMap;
       console.log(chalkLog("RNT | LOAD_MAX_INPUTS_HASHMAP"
         + " | " + Object.keys(maxInputHashMap)
+      ));
+    break;
+
+    case "LOAD_NORMALIZATION":
+      normalization = {};
+      normalization = m.normalization;
+      console.log(chalkLog("RNT | LOAD_NORMALIZATION"
+        + "\n" + jsonPrint(normalization)
       ));
     break;
 
@@ -1602,7 +1870,7 @@ process.on("message", async function(m) {
       activateNetworkQueue.push(m.obj);
 
       if (configuration.verbose) {
-        console.log(chalkInfo("### ACTIVATE"
+        console.log(chalkInfo("RNT | ### ACTIVATE"
           + " [" + activateNetworkQueue.length + "]"
           + " | " + getTimeStamp()
           + " | " + m.obj.user.nodeId
