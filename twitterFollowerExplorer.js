@@ -1036,6 +1036,7 @@ function initCategorizedUserIdSet(){
     childParams.command.childId = "tfe_node_child_altthreecee00"
     childParams.command.op = "FETCH_USER_TWEETS";
     childParams.command.userArray = [];
+    childParams.command.fetchUserTweetsEndFlag = false;
 
     async.whilst(
 
@@ -1121,7 +1122,17 @@ function initCategorizedUserIdSet(){
           console.log(chalkError(MODULE_ID_PREFIX + " | INIT CATEGORIZED USER HASHMAP ERROR: " + err + "\n" + jsonPrint(err)));
           return reject(err);
         }
-        resolve();
+
+        childParams.command.fetchUserTweetsEndFlag = true;
+        childParams.command.userArray = [];
+        
+        childSend(childParams).
+        then(function(){
+          resolve();
+        })
+        .catch(function(err){
+          reject(err);
+        })
       }
     );
 
@@ -6306,8 +6317,8 @@ const fsmStates = {
         statsObj.status = "FSM FETCH_ALL";
 
         try{
-          await initCategorizedUserIdSet();
           childSendAll({op: "FETCH_START"});
+          await initCategorizedUserIdSet();
           console.log("TFE | FETCH_ALL | onEnter | " + event);
         }
         catch(err){

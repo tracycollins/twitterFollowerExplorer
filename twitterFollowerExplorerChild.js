@@ -196,6 +196,8 @@ statsObj.users = {};
 statsObj.tweets = {};
 statsObj.tweets.fetched = 0;
 
+statsObj.fetchUserTweetsEndFlag = false;
+
 statsObj.queues = {};
 statsObj.queues.saveFileQueue = {};
 statsObj.queues.saveFileQueue.busy = false;
@@ -1608,7 +1610,11 @@ function initFetchUserTweets(p) {
 
     fetchUserTweetsQueueInterval = setInterval(async function(){
 
-      if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag && fetchUserTweetsQueueReady && (fetchUserTweetsQueue.length === 0)) {
+      if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag 
+        && fetchUserTweetsQueueReady 
+        && (fetchUserTweetsQueue.length === 0)
+        && statsObj.fetchUserTweetsEndFlag
+      ) {
 
         console.log(chalkBlueBold("TFC | ==========================="));
         console.log(chalkBlueBold("TFC | XXX FETCHED USER TWEETS END"));
@@ -2150,6 +2156,7 @@ process.on("message", async function(m) {
       });
       console.log(chalkBlue(MODULE_ID_PREFIX
         + " | FETCH_USER_TWEETS"
+        + " | END FLAG: " + m.fetchUserTweetsEndFlag
         + " | USER ARRAY: " + m.userArray.length
         + " | FUTQ: " + fetchUserTweetsQueue.length
       ));
