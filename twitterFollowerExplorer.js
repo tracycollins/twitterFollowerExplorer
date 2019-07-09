@@ -1125,7 +1125,7 @@ function initCategorizedUserIdSet(){
 
         childParams.command.fetchUserTweetsEndFlag = true;
         childParams.command.userArray = [];
-        
+
         childSend(childParams).
         then(function(){
           resolve();
@@ -5552,7 +5552,12 @@ function updateUserTweets(params){
 
   return new Promise(function(resolve, reject){
 
-    if (params.user.latestTweets.length === 0) { return resolve(params.user); }
+    if (params.user.latestTweets.length === 0) { 
+      if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) { 
+        params.user.tweetHistograms = {};
+      }
+      return resolve(params.user);
+    }
 
     let user = {};
     const latestTweets = params.user.latestTweets;
@@ -5560,7 +5565,7 @@ function updateUserTweets(params){
     user = params.user;
     delete user.latestTweets;
 
-    if (user.tweetHistograms === undefined) { 
+    if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { 
       user.tweetHistograms = {};
     }
 
