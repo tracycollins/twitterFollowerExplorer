@@ -2154,6 +2154,11 @@ process.on("message", async function(m) {
       m.userArray.forEach(function(user){
         fetchUserTweetsQueue.push(user);
       });
+
+      if (m.fetchUserTweetsEndFlag) {
+        statsObj.fetchUserTweetsEndFlag = m.fetchUserTweetsEndFlag;
+      }
+
       console.log(chalkBlue(MODULE_ID_PREFIX
         + " | FETCH_USER_TWEETS"
         + " | END FLAG: " + m.fetchUserTweetsEndFlag
