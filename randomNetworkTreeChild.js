@@ -308,6 +308,12 @@ const sortedObjectValues = function(params) {
 let previousPrintedNetworkObj = {};
 
 function outputNetworkInputText(params){
+  if (params.truncated){
+    console.log(chalkLog(
+      params.hits + " / " + params.inputArraySize + " | HIT RATE: " + params.hitRate.toFixed(2) + "% | " + params.title
+    ));
+    return;
+  }
   console.log(chalkLog(
     "______________________________________________________________________________________________________________________________________"
     + "\n" + params.hits + " / " + params.inputArraySize + " | HIT RATE: " + params.hitRate.toFixed(2) + "% | " + params.title
@@ -339,10 +345,13 @@ function printNetworkInput(params){
     const inputArraySize = inputArray.length;
 
     if (previousPrintedNetworkObj && (previousPrintedNetworkObj.inputsId === params.inputsObj.inputsId)) {
+      previousPrintedNetworkObj.truncated = true;
       previousPrintedNetworkObj.title = params.title;
       outputNetworkInputText(previousPrintedNetworkObj);
       return resolve();
     }
+
+    previousPrintedNetworkObj.truncated = false;
 
     async.eachOfSeries(inputArray, function(input, index, cb){
 
@@ -379,12 +388,13 @@ function printNetworkInput(params){
       }
 
       previousPrintedNetworkObj = {
+        title: params.title,
         inputsId: params.inputsObj.inputsId,
         text: text,
         hits: hits,
         inputArraySize: inputArraySize,
         hitRate: hitRate,
-        title: title
+        truncated: false
       };
 
       outputNetworkInputText(previousPrintedNetworkObj);
@@ -575,7 +585,7 @@ function convertDatum(params){
 
       const convertedDatum = {};
 
-      convertedDatum.inputsId = datum.inputsId;
+      convertedDatum.inputsId = params.inputsObj.inputsId;
       convertedDatum.screenName = datum.screenName;
       convertedDatum.name = [];
       convertedDatum.input = [];
