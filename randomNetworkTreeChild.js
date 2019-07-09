@@ -338,9 +338,10 @@ function printNetworkInput(params){
     let hitRate = 0;
     const inputArraySize = inputArray.length;
 
-    if (previousPrintedNetworkObj.inputsId === params.inputsObj.inputsId) {
+    if (previousPrintedNetworkObj && (previousPrintedNetworkObj.inputsId === params.inputsObj.inputsId)) {
       previousPrintedNetworkObj.title = params.title;
       outputNetworkInputText(previousPrintedNetworkObj);
+      return resolve();
     }
 
     async.eachOfSeries(inputArray, function(input, index, cb){
@@ -378,6 +379,7 @@ function printNetworkInput(params){
       }
 
       previousPrintedNetworkObj = {
+        inputsId: params.inputsObj.inputsId,
         text: text,
         hits: hits,
         inputArraySize: inputArraySize,
@@ -573,6 +575,7 @@ function convertDatum(params){
 
       const convertedDatum = {};
 
+      convertedDatum.inputsId = datum.inputsId;
       convertedDatum.screenName = datum.screenName;
       convertedDatum.name = [];
       convertedDatum.input = [];
