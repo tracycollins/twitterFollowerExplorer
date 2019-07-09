@@ -72,6 +72,7 @@ hostname = hostname.replace(/word0-instance-1/g, "google");
 hostname = hostname.replace(/word/g, "google");
 
 const chalk = require("chalk");
+const chalkWarn = chalk.yellow;
 const chalkAlert = chalk.red;
 const chalkError = chalk.bold.red;
 const chalkLog = chalk.gray;
@@ -770,17 +771,17 @@ function activateNetwork(params){
     try {
 
       if (params.user.profileHistograms === undefined) {
-        console.log(chalkAlert("RNT | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
+        console.log(chalkWarn("RNT | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
         params.user.profileHistograms = {};
       }
 
       if (params.user.tweetHistograms === undefined) {
-        console.log(chalkAlert("RNT | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
+        console.log(chalkWarn("RNT | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
         params.user.tweetHistograms = {};
       }
 
       if (params.user.friends === undefined) {
-        console.log(chalkAlert("RNT | UNDEFINED USER FRIENDS | @" + params.user.screenName));
+        console.log(chalkWarn("RNT | UNDEFINED USER FRIENDS | @" + params.user.screenName));
         params.user.friends = [];
       }
 
