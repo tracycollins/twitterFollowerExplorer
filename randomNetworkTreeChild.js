@@ -1314,7 +1314,7 @@ function initActivateNetworkInterval(interval){
     messageObj.currentBestNetwork = null;
     messageObj.category = "none";
     messageObj.categoryAuto = "none";
-    messageObj.output = null;
+    // messageObj.output = null;
 
     let generateNetworksOutputParams = {};
 
@@ -1463,7 +1463,7 @@ function initActivateNetworkInterval(interval){
           messageObj.currentBestNetwork = statsObj.currentBestNetwork;
           messageObj.category = category;
           messageObj.categoryAuto = generateNetworksOutputObj.bestNetwork.categoryAuto;
-          messageObj.output = activateNetworkResults;
+          // messageObj.output = activateNetworkResults;
 
           process.send(messageObj);
 
