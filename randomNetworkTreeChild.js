@@ -767,39 +767,25 @@ function activateNetwork(params){
 
     activateNetworkBusy = true;
 
-    // const networkOutput = {};
-    // let userHistograms = {};
-    // let networkObj;
-    // let networkInputObj = {};
-    // let output = [];
-    // let maxOutputIndex;
-    // let categoryAuto;
-    // let match;
-
     try {
 
       if (params.user.profileHistograms === undefined) {
-        console.log(chalkError("RNT | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
+        console.log(chalkAlert("RNT | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
         params.user.profileHistograms = {};
-        // return reject(new Error("UNDEFINED USER PROFILE HISTOGRAMS"));
       }
 
       if (params.user.tweetHistograms === undefined) {
-        console.log(chalkError("RNT | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
+        console.log(chalkAlert("RNT | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
         params.user.tweetHistograms = {};
-        // return reject(new Error("UNDEFINED USER TWEET HISTOGRAMS"));
       }
 
       if (params.user.friends === undefined) {
-        console.log(chalkError("RNT | UNDEFINED USER FRIENDS | @" + params.user.screenName));
+        console.log(chalkAlert("RNT | UNDEFINED USER FRIENDS | @" + params.user.screenName));
         params.user.friends = [];
-        // return reject(new Error("UNDEFINED USER FRIENDS"));
       }
 
       const userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
       userHistograms.friends = generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
-
-      // const languageAnalysis = params.user.languageAnalysis;
 
       const networkOutput = {};
 
@@ -822,14 +808,6 @@ function activateNetwork(params){
         }
 
         try {
-
-          // const networkInputObj = await generateNetworkInputIndexed({
-          //   networkId: networkObj.networkId,
-          //   userScreenName: params.user.screenName,
-          //   histograms: userHistograms,
-          //   // languageAnalysis: languageAnalysis,
-          //   inputsObj: networkObj.inputsObj
-          // });
 
           const networkInputObj = await convertDatum({datum: params.user, inputsObj: networkObj.inputsObj, generateInputRaw: false});
 
@@ -877,7 +855,6 @@ function activateNetwork(params){
               + " | C: " + params.user.category 
               + " | A: " + categoryAuto
               + " | MATCH: " + match,
-              // + "\n" + jsonPrint(userHistograms),
               inputsObj: networkInputObj
             });
           }
