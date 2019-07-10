@@ -5689,7 +5689,7 @@ function generateAutoCategory(user, callback) {
 
 function updateUserTweets(params){
 
-  return new Promise(function(resolve, reject){
+  return new Promise(async function(resolve, reject){
 
     if (params.user.latestTweets.length === 0) { 
       if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) { 
@@ -5704,7 +5704,21 @@ function updateUserTweets(params){
     user = params.user;
     delete user.latestTweets;
 
-    if (!user.tweetHistograms || (user.tweetHistograms === undefined) || (user.tweetHistograms === {})) { 
+    let allHistogramsZero = false;
+
+    try{
+      allHistogramsZero = await allHistogramsZeroKeys(user.tweetHistograms);
+    }
+    catch(err){
+      console.log(chalkError("TFE | *** ERROR updateUserTweets allHistogramsZero tweetHistograms", err));
+      return reject(err);
+    }
+
+    if (!user.tweetHistograms 
+      || (user.tweetHistograms === undefined) 
+      || (user.tweetHistograms === {})
+      || allHistogramsZero
+    ) { 
       console.log(chalkAlert("TFE | updateUserTweets | *** USER tweetHistograms UNDEFINED | @" + user.screenName));
       user.tweetHistograms = {};
       user.tweets = {};
@@ -5713,7 +5727,7 @@ function updateUserTweets(params){
       user.tweets.tweetIds = [];
     }
 
-    if (!user.tweets || (user.tweets === undefined) || (user.tweets === {})) { 
+    if (!user.tweets || (user.tweets === undefined) || (user.tweets === {}) || allHistogramsZero) { 
       console.log(chalkAlert("TFE | updateUserTweets | *** USER tweets UNDEFINED | @" + user.screenName));
       user.tweets = {};
       user.tweets.maxId = "0";
