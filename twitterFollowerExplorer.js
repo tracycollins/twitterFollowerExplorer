@@ -1096,7 +1096,7 @@ function initCategorizedUserIdSet(){
               console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: childSend FETCH_USER_TWEETS ERROR: " + e));
               return cb(err);
             });
-            
+
           }
           else {
 
@@ -5485,12 +5485,19 @@ function updateUserHistograms(p) {
       const results = await userProfileChangeHistogram({user: user});
       const dbUser = await global.globalUser.findOne({nodeId: user.nodeId});
 
-      if (!dbUser.profileHistograms || (dbUser.profileHistograms === undefined)){
+      if (!dbUser.profileHistograms || (dbUser.profileHistograms === undefined)) {
+        console.log(chalkWarn("TFE | UNDEFINED USER PROFILE HISTOGRAMS | @" + dbUser.screenName));
         dbUser.profileHistograms = {};
       }
 
-      if (!dbUser.tweetHistograms || (dbUser.tweetHistograms === undefined)){
+      if (!dbUser.tweetHistograms || (dbUser.tweetHistograms === undefined)) {
+        console.log(chalkWarn("TFE | UNDEFINED USER TWEET HISTOGRAMS | @" + dbUser.screenName));
         dbUser.tweetHistograms = {};
+      }
+
+      if (!dbUser.friends || (dbUser.friends === undefined)) {
+        console.log(chalkWarn("TFE | UNDEFINED USER FRIENDS | @" + dbUser.screenName));
+        dbUser.friends = [];
       }
 
       if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
@@ -5528,10 +5535,6 @@ function updateUserHistograms(p) {
       const updatedUser = await dbUser.save();
 
       params.user = updatedUser.toObject();
-
-      // if (!params.user.friends || (params.user.friends === undefined)){ 
-      //   params.user.friends = [];
-      // }
 
       if (configuration.testMode && params.user.friends.length === 0) {
 
