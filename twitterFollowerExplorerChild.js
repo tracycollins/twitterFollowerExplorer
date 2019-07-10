@@ -2157,7 +2157,12 @@ process.on("message", async function(m) {
 
     case "FETCH_USER_TWEETS":
       m.userArray.forEach(function(user){
-        fetchUserTweetsQueue.push(user);
+        if (m.priority) {
+          fetchUserTweetsQueue.unshift(user);
+        }
+        else {
+          fetchUserTweetsQueue.push(user);
+        }
       });
 
       if (m.fetchUserTweetsEndFlag) {

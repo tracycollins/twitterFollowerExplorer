@@ -1036,6 +1036,7 @@ function initCategorizedUserIdSet(){
     childParams.command = {};
     childParams.command.childId = "tfe_node_child_altthreecee00"
     childParams.command.op = "FETCH_USER_TWEETS";
+    childParams.command.priority = false;
     childParams.command.userArray = [];
     childParams.command.fetchUserTweetsEndFlag = false;
 
@@ -5756,6 +5757,7 @@ function updateUserTweets(params){
       childParams.command.childId = "tfe_node_child_altthreecee00"
       childParams.command.op = "FETCH_USER_TWEETS";
       childParams.command.userArray = [];
+      childParams.command.priority = true;
       childParams.command.fetchUserTweetsEndFlag = false;
       childParams.command.userArray.push(user.nodeId);
 
