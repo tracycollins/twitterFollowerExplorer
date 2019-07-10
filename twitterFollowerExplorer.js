@@ -5730,7 +5730,6 @@ function updateUserTweets(params){
 
     if (!user.tweetHistograms 
       || (user.tweetHistograms === undefined) 
-      || (user.tweetHistograms === {})
       || allHistogramsZero
     ) { 
       console.log(chalkAlert("TFE | updateUserTweets | *** USER tweetHistograms UNDEFINED | @" + user.screenName));
@@ -5741,7 +5740,7 @@ function updateUserTweets(params){
       user.tweets.tweetIds = [];
     }
 
-    if (!user.tweets || (user.tweets === undefined) || (user.tweets === {}) || allHistogramsZero) { 
+    if (!user.tweets || (user.tweets === undefined) || allHistogramsZero) { 
       console.log(chalkAlert("TFE | updateUserTweets | *** USER tweets UNDEFINED | @" + user.screenName));
       user.tweets = {};
       user.tweets.maxId = MIN_TWEET_ID;
@@ -5965,7 +5964,7 @@ function processUser(params) {
           user.statusesCount = userIn.statusesCount;
         } 
 
-        if (!user.tweets || (user.tweets === undefined) || (user.tweets === {})){
+        if (!user.tweets || (user.tweets === undefined)){
           console.log(chalkAlert("TFE | *** USER TWEETS UNDEFINED | @" + user.screenName));
           user.tweets = {};
           user.tweets.sinceId = MIN_TWEET_ID;
@@ -5978,7 +5977,7 @@ function processUser(params) {
           user.profileHistograms = {};
         }
 
-        if (!user.tweetHistograms || (user.tweetHistograms === undefined)|| (user.tweetHistograms === {})) {
+        if (!user.tweetHistograms || (user.tweetHistograms === undefined)) {
           console.log(chalkWarn("TFE | *** UNDEFINED USER TWEET HISTOGRAMS | @" + user.screenName));
           user.tweetHistograms = {};
           user.tweets = {};
@@ -6163,7 +6162,7 @@ function initProcessUserQueueInterval(interval) {
 
           user.latestTweets = _.union(user.latestTweets, mObj.latestTweets);
 
-          if (!user.tweets || (user.tweets === undefined) || (user.tweets === {})){
+          if (!user.tweets || (user.tweets === undefined)){
             user.tweets = {};
             user.tweets.sinceId = MIN_TWEET_ID;
             user.tweets.maxId = MIN_TWEET_ID;
@@ -6172,7 +6171,7 @@ function initProcessUserQueueInterval(interval) {
 
           processedUser = await processUser({user: user});
 
-          if (!processedUser.tweets || (processedUser.tweets === undefined) || (processedUser.tweets === {})){
+          if (!processedUser.tweets || (processedUser.tweets === undefined)){
             processedUser.tweets = {};
             processedUser.tweets.sinceId = MIN_TWEET_ID;
             processedUser.tweets.maxId = MIN_TWEET_ID;
