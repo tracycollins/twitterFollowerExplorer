@@ -5489,16 +5489,19 @@ function updateUserHistograms(p) {
       if (!dbUser.profileHistograms || (dbUser.profileHistograms === undefined)) {
         console.log(chalkWarn("TFE | UNDEFINED USER PROFILE HISTOGRAMS | @" + dbUser.screenName));
         dbUser.profileHistograms = {};
+        dbUser.markModified("profileHistograms");
       }
 
       if (!dbUser.tweetHistograms || (dbUser.tweetHistograms === undefined)) {
         console.log(chalkWarn("TFE | UNDEFINED USER TWEET HISTOGRAMS | @" + dbUser.screenName));
         dbUser.tweetHistograms = {};
+        dbUser.markModified("tweetHistograms");
       }
 
       if (!dbUser.friends || (dbUser.friends === undefined)) {
         console.log(chalkWarn("TFE | UNDEFINED USER FRIENDS | @" + dbUser.screenName));
         dbUser.friends = [];
+        dbUser.markModified("friends");
       }
 
       if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
