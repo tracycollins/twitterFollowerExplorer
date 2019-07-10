@@ -4744,7 +4744,7 @@ function allHistogramsZeroKeys(histogram){
   return new Promise(function(resolve){
 
     Object.keys(histogram).forEach(function(histogramType){
-      if (Object.keys(histogram[histogramType]).length > 0) { return resolve(false); }
+      if ((histogramType !== "sentiment") && (Object.keys(histogram[histogramType]).length > 0)) { return resolve(false); }
     });
 
     resolve(true);
@@ -5603,12 +5603,17 @@ function updateUserTweets(params){
     user = params.user;
     delete user.latestTweets;
 
-    if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { 
+    if (!user.tweetHistograms || (user.tweetHistograms === undefined) || (user.tweetHistograms === {})) { 
+      console.log(chalkAlert("TFE | updateUserTweets | *** USER tweetHistograms UNDEFINED | @" + user.screenName));
       user.tweetHistograms = {};
+      user.tweets = {};
+      user.tweets.maxId = "0";
+      user.tweets.sinceId = "0";
+      user.tweets.tweetIds = [];
     }
 
-    if (!user.tweets || user.tweets === undefined || user.tweets === {}) { 
-      console.log(chalkAlert("TFE | updateUserTweets | *** USER TWEETS UNDEFINED\n", jsonPrint(user.tweets)));
+    if (!user.tweets || (user.tweets === undefined) || (user.tweets === {})) { 
+      console.log(chalkAlert("TFE | updateUserTweets | *** USER tweets UNDEFINED | @" + user.screenName));
       user.tweets = {};
       user.tweets.maxId = "0";
       user.tweets.sinceId = "0";
