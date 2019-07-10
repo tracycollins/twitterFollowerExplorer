@@ -1858,6 +1858,21 @@ process.on("message", async function(m) {
     
     case "ACTIVATE":
 
+      if (!m.obj.user.profileHistograms || (m.obj.user.profileHistograms === undefined)) {
+        console.log(chalkWarn("RNT | ACTIVATE | UNDEFINED USER PROFILE HISTOGRAMS | @" + m.obj.user.screenName));
+        m.obj.user.profileHistograms = {};
+      }
+
+      if (!m.obj.user.tweetHistograms || (m.obj.user.tweetHistograms === undefined)) {
+        console.log(chalkWarn("RNT | ACTIVATE | UNDEFINED USER TWEET HISTOGRAMS | @" + m.obj.user.screenName));
+        m.obj.user.tweetHistograms = {};
+      }
+
+      if (!m.obj.user.friends || (m.obj.user.friends === undefined)) {
+        console.log(chalkWarn("RNT | ACTIVATE | UNDEFINED USER FRIENDS | @" + m.obj.user.screenName));
+        m.obj.user.friends = [];
+      }
+
       activateNetworkQueue.push(m.obj);
 
       if (configuration.verbose) {
