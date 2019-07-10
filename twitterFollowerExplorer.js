@@ -5739,7 +5739,7 @@ function updateUserTweets(params){
     user.tweets.sinceId = user.tweets.sinceId || "0";
     user.tweets.tweetIds = user.tweets.tweetIds || [];
 
-    if (user.tweets.tweetIds === []){
+    if (user.tweets.tweetIds.length === 0){
       const childParams = {};
       childParams.command = {};
       childParams.command.childId = "tfe_node_child_altthreecee00"
