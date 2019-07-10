@@ -5485,6 +5485,14 @@ function updateUserHistograms(p) {
       const results = await userProfileChangeHistogram({user: user});
       const dbUser = await global.globalUser.findOne({nodeId: user.nodeId});
 
+      if (!dbUser.profileHistograms || (dbUser.profileHistograms === undefined)){
+        dbUser.profileHistograms = {};
+      }
+
+      if (!dbUser.tweetHistograms || (dbUser.tweetHistograms === undefined)){
+        dbUser.tweetHistograms = {};
+      }
+
       if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
 
         if (results.userProfileChanges) {

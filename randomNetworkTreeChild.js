@@ -770,17 +770,17 @@ function activateNetwork(params){
 
     try {
 
-      if (params.user.profileHistograms === undefined) {
+      if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
         console.log(chalkWarn("RNT | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
         params.user.profileHistograms = {};
       }
 
-      if (params.user.tweetHistograms === undefined) {
+      if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
         console.log(chalkWarn("RNT | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
         params.user.tweetHistograms = {};
       }
 
-      if (params.user.friends === undefined) {
+      if (!params.user.friends || (params.user.friends === undefined)) {
         console.log(chalkWarn("RNT | UNDEFINED USER FRIENDS | @" + params.user.screenName));
         params.user.friends = [];
       }
