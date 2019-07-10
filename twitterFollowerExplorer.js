@@ -2,7 +2,7 @@ const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 const CHILD_PREFIX = "tfe_node";
 
-const MIN_TWEET_ID = 1000;
+const MIN_TWEET_ID = 1000000;
 
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;

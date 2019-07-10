@@ -1253,6 +1253,7 @@ function fetchUserTweets(params){
           + " | ERR CODE: " + err.code
           + " | " + err.message
           + "\n" + jsonPrint(err)
+          + "\fetchUserTweetsParams\n" + jsonPrint(fetchUserTweetsParams)
         ));
 
         return reject(err);
