@@ -1165,6 +1165,12 @@ function fetchUserTweets(params){
     if (params.user.maxId) { fetchUserTweetsParams.max_id = params.user.maxId; } 
     if (params.user.sinceId) { fetchUserTweetsParams.since_id = params.user.sinceId; } 
 
+    if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)){
+      console.log(chalk.yellow("TFC | fetchUserTweets | tweetHistograms UNDEFINED | RESET MAX/SINCE IDs | @" + arams.user));
+      fetchUserTweetsParams.max_id = "0";
+      fetchUserTweetsParams.since_id = "0";
+    }
+
     fetchUserTweetsParams.count = params.tweetFetchCount || configuration.tweetFetchCount;
     fetchUserTweetsParams.exclude_replies = params.excludeReplies || DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES;
     fetchUserTweetsParams.include_rts = params.includeRetweets || DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS;
@@ -1633,21 +1639,21 @@ function initFetchUserTweets(p) {
 
           latestTweets = await fetchUserTweets({ user: user, excludeUser: false });
 
-            if (latestTweets.length > 0) {
+          if (latestTweets.length > 0) {
 
-              statsObj.tweets.fetched += latestTweets.length;
+            statsObj.tweets.fetched += latestTweets.length;
 
-              if (statsObj.tweets.fetched % 100 === 0) {
+            if (statsObj.tweets.fetched % 100 === 0) {
 
-                console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
-                  + " [ " + latestTweets.length + " LATEST / " + statsObj.tweets.fetched + " TOT FETCHED ]"
-                  + " | " + user.userId
-                  + " | @" + user.screenName
-                  + " | SINCE: " + user.tweets.sinceId
-                ));
-              }
-
+              console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
+                + " [ " + latestTweets.length + " LATEST / " + statsObj.tweets.fetched + " TOT FETCHED ]"
+                + " | " + user.userId
+                + " | @" + user.screenName
+                + " | SINCE: " + user.tweets.sinceId
+              ));
             }
+
+          }
 
           process.send(
             {
