@@ -3928,19 +3928,23 @@ function initActivateNetworkQueueInterval(interval) {
         statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
 
         if (!activateNetworkObj.user.profileHistograms || (activateNetworkObj.user.profileHistograms === undefined)) {
-          console.log(chalkWarn("RNT | ACTIVATE | UNDEFINED USER PROFILE HISTOGRAMS | @" + activateNetworkObj.user.screenName));
+          console.log(chalkWarn("TFE | ACTIVATE | UNDEFINED USER PROFILE HISTOGRAMS | @" + activateNetworkObj.user.screenName));
           activateNetworkObj.user.profileHistograms = {};
         }
 
         if (!activateNetworkObj.user.tweetHistograms || (activateNetworkObj.user.tweetHistograms === undefined)) {
-          console.log(chalkWarn("RNT | ACTIVATE | UNDEFINED USER TWEET HISTOGRAMS | @" + activateNetworkObj.user.screenName));
+          console.log(chalkWarn("TFE | ACTIVATE | UNDEFINED USER TWEET HISTOGRAMS | @" + activateNetworkObj.user.screenName));
           activateNetworkObj.user.tweetHistograms = {};
         }
 
         if (!activateNetworkObj.user.friends || (activateNetworkObj.user.friends === undefined)) {
-          console.log(chalkWarn("RNT | ACTIVATE | UNDEFINED USER FRIENDS | @" + activateNetworkObj.user.screenName));
+          console.log(chalkWarn("TFE | ACTIVATE | UNDEFINED USER FRIENDS | @" + activateNetworkObj.user.screenName));
           activateNetworkObj.user.friends = [];
         }
+
+        console.log(chalk.blue("TFE | ACTIVE OBJ SIZE | @" + activateNetworkObj.user.screenName
+          + " | " + sizeof(activateNetworkObj/ONE_MEGABYTE).toFixed(3)
+        ));
 
         randomNetworkTree.send({op: "ACTIVATE", obj: activateNetworkObj}, function(){
           statsObj.queues.activateNetworkQueue.busy = false;
