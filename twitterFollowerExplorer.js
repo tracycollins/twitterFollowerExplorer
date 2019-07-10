@@ -1091,7 +1091,6 @@ function initCategorizedUserIdSet(){
 
               p.skip += results.count;
               cb();
-
             }).
             catch(function(e){
               console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: childSend FETCH_USER_TWEETS ERROR: " + e));
