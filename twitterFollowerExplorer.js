@@ -5567,7 +5567,7 @@ function updateUserHistograms(p) {
         updatedUser.friends = [];
       }
 
-      params.user = updatedUser.toJSON();
+      params.user = updatedUser.toObject();
 
       if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
         console.log(chalkWarn("TFE | params.user | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
@@ -5576,6 +5576,7 @@ function updateUserHistograms(p) {
 
       if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
         console.log(chalkWarn("TFE | params.user | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
+        console.log(chalkWarn("TFE | params.user | updatedUser.tweetHistograms\n" + jsonPrint(updatedUser.tweetHistograms)));
         params.user.tweetHistograms = {};
       }
 
