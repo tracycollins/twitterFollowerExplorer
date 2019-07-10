@@ -1096,6 +1096,7 @@ function initCategorizedUserIdSet(){
               console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: childSend FETCH_USER_TWEETS ERROR: " + e));
               return cb(err);
             });
+            
           }
           else {
 
