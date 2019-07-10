@@ -5569,6 +5569,22 @@ function updateUserHistograms(p) {
 
       params.user = updatedUser.toObject();
 
+      if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
+        console.log(chalkWarn("TFE | params.user | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
+        params.user.profileHistograms = {};
+      }
+
+      if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
+        console.log(chalkWarn("TFE | params.user | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
+        params.user.tweetHistograms = {};
+      }
+
+      if (!params.user.friends || (params.user.friends === undefined)) {
+        console.log(chalkWarn("TFE | params.user | UNDEFINED USER FRIENDS | @" + params.user.screenName));
+        params.user.friends = [];
+      }
+
+
       if (configuration.testMode && params.user.friends.length === 0) {
 
         params.user.friends = Array.from({ length: randomInt(1,47) }, () => (Math.floor(Math.random() * 123456789).toString()));
