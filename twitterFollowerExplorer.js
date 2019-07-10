@@ -5465,35 +5465,65 @@ function updateUserHistograms(p) {
 
     const user = params.user;
 
-    user.profileHistograms = user.profileHistograms || {};
-    user.tweetHistograms = user.tweetHistograms || {};
+    // user.profileHistograms = user.profileHistograms || {};
+    // user.tweetHistograms = user.tweetHistograms || {};
+
+    if (!user.profileHistograms || (user.profileHistograms === undefined)){ 
+      user.profileHistograms = {};
+    }
+
+    if (!user.tweetHistograms || (user.tweetHistograms === undefined)){ 
+      user.tweetHistograms = {};
+    }
+
+    if (!user.friends || (user.friends === undefined)){ 
+      user.friends = [];
+    }
 
     try {
 
       const results = await userProfileChangeHistogram({user: user});
+      const dbUser = await global.globalUser.findOne({nodeId: user.nodeId});
 
       if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
-        user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.histograms });
+
+        if (results.userProfileChanges) {
+          results.userProfileChanges.forEach(function(prop){
+            if (user[prop] && (user[prop] !== undefined)){
+              console.log(chalkLog("TFE | user prop change | " + prop + " -<- " + user[prop]));
+              dbUser[prop] = user[prop];
+            }
+          });
+        }
+
+        dbUser.profileHistograms = await mergeHistograms.merge({ histogramA: dbUser.profileHistograms, histogramB: results.histograms });
+
       }
 
       if (results && results.bannerImageAnalyzedFlag) {
-        user.bannerImageAnalyzed = user.bannerImageUrl;
+        dbUser.bannerImageUrl = user.bannerImageUrl;
+        dbUser.bannerImageAnalyzed = user.bannerImageUrl;
       }
 
       if (results && results.profileImageAnalyzedFlag) {
-        user.profileImageAnalyzed = user.profileImageUrl;
+        dbUser.profileImageUrl = user.profileImageUrl;
+        dbUser.profileImageAnalyzed = user.profileImageUrl;
       }
 
-      user.lastHistogramTweetId = user.statusId;
-      user.lastHistogramQuoteId = user.quotedStatusId;
+      dbUser.statusId = user.statusId;
+      dbUser.lastHistogramTweetId = user.statusId;
+      dbUser.quotedStatusId = user.quotedStatusId;
+      dbUser.lastHistogramQuoteId = user.quotedStatusId;
 
-      const updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: false, noInc: true});
+      // const updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: false, noInc: true});
+
+      const updatedUser = await dbUser.save();
 
       params.user = updatedUser.toObject();
 
-      if (!params.user.friends || (params.user.friends === undefined)){ 
-        params.user.friends = [];
-      }
+      // if (!params.user.friends || (params.user.friends === undefined)){ 
+      //   params.user.friends = [];
+      // }
 
       if (configuration.testMode && params.user.friends.length === 0) {
 
