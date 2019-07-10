@@ -5567,7 +5567,7 @@ function updateUserHistograms(p) {
         updatedUser.friends = [];
       }
 
-      params.user = updatedUser.toObject();
+      params.user = updatedUser.toObject({ getters: true });
 
       if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
         console.log(chalkWarn("TFE | params.user | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
