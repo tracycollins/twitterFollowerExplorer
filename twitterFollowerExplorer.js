@@ -57,7 +57,7 @@ let neuralNetworkInitialized = false;
 const RNT_CHILD_ID = CHILD_PREFIX + "_child_rnt";
 const LAC_CHILD_ID = CHILD_PREFIX + "_child_lac";
 
-const DEFAULT_MIN_INTERVAL = 10;
+const DEFAULT_MIN_INTERVAL = 2;
 
 const ONE_KILOBYTE = 1024;
 const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
