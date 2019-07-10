@@ -5576,6 +5576,7 @@ function updateUserHistograms(p) {
 
       if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
         console.log(chalkWarn("TFE | params.user | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
+        console.log(chalkWarn("TFE | params.user | params.user.tweetHistograms\n" + jsonPrint(params.user.tweetHistograms)));
         console.log(chalkWarn("TFE | params.user | user.tweetHistograms\n" + jsonPrint(user.tweetHistograms)));
         console.log(chalkWarn("TFE | params.user | updatedUser.tweetHistograms\n" + jsonPrint(updatedUser.tweetHistograms)));
         params.user.tweetHistograms = {};
