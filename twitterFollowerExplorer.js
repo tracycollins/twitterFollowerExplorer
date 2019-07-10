@@ -5498,7 +5498,7 @@ function updateUserHistograms(p) {
         if (results.userProfileChanges) {
           results.userProfileChanges.forEach(function(prop){
             if (user[prop] && (user[prop] !== undefined)){
-              console.log(chalkLog("TFE | user prop change | " + prop + " -<- " + user[prop]));
+              console.log(chalkLog("TFE | -<- PROP CHANGE | @" + user.screenName  + " | " + prop + " -<- " + user[prop]));
               dbUser[prop] = user[prop];
             }
           });
