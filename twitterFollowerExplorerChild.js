@@ -1165,7 +1165,7 @@ function fetchUserTweets(params){
     if (params.user.maxId) { fetchUserTweetsParams.max_id = params.user.maxId; } 
     if (params.user.sinceId) { fetchUserTweetsParams.since_id = params.user.sinceId; } 
 
-    if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)){
+    if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)|| (params.user.tweetHistograms === {})){
       console.log(chalk.yellow("TFC | fetchUserTweets | tweetHistograms UNDEFINED | RESET MAX/SINCE IDs | @" + arams.user));
       fetchUserTweetsParams.max_id = "0";
       fetchUserTweetsParams.since_id = "0";
