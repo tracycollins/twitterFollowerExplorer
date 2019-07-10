@@ -5752,20 +5752,21 @@ function updateUserTweets(params){
     user.tweets.sinceId = user.tweets.sinceId || MIN_TWEET_ID;
     user.tweets.tweetIds = user.tweets.tweetIds || [];
 
-    if (user.tweets.tweetIds.length === 0){
-      const childParams = {};
-      childParams.command = {};
-      childParams.command.childId = "tfe_node_child_altthreecee00"
-      childParams.command.op = "FETCH_USER_TWEETS";
-      childParams.command.userArray = [];
-      childParams.command.priority = true;
-      childParams.command.fetchUserTweetsEndFlag = false;
-      childParams.command.userArray.push(user);
+    // if (user.tweets.tweetIds.length === 0){
 
-      console.log(chalkAlert("TFE | updateUserTweets | +++ USER RE FETCH TWEETS | @" + user.screenName));
+    //   const childParams = {};
+    //   childParams.command = {};
+    //   childParams.command.childId = "tfe_node_child_altthreecee00"
+    //   childParams.command.op = "FETCH_USER_TWEETS";
+    //   childParams.command.userArray = [];
+    //   childParams.command.priority = true;
+    //   childParams.command.fetchUserTweetsEndFlag = false;
+    //   childParams.command.userArray.push(user);
 
-      childSend(childParams);
-    }
+    //   console.log(chalkAlert("TFE | updateUserTweets | +++ USER RE FETCH TWEETS | @" + user.screenName));
+
+    //   childSend(childParams);
+    // }
 
     const tscParams = {};
 
