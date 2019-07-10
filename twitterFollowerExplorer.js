@@ -2,6 +2,8 @@ const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 const CHILD_PREFIX = "tfe_node";
 
+const MIN_TWEET_ID = 1000;
+
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
@@ -5734,21 +5736,21 @@ function updateUserTweets(params){
       console.log(chalkAlert("TFE | updateUserTweets | *** USER tweetHistograms UNDEFINED | @" + user.screenName));
       user.tweetHistograms = {};
       user.tweets = {};
-      user.tweets.maxId = "0";
-      user.tweets.sinceId = "0";
+      user.tweets.maxId = MIN_TWEET_ID;
+      user.tweets.sinceId = MIN_TWEET_ID;
       user.tweets.tweetIds = [];
     }
 
     if (!user.tweets || (user.tweets === undefined) || (user.tweets === {}) || allHistogramsZero) { 
       console.log(chalkAlert("TFE | updateUserTweets | *** USER tweets UNDEFINED | @" + user.screenName));
       user.tweets = {};
-      user.tweets.maxId = "0";
-      user.tweets.sinceId = "0";
+      user.tweets.maxId = MIN_TWEET_ID;
+      user.tweets.sinceId = MIN_TWEET_ID;
       user.tweets.tweetIds = [];
     }
 
-    user.tweets.maxId = user.tweets.maxId || "0";
-    user.tweets.sinceId = user.tweets.sinceId || "0";
+    user.tweets.maxId = user.tweets.maxId || MIN_TWEET_ID;
+    user.tweets.sinceId = user.tweets.sinceId || MIN_TWEET_ID;
     user.tweets.tweetIds = user.tweets.tweetIds || [];
 
     if (user.tweets.tweetIds.length === 0){
@@ -5966,8 +5968,8 @@ function processUser(params) {
         if (!user.tweets || (user.tweets === undefined) || (user.tweets === {})){
           console.log(chalkAlert("TFE | *** USER TWEETS UNDEFINED | @" + user.screenName));
           user.tweets = {};
-          user.tweets.sinceId = "0";
-          user.tweets.maxId = "0";
+          user.tweets.sinceId = MIN_TWEET_ID;
+          user.tweets.maxId = MIN_TWEET_ID;
           user.tweets.tweetIds = [];
         }
 
@@ -5980,8 +5982,8 @@ function processUser(params) {
           console.log(chalkWarn("TFE | *** UNDEFINED USER TWEET HISTOGRAMS | @" + user.screenName));
           user.tweetHistograms = {};
           user.tweets = {};
-          user.tweets.sinceId = "0";
-          user.tweets.maxId = "0";
+          user.tweets.sinceId = MIN_TWEET_ID;
+          user.tweets.maxId = MIN_TWEET_ID;
           user.tweets.tweetIds = [];
         }
 
@@ -6152,8 +6154,8 @@ function initProcessUserQueueInterval(interval) {
           if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { 
             user.tweetHistograms = {};
             user.tweets = {};
-            user.tweets.sinceId = "0";
-            user.tweets.maxId = "0";
+            user.tweets.sinceId = MIN_TWEET_ID;
+            user.tweets.maxId = MIN_TWEET_ID;
             user.tweets.tweetIds = [];
           }
 
@@ -6163,8 +6165,8 @@ function initProcessUserQueueInterval(interval) {
 
           if (!user.tweets || (user.tweets === undefined) || (user.tweets === {})){
             user.tweets = {};
-            user.tweets.sinceId = "0";
-            user.tweets.maxId = "0";
+            user.tweets.sinceId = MIN_TWEET_ID;
+            user.tweets.maxId = MIN_TWEET_ID;
             user.tweets.tweetIds = [];
           }
 
@@ -6172,8 +6174,8 @@ function initProcessUserQueueInterval(interval) {
 
           if (!processedUser.tweets || (processedUser.tweets === undefined) || (processedUser.tweets === {})){
             processedUser.tweets = {};
-            processedUser.tweets.sinceId = "0";
-            processedUser.tweets.maxId = "0";
+            processedUser.tweets.sinceId = MIN_TWEET_ID;
+            processedUser.tweets.maxId = MIN_TWEET_ID;
             processedUser.tweets.tweetIds = [];
           }
 
