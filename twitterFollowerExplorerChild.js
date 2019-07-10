@@ -1167,8 +1167,8 @@ function fetchUserTweets(params){
 
     if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)|| (params.user.tweetHistograms === {})){
       console.log(chalk.yellow("TFC | fetchUserTweets | tweetHistograms UNDEFINED | RESET MAX/SINCE IDs | @" + params.user));
-      fetchUserTweetsParams.max_id = null;
-      fetchUserTweetsParams.since_id = null;
+      delete fetchUserTweetsParams.max_id;
+      delete fetchUserTweetsParams.since_id;
     }
 
     fetchUserTweetsParams.count = params.tweetFetchCount || configuration.tweetFetchCount;
