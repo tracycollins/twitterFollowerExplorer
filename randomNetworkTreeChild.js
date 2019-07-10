@@ -676,6 +676,9 @@ function convertDatum(params){
                     inputValue = 0;
                   }
                 break;
+                default:
+                  console.log(chalkAlert("TNC | ??? UNKNOWN NORMALIZATION PROPERTY: " + inputName + " | @" + datum.screenName));
+                  throw new Error("UNKNOWN NORMALIZATION PROPERTY: " + inputName);
               }
 
               convertedDatum.input.push(inputValue);
