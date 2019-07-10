@@ -5981,18 +5981,18 @@ function initProcessUserQueueInterval(interval) {
 
         try {
 
-          if (!categorizedUserIdSet.has(mObj.userId)){
-            console.log(chalkAlert("TFE | !!! USER ID NOT IN CATEGORIZED SET: " + mObj.userId));
+          if (!categorizedUserIdSet.has(mObj.nodeId)){
+            console.log(chalkAlert("TFE | !!! NODE ID NOT IN CATEGORIZED SET: " + mObj.nodeId));
             statsObj.users.totalUsersSkipped += 1;
             statsObj.queues.processUserQueue.busy = false;
             return;
           }
 
-          user = await global.globalUser.findOne({nodeId: mObj.userId});
+          user = await global.globalUser.findOne({nodeId: mObj.nodeId});
 
           if (!user) {
             console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
-              + " | UID: " + mObj.userId
+              + " | NID: " + mObj.nodeId
               + " | @" + mObj.screenName
             ));
             statsObj.users.totalUsersSkipped += 1;
@@ -6007,6 +6007,15 @@ function initProcessUserQueueInterval(interval) {
           }
 
           if (!user.latestTweets || (user.latestTweets === undefined)) { user.latestTweets = []; }
+          if (!user.profileHistograms || (user.profileHistograms === undefined)) { user.profileHistograms = {}; }
+          if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { 
+            user.tweetHistograms = {};
+            user.tweets = {};
+            user.tweets.sinceId = "0";
+            user.tweets.maxId = "0";
+            user.tweets.tweetIds = [];
+          }
+
           if (!mObj.latestTweets || (mObj.latestTweets === undefined)) { mObj.latestTweets = []; }
 
           user.latestTweets = _.union(user.latestTweets, mObj.latestTweets);
@@ -7380,7 +7389,7 @@ function childCreate(p){
 
           case "USER_TWEETS":
 
-            if (categorizedUserIdSet.has(m.userId)){
+            if (categorizedUserIdSet.has(m.nodeId)){
 
               processUserQueue.push(m);
               statsObj.queues.processUserQueue.size = processUserQueue.length;
@@ -7388,7 +7397,7 @@ function childCreate(p){
               if (configuration.verbose){
                 console.log(chalkTwitter("TFE | USER_TWEETS"
                   + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
-                  + " | UID: " + m.userId
+                  + " | NID: " + m.nodeId
                   + " | LTs: " + m.latestTweets.length
                 ));
               }

@@ -1658,7 +1658,7 @@ function initFetchUserTweets(p) {
           process.send(
             {
               op: "USER_TWEETS",
-              userId: user.userId,
+              nodeId: user.nodeId,
               latestTweets: latestTweets
             }, 
 
@@ -2228,7 +2228,7 @@ process.on("message", async function(m) {
         + " | " + m.op
       ));
   }
-  
+
 });
 
 setTimeout(async function(){
