@@ -4757,9 +4757,26 @@ function checkPropertyChange(user, prop){
   return false;
 }
 
-function allHistogramsZeroKeys(histogram){
+// function allHistogramsZeroKeys(histogram){
+
+//   return new Promise(function(resolve){
+
+//     Object.keys(histogram).forEach(function(histogramType){
+//       if ((histogramType !== "sentiment") && (Object.keys(histogram[histogramType]).length > 0)) { return resolve(false); }
+//     });
+
+//     resolve(true);
+
+//   });
+// }
+
+function emptyHistogram(histogram){
 
   return new Promise(function(resolve){
+
+    if (!histogram) { return true; }
+    if (histogram === undefined) { return true; }
+    if (histogram === {}) { return true; }
 
     Object.keys(histogram).forEach(function(histogramType){
       if ((histogramType !== "sentiment") && (Object.keys(histogram[histogramType]).length > 0)) { return resolve(false); }
@@ -4776,28 +4793,23 @@ function checkUserProfileChanged(params) {
 
     const user = params.user;
 
-    let allHistogramsZero = false;
+    let profileHistogramsEmpty = false;
 
     try{
-      allHistogramsZero = await allHistogramsZeroKeys(user.profileHistograms);
+      profileHistogramsEmpty = await emptyHistogram(user.profileHistograms);
     }
     catch(err){
-      console.log(chalkError("TFE | *** ALL HISTOGRAMS ZERO ERROR: " + err));
+      console.log(chalkError("TFE | *** ALL HISTOGRAMS profileHistogramsEmpty ERROR: " + err));
       return reject(err);
     }
 
-    if (!user.profileHistograms 
-      || (user.profileHistograms === undefined) 
-      || (user.profileHistograms === {})
-      || (Object.keys(user.profileHistograms).length === 0)
-      || allHistogramsZero
-    ){
+    if (profileHistogramsEmpty){
 
       console.log(chalkInfo(
-        "TFE | USER PROFILE HISTOGRAMS UNDEFINED" 
+        "TFE | USER PROFILE HISTOGRAMS EMPTY" 
         + " | RST PREV PROP VALUES" 
         + " | @" + user.screenName 
-        // + "\nTFE | PROFILE HISTOGRAMS\n" + jsonPrint(user.profileHistograms) 
+        + "\nTFE | PROFILE HISTOGRAMS\n" + jsonPrint(user.profileHistograms) 
       ));
 
       user.previousBannerImageUrl = null;
@@ -5718,21 +5730,22 @@ function updateUserTweets(params){
     user = params.user;
     delete user.latestTweets;
 
-    let allHistogramsZero = false;
+    let tweetHistogramsEmpty = false;
 
     try{
-      allHistogramsZero = await allHistogramsZeroKeys(user.tweetHistograms);
+      tweetHistogramsEmpty = await emptyHistogram(user.tweetHistograms);
     }
     catch(err){
-      console.log(chalkError("TFE | *** ERROR updateUserTweets allHistogramsZero tweetHistograms", err));
+      console.log(chalkError("TFE | *** ERROR updateUserTweets emptyHistogram tweetHistograms", err));
       return reject(err);
     }
 
-    if (!user.tweetHistograms 
-      || (user.tweetHistograms === undefined) 
-      || allHistogramsZero
-    ) { 
-      console.log(chalkAlert("TFE | updateUserTweets | *** USER tweetHistograms UNDEFINED | @" + user.screenName));
+    if (tweetHistogramsEmpty) { 
+
+      console.log(chalkAlert("TFE | updateUserTweets | *** USER tweetHistograms UNDEFINED"
+        + " | @" + user.screenName
+        + "\ntweetHistograms\n" + jsonPrint(user.tweetHistograms)
+      ));
       user.tweetHistograms = {};
       user.tweets = {};
       user.tweets.maxId = MIN_TWEET_ID;
@@ -5740,13 +5753,13 @@ function updateUserTweets(params){
       user.tweets.tweetIds = [];
     }
 
-    if (!user.tweets || (user.tweets === undefined) || allHistogramsZero) { 
-      console.log(chalkAlert("TFE | updateUserTweets | *** USER tweets UNDEFINED | @" + user.screenName));
-      user.tweets = {};
-      user.tweets.maxId = MIN_TWEET_ID;
-      user.tweets.sinceId = MIN_TWEET_ID;
-      user.tweets.tweetIds = [];
-    }
+    // if (!user.tweets || (user.tweets === undefined) || allHistogramsZero) { 
+    //   console.log(chalkAlert("TFE | updateUserTweets | *** USER tweets UNDEFINED | @" + user.screenName));
+    //   user.tweets = {};
+    //   user.tweets.maxId = MIN_TWEET_ID;
+    //   user.tweets.sinceId = MIN_TWEET_ID;
+    //   user.tweets.tweetIds = [];
+    // }
 
     user.tweets.maxId = user.tweets.maxId || MIN_TWEET_ID;
     user.tweets.sinceId = user.tweets.sinceId || MIN_TWEET_ID;
