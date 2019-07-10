@@ -5552,6 +5552,21 @@ function updateUserHistograms(p) {
 
       const updatedUser = await dbUser.save();
 
+      if (!updatedUser.profileHistograms || (updatedUser.profileHistograms === undefined)) {
+        console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER PROFILE HISTOGRAMS | @" + updatedUser.screenName));
+        updatedUser.profileHistograms = {};
+      }
+
+      if (!updatedUser.tweetHistograms || (updatedUser.tweetHistograms === undefined)) {
+        console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER TWEET HISTOGRAMS | @" + updatedUser.screenName));
+        updatedUser.tweetHistograms = {};
+      }
+
+      if (!updatedUser.friends || (updatedUser.friends === undefined)) {
+        console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER FRIENDS | @" + updatedUser.screenName));
+        updatedUser.friends = [];
+      }
+
       params.user = updatedUser.toObject();
 
       if (configuration.testMode && params.user.friends.length === 0) {
@@ -5626,26 +5641,26 @@ function generateAutoCategory(user, callback) {
     }
 
     updateUserHistograms({user: user}).
-    then(function(updatedUser){
+    then(function(udUser){
 
-      if (!updatedUser.profileHistograms || (updatedUser.profileHistograms === undefined)) {
-        console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER PROFILE HISTOGRAMS | @" + updatedUser.screenName));
-        updatedUser.profileHistograms = {};
+      if (!udUser.profileHistograms || (udUser.profileHistograms === undefined)) {
+        console.log(chalkWarn("TFE | udUser | UNDEFINED USER PROFILE HISTOGRAMS | @" + udUser.screenName));
+        udUser.profileHistograms = {};
       }
 
-      if (!updatedUser.tweetHistograms || (updatedUser.tweetHistograms === undefined)) {
-        console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER TWEET HISTOGRAMS | @" + updatedUser.screenName));
-        updatedUser.tweetHistograms = {};
+      if (!udUser.tweetHistograms || (udUser.tweetHistograms === undefined)) {
+        console.log(chalkWarn("TFE | udUser | UNDEFINED USER TWEET HISTOGRAMS | @" + udUser.screenName));
+        udUser.tweetHistograms = {};
       }
 
-      if (!updatedUser.friends || (updatedUser.friends === undefined)) {
-        console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER FRIENDS | @" + updatedUser.screenName));
-        updatedUser.friends = [];
+      if (!udUser.friends || (udUser.friends === undefined)) {
+        console.log(chalkWarn("TFE | udUser | UNDEFINED USER FRIENDS | @" + udUser.screenName));
+        udUser.friends = [];
       }
 
-      activateNetworkQueue.push({user: updatedUser});
+      activateNetworkQueue.push({user: udUser});
       statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
-      callback(null, updatedUser);
+      callback(null, udUser);
     }).
     catch(function(err){
       console.log(chalkError("TFE | *** USER CATEGORIZE ERROR: " + err));
