@@ -5595,6 +5595,21 @@ function generateAutoCategory(user, callback) {
 
     // console.log(chalkLog("TFE | generateAutoCategory user\n" + jsonPrint(user.toObject())));
 
+    if (!user.profileHistograms || (user.profileHistograms === undefined)) {
+      console.log(chalkWarn("TFE | user | UNDEFINED USER PROFILE HISTOGRAMS | @" + user.screenName));
+      user.profileHistograms = {};
+    }
+
+    if (!user.tweetHistograms || (user.tweetHistograms === undefined)) {
+      console.log(chalkWarn("TFE | user | UNDEFINED USER TWEET HISTOGRAMS | @" + user.screenName));
+      user.tweetHistograms = {};
+    }
+
+    if (!user.friends || (user.friends === undefined)) {
+      console.log(chalkWarn("TFE | user | UNDEFINED USER FRIENDS | @" + user.screenName));
+      user.friends = [];
+    }
+
     updateUserHistograms({user: user}).
     then(function(updatedUser){
 
