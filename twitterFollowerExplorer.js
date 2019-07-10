@@ -5568,6 +5568,21 @@ function updateUserHistograms(p) {
 
       await updateGlobalHistograms(params);
 
+      if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
+        console.log(chalkWarn("TFE | updateUserHistograms | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
+        params.user.profileHistograms = {};
+      }
+
+      if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
+        console.log(chalkWarn("TFE | updateUserHistograms | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
+        params.user.tweetHistograms = {};
+      }
+
+      if (!params.user.friends || (params.user.friends === undefined)) {
+        console.log(chalkWarn("TFE | updateUserHistograms | UNDEFINED USER FRIENDS | @" + params.user.screenName));
+        params.user.friends = [];
+      }
+
       resolve(params.user);
 
     }
