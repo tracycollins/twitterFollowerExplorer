@@ -5478,33 +5478,33 @@ function updateUserHistograms(p) {
       return reject(err);
     }
 
-    const user = params.user;
+    // const user = params.user;
 
     // user.profileHistograms = user.profileHistograms || {};
     // user.tweetHistograms = user.tweetHistograms || {};
 
-    if (!user.profileHistograms || (user.profileHistograms === undefined)){ 
-      user.profileHistograms = {};
+    if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)){ 
+      params.user.profileHistograms = {};
     }
 
-    if (!user.tweetHistograms || (user.tweetHistograms === undefined)){ 
-      user.tweetHistograms = {};
+    if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)){ 
+      params.user.tweetHistograms = {};
     }
 
-    if (!user.friends || (user.friends === undefined)){ 
-      user.friends = [];
+    if (!params.user.friends || (params.user.friends === undefined)){ 
+      params.user.friends = [];
     }
 
     try {
 
-      const results = await userProfileChangeHistogram({user: user});
-      const dbUser = await global.globalUser.findOne({nodeId: user.nodeId});
+      const results = await userProfileChangeHistogram({user: params.user});
+      const dbUser = await global.globalUser.findOne({nodeId: params.user.nodeId});
 
       if (!dbUser.profileHistograms || (dbUser.profileHistograms === undefined)) {
         console.log(chalkWarn("TFE | UNDEFINED USER PROFILE HISTOGRAMS | @" + dbUser.screenName));
         dbUser.profileHistograms = {};
-        if (user.profileHistograms && (user.profileHistograms !== undefined)){
-          dbUser.profileHistograms = user.profileHistograms;
+        if (params.user.profileHistograms && (params.user.profileHistograms !== undefined)){
+          dbUser.profileHistograms = params.user.profileHistograms;
         } 
         dbUser.markModified("profileHistograms");
       }
@@ -5512,8 +5512,8 @@ function updateUserHistograms(p) {
       if (!dbUser.tweetHistograms || (dbUser.tweetHistograms === undefined)) {
         console.log(chalkWarn("TFE | UNDEFINED USER TWEET HISTOGRAMS | @" + dbUser.screenName));
         dbUser.tweetHistograms = {};
-        if (user.tweetHistograms && (user.tweetHistograms !== undefined)){
-          dbUser.tweetHistograms = user.tweetHistograms;
+        if (params.user.tweetHistograms && (params.user.tweetHistograms !== undefined)){
+          dbUser.tweetHistograms = params.user.tweetHistograms;
         } 
         dbUser.markModified("tweetHistograms");
       }
@@ -5521,8 +5521,8 @@ function updateUserHistograms(p) {
       if (!dbUser.friends || (dbUser.friends === undefined)) {
         console.log(chalkWarn("TFE | UNDEFINED USER FRIENDS | @" + dbUser.screenName));
         dbUser.friends = [];
-        if (user.friends && (user.friends !== undefined)){
-          dbUser.friends = user.friends;
+        if (params.user.friends && (params.user.friends !== undefined)){
+          dbUser.friends = params.user.friends;
         } 
         dbUser.markModified("friends");
       }
@@ -5531,9 +5531,9 @@ function updateUserHistograms(p) {
 
         if (results.userProfileChanges) {
           results.userProfileChanges.forEach(function(prop){
-            if (user[prop] && (user[prop] !== undefined)){
-              console.log(chalkLog("TFE | -<- PROP CHANGE | @" + user.screenName  + " | " + prop + " -<- " + user[prop]));
-              dbUser[prop] = user[prop];
+            if (params.user[prop] && (params.user[prop] !== undefined)){
+              console.log(chalkLog("TFE | -<- PROP CHANGE | @" + params.user.screenName  + " | " + prop + " -<- " + params.user[prop]));
+              dbUser[prop] = params.user[prop];
             }
           });
         }
@@ -5543,88 +5543,90 @@ function updateUserHistograms(p) {
       }
 
       if (results && results.bannerImageAnalyzedFlag) {
-        dbUser.bannerImageUrl = user.bannerImageUrl;
-        dbUser.bannerImageAnalyzed = user.bannerImageUrl;
+        dbUser.bannerImageUrl = params.user.bannerImageUrl;
+        dbUser.bannerImageAnalyzed = params.user.bannerImageUrl;
       }
 
       if (results && results.profileImageAnalyzedFlag) {
-        dbUser.profileImageUrl = user.profileImageUrl;
-        dbUser.profileImageAnalyzed = user.profileImageUrl;
+        dbUser.profileImageUrl = params.user.profileImageUrl;
+        dbUser.profileImageAnalyzed = params.user.profileImageUrl;
       }
 
-      dbUser.statusId = user.statusId;
-      dbUser.lastHistogramTweetId = user.statusId;
-      dbUser.quotedStatusId = user.quotedStatusId;
-      dbUser.lastHistogramQuoteId = user.quotedStatusId;
+      dbUser.statusId = params.user.statusId;
+      dbUser.lastHistogramTweetId = params.user.statusId;
+      dbUser.quotedStatusId = params.user.quotedStatusId;
+      dbUser.lastHistogramQuoteId = params.user.quotedStatusId;
 
       // const updatedUser = await userServerController.findOneUserV2({user: user, mergeHistograms: false, noInc: true});
 
-      const updatedUser = await dbUser.save();
+      await dbUser.save();
 
-      if (!updatedUser.profileHistograms || (updatedUser.profileHistograms === undefined)) {
-        console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER PROFILE HISTOGRAMS | @" + updatedUser.screenName));
-        updatedUser.profileHistograms = {};
-      }
+      // if (!updatedUser.profileHistograms || (updatedUser.profileHistograms === undefined)) {
+      //   console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER PROFILE HISTOGRAMS | @" + updatedUser.screenName));
+      //   updatedUser.profileHistograms = {};
+      // }
 
-      if (!updatedUser.tweetHistograms || (updatedUser.tweetHistograms === undefined)) {
-        console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER TWEET HISTOGRAMS | @" + updatedUser.screenName));
-        updatedUser.tweetHistograms = {};
-      }
+      // if (!updatedUser.tweetHistograms || (updatedUser.tweetHistograms === undefined)) {
+      //   console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER TWEET HISTOGRAMS | @" + updatedUser.screenName));
+      //   updatedUser.tweetHistograms = {};
+      // }
 
-      if (!updatedUser.friends || (updatedUser.friends === undefined)) {
-        console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER FRIENDS | @" + updatedUser.screenName));
-        updatedUser.friends = [];
-      }
+      // if (!updatedUser.friends || (updatedUser.friends === undefined)) {
+      //   console.log(chalkWarn("TFE | updatedUser | UNDEFINED USER FRIENDS | @" + updatedUser.screenName));
+      //   updatedUser.friends = [];
+      // }
 
-      params.user = updatedUser.toObject();
+      // params.user = updatedUser.toObject();
 
-      if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
-        console.log(chalkWarn("TFE | params.user | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
-        params.user.profileHistograms = {};
-      }
+      // if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
+      //   console.log(chalkWarn("TFE | params.user | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
+      //   params.user.profileHistograms = {};
+      // }
 
-      if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
-        console.log(chalkWarn("TFE | params.user | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
-        console.log(chalkWarn("TFE | params.user | params.user.tweetHistograms\n" + jsonPrint(params.user.tweetHistograms)));
-        console.log(chalkWarn("TFE | params.user | user.tweetHistograms\n" + jsonPrint(user.tweetHistograms)));
-        console.log(chalkWarn("TFE | params.user | updatedUser.tweetHistograms\n" + jsonPrint(updatedUser.tweetHistograms)));
-        params.user.tweetHistograms = {};
-      }
+      // if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
+      //   console.log(chalkWarn("TFE | params.user | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
+      //   console.log(chalkWarn("TFE | params.user | params.user.tweetHistograms\n" + jsonPrint(params.user.tweetHistograms)));
+      //   console.log(chalkWarn("TFE | params.user | user.tweetHistograms\n" + jsonPrint(user.tweetHistograms)));
+      //   console.log(chalkWarn("TFE | params.user | updatedUser.tweetHistograms\n" + jsonPrint(updatedUser.tweetHistograms)));
+      //   params.user.tweetHistograms = {};
+      // }
 
-      if (!params.user.friends || (params.user.friends === undefined)) {
-        console.log(chalkWarn("TFE | params.user | UNDEFINED USER FRIENDS | @" + params.user.screenName));
-        params.user.friends = [];
-      }
+      // if (!params.user.friends || (params.user.friends === undefined)) {
+      //   console.log(chalkWarn("TFE | params.user | UNDEFINED USER FRIENDS | @" + params.user.screenName));
+      //   params.user.friends = [];
+      // }
 
 
-      if (configuration.testMode && params.user.friends.length === 0) {
+      if (configuration.testMode && dbUser.friends.length === 0) {
 
-        params.user.friends = Array.from({ length: randomInt(1,47) }, () => (Math.floor(Math.random() * 123456789).toString()));
+        dbUser.friends = Array.from({ length: randomInt(1,47) }, () => (Math.floor(Math.random() * 123456789).toString()));
 
         console.log(chalkLog("TFE | TEST MODE | ADD RANDOM FRNDs IDs"
-          + " | " + params.user.userId
-          + " | @" + params.user.screenName
-          + " | " + params.user.friends.length + "FRNDs"
+          + " | " + dbUser.userId
+          + " | @" + dbUser.screenName
+          + " | " + dbUser.friends.length + "FRNDs"
           // + "\n" + params.user.friends
         ));
       }
 
+      params.user = dbUser.toObject();
+
       await updateGlobalHistograms(params);
 
-      if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
-        console.log(chalkWarn("TFE | updateUserHistograms | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
-        params.user.profileHistograms = {};
-      }
+      // if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
+      //   console.log(chalkWarn("TFE | updateUserHistograms | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
+      //   params.user.profileHistograms = {};
+      // }
 
-      if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
-        console.log(chalkWarn("TFE | updateUserHistograms | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
-        params.user.tweetHistograms = {};
-      }
+      // if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
+      //   console.log(chalkWarn("TFE | updateUserHistograms | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
+      //   params.user.tweetHistograms = {};
+      // }
 
-      if (!params.user.friends || (params.user.friends === undefined)) {
-        console.log(chalkWarn("TFE | updateUserHistograms | UNDEFINED USER FRIENDS | @" + params.user.screenName));
-        params.user.friends = [];
-      }
+      // if (!params.user.friends || (params.user.friends === undefined)) {
+      //   console.log(chalkWarn("TFE | updateUserHistograms | UNDEFINED USER FRIENDS | @" + params.user.screenName));
+      //   params.user.friends = [];
+      // }
 
       resolve(params.user);
 
