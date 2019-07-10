@@ -5761,7 +5761,7 @@ function updateUserTweets(params){
       childParams.command.userArray = [];
       childParams.command.priority = true;
       childParams.command.fetchUserTweetsEndFlag = false;
-      childParams.command.userArray.push(user.nodeId);
+      childParams.command.userArray.push(user);
 
       console.log(chalkAlert("TFE | updateUserTweets | +++ USER RE FETCH TWEETS | @" + user.screenName));
 
