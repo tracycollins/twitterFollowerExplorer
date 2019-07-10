@@ -1034,7 +1034,7 @@ function initTwitter(twitterConfig){
     twitClient.get("account/settings", async function(err, accountSettings, response) {
 
       if (configuration.verbose) {
-        debug("TFC | TWITTER ACCOUNT SETTINGS response\n", + response);
+        debug("TFC | TWITTER ACCOUNT SETTINGS response\n", response);
       }
 
       if (err){
@@ -1166,7 +1166,7 @@ function fetchUserTweets(params){
     if (params.user.sinceId) { fetchUserTweetsParams.since_id = params.user.sinceId; } 
 
     if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)|| (params.user.tweetHistograms === {})){
-      console.log(chalk.yellow("TFC | fetchUserTweets | tweetHistograms UNDEFINED | RESET MAX/SINCE IDs | @" + arams.user));
+      console.log(chalk.yellow("TFC | fetchUserTweets | tweetHistograms UNDEFINED | RESET MAX/SINCE IDs | @" + params.user));
       fetchUserTweetsParams.max_id = "0";
       fetchUserTweetsParams.since_id = "0";
     }
@@ -1611,7 +1611,6 @@ function initFetchUserTweets(p) {
       + "\nPARAMS\n" + jsonPrint(params)
     ));
 
-    let userId;
     let latestTweets = [];
 
     fetchUserTweetsQueueInterval = setInterval(async function(){
