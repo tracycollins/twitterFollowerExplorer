@@ -5503,18 +5503,27 @@ function updateUserHistograms(p) {
       if (!dbUser.profileHistograms || (dbUser.profileHistograms === undefined)) {
         console.log(chalkWarn("TFE | UNDEFINED USER PROFILE HISTOGRAMS | @" + dbUser.screenName));
         dbUser.profileHistograms = {};
+        if (user.profileHistograms && (user.profileHistograms !== undefined)){
+          dbUser.profileHistograms = user.profileHistograms;
+        } 
         dbUser.markModified("profileHistograms");
       }
 
       if (!dbUser.tweetHistograms || (dbUser.tweetHistograms === undefined)) {
         console.log(chalkWarn("TFE | UNDEFINED USER TWEET HISTOGRAMS | @" + dbUser.screenName));
         dbUser.tweetHistograms = {};
+        if (user.tweetHistograms && (user.tweetHistograms !== undefined)){
+          dbUser.tweetHistograms = user.tweetHistograms;
+        } 
         dbUser.markModified("tweetHistograms");
       }
 
       if (!dbUser.friends || (dbUser.friends === undefined)) {
         console.log(chalkWarn("TFE | UNDEFINED USER FRIENDS | @" + dbUser.screenName));
         dbUser.friends = [];
+        if (user.friends && (user.friends !== undefined)){
+          dbUser.friends = user.friends;
+        } 
         dbUser.markModified("friends");
       }
 
