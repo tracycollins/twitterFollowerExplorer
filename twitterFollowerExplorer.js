@@ -3158,6 +3158,15 @@ function loadBestNetworksDatabase(paramsIn) {
 
     const params = (paramsIn === undefined) ? {} : paramsIn;
 
+    const minTestCycles = (params.minTestCycles !== undefined) ? params.minTestCycles : configuration.minTestCycles;
+    const globalMinSuccessRate = params.globalMinSuccessRate || configuration.globalMinSuccessRate;
+    const randomUntestedLimit = params.randomUntestedLimit || configuration.randomUntestedLimit;
+    let networkDatabaseLoadLimit = params.networkDatabaseLoadLimit || configuration.networkDatabaseLoadLimit;
+
+    if (configuration.testMode) {
+      networkDatabaseLoadLimit = TEST_MODE_NUM_NN;
+    }
+
     console.log(chalkLog("TFE | LOAD BEST NETWORKS DATABASE"));
 
     statsObj.status = "LOAD BEST NNs DATABASE";
@@ -3172,29 +3181,22 @@ function loadBestNetworksDatabase(paramsIn) {
     let query = {};
     query.inputsId = { "$in": inputsIdArray };
 
-    if (configuration.minTestCycles) {
+    if (minTestCycles) {
       query = {};
       query.$and = [
         { inputsId: { "$in": inputsIdArray } },
-        { overallMatchRate: { "$gte": configuration.globalMinSuccessRate } },
-        { testCycles: { "$gte": configuration.minTestCycles } }
+        { overallMatchRate: { "$gte": globalMinSuccessRate } },
+        { testCycles: { "$gte": minTestCycles } }
       ];
     }
 
     const randomUntestedQuery = {};
     randomUntestedQuery.$and = [
       { inputsId: { "$in": inputsIdArray } },
-      { successRate: { "$gte": configuration.globalMinSuccessRate } },
-      { testCycles: { "$lt": configuration.minTestCycles } }
+      { successRate: { "$gte": globalMinSuccessRate } },
+      { testCycles: { "$lt": minTestCycles } }
     ];
  
-    let limit = params.limit || configuration.networkDatabaseLoadLimit;
-    const randomUntestedLimit = params.randomUntestedLimit || configuration.randomUntestedLimit;
-
-    if (configuration.testMode) {
-      limit = TEST_MODE_NUM_NN;
-    }
-
     if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
 
     let nnArrayTopOverallMatchRate = [];
@@ -3202,12 +3204,12 @@ function loadBestNetworksDatabase(paramsIn) {
     let nnArray = [];
 
     try {
-      console.log(chalkBlue("TFE | LOADING " + limit + " BEST NNs (by OAMR) FROM DB ..."));
+      console.log(chalkBlue("TFE | LOADING " + networkDatabaseLoadLimit + " BEST NNs (by OAMR) FROM DB ..."));
 
       nnArrayTopOverallMatchRate = await global.globalNeuralNetwork.find(query)
       .lean()
       .sort({"overallMatchRate": -1})
-      .limit(limit)
+      .limit(networkDatabaseLoadLimit)
       .exec();
 
       console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs (by OAMR) FROM DB ..."));
@@ -3230,8 +3232,24 @@ function loadBestNetworksDatabase(paramsIn) {
     }
 
     if (nnArray.length === 0){
-      console.log(chalkAlert("TFE | ??? NO NEURAL NETWORKS NOT FOUND IN DATABASE"));
-      return resolve();
+      console.log(chalkAlert("TFE | ??? NO NEURAL NETWORKS NOT FOUND IN DATABASE"
+        + "\nQUERY\n" + jsonPrint(query)
+        + "\nRANDOM QUERY\n" + jsonPrint(randomUntestedQuery)
+      ));
+
+      try{
+        console.log(chalkAlert("TFE | RETRY NEURAL NETWORK DB SEARCH"
+          + "\nQUERY\n" + jsonPrint(query)
+          + "\nRANDOM QUERY\n" + jsonPrint(randomUntestedQuery)
+        ));
+        await loadBestNetworksDatabase({minTestCycles: 0, globalMinSuccessRate: 50});
+        return resolve();
+      }
+      catch(err){
+        console.log(chalkError("TFE | *** RETRY NEURAL NETWORK FIND ERROR: " + err));
+        return reject(err);
+      }
+
     }
 
     console.log(chalkBlueBold("TFE | LOADING " + nnArray.length + " NNs FROM DB ..."));
@@ -3767,6 +3785,7 @@ function updateNetworkStats(params) {
     const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
     const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
     const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : false;
+    const minTestCycles = params.minTestCycles || configuration.minTestCycles;
 
     const nnIds = Object.keys(params.networkStatsObj);
 
@@ -3846,7 +3865,7 @@ function updateNetworkStats(params) {
 
         query.$and = [
           { inputsId: { "$in": inputsIdArray } },
-          { testCycles: { "$gte": configuration.minTestCycles } }
+          { testCycles: { "$gte": minTestCycles } }
         ]
 
         let chalkVal = chalkLog;

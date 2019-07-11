@@ -966,7 +966,11 @@ function updateNetworkRank(){
 
       async.setImmediate(function() { cb(); });
 
-    }, function(){
+    }, function(err){
+
+      if (err) {
+        return reject(err);
+      }
 
       resolve();
 
