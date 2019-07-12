@@ -5681,6 +5681,7 @@ function fetchUserTweets(params){
     try{
       await childSend(childParams);
       const latestTweets = await processPriorityUserTweets({user: user});
+      user.latestTweetsFetchedFlag = true;
       if (latestTweets) { user.latestTweets = latestTweets; }
       resolve(user);
     }
@@ -5727,7 +5728,7 @@ function updateUserTweets(params){
 
     const histogramIncompleteFlag = await histogramIncomplete(user.tweetHistograms);
 
-    if (configuration.testFetchTweetsMode || histogramIncompleteFlag) { 
+    if (configuration.testFetchTweetsMode || (!user.latestTweetsFetchedFlag && histogramIncompleteFlag)) { 
 
       if (configuration.testFetchTweetsMode) {
         console.log(chalkAlert("TFE | updateUserTweets | !!! TEST MODE FETCH TWEETS"
@@ -5739,6 +5740,8 @@ function updateUserTweets(params){
           + " | @" + user.screenName
         ));
       }
+
+      delete user.latestTweetsFetchedFlag;
 
       user.tweetHistograms = {};
       user.markModified("tweetHistograms");
