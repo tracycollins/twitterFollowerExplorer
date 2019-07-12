@@ -155,7 +155,7 @@ const DROPBOX_LIST_FOLDER_LIMIT = 50;
 
 let configuration = {};
 configuration.verbose = false;
-configuration.languageQuotaTimoutDuration = ONE_MINUTE;
+configuration.languageQuotaTimoutDuration = 10*ONE_MINUTE;
 configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
 configuration.forceLanguageAnalysis = DEFAULT_FORCE_LANG_ANALYSIS;
 configuration.enableImageAnalysis = DEFAULT_ENABLE_IMAGE_ANALYSIS;
