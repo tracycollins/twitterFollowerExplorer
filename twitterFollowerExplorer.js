@@ -5503,38 +5503,6 @@ function updateUserHistograms(params) {
     try {
 
       const results = await userProfileChangeHistogram({user: user});
-      // const dbUser = await global.globalUser.findOne({nodeId: user.nodeId});
-
-      // if (!dbUser.profileHistograms || (dbUser.profileHistograms === undefined)) {
-
-      //   console.log(chalkWarn("TFE | UNDEFINED USER PROFILE HISTOGRAMS | @" + dbUser.screenName));
-
-      //   dbUser.profileHistograms = {};
-
-      //   if (user.profileHistograms && (user.profileHistograms !== undefined)){
-      //     dbUser.profileHistograms = user.profileHistograms;
-      //   }
-
-      //   dbUser.markModified("profileHistograms");
-      // }
-
-      // if (!dbUser.tweetHistograms || (dbUser.tweetHistograms === undefined)) {
-      //   console.log(chalkWarn("TFE | UNDEFINED USER TWEET HISTOGRAMS | @" + dbUser.screenName));
-      //   dbUser.tweetHistograms = {};
-      //   if (user.tweetHistograms && (user.tweetHistograms !== undefined)){
-      //     dbUser.tweetHistograms = user.tweetHistograms;
-      //   } 
-      //   dbUser.markModified("tweetHistograms");
-      // }
-
-      // if (!dbUser.friends || (dbUser.friends === undefined)) {
-      //   console.log(chalkWarn("TFE | UNDEFINED USER FRIENDS | @" + dbUser.screenName));
-      //   dbUser.friends = [];
-      //   if (user.friends && (user.friends !== undefined)){
-      //     dbUser.friends = user.friends;
-      //   } 
-      //   dbUser.markModified("friends");
-      // }
 
       if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
 
@@ -5682,7 +5650,10 @@ function fetchUserTweets(params){
     try{
       await childSend(childParams);
       const latestTweets = await processPriorityUserTweets({user: user});
-      if (latestTweets) { user.latestTweets = latestTweets; }
+      if (latestTweets) { 
+        user.latestTweets = latestTweets;
+        user.markModified("latestTweets");
+      }
       resolve(user);
     }
     catch(err){
@@ -5764,21 +5735,7 @@ function updateUserTweets(params){
     tscParams.twitterEvents = configEvents;
     tscParams.tweetStatus = {};
 
-    defaults()
-
-    if (!user.tweets || (user.tweets === undefined)){
-      user.tweets = {};
-      user.tweets.maxId = MIN_TWEET_ID;
-      user.tweets.sinceId = MIN_TWEET_ID;
-      user.tweets.tweetIds = [];
-    }
-
-    if (!user.tweets || (user.tweets === undefined)){
-      user.tweets = {};
-      user.tweets.maxId = MIN_TWEET_ID;
-      user.tweets.sinceId = MIN_TWEET_ID;
-      user.tweets.tweetIds = [];
-    }
+    defaults(user.tweets, userTweetsDefault);
 
     if (user.tweets.tweetIds.length > DEFAULT_MAX_USER_TWEETIDS) {
 
@@ -6051,13 +6008,8 @@ function initProcessUserQueueInterval(interval) {
             user.markModified("profileHistograms");
           }
 
-          if (!user.tweets || (user.tweets === undefined)){
-            user.tweets = {};
-            user.tweets.sinceId = MIN_TWEET_ID;
-            user.tweets.maxId = MIN_TWEET_ID;
-            user.tweets.tweetIds = [];
-            user.markModified("profileHistograms");
-          }
+          defaults(user.tweets, userTweetsDefault);
+          user.markModified("tweets");
 
           if (!mObj.latestTweets || (mObj.latestTweets === undefined)) { mObj.latestTweets = []; }
 
