@@ -1175,6 +1175,14 @@ function fetchUserTweets(params){
     fetchUserTweetsParams.exclude_replies = params.excludeReplies || DEFAULT_TWEET_FETCH_EXCLUDE_REPLIES;
     fetchUserTweetsParams.include_rts = params.includeRetweets || DEFAULT_TWEET_FETCH_INCLUDE_RETWEETS;
 
+    debug(chalkError("TFC | ... TWITTER FETCH USER TWEETS"
+      + " | " + getTimeStamp() 
+      + " | 3C @" + configuration.threeceeUser 
+      + " | UID: " + params.user.userId
+      + " | @" + params.user.screenName
+      + "\nfetchUserTweetsParams\n" + jsonPrint(fetchUserTweetsParams)
+    ));
+
     twitClient.get("statuses/user_timeline", fetchUserTweetsParams, function(err, userTweetsArray, response) {
 
       if (configuration.verbose) {
@@ -1643,9 +1651,9 @@ function initFetchUserTweets(p) {
 
             statsObj.tweets.fetched += latestTweets.length;
 
-            if (statsObj.tweets.fetched % 100 === 0) {
-
+            if (user.priority || (statsObj.tweets.fetched % 100 === 0)) {
               console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
+                + " | PRIORITY: " + user.priority
                 + " [ " + latestTweets.length + " LATEST / " + statsObj.tweets.fetched + " TOT FETCHED ]"
                 + " | " + user.userId
                 + " | @" + user.screenName
@@ -1659,6 +1667,7 @@ function initFetchUserTweets(p) {
             {
               op: "USER_TWEETS",
               nodeId: user.nodeId,
+              priority: user.priority,
               latestTweets: latestTweets
             }, 
 
@@ -2158,8 +2167,22 @@ process.on("message", async function(m) {
 
     case "FETCH_USER_TWEETS":
       m.userArray.forEach(function(user){
+
         if (m.priority) {
+
+          user.priority = true;
+
           fetchUserTweetsQueue.unshift(user);
+
+          console.log(chalkBlue(MODULE_ID_PREFIX
+            + " | >>> PRIORITY | FETCH_USER_TWEETS"
+            + " | PRIORITY: " + m.priority
+            + " | END FLAG: " + m.fetchUserTweetsEndFlag
+            + " | USER ARRAY: " + m.userArray.length
+            + " | FUTQ: " + fetchUserTweetsQueue.length
+            + " | @" + user.screenName
+          ));
+
         }
         else {
           fetchUserTweetsQueue.push(user);
@@ -2172,10 +2195,12 @@ process.on("message", async function(m) {
 
       console.log(chalkBlue(MODULE_ID_PREFIX
         + " | FETCH_USER_TWEETS"
+        + " | PRIORITY: " + m.priority
         + " | END FLAG: " + m.fetchUserTweetsEndFlag
         + " | USER ARRAY: " + m.userArray.length
         + " | FUTQ: " + fetchUserTweetsQueue.length
       ));
+
     break;
 
     case "READY":

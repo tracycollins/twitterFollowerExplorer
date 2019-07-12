@@ -649,25 +649,47 @@ function convertDatum(params){
               let inputValue;
 
               switch (inputName) {
-                case "score": // range = 0,1
-                  inputValue = 0.5*(mergedHistograms.sentiment.score + 1);
-                  if ((inputValue > 1) || (inputValue < -1)){
-                    console.log(chalkAlert("TNC | ??? NORMALIZATION SCORE RANGE ERROR"
-                      + " | SCORE: " + inputValue + " | RAW SCORE: " + mergedHistograms.sentiment.score
+
+                case "score": // range = -1,1
+
+                  if (mergedHistograms.sentiment.score > 1){
+                    console.log(chalkAlert("TNC | !!! NORMALIZATION SCORE RANGE ERROR | CLAMPED"
+                      + " | SCORE: " + mergedHistograms.sentiment.score
                       + " | @" + datum.screenName
                     ));
+                    mergedHistograms.sentiment.score = 1.0;
                   }
+
+                  if (mergedHistograms.sentiment.score < 1){
+                    console.log(chalkAlert("TNC | !!! NORMALIZATION SCORE RANGE ERROR | CLAMPED"
+                      + " | SCORE: " + mergedHistograms.sentiment.score
+                      + " | @" + datum.screenName
+                    ));
+                    mergedHistograms.sentiment.score = -1.0;
+                  }
+
+                  inputValue = 0.5*(mergedHistograms.sentiment.score + 1);
+
                 break;
                 case "magnitude": // range = 0,+Infinity
+
+                  if (mergedHistograms.sentiment.magnitude < 0){
+                    console.log(chalkAlert("TNC | !!! NORMALIZATION MAGNITUDE RANGE ERROR | CLAMPED"
+                      + " | SCORE: " + mergedHistograms.sentiment.magnitude
+                      + " | @" + datum.screenName
+                    ));
+                    mergedHistograms.sentiment.magnitude = 0;
+                  }
+
                   if (normalization.magnitude.max > 0){
                     inputValue = mergedHistograms.sentiment.magnitude/normalization.magnitude.max;
                   }
                   else {
-                    console.log(chalkAlert("TNC | ??? NORMALIZATION MAGNITUDE MAX === 0 | @" + datum.screenName));
+                    console.log(chalkAlert("TNC | ??? NORMALIZATION MAGNITUDE MAX LT/EQ ZERO RANGE ERROR | @" + datum.screenName));
                     inputValue = 0;
                   }
                 break;
-                case "comp":  // range = -Infinity,+Infinity
+                case "comp": // range = -Infinity,+Infinity
                   if (compRange > 0){
                     inputValue = (mergedHistograms.sentiment.comp - normalization.comp.min)/compRange;
                   }
@@ -779,7 +801,7 @@ function activateNetwork(params){
       }
 
       if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
-        console.log(chalkWarn("RNT | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName));
+        console.log(chalkWarn("RNT | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName + "\n" + jsonPrint(params)));
         params.user.tweetHistograms = {};
       }
 
@@ -955,7 +977,7 @@ function printNetworkResults(params){
 }
 
 function updateNetworkRank(){
-  return new Promise(function(resolve){
+  return new Promise(function(resolve, reject){
     async.eachOf(sortedNetworkResults.sortedKeys, function(nnId, index, cb){
 
       statsObj.loadedNetworks[nnId].rank = index;
