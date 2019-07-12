@@ -140,6 +140,7 @@ const inputsIdSet = new Set();
 const bestInputsSet = new Set();
 const skipLoadNetworkSet = new Set();
 const userErrorSet = new Set();
+const userTweetFetchSet = new Set();
 
 let globalHistograms = {};
 
@@ -5728,7 +5729,7 @@ function updateUserTweets(params){
 
     const histogramIncompleteFlag = await histogramIncomplete(user.tweetHistograms);
 
-    if (configuration.testFetchTweetsMode || (!user.latestTweetsFetchedFlag && histogramIncompleteFlag)) { 
+    if (configuration.testFetchTweetsMode || (!userTweetFetchSet.has(user.nodeId) && histogramIncompleteFlag)) { 
 
       if (configuration.testFetchTweetsMode) {
         console.log(chalkAlert("TFE | updateUserTweets | !!! TEST MODE FETCH TWEETS"
@@ -5741,11 +5742,12 @@ function updateUserTweets(params){
         ));
       }
 
-      delete user.latestTweetsFetchedFlag;
+      user.latestTweetsFetchedFlag;
 
       user.tweetHistograms = {};
       user.markModified("tweetHistograms");
       user = await fetchUserTweets({user: user, force: true});
+      userTweetFetchSet.add(user.nodeId);
     }
 
     if (user.latestTweets.length === 0) { 
