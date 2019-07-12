@@ -285,7 +285,6 @@ statsObj.elapsed = getElapsedTimeStamp();
 statsObj.remainingTimeMs = 0;
 statsObj.status = "START";
 statsObj.timeStamp = getTimeStamp();
-statsObj.remainingTimeMs = 0;
 
 statsObj.bestNetwork = {};
 statsObj.bestNetwork.networkId = null;
