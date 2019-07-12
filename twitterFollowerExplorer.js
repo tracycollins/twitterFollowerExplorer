@@ -1412,7 +1412,7 @@ function showStats(options) {
     statsObj.users.processRateMS = statsObj.processUserElapsedMS/statsObj.users.mumProcessed; // ms/userProcessed
     statsObj.users.processRateSec = statsObj.users.processRateMS/1000;
 
-    statsObj.remainingTimeMs = statsObj.users.processUserElapsedMS * statsObj.users.numProcessRemaining;
+    statsObj.remainingTimeMs = statsObj.users.processRateMS * statsObj.users.numProcessRemaining;
 
     try{
       await childStatsAll();
