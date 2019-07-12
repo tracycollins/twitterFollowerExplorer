@@ -191,6 +191,7 @@ const languageClient = new Language.LanguageServiceClient();
 
 const path = require("path");
 const watch = require("watch");
+const defaults = require("object.defaults");
 const randomInt = require("random-int");
 const fetch = require("isomorphic-fetch"); // or another library of choice.
 const urlParse = require("url-parse");
@@ -5636,6 +5637,12 @@ function processPriorityUserTweets(){
   });
 }
 
+const userTweetsDefault = {
+  maxId: MIN_TWEET_ID,
+  sinceId: MIN_TWEET_ID,
+  tweetIds: []
+}
+
 function fetchUserTweets(params){
 
   return new Promise(async function(resolve, reject){
@@ -5655,17 +5662,10 @@ function fetchUserTweets(params){
     if (params.force) {
       delete user.tweets;
       user.tweets = {};
-      user.tweets.maxId = MIN_TWEET_ID;
-      user.tweets.sinceId = MIN_TWEET_ID;
-      user.tweets.tweetIds = [];
-      user.markModified("tweets");
     }
-    else if (user.tweets && user.tweets !== undefined) {
-      user.tweets.maxId = user.tweets.maxId || MIN_TWEET_ID;
-      user.tweets.sinceId = user.tweets.sinceId || MIN_TWEET_ID;
-      user.tweets.tweetIds = user.tweets.tweetIds || [];
-      user.markModified("tweets");
-    }
+
+    defaults(user.tweets, userTweetsDefault);
+    user.markModified("tweets");
 
     const childParams = {};
 
@@ -5682,7 +5682,6 @@ function fetchUserTweets(params){
     try{
       await childSend(childParams);
       const latestTweets = await processPriorityUserTweets({user: user});
-      user.latestTweetsFetchedFlag = true;
       if (latestTweets) { user.latestTweets = latestTweets; }
       resolve(user);
     }
@@ -5742,8 +5741,6 @@ function updateUserTweets(params){
         ));
       }
 
-      user.latestTweetsFetchedFlag;
-
       user.tweetHistograms = {};
       user.markModified("tweetHistograms");
       user = await fetchUserTweets({user: user, force: true});
@@ -5755,7 +5752,6 @@ function updateUserTweets(params){
       return resolve(user);
     }
 
-    // let user = {};
     const latestTweets = user.latestTweets;
     
     delete user.latestTweets;
@@ -5767,6 +5763,22 @@ function updateUserTweets(params){
     tscParams.inc = false;
     tscParams.twitterEvents = configEvents;
     tscParams.tweetStatus = {};
+
+    defaults()
+
+    if (!user.tweets || (user.tweets === undefined)){
+      user.tweets = {};
+      user.tweets.maxId = MIN_TWEET_ID;
+      user.tweets.sinceId = MIN_TWEET_ID;
+      user.tweets.tweetIds = [];
+    }
+
+    if (!user.tweets || (user.tweets === undefined)){
+      user.tweets = {};
+      user.tweets.maxId = MIN_TWEET_ID;
+      user.tweets.sinceId = MIN_TWEET_ID;
+      user.tweets.tweetIds = [];
+    }
 
     if (user.tweets.tweetIds.length > DEFAULT_MAX_USER_TWEETIDS) {
 
