@@ -36,9 +36,9 @@ hostname = hostname.replace(/word/g, "google");
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
-const tcuChildName = MODULE_ID_PREFIX + "_TCU";
-const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
-const tcUtils = new ThreeceeUtilities(tcuChildName);
+// const tcuChildName = MODULE_ID_PREFIX + "_TCU";
+// const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
+// const tcUtils = new ThreeceeUtilities(tcuChildName);
 
 let DROPBOX_ROOT_FOLDER;
 
@@ -78,8 +78,8 @@ const FETCH_COUNT = 200;
 const TEST_TWEET_FETCH_COUNT = 11;
 
 const TEST_MODE_NUM_NN = 10;
-const TEST_FETCH_COUNT = 51;
-const TEST_TOTAL_FETCH = 147;
+const TEST_FETCH_COUNT = 10;
+const TEST_TOTAL_FETCH = 47;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -4502,6 +4502,8 @@ function initRandomNetworkTreeChild() {
 
     if (randomNetworkTree === undefined) {
 
+      randomNetworkTreeReadyFlag = false;
+
       console.log(chalkBlue("TFE | INIT RANDOM NETWORK TREE CHILD PROCESS"));
 
       randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`);
@@ -7652,5 +7654,3 @@ setTimeout(async function(){
     }
   }
 }, 1000);
-
-
