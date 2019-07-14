@@ -31,8 +31,8 @@ const HashMap = require("hashmap").HashMap;
 const networksHashMap = new HashMap();
 const activateNetworkQueue = [];
 let maxQueueFlag = false;
-let maxInputHashMap = {};
-let normalization = {};
+// let maxInputHashMap = {};
+// let normalization = {};
 
 let sortedNetworkResults = {};
 
@@ -62,6 +62,10 @@ const table = require("text-table");
 
 const neataptic = require("neataptic");
 
+const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
+const nnTools = new NeuralNetworkTools("RNT_NNT");
+
+
 let hostname = os.hostname();
 hostname = hostname.replace(/\.example\.com/g, "");
 hostname = hostname.replace(/\.local/g, "");
@@ -70,6 +74,10 @@ hostname = hostname.replace(/\.at\.net/g, "");
 hostname = hostname.replace(/\.fios-router\.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 hostname = hostname.replace(/word/g, "google");
+
+const tcuChildName = + "RNT_TCU";
+const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
+const tcUtils = new ThreeceeUtilities(tcuChildName);
 
 const chalk = require("chalk");
 const chalkWarn = chalk.yellow;
@@ -559,231 +567,231 @@ function generateObjFromArray(params){
   });
 }
 
-function convertDatum(params){
+// function convertDatum(params){
 
-  const datum = params.datum;
-  const generateInputRaw = params.generateInputRaw;
+//   const datum = params.datum;
+//   const generateInputRaw = params.generateInputRaw;
 
-  const compRange = normalization.comp.max - normalization.comp.min;
+//   const compRange = normalization.comp.max - normalization.comp.min;
 
-  return new Promise(async function(resolve, reject){
+//   return new Promise(async function(resolve, reject){
 
-    try {
+//     try {
 
-      const inputTypes = Object.keys(params.inputsObj.inputs).sort();
+//       const inputTypes = Object.keys(params.inputsObj.inputs).sort();
 
-      if (!datum.tweetHistograms || (datum.tweetHistograms === undefined)){
-        console.log(chalkError("RNT | *** USER TWEET HISTOGRAMS UNDEFINED\nDATUM\n" + jsonPrint(datum)));
-        return reject(new Error("USER TWEET HISTOGRAMS UNDEFINED"));
-      }
+//       if (!datum.tweetHistograms || (datum.tweetHistograms === undefined)){
+//         console.log(chalkError("RNT | *** USER TWEET HISTOGRAMS UNDEFINED\nDATUM\n" + jsonPrint(datum)));
+//         return reject(new Error("USER TWEET HISTOGRAMS UNDEFINED"));
+//       }
 
-      if (!datum.profileHistograms || (datum.profileHistograms === undefined)){
-        console.log(chalkError("RNT | *** USER PROFILE HISTOGRAMS UNDEFINED\nDATUM\n" + jsonPrint(datum)));
-        return reject(new Error("USER PROFILE HISTOGRAMS UNDEFINED"));
-      }
+//       if (!datum.profileHistograms || (datum.profileHistograms === undefined)){
+//         console.log(chalkError("RNT | *** USER PROFILE HISTOGRAMS UNDEFINED\nDATUM\n" + jsonPrint(datum)));
+//         return reject(new Error("USER PROFILE HISTOGRAMS UNDEFINED"));
+//       }
 
-      const mergedHistograms = await mergeHistograms.merge({ histogramA: datum.tweetHistograms, histogramB: datum.profileHistograms });
+//       const mergedHistograms = await mergeHistograms.merge({ histogramA: datum.tweetHistograms, histogramB: datum.profileHistograms });
 
-      const convertedDatum = {};
+//       const convertedDatum = {};
 
-      convertedDatum.inputsId = params.inputsObj.inputsId;
-      convertedDatum.screenName = datum.screenName;
-      convertedDatum.name = [];
-      convertedDatum.input = [];
-      convertedDatum.output = [];
-      convertedDatum.inputRaw = [];
+//       convertedDatum.inputsId = params.inputsObj.inputsId;
+//       convertedDatum.screenName = datum.screenName;
+//       convertedDatum.name = [];
+//       convertedDatum.input = [];
+//       convertedDatum.output = [];
+//       convertedDatum.inputRaw = [];
 
-      switch (datum.category) {
-        case "left":
-        convertedDatum.output = [1, 0, 0];
-        break;
-        case "neutral":
-        convertedDatum.output = [0, 1, 0];
-        break;
-        case "right":
-        convertedDatum.output = [0, 0, 1];
-        break;
-        default:
-        console.log(chalkError("RNT | *** CATEGORY ERROR"
-          + " | " + datum.category 
-          + " | @" + datum.screenName
-        ));
-        return reject(new Error("UNKNOWN CATEGORY: " + datum.category));
-      }
+//       switch (datum.category) {
+//         case "left":
+//         convertedDatum.output = [1, 0, 0];
+//         break;
+//         case "neutral":
+//         convertedDatum.output = [0, 1, 0];
+//         break;
+//         case "right":
+//         convertedDatum.output = [0, 0, 1];
+//         break;
+//         default:
+//         console.log(chalkError("RNT | *** CATEGORY ERROR"
+//           + " | " + datum.category 
+//           + " | @" + datum.screenName
+//         ));
+//         return reject(new Error("UNKNOWN CATEGORY: " + datum.category));
+//       }
 
-      async.eachSeries(inputTypes, function(inputType, cb0){
+//       async.eachSeries(inputTypes, function(inputType, cb0){
 
-        const inNames = params.inputsObj.inputs[inputType].sort();
+//         const inNames = params.inputsObj.inputs[inputType].sort();
 
-        async.eachSeries(inNames, function(inName, cb1){
+//         async.eachSeries(inNames, function(inName, cb1){
 
-          const inputName = inName;
+//           const inputName = inName;
 
-          if (generateInputRaw) {
-            convertedDatum.inputRaw.push(inputName);
-          }
+//           if (generateInputRaw) {
+//             convertedDatum.inputRaw.push(inputName);
+//           }
 
-          if (inputType === "sentiment") {
+//           if (inputType === "sentiment") {
 
-            if (
-              mergedHistograms.sentiment 
-              && (mergedHistograms.sentiment !== undefined) 
-              && (mergedHistograms.sentiment[inputName] !== undefined)
-            ){
+//             if (
+//               mergedHistograms.sentiment 
+//               && (mergedHistograms.sentiment !== undefined) 
+//               && (mergedHistograms.sentiment[inputName] !== undefined)
+//             ){
 
-              // "normalization": {
-              //   "score": {
-              //     "min": -0.8999999761581421,
-              //     "max": 1
-              //   },
-              //   "comp": {
-              //     "min": -264.00000011920923,
-              //     "max": 308.00000143051136
-              //   },
-              //   "magnitude": {
-              //     "min": 0,
-              //     "max": 4.400000095367432
-              //   }
-              // }
+//               // "normalization": {
+//               //   "score": {
+//               //     "min": -0.8999999761581421,
+//               //     "max": 1
+//               //   },
+//               //   "comp": {
+//               //     "min": -264.00000011920923,
+//               //     "max": 308.00000143051136
+//               //   },
+//               //   "magnitude": {
+//               //     "min": 0,
+//               //     "max": 4.400000095367432
+//               //   }
+//               // }
 
-              let inputValue;
+//               let inputValue;
 
-              switch (inputName) {
+//               switch (inputName) {
 
-                case "score": // range = -1,1
+//                 case "score": // range = -1,1
 
-                  if (mergedHistograms.sentiment.score > 1){
-                    console.log(chalkAlert("TNC | !!! NORMALIZATION SCORE RANGE ERROR | CLAMPED"
-                      + " | SCORE: " + mergedHistograms.sentiment.score
-                      + " | @" + datum.screenName
-                    ));
-                    mergedHistograms.sentiment.score = 1.0;
-                  }
+//                   if (mergedHistograms.sentiment.score > 1){
+//                     console.log(chalkAlert("TNC | !!! NORMALIZATION SCORE RANGE ERROR | CLAMPED"
+//                       + " | SCORE: " + mergedHistograms.sentiment.score
+//                       + " | @" + datum.screenName
+//                     ));
+//                     mergedHistograms.sentiment.score = 1.0;
+//                   }
 
-                  if (mergedHistograms.sentiment.score < 1){
-                    console.log(chalkAlert("TNC | !!! NORMALIZATION SCORE RANGE ERROR | CLAMPED"
-                      + " | SCORE: " + mergedHistograms.sentiment.score
-                      + " | @" + datum.screenName
-                    ));
-                    mergedHistograms.sentiment.score = -1.0;
-                  }
+//                   if (mergedHistograms.sentiment.score < 1){
+//                     console.log(chalkAlert("TNC | !!! NORMALIZATION SCORE RANGE ERROR | CLAMPED"
+//                       + " | SCORE: " + mergedHistograms.sentiment.score
+//                       + " | @" + datum.screenName
+//                     ));
+//                     mergedHistograms.sentiment.score = -1.0;
+//                   }
 
-                  inputValue = 0.5*(mergedHistograms.sentiment.score + 1);
+//                   inputValue = 0.5*(mergedHistograms.sentiment.score + 1);
 
-                break;
-                case "magnitude": // range = 0,+Infinity
+//                 break;
+//                 case "magnitude": // range = 0,+Infinity
 
-                  if (mergedHistograms.sentiment.magnitude < 0){
-                    console.log(chalkAlert("TNC | !!! NORMALIZATION MAGNITUDE RANGE ERROR | CLAMPED"
-                      + " | SCORE: " + mergedHistograms.sentiment.magnitude
-                      + " | @" + datum.screenName
-                    ));
-                    mergedHistograms.sentiment.magnitude = 0;
-                  }
+//                   if (mergedHistograms.sentiment.magnitude < 0){
+//                     console.log(chalkAlert("TNC | !!! NORMALIZATION MAGNITUDE RANGE ERROR | CLAMPED"
+//                       + " | SCORE: " + mergedHistograms.sentiment.magnitude
+//                       + " | @" + datum.screenName
+//                     ));
+//                     mergedHistograms.sentiment.magnitude = 0;
+//                   }
 
-                  if (normalization.magnitude.max > 0){
-                    inputValue = mergedHistograms.sentiment.magnitude/normalization.magnitude.max;
-                  }
-                  else {
-                    console.log(chalkAlert("TNC | ??? NORMALIZATION MAGNITUDE MAX LT/EQ ZERO RANGE ERROR | @" + datum.screenName));
-                    inputValue = 0;
-                  }
-                break;
-                case "comp": // range = -Infinity,+Infinity
-                  if (compRange > 0){
-                    inputValue = (mergedHistograms.sentiment.comp - normalization.comp.min)/compRange;
-                  }
-                  else{
-                    console.log(chalkAlert("TNC | ??? NORMALIZATION COMP RANGE === 0 | @" + datum.screenName));
-                    inputValue = 0;
-                  }
-                break;
-                default:
-                  console.log(chalkAlert("TNC | ??? UNKNOWN NORMALIZATION PROPERTY: " + inputName + " | @" + datum.screenName));
-                  throw new Error("UNKNOWN NORMALIZATION PROPERTY: " + inputName);
-              }
+//                   if (normalization.magnitude.max > 0){
+//                     inputValue = mergedHistograms.sentiment.magnitude/normalization.magnitude.max;
+//                   }
+//                   else {
+//                     console.log(chalkAlert("TNC | ??? NORMALIZATION MAGNITUDE MAX LT/EQ ZERO RANGE ERROR | @" + datum.screenName));
+//                     inputValue = 0;
+//                   }
+//                 break;
+//                 case "comp": // range = -Infinity,+Infinity
+//                   if (compRange > 0){
+//                     inputValue = (mergedHistograms.sentiment.comp - normalization.comp.min)/compRange;
+//                   }
+//                   else{
+//                     console.log(chalkAlert("TNC | ??? NORMALIZATION COMP RANGE === 0 | @" + datum.screenName));
+//                     inputValue = 0;
+//                   }
+//                 break;
+//                 default:
+//                   console.log(chalkAlert("TNC | ??? UNKNOWN NORMALIZATION PROPERTY: " + inputName + " | @" + datum.screenName));
+//                   throw new Error("UNKNOWN NORMALIZATION PROPERTY: " + inputName);
+//               }
 
-              convertedDatum.input.push(inputValue);
-              convertedDatum.name.push(inputName);
+//               convertedDatum.input.push(inputValue);
+//               convertedDatum.name.push(inputName);
 
-              async.setImmediate(function() {
-                cb1();
-              });
-            }
-          }
-          else if (inputType === "friends"){
+//               async.setImmediate(function() {
+//                 cb1();
+//               });
+//             }
+//           }
+//           else if (inputType === "friends"){
 
-            if ((datum.friends !== undefined) && (datum.friends.length > 0) && (datum.friends.includes(inputName))){
-              convertedDatum.input.push(1);
-              convertedDatum.name.push(inputName);
-              debug(chalkLog("TNC | +++ FRIEND INPUT | @" + datum.screenName + " | " + inputName));
-            }
-            else {
-              convertedDatum.input.push(0);
-              convertedDatum.name.push(inputName);
-            }
+//             if ((datum.friends !== undefined) && (datum.friends.length > 0) && (datum.friends.includes(inputName))){
+//               convertedDatum.input.push(1);
+//               convertedDatum.name.push(inputName);
+//               debug(chalkLog("TNC | +++ FRIEND INPUT | @" + datum.screenName + " | " + inputName));
+//             }
+//             else {
+//               convertedDatum.input.push(0);
+//               convertedDatum.name.push(inputName);
+//             }
 
-            async.setImmediate(function() {
-              cb1();
-            });
+//             async.setImmediate(function() {
+//               cb1();
+//             });
 
-          }
-          else if (
-            mergedHistograms[inputType] 
-            && (mergedHistograms[inputType] !== undefined) 
-            && (mergedHistograms[inputType][inputName] !== undefined)
-          ){
+//           }
+//           else if (
+//             mergedHistograms[inputType] 
+//             && (mergedHistograms[inputType] !== undefined) 
+//             && (mergedHistograms[inputType][inputName] !== undefined)
+//           ){
 
-            if (configuration.inputsBinaryMode) {
-              convertedDatum.input.push(1);
-              convertedDatum.name.push(inputName);
-            }
-            else if ((maxInputHashMap === undefined) 
-              || (maxInputHashMap[inputType] === undefined)) {
-              debug(chalkAlert("UNDEFINED??? maxInputHashMap." + inputType + " | " + inputName));
-              convertedDatum.input.push(1);
-              convertedDatum.name.push(inputName);
-            }
-            else {
-              const inputValue = (
-                maxInputHashMap[inputType] 
-                && maxInputHashMap[inputType][inputName] 
-                && (maxInputHashMap[inputType][inputName] > 0)
-              ) 
-                ? mergedHistograms[inputType][inputName]/maxInputHashMap[inputType][inputName] 
-                : 1;
-              convertedDatum.input.push(inputValue);
-              convertedDatum.name.push(inputName);
-            }
+//             if (configuration.inputsBinaryMode) {
+//               convertedDatum.input.push(1);
+//               convertedDatum.name.push(inputName);
+//             }
+//             else if ((maxInputHashMap === undefined) 
+//               || (maxInputHashMap[inputType] === undefined)) {
+//               debug(chalkAlert("UNDEFINED??? maxInputHashMap." + inputType + " | " + inputName));
+//               convertedDatum.input.push(1);
+//               convertedDatum.name.push(inputName);
+//             }
+//             else {
+//               const inputValue = (
+//                 maxInputHashMap[inputType] 
+//                 && maxInputHashMap[inputType][inputName] 
+//                 && (maxInputHashMap[inputType][inputName] > 0)
+//               ) 
+//                 ? mergedHistograms[inputType][inputName]/maxInputHashMap[inputType][inputName] 
+//                 : 1;
+//               convertedDatum.input.push(inputValue);
+//               convertedDatum.name.push(inputName);
+//             }
 
-            async.setImmediate(function() {
-              cb1();
-            });
-          }
-          else {
-            convertedDatum.input.push(0);
-            convertedDatum.name.push(inputName);
-            async.setImmediate(function() {
-              cb1();
-            });
-          }
+//             async.setImmediate(function() {
+//               cb1();
+//             });
+//           }
+//           else {
+//             convertedDatum.input.push(0);
+//             convertedDatum.name.push(inputName);
+//             async.setImmediate(function() {
+//               cb1();
+//             });
+//           }
 
-        }, function(){
-          cb0();
-        });
+//         }, function(){
+//           cb0();
+//         });
 
-      }, function(){
-        resolve(convertedDatum);
-      });
+//       }, function(){
+//         resolve(convertedDatum);
+//       });
 
-    }
-    catch(err){
-      console.log(chalkError("RNT | *** CONVERT TRAINING DATUM ERROR: " + err));
-      return reject(err);
-    }
+//     }
+//     catch(err){
+//       console.log(chalkError("RNT | *** CONVERT TRAINING DATUM ERROR: " + err));
+//       return reject(err);
+//     }
 
-  });
-}
+//   });
+// }
 
 let activateNetworkBusy = false;
 
@@ -791,132 +799,138 @@ function activateNetwork(params){
 
   return new Promise(async function(resolve, reject){
 
-    activateNetworkBusy = true;
+    // activateNetworkBusy = true;
 
-    try {
+    // try {
 
-      if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
-        console.log(chalkWarn("RNT | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
-        params.user.profileHistograms = {};
-      }
+    //   if (!params.user.profileHistograms || (params.user.profileHistograms === undefined)) {
+    //     console.log(chalkWarn("RNT | UNDEFINED USER PROFILE HISTOGRAMS | @" + params.user.screenName));
+    //     params.user.profileHistograms = {};
+    //   }
 
-      if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
-        console.log(chalkWarn("RNT | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName + "\n" + jsonPrint(params)));
-        params.user.tweetHistograms = {};
-      }
+    //   if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)) {
+    //     console.log(chalkWarn("RNT | UNDEFINED USER TWEET HISTOGRAMS | @" + params.user.screenName + "\n" + jsonPrint(params)));
+    //     params.user.tweetHistograms = {};
+    //   }
 
-      if (!params.user.friends || (params.user.friends === undefined)) {
-        console.log(chalkWarn("RNT | UNDEFINED USER FRIENDS | @" + params.user.screenName));
-        params.user.friends = [];
-      }
+    //   if (!params.user.friends || (params.user.friends === undefined)) {
+    //     console.log(chalkWarn("RNT | UNDEFINED USER FRIENDS | @" + params.user.screenName));
+    //     params.user.friends = [];
+    //   }
 
-      const userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
-      userHistograms.friends = generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
+    //   const nnToolsResults = await nnTools.activate({user: params.user});
 
-      const networkOutput = {};
+    //   if (configuration.testMode) {
+    //     console.log(chalkAlert("TFE | --> NNT RESULTS | " + Object.keys(nnToolsResults)));
+    //   }
 
-      async.each(networksHashMap.keys(), async function(nnId){
+    //   const userHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
+    //   userHistograms.friends = generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
 
-        const networkObj = networksHashMap.get(nnId);
+    //   const networkOutput = {};
 
-        networkOutput[nnId] = {};
-        networkOutput[nnId].output = [];
-        networkOutput[nnId].left = statsObj.loadedNetworks[nnId].left;
-        networkOutput[nnId].neutral = statsObj.loadedNetworks[nnId].neutral;
-        networkOutput[nnId].right = statsObj.loadedNetworks[nnId].right;
-        networkOutput[nnId].none = statsObj.loadedNetworks[nnId].none;
-        networkOutput[nnId].positive = statsObj.loadedNetworks[nnId].positive;
-        networkOutput[nnId].negative = statsObj.loadedNetworks[nnId].negative;
+    //   async.each(networksHashMap.keys(), async function(nnId){
 
-        if (networkObj.inputsObj.inputs === undefined) {
-          console.log(chalkError("RNT | UNDEFINED NETWORK INPUTS OBJ | NETWORK OBJ KEYS: " + Object.keys(networkObj)));
-          return ("UNDEFINED NETWORK INPUTS OBJ");
-        }
+    //     const networkObj = networksHashMap.get(nnId);
 
-        try {
+    //     networkOutput[nnId] = {};
+    //     networkOutput[nnId].output = [];
+    //     networkOutput[nnId].left = statsObj.loadedNetworks[nnId].left;
+    //     networkOutput[nnId].neutral = statsObj.loadedNetworks[nnId].neutral;
+    //     networkOutput[nnId].right = statsObj.loadedNetworks[nnId].right;
+    //     networkOutput[nnId].none = statsObj.loadedNetworks[nnId].none;
+    //     networkOutput[nnId].positive = statsObj.loadedNetworks[nnId].positive;
+    //     networkOutput[nnId].negative = statsObj.loadedNetworks[nnId].negative;
 
-          const networkInputObj = await convertDatum({datum: params.user, inputsObj: networkObj.inputsObj, generateInputRaw: false});
+    //     if (networkObj.inputsObj.inputs === undefined) {
+    //       console.log(chalkError("RNT | UNDEFINED NETWORK INPUTS OBJ | NETWORK OBJ KEYS: " + Object.keys(networkObj)));
+    //       return ("UNDEFINED NETWORK INPUTS OBJ");
+    //     }
 
-          const output = networkObj.network.activate(networkInputObj.input);
+    //     try {
 
-          if (output.length !== 3) {
-            console.log(chalkError("RNT | *** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
-            activateNetworkBusy = false;
-            return("ZERO LENGTH NETWORK OUTPUT");
-          }
+    //       const networkInputObj = await tcUtils.convertDatum({datum: params.user, inputsObj: networkObj.inputsObj, generateInputRaw: false});
 
-          const maxOutputIndex = await indexOfMax(output);
+    //       const output = networkObj.network.activate(networkInputObj.input);
 
-          let categoryAuto;
+    //       if (output.length !== 3) {
+    //         console.log(chalkError("RNT | *** ZERO LENGTH NETWORK OUTPUT | " + nnId ));
+    //         activateNetworkBusy = false;
+    //         return("ZERO LENGTH NETWORK OUTPUT");
+    //       }
 
-          switch (maxOutputIndex) {
-            case 0:
-              categoryAuto = "left";
-              networkOutput[nnId].output = [1,0,0];
-              networkOutput[nnId].left += 1;
-            break;
-            case 1:
-              categoryAuto = "neutral";
-              networkOutput[nnId].output = [0,1,0];
-              networkOutput[nnId].neutral += 1;
-            break;
-            case 2:
-              categoryAuto = "right";
-              networkOutput[nnId].output = [0,0,1];
-              networkOutput[nnId].right += 1;
-            break;
-            default:
-              categoryAuto = "none";
-              networkOutput[nnId].output = [0,0,0];
-              networkOutput[nnId].none += 1;
-          }
+    //       const maxOutputIndex = await indexOfMax(output);
 
-          const match = (categoryAuto === params.user.category) ? "MATCH" : "MISS";
+    //       let categoryAuto;
 
-          if (configuration.verbose) {
-            await printNetworkInput({
-              title: networkObj.networkId
-              + " | INPUT: " + networkObj.inputsId 
-              + " | @" + params.user.screenName 
-              + " | C: " + params.user.category 
-              + " | A: " + categoryAuto
-              + " | MATCH: " + match,
-              inputsObj: networkInputObj
-            });
-          }
+    //       switch (maxOutputIndex) {
+    //         case 0:
+    //           categoryAuto = "left";
+    //           networkOutput[nnId].output = [1,0,0];
+    //           networkOutput[nnId].left += 1;
+    //         break;
+    //         case 1:
+    //           categoryAuto = "neutral";
+    //           networkOutput[nnId].output = [0,1,0];
+    //           networkOutput[nnId].neutral += 1;
+    //         break;
+    //         case 2:
+    //           categoryAuto = "right";
+    //           networkOutput[nnId].output = [0,0,1];
+    //           networkOutput[nnId].right += 1;
+    //         break;
+    //         default:
+    //           categoryAuto = "none";
+    //           networkOutput[nnId].output = [0,0,0];
+    //           networkOutput[nnId].none += 1;
+    //       }
 
-          return;
+    //       const match = (categoryAuto === params.user.category) ? "MATCH" : "MISS";
 
-        }
-        catch(err){
-          console.log(chalkError("RNT | *** ERROR ACTIVATE NETWORK", err));
-          activateNetworkBusy = false;
-          return reject(err);
-        }
-      }, function(err){
+    //       if (configuration.verbose) {
+    //         await printNetworkInput({
+    //           title: networkObj.networkId
+    //           + " | INPUT: " + networkObj.inputsId 
+    //           + " | @" + params.user.screenName 
+    //           + " | C: " + params.user.category 
+    //           + " | A: " + categoryAuto
+    //           + " | MATCH: " + match,
+    //           inputsObj: networkInputObj
+    //         });
+    //       }
 
-        if (err) {
-          console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR", err));
-          return reject(err);
-        }
+    //       return;
 
-        activateNetworkBusy = false;
+    //     }
+    //     catch(err){
+    //       console.log(chalkError("RNT | *** ERROR ACTIVATE NETWORK", err));
+    //       activateNetworkBusy = false;
+    //       return reject(err);
+    //     }
+    //   }, function(err){
 
-        resolve({
-          user: params.user,
-          networkOutput: networkOutput
-        });
+    //     if (err) {
+    //       console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR", err));
+    //       return reject(err);
+    //     }
+
+    //     activateNetworkBusy = false;
+
+    //     resolve({
+    //       user: params.user,
+    //       networkOutput: networkOutput
+    //     });
         
-      });
+    //   });
 
-    }
-    catch(err){
+    // }
+    // catch(err){
 
-      activateNetworkBusy = false;
+    //   activateNetworkBusy = false;
 
-      console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR", err));
-      reject(err);
-    }
+    //   console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR", err));
+    //   reject(err);
+    // }
 
   });
 }
@@ -1360,8 +1374,6 @@ function initActivateNetworkInterval(interval){
           messageObj.user.friends = [];
         }
 
-        // normalization = activateNetworkObj.normalization;
-
         try {
 
           const activateNetworkResults = await activateNetwork({ user: activateNetworkObj.user });
@@ -1551,119 +1563,119 @@ function initActivateNetworkInterval(interval){
   });
 }
 
-function loadNetwork(params){
+// function loadNetwork(params){
 
-  return new Promise(function(resolve, reject){
+//   return new Promise(function(resolve, reject){
 
-    console.log(chalk.green("RNT | LOAD NETWORK: " + params.networkObj.networkId));
+//     console.log(chalk.green("RNT | LOAD NETWORK: " + params.networkObj.networkId));
 
-    const networkObj = params.networkObj;
+//     const networkObj = params.networkObj;
 
-    if (!networkObj || networkObj === undefined || networkObj.network === undefined) {
-      console.log(chalkError("RNT | *** LOAD NETWORK UNDEFINED: " + networkObj));
-      return reject(new Error("LOAD NETWORK UNDEFINED"));
-    }
+//     if (!networkObj || networkObj === undefined || networkObj.network === undefined) {
+//       console.log(chalkError("RNT | *** LOAD NETWORK UNDEFINED: " + networkObj));
+//       return reject(new Error("LOAD NETWORK UNDEFINED"));
+//     }
 
-    const network = neataptic.Network.fromJSON(networkObj.network);
+//     const network = neataptic.Network.fromJSON(networkObj.network);
 
-    networkObj.network = {};
-    networkObj.network = network;
+//     networkObj.network = {};
+//     networkObj.network = network;
 
-    networkObj.testCycles = (networkObj.testCycles !== undefined) ? networkObj.testCycles : 0;
-    networkObj.testCycleHistory = (networkObj.testCycleHistory !== undefined) ? networkObj.testCycleHistory : [];
-    networkObj.successRate = (networkObj.successRate !== undefined) ? networkObj.successRate : 0;
-    networkObj.matchRate = (networkObj.matchRate !== undefined) ? networkObj.matchRate : 0;
-    networkObj.overallMatchRate = (networkObj.overallMatchRate !== undefined) ? networkObj.overallMatchRate : 0;
+//     networkObj.testCycles = (networkObj.testCycles !== undefined) ? networkObj.testCycles : 0;
+//     networkObj.testCycleHistory = (networkObj.testCycleHistory !== undefined) ? networkObj.testCycleHistory : [];
+//     networkObj.successRate = (networkObj.successRate !== undefined) ? networkObj.successRate : 0;
+//     networkObj.matchRate = (networkObj.matchRate !== undefined) ? networkObj.matchRate : 0;
+//     networkObj.overallMatchRate = (networkObj.overallMatchRate !== undefined) ? networkObj.overallMatchRate : 0;
 
-    networksHashMap.set(networkObj.networkId, networkObj);
+//     networksHashMap.set(networkObj.networkId, networkObj);
 
-    if (params.isBestNetwork) {
+//     if (params.isBestNetwork) {
 
-      console.log(chalk.green("RNT | LOAD BEST NETWORK: " + networkObj.networkId));
+//       console.log(chalk.green("RNT | LOAD BEST NETWORK: " + networkObj.networkId));
 
-      statsObj.bestNetwork = {};
-      statsObj.bestNetwork.networkId = networkObj.networkId;
-      statsObj.bestNetwork.inputsId = networkObj.inputsId;
-      statsObj.bestNetwork.numInputs = networkObj.numInputs;
-      statsObj.bestNetwork.output = [];
-      statsObj.bestNetwork.successRate = networkObj.successRate;
-      statsObj.bestNetwork.matchRate = networkObj.matchRate;
-      statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate;
-      statsObj.bestNetwork.rank = networkObj.rank || "";
-      statsObj.bestNetwork.testCycles = networkObj.testCycles;
-      statsObj.bestNetwork.testCycleHistory = [];
-      statsObj.bestNetwork.testCycleHistory = networkObj.testCycleHistory;
-      statsObj.bestNetwork.total = 0;
-      statsObj.bestNetwork.match = 0;
-      statsObj.bestNetwork.mismatch = 0;
-      statsObj.bestNetwork.matchFlag = false;
-      statsObj.bestNetwork.left = 0;
-      statsObj.bestNetwork.neutral = 0;
-      statsObj.bestNetwork.right = 0;
-      statsObj.bestNetwork.positive = 0;
-      statsObj.bestNetwork.negative = 0;
-    }
+//       statsObj.bestNetwork = {};
+//       statsObj.bestNetwork.networkId = networkObj.networkId;
+//       statsObj.bestNetwork.inputsId = networkObj.inputsId;
+//       statsObj.bestNetwork.numInputs = networkObj.numInputs;
+//       statsObj.bestNetwork.output = [];
+//       statsObj.bestNetwork.successRate = networkObj.successRate;
+//       statsObj.bestNetwork.matchRate = networkObj.matchRate;
+//       statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate;
+//       statsObj.bestNetwork.rank = networkObj.rank || "";
+//       statsObj.bestNetwork.testCycles = networkObj.testCycles;
+//       statsObj.bestNetwork.testCycleHistory = [];
+//       statsObj.bestNetwork.testCycleHistory = networkObj.testCycleHistory;
+//       statsObj.bestNetwork.total = 0;
+//       statsObj.bestNetwork.match = 0;
+//       statsObj.bestNetwork.mismatch = 0;
+//       statsObj.bestNetwork.matchFlag = false;
+//       statsObj.bestNetwork.left = 0;
+//       statsObj.bestNetwork.neutral = 0;
+//       statsObj.bestNetwork.right = 0;
+//       statsObj.bestNetwork.positive = 0;
+//       statsObj.bestNetwork.negative = 0;
+//     }
 
-    if (statsObj.loadedNetworks[networkObj.networkId] === undefined) {
-      statsObj.loadedNetworks[networkObj.networkId] = {};
-      statsObj.loadedNetworks[networkObj.networkId].networkId = networkObj.networkId;
-      statsObj.loadedNetworks[networkObj.networkId].inputsId = networkObj.inputsId;
-      statsObj.loadedNetworks[networkObj.networkId].numInputs = networkObj.numInputs;
-      statsObj.loadedNetworks[networkObj.networkId].output = [];
-      statsObj.loadedNetworks[networkObj.networkId].successRate = networkObj.successRate;
-      statsObj.loadedNetworks[networkObj.networkId].matchRate = networkObj.matchRate;
-      statsObj.loadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
-      statsObj.loadedNetworks[networkObj.networkId].rank = networkObj.rank || "";
-      statsObj.loadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
-      statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = [];
-      statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
-      statsObj.loadedNetworks[networkObj.networkId].total = 0;
-      statsObj.loadedNetworks[networkObj.networkId].match = 0;
-      statsObj.loadedNetworks[networkObj.networkId].mismatch = 0;
-      statsObj.loadedNetworks[networkObj.networkId].matchFlag = false;
-      statsObj.loadedNetworks[networkObj.networkId].left = 0;
-      statsObj.loadedNetworks[networkObj.networkId].neutral = 0;
-      statsObj.loadedNetworks[networkObj.networkId].right = 0;
-      statsObj.loadedNetworks[networkObj.networkId].positive = 0;
-      statsObj.loadedNetworks[networkObj.networkId].negative = 0;
-    }
+//     if (statsObj.loadedNetworks[networkObj.networkId] === undefined) {
+//       statsObj.loadedNetworks[networkObj.networkId] = {};
+//       statsObj.loadedNetworks[networkObj.networkId].networkId = networkObj.networkId;
+//       statsObj.loadedNetworks[networkObj.networkId].inputsId = networkObj.inputsId;
+//       statsObj.loadedNetworks[networkObj.networkId].numInputs = networkObj.numInputs;
+//       statsObj.loadedNetworks[networkObj.networkId].output = [];
+//       statsObj.loadedNetworks[networkObj.networkId].successRate = networkObj.successRate;
+//       statsObj.loadedNetworks[networkObj.networkId].matchRate = networkObj.matchRate;
+//       statsObj.loadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+//       statsObj.loadedNetworks[networkObj.networkId].rank = networkObj.rank || "";
+//       statsObj.loadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
+//       statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = [];
+//       statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
+//       statsObj.loadedNetworks[networkObj.networkId].total = 0;
+//       statsObj.loadedNetworks[networkObj.networkId].match = 0;
+//       statsObj.loadedNetworks[networkObj.networkId].mismatch = 0;
+//       statsObj.loadedNetworks[networkObj.networkId].matchFlag = false;
+//       statsObj.loadedNetworks[networkObj.networkId].left = 0;
+//       statsObj.loadedNetworks[networkObj.networkId].neutral = 0;
+//       statsObj.loadedNetworks[networkObj.networkId].right = 0;
+//       statsObj.loadedNetworks[networkObj.networkId].positive = 0;
+//       statsObj.loadedNetworks[networkObj.networkId].negative = 0;
+//     }
 
-    statsObj.loadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
-    statsObj.loadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
-    statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
+//     statsObj.loadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+//     statsObj.loadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
+//     statsObj.loadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
 
-    if (statsObj.allTimeLoadedNetworks[networkObj.networkId] === undefined) {
-      statsObj.allTimeLoadedNetworks[networkObj.networkId] = {};
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].networkId = networkObj.networkId;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].inputsId = networkObj.inputsId;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].numInputs = networkObj.numInputs;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].successRate = networkObj.successRate;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = [];
-      statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
-    }
+//     if (statsObj.allTimeLoadedNetworks[networkObj.networkId] === undefined) {
+//       statsObj.allTimeLoadedNetworks[networkObj.networkId] = {};
+//       statsObj.allTimeLoadedNetworks[networkObj.networkId].networkId = networkObj.networkId;
+//       statsObj.allTimeLoadedNetworks[networkObj.networkId].inputsId = networkObj.inputsId;
+//       statsObj.allTimeLoadedNetworks[networkObj.networkId].numInputs = networkObj.numInputs;
+//       statsObj.allTimeLoadedNetworks[networkObj.networkId].successRate = networkObj.successRate;
+//       statsObj.allTimeLoadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+//       statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
+//       statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = [];
+//       statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
+//     }
 
-    statsObj.allTimeLoadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
-    statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
-    statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
+//     statsObj.allTimeLoadedNetworks[networkObj.networkId].overallMatchRate = networkObj.overallMatchRate;
+//     statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycles = networkObj.testCycles;
+//     statsObj.allTimeLoadedNetworks[networkObj.networkId].testCycleHistory = networkObj.testCycleHistory;
 
-    console.log(chalkLog("RNT | LOAD NETWORK"
-      + " | [ " + networksHashMap.size + " NNs IN HM ]"
-      + " | BEST NETWORK: " + params.isBestNetwork
-      + " | SR: " + networkObj.successRate.toFixed(2) + "%"
-      + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
-      + " | OMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-      + " | RANK: " + networkObj.rank
-      + " | TC: " + networkObj.testCycles
-      + " | TCH: " + networkObj.testCycleHistory.length
-      + " | " + networkObj.networkId
-    ));
+//     console.log(chalkLog("RNT | LOAD NETWORK"
+//       + " | [ " + networksHashMap.size + " NNs IN HM ]"
+//       + " | BEST NETWORK: " + params.isBestNetwork
+//       + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+//       + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
+//       + " | OMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+//       + " | RANK: " + networkObj.rank
+//       + " | TC: " + networkObj.testCycles
+//       + " | TCH: " + networkObj.testCycleHistory.length
+//       + " | " + networkObj.networkId
+//     ));
 
-    resolve();
+//     resolve();
 
-  });
-}
+//   });
+// }
 
 function printCategorizeHistory(){
   console.log(chalkInfo("RNT | CATGORIZE HISTORY ==========================================="));
@@ -1688,12 +1700,10 @@ function printCategorizeHistory(){
 }
 
 function busy(){
-  // if (loadNetworksBusy) { return "loadNetworksBusy"; }
   if (initializeBusy) { return "initializeBusy"; }
   if (generateNetworksOutputBusy) { return "generateNetworksOutputBusy"; }
   if (activateNetworkBusy) { return "activateNetworkBusy"; }
   if (activateNetworkIntervalBusy) { return "activateNetworkIntervalBusy"; }
-  // if (generateNetworkInputBusy) { return "generateNetworkInputBusy"; }
   if (activateNetworkQueue.length > MAX_Q_SIZE) { return "activateNetworkQueue"; }
 
   return false;
@@ -1703,8 +1713,8 @@ function resetStats(callback){
 
   networksHashMap.clear();
 
-  maxInputHashMap = {};
-  normalization = {};
+  // maxInputHashMap = {};
+  // normalization = {};
 
   statsObj.loadedNetworks = {};
   statsObj.allTimeLoadedNetworks = {};
@@ -1784,18 +1794,16 @@ process.on("message", async function(m) {
     break;
 
     case "LOAD_MAX_INPUTS_HASHMAP":
-      maxInputHashMap = {};
-      maxInputHashMap = m.maxInputHashMap;
+      tcUtils.setMaxInputHashMap(m.maxInputHashMap);
       console.log(chalkLog("RNT | LOAD_MAX_INPUTS_HASHMAP"
-        + " | " + Object.keys(maxInputHashMap)
+        + " | " + Object.keys(tcUtils.getMaxInputHashMap())
       ));
     break;
 
     case "LOAD_NORMALIZATION":
-      normalization = {};
-      normalization = m.normalization;
+      tcUtils.setNormalization(m.normalization);
       console.log(chalkLog("RNT | LOAD_NORMALIZATION"
-        + "\n" + jsonPrint(normalization)
+        + "\n" + jsonPrint(tcUtils.getNormalization())
       ));
     break;
 
@@ -1872,7 +1880,7 @@ process.on("message", async function(m) {
     case "LOAD_NETWORK":
 
       try {
-        await loadNetwork({networkObj: m.networkObj, isBestNetwork: m.isBestNetwork});
+        await nnTools.loadNetwork({networkObj: m.networkObj, isBestNetwork: m.isBestNetwork});
       }
       catch(err){
         console.trace(chalkError("RNT | *** LOAD NETWORK ERROR | " + err));

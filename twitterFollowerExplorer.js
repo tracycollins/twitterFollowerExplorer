@@ -36,6 +36,10 @@ hostname = hostname.replace(/word/g, "google");
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
+const tcuChildName = MODULE_ID_PREFIX + "_TCU";
+const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
+const tcUtils = new ThreeceeUtilities(tcuChildName);
+
 let DROPBOX_ROOT_FOLDER;
 
 if (hostname === "google") {
@@ -1299,6 +1303,7 @@ let userServerControllerReady = false;
 const TweetServerController = require("@threeceelabs/tweet-server-controller");
 let tweetServerController;
 let tweetServerControllerReady = false;
+
 
 function connectDb(){
 
@@ -5009,7 +5014,6 @@ function startQuotaTimeOutTimer(p){
   }, params.duration);
 }
 
-
 function userProfileChangeHistogram(params) {
 
   return new Promise(async function(resolve, reject){
@@ -5688,7 +5692,6 @@ function histogramIncomplete(histogram){
     });
 
   });
-
 }
 
 function updateUserTweets(params){
@@ -5912,7 +5915,6 @@ function updatePreviousUserProps(params){
 
   });
 }
-
 
 function printUser(params) {
   let text;
