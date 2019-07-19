@@ -66,7 +66,7 @@ hostname = hostname.replace(/\.fios-router\.home/g, "");
 hostname = hostname.replace(/word0-instance-1/g, "google");
 hostname = hostname.replace(/word/g, "google");
 
-const tcuChildName = Number("RNT_TCU");
+const tcuChildName = "RNT_TCU";
 const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
 const tcUtils = new ThreeceeUtilities(tcuChildName);
 
@@ -236,114 +236,8 @@ function quit(message) {
   }, 3000);
 }
 
-// function printNetworkResults(params){
-
-//   const statsTextArray = [];
-
-//   return new Promise(function(resolve, reject){
-
-//     async.eachOf(sortedNetworkResults.sortedKeys, function(nnId, index, cb0){
-
-//       statsTextArray[index] = statsTextObj[nnId];
-
-//       async.setImmediate(function() { cb0(); });
-
-//     }, function(err){
-
-//       if (err) {
-//         console.log(chalkError("RNT | *** printNetworkResults ERROR: " + err));
-//         return reject(err);
-//       }
-
-//       statsTextArray.unshift([
-//         "RNT | ",
-//         "RANK",
-//         "NNID",
-//         "INPUTSID",
-//         "INPUTS",
-//         "OAMR",
-//         "SR",
-//         "TCs",
-//         "TCH",
-//         "MFLAG",
-//         "OUTPUT",
-//         "TOT",
-//         " M",
-//         " MM",
-//         " MR"
-//       ]);
-
-//       console.log(chalk.blue(
-//           "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
-//         + "\nRNT | " + params.title 
-//         + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------\n"
-//         + table(statsTextArray, { align: ["l", "r", "l", "l", "r", "r", "r", "r", "r", "l", "r", "r", "r", "r", "r"] })
-//         + "\nRNT | -------------------------------------------------------------------------------------------------------------------------------------------------"
-//       ));
-
-//       resolve();
-
-//     });
-
-//   });
-
-// }
-
 const generateNetworksOutputBusy = false;
-
 const statsTextObj = {};
-
-// function categoryToString(c) {
-
-//   let cs = "";
-
-//   switch (c) {
-//     case "left":
-//       cs = "L";
-//     break;
-//     case "neutral":
-//       cs = "N";
-//     break;
-//     case "right":
-//       cs = "R";
-//     break;
-//     case "positive":
-//       cs = "+";
-//     break;
-//     case "negative":
-//       cs = "-";
-//     break;
-//     case "none":
-//       cs = "0";
-//     break;
-//     case false:
-//       cs = "false";
-//     break;
-//     case undefined:
-//       cs = "undefined";
-//     break;
-//     case null:
-//       cs = "null";
-//     break;
-//     default:
-//       cs = "?";
-//   }
-
-//   return cs;
-// }
-
-// function printActivateResult(prefix, nn, category, categoryAuto, screenName){
-//   console.log(chalkInfo(prefix
-//     + " | MR " + statsObj.categorize.matchRate.toFixed(2) + "% (" + statsObj.categorize.match + "/" + statsObj.categorize.total + ")"
-//     + " | OMR " + nn.overallMatchRate.toFixed(2) + "%"
-//     + " | SR " + nn.successRate.toFixed(2) + "%"
-//     + " | TC " + nn.testCycles
-//     + " | " + nn.networkId
-//     + " | " + nn.numInputs + " IN"
-//     + " | C M:" + categoryToString(category) + " A: " + categoryToString(categoryAuto)
-//     + " | @" + screenName
-//   ));
-// }
 
 function initActivateNetworkInterval(interval){
 
@@ -361,8 +255,8 @@ function initActivateNetworkInterval(interval){
     messageObj.op = "NETWORK_OUTPUT";
     messageObj.queue = activateNetworkQueue.length;
     messageObj.user = null;
-    messageObj.bestNetwork = currentBestNetwork;
-    messageObj.currentBestNetwork = currentBestNetwork;
+    messageObj.bestNetwork = statsObj.currentBestNetwork;
+    messageObj.currentBestNetwork = statsObj.currentBestNetwork;
     messageObj.category = "none";
     messageObj.categoryAuto = "none";
 
@@ -381,20 +275,28 @@ function initActivateNetworkInterval(interval){
 
         try {
 
-          // resolve({
-          //   user: user,
-          //   networkOutput: networkOutput,
-          //   bestNetwork: currentBestNetwork
-          // });
-
           const activateNetworkResults = await nnTools.activate({ user: activateNetworkObj.user });
 
           const currentBestNetworkStats = await nnTools.updateNetworkStats({
+
+            user: activateNetworkObj.user,
             networkOutput: activateNetworkResults.networkOutput, 
             expectedCategory: activateNetworkResults.user.category
           });
 
-          messageObj.currentBestNetwork = currentBestNetwork;
+          if (configuration.verbose) {
+            console.log("RNT | NN UPDATE STATS | BEST NETWORK"
+              + " | " + currentBestNetworkStats.networkId
+              + " | " + currentBestNetworkStats.inputsId
+              + " | RANK: " + currentBestNetworkStats.rank
+              + " | " + currentBestNetworkStats.meta.match + "/" + currentBestNetworkStats.meta.total
+              + " | MR: " + currentBestNetworkStats.matchRate.toFixed(2) + "%"
+              + " | OUT: " + currentBestNetworkStats.meta.output
+              + " | MATCH: " + currentBestNetworkStats.meta.matchFlag
+            );
+          }
+
+          messageObj.currentBestNetwork = currentBestNetworkStats;
           messageObj.user = activateNetworkResults.user;
           messageObj.category = activateNetworkResults.user.category;
           messageObj.categoryAuto = activateNetworkResults.categoryAuto;
@@ -483,7 +385,6 @@ function printCategorizeHistory(){
 function busy(){
   if (initializeBusy) { return "initializeBusy"; }
   if (generateNetworksOutputBusy) { return "generateNetworksOutputBusy"; }
-  // if (activateNetworkBusy) { return "activateNetworkBusy"; }
   if (activateNetworkIntervalBusy) { return "activateNetworkIntervalBusy"; }
   if (activateNetworkQueue.length > MAX_Q_SIZE) { return "activateNetworkQueue"; }
 
@@ -570,14 +471,16 @@ process.on("message", async function(m) {
     break;
 
     case "LOAD_MAX_INPUTS_HASHMAP":
-      tcUtils.setMaxInputHashMap(m.maxInputHashMap);
+      // tcUtils.setMaxInputHashMap(m.maxInputHashMap);
+      await nnTools.setMaxInputHashMap(m.maxInputHashMap);
       console.log(chalkLog("RNT | LOAD_MAX_INPUTS_HASHMAP"
         + " | " + Object.keys(tcUtils.getMaxInputHashMap())
       ));
     break;
 
     case "LOAD_NORMALIZATION":
-      tcUtils.setNormalization(m.normalization);
+      // tcUtils.setNormalization(m.normalization);
+      await nnTools.setNormalization(m.normalization);
       console.log(chalkLog("RNT | LOAD_NORMALIZATION"
         + "\n" + jsonPrint(tcUtils.getNormalization())
       ));

@@ -935,15 +935,15 @@ function printNetworkObj(title, nObj, format) {
   const networkObj = networkDefaults(nObj);
 
   console.log(chalkFormat(title
-    + " | RANK: " + networkObj.rank
-    + " | ARCHIVED: " + networkObj.archived
+    + " | RNK: " + networkObj.rank
+    + " | ARCH: " + networkObj.archived
     + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
     + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
     + " | SR: " + networkObj.successRate.toFixed(2) + "%"
     + " | CR: " + getTimeStamp(networkObj.createdAt)
     + " | TC:  " + networkObj.testCycles
     + " | TCH: " + networkObj.testCycleHistory.length
-    + " | INPUTS: " + networkObj.numInputs
+    + " | INs: " + networkObj.numInputs
     + " | IN ID:  " + networkObj.inputsId
     + " | " + networkObj.networkId
   ));
@@ -4309,7 +4309,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval) {
                 + " | MR: " + m.bestNetwork.matchRate.toFixed(2) + "%"
                 + " | OAMR: " + m.bestNetwork.overallMatchRate.toFixed(2) + "%"
                 + " | TC: " + m.bestNetwork.testCycles
-                + " | TCH: " + m.bestNetwork.testCycleHistory.length
+                // + " | TCH: " + m.bestNetwork.testCycleHistory.length
                 + " | @" + m.user.screenName
                 + " | C: " + m.user.category
                 + " | CA: " + m.categoryAuto
