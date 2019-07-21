@@ -30,8 +30,6 @@ const networksHashMap = new HashMap();
 const activateNetworkQueue = [];
 let maxQueueFlag = false;
 
-const sortedNetworkResults = {};
-
 let activateNetworkInterval;
 let activateNetworkIntervalBusy = false;
 
@@ -48,14 +46,11 @@ const os = require("os");
 const util = require("util");
 const moment = require("moment");
 const treeify = require("treeify");
-const async = require("async");
 const debug = require("debug")("rnt");
 const debugCache = require("debug")("cache");
-const table = require("text-table");
 
 const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
 const nnTools = new NeuralNetworkTools("RNT_NNT");
-
 
 let hostname = os.hostname();
 hostname = hostname.replace(/\.example\.com/g, "");
@@ -237,7 +232,6 @@ function quit(message) {
 }
 
 const generateNetworksOutputBusy = false;
-const statsTextObj = {};
 
 function initActivateNetworkInterval(interval){
 
@@ -255,8 +249,6 @@ function initActivateNetworkInterval(interval){
     messageObj.op = "NETWORK_OUTPUT";
     messageObj.queue = activateNetworkQueue.length;
     messageObj.user = null;
-    messageObj.bestNetwork = statsObj.currentBestNetwork;
-    messageObj.currentBestNetwork = statsObj.currentBestNetwork;
     messageObj.category = "none";
     messageObj.categoryAuto = "none";
 
@@ -278,14 +270,15 @@ function initActivateNetworkInterval(interval){
           const activateNetworkResults = await nnTools.activate({ user: activateNetworkObj.user });
 
           const currentBestNetworkStats = await nnTools.updateNetworkStats({
-
             user: activateNetworkObj.user,
             networkOutput: activateNetworkResults.networkOutput, 
             expectedCategory: activateNetworkResults.user.category
           });
 
-          if (configuration.verbose) {
-            console.log("RNT | NN UPDATE STATS | BEST NETWORK"
+          statsObj.currentBestNetwork = currentBestNetworkStats;
+
+          if (configuration.testMode || configuration.verbose) {
+            console.log("RNT | NN UPDATE STATS | BEST NN"
               + " | " + currentBestNetworkStats.networkId
               + " | " + currentBestNetworkStats.inputsId
               + " | RANK: " + currentBestNetworkStats.rank
@@ -482,7 +475,8 @@ process.on("message", async function(m) {
       // tcUtils.setNormalization(m.normalization);
       await nnTools.setNormalization(m.normalization);
       console.log(chalkLog("RNT | LOAD_NORMALIZATION"
-        + "\n" + jsonPrint(tcUtils.getNormalization())
+        + "\n" + jsonPrint(m.normalization)
+        // + "\n" + jsonPrint(tcUtils.getNormalization())
       ));
     break;
 
@@ -582,6 +576,9 @@ process.on("message", async function(m) {
       if (!m.obj.user.tweetHistograms || (m.obj.user.tweetHistograms === undefined)) {
         console.log(chalkWarn("RNT | ACTIVATE | UNDEFINED USER TWEET HISTOGRAMS | @" + m.obj.user.screenName));
         m.obj.user.tweetHistograms = {};
+      }
+      else if (configuration.testMode){
+        console.log(chalkLog("RNT | ACTIVATE | USER TWEET HISTOGRAMS | @" + m.obj.user.screenName + " | " + Object.keys(m.obj.user.tweetHistograms)));
       }
 
       if (!m.obj.user.friends || (m.obj.user.friends === undefined)) {

@@ -207,6 +207,10 @@ statsObj.queues.fetchUserFriendsIdsQueue = {};
 statsObj.queues.fetchUserFriendsIdsQueue.busy = false;
 statsObj.queues.fetchUserFriendsIdsQueue.size = 0;
 
+statsObj.queues.fetchUserTweetsQueue = {};
+statsObj.queues.fetchUserTweetsQueue.busy = false;
+statsObj.queues.fetchUserTweetsQueue.size = 0;
+
 statsObj.errors = {};
 
 statsObj.status = "START";
@@ -328,7 +332,7 @@ async function showStats(options) {
 
 function initConfig(cnf) {
 
-  return new Promise(async function(resolve, reject){
+  return new Promise(function(resolve, reject){
 
     statsObj.status = "INIT CONFIG";
 
@@ -398,7 +402,7 @@ let userServerControllerReady = false;
 
 function connectDb(){
 
-  return new Promise(async function(resolve, reject){
+  return new Promise(function(resolve, reject){
 
     try {
 
@@ -580,6 +584,7 @@ else {
 
 
 function filesListFolderLocal(options){
+
   return new Promise(function(resolve, reject) {
 
     const fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + options.path;
@@ -1144,7 +1149,7 @@ function resetTwitterUserState(){
 
 function fetchUserTweets(params){
 
-  return new Promise(async function(resolve, reject){
+  return new Promise(function(resolve, reject){
 
     if (!twitClient || (twitClient === undefined)) {
       console.log(chalkAlert("TFC | fetchUserTweets | twitClient UNDEFINED | @" + configuration.threeceeUser));
@@ -1276,7 +1281,7 @@ function fetchUserTweets(params){
 
 function twitterUsersShow(){
 
-  return new Promise(async function(resolve, reject){
+  return new Promise(function(resolve, reject){
 
     if (!twitClient || (twitClient === undefined)) {
       console.log(chalkAlert("TFC | twitterUsersShow | twitClient UNDEFINED | @" + configuration.threeceeUser));
@@ -1353,19 +1358,18 @@ function twitterUsersShow(){
   });
 }
 
-function twitterUserUpdate(){
+async function twitterUserUpdate(){
 
-  return new Promise(async function(resolve, reject){
+  // return new Promise(function(resolve, reject){
 
     if (statsObj.threeceeUser.twitterRateLimit.users.exceptionFlag || statsObj.threeceeUser.twitterRateLimit.friends.exceptionFlag) {
       console.log(chalkAlert("TFC | twitterUserUpdate | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
-      return resolve();
+      return;
     }
 
     try {
       await twitterUsersShow();
-      // await fetch3cUserFriendsIds();
-      resolve();
+      return;
     }
     catch(err){
       console.log(chalkError("TFC | *** TWITTER SHOW USER ERROR"
@@ -1376,17 +1380,17 @@ function twitterUserUpdate(){
       ));
 
       if (err.code === 88) {
-        return resolve();
+        return;
       }
-      return reject(err);
+      return err;
     }
 
-  });
+  // });
 }
 
 function checkEndPointRateLimit(params){
 
-  return new Promise(async function(resolve){
+  return new Promise(function(resolve){
 
     const resource = params.resource;
     const endPoint = params.endPoint;
@@ -1490,7 +1494,7 @@ function checkEndPointRateLimit(params){
 
 function checkRateLimit(){
 
-  return new Promise(async function(resolve, reject){
+  return new Promise(function(resolve, reject){
 
     if (!twitClient || (twitClient === undefined)) {
       console.log(chalkError("TFC | *** CHECK RATE LIMIT | TWIT CLIENT UNDEFINED"
@@ -1551,6 +1555,7 @@ function checkRateLimit(){
           + " | STATUS CODE: " + err.statusCode
           + " | " + err.message
         ));
+
       }
 
       Object.keys(TWITTER_RATE_LIMIT_RESOURCES).forEach(function(resource){
@@ -1602,10 +1607,12 @@ const fetchUserTweetsQueue = [];
 
 function initFetchUserTweets(p) {
 
-  return new Promise(async function(resolve, reject){
+  return new Promise(function(resolve, reject){
 
     clearInterval(fetchUserTweetsQueueInterval);
+
     fetchUserTweetsQueueReady = true;
+    statsObj.queues.fetchUserTweetsQueue.busy = false;
 
     const params = p || {};
     params.interval = params.interval || DEFAUT_TWITTER_FETCH_TWEETS_INTERVAL;
@@ -1624,24 +1631,43 @@ function initFetchUserTweets(p) {
 
     fetchUserTweetsQueueInterval = setInterval(async function(){
 
-      if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag 
-        && fetchUserTweetsQueueReady 
-        && (fetchUserTweetsQueue.length === 0)
-        && statsObj.fetchUserTweetsEndFlag
-      ) {
+      // if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag 
+      //   && fetchUserTweetsQueueReady 
+      //   && (fetchUserTweetsQueue.length === 0)
+      //   && statsObj.fetchUserTweetsEndFlag
+      // ) {
 
+      //   console.log(chalkBlueBold("TFC | ==========================="));
+      //   console.log(chalkBlueBold("TFC | XXX FETCHED USER TWEETS END"));
+      //   console.log(chalkBlueBold("TFC | ==========================="));
+        
+      //   fetchUserTweetsQueueReady = false;
+      //   fsm.fsm_fetchUserEnd();
+      // }
+
+      if (fetchUserTweetsQueueReady && statsObj.fetchUserTweetsEndFlag && (fetchUserTweetsQueue.length === 0)){
         console.log(chalkBlueBold("TFC | ==========================="));
         console.log(chalkBlueBold("TFC | XXX FETCHED USER TWEETS END"));
         console.log(chalkBlueBold("TFC | ==========================="));
         
         fetchUserTweetsQueueReady = false;
+        statsObj.queues.fetchUserTweetsQueue.busy = false;
+        statsObj.queues.fetchUserTweetsQueue.size = 0;
         fsm.fsm_fetchUserEnd();
       }
+      
       else if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag && fetchUserTweetsQueueReady && (fetchUserTweetsQueue.length > 0)) {
 
         fetchUserTweetsQueueReady = false;
+        statsObj.queues.fetchUserTweetsQueue.busy = true;
 
         const user = fetchUserTweetsQueue.shift();
+
+        statsObj.queues.fetchUserTweetsQueue.size = fetchUserTweetsQueue.length;
+
+        if (!user.tweets || (user.tweets === undefined)){
+          user.tweets = {};
+        }
 
         try {
 
@@ -1651,8 +1677,9 @@ function initFetchUserTweets(p) {
 
             statsObj.tweets.fetched += latestTweets.length;
 
-            if (user.priority || (statsObj.tweets.fetched % 100 === 0)) {
+            if (configuration.testMode || user.priority || (statsObj.tweets.fetched % 100 === 0)) {
               console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
+                + " | FUTQ: " + fetchUserTweetsQueue.length
                 + " | PRIORITY: " + user.priority
                 + " [ " + latestTweets.length + " LATEST / " + statsObj.tweets.fetched + " TOT FETCHED ]"
                 + " | " + user.userId
@@ -1673,6 +1700,7 @@ function initFetchUserTweets(p) {
 
             function(){ 
               fetchUserTweetsQueueReady = true; 
+              statsObj.queues.fetchUserTweetsQueue.busy = false;
             }
           );
 
@@ -1949,7 +1977,7 @@ const fsmStates = {
           if (results.anyRateLimitFlag) {
 
             const resources = Object.keys(results.flags);
-            const resource = resources[0];
+            const resource = (resources.length > 0) ? resources[0] : false;
             const endPoints = results.flags.resource;
             const endPoint = endPoints[0];
 
@@ -2165,6 +2193,11 @@ process.on("message", async function(m) {
       fsm.fsm_idle();
     break;
 
+    case "FETCH_USER_TWEETS_END":
+      console.log(chalkAlert("TFC | >>> FETCH USER TWEETS END FLAG"));
+      statsObj.fetchUserTweetsEndFlag = m.fetchUserTweetsEndFlag;
+    break;
+
     case "FETCH_USER_TWEETS":
       m.userArray.forEach(function(user){
 
@@ -2173,6 +2206,8 @@ process.on("message", async function(m) {
           user.priority = true;
 
           fetchUserTweetsQueue.unshift(user);
+
+          statsObj.queues.fetchUserTweetsQueue.size = fetchUserTweetsQueue.length;
 
           console.log(chalkBlue(MODULE_ID_PREFIX
             + " | >>> PRIORITY | FETCH_USER_TWEETS"
@@ -2186,6 +2221,7 @@ process.on("message", async function(m) {
         }
         else {
           fetchUserTweetsQueue.push(user);
+          statsObj.queues.fetchUserTweetsQueue.size = fetchUserTweetsQueue.length;
         }
       });
 
