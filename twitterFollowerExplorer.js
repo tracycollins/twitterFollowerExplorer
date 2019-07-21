@@ -6019,7 +6019,6 @@ async function initProcessUserQueueInterval(interval) {
       }
       else if (!statsObj.queues.processUserQueue.busy && statsObj.queues.processUserQueue.size > 0) {
 
-        statsObj.processedStartFlag = true;
         statsObj.status = "PROCESS USER";
 
         statsObj.queues.processUserQueue.busy = true;
@@ -6028,6 +6027,11 @@ async function initProcessUserQueueInterval(interval) {
 
         statsObj.queues.processUserQueue.size = processUserQueue.length;
 
+        if (!statsObj.processedStartFlag) {
+          statsObj.processedStartFlag = true;
+          showStats();
+        }
+        
         try {
 
           if (!categorizedUserIdSet.has(mObj.nodeId)){
