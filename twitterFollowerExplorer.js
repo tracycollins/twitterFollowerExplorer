@@ -2332,7 +2332,7 @@ function saveFile(params, callback){
     //   if (callback !== undefined) { return callback(err); }
     // });
 
-    console.log(chalkBlue(MODULE_ID_PREFIX + " | SAVING DROPBOX LOCALLY"
+    debug(chalkBlue(MODULE_ID_PREFIX + " | SAVING DROPBOX LOCALLY"
       + " | " + objSizeMBytes.toFixed(3) + " MB"
       + " | " + fullPath
     ));

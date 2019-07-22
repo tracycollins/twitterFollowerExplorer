@@ -321,7 +321,7 @@ function initActivateNetworkInterval(interval){
           });
 
           if (statsObj.currentBestNetwork.matchRate < currentBestNetworkStats.matchRate) {
-            printNetworkObj("NNT | +++ UPDATE BEST NETWORK", currentBestNetworkStats, chalk.black);
+            printNetworkObj("NNT | +++ UPDATE BEST NETWORK | @" + messageObj.user.screenName + " | CM: " + messageObj.user.category, currentBestNetworkStats, chalk.black);
             await nnTools.printNetworkResults();
           }
 
