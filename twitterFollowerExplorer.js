@@ -68,7 +68,7 @@ const DEFAULT_MIN_INTERVAL = 2;
 const ONE_KILOBYTE = 1024;
 const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 
-const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
+// const MAX_SAVE_DROPBOX_NORMAL = 20 * ONE_MEGABYTE;
 
 const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
@@ -2308,7 +2308,7 @@ saveCache.on("set", function(file, fileObj) {
 
 function saveFile(params, callback){
 
-  const fullPath = params.folder + "/" + params.file;
+  let fullPath = params.folder + "/" + params.file;
   const limit = params.limit || DROPBOX_LIST_FOLDER_LIMIT;
   const localFlag = params.localFlag || false;
 
@@ -2319,6 +2319,8 @@ function saveFile(params, callback){
   const options = {};
 
   if (localFlag) {
+
+    fullPath += DROPBOX_ROOT_FOLDER + fullPath;
 
     const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
 
@@ -6586,25 +6588,19 @@ const fsmStates = {
           // if ((sizeof(globalHistograms[type]) > MAX_SAVE_DROPBOX_NORMAL) || configuration.testMode) {
 
             if (configuration.testMode) {
-              if (hostname === PRIMARY_HOST && hostname === "google") {
-                folder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms_test/types/" + type;
-              }
-              else if (hostname === PRIMARY_HOST) {
-                folder = DROPBOX_ROOT_FOLDER + "/config/utility/default/histograms_test/types/" + type;
+              if (hostname === PRIMARY_HOST) {
+                folder = "/config/utility/default/histograms_test/types/" + type;
               }
               else {
-                folder = DROPBOX_ROOT_FOLDER + "/config/utility/" + hostname + "/histograms_test/types/" + type;
+                folder = "/config/utility/" + hostname + "/histograms_test/types/" + type;
               }
             }
             else {
-              if (hostname === PRIMARY_HOST && hostname === "google") {
-                folder = DROPBOX_ROOT_FOLDER + "/config/utility/default/histograms/types/" + type;
-              }
-              else if (hostname === PRIMARY_HOST) {
-                folder = DROPBOX_ROOT_FOLDER + "/config/utility/default/histograms/types/" + type;
+              if (hostname === PRIMARY_HOST) {
+                folder = "/config/utility/default/histograms/types/" + type;
               }
               else {
-                folder = DROPBOX_ROOT_FOLDER + "/config/utility/" + hostname + "/histograms/types/" + type;
+                folder = "/config/utility/" + hostname + "/histograms/types/" + type;
               }
             }
 
