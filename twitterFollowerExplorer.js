@@ -4013,7 +4013,7 @@ function updateBestNetworkStats(params) {
     statsObj.currentBestNetworkId = networkObj.networkId;
 
     statsObj.bestNetwork.networkId = networkObj.networkId;
-    statsObj.bestNetwork.network = networkObj.network;
+    // statsObj.bestNetwork.network = networkObj.network;
     statsObj.bestNetwork.networkType = networkObj.networkType;
     statsObj.bestNetwork.successRate = networkObj.successRate || 0;
     statsObj.bestNetwork.matchRate = networkObj.matchRate || 0;
