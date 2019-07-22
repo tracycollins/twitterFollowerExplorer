@@ -1497,7 +1497,7 @@ function initStatsUpdate() {
     statsObj.elapsed = getElapsedTimeStamp();
     statsObj.timeStamp = getTimeStamp();
 
-    saveFile({localFlag: false, folder: statsFolder, file: statsFile, obj: statsObj});
+    saveFile({localFlag: true, folder: statsFolder, file: statsFile, obj: statsObj});
 
     clearInterval(statsUpdateInterval);
 
@@ -1506,7 +1506,7 @@ function initStatsUpdate() {
       statsObj.elapsed = getElapsedTimeStamp();
       statsObj.timeStamp = getTimeStamp();
 
-      saveFileQueue.push({localFlag: false, folder: statsFolder, file: statsFile, obj: statsObj});
+      saveFileQueue.push({folder: statsFolder, file: statsFile, obj: statsObj, localFlag: true});
       statsObj.queues.saveFileQueue.size = saveFileQueue.length;
 
       try{
@@ -3740,14 +3740,14 @@ function saveNetworkHashMap(params, callback) {
     const file = nnId + ".json";
 
     if (params.saveImmediate) {
-      saveFileQueue.push({folder: folder, file: file, obj: networkObj });
+      saveFileQueue.push({folder: folder, file: file, obj: networkObj, localFlag: true });
       debug(chalkNetwork("SAVING NN (Q)"
         + " | " + networkObj.networkId
       ));
       cb0();
     }
     else {
-      saveCache.set(file, {folder: folder, file: file, obj: networkObj });
+      saveCache.set(file, {folder: folder, file: file, obj: networkObj, localFlag: true });
       debug(chalkNetwork("SAVING NN ($)"
         + " | " + networkObj.networkId
       ));
@@ -3894,7 +3894,7 @@ function updateNetworkStats(params) {
           file = hostBestInputsConfigFile;
         }
 
-        saveFileQueue.push({folder: folder, file: file, obj: bestInputsConfigObj});
+        saveFileQueue.push({folder: folder, file: file, obj: bestInputsConfigObj, localFlag: true});
 
         saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb}, function() {
           statsObj.status = statsObj.fsmState;
@@ -6583,7 +6583,7 @@ const fsmStates = {
             + " | PATH: " + folder + "/" + file
           ));
 
-          if ((sizeof(globalHistograms[type]) > MAX_SAVE_DROPBOX_NORMAL) || configuration.testMode) {
+          // if ((sizeof(globalHistograms[type]) > MAX_SAVE_DROPBOX_NORMAL) || configuration.testMode) {
 
             if (configuration.testMode) {
               if (hostname === PRIMARY_HOST && hostname === "google") {
@@ -6609,10 +6609,10 @@ const fsmStates = {
             }
 
             saveFileQueue.push({folder: folder, file: file, obj: histObj, localFlag: true });
-          }
-          else {
-            saveFileQueue.push({folder: folder, file: file, obj: histObj });
-          }
+          // }
+          // else {
+          //   saveFileQueue.push({folder: folder, file: file, obj: histObj });
+          // }
 
           cb();
 
@@ -7450,7 +7450,7 @@ async function childCreate(p){
                   + "\n" + jsonPrint(m.friend)
                 ));
                 statsObj.rawFriend = m.friend;
-                saveFileQueue.push({folder: testDataUserFolder, file: file, obj: m.friend });
+                saveFileQueue.push({folder: testDataUserFolder, file: file, obj: m.friend, localFlag: true});
                 saveRawFriendFlag = false;
               }
             }
