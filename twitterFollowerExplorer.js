@@ -1497,7 +1497,7 @@ function initStatsUpdate() {
     statsObj.elapsed = getElapsedTimeStamp();
     statsObj.timeStamp = getTimeStamp();
 
-    saveFile({localFlag: true, folder: statsFolder, file: statsFile, obj: statsObj});
+    saveFile({folder: statsFolder, file: statsFile, obj: statsObj, localFlag: true});
 
     clearInterval(statsUpdateInterval);
 
@@ -2320,7 +2320,7 @@ function saveFile(params, callback){
 
   if (localFlag) {
 
-    fullPath += DROPBOX_ROOT_FOLDER + fullPath;
+    fullPath = path.join(DROPBOX_ROOT_FOLDER + fullPath);
 
     const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
 
