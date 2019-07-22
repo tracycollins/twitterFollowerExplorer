@@ -48,6 +48,7 @@ const moment = require("moment");
 const treeify = require("treeify");
 const debug = require("debug")("rnt");
 const debugCache = require("debug")("cache");
+const defaults = require("object.defaults");
 
 const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
 const nnTools = new NeuralNetworkTools("RNT_NNT");
@@ -121,6 +122,50 @@ function msToTime(d) {
 
   if (sign > 0) return days + ":" + hours + ":" + minutes + ":" + seconds;
   return "- " + days + ":" + hours + ":" + minutes + ":" + seconds;
+}
+
+const networkDefaults = {};
+
+networkDefaults.rank = Infinity;
+networkDefaults.matchRate = 0;
+networkDefaults.overallMatchRate = 0;
+networkDefaults.successRate = 0;
+networkDefaults.testCycles = 0;
+networkDefaults.testCycleHistory = [];
+
+networkDefaults.meta = {};
+
+networkDefaults.meta.output = [];
+networkDefaults.meta.total = 0;
+networkDefaults.meta.match = 0;
+networkDefaults.meta.mismatch = 0;
+
+networkDefaults.meta.left = 0;
+networkDefaults.meta.neutral = 0;
+networkDefaults.meta.right = 0;
+networkDefaults.meta.none = 0;
+networkDefaults.meta.positive = 0;
+networkDefaults.meta.negative = 0;
+
+function printNetworkObj(title, nObj, format) {
+
+  const chalkFormat = (format !== undefined) ? format : chalk.blue;
+
+  const nn = defaults(nObj, networkDefaults);
+
+  console.log(chalkFormat(title
+    + " | RK: " + nn.rank.toFixed(0)
+    + " | OR: " + nn.overallMatchRate.toFixed(2) + "%"
+    + " | MR: " + nn.matchRate.toFixed(2) + "%"
+    + " | SR: " + nn.successRate.toFixed(2) + "%"
+    + " | CR: " + tcUtils.getTimeStamp(nn.createdAt)
+    + " | TC:  " + nn.testCycles
+    + " | TH: " + nn.testCycleHistory.length
+    + " |  " + nn.inputsId
+    + " | " + nn.networkId
+  ));
+
+  return;
 }
 
 process.title = "node_randomNetworkTree";
@@ -274,6 +319,11 @@ function initActivateNetworkInterval(interval){
             networkOutput: activateNetworkResults.networkOutput, 
             expectedCategory: activateNetworkResults.user.category
           });
+
+          if (statsObj.currentBestNetwork.matchRate < currentBestNetworkStats.matchRate) {
+            printNetworkObj("NNT | +++ UPDATE BEST NETWORK", currentBestNetworkStats, chalk.black);
+            await nnTools.printNetworkResults();
+          }
 
           statsObj.currentBestNetwork = currentBestNetworkStats;
 

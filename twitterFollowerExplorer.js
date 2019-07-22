@@ -2324,13 +2324,13 @@ function saveFile(params, callback){
 
     const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
 
-    showStats().
-    then(function(){
-    }).
-    catch(function(err){
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** SHOW STATS ERROR: " + err));
-      if (callback !== undefined) { return callback(err); }
-    });
+    // showStats().
+    // then(function(){
+    // }).
+    // catch(function(err){
+    //   console.log(chalkError(MODULE_ID_PREFIX + " | *** SHOW STATS ERROR: " + err));
+    //   if (callback !== undefined) { return callback(err); }
+    // });
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | SAVING DROPBOX LOCALLY"
       + " | " + objSizeMBytes.toFixed(3) + " MB"
@@ -4225,6 +4225,14 @@ async function processRandomNetworkTreeMessage(params){
       debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
       debug(chalkAlert("RNT NETWORK_OUTPUT | " + m.currentBestNetwork.networkId));
 
+      if (m.currentBestNetwork === undefined 
+        || !m.currentBestNetwork 
+        || !m.currentBestNetwork.networkId 
+        || m.currentBestNetwork === undefined
+      ) {
+        console.log(chalkError("TFE | *** NETWORK_OUTPUT BEST NN NOT DEFINED\n" + jsonPrint(m.currentBestNetwork)));
+        return;
+      }
       // statsObj.bestRuntimeNetworkId = m.currentBestNetwork.networkId;
       statsObj.currentBestNetworkId = m.currentBestNetwork.networkId
 
@@ -5642,7 +5650,7 @@ async function fetchUserTweets(params){
     childParams.command.fetchUserTweetsEndFlag = false;
     childParams.command.userArray.push(user);
 
-    console.log(chalkAlert("TFE | fetchUserTweets | >>> PRIORITY USER FETCH TWEETS | @" + user.screenName));
+    debug(chalkAlert("TFE | >>> PRIORITY USER FETCH TWEETS | @" + user.screenName));
 
     try{
       await childSend(childParams);
@@ -5812,7 +5820,7 @@ async function updateUserTweets(params){
         ));
       }
       else{
-        console.log(chalkInfo("TFE | FETCH TWEETS"
+        console.log(chalkInfo("TFE | >>> PRIORITY FETCH TWEETS"
           + " | @" + user.screenName
         ));
       }
@@ -6226,10 +6234,10 @@ function reporter(event, oldState, newState) {
 function waitEvent(params) {
   return new Promise(function(resolve){
 
-    console.log(chalkInfo("TFE | ... WAIT EVENT: " + params.event));
+    debug(chalkInfo("TFE | ... WAIT EVENT: " + params.event));
 
     myEmitter.once(params.event, function(){
-      console.log(chalkInfo("TFE | !!! WAIT EVENT FIRED: " + params.event));
+      debug(chalkInfo("TFE | !!! WAIT EVENT FIRED: " + params.event));
       resolve();
     });
 
