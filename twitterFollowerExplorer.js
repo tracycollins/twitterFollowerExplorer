@@ -4787,9 +4787,9 @@ function emptyHistogram(histogram){
 
   return new Promise(function(resolve){
 
-    if (!histogram) { return true; }
-    if (histogram === undefined) { return true; }
-    if (histogram === {}) { return true; }
+    if (!histogram) { return resolve(true); }
+    if (histogram === undefined) { return resolve(true); }
+    if (histogram === {}) { return resolve(true); }
 
     Object.keys(histogram).forEach(function(histogramType){
       if ((histogramType !== "sentiment") && (Object.keys(histogram[histogramType]).length > 0)) { return resolve(false); }
