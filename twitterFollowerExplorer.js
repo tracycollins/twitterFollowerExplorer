@@ -5781,7 +5781,7 @@ function processUserTweetArray(params){
           + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
           + " | Ts: " + user.tweets.tweetIds.length
           + " | @" + user.screenName
-          + "\nTFE | THG\n" + jsonPrint(user.tweetHistograms)
+          // + "\nTFE | THG\n" + jsonPrint(user.tweetHistograms)
         ));
       }
 
@@ -5822,14 +5822,14 @@ async function processUserTweets(params){
         console.log(chalkLog("TFE | >>> processUserTweetArray USER"
           + " | " + printUser({user: processedUser})
         ));
-        console.log(chalkLog("TFE | >>> processUserTweetArray USER TWEETS"
+        debug(chalkLog("TFE | >>> processUserTweetArray USER TWEETS"
           + " | SINCE: " + processedUser.tweets.sinceId
           + " | TWEETS: " + processedUser.tweets.tweetIds.length
         ));
-        console.log(chalkLog("TFE | >>> processUserTweetArray USER TWEET HISTOGRAMS"
+        debug(chalkLog("TFE | >>> processUserTweetArray USER TWEET HISTOGRAMS"
           + "\n" + jsonPrint(processedUser.tweetHistograms)
         ));
-        console.log(chalkLog("TFE | >>> processUserTweetArray USER PROFILE HISTOGRAMS"
+        debug(chalkLog("TFE | >>> processUserTweetArray USER PROFILE HISTOGRAMS"
           + "\n" + jsonPrint(processedUser.profileHistograms)
         ));
       }

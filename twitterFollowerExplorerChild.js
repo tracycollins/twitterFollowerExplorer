@@ -2209,7 +2209,7 @@ process.on("message", async function(m) {
 
           statsObj.queues.fetchUserTweetsQueue.size = fetchUserTweetsQueue.length;
 
-          console.log(chalkBlue(MODULE_ID_PREFIX
+          debug(chalkBlue(MODULE_ID_PREFIX
             + " | >>> PRIORITY | FETCH_USER_TWEETS"
             + " | PRIORITY: " + m.priority
             + " | END FLAG: " + m.fetchUserTweetsEndFlag
@@ -2229,7 +2229,7 @@ process.on("message", async function(m) {
         statsObj.fetchUserTweetsEndFlag = m.fetchUserTweetsEndFlag;
       }
 
-      console.log(chalkBlue(MODULE_ID_PREFIX
+      debug(chalkBlue(MODULE_ID_PREFIX
         + " | FETCH_USER_TWEETS"
         + " | PRIORITY: " + m.priority
         + " | END FLAG: " + m.fetchUserTweetsEndFlag
