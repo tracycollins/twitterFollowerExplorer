@@ -5773,8 +5773,9 @@ function processUserTweetArray(params){
         return reject(err);
       }
 
-      if (configuration.testMode || configuration.verbose) {
+      if (forceFetch || configuration.testMode || configuration.verbose) {
         console.log(chalkLog("TFE | +++ Ts"
+          + " | FORCE: " + forceFetch
           + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
           + " | Ts: " + user.tweets.tweetIds.length
           + " | @" + user.screenName
@@ -5812,8 +5813,26 @@ async function processUserTweets(params){
 
     try{
       tweetHistogramsEmpty = await emptyHistogram(user.tweetHistograms);
-      user = await processUserTweetArray({user: user, forceFetch: tweetHistogramsEmpty, tweets: tweets, tscParams: tscParams});
-      return user;
+
+      const processedUser = await processUserTweetArray({user: user, forceFetch: tweetHistogramsEmpty, tweets: tweets, tscParams: tscParams});
+
+      if (tweetHistogramsEmpty) {
+        console.log(chalkLog("TFE | >>> processUserTweetArray USER"
+          + " | " + printUser({user: processedUser})
+        ));
+        console.log(chalkLog("TFE | >>> processUserTweetArray USER TWEETS"
+          + " | SINCE: " + processedUser.tweets.sinceId
+          + " | TWEETS: " + processedUser.tweets.tweetIds.length
+        ));
+        console.log(chalkLog("TFE | >>> processUserTweetArray USER TWEET HISTOGRAMS"
+          + "\n" + jsonPrint(processedUser.tweetHistograms)
+        ));
+        console.log(chalkLog("TFE | >>> processUserTweetArray USER PROFILE HISTOGRAMS"
+          + "\n" + jsonPrint(processedUser.profileHistograms)
+        ));
+      }
+
+      return processedUser;
     }
     catch(err){
       console.log(chalkError("TFE | *** processUserTweetArray ERROR: " + err));
