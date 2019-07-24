@@ -4855,9 +4855,9 @@ async function checkUserProfileChanged(params) {
   // });
 }
 
-async function processTweetObj(params){
+function processTweetObj(params){
 
-  // return new Promise(async function(resolve, reject){
+  return new Promise(function(resolve, reject){
 
     const tweetObj = params.tweetObj;
     const histograms = params.histograms || {};
@@ -4924,9 +4924,11 @@ async function processTweetObj(params){
           histograms[entityType] = {};
           histograms[entityType][entity] = 1;
         }
-
-        if (!histograms[entityType][entity] || (histograms[entityType][entity] === undefined)){
+        else if (!histograms[entityType][entity] || (histograms[entityType][entity] === undefined)){
           histograms[entityType][entity] = 1;
+        }
+        else{
+          histograms[entityType][entity] += 1;
         }
 
         async.setImmediate(function() { cb1(); });
@@ -4939,14 +4941,14 @@ async function processTweetObj(params){
     }, function(err){
 
       if (err) {
-        throw err;
+        return reject(err);
       }
 
-      return histograms;
+      resolve(histograms);
 
     });
 
-  // });
+  });
 }
 
 async function analyzeLanguage(params){
