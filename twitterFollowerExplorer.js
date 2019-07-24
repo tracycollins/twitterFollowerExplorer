@@ -5725,7 +5725,7 @@ function processUserTweetArray(params){
 
           const tweetObj = await tweetServerController.createStreamTweet(tscParams);
 
-          if (user.tweetHistograms || user.tweetHistograms === undefined) { user.tweetHistograms = {}; }
+          if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { user.tweetHistograms = {}; }
 
           user.tweetHistograms = await processTweetObj({tweetObj: tweetObj, histograms: user.tweetHistograms});
           user.tweets.tweetIds = _.union(user.tweets.tweetIds, [tweet.id_str]); 
@@ -5812,14 +5812,6 @@ async function processUserTweets(params){
 
     try{
       tweetHistogramsEmpty = await emptyHistogram(user.tweetHistograms);
-    }
-    catch(err){
-      console.log(chalkError("TFE | *** processUserTweetArray | ALL HISTOGRAMS EMPTY ERROR: " + err));
-      throw err;
-    }
-
-
-    try{
       user = await processUserTweetArray({user: user, forceFetch: tweetHistogramsEmpty, tweets: tweets, tscParams: tscParams});
       return user;
     }
@@ -5827,89 +5819,6 @@ async function processUserTweets(params){
       console.log(chalkError("TFE | *** processUserTweetArray ERROR: " + err));
       throw err;
     }
-
-    // async.eachSeries(tweets, async function(tweet){
-
-    //   tscParams.tweetStatus = tweet;
-    //   tscParams.tweetStatus.user = {};
-    //   tscParams.tweetStatus.user = user;
-    //   tscParams.tweetStatus.user.isNotRaw = true;
-
-    //   if (tweet.id_str.toString() > user.tweets.maxId.toString()) {
-    //     user.tweets.maxId = tweet.id_str.toString();
-    //   }
-
-    //   if (tweet.id_str.toString() > user.tweets.sinceId.toString()) {
-    //     user.tweets.sinceId = tweet.id_str.toString();
-    //   }
-
-    //   if (!user.tweets.tweetIds.includes(tweet.id_str.toString())) { 
-
-    //     try {
-
-    //       const tweetObj = await tweetServerController.createStreamTweet(tscParams);
-
-    //       if (user.tweetHistograms || user.tweetHistograms === undefined) { user.tweetHistograms = {}; }
-
-    //       user.tweetHistograms = await processTweetObj({tweetObj: tweetObj, histograms: user.tweetHistograms});
-    //       user.tweets.tweetIds.push(tweet.id_str); 
-
-    //       statsObj.twitter.tweetsProcessed += 1;
-    //       statsObj.twitter.tweetsTotal += 1;
-
-    //       if (configuration.testMode || configuration.verbose || (statsObj.twitter.tweetsTotal % 100 === 0)) {
-    //         console.log(chalkTwitter("TFE | +++ PROCESSED TWEET"
-    //           + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
-    //           + " | TW: " + tweet.id_str
-    //           + " | SINCE: " + user.tweets.sinceId
-    //           + " | TWs: " + user.tweets.tweetIds.length
-    //           + " | @" + user.screenName
-    //         ));
-    //       }
-
-    //       return;
-    //     }
-    //     catch(err){
-    //       console.log(chalkError("TFE | updateUserTweets ERROR: " + err));
-    //       return err;
-    //     }
-    //   }
-    //   else {
-
-    //     statsObj.twitter.tweetsHits += 1;
-    //     statsObj.twitter.tweetsTotal += 1;
-
-    //     if (configuration.testMode || configuration.verbose) {
-    //       console.log(chalkInfo("TFE | ... TWEET ALREADY PROCESSED"
-    //         + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
-    //         + " | TW: " + tweet.id_str
-    //         + " | TWs: " + user.tweets.tweetIds.length
-    //         + " | @" + user.screenName
-    //       ));
-    //     }
-
-    //     return;
-    //   }
-    // }, function(err){
-    //   if (err) {
-    //     console.log(chalkError("TFE | updateUserTweets ERROR: " + err));
-    //     return reject(err);
-    //   }
-
-    //   if (configuration.testMode || configuration.verbose) {
-    //     console.log(chalkLog("TFE | +++ Ts"
-    //       + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
-    //       + " | Ts: " + user.tweets.tweetIds.length
-    //       + " | @" + user.screenName
-    //       + "\nTFE | THG\n" + jsonPrint(user.tweetHistograms)
-    //     ));
-    //   }
-
-    //   user.markModified("tweets");
-    //   user.markModified("tweetHistograms");
-
-    //   resolve(user);
-    // });
 
   // });
 }
