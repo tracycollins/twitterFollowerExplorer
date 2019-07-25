@@ -7564,12 +7564,12 @@ async function childCreate(p){
 
             if (childId === "tfe_node_child_altthreecee00"){
               statsObj.queues.fetchUserTweetsQueue = m.statsObj.queues.fetchUserTweetsQueue;
-              console.log(chalkLog("TFE | CHILD STATS"
-                + " | " + m.threeceeUser
-                + " | " + getTimeStamp() + " ___________________________\n"
-                + jsonPrint(m.statsObj, "TFC | STATS ")
-                + "\nTFC | CHILD STATS___________________________"
-              ));
+              // console.log(chalkLog("TFE | CHILD STATS"
+              //   + " | " + m.threeceeUser
+              //   + " | " + getTimeStamp() + " ___________________________\n"
+              //   + jsonPrint(m.statsObj, "TFC | STATS ")
+              //   + "\nTFC | CHILD STATS___________________________"
+              // ));
             }
 
             if (configuration.verbose) {
