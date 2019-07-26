@@ -322,10 +322,11 @@ async function showStats(options) {
       + " | STATUS"
       + " | @" + configuration.threeceeUser
       + " | FSM: " + fsm.getMachineState()
-      + " | FUTQ: " + fetchUserTweetsQueue.length      
+      + " | FUTQ: " + fetchUserTweetsQueue.length 
       + " | START: " + statsObj.startTime
       + " | NOW: " + getTimeStamp()
       + " | ELAPSED: " + statsObj.elapsed
+      + " | IDLE START: " + idleStartMoment.format(compactDateTimeFormat) + " | " + msToTime(moment().diff(idleStartMoment))
     ));
   }
 }
@@ -1599,11 +1600,15 @@ function checkRateLimit(){
   });
 }
 
+
 let fetchUserTweetsQueueInterval;
 intervalsSet.add("fetchUserTweetsQueueInterval");
 
 let fetchUserTweetsQueueReady = true;
 const fetchUserTweetsQueue = [];
+
+let idleStartMoment = false;
+let idleTimeoutFlag = false;
 
 function initFetchUserTweets(p) {
 
@@ -1629,23 +1634,18 @@ function initFetchUserTweets(p) {
 
     let latestTweets = [];
 
+    if (!idleStartMoment) { idleStartMoment = moment(); }
+
     fetchUserTweetsQueueInterval = setInterval(async function(){
 
-      // if (!statsObj.threeceeUser.twitterRateLimitExceptionFlag 
-      //   && fetchUserTweetsQueueReady 
-      //   && (fetchUserTweetsQueue.length === 0)
-      //   && statsObj.fetchUserTweetsEndFlag
-      // ) {
+      if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) { idleStartMoment = moment(); }
 
-      //   console.log(chalkBlueBold("TFC | ==========================="));
-      //   console.log(chalkBlueBold("TFC | XXX FETCHED USER TWEETS END"));
-      //   console.log(chalkBlueBold("TFC | ==========================="));
-        
-      //   fetchUserTweetsQueueReady = false;
-      //   fsm.fsm_fetchUserEnd();
-      // }
+      if (!idleTimeoutFlag && (moment().diff(idleStartMoment) > 5*ONE_MINUTE)){
+        console.log(chalkAlert("TFC | IDLE TIMEOUT | " + msToTime(moment().diff(idleStartMoment))));
+        idleTimeoutFlag = true;
+      }
 
-      if (fetchUserTweetsQueueReady && statsObj.fetchUserTweetsEndFlag && (fetchUserTweetsQueue.length === 0)){
+      if (fetchUserTweetsQueueReady && idleTimeoutFlag && (fetchUserTweetsQueue.length === 0)){
         console.log(chalkBlueBold("TFC | ==========================="));
         console.log(chalkBlueBold("TFC | XXX FETCHED USER TWEETS END"));
         console.log(chalkBlueBold("TFC | ==========================="));
@@ -1662,6 +1662,8 @@ function initFetchUserTweets(p) {
         statsObj.queues.fetchUserTweetsQueue.busy = true;
 
         const user = fetchUserTweetsQueue.shift();
+
+        idleStartMoment = moment();
 
         statsObj.queues.fetchUserTweetsQueue.size = fetchUserTweetsQueue.length;
 
