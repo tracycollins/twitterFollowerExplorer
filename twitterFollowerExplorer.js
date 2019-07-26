@@ -6258,7 +6258,7 @@ async function initProcessUserQueueInterval(interval) {
           && (mObj.latestTweets[0].user.id_str === mObj.nodeId))
         {
           // update user props
-          const convertedRawUser = userServerController.convertRawUserPromise({user: mObj.latestTweets[0].user});
+          const convertedRawUser = await userServerController.convertRawUserPromise({user: mObj.latestTweets[0].user});
 
           user.bannerImageUrl = convertedRawUser.bannerImageUrl;
           user.createdAt = convertedRawUser.createdAt;
