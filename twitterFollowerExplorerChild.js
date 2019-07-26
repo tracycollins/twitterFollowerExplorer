@@ -10,6 +10,8 @@ const MODULE_ID_PREFIX = "TFC";
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 
+const DEFAULT_IDLE_TIMEOUT = ONE_MINUTE;
+
 const DEFAULT_INPUTS_BINARY_MODE = true;
 const DEFAULT_FETCH_COUNT = 200;
 const TEST_FETCH_COUNT = 27;
@@ -167,6 +169,7 @@ configuration.verbose =false;
 configuration.threeceeUser = process.env.THREECEE_USER;
 configuration.inputsBinaryMode = DEFAULT_INPUTS_BINARY_MODE;
 configuration.testMode = TEST_MODE;
+configuration.idleTimeout = DEFAULT_IDLE_TIMEOUT;
 configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : DEFAULT_TWEET_FETCH_COUNT;
 configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : DEFAULT_FETCH_COUNT;
 configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
@@ -1640,8 +1643,8 @@ function initFetchUserTweets(p) {
 
       if (statsObj.threeceeUser.twitterRateLimitExceptionFlag) { idleStartMoment = moment(); }
 
-      if (!idleTimeoutFlag && (moment().diff(idleStartMoment) > 5*ONE_MINUTE)){
-        console.log(chalkAlert("TFC | IDLE TIMEOUT | " + msToTime(moment().diff(idleStartMoment))));
+      if (!idleTimeoutFlag && (moment().diff(idleStartMoment) > configuration.idleTimeout)){
+        console.log(chalkAlert("TFC | XXX IDLE TIMEOUT XXX | " + msToTime(moment().diff(idleStartMoment))));
         idleTimeoutFlag = true;
       }
 
