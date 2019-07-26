@@ -4635,7 +4635,7 @@ function parseImage(params){
         + " | CAT: " + params.category
         + " | @" + params.screenName
         + " | " + params.imageUrl
-        + "\n" + jsonPrint(hist)
+        // + "\n" + jsonPrint(hist)
       ));
       resolve(hist);
     }).
