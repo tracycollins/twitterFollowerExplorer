@@ -5848,7 +5848,7 @@ async function updateUserTweets(params){
 
   // return new Promise(async function(resolve, reject){
 
-    let user = params.user;
+    const user = params.user;
 
     const histogramIncompleteFlag = await histogramIncomplete(user.tweetHistograms);
 
@@ -5903,9 +5903,9 @@ async function updateUserTweets(params){
       user.tweets.tweetIds.splice(0,removeNumber);
     }
 
-    user = await processUserTweets({tweets: latestTweets, user: user});
+    const processedUser = await processUserTweets({tweets: latestTweets, user: user});
 
-    return user;
+    return processedUser;
 
   // });
 }
@@ -5925,18 +5925,18 @@ async function processUser(params) {
 
     try {
 
-      let user = params.user;
+      const user = params.user;
       user.following = true;
 
-      user = await updateUserTweets({user: params.user});
-      user = await generateAutoCategory({user: user});
-      user = await updatePreviousUserProps({user: user});
+      const updatedTweetsUser = await updateUserTweets({user: user});
+      const autoCategoryUser = await generateAutoCategory({user: updatedTweetsUser});
+      const prevPropsUser = await updatePreviousUserProps({user: autoCategoryUser});
 
-      user.markModified("tweetHistograms");
-      user.markModified("profileHistograms");
-      user.markModified("tweets");
+      prevPropsUser.markModified("tweetHistograms");
+      prevPropsUser.markModified("profileHistograms");
+      prevPropsUser.markModified("tweets");
 
-      const savedUser = await user.save();
+      const savedUser = await prevPropsUser.save();
 
       if (configuration.verbose){
         console.log(chalkLog("TFE | >>> SAVED USER"
@@ -6063,7 +6063,7 @@ async function initProcessUserQueueInterval(interval) {
 
     let mObj = {};
     let user;
-    let processedUser;
+    // let processedUser;
     // let userUpdated; 
 
     console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + PROCESS_USER_QUEUE_INTERVAL + " MS"));
@@ -6118,7 +6118,7 @@ async function initProcessUserQueueInterval(interval) {
             return;
           }
 
-          user = await global.globalUser.findOne({nodeId: mObj.nodeId});
+          const user = await global.globalUser.findOne({nodeId: mObj.nodeId});
 
           if (!user) {
             console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
@@ -6156,7 +6156,7 @@ async function initProcessUserQueueInterval(interval) {
 
           user.latestTweets = _.union(user.latestTweets, mObj.latestTweets);
 
-          processedUser = await processUser({user: user});
+          const processedUser = await processUser({user: user});
 
           debug("PROCESSED USER\n" + jsonPrint(processedUser));
 
