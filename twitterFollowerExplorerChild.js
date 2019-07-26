@@ -1607,7 +1607,7 @@ intervalsSet.add("fetchUserTweetsQueueInterval");
 let fetchUserTweetsQueueReady = true;
 const fetchUserTweetsQueue = [];
 
-let idleStartMoment = false;
+let idleStartMoment = moment();
 let idleTimeoutFlag = false;
 
 function initFetchUserTweets(p) {
@@ -1662,6 +1662,8 @@ function initFetchUserTweets(p) {
         statsObj.queues.fetchUserTweetsQueue.busy = true;
 
         const user = fetchUserTweetsQueue.shift();
+
+        console.log(chalkLog("TFC | <<< FETCHED USER Q [" + fetchUserTweetsQueue.length + "] | @" + user.screenName));
 
         idleStartMoment = moment();
 
