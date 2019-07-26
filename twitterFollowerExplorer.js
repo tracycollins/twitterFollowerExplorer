@@ -5534,31 +5534,33 @@ async function updateUserHistograms(params) {
 
       if (results && results.bannerImageAnalyzedFlag) {
         user.bannerImageAnalyzed = user.bannerImageUrl;
+        user.previousBannerImageUrl = user.bannerImageUrl;
       }
 
       if (results && results.profileImageAnalyzedFlag) {
         user.profileImageAnalyzed = user.profileImageUrl;
+        user.previousProfileImageUrl = user.profileImageUrl;
       }
 
       user.lastHistogramTweetId = user.statusId;
       user.lastHistogramQuoteId = user.quotedStatusId;
 
-      await user.save();
+      const savedUser = await user.save();
 
-      if (configuration.testMode && user.friends.length === 0) {
+      if (configuration.testMode && savedUser.friends.length === 0) {
 
-        user.friends = Array.from({ length: randomInt(1,47) }, () => (Math.floor(Math.random() * 123456789).toString()));
+        savedUser.friends = Array.from({ length: randomInt(1,47) }, () => (Math.floor(Math.random() * 123456789).toString()));
 
         console.log(chalkLog("TFE | TEST MODE | ADD RANDOM FRNDs IDs"
-          + " | " + user.userId
-          + " | @" + user.screenName
-          + " | " + user.friends.length + "FRNDs"
+          + " | " + savedUser.userId
+          + " | @" + savedUser.screenName
+          + " | " + savedUser.friends.length + "FRNDs"
           // + "\n" + user.friends
         ));
       }
 
-      updateGlobalHistograms({user: user});
-      return user;
+      updateGlobalHistograms({user: savedUser});
+      return savedUser;
 
     }
     catch(err){
