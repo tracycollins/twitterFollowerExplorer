@@ -2979,7 +2979,7 @@ async function loadNetworkFile(params){
     const folder = params.folder;
     const entry = params.entry;
 
-    const networkObj = await loadFileRetry({folder: folder, file: entry.name, loadLocalFile: true});
+    const networkObj = await loadFileRetry({folder: folder, file: entry.name});
 
     if (!networkObj || networkObj=== undefined) {
       // throw new Error("NO BEST NETWORK FOUND?");
