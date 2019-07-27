@@ -2982,7 +2982,9 @@ async function loadNetworkFile(params){
     const networkObj = await loadFileRetry({folder: folder, file: entry.name, loadLocalFile: true});
 
     if (!networkObj || networkObj=== undefined) {
-      throw new Error("NO BEST NETWORK FOUND?");
+      // throw new Error("NO BEST NETWORK FOUND?");
+      console.log(chalkError("NO BEST NETWORK FOUND? | " + folder + "/" + entry.name));
+      return;
     }
 
     if (!inputsIdSet.has(networkObj.inputsId)){
@@ -3096,6 +3098,7 @@ async function loadNetworkFile(params){
 
       await updateDbNetwork(updateDbNetworkParams);
       return;
+
     }
     else {
       if (networkObj.archived) {
@@ -6559,6 +6562,7 @@ const fsmStates = {
         statsObj.status = "FSM INIT";
 
         try {
+          console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT"));
           await initNetworks();
           await childCreateAll();
           console.log(chalkBlue(MODULE_ID_PREFIX + " | CREATED ALL CHILDREN: " + Object.keys(childHashMap).length));
