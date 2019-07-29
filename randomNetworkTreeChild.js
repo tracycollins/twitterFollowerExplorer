@@ -320,15 +320,21 @@ function initActivateNetworkInterval(interval){
             expectedCategory: activateNetworkResults.user.category
           });
 
-          if (statsObj.currentBestNetwork.matchRate < currentBestNetworkStats.matchRate) {
-            printNetworkObj("NNT | +++ UPDATE BEST NETWORK | @" + messageObj.user.screenName + " | CM: " + messageObj.user.category, currentBestNetworkStats, chalk.black);
+          // if (statsObj.currentBestNetwork.matchRate < currentBestNetworkStats.matchRate) {
+          if (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank) {
+            printNetworkObj("NNT | +++ UPDATE BEST NETWORK"
+              + " | @" + messageObj.user.screenName 
+              + " | CM: " + messageObj.user.category, currentBestNetworkStats, chalk.black
+            );
             await nnTools.printNetworkResults();
           }
 
-          statsObj.currentBestNetwork = currentBestNetworkStats;
 
-          if (configuration.testMode || configuration.verbose) {
-            console.log("RNT | NN UPDATE STATS | BEST NN"
+          if (configuration.testMode 
+            || configuration.verbose
+            || (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank)
+          ) {
+            console.log("RNT | BEST NN"
               + " | " + currentBestNetworkStats.networkId
               + " | " + currentBestNetworkStats.inputsId
               + " | RANK: " + currentBestNetworkStats.rank
@@ -338,6 +344,8 @@ function initActivateNetworkInterval(interval){
               + " | MATCH: " + currentBestNetworkStats.meta.matchFlag
             );
           }
+
+          statsObj.currentBestNetwork = currentBestNetworkStats;
 
           messageObj.currentBestNetwork = currentBestNetworkStats;
           messageObj.user = activateNetworkResults.user;
