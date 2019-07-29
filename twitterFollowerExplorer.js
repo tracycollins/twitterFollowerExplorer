@@ -221,7 +221,7 @@ const renameFileAsync = promisify(fs.rename);
 const unlinkFileAsync = promisify(fs.unlink);
 const statFileAsync = promisify(fs.stat);
 
-const jsonParse = require("safe-json-parse");
+const parseJson = require("parse-json");
 const debug = require("debug")("TFE");
 const util = require("util");
 const deepcopy = require("deep-copy");
@@ -2401,20 +2401,9 @@ async function loadNetworkFile(params){
           return;
         }
         catch(err){
-          // console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(err)));
-          jsonParse(err, function(err, errObj){
-            if (err) {
-              console.log(chalkError(getTimeStamp()
-                + " | *** MOVE FILE FROM DROPBOX ERROR PARSE"
-                + " | " + err
-              ));
-              throw err;
-            }
-            else {
-              console.log(chalkError("TFE | *** DROPBOX FILE MOVE ERROR", jsonPrint(errObj)));
-              return;
-            }
-          });
+          console.log(chalkError(MODULE_ID_PREFIX + " | *** RENAME ERROR: " + err
+            + " | " + path.join(folder, entry.name)
+          ));
         }
       }
     }
