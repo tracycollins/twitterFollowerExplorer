@@ -36,9 +36,9 @@ hostname = hostname.replace(/word/g, "google");
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
-// const tcuChildName = MODULE_ID_PREFIX + "_TCU";
-// const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
-// const tcUtils = new ThreeceeUtilities(tcuChildName);
+const tcuChildName = MODULE_ID_PREFIX + "_TCU";
+const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
+const tcUtils = new ThreeceeUtilities(tcuChildName);
 
 let DROPBOX_ROOT_FOLDER;
 
@@ -155,8 +155,6 @@ DEFAULT_INPUT_TYPES.forEach(function(type){
 const unfollowableUserFile = "unfollowableUser.json";
 let unfollowableUserSet = new Set();
 
-const DROPBOX_LIST_FOLDER_LIMIT = 50;
-
 let configuration = {};
 configuration.verbose = false;
 configuration.languageQuotaTimoutDuration = 10*ONE_MINUTE;
@@ -197,7 +195,7 @@ const path = require("path");
 const watch = require("watch");
 const defaults = require("object.defaults");
 const randomInt = require("random-int");
-const fetch = require("isomorphic-fetch"); // or another library of choice.
+// const fetch = require("isomorphic-fetch"); // or another library of choice.
 const urlParse = require("url-parse");
 const moment = require("moment");
 const HashMap = require("hashmap").HashMap;
@@ -213,9 +211,16 @@ const merge = require("deepmerge");
 const btoa = require("btoa");
 const MergeHistograms = require("@threeceelabs/mergehistograms");
 const mergeHistograms = new MergeHistograms();
-const writeJsonFile = require("write-json-file");
+// const writeJsonFile = require("write-json-file");
 const sizeof = require("object-sizeof");
+
 const fs = require("fs");
+const { promisify } = require("util");
+const readFileAsync = promisify(fs.readFile);
+const renameFileAsync = promisify(fs.rename);
+const unlinkFileAsync = promisify(fs.unlink);
+const statFileAsync = promisify(fs.stat);
+
 const jsonParse = require("safe-json-parse");
 const debug = require("debug")("TFE");
 const util = require("util");
@@ -825,9 +830,9 @@ configuration.localPurgeMinSuccessRate = (process.env.TFE_LOCAL_PURGE_MIN_SUCCES
   : DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE;
 
 configuration.DROPBOX = {};
-configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
-configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY;
-configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
+// configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
+// configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY;
+// configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
 configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
 configuration.DROPBOX.DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || "twitterFollowerExplorerStats.json";
 
@@ -878,50 +883,47 @@ async function loadInputsDropbox(params) {
 
   statsObj.status = "LOAD INPUTS CONFIG";
 
-  // return new Promise(async function(resolve, reject){
+  const folder = params.folder;
+  const file = params.file;
 
-    const folder = params.folder;
-    const file = params.file;
+  console.log(chalkNetwork("TFE | LOADING DROPBOX INPUTS CONFIG | " + folder + "/" + file + " ..."));
 
-    console.log(chalkNetwork("TFE | LOADING DROPBOX INPUTS CONFIG | " + folder + "/" + file + " ..."));
+  try {
 
-    try {
+    const inputsConfigObj = await tcUtils.loadFile({folder: folder, file: file, noErrorNotFound: params.noErrorNotFound});
 
-      const inputsConfigObj = await loadFile({folder: folder, file: file, noErrorNotFound: true});
-
-      if (inputsConfigObj === "NOT_FOUND") {
-        if (params.noErrorNotFound) {
-          console.log(chalkAlert("TFE | !!! DROPBOX LOAD INPUTS CONFIG FILE ERROR | FILE NOT FOUND "));
-          return;
-        }
-        console.log(chalkError("TFE | DROPBOX LOAD INPUTS CONFIG FILE ERROR | JSON UNDEFINED ??? "));
-        throw new Error("DROPBOX LOAD INPUTS CONFIG FILE ERROR | JSON UNDEFINED");
-      }
-
-      const tempInputsIdSet = new Set(inputsConfigObj.INPUTS_IDS);
-
-      for (const inputsId of tempInputsIdSet) {
-        inputsIdSet.add(inputsId);
-      }
-
-      console.log(chalkBlue("TFE | LOADED DROPBOX INPUTS CONFIG"
-        + "\nTFE | CURRENT FILE INPUTS IDS SET: " + tempInputsIdSet.size + " INPUTS IDS"
-        + "\n" + jsonPrint([...tempInputsIdSet])
-        + "\nTFE | FINAL INPUTS IDS SET: " + inputsIdSet.size + " INPUTS IDS"
-        + "\n" + jsonPrint([...inputsIdSet])
-      ));
-
-      return;
-    }
-    catch(err){
-      if ((err.status === 409) || (err.status === 404)) {
-        console.log(chalkError("TFE | DROPBOX LOAD INPUTS CONFIG FILE NOT FOUND"));
+    if (!inputsConfigObj) {
+      if (params.noErrorNotFound) {
+        console.log(chalkAlert("TFE | !!! DROPBOX LOAD INPUTS CONFIG FILE ERROR | FILE NOT FOUND "));
         return;
       }
-      console.log(chalkError("TFE | DROPBOX LOAD INPUTS CONFIG FILE ERROR: ", err));
-      throw err;
+      console.log(chalkError("TFE | DROPBOX LOAD INPUTS CONFIG FILE ERROR | JSON UNDEFINED ??? "));
+      throw new Error("DROPBOX LOAD INPUTS CONFIG FILE ERROR | JSON UNDEFINED");
     }
-  // });
+
+    const tempInputsIdSet = new Set(inputsConfigObj.INPUTS_IDS);
+
+    for (const inputsId of tempInputsIdSet) {
+      inputsIdSet.add(inputsId);
+    }
+
+    console.log(chalkBlue("TFE | LOADED DROPBOX INPUTS CONFIG"
+      + "\nTFE | CURRENT FILE INPUTS IDS SET: " + tempInputsIdSet.size + " INPUTS IDS"
+      + "\n" + jsonPrint([...tempInputsIdSet])
+      + "\nTFE | FINAL INPUTS IDS SET: " + inputsIdSet.size + " INPUTS IDS"
+      + "\n" + jsonPrint([...inputsIdSet])
+    ));
+
+    return;
+  }
+  catch(err){
+    if ((err.status === 409) || (err.status === 404)) {
+      console.log(chalkError("TFE | DROPBOX LOAD INPUTS CONFIG FILE NOT FOUND"));
+      return;
+    }
+    console.log(chalkError("TFE | DROPBOX LOAD INPUTS CONFIG FILE ERROR: ", err));
+    throw err;
+  }
 }
 
 const networkDefaults = function (networkObj){
@@ -944,7 +946,8 @@ function printNetworkObj(title, nObj, format) {
 
   console.log(chalkFormat(title
     + " | RNK: " + networkObj.rank
-    + " | ARCH: " + networkObj.archived
+    + " | ARCHIVED: " + networkObj.archived
+    + " | TECH: " + networkObj.networkTechnology
     + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
     + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
     + " | SR: " + networkObj.successRate.toFixed(2) + "%"
@@ -1534,11 +1537,8 @@ function initStatsUpdate() {
 
     console.log(chalkLog(MODULE_ID_PREFIX + " | INIT STATS UPDATE INTERVAL | " + msToTime(configuration.statsUpdateIntervalTime)));
 
-
     statsObj.elapsed = getElapsedTimeStamp();
     statsObj.timeStamp = getTimeStamp();
-
-    saveFile({folder: statsFolder, file: statsFile, obj: statsObj, localFlag: true});
 
     clearInterval(statsUpdateInterval);
 
@@ -1567,25 +1567,16 @@ function initStatsUpdate() {
 // ==================================================================
 // DROPBOX
 // ==================================================================
-const Dropbox = require("dropbox").Dropbox;
-
-const DEFAULT_DROPBOX_TIMEOUT = 30 * ONE_SECOND;
-const DROPBOX_MAX_FILE_UPLOAD = 140 * ONE_MEGABYTE; // bytes
-
-configuration.dropboxMaxFileUpload = DROPBOX_MAX_FILE_UPLOAD;
 
 configuration.DROPBOX = {};
 
-configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
-configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY;
-configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
 configuration.DROPBOX.DROPBOX_CONFIG_FILE = process.env.DROPBOX_CONFIG_FILE || MODULE_NAME + "Config.json";
 configuration.DROPBOX.DROPBOX_STATS_FILE = process.env.DROPBOX_STATS_FILE || MODULE_NAME + "Stats.json";
 
-const dropboxConfigDefaultFolder = "/config/utility/default";
-const dropboxConfigHostFolder = "/config/utility/" + hostname;
+const configDefaultFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility/default");
+const configHostFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility",hostname);
 
-const dropboxConfigDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
+const configDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 
 const childPidFolderLocal = DROPBOX_ROOT_FOLDER + "/config/utility/" + hostname + "/children";
@@ -1593,55 +1584,32 @@ const childPidFolderLocal = DROPBOX_ROOT_FOLDER + "/config/utility/" + hostname 
 const statsFolder = "/stats/" + hostname;
 const statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
 
-const defaultTrainingSetFolder = dropboxConfigDefaultFolder + "/trainingSets";
+const defaultTrainingSetFolder = configDefaultFolder + "/trainingSets";
 
 const globalBestNetworkFolder = "/config/utility/best/neuralNetworks";
 const globalBestNetworkArchiveFolder = globalBestNetworkFolder + "/archive";
 const localBestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
-const bestNetworkFolder = (hostname === PRIMARY_HOST) ? "/config/utility/best/neuralNetworks" : localBestNetworkFolder;
 
-configuration.neuralNetworkFolder = dropboxConfigHostFolder + "/neuralNetworks";
+const bestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility/best/neuralNetworks");
+
+configuration.neuralNetworkFolder = configHostFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
 const defaultMaxInputHashmapFile = "maxInputHashMap.json";
 
-const localHistogramsFolder = dropboxConfigHostFolder + "/histograms";
-const defaultHistogramsFolder = dropboxConfigDefaultFolder + "/histograms";
+const localHistogramsFolder = configHostFolder + "/histograms";
+const defaultHistogramsFolder = configDefaultFolder + "/histograms";
 
 const defaultInputsConfigFile = "default_networkInputsConfig.json";
 const hostInputsConfigFile = hostname + "_networkInputsConfig.json";
 
-const testDataUserFolder = dropboxConfigHostFolder + "/test/testData/user";
-
-const dropboxRemoteClient = new Dropbox({ 
-  accessToken: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN,
-  fetch: fetch
-});
-
-const dropboxLocalClient = { // offline mode
-  filesListFolder: filesListFolderLocal,
-  filesUpload: function(){},
-  filesDownload: function(){},
-  filesGetMetadata: filesGetMetadataLocal,
-  filesDelete: function(){}
-};
-
-let dropboxClient;
-
-if (configuration.offlineMode) {
-  dropboxClient = dropboxLocalClient;
-}
-else {
-  dropboxClient = dropboxRemoteClient;
-}
+const testDataUserFolder = configHostFolder + "/test/testData/user";
 
 
-function filesListFolderLocal(options){
+function filesListFolder(params){
   return new Promise(function(resolve, reject) {
 
-    const fullPath = DROPBOX_ROOT_FOLDER + options.path;
-
-    fs.readdir(fullPath, function(err, items){
+    fs.readdir(params.folder, function(err, items){
       if (err) {
         reject(err);
       }
@@ -1656,7 +1624,7 @@ function filesListFolderLocal(options){
               name: item, 
               client_modified: false,
               content_hash: false,
-              path_display: fullPath + "/" + item
+              path_display: path.join(params.folder, item)
             }
           );
           cb();
@@ -1679,629 +1647,248 @@ function filesListFolderLocal(options){
   });
 }
 
-function filesGetMetadataLocal(options){
-
-  return new Promise(function(resolve, reject) {
-
-    const fullPath = DROPBOX_ROOT_FOLDER + options.path;
-
-    fs.stat(fullPath, function(err, stats){
-      if (err) {
-        reject(err);
-      }
-      else {
-        const response = {
-          client_modified: stats.mtimeMs
-        };
-        
-        resolve(response);
-      }
-    });
-  });
-}
-
-function loadFile(params) {
-
-  return new Promise(function(resolve, reject){
-
-    const noErrorNotFound = (params.noErrorNotFound !== undefined) ? params.noErrorNotFound : false;
-
-    let fullPath = params.path || params.folder + "/" + params.file;
-
-    if (configuration.offlineMode || params.loadLocalFile) {
-
-      fullPath = DROPBOX_ROOT_FOLDER + fullPath;
-
-      fs.readFile(fullPath, "utf8", function(err, data) {
-
-        if (err) {
-          console.log(chalkError("fs readFile ERROR: " + err));
-          return reject(err);
-        }
-
-        console.log(chalkLog("TFE | ... LOADING DROPBOX FILE"
-          + " | " + getTimeStamp()
-          + " | " + fullPath
-        ));
-
-        if (fullPath.match(/\.json$/gi)) {
-
-          jsonParse(data, function(err, fileObj){
-            if (err) {
-              console.log(chalkError("TFE | +++ LOAD DROPBOX FILE ERROR"
-                + " | " + getTimeStamp()
-                + " | " + fullPath
-                + " | " + err
-              ));
-
-              return reject(err);
-            }
-
-            const fileObjSizeMbytes = sizeof(fileObj)/ONE_MEGABYTE;
-
-            console.log(chalkInfo("TFE | +++ LOADED DROPBOX FILE"
-              + " | " + getTimeStamp()
-              + " | " + fileObjSizeMbytes.toFixed(2) + " MB"
-              + " | " + fullPath
-            ));
-
-            resolve(fileObj);
-
-          });
-        }
-        else{
-          console.log(chalkError(getTimeStamp()
-            + " | SKIP LOAD FILE FROM DROPBOX"
-            + " | " + fullPath
-          ));
-          resolve();
-        }
-
-      });
-
-     }
-    else {
-
-      console.log(chalkLog("TFE | ... LOADING DROPBOX FILE"
-        + " | " + getTimeStamp()
-        + " | " + fullPath
-      ));
-
-      dropboxClient.filesDownload({path: fullPath}).
-      then(function(data) {
-
-        if (fullPath.match(/\.json$/gi)) {
-
-          const payload = data.fileBinary;
-
-          if (!payload || (payload === undefined)) {
-            console.log(chalkError(getTimeStamp()
-              + " | DROPBOX PAYLOAD UNDEFINED "
-            ));
-            return reject(new Error(MODULE_ID_PREFIX + " LOAD FILE PAYLOAD UNDEFINED"));
-          }
-
-          jsonParse(payload, function(err, fileObj){
-            if (err) {
-              console.log(chalkError(getTimeStamp()
-                + " | *** LOAD FILE FROM DROPBOX ERROR"
-                + " | " + fullPath
-                + " | " + err
-              ));
-
-              return reject(err);
-            }
-
-            return resolve(fileObj);
-          });
-        }
-        else {
-          return resolve();
-        }
-      }).
-      catch(function(err) {
-
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX loadFile ERROR: " + fullPath));
-        
-        if ((err.status === 409) || (err.status === 404)) {
-          if (noErrorNotFound) {
-            console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND ... SKIPPING ..."));
-            return resolve("NOT_FOUND");
-          }
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE ERROR: " + fullPath + " NOT FOUND"));
-          return reject(new Error("NOT FOUND"));
-        }
-        
-        if (err.status === 0) {
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX NO RESPONSE"
-            + " | NO INTERNET CONNECTION? SKIPPING ..."));
-          return reject(new Error("NO INTERNET"));
-        }
-
-        // throw err;
-
-      });
-    }
-  });
-}
-
-async function loadFileRetry(params){
-
-  // return new Promise(function(resolve, reject){
-
-    const noErrorNotFound = params.noErrorNotFound || false;
-    const maxRetries = params.maxRetries || 5;
-    let retryNumber;
-    let backOffTime = params.initialBackOffTime || ONE_SECOND;
-    const path = params.path || params.folder + "/" + params.file;
-
-    function backOffTimeOut (err){
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | FILE LOAD ERROR ... RETRY"
-        + " | " + path
-        + " | BACKOFF: " + msToTime(backOffTime)
-        + " | " + retryNumber + " OF " + maxRetries
-        + " | ERROR: " + err
-      )); 
-    }
-
-    for (retryNumber = 0;retryNumber < maxRetries;retryNumber++) {
-      try {
-        
-        const fileObj = await loadFile(params);
-
-        if (retryNumber > 0) { 
-          console.log(chalkAlert(MODULE_ID_PREFIX + " | FILE LOAD RETRY"
-            + " | " + path
-            + " | BACKOFF: " + msToTime(backOffTime)
-            + " | " + retryNumber + " OF " + maxRetries
-          )); 
-        }
-
-        return fileObj;
-      } 
-      catch(err) {
-        backOffTime *= 1.5;
-        setTimeout(backOffTimeOut(err), backOffTime);
-      }
-    }
-
-    if (noErrorNotFound) {
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | FILE LOAD FAILED | RETRY: " + retryNumber + " OF " + maxRetries));
-      return false;
-    }
-    console.log(chalkError(MODULE_ID_PREFIX + " | FILE LOAD FAILED | RETRY: " + retryNumber + " OF " + maxRetries));
-    throw new Error("FILE LOAD ERROR | RETRIES " + maxRetries);
-
-  // });
-}
-
-function getFileMetadata(params) {
-
-  return new Promise(function(resolve, reject){
-
-    const fullPath = params.folder + "/" + params.file;
-    debug(chalkInfo("FOLDER " + params.folder));
-    debug(chalkInfo("FILE " + params.file));
-    debug(chalkInfo("getFileMetadata FULL PATH: " + fullPath));
-
-    if (configuration.offlineMode) {
-      dropboxClient = dropboxLocalClient;
-    }
-    else {
-      dropboxClient = dropboxRemoteClient;
-    }
-
-    dropboxClient.filesGetMetadata({path: fullPath}).
-    then(function(response) {
-      // debug(chalkInfo("FILE META\n", response));
-      resolve(response);
-    }).
-    catch(function(err) {
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX getFileMetadata ERROR: " + fullPath));
-
-      if ((err.status === 404) || (err.status === 409)) {
-        console.error(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND"));
-      }
-      if (err.status === 0) {
-        console.error(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX NO RESPONSE"));
-      }
-
-      reject(err);
-
-    });
-
-  });
-}
-
-function listDropboxFolder(params){
-
-  return new Promise(function(resolve, reject){
-
-    try{
-
-      statsObj.status = "LIST DROPBOX FOLDER: " + params.folder;
-
-      console.log(chalkInfo(MODULE_ID_PREFIX + " | LISTING DROPBOX FOLDER | " + params.folder));
-
-      const results = {};
-      results.entries = [];
-
-      let cursor;
-      let more = false;
-      const limit = params.limit || DROPBOX_LIST_FOLDER_LIMIT;
-
-      if (configuration.offlineMode) {
-        dropboxClient = dropboxLocalClient;
-      }
-      else {
-        dropboxClient = dropboxRemoteClient;
-      }
-
-      dropboxClient.filesListFolder({path: params.folder, limit: limit}).
-      then(function(response){
-
-        cursor = response.cursor;
-        more = response.has_more;
-        results.entries = response.entries;
-
-        async.whilst(
-
-          function test(cbTest) { cbTest(null, more); },
-
-          function(cb){
-
-            setTimeout(function(){
-
-              dropboxClient.filesListFolderContinue({cursor: cursor}).
-              then(function(responseCont){
-
-                cursor = responseCont.cursor;
-                more = responseCont.has_more;
-                results.entries = results.entries.concat(responseCont.entries);
-
-                if (configuration.testMode || configuration.verbose) {
-                  console.log(chalkLog("DROPBOX LIST FOLDER CONT"
-                    + " | PATH:" + params.folder
-                    + " | ENTRIES: " + responseCont.entries.length + "/" + results.entries.length
-                    + " | LIMIT: " + limit
-                    + " | MORE: " + more
-                  ));
-                }
-
-                cb();
-
-              }).
-              catch(function(err){
-                console.trace(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX filesListFolderContinue ERROR: " + err.status));
-                cb(err);
-              });
-
-
-            }, 1000);
-          },
-
-          function(err){
-            if (err) {
-              console.log(chalkError(MODULE_ID_PREFIX + " | DROPBOX LIST FOLDERS: " + err + "\n" + jsonPrint(err)));
-              return reject(err);
-            }
-
-            console.log(chalkLog(MODULE_ID_PREFIX
-              + " | DROPBOX LIST FOLDER"
-              + " | FOLDER:" + params.folder
-              + " | ENTRIES: " + results.entries.length
-            ));
-
-            resolve(results);
-          });
-      }).
-      catch(function(err){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
-        return reject(err);
-      });
-
-    }
-    catch(err){
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
-      return reject(err);
-    }
-
-  });
-}
-
 async function loadConfigFile(params) {
 
-  // return new Promise(async function(resolve, reject){
+  const fullPath = path.join(params.folder, params.file);
 
-    const fullPath = params.folder + "/" + params.file;
+  try {
 
-    try {
+    if (configuration.offlineMode) {
+      await loadCommandLineArgs();
+      return;
+    }
 
-      if (configuration.offlineMode) {
-        await loadCommandLineArgs();
-        return;
-      }
+    const newConfiguration = {};
+    newConfiguration.evolve = {};
 
-      if (params.file === dropboxConfigDefaultFile) {
-        prevConfigFileModifiedMoment = moment(prevDefaultConfigFileModifiedMoment);
+    const loadedConfigObj = await tcUtils.loadFile({folder: params.folder, file: params.file, noErrorNotFound: params.noErrorNotFound });
+
+    if (loadedConfigObj === undefined) {
+      if (params.noErrorNotFound) {
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | ... SKIP LOAD CONFIG FILE: " + params.folder + "/" + params.file));
+        return newConfiguration;
       }
       else {
-        prevConfigFileModifiedMoment = moment(prevHostConfigFileModifiedMoment);
-      }
-
-      try {
-
-        const response = await getFileMetadata({folder: params.folder, file: params.file});
-
-        const fileModifiedMoment = moment(new Date(response.client_modified));
-        
-        if (fileModifiedMoment.isSameOrBefore(prevConfigFileModifiedMoment)){
-
-          console.log(chalkInfo(MODULE_ID_PREFIX + " | CONFIG FILE BEFORE OR EQUAL"
-            + " | " + fullPath
-            + " | PREV: " + prevConfigFileModifiedMoment.format(compactDateTimeFormat)
-            + " | " + fileModifiedMoment.format(compactDateTimeFormat)
-          ));
-          return;
-        }
-
-        console.log(chalkLog(MODULE_ID_PREFIX + " | +++ CONFIG FILE AFTER ... LOADING"
-          + " | " + fullPath
-          + " | PREV: " + prevConfigFileModifiedMoment.format(compactDateTimeFormat)
-          + " | " + fileModifiedMoment.format(compactDateTimeFormat)
-        ));
-
-        prevConfigFileModifiedMoment = moment(fileModifiedMoment);
-
-        // if (params.file === dropboxConfigDefaultFile) {
-        //   prevDefaultConfigFileModifiedMoment = moment(fileModifiedMoment);
-        // }
-        // else {
-        //   prevHostConfigFileModifiedMoment = moment(fileModifiedMoment);
-        // }
-
-      }
-      catch(err){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX CONFIG LOAD FILE getFileMetadata ERROR: " + err));
-        throw err;
-      }
-
-
-      const loadedConfigObj = await loadFile({folder: params.folder, file: params.file, noErrorNotFound: true });
-
-      if (loadedConfigObj === undefined) {
         console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX CONFIG LOAD FILE ERROR | JSON UNDEFINED ??? "));
         throw new Error("JSON UNDEFINED");
       }
-
-      if (loadedConfigObj instanceof Error) {
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX CONFIG LOAD FILE ERROR: " + loadedConfigObj));
-      }
-
-      console.log(chalkInfo(MODULE_ID_PREFIX + " | LOADED CONFIG FILE: " + params.file + "\n" + jsonPrint(loadedConfigObj)));
-
-      const newConfiguration = {};
-      newConfiguration.evolve = {};
-
-      if (loadedConfigObj.TFE_TEST_MODE !== undefined) {
-        console.log("TFE | LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
-        if ((loadedConfigObj.TFE_TEST_MODE === true) || (loadedConfigObj.TFE_TEST_MODE === "true")) {
-          newConfiguration.testMode = true;
-        }
-        if ((loadedConfigObj.TFE_TEST_MODE === false) || (loadedConfigObj.TFE_TEST_MODE === "false")) {
-          newConfiguration.testMode = false;
-        }
-      }
-
-      if (loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER !== undefined) {
-        console.log("TFE | LOADED TFE_THRECEE_AUTO_FOLLOW_USER: " + loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER);
-        newConfiguration.threeceeAutoFollowUser = loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER;
-      }
-
-      if (loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS !== undefined) {
-        console.log("TFE | LOADED TFE_FORCE_INIT_RANDOM_NETWORKS: " + loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS);
-        newConfiguration.forceInitRandomNetworks = loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS;
-      }
-
-      if (loadedConfigObj.TFE_NUM_NN !== undefined) {
-        console.log("TFE | LOADED TFE_NUM_NN: " + loadedConfigObj.TFE_NUM_NN);
-        newConfiguration.networkDatabaseLoadLimit = loadedConfigObj.TFE_NUM_NN;
-      }
-
-      if (loadedConfigObj.TFE_MIN_TEST_CYCLES !== undefined) {
-        console.log("TFE | LOADED TFE_MIN_TEST_CYCLES: " + loadedConfigObj.TFE_MIN_TEST_CYCLES);
-        newConfiguration.minTestCycles = loadedConfigObj.TFE_MIN_TEST_CYCLES;
-      }
-
-      if (newConfiguration.testMode) {
-        newConfiguration.networkDatabaseLoadLimit = TEST_MODE_NUM_NN;
-        console.log(chalkLog("TFE | TEST MODE | networkDatabaseLoadLimit: " + newConfiguration.networkDatabaseLoadLimit));
-      }
-
-
-      if (loadedConfigObj.TFE_FETCH_ALL_INTERVAL !== undefined) {
-        console.log("TFE | LOADED TFE_FETCH_ALL_INTERVAL: " + loadedConfigObj.TFE_FETCH_ALL_INTERVAL);
-        newConfiguration.fetchAllIntervalTime = loadedConfigObj.TFE_FETCH_ALL_INTERVAL; 
-      }
-
-      if (newConfiguration.testMode) {
-        newConfiguration.fetchAllIntervalTime = TEST_MODE_FETCH_ALL_INTERVAL;
-        console.log(chalkLog("TFE | TEST MODE | fetchAllIntervalTime: " + newConfiguration.fetchAllIntervalTime));
-      }
-
-      if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined) {
-        console.log("TFE | LOADED TFE_BEST_NN_INCREMENTAL_UPDATE: " + loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE);
-        newConfiguration.bestNetworkIncrementalUpdate = loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE;
-      }
-
-      if (loadedConfigObj.TFE_QUIT_ON_COMPLETE !== undefined) {
-        console.log("TFE | LOADED TFE_QUIT_ON_COMPLETE: " + loadedConfigObj.TFE_QUIT_ON_COMPLETE);
-        if ((loadedConfigObj.TFE_QUIT_ON_COMPLETE === true) || (loadedConfigObj.TFE_QUIT_ON_COMPLETE === "true")) {
-          newConfiguration.quitOnComplete = true;
-        }
-        if ((loadedConfigObj.TFE_QUIT_ON_COMPLETE === false) || (loadedConfigObj.TFE_QUIT_ON_COMPLETE === "false")) {
-          newConfiguration.quitOnComplete = false;
-        }
-      }
-
-      if (loadedConfigObj.TFE_VERBOSE !== undefined) {
-        console.log("TFE | LOADED TFE_VERBOSE: " + loadedConfigObj.TFE_VERBOSE);
-        if ((loadedConfigObj.TFE_VERBOSE === true) || (loadedConfigObj.TFE_VERBOSE === "true")) {
-          newConfiguration.verbose = true;
-        }
-        if ((loadedConfigObj.TFE_VERBOSE === false) || (loadedConfigObj.TFE_VERBOSE === "false")) {
-          newConfiguration.verbose = false;
-        }
-      }
-
-      if (loadedConfigObj.TFE_FETCH_USER_INTERVAL !== undefined) {
-        console.log("TFE | LOADED TFE_FETCH_USER_INTERVAL: " + loadedConfigObj.TFE_FETCH_USER_INTERVAL);
-        newConfiguration.fetchUserInterval = loadedConfigObj.TFE_FETCH_USER_INTERVAL;
-      }
-
-      if (loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT !== undefined) {
-        console.log("TFE | LOADED TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT: " + loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT);
-        newConfiguration.imageParserRateTimitTimeout = loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT;
-      }
-
-      if (loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined) {
-        console.log("TFE | LOADED TFE_HISTOGRAM_PARSE_DOMINANT_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN);
-        newConfiguration.histogramParseDominantMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN;
-      }
-
-      if (loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN !== undefined) {
-        console.log("TFE | LOADED TFE_HISTOGRAM_PARSE_TOTAL_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN);
-        newConfiguration.histogramParseTotalMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN;
-      }
-
-      if (loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE !== undefined) {
-        console.log("TFE | LOADED TFE_LOCAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE);
-        newConfiguration.localMinSuccessRate = loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE;
-      }
-
-      if (loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) {
-        console.log("TFE | LOADED TFE_GLOBAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE);
-        newConfiguration.globalMinSuccessRate = loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE;
-      }
-
-      if (loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE !== undefined) {
-        console.log("TFE | LOADED TFE_LOCAL_PURGE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE);
-        newConfiguration.localPurgeMinSuccessRate = loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE;
-      }
-
-      if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined) {
-        console.log("TFE | LOADED TFE_NUM_RANDOM_NETWORKS: " + loadedConfigObj.TFE_NUM_RANDOM_NETWORKS);
-        newConfiguration.numRandomNetworks = loadedConfigObj.TFE_NUM_RANDOM_NETWORKS;
-      }
-
-      if (loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS !== undefined) {
-        console.log("TFE | LOADED TFE_ENABLE_LANG_ANALYSIS: " + loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS);
-        newConfiguration.enableLanguageAnalysis = loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS;
-      }
-
-      if (loadedConfigObj.TFE_FORCE_LANG_ANALYSIS !== undefined) {
-        console.log("TFE | LOADED TFE_FORCE_LANG_ANALYSIS: " + loadedConfigObj.TFE_FORCE_LANG_ANALYSIS);
-        newConfiguration.forceLanguageAnalysis = loadedConfigObj.TFE_FORCE_LANG_ANALYSIS;
-      }
-
-      if (loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS !== undefined) {
-        console.log("TFE | LOADED TFE_ENABLE_IMAGE_ANALYSIS: " + loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS);
-        newConfiguration.enableImageAnalysis = loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS;
-      }
-
-      if (loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS !== undefined) {
-        console.log("TFE | LOADED TFE_FORCE_IMAGE_ANALYSIS: " + loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS);
-        newConfiguration.forceImageAnalysis = loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS;
-      }
-
-      if (loadedConfigObj.TFE_ENABLE_STDIN !== undefined) {
-        console.log("TFE | LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_ENABLE_STDIN);
-        newConfiguration.enableStdin = loadedConfigObj.TFE_ENABLE_STDIN;
-      }
-
-      if (loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID !== undefined) {
-        console.log("TFE | LOADED TFE_NEURAL_NETWORK_FILE_PID: " + loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID);
-        newConfiguration.loadNeuralNetworkID = loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID;
-      }
-
-      if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER !== undefined) {
-        console.log("TFE | LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER: "
-          + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER));
-        newConfiguration.twitterConfigFolder = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER;
-      }
-
-      if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE !== undefined) {
-        console.log("TFE | LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE: "
-          + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE));
-        newConfiguration.twitterConfigFile = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE;
-      }
-
-      if (loadedConfigObj.TFE_TWITTER_USERS !== undefined) {
-        console.log("TFE | LOADED TFE_TWITTER_USERS: " + jsonPrint(loadedConfigObj.TFE_TWITTER_USERS));
-        newConfiguration.twitterUsers = loadedConfigObj.TFE_TWITTER_USERS;
-      }
-
-      if (loadedConfigObj.TFE_TWITTER_DEFAULT_USER !== undefined) {
-        console.log("TFE | LOADED TFE_TWITTER_DEFAULT_USER: " + jsonPrint(loadedConfigObj.TFE_TWITTER_DEFAULT_USER));
-        newConfiguration.twitterDefaultUser = loadedConfigObj.TFE_TWITTER_DEFAULT_USER;
-      }
-
-      if (loadedConfigObj.TFE_KEEPALIVE_INTERVAL !== undefined) {
-        console.log("TFE | LOADED TFE_KEEPALIVE_INTERVAL: " + loadedConfigObj.TFE_KEEPALIVE_INTERVAL);
-        newConfiguration.keepaliveInterval = loadedConfigObj.TFE_KEEPALIVE_INTERVAL;
-      }
-
-      return newConfiguration;
-    }
-    catch(err){
-      console.error(chalkError(MODULE_ID_PREFIX + " | ERROR LOAD DROPBOX CONFIG: " + fullPath
-        + "\n" + jsonPrint(err)
-      ));
-      throw err;
     }
 
-  // });
+    if (loadedConfigObj instanceof Error) {
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX CONFIG LOAD FILE ERROR: " + loadedConfigObj));
+    }
+
+    console.log(chalkInfo(MODULE_ID_PREFIX + " | LOADED CONFIG FILE: " + params.file + "\n" + jsonPrint(loadedConfigObj)));
+
+    if (loadedConfigObj.TFE_TEST_MODE !== undefined) {
+      console.log("TFE | LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
+      if ((loadedConfigObj.TFE_TEST_MODE === true) || (loadedConfigObj.TFE_TEST_MODE === "true")) {
+        newConfiguration.testMode = true;
+      }
+      if ((loadedConfigObj.TFE_TEST_MODE === false) || (loadedConfigObj.TFE_TEST_MODE === "false")) {
+        newConfiguration.testMode = false;
+      }
+    }
+
+    if (loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER !== undefined) {
+      console.log("TFE | LOADED TFE_THRECEE_AUTO_FOLLOW_USER: " + loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER);
+      newConfiguration.threeceeAutoFollowUser = loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER;
+    }
+
+    if (loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS !== undefined) {
+      console.log("TFE | LOADED TFE_FORCE_INIT_RANDOM_NETWORKS: " + loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS);
+      newConfiguration.forceInitRandomNetworks = loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS;
+    }
+
+    if (loadedConfigObj.TFE_NUM_NN !== undefined) {
+      console.log("TFE | LOADED TFE_NUM_NN: " + loadedConfigObj.TFE_NUM_NN);
+      newConfiguration.networkDatabaseLoadLimit = loadedConfigObj.TFE_NUM_NN;
+    }
+
+    if (loadedConfigObj.TFE_MIN_TEST_CYCLES !== undefined) {
+      console.log("TFE | LOADED TFE_MIN_TEST_CYCLES: " + loadedConfigObj.TFE_MIN_TEST_CYCLES);
+      newConfiguration.minTestCycles = loadedConfigObj.TFE_MIN_TEST_CYCLES;
+    }
+
+    if (newConfiguration.testMode) {
+      newConfiguration.networkDatabaseLoadLimit = TEST_MODE_NUM_NN;
+      console.log(chalkLog("TFE | TEST MODE | networkDatabaseLoadLimit: " + newConfiguration.networkDatabaseLoadLimit));
+    }
+
+
+    if (loadedConfigObj.TFE_FETCH_ALL_INTERVAL !== undefined) {
+      console.log("TFE | LOADED TFE_FETCH_ALL_INTERVAL: " + loadedConfigObj.TFE_FETCH_ALL_INTERVAL);
+      newConfiguration.fetchAllIntervalTime = loadedConfigObj.TFE_FETCH_ALL_INTERVAL; 
+    }
+
+    if (newConfiguration.testMode) {
+      newConfiguration.fetchAllIntervalTime = TEST_MODE_FETCH_ALL_INTERVAL;
+      console.log(chalkLog("TFE | TEST MODE | fetchAllIntervalTime: " + newConfiguration.fetchAllIntervalTime));
+    }
+
+    if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined) {
+      console.log("TFE | LOADED TFE_BEST_NN_INCREMENTAL_UPDATE: " + loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE);
+      newConfiguration.bestNetworkIncrementalUpdate = loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE;
+    }
+
+    if (loadedConfigObj.TFE_QUIT_ON_COMPLETE !== undefined) {
+      console.log("TFE | LOADED TFE_QUIT_ON_COMPLETE: " + loadedConfigObj.TFE_QUIT_ON_COMPLETE);
+      if ((loadedConfigObj.TFE_QUIT_ON_COMPLETE === true) || (loadedConfigObj.TFE_QUIT_ON_COMPLETE === "true")) {
+        newConfiguration.quitOnComplete = true;
+      }
+      if ((loadedConfigObj.TFE_QUIT_ON_COMPLETE === false) || (loadedConfigObj.TFE_QUIT_ON_COMPLETE === "false")) {
+        newConfiguration.quitOnComplete = false;
+      }
+    }
+
+    if (loadedConfigObj.TFE_VERBOSE !== undefined) {
+      console.log("TFE | LOADED TFE_VERBOSE: " + loadedConfigObj.TFE_VERBOSE);
+      if ((loadedConfigObj.TFE_VERBOSE === true) || (loadedConfigObj.TFE_VERBOSE === "true")) {
+        newConfiguration.verbose = true;
+      }
+      if ((loadedConfigObj.TFE_VERBOSE === false) || (loadedConfigObj.TFE_VERBOSE === "false")) {
+        newConfiguration.verbose = false;
+      }
+    }
+
+    if (loadedConfigObj.TFE_FETCH_USER_INTERVAL !== undefined) {
+      console.log("TFE | LOADED TFE_FETCH_USER_INTERVAL: " + loadedConfigObj.TFE_FETCH_USER_INTERVAL);
+      newConfiguration.fetchUserInterval = loadedConfigObj.TFE_FETCH_USER_INTERVAL;
+    }
+
+    if (loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT !== undefined) {
+      console.log("TFE | LOADED TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT: " + loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT);
+      newConfiguration.imageParserRateTimitTimeout = loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT;
+    }
+
+    if (loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined) {
+      console.log("TFE | LOADED TFE_HISTOGRAM_PARSE_DOMINANT_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN);
+      newConfiguration.histogramParseDominantMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN;
+    }
+
+    if (loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN !== undefined) {
+      console.log("TFE | LOADED TFE_HISTOGRAM_PARSE_TOTAL_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN);
+      newConfiguration.histogramParseTotalMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN;
+    }
+
+    if (loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE !== undefined) {
+      console.log("TFE | LOADED TFE_LOCAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE);
+      newConfiguration.localMinSuccessRate = loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE;
+    }
+
+    if (loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) {
+      console.log("TFE | LOADED TFE_GLOBAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE);
+      newConfiguration.globalMinSuccessRate = loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE;
+    }
+
+    if (loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE !== undefined) {
+      console.log("TFE | LOADED TFE_LOCAL_PURGE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE);
+      newConfiguration.localPurgeMinSuccessRate = loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE;
+    }
+
+    if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined) {
+      console.log("TFE | LOADED TFE_NUM_RANDOM_NETWORKS: " + loadedConfigObj.TFE_NUM_RANDOM_NETWORKS);
+      newConfiguration.numRandomNetworks = loadedConfigObj.TFE_NUM_RANDOM_NETWORKS;
+    }
+
+    if (loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS !== undefined) {
+      console.log("TFE | LOADED TFE_ENABLE_LANG_ANALYSIS: " + loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS);
+      newConfiguration.enableLanguageAnalysis = loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS;
+    }
+
+    if (loadedConfigObj.TFE_FORCE_LANG_ANALYSIS !== undefined) {
+      console.log("TFE | LOADED TFE_FORCE_LANG_ANALYSIS: " + loadedConfigObj.TFE_FORCE_LANG_ANALYSIS);
+      newConfiguration.forceLanguageAnalysis = loadedConfigObj.TFE_FORCE_LANG_ANALYSIS;
+    }
+
+    if (loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS !== undefined) {
+      console.log("TFE | LOADED TFE_ENABLE_IMAGE_ANALYSIS: " + loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS);
+      newConfiguration.enableImageAnalysis = loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS;
+    }
+
+    if (loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS !== undefined) {
+      console.log("TFE | LOADED TFE_FORCE_IMAGE_ANALYSIS: " + loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS);
+      newConfiguration.forceImageAnalysis = loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS;
+    }
+
+    if (loadedConfigObj.TFE_ENABLE_STDIN !== undefined) {
+      console.log("TFE | LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_ENABLE_STDIN);
+      newConfiguration.enableStdin = loadedConfigObj.TFE_ENABLE_STDIN;
+    }
+
+    if (loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID !== undefined) {
+      console.log("TFE | LOADED TFE_NEURAL_NETWORK_FILE_PID: " + loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID);
+      newConfiguration.loadNeuralNetworkID = loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID;
+    }
+
+    if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER !== undefined) {
+      console.log("TFE | LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER: "
+        + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER));
+      newConfiguration.twitterConfigFolder = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER;
+    }
+
+    if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE !== undefined) {
+      console.log("TFE | LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE: "
+        + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE));
+      newConfiguration.twitterConfigFile = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE;
+    }
+
+    if (loadedConfigObj.TFE_TWITTER_USERS !== undefined) {
+      console.log("TFE | LOADED TFE_TWITTER_USERS: " + jsonPrint(loadedConfigObj.TFE_TWITTER_USERS));
+      newConfiguration.twitterUsers = loadedConfigObj.TFE_TWITTER_USERS;
+    }
+
+    if (loadedConfigObj.TFE_TWITTER_DEFAULT_USER !== undefined) {
+      console.log("TFE | LOADED TFE_TWITTER_DEFAULT_USER: " + jsonPrint(loadedConfigObj.TFE_TWITTER_DEFAULT_USER));
+      newConfiguration.twitterDefaultUser = loadedConfigObj.TFE_TWITTER_DEFAULT_USER;
+    }
+
+    if (loadedConfigObj.TFE_KEEPALIVE_INTERVAL !== undefined) {
+      console.log("TFE | LOADED TFE_KEEPALIVE_INTERVAL: " + loadedConfigObj.TFE_KEEPALIVE_INTERVAL);
+      newConfiguration.keepaliveInterval = loadedConfigObj.TFE_KEEPALIVE_INTERVAL;
+    }
+
+    return newConfiguration;
+  }
+  catch(err){
+    console.error(chalkError(MODULE_ID_PREFIX + " | ERROR LOAD DROPBOX CONFIG: " + fullPath
+      + "\n" + jsonPrint(err)
+    ));
+    throw err;
+  }
+
 }
 
 async function loadAllConfigFiles(){
 
-  // return new Promise(async function(resolve, reject){
+  statsObj.status = "LOAD CONFIG";
 
-    // try {
+  const defaultConfig = await loadConfigFile({folder: configDefaultFolder, file: configDefaultFile});
 
-      statsObj.status = "LOAD CONFIG";
+  if (defaultConfig) {
+    defaultConfiguration = defaultConfig;
+    console.log(chalkInfo(MODULE_ID_PREFIX + " | <<< LOADED DEFAULT CONFIG " + configDefaultFolder + "/" + configDefaultFile));
+  }
+  
+  const hostConfig = await loadConfigFile({folder: configHostFolder, file: dropboxConfigHostFile, noErrorNotFound: true});
 
-      const defaultConfig = await loadConfigFile({folder: dropboxConfigDefaultFolder, file: dropboxConfigDefaultFile});
+  if (hostConfig) {
+    hostConfiguration = hostConfig;
+    console.log(chalkInfo(MODULE_ID_PREFIX + " | <<< LOADED HOST CONFIG " + configHostFolder + "/" + dropboxConfigHostFile));
+  }
 
-      if (defaultConfig) {
-        defaultConfiguration = defaultConfig;
-        console.log(chalkAlert(MODULE_ID_PREFIX + " | +++ RELOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
-      }
-      
-      const hostConfig = await loadConfigFile({folder: dropboxConfigHostFolder, file: dropboxConfigHostFile});
+  await loadInputsDropbox({folder: configDefaultFolder, file: defaultInputsConfigFile, noErrorNotFound: false});
+  await loadInputsDropbox({folder: configHostFolder, file: hostInputsConfigFile, noErrorNotFound: true});
+  
+  const defaultAndHostConfig = merge(defaultConfiguration, hostConfiguration); // host settings override defaults
+  const tempConfig = merge(configuration, defaultAndHostConfig); // any new settings override existing config
 
-      if (hostConfig) {
-        hostConfiguration = hostConfig;
-        console.log(chalkAlert(MODULE_ID_PREFIX + " | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
-      }
+  configuration = deepcopy(tempConfig);
 
-      await loadInputsDropbox({folder: dropboxConfigDefaultFolder, file: defaultInputsConfigFile, noErrorNotFound: false});
-      await loadInputsDropbox({folder: dropboxConfigHostFolder, file: hostInputsConfigFile, noErrorNotFound: true});
-      
-      const defaultAndHostConfig = merge(defaultConfiguration, hostConfiguration); // host settings override defaults
-      const tempConfig = merge(configuration, defaultAndHostConfig); // any new settings override existing config
+  configuration.twitterUsers = _.uniq(configuration.twitterUsers);
 
-      configuration = deepcopy(tempConfig);
+  return;
 
-      configuration.twitterUsers = _.uniq(configuration.twitterUsers);
-
-      return;
-
-    // }
-    // catch(err){
-    //   throw err;
-    // }
-  // });
 }
 
 
@@ -2347,195 +1934,44 @@ saveCache.on("set", function(file, fileObj) {
   ));
 });
 
-function saveFile(params, callback){
-
-  let fullPath = params.folder + "/" + params.file;
-  const limit = params.limit || DROPBOX_LIST_FOLDER_LIMIT;
-  const localFlag = params.localFlag || false;
-
-  debug(chalkInfo("LOAD FOLDER " + params.folder));
-  debug(chalkInfo("LOAD FILE " + params.file));
-  debug(chalkInfo("FULL PATH " + fullPath));
-
-  const options = {};
-
-  if (localFlag) {
-
-    fullPath = path.join(DROPBOX_ROOT_FOLDER + fullPath);
-
-    const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
-
-    // showStats().
-    // then(function(){
-    // }).
-    // catch(function(err){
-    //   console.log(chalkError(MODULE_ID_PREFIX + " | *** SHOW STATS ERROR: " + err));
-    //   if (callback !== undefined) { return callback(err); }
-    // });
-
-    debug(chalkBlue(MODULE_ID_PREFIX + " | SAVING DROPBOX LOCALLY"
-      + " | " + objSizeMBytes.toFixed(3) + " MB"
-      + " | " + fullPath
-    ));
-
-    writeJsonFile(fullPath, params.obj, { mode: 0o777 }).
-    then(function() {
-
-      console.log(chalkBlue(MODULE_ID_PREFIX + " | SAVED DROPBOX LOCALLY"
-        + " | " + objSizeMBytes.toFixed(3) + " MB"
-        + " | " + fullPath
-      ));
-      if (callback !== undefined) { return callback(null); }
-
-    }).
-    catch(function(error){
-      console.trace(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
-        + " | !!! ERROR DROBOX LOCAL JSON WRITE | FILE: " + fullPath 
-        + " | ERROR: " + error
-        + " | ERROR\n" + jsonPrint(error)
-      ));
-      if (callback !== undefined) { return callback(error); }
-    });
-  }
-  else {
-
-    options.contents = JSON.stringify(params.obj, null, 2);
-    options.autorename = params.autorename || false;
-    options.mode = params.mode || "overwrite";
-    options.path = fullPath;
-
-    const dbFileUpload = function () {
-
-      dropboxClient.filesUpload(options).
-      then(function(){
-        debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
-        if (callback !== undefined) { return callback(null); }
-      }).
-      catch(function(error){
-        if (error.status === 413){
-          console.log(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
-            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-            + " | ERROR: 413"
-            + " | ERROR: FILE TOO LARGE"
-          ));
-          if (callback !== undefined) { return callback(error); }
-        }
-        else if (error.status === 429){
-          console.log(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
-            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-            + " | ERROR: TOO MANY WRITES"
-          ));
-          if (callback !== undefined) { return callback(error); }
-        }
-        else if (error.status === 500){
-          console.log(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
-            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-            + " | ERROR: DROPBOX SERVER ERROR"
-          ));
-          if (callback !== undefined) { return callback(error); }
-        }
-        else {
-          console.log(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
-            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-            + "\n" + MODULE_ID_PREFIX + " | ERROR:        " + error
-            + "\n" + MODULE_ID_PREFIX + " | ERROR CODE:   " + error.code
-            + "\n" + MODULE_ID_PREFIX + " | ERROR STATUS: " + error.status
-          ));
-          if (callback !== undefined) { return callback(error); }
-        }
-      });
-    };
-
-    if (options.mode === "add") {
-
-      dropboxClient.filesListFolder({path: params.folder, limit: limit}).
-      then(function(response){
-
-        debug(chalkLog("DROPBOX LIST FOLDER"
-          + " | ENTRIES: " + response.entries.length
-          + " | MORE: " + response.has_more
-          + " | PATH:" + options.path
-        ));
-
-        let fileExits = false;
-
-        async.each(response.entries, function(entry, cb){
-
-          console.log(chalkLog(MODULE_ID_PREFIX + " | DROPBOX FILE"
-            + " | " + params.folder
-            + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
-            + " | " + entry.name
-          ));
-
-          if (entry.name === params.file) {
-            fileExits = true;
-          }
-
-          cb();
-
-        }, function(err){
-          if (err) {
-            console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR DROPBOX SAVE FILE: " + err));
-            if (callback !== undefined) { 
-              return callback(err, null);
-            }
-            return;
-          }
-          if (fileExits) {
-            console.log(chalkAlert(MODULE_ID_PREFIX + " | DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
-            if (callback !== undefined) { callback(err, null); }
-          }
-          else {
-            console.log(chalkAlert(MODULE_ID_PREFIX + " | DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
-            dbFileUpload();
-          }
-        });
-      }).
-      catch(function(err){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
-        if (callback !== undefined) { callback(err, null); }
-      });
-    }
-    else {
-      dbFileUpload();
-    }
-  }
-}
-
 function initSaveFileQueue(cnf) {
 
   console.log(chalkLog(MODULE_ID_PREFIX + " | INIT DROPBOX SAVE FILE INTERVAL | " + msToTime(cnf.saveFileQueueInterval)));
 
   clearInterval(saveFileQueueInterval);
 
-  saveFileQueueInterval = setInterval(function () {
+  saveFileQueueInterval = setInterval(async function () {
 
     if (!statsObj.queues.saveFileQueue.busy && saveFileQueue.length > 0) {
 
       statsObj.queues.saveFileQueue.busy = true;
 
       const saveFileObj = saveFileQueue.shift();
+      saveFileObj.verbose = true;
 
       statsObj.queues.saveFileQueue.size = saveFileQueue.length;
 
-      saveFile(saveFileObj, function(err) {
-        if (err) {
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** SAVE FILE ERROR ... RETRY | " + saveFileObj.folder + "/" + saveFileObj.file));
-          saveFileQueue.push(saveFileObj);
-          statsObj.queues.saveFileQueue.size = saveFileQueue.length;
-        }
-        else {
-          console.log(chalkLog(
-            MODULE_ID_PREFIX 
-            + " | SAVED FILE"
-            + " [Q: " + saveFileQueue.length + "] " 
-            + " [$: " + saveCache.getStats().keys + "] " 
-            + saveFileObj.folder + "/" + saveFileObj.file
-          ));
-        }
+      try{
+        await tcUtils.saveFile(saveFileObj);
+        console.log(chalkLog(
+          MODULE_ID_PREFIX 
+          + " | SAVED FILE"
+          + " [Q: " + saveFileQueue.length + "] " 
+          + " [$: " + saveCache.getStats().keys + "] " 
+          + saveFileObj.folder + "/" + saveFileObj.file
+        ));
         statsObj.queues.saveFileQueue.busy = false;
-      });
+      }
+      catch(err){
+        console.log(chalkError(MODULE_ID_PREFIX 
+          + " | *** SAVE FILE ERROR ... RETRY"
+          + " | ERROR: " + err
+          + " | " + saveFileObj.folder + "/" + saveFileObj.file
+        ));
+        saveFileQueue.push(saveFileObj);
+        statsObj.queues.saveFileQueue.size = saveFileQueue.length;
+        statsObj.queues.saveFileQueue.busy = false;
+      }
 
     }
   }, cnf.saveFileQueueInterval);
@@ -2858,98 +2294,34 @@ let killAllInProgress = false;
 //=========================================================================
 async function initTwitterConfig(params) {
 
-  // return new Promise(async function(resolve, reject){
+  statsObj.status = "INIT TWITTER | @" + params.threeceeUser;
 
-    statsObj.status = "INIT TWITTER | @" + params.threeceeUser;
+  const twitterConfigFile = params.threeceeUser + ".json";
 
-    const twitterConfigFile = params.threeceeUser + ".json";
+  debug(chalkInfo("INIT TWITTER USER @" + params.threeceeUser + " | " + twitterConfigFile));
 
-    debug(chalkInfo("INIT TWITTER USER @" + params.threeceeUser + " | " + twitterConfigFile));
+  const folder = path.join(DROPBOX_ROOT_FOLDER, configuration.twitterConfigFolder);
 
-    try {
-      const twitterConfig = await loadFile({folder: configuration.twitterConfigFolder, file: twitterConfigFile});
+  try {
+    const twitterConfig = await tcUtils.loadFile({folder: folder, file: twitterConfigFile});
 
-      twitterConfig.threeceeUser = params.threeceeUser;
+    twitterConfig.threeceeUser = params.threeceeUser;
 
-      console.log(chalkTwitter("TFE | LOADED TWITTER CONFIG"
-        + " | @" + params.threeceeUser
-        + " | CONFIG FILE: " + configuration.twitterConfigFolder + "/" + twitterConfigFile
-      ));
+    console.log(chalkTwitter("TFE | LOADED TWITTER CONFIG"
+      + " | @" + params.threeceeUser
+      + " | CONFIG FILE: " + folder + "/" + twitterConfigFile
+    ));
 
-      return twitterConfig;
-    }
-    catch(err){
-      console.log(chalkError("TFE | *** LOADED TWITTER CONFIG ERROR: FILE:  " 
-        + configuration.twitterConfigFolder + "/" + twitterConfigFile
-      ));
-      console.log(chalkError("TFE | *** LOADED TWITTER CONFIG ERROR: ERROR: " + err));
-      throw err;
-    }
+    return twitterConfig;
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** LOADED TWITTER CONFIG ERROR: FILE:  " 
+      + folder + "/" + twitterConfigFile
+    ));
+    console.log(chalkError("TFE | *** LOADED TWITTER CONFIG ERROR: ERROR: " + err));
+    throw err;
+  }
 
-  // });
-}
-
-function dropboxFileMove(params){
-
-  return new Promise(function(resolve, reject){
-
-    if (!params || !params.srcFolder || !params.srcFile || !params.dstFolder || !params.dstFile) {
-      return reject(new Error("params undefined"));
-    }
-
-    const srcPath = params.srcFolder + "/" + params.srcFile;
-    const dstPath = params.dstFolder + "/" + params.dstFile;
-
-    dropboxClient.filesMoveV2({from_path: srcPath, to_path: dstPath, autorename: true, allow_ownership_transfer: true, allow_shared_folder: true}).
-    then(function(response){
-      console.log(chalkBlueBold(MODULE_ID_PREFIX + " | ->- DROPBOX FILE MOVE"
-        + " | " + srcPath
-        + " > " + dstPath
-        // + " | RESPONSE\n", response
-      ));
-      debug("dropboxClient filesMoveV2 response\n", response);
-      return resolve();
-    }).
-    catch(function(err){
-      if (err.status === 409) {
-        if (params.noErrorNotFound){
-          console.log(chalkInfo(MODULE_ID_PREFIX + " | ... DROPBOX FILE MOVE"
-            + " | STATUS: " + err.status
-            + " | " + srcPath
-            + " | DOES NOT EXIST"
-            + " | SUMMARY: " + err.response.statusText
-          ));
-          return resolve();
-        }
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR DROPBOX FILE MOVE"
-          + " | STATUS: " + err.status
-          + " | " + srcPath
-          + " > " + dstPath
-          + " | DOES NOT EXIST"
-        ));
-      }
-      else if (err.status === 429) {
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR: XXX NN"
-          + " | STATUS: " + err.status
-          + " | " + srcPath
-          + " > " + dstPath
-          + " | TOO MANY REQUESTS"
-        ));
-        return resolve();
-      }
-      else {
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR: XXX NN"
-          + " | STATUS: " + err.status
-          + " | " + srcPath
-          + " > " + dstPath
-          + " | SUMMARY: " + err.response.statusText
-        ));
-        console.log(err);
-      }
-      return reject(err);
-    });
-
-  });
 }
 
 function isBestNetwork(p){
@@ -2979,7 +2351,7 @@ async function loadNetworkFile(params){
     const folder = params.folder;
     const entry = params.entry;
 
-    const networkObj = await loadFileRetry({folder: folder, file: entry.name});
+    const networkObj = await tcUtils.loadFileRetry({folder: folder, file: entry.name});
 
     if (!networkObj || networkObj=== undefined) {
       // throw new Error("NO BEST NETWORK FOUND?");
@@ -3005,13 +2377,16 @@ async function loadNetworkFile(params){
         ));
 
         try{
-          await dropboxFileMove({
-            noErrorNotFound: true,
-            srcFolder: folder, 
-            srcFile: entry.name, 
-            dstFolder: globalBestNetworkArchiveFolder, 
-            dstFile: entry.name
-          });
+
+          await renameFileAsync(path.join(folder, entry.name), path.join(globalBestNetworkArchiveFolder, entry.name));
+
+          // await tcUtils.fileMove({
+          //   noErrorNotFound: true,
+          //   srcFolder: folder, 
+          //   srcFile: entry.name, 
+          //   dstFolder: globalBestNetworkArchiveFolder, 
+          //   dstFile: entry.name
+          // });
 
           const updateDbNetworkParams = {};
 
@@ -3086,7 +2461,7 @@ async function loadNetworkFile(params){
           + " > " + globalBestNetworkArchiveFolder
       ));
 
-      await dropboxFileMove({
+      await tcUtils.fileMove({
         noErrorNotFound: true,
         srcFolder: folder, 
         srcFile: entry.name, 
@@ -3120,36 +2495,31 @@ async function loadNetworkFile(params){
 
           console.log(chalkLog(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | DELETING: " + deletePath));
 
-          dropboxClient.filesDelete({path: deletePath}).
-          then(function(){
-            console.log(chalkAlert(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | DELETED: " + deletePath));
-            return;
-          }).
-          catch(function(err){
-            console.log(chalkError("TFE | *** LOAD DROPBOX NETWORK / NN DELETE ERROR: " + err));
-            throw err;
-          });
+          await unlinkFileAsync(deletePath);
+          console.log(chalkAlert(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | DELETED: " + deletePath));
+          return;
+
         }
       }
     }
   // });
 }
 
-async function loadBestNetworksDropbox(params) {
+async function loadBestNetworksFolder(params) {
 
-  console.log(chalkLog("TFE | LOAD BEST NETWORKS DROPBOX"));
+  console.log(chalkLog("TFE | LOAD BEST NETWORKS FOLDER"));
 
-  statsObj.status = "LOAD BEST NNs DROPBOX";
+  statsObj.status = "LOAD BEST NNs FOLDER";
 
   const folder = params.folder;
 
-  console.log(chalkInfo("TFE | LOADING DROPBOX BEST NETWORKS | " + folder));
+  console.log(chalkInfo("TFE | LOADING FOLDER BEST NETWORKS | " + folder));
 
-  const results = await listDropboxFolder({folder: folder});
+  const results = await filesListFolder({folder: folder});
 
   if ((results === undefined) || !results) {
-    console.log(chalkError("TFE | DROPBOX LIST FOLDER ERROR | RESULT UNDEFINED ??? "));
-    throw new Error("DROPBOX LOAD LIST FOLDER ERROR | RESULT UNDEFINED");
+    console.log(chalkError("TFE | FOLDER LIST FOLDER ERROR | RESULT UNDEFINED ??? "));
+    throw new Error("FOLDER LOAD LIST FOLDER ERROR | RESULT UNDEFINED");
   }
 
   let resultsArray = [];
@@ -3167,7 +2537,7 @@ async function loadBestNetworksDropbox(params) {
 
   resultsArray.forEach(function(entry){
     if (!entry.name.endsWith(".json") || entry.name.startsWith("bestRuntimeNetwork")) {
-      console.log(chalkWarn("TFE | ... SKIP LOAD BEST NETWORKS | " + folder + "/" + entry.name));
+      console.log(chalkWarn("TFE | ... SKIP LOAD FOLDER BEST NETWORKS | " + folder + "/" + entry.name));
     }
     else{
       loadNetworkFilePromiseArray.push(loadNetworkFile({folder: folder, entry: entry}));
@@ -3176,7 +2546,7 @@ async function loadBestNetworksDropbox(params) {
 
   await Promise.all(loadNetworkFilePromiseArray)
   .then(function(){
-    console.log(chalkWarn("TFE | +++ LOAD BEST NETWORKS COMPLETE | " + folder));
+    console.log(chalkWarn("TFE | +++ LOAD FOLDER BEST NETWORKS COMPLETE | " + folder));
     return;
   });
 }
@@ -3331,11 +2701,10 @@ async function loadBestNeuralNetworks() {
 
     console.log(chalkLog("TFE | LOADING NEURAL NETWORKS"
       + " | FOLDER: " + bestNetworkFolder
-      + " | TIMEOUT: " + DEFAULT_DROPBOX_TIMEOUT + " MS"
     ));
 
     try {
-      await loadBestNetworksDropbox({folder: bestNetworkFolder});
+      await loadBestNetworksFolder({folder: bestNetworkFolder});
       await loadBestNetworksDatabase();
       return;
     }
@@ -3360,7 +2729,7 @@ async function loadMaxInputDropbox(params) {
 
     try {
 
-      const maxInputHashMapObj = await loadFile({folder: folder, file: file, loadLocalFile: true});
+      const maxInputHashMapObj = await tcUtils.loadFile({folder: folder, file: file, loadLocalFile: true});
 
       if ((maxInputHashMapObj === undefined) || !maxInputHashMapObj) {
         console.log(chalkError("TFE | DROPBOX MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED ??? "));
@@ -3401,247 +2770,234 @@ async function initWatchConfig(params){
 
   statsObj.status = "INIT WATCH CONFIG";
 
-  // return new Promise(async function(resolve){
+  console.log(chalkLog(MODULE_ID_PREFIX + " | ... INIT WATCH"));
 
-    console.log(chalkLog(MODULE_ID_PREFIX + " | INIT WATCH\n" + jsonPrint(params)));
+  const loadConfig = async function(f){
 
-    const loadConfig = async function(f){
+    try{
 
-      try{
+      console.log(chalkInfo(MODULE_ID_PREFIX + " | +++ FILE CREATED or CHANGED | " + getTimeStamp() + " | " + f));
 
-        console.log(chalkInfo(MODULE_ID_PREFIX + " | +++ FILE CREATED or CHANGED | " + getTimeStamp() + " | " + f));
+      if (f.endsWith("twitterFollowerExplorerConfig.json")){
 
-        if (f.endsWith("twitterFollowerExplorerConfig.json")){
+        await loadAllConfigFiles();
 
-          await loadAllConfigFiles();
+        const configArgs = Object.keys(configuration);
 
-          const configArgs = Object.keys(configuration);
-
-          configArgs.forEach(function(arg){
-            if (_.isObject(configuration[arg])) {
-              console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + "\n" + jsonPrint(configuration[arg]));
-            }
-            else {
-              console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + ": " + configuration[arg]);
-            }
-          });
-        }
-
+        configArgs.forEach(function(arg){
+          if (_.isObject(configuration[arg])) {
+            console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + "\n" + jsonPrint(configuration[arg]));
+          }
+          else {
+            console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + ": " + configuration[arg]);
+          }
+        });
       }
-      catch(err){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** LOAD ALL CONFIGS ON CREATE ERROR: " + err));
-      }
+
     }
+    catch(err){
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** LOAD ALL CONFIGS ON CREATE ERROR: " + err));
+    }
+  }
 
-    watch.createMonitor(path.join(DROPBOX_ROOT_FOLDER, dropboxConfigDefaultFolder), watchOptions, function (monitor) {
+  watch.createMonitor(configDefaultFolder, watchOptions, function (monitor) {
 
-      monitor.on("created", loadConfig);
+    monitor.on("created", loadConfig);
 
-      monitor.on("changed", loadConfig);
+    monitor.on("changed", loadConfig);
 
-      monitor.on("removed", function (f) {
-        console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
-      });
+    monitor.on("removed", function (f) {
+      console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
     });
+  });
 
-    watch.createMonitor(path.join(DROPBOX_ROOT_FOLDER, dropboxConfigHostFolder), watchOptions, function (monitor) {
+  watch.createMonitor(configHostFolder, watchOptions, function (monitor) {
 
-      monitor.on("created", loadConfig);
+    monitor.on("created", loadConfig);
 
-      monitor.on("changed", loadConfig);
+    monitor.on("changed", loadConfig);
 
-      monitor.on("removed", function (f) {
-        console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
-      });
+    monitor.on("removed", function (f) {
+      console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
     });
+  });
 
-    return;
+  return;
 
-  // });
 }
 
 
 async function generateObjFromArray(params){
 
-  // return new Promise(async function(resolve, reject){
+  const keys = params.keys || [];
+  const value = params.value || 0;
+  const result = {};
 
-    const keys = params.keys || [];
-    const value = params.value || 0;
-    const result = {};
+  async.each(keys, function(key, cb){
+    result[key.toString()] = value;
+    cb();
+  }, function(err){
+    if (err) {
+      throw err;
+    }
+    return;
+  });
 
-    async.each(keys, function(key, cb){
-      result[key.toString()] = value;
-      cb();
-    }, function(err){
-      if (err) {
-        throw err;
-      }
-      return;
-    });
-
-  // });
 }
 
 async function pruneGlobalHistograms(p) {
 
-  // return new Promise(async function(resolve, reject){
+  const params = p || {};
 
-    const params = p || {};
+  statsObj.status = "PRUNE GLOBAL HISTOGRAMS";
 
-    statsObj.status = "PRUNE GLOBAL HISTOGRAMS";
+  let inputTypeMin = params.defaultInputTypeMin || DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
 
-    let inputTypeMin = params.defaultInputTypeMin || DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
+  async.eachSeries(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
 
-    async.eachSeries(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
+    if (!globalHistograms[inputType] || (globalHistograms[inputType] === undefined)){
+      return cb0();
+    }
 
-      if (!globalHistograms[inputType] || (globalHistograms[inputType] === undefined)){
-        return cb0();
-      }
+    const initialNumberOfItems = Object.keys(globalHistograms[inputType]).length;
 
-      const initialNumberOfItems = Object.keys(globalHistograms[inputType]).length;
+    let prunedItems = 0;
 
-      let prunedItems = 0;
+    switch (inputType) {
+      case "friends":
+        inputTypeMin = DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL;
+      break;
+      default:
+        inputTypeMin = DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
+    }
 
-      switch (inputType) {
-        case "friends":
-          inputTypeMin = DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL;
-        break;
-        default:
-          inputTypeMin = DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
-      }
+    async.each(Object.keys(globalHistograms[inputType]), function(item, cb1) {
 
-      async.each(Object.keys(globalHistograms[inputType]), function(item, cb1) {
+      if (globalHistograms[inputType][item].total < inputTypeMin) {
 
-        if (globalHistograms[inputType][item].total < inputTypeMin) {
+        prunedItems += 1;
 
-          prunedItems += 1;
-
-          if (configuration.verbose) {
-            debug(chalkLog(MODULE_ID_PREFIX
-              + " | HISTOGRAM ITEM LESS THAN MIN (" + inputTypeMin + ") ... DELETING"
-              + " | " + inputType.toUpperCase()
-              + " | TOTAL: " + globalHistograms[inputType][item].total
-              + " | " + item
-            ));
-          }
-
-          delete globalHistograms[inputType][item];
+        if (configuration.verbose) {
+          debug(chalkLog(MODULE_ID_PREFIX
+            + " | HISTOGRAM ITEM LESS THAN MIN (" + inputTypeMin + ") ... DELETING"
+            + " | " + inputType.toUpperCase()
+            + " | TOTAL: " + globalHistograms[inputType][item].total
+            + " | " + item
+          ));
         }
 
-        cb1();
+        delete globalHistograms[inputType][item];
+      }
 
-      }, function(err) {
-
-        if (err) { throw err; }
-
-        const percent = 100 * prunedItems/initialNumberOfItems;
-
-        console.log(chalkAlert(MODULE_ID_PREFIX
-          + " | " + inputType.toUpperCase()
-          + " | " + inputTypeMin + " MIN"
-          + " | PRUNED " + prunedItems
-          + "/" + initialNumberOfItems + " ITEMS (" + percent.toFixed(2) + "%)"
-        ));
-
-        cb0();
-
-      });
+      cb1();
 
     }, function(err) {
 
       if (err) { throw err; }
 
-      return;
+      const percent = 100 * prunedItems/initialNumberOfItems;
+
+      console.log(chalkAlert(MODULE_ID_PREFIX
+        + " | " + inputType.toUpperCase()
+        + " | " + inputTypeMin + " MIN"
+        + " | PRUNED " + prunedItems
+        + "/" + initialNumberOfItems + " ITEMS (" + percent.toFixed(2) + "%)"
+      ));
+
+      cb0();
 
     });
 
-  // });
+  }, function(err) {
+
+    if (err) { throw err; }
+
+    return;
+
+  });
+
 }
 
 async function updateGlobalHistograms(params) {
 
-  // return new Promise(async function(resolve, reject){
+  statsObj.status = "UPDATE GLOBAL HISTOGRAMS";
 
-    statsObj.status = "UPDATE GLOBAL HISTOGRAMS";
+  let mergedHistograms = {};
 
-    let mergedHistograms = {};
+  try {
+    mergedHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
+    mergedHistograms.friends = await generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** UPDATE GLOBAL HISTOGRAMS ERROR: " + err));
+    throw err;
+  }
 
-    try {
-      mergedHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
-      mergedHistograms.friends = await generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
+  async.each(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
+
+    if (!mergedHistograms[inputType] || (mergedHistograms[inputType] === undefined)){
+      return cb0();
     }
-    catch(err){
-      console.log(chalkError("TFE | *** UPDATE GLOBAL HISTOGRAMS ERROR: " + err));
-      throw err;
-    }
 
-    // async.each(Object.keys(mergedHistograms), function(type, cb0) {
-    async.each(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
+    if (globalHistograms[inputType] === undefined) { globalHistograms[inputType] = {}; }
 
-      if (!mergedHistograms[inputType] || (mergedHistograms[inputType] === undefined)){
-        return cb0();
+    async.each(Object.keys(mergedHistograms[inputType]), function(item, cb1) {
+
+      if (globalHistograms[inputType][item] === undefined) {
+        globalHistograms[inputType][item] = {};
+        globalHistograms[inputType][item].total = 0;
+        globalHistograms[inputType][item].left = 0;
+        globalHistograms[inputType][item].leftRatio = 0;
+        globalHistograms[inputType][item].neutral = 0;
+        globalHistograms[inputType][item].neutralRatio = 0;
+        globalHistograms[inputType][item].right = 0;
+        globalHistograms[inputType][item].rightRatio = 0;
+        globalHistograms[inputType][item].positive = 0;
+        globalHistograms[inputType][item].positiveRatio = 0;
+        globalHistograms[inputType][item].negative = 0;
+        globalHistograms[inputType][item].negativeRatio = 0;
+        globalHistograms[inputType][item].none = 0;
+        globalHistograms[inputType][item].uncategorized = 0;
       }
 
-      if (globalHistograms[inputType] === undefined) { globalHistograms[inputType] = {}; }
+      globalHistograms[inputType][item].total += 1;
 
-      async.each(Object.keys(mergedHistograms[inputType]), function(item, cb1) {
+      if (params.user.category) {
+        if (params.user.category === "left") { globalHistograms[inputType][item].left += 1; }
+        if (params.user.category === "neutral") { globalHistograms[inputType][item].neutral += 1; }
+        if (params.user.category === "right") { globalHistograms[inputType][item].right += 1; }
+        if (params.user.category === "positive") { globalHistograms[inputType][item].positive += 1; }
+        if (params.user.category === "negative") { globalHistograms[inputType][item].negative += 1; }
+        if (params.user.category === "none") { globalHistograms[inputType][item].none += 1; }
+      }
+      else {
+        globalHistograms[inputType][item].uncategorized += 1;
+      }
 
-        if (globalHistograms[inputType][item] === undefined) {
-          globalHistograms[inputType][item] = {};
-          globalHistograms[inputType][item].total = 0;
-          globalHistograms[inputType][item].left = 0;
-          globalHistograms[inputType][item].leftRatio = 0;
-          globalHistograms[inputType][item].neutral = 0;
-          globalHistograms[inputType][item].neutralRatio = 0;
-          globalHistograms[inputType][item].right = 0;
-          globalHistograms[inputType][item].rightRatio = 0;
-          globalHistograms[inputType][item].positive = 0;
-          globalHistograms[inputType][item].positiveRatio = 0;
-          globalHistograms[inputType][item].negative = 0;
-          globalHistograms[inputType][item].negativeRatio = 0;
-          globalHistograms[inputType][item].none = 0;
-          globalHistograms[inputType][item].uncategorized = 0;
-        }
+      globalHistograms[inputType][item].leftRatio = globalHistograms[inputType][item].left/globalHistograms[inputType][item].total;
+      globalHistograms[inputType][item].neutralRatio = globalHistograms[inputType][item].neutral/globalHistograms[inputType][item].total;
+      globalHistograms[inputType][item].rightRatio = globalHistograms[inputType][item].right/globalHistograms[inputType][item].total;
+      globalHistograms[inputType][item].positiveRatio = globalHistograms[inputType][item].positive/globalHistograms[inputType][item].total;
+      globalHistograms[inputType][item].negativeRatio = globalHistograms[inputType][item].negative/globalHistograms[inputType][item].total;
 
-        globalHistograms[inputType][item].total += 1;
-
-        if (params.user.category) {
-          if (params.user.category === "left") { globalHistograms[inputType][item].left += 1; }
-          if (params.user.category === "neutral") { globalHistograms[inputType][item].neutral += 1; }
-          if (params.user.category === "right") { globalHistograms[inputType][item].right += 1; }
-          if (params.user.category === "positive") { globalHistograms[inputType][item].positive += 1; }
-          if (params.user.category === "negative") { globalHistograms[inputType][item].negative += 1; }
-          if (params.user.category === "none") { globalHistograms[inputType][item].none += 1; }
-        }
-        else {
-          globalHistograms[inputType][item].uncategorized += 1;
-        }
-
-        globalHistograms[inputType][item].leftRatio = globalHistograms[inputType][item].left/globalHistograms[inputType][item].total;
-        globalHistograms[inputType][item].neutralRatio = globalHistograms[inputType][item].neutral/globalHistograms[inputType][item].total;
-        globalHistograms[inputType][item].rightRatio = globalHistograms[inputType][item].right/globalHistograms[inputType][item].total;
-        globalHistograms[inputType][item].positiveRatio = globalHistograms[inputType][item].positive/globalHistograms[inputType][item].total;
-        globalHistograms[inputType][item].negativeRatio = globalHistograms[inputType][item].negative/globalHistograms[inputType][item].total;
-
-        cb1();
-
-      }, function(err) {
-
-        if (err) { throw err; }
-
-        cb0();
-
-      });
+      cb1();
 
     }, function(err) {
 
       if (err) { throw err; }
 
-      return;
+      cb0();
 
     });
 
-  // });
+  }, function(err) {
+
+    if (err) { throw err; }
+
+    return;
+
+  });
+
 }
 
 function initRandomNetworks(){
@@ -3704,65 +3060,47 @@ async function initMaxInputHashMap(){
 
   statsObj.status = "INIT MAX INPUT HASHMAP";
 
-  // return new Promise(async function(resolve, reject){
+  if (randomNetworkTree && (randomNetworkTree !== undefined)) {
 
-    if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+    try{
+      await randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap });
+      console.log(chalkBlue("TFE | SENT MAX INPUTS HASHMAP > RNT"));
 
-      try{
-        await randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap });
-        console.log(chalkBlue("TFE | SENT MAX INPUTS HASHMAP > RNT"));
+      await randomNetworkTree.send({ op: "LOAD_NORMALIZATION", normalization: normalization });
+      console.log(chalkBlue("TFE | SENT NORMALIZATION > RNT"));
 
-        await randomNetworkTree.send({ op: "LOAD_NORMALIZATION", normalization: normalization });
-        console.log(chalkBlue("TFE | SENT NORMALIZATION > RNT"));
-
-        return;
-      }
-      catch(err){
-        console.log(chalkError("TFE | INIT MAX INPUT HASHMAP ERROR: " + err));
-        throw err;
-      }
-     
+      return;
     }
-    else {
-      console.log(chalkError("TFE | *** INIT MAX INPUT HASHMAP ERROR: RNT NOT INITIALIZED *** "));
-      return new Error("RNT NOT INITIALIZED");
+    catch(err){
+      console.log(chalkError("TFE | INIT MAX INPUT HASHMAP ERROR: " + err));
+      throw err;
     }
+   
+  }
+  else {
+    console.log(chalkError("TFE | *** INIT MAX INPUT HASHMAP ERROR: RNT NOT INITIALIZED *** "));
+    return new Error("RNT NOT INITIALIZED");
+  }
 
-  // });
 }
 
 async function initNetworks(){
 
-  // return new Promise(async function(resolve, reject){
+  statsObj.status = "INIT NNs";
 
-    statsObj.status = "INIT NNs";
+  console.log(chalkTwitter("TFE | INIT NETWORKS"));
 
-    console.log(chalkTwitter("TFE | INIT NETWORKS"));
+  await Promise.all([
+    loadBestNeuralNetworks(),
+    loadMaxInputDropbox({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile})
+  ])
+  .then(async function(){
+    await initMaxInputHashMap();
+    await initRandomNetworks();
+    console.log(chalkWarn("TFE | +++ LOAD BEST NETWORKS COMPLETE"));
+    return;
+  });
 
-    await Promise.all([
-      loadBestNeuralNetworks(),
-      loadMaxInputDropbox({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile})
-    ])
-    .then(async function(){
-      await initMaxInputHashMap();
-      await initRandomNetworks();
-      console.log(chalkWarn("TFE | +++ LOAD BEST NETWORKS COMPLETE"));
-      return;
-    });
-
-    // try {
-    //   await loadBestNeuralNetworks();
-    //   await loadMaxInputDropbox({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile});
-    //   await initRandomNetworks();
-    //   await initMaxInputHashMap();
-    //   return;
-    // }
-    // catch(err){
-    //   console.log(chalkError("TFE | *** INIT NETWORKS ERROR: " + err));
-    //   throw err;
-    // }
-
-  // });
 }
 
 function saveNetworkHashMap(params, callback) {
@@ -3878,7 +3216,6 @@ function updateNetworkStats(params) {
         ));
         return;
       }
-      
     }, async function(err) {
 
       if (err) {
@@ -3932,11 +3269,11 @@ function updateNetworkStats(params) {
         bestInputsConfigObj.INPUTS_IDS = [...bestInputsSet];
 
 
-        let folder = dropboxConfigDefaultFolder;
+        let folder = configDefaultFolder;
         let file = defaultBestInputsConfigFile;
 
         if (hostname !== "google") {
-          folder = dropboxConfigHostFolder;
+          folder = configHostFolder;
           file = hostBestInputsConfigFile;
         }
 
@@ -3952,7 +3289,6 @@ function updateNetworkStats(params) {
         console.log(chalkError("TFE | *** BEST INPUTS ERROR: " + e));
         reject(e);
       }
-
     });
 
   });
@@ -3965,9 +3301,6 @@ function initActivateNetworkQueueInterval(interval) {
     clearInterval(activateNetworkQueueInterval);
 
     statsObj.status = "INIT RNT ACTIVATE Q INTERVAL";
-
-    // let activateNetworkObj = {};
-
     statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
     statsObj.queues.activateNetworkQueue.busy = false;
 
@@ -4059,7 +3392,6 @@ function updateBestNetworkStats(params) {
     statsObj.currentBestNetworkId = networkObj.networkId;
 
     statsObj.bestNetwork.networkId = networkObj.networkId;
-    // statsObj.bestNetwork.network = networkObj.network;
     statsObj.bestNetwork.networkType = networkObj.networkType;
     statsObj.bestNetwork.successRate = networkObj.successRate || 0;
     statsObj.bestNetwork.matchRate = networkObj.matchRate || 0;
@@ -4080,7 +3412,6 @@ function updateBestNetworkStats(params) {
     }
 
     resolve(statsObj.bestNetwork);
-
   });
 }
 
@@ -4112,7 +3443,6 @@ function saveBestNetworkFileCache(params) {
     saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
 
     resolve();
-
   });
 }
 
@@ -4647,23 +3977,19 @@ function initRandomNetworkTreeChild() {
 
 async function parseText(params){
 
-  // return new Promise(async function(resolve, reject) {
+  params.updateGlobalHistograms = (params.updateGlobalHistograms !== undefined) ? params.updateGlobalHistograms : false;
+  params.category = (params.category !== undefined) ? params.category : "none";
+  params.minWordLength = params.minWordLength || configuration.minWordLength;
 
-    params.updateGlobalHistograms = (params.updateGlobalHistograms !== undefined) ? params.updateGlobalHistograms : false;
-    params.category = (params.category !== undefined) ? params.category : "none";
-    params.minWordLength = params.minWordLength || configuration.minWordLength;
-
-    try {
-      const hist = await twitterTextParser.parseText(params);
-      return hist;
-    }
-    catch(err){
-      console.log(chalkError("*** TWITTER TEXT PARSER ERROR: " + err));
-      console.error(err);
-      throw err;
-    }
-
-  // });
+  try {
+    const hist = await twitterTextParser.parseText(params);
+    return hist;
+  }
+  catch(err){
+    console.log(chalkError("*** TWITTER TEXT PARSER ERROR: " + err));
+    console.error(err);
+    throw err;
+  }
 }
 
 function parseImage(params){
@@ -4679,7 +4005,6 @@ function parseImage(params){
         + " | CAT: " + params.category
         + " | @" + params.screenName
         + " | " + params.imageUrl
-        // + "\n" + jsonPrint(hist)
       ));
       resolve(hist);
     }).
@@ -4697,7 +4022,6 @@ function parseImage(params){
       console.error(err);
       reject(err);
     });
-
   });
 }
 
@@ -4846,57 +4170,54 @@ function emptyHistogram(histogram){
 
 async function checkUserProfileChanged(params) {
 
-  // return new Promise(async function(resolve, reject){
+  const user = params.user;
 
-    const user = params.user;
+  let profileHistogramsEmpty = false;
 
-    let profileHistogramsEmpty = false;
+  try{
+    profileHistogramsEmpty = await emptyHistogram(user.profileHistograms);
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** ALL HISTOGRAMS profileHistogramsEmpty ERROR: " + err));
+    throw err;
+  }
 
-    try{
-      profileHistogramsEmpty = await emptyHistogram(user.profileHistograms);
-    }
-    catch(err){
-      console.log(chalkError("TFE | *** ALL HISTOGRAMS profileHistogramsEmpty ERROR: " + err));
-      throw err;
-    }
+  if (profileHistogramsEmpty){
 
-    if (profileHistogramsEmpty){
+    console.log(chalkInfo(
+      "TFE | USER PROFILE HISTOGRAMS EMPTY" 
+      + " | RST PREV PROP VALUES" 
+      + " | @" + user.screenName 
+      + "\nTFE | PROFILE HISTOGRAMS\n" + jsonPrint(user.profileHistograms) 
+    ));
 
-      console.log(chalkInfo(
-        "TFE | USER PROFILE HISTOGRAMS EMPTY" 
-        + " | RST PREV PROP VALUES" 
-        + " | @" + user.screenName 
-        + "\nTFE | PROFILE HISTOGRAMS\n" + jsonPrint(user.profileHistograms) 
-      ));
+    user.previousBannerImageUrl = null;
+    user.previousProfileImageUrl = null;
 
-      user.previousBannerImageUrl = null;
-      user.previousProfileImageUrl = null;
+    user.previousDescription = null;
+    user.previousExpandedUrl = null;
+    user.previousLocation = null;
+    user.previousName = null;
+    user.previousProfileUrl = null;
+    user.previousScreenName = null;
+    user.previousUrl = null;
+  }
 
-      user.previousDescription = null;
-      user.previousExpandedUrl = null;
-      user.previousLocation = null;
-      user.previousName = null;
-      user.previousProfileUrl = null;
-      user.previousScreenName = null;
-      user.previousUrl = null;
-    }
+  const results = [];
 
-    const results = [];
+  if (!user.bannerImageAnalyzed || checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
+  if (!user.profileImageAnalyzed || checkPropertyChange(user, "profileImageUrl")) { results.push("profileImageUrl"); }
 
-    if (!user.bannerImageAnalyzed || checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
-    if (!user.profileImageAnalyzed || checkPropertyChange(user, "profileImageUrl")) { results.push("profileImageUrl"); }
+  if (checkPropertyChange(user, "description")) { results.push("description"); }
+  if (checkPropertyChange(user, "expandedUrl")) { results.push("expandedUrl"); }
+  if (checkPropertyChange(user, "location")) { results.push("location"); }
+  if (checkPropertyChange(user, "name")) { results.push("name"); }
+  if (checkPropertyChange(user, "profileUrl")) { results.push("profileUrl"); }
+  if (checkPropertyChange(user, "screenName")) { results.push("screenName"); }
+  if (checkPropertyChange(user, "url")) { results.push("url"); }
 
-    if (checkPropertyChange(user, "description")) { results.push("description"); }
-    if (checkPropertyChange(user, "expandedUrl")) { results.push("expandedUrl"); }
-    if (checkPropertyChange(user, "location")) { results.push("location"); }
-    if (checkPropertyChange(user, "name")) { results.push("name"); }
-    if (checkPropertyChange(user, "profileUrl")) { results.push("profileUrl"); }
-    if (checkPropertyChange(user, "screenName")) { results.push("screenName"); }
-    if (checkPropertyChange(user, "url")) { results.push("url"); }
-
-    if (results.length === 0) { return; }
-    return results;
-  // });
+  if (results.length === 0) { return; }
+  return results;
 }
 
 function processTweetObj(params){
@@ -4997,8 +4318,6 @@ function processTweetObj(params){
 
 async function analyzeLanguage(params){
 
-  // return new Promise(async function(resolve, reject){
-
     debug(chalkAlert("analyzeLanguage\n" + jsonPrint(params)));
 
     const document = {
@@ -5040,8 +4359,6 @@ async function analyzeLanguage(params){
       statsObj.analyzer.total += 1;
       throw err;
     }
-
-  // });
 }
 
 let startQuotaTimeOut;
@@ -5267,436 +4584,426 @@ async function processLocationChange(params){
 
     return {user: user, locations: locations, text: text};
   }
-
-
 }
 
 async function userProfileChangeHistogram(params) {
 
-    let userProfileChanges = false;
-    let bannerImageAnalyzedFlag = false;
-    let languageAnalyzedFlag = false;
-    let profileImageAnalyzedFlag = false;
+  let userProfileChanges = false;
+  let bannerImageAnalyzedFlag = false;
+  let languageAnalyzedFlag = false;
+  let profileImageAnalyzedFlag = false;
 
-    userProfileChanges = await checkUserProfileChanged(params);
+  userProfileChanges = await checkUserProfileChanged(params);
 
-    const user = params.user;
+  const user = params.user;
 
-    let sentimentHistogram = {};
-    sentimentHistogram.sentiment = {};
+  let sentimentHistogram = {};
+  sentimentHistogram.sentiment = {};
 
-    if (!userProfileChanges) {
+  if (!userProfileChanges) {
 
-      if (configuration.enableLanguageAnalysis
-        && !statsObj.languageQuotaFlag
-        && (!user.profileHistograms.sentiment 
-          || (user.profileHistograms.sentiment === undefined)
-          || (Object.keys(user.profileHistograms.sentiment).length === 0)
-          )
-      ) {
+    if (configuration.enableLanguageAnalysis
+      && !statsObj.languageQuotaFlag
+      && (!user.profileHistograms.sentiment 
+        || (user.profileHistograms.sentiment === undefined)
+        || (Object.keys(user.profileHistograms.sentiment).length === 0)
+        )
+    ) {
 
-        const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
+      const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
 
-        try{
-          userProfileChanges = [];
-          userProfileChanges.push("sentiment");
-          sentimentHistogram = await analyzeLanguage({screenName: user.screenName, text: profileText});
-          languageAnalyzedFlag = true;
-          statsObj.languageQuotaFlag = false;
+      try{
+        userProfileChanges = [];
+        userProfileChanges.push("sentiment");
+        sentimentHistogram = await analyzeLanguage({screenName: user.screenName, text: profileText});
+        languageAnalyzedFlag = true;
+        statsObj.languageQuotaFlag = false;
+      }
+      catch(err){
+        if (err.code === 3) {
+          console.log(chalkAlert("TFE | UNSUPPORTED LANG"
+            + " | NID: " + user.nodeId
+            + " | @" + user.screenName
+            + " | " + err
+          ));
         }
-        catch(err){
-          if (err.code === 3) {
-            console.log(chalkAlert("TFE | UNSUPPORTED LANG"
-              + " | NID: " + user.nodeId
-              + " | @" + user.screenName
-              + " | " + err
-            ));
-          }
-          else if (err.code === 8) {
-            console.error(chalkAlert("TFE"
-              + " | " + getTimeStamp()
-              + " | LANGUAGE QUOTA"
-              + " | RESOURCE_EXHAUSTED"
-              + " | NID: " + user.nodeId
-              + " | @" + user.screenName
-            ));
-            statsObj.languageQuotaFlag = moment().valueOf();
-            startQuotaTimeOutTimer();
-          }
-          else {
-            console.error(chalkError("TFE | *** LANGUAGE TEXT ERROR"
-              + " | " + err
-              + "\n" + jsonPrint(err)
-            ));
-          }
+        else if (err.code === 8) {
+          console.error(chalkAlert("TFE"
+            + " | " + getTimeStamp()
+            + " | LANGUAGE QUOTA"
+            + " | RESOURCE_EXHAUSTED"
+            + " | NID: " + user.nodeId
+            + " | @" + user.screenName
+          ));
+          statsObj.languageQuotaFlag = moment().valueOf();
+          startQuotaTimeOutTimer();
+        }
+        else {
+          console.error(chalkError("TFE | *** LANGUAGE TEXT ERROR"
+            + " | " + err
+            + "\n" + jsonPrint(err)
+          ));
         }
       }
     }
+  }
 
-    let text = "";
-    const urlsHistogram = {};
-    urlsHistogram.urls = {};
+  let text = "";
+  const urlsHistogram = {};
+  urlsHistogram.urls = {};
 
-    const locationsHistogram = {};
-    locationsHistogram.locations = {};
+  const locationsHistogram = {};
+  locationsHistogram.locations = {};
 
-    async.eachSeries(userProfileChanges, function(userProp, cb){
+  async.eachSeries(userProfileChanges, function(userProp, cb){
 
-      let userPropValue = false;
+    let userPropValue = false;
 
-      if (user[userProp] && (user[userProp] !== undefined)) {
-        userPropValue = user[userProp].toLowerCase();
-      }
+    if (user[userProp] && (user[userProp] !== undefined)) {
+      userPropValue = user[userProp].toLowerCase();
+    }
 
-      const prevUserProp = "previous" + _.upperFirst(userProp);
+    const prevUserProp = "previous" + _.upperFirst(userProp);
 
-      let domain;
-      let domainNodeId;
-      let nodeId;
+    let domain;
+    let domainNodeId;
+    let nodeId;
 
-      user[prevUserProp] = (user[prevUserProp] === undefined) ? null : user[prevUserProp];
+    user[prevUserProp] = (user[prevUserProp] === undefined) ? null : user[prevUserProp];
 
-      if (!userPropValue && (userPropValue !== undefined)) {
-        // if (configuration.verbose) {
-          console.log(chalkLog(MODULE_ID_PREFIX
-            + " | ??? userProfileChangeHistogram USER PROP VALUE FALSE"
-            + " | @" + user.screenName
-            + " | PROP: " + userProp
-            + " | VALUE: " + userPropValue
-          ));
-        // }
+    if (!userPropValue && (userPropValue !== undefined)) {
+      // if (configuration.verbose) {
+        console.log(chalkLog(MODULE_ID_PREFIX
+          + " | ??? userProfileChangeHistogram USER PROP VALUE FALSE"
+          + " | @" + user.screenName
+          + " | PROP: " + userProp
+          + " | VALUE: " + userPropValue
+        ));
+      // }
+      user[prevUserProp] = user[userProp];
+      return cb();
+    }
+
+    switch (userProp) {
+
+      case "sentiment":
+        cb();
+      break;
+
+      case "location":
+        processLocationChange({user: user, userPropValue: userPropValue, text: text})
+        .then(function(results){
+          locationsHistogram.locations = results.locations;
+          user.location = results.user.location;
+          user.previousLocation = results.user.previousLocation;
+          text = results.text;
+          cb();
+        })
+        .catch(function(e0){
+          cb(e0);
+        });
+      break;
+
+      case "name":
+      case "description":
+        text += userPropValue + "\n";
         user[prevUserProp] = user[userProp];
-        return cb();
-      }
+        cb();
+      break;
 
-      switch (userProp) {
+      case "screenName":
+        text += "@" + userPropValue + "\n";
+        user[prevUserProp] = user[userProp];
+        cb();
+      break;
 
-        case "sentiment":
-          cb();
-        break;
+      case "url":
+      case "profileUrl":
+      case "expandedUrl":
+      case "bannerImageUrl":
+      case "profileImageUrl":
 
-        case "location":
-          processLocationChange({user: user, userPropValue: userPropValue, text: text})
-          .then(function(results){
-            locationsHistogram.locations = results.locations;
-            user.location = results.user.location;
-            user.previousLocation = results.user.previousLocation;
-            text = results.text;
-            cb();
-          })
-          .catch(function(e0){
-            cb(e0);
-          });
-        break;
+        if (userPropValue && (typeof userPropValue === "string")){
+          domain = urlParse(userPropValue.toLowerCase()).hostname;
+          nodeId = btoa(userPropValue.toLowerCase());
 
-        case "name":
-        case "description":
-          text += userPropValue + "\n";
+          if (userPropValue && domain) { 
+            domainNodeId = btoa(domain);
+            urlsHistogram.urls[domainNodeId] = (urlsHistogram.urls[domainNodeId] === undefined) ? 1 : urlsHistogram.urls[domainNodeId] + 1; 
+          }
+          urlsHistogram.urls[nodeId] = (urlsHistogram.urls[nodeId] === undefined) ? 1 : urlsHistogram.urls[nodeId] + 1;
           user[prevUserProp] = user[userProp];
           cb();
-        break;
-
-        case "screenName":
-          text += "@" + userPropValue + "\n";
-          user[prevUserProp] = user[userProp];
+        }
+        else{
           cb();
-        break;
+        }
+      break;
 
-        case "url":
-        case "profileUrl":
-        case "expandedUrl":
-        case "bannerImageUrl":
-        case "profileImageUrl":
+      default:
+        console.log(chalkError("TFE | UNKNOWN USER PROPERTY: " + userProp));
+        return cb(new Error("UNKNOWN USER PROPERTY: " + userProp));
+    }
 
-          if (userPropValue && (typeof userPropValue === "string")){
-            domain = urlParse(userPropValue.toLowerCase()).hostname;
-            nodeId = btoa(userPropValue.toLowerCase());
+  }, function(err){
 
-            if (userPropValue && domain) { 
-              domainNodeId = btoa(domain);
-              urlsHistogram.urls[domainNodeId] = (urlsHistogram.urls[domainNodeId] === undefined) ? 1 : urlsHistogram.urls[domainNodeId] + 1; 
+    if (err) {
+      console.trace(chalkError("TFE | USER PROFILE HISTOGRAM ERROR: " + err));
+      throw err;
+    }
+
+    async.parallel({
+
+      bannerImageHist: function(cb) {
+
+        if(statsObj.imageParser.rateLimitFlag){
+          console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
+          return cb(null);
+        }
+
+        if (
+            (configuration.enableImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl !== user.bannerImageAnalyzed)
+          || (configuration.forceImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined))
+          )
+        ){
+
+          parseImage({
+            screenName: user.screenName, 
+            category: user.category, 
+            imageUrl: user.bannerImageUrl, 
+            histograms: user.profileHistograms,
+            updateGlobalHistograms: true
+          }).
+          then(function(imageParseResults){
+            if (imageParseResults) { 
+              bannerImageAnalyzedFlag = true;
+              cb(null, imageParseResults);
             }
-            urlsHistogram.urls[nodeId] = (urlsHistogram.urls[nodeId] === undefined) ? 1 : urlsHistogram.urls[nodeId] + 1;
-            user[prevUserProp] = user[userProp];
-            cb();
-          }
-          else{
-            cb();
-          }
-        break;
+            else{
+              cb(null, {});
+            }
+          }).
+          catch(function(err){
+            console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+            cb(err, null);
+          });
 
-        default:
-          console.log(chalkError("TFE | UNKNOWN USER PROPERTY: " + userProp));
-          return cb(new Error("UNKNOWN USER PROPERTY: " + userProp));
+        }
+        else {
+          cb(null, {});
+        }
+      }, 
+
+      profileImageHist: function(cb) {
+
+        if(statsObj.imageParser.rateLimitFlag){
+          console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
+          return cb(null);
+        }
+
+        if (
+            (configuration.enableImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined) && (user.profileImageUrl !== user.profileImageAnalyzed)
+          || (configuration.forceImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined))
+          )
+        ){
+
+          parseImage({
+            screenName: user.screenName, 
+            category: user.category, 
+            imageUrl: user.profileImageUrl, 
+            histograms: user.profileHistograms,
+            updateGlobalHistograms: true
+          }).
+          then(function(imageParseResults){
+            if (imageParseResults) { 
+              profileImageAnalyzedFlag = true;
+              cb(null, imageParseResults);
+            }
+            else{
+              cb(null, {});
+            }
+          }).
+          catch(function(err){
+            console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+            cb(err, null);
+          });
+
+        }
+        else {
+          cb(null, {});
+        }
+      }, 
+
+      textHist: function(cb){
+
+        if (text && (text !== undefined)){
+
+          if (configuration.enableLanguageAnalysis && !statsObj.languageQuotaFlag) {
+
+            analyzeLanguage({screenName: user.screenName, text: text})
+            .then(function(sentHist){
+              sentimentHistogram = sentHist;
+              languageAnalyzedFlag = true;
+              statsObj.languageQuotaFlag = false;
+            })
+            .catch(function(e){
+              if (e.code === 3) {
+                console.log(chalkLog("TFE | UNSUPPORTED LANG"
+                  + " | " + e
+                ));
+              }
+              else if (e.code === 8) {
+                console.error(chalkAlert("TFE"
+                  + " | LANGUAGE QUOTA"
+                  + " | RESOURCE_EXHAUSTED"
+                ));
+                statsObj.languageQuotaFlag = moment().valueOf();
+                startQuotaTimeOutTimer();
+              }
+              else {
+                console.error(chalkError("TFE | *** LANGUAGE TEXT ERROR"
+                  + " | " + e
+                  + "\n" + jsonPrint(e)
+                ));
+              }
+            });
+
+          }
+
+          parseText({ category: user.category, text: text, updateGlobalHistograms: true }).
+          then(function(textParseResults){
+
+            cb(null, textParseResults);
+
+          }).
+          catch(function(err){
+            if (err) {
+              console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+            }
+            cb(err, null);
+          });
+        }
+        else {
+          cb(null, {});
+        }
       }
 
-    }, function(err){
+    }, function(err, results){
 
       if (err) {
-        console.trace(chalkError("TFE | USER PROFILE HISTOGRAM ERROR: " + err));
+        console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
         throw err;
       }
 
-      async.parallel({
-
-        bannerImageHist: function(cb) {
-
-          if(statsObj.imageParser.rateLimitFlag){
-            console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
-            return cb(null);
-          }
-
-          if (
-              (configuration.enableImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl !== user.bannerImageAnalyzed)
-            || (configuration.forceImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined))
-            )
-          ){
-
-            parseImage({
-              screenName: user.screenName, 
-              category: user.category, 
-              imageUrl: user.bannerImageUrl, 
-              histograms: user.profileHistograms,
-              updateGlobalHistograms: true
-            }).
-            then(function(imageParseResults){
-              if (imageParseResults) { 
-                bannerImageAnalyzedFlag = true;
-                cb(null, imageParseResults);
-              }
-              else{
-                cb(null, {});
-              }
-            }).
-            catch(function(err){
-              console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-              cb(err, null);
-            });
-
-          }
-          else {
-            cb(null, {});
-          }
-        }, 
-
-        profileImageHist: function(cb) {
-
-          if(statsObj.imageParser.rateLimitFlag){
-            console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
-            return cb(null);
-          }
-
-          if (
-              (configuration.enableImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined) && (user.profileImageUrl !== user.profileImageAnalyzed)
-            || (configuration.forceImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined))
-            )
-          ){
-
-            parseImage({
-              screenName: user.screenName, 
-              category: user.category, 
-              imageUrl: user.profileImageUrl, 
-              histograms: user.profileHistograms,
-              updateGlobalHistograms: true
-            }).
-            then(function(imageParseResults){
-              if (imageParseResults) { 
-                profileImageAnalyzedFlag = true;
-                cb(null, imageParseResults);
-              }
-              else{
-                cb(null, {});
-              }
-            }).
-            catch(function(err){
-              console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-              cb(err, null);
-            });
-
-          }
-          else {
-            cb(null, {});
-          }
-        }, 
-
-        textHist: function(cb){
-
-          if (text && (text !== undefined)){
-
-            if (configuration.enableLanguageAnalysis && !statsObj.languageQuotaFlag) {
-
-              analyzeLanguage({screenName: user.screenName, text: text})
-              .then(function(sentHist){
-                sentimentHistogram = sentHist;
-                languageAnalyzedFlag = true;
-                statsObj.languageQuotaFlag = false;
-              })
-              .catch(function(e){
-                if (e.code === 3) {
-                  console.log(chalkLog("TFE | UNSUPPORTED LANG"
-                    + " | " + e
-                  ));
-                }
-                else if (e.code === 8) {
-                  console.error(chalkAlert("TFE"
-                    + " | LANGUAGE QUOTA"
-                    + " | RESOURCE_EXHAUSTED"
-                  ));
-                  statsObj.languageQuotaFlag = moment().valueOf();
-                  startQuotaTimeOutTimer();
-                }
-                else {
-                  console.error(chalkError("TFE | *** LANGUAGE TEXT ERROR"
-                    + " | " + e
-                    + "\n" + jsonPrint(e)
-                  ));
-                }
-              });
-
-            }
-
-            parseText({ category: user.category, text: text, updateGlobalHistograms: true }).
-            then(function(textParseResults){
-
-              cb(null, textParseResults);
-
-            }).
-            catch(function(err){
-              if (err) {
-                console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-              }
-              cb(err, null);
-            });
-          }
-          else {
-            cb(null, {});
-          }
-        }
-
-      }, function(err, results){
-
-        if (err) {
-          console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-          throw err;
-        }
-
-        mergeHistogramsArray( {
-          histogramArray: [
-            results.textHist, 
-            results.bannerImageHist, 
-            results.profileImageHist, 
-            urlsHistogram,
-            locationsHistogram,
-            sentimentHistogram
-          ]
-        } ).
-        then(function(histogramsMerged){
-          return {
-            user: user,
-            userProfileChanges: userProfileChanges, 
-            histograms: histogramsMerged, 
-            languageAnalyzedFlag: languageAnalyzedFlag, 
-            bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, 
-            profileImageAnalyzedFlag: profileImageAnalyzedFlag
-          };
-        }).
-        catch(function(err){
-          console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-          throw err;
-        });
+      mergeHistogramsArray( {
+        histogramArray: [
+          results.textHist, 
+          results.bannerImageHist, 
+          results.profileImageHist, 
+          urlsHistogram,
+          locationsHistogram,
+          sentimentHistogram
+        ]
+      } ).
+      then(function(histogramsMerged){
+        return {
+          user: user,
+          userProfileChanges: userProfileChanges, 
+          histograms: histogramsMerged, 
+          languageAnalyzedFlag: languageAnalyzedFlag, 
+          bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, 
+          profileImageAnalyzedFlag: profileImageAnalyzedFlag
+        };
+      }).
+      catch(function(err){
+        console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+        throw err;
       });
     });
-
-  // });
+  });
 }
 
 async function updateUserHistograms(params) {
 
-  // return new Promise(async function(resolve, reject){
+  if ((params.user === undefined) || !params.user) {
+    console.log(chalkError("TFE | *** updateUserHistograms USER UNDEFINED"));
+    const err = new Error("TFE | *** updateUserHistograms USER UNDEFINED");
+    console.error(err);
+    throw err;
+  }
 
-    if ((params.user === undefined) || !params.user) {
-      console.log(chalkError("TFE | *** updateUserHistograms USER UNDEFINED"));
-      const err = new Error("TFE | *** updateUserHistograms USER UNDEFINED");
-      console.error(err);
-      throw err;
-    }
+  const user = params.user;
 
-    const user = params.user;
+  if (!user.profileHistograms || (user.profileHistograms === undefined)){ 
+    user.profileHistograms = {};
+  }
 
-    if (!user.profileHistograms || (user.profileHistograms === undefined)){ 
-      user.profileHistograms = {};
-    }
+  if (!user.tweetHistograms || (user.tweetHistograms === undefined)){ 
+    user.tweetHistograms = {};
+  }
 
-    if (!user.tweetHistograms || (user.tweetHistograms === undefined)){ 
-      user.tweetHistograms = {};
-    }
+  if (!user.friends || (user.friends === undefined)){ 
+    user.friends = [];
+  }
 
-    if (!user.friends || (user.friends === undefined)){ 
-      user.friends = [];
-    }
+  try {
 
-    try {
+    const results = userProfileChangeHistogram({user: user});
 
-      const results = userProfileChangeHistogram({user: user});
+    if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
 
-      if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
-
-        if (results.userProfileChanges) {
-          results.userProfileChanges.forEach(function(prop){
-            if (user[prop] && (user[prop] !== undefined)){
-              console.log(chalkLog("TFE | -<- PROP CHANGE | @" + user.screenName 
-                + " | " + prop + " -<- " + user[prop]
-              ));
-            }
-          });
-        }
-
-        user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.histograms });
-        user.markModified("profileHistograms");
+      if (results.userProfileChanges) {
+        results.userProfileChanges.forEach(function(prop){
+          if (user[prop] && (user[prop] !== undefined)){
+            console.log(chalkLog("TFE | -<- PROP CHANGE | @" + user.screenName 
+              + " | " + prop + " -<- " + user[prop]
+            ));
+          }
+        });
       }
 
-      if (results && results.bannerImageAnalyzedFlag) {
-        user.bannerImageAnalyzed = user.bannerImageUrl;
-        user.previousBannerImageUrl = user.bannerImageUrl;
-      }
-
-      if (results && results.profileImageAnalyzedFlag) {
-        user.profileImageAnalyzed = user.profileImageUrl;
-        user.previousProfileImageUrl = user.profileImageUrl;
-      }
-
-      user.lastHistogramTweetId = user.statusId;
-      user.lastHistogramQuoteId = user.quotedStatusId;
-
-      const savedUser = await user.save();
-
-      if (configuration.testMode && savedUser.friends.length === 0) {
-
-        savedUser.friends = Array.from({ length: randomInt(1,47) }, () => (Math.floor(Math.random() * 123456789).toString()));
-
-        console.log(chalkLog("TFE | TEST MODE | ADD RANDOM FRNDs IDs"
-          + " | " + savedUser.userId
-          + " | @" + savedUser.screenName
-          + " | " + savedUser.friends.length + "FRNDs"
-          // + "\n" + user.friends
-        ));
-      }
-
-      updateGlobalHistograms({user: savedUser});
-      return savedUser;
-
-    }
-    catch(err){
-      console.log(chalkError("TFE | *** updateUserHistograms ERROR: " + err));
-      throw err;
+      user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.histograms });
+      user.markModified("profileHistograms");
     }
 
-  // });
+    if (results && results.bannerImageAnalyzedFlag) {
+      user.bannerImageAnalyzed = user.bannerImageUrl;
+      user.previousBannerImageUrl = user.bannerImageUrl;
+    }
+
+    if (results && results.profileImageAnalyzedFlag) {
+      user.profileImageAnalyzed = user.profileImageUrl;
+      user.previousProfileImageUrl = user.profileImageUrl;
+    }
+
+    user.lastHistogramTweetId = user.statusId;
+    user.lastHistogramQuoteId = user.quotedStatusId;
+
+    const savedUser = await user.save();
+
+    if (configuration.testMode && savedUser.friends.length === 0) {
+
+      savedUser.friends = Array.from({ length: randomInt(1,47) }, () => (Math.floor(Math.random() * 123456789).toString()));
+
+      console.log(chalkLog("TFE | TEST MODE | ADD RANDOM FRNDs IDs"
+        + " | " + savedUser.userId
+        + " | @" + savedUser.screenName
+        + " | " + savedUser.friends.length + "FRNDs"
+        // + "\n" + user.friends
+      ));
+    }
+
+    updateGlobalHistograms({user: savedUser});
+    return savedUser;
+
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** updateUserHistograms ERROR: " + err));
+    throw err;
+  }
 }
 
 async function generateAutoCategory(params) {
-
-  // return new Promise(async function(resolve, reject){
 
     statsObj.status = "GEN AUTO CAT";
 
@@ -5715,26 +5022,20 @@ async function generateAutoCategory(params) {
       console.log(chalkError("TFE | *** generateAutoCategory ERROR: " + err));
       throw err;
     }
-
-  // });
 }
 
 async function processPriorityUserTweets(){
 
-  // return new Promise(async function(resolve, reject){
+  await waitEvent({ event: "priorityUserTweetsEvent"});
 
-    await waitEvent({ event: "priorityUserTweetsEvent"});
+  if (priorityUserTweetsQueue.length === 0) {
+    console.log(chalkAlert("TFE | ??? PRORITY USER TWEETS QUEUE EMPTY"));
+    return;
+  }
 
-    if (priorityUserTweetsQueue.length === 0) {
-      console.log(chalkAlert("TFE | ??? PRORITY USER TWEETS QUEUE EMPTY"));
-      return;
-    }
+  const obj = priorityUserTweetsQueue.shift();
 
-    const obj = priorityUserTweetsQueue.shift();
-
-    return obj.latestTweets;
-
-  // });
+  return obj.latestTweets;
 }
 
 const userTweetsDefault = {
@@ -6359,8 +5660,8 @@ async function initUnfollowableUserSet(){
 
     try {
 
-      const unfollowableUserSetObj = await loadFile({
-        folder: dropboxConfigDefaultFolder, 
+      const unfollowableUserSetObj = await tcUtils.loadFile({
+        folder: configDefaultFolder, 
         file: unfollowableUserFile, 
         loadLocalFile: true,
         noErrorNotFound: true
@@ -6378,7 +5679,7 @@ async function initUnfollowableUserSet(){
     catch(err){
       if (err.code === "ENOTFOUND") {
         console.log(chalkError("TFE | *** LOAD UNFOLLOWABLE USERS ERROR: FILE NOT FOUND:  " 
-          + dropboxConfigDefaultFolder + "/" + unfollowableUserFile
+          + configDefaultFolder + "/" + unfollowableUserFile
         ));
       }
       else {
@@ -6514,6 +5815,25 @@ const fsmStates = {
     },
 
     "fsm_resetEnd": "IDLE"
+  },
+
+  "ERROR": {
+
+    onEnter: async function(event, oldState, newState) {
+
+      if (event !== "fsm_tick") {
+
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** FSM ERROR"));
+
+        reporter(event, oldState, newState);
+        statsObj.status = "FSM ERROR";
+
+        quit({cause: "FSM ERROR"});
+
+      }
+
+    },
+
   },
 
   "IDLE": {
@@ -7876,35 +7196,19 @@ setTimeout(async function(){
     console.log(chalkBlueBold(
         "\n--------------------------------------------------------"
       + "\n" + MODULE_ID_PREFIX + " | " + configuration.processName 
-      + "\nCONFIGURATION\n" + jsonPrint(configuration)
+      // + "\nCONFIGURATION\n" + jsonPrint(configuration)
       + "--------------------------------------------------------"
     ));
 
-    // try {
-
-      // try {
-
-        await connectDb();
-        await initUserDbUpdateQueueInterval(USER_DB_UPDATE_QUEUE_INTERVAL);
-        await initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
-        await initActivateNetworkQueueInterval(ACTIVATE_NETWORK_QUEUE_INTERVAL);
-        await initRandomNetworkTreeChild();
-        await initWatchConfig();
-        await initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
-        await fsmStart();
-        await initUnfollowableUserSet();
-
-      // }
-      // catch(err){
-      //   console.log(chalkError(MODULE_ID_PREFIX + " | *** FSM START ERROR: " + err + " | QUITTING ***"));
-      //   quit({cause: "FSM START ERROR"});
-      // }
-
-    // }
-    // catch(err){
-    //   console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECT ERROR: " + err + " | QUITTING ***"));
-    //   quit({cause: "MONGO DB CONNECT ERROR"});
-    // }
+    await connectDb();
+    await initUserDbUpdateQueueInterval(USER_DB_UPDATE_QUEUE_INTERVAL);
+    await initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
+    await initActivateNetworkQueueInterval(ACTIVATE_NETWORK_QUEUE_INTERVAL);
+    await initRandomNetworkTreeChild();
+    await initWatchConfig();
+    await initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
+    await fsmStart();
+    await initUnfollowableUserSet();
 
   }
   catch(err){
