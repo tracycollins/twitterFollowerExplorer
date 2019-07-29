@@ -195,7 +195,6 @@ const path = require("path");
 const watch = require("watch");
 const defaults = require("object.defaults");
 const randomInt = require("random-int");
-// const fetch = require("isomorphic-fetch"); // or another library of choice.
 const urlParse = require("url-parse");
 const moment = require("moment");
 const HashMap = require("hashmap").HashMap;
@@ -211,7 +210,6 @@ const merge = require("deepmerge");
 const btoa = require("btoa");
 const MergeHistograms = require("@threeceelabs/mergehistograms");
 const mergeHistograms = new MergeHistograms();
-// const writeJsonFile = require("write-json-file");
 const sizeof = require("object-sizeof");
 
 const fs = require("fs");
@@ -1586,10 +1584,10 @@ const statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
 
 const defaultTrainingSetFolder = configDefaultFolder + "/trainingSets";
 
-const globalBestNetworkFolder = "/config/utility/best/neuralNetworks";
+const globalBestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "/config/utility/best/neuralNetworks");
 const globalBestNetworkArchiveFolder = globalBestNetworkFolder + "/archive";
-const localBestNetworkFolder = "/config/utility/" + hostname + "/neuralNetworks/best";
 
+const localBestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility", hostname);
 const bestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility/best/neuralNetworks");
 
 configuration.neuralNetworkFolder = configHostFolder + "/neuralNetworks";
