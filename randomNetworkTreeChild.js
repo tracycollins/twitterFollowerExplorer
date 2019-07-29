@@ -321,8 +321,15 @@ function initActivateNetworkInterval(interval){
           });
 
           // if (statsObj.currentBestNetwork.matchRate < currentBestNetworkStats.matchRate) {
-          if (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank) {
+          if (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank){
             printNetworkObj("NNT | +++ UPDATE BEST NETWORK"
+              + " | @" + messageObj.user.screenName 
+              + " | CM: " + messageObj.user.category, currentBestNetworkStats, chalk.black
+            );
+            await nnTools.printNetworkResults();
+          }
+          else if (currentBestNetworkStats.meta.total % 100 === 0) {
+            printNetworkObj("NNT | NETWORK STATS"
               + " | @" + messageObj.user.screenName 
               + " | CM: " + messageObj.user.category, currentBestNetworkStats, chalk.black
             );
@@ -335,13 +342,13 @@ function initActivateNetworkInterval(interval){
             || (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank)
           ) {
             console.log("RNT | BEST NN"
-              + " | " + currentBestNetworkStats.networkId
-              + " | " + currentBestNetworkStats.inputsId
               + " | RANK: " + currentBestNetworkStats.rank
-              + " | " + currentBestNetworkStats.meta.match + "/" + currentBestNetworkStats.meta.total
               + " | MR: " + currentBestNetworkStats.matchRate.toFixed(2) + "%"
-              + " | OUT: " + currentBestNetworkStats.meta.output
+              + " | " + currentBestNetworkStats.meta.match + "/" + currentBestNetworkStats.meta.total
               + " | MATCH: " + currentBestNetworkStats.meta.matchFlag
+              + " | " + currentBestNetworkStats.networkId
+              + " | IN: " + currentBestNetworkStats.inputsId
+              + " | OUT: " + currentBestNetworkStats.meta.output
             );
           }
 
