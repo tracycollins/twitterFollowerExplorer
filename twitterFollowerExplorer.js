@@ -5254,124 +5254,116 @@ async function processUserTweets(params){
 
 async function updateUserTweets(params){
 
-  // return new Promise(async function(resolve, reject){
+  let user = params.user;
 
-    let user = params.user;
+  const histogramIncompleteFlag = await histogramIncomplete(user.tweetHistograms);
 
-    const histogramIncompleteFlag = await histogramIncomplete(user.tweetHistograms);
+  if (statsObj.fetchUserTweetsEndFlag){
+    console.log(chalkAlert("TFE | FETCH USER TWEETS END FLAG SENT | "
+      + " | FLAG: " + statsObj.fetchUserTweetsEndFlag
+      + " | @" + user.screenName
+    ));
+  }
+  
+  if (configuration.testFetchTweetsMode || (!userTweetFetchSet.has(user.nodeId) && histogramIncompleteFlag)) { 
 
-    if (statsObj.fetchUserTweetsEndFlag){
-      console.log(chalkAlert("TFE | END FLAG ALREADY SENT | "
-        + " | FLAG: " + statsObj.fetchUserTweetsEndFlag
+    if (configuration.testFetchTweetsMode) {
+      console.log(chalkAlert("TFE | updateUserTweets | !!! TEST MODE FETCH TWEETS"
         + " | @" + user.screenName
       ));
     }
-    
-    if (configuration.testFetchTweetsMode || (!userTweetFetchSet.has(user.nodeId) && histogramIncompleteFlag)) { 
-
-      if (configuration.testFetchTweetsMode) {
-        console.log(chalkAlert("TFE | updateUserTweets | !!! TEST MODE FETCH TWEETS"
-          + " | @" + user.screenName
-        ));
-      }
-      else{
-        console.log(chalkInfo("TFE | >>> PRIORITY FETCH TWEETS"
-          + " | @" + user.screenName
-        ));
-      }
-
-      user.tweetHistograms = {};
-      user.markModified("tweetHistograms");
-      user = await fetchUserTweets({user: user, force: true});
-      userTweetFetchSet.add(user.nodeId);
+    else{
+      console.log(chalkInfo("TFE | >>> PRIORITY FETCH TWEETS"
+        + " | @" + user.screenName
+      ));
     }
 
-    if (user.latestTweets.length === 0) { 
-      delete user.latestTweets;
-      return user;
-    }
+    user.tweetHistograms = {};
+    user.markModified("tweetHistograms");
+    user = await fetchUserTweets({user: user, force: true});
+    userTweetFetchSet.add(user.nodeId);
+  }
 
-    const latestTweets = user.latestTweets;
-    
+  if (user.latestTweets.length === 0) { 
     delete user.latestTweets;
+    return user;
+  }
 
-    defaults(user.tweets, userTweetsDefault);
+  const latestTweets = user.latestTweets;
+  
+  delete user.latestTweets;
 
-    if (user.tweets.tweetIds.length > DEFAULT_MAX_USER_TWEETIDS) {
+  defaults(user.tweets, userTweetsDefault);
 
-      const length = user.tweets.tweetIds.length;
-      const removeNumber = length - DEFAULT_MAX_USER_TWEETIDS;
+  if (user.tweets.tweetIds.length > DEFAULT_MAX_USER_TWEETIDS) {
 
-      debug(chalkLog("TFE | ---  TWEETS > MAX TWEETIDS"
-        + " | " + user.nodeId
-        + " | @" + user.screenName
-        + " | " + length + " TWEETS"
-        + " | REMOVE: " + removeNumber
-      ));
+    const length = user.tweets.tweetIds.length;
+    const removeNumber = length - DEFAULT_MAX_USER_TWEETIDS;
 
-      user.tweets.tweetIds.splice(0,removeNumber);
-    }
+    debug(chalkLog("TFE | ---  TWEETS > MAX TWEETIDS"
+      + " | " + user.nodeId
+      + " | @" + user.screenName
+      + " | " + length + " TWEETS"
+      + " | REMOVE: " + removeNumber
+    ));
 
-    const processedUser = await processUserTweets({tweets: latestTweets, user: user});
+    user.tweets.tweetIds.splice(0,removeNumber);
+  }
 
-    return processedUser;
+  const processedUser = await processUserTweets({tweets: latestTweets, user: user});
 
-  // });
+  return processedUser;
 }
 
 async function processUser(params) {
 
-  // return new Promise(async function(resolve, reject){
+  statsObj.status = "PROCESS USER";
 
-    statsObj.status = "PROCESS USER";
+  debug(chalkInfo("PROCESS USER\n" + jsonPrint(params.user)));
 
-    debug(chalkInfo("PROCESS USER\n" + jsonPrint(params.user)));
+  if (userServerController === undefined) {
+    console.log(chalkError("TFE | *** processUser userServerController UNDEFINED"));
+    throw new Error("processUser userServerController UNDEFINED");
+  }
 
-    if (userServerController === undefined) {
-      console.log(chalkError("TFE | *** processUser userServerController UNDEFINED"));
-      throw new Error("processUser userServerController UNDEFINED");
+  try {
+
+    const user = params.user;
+    user.following = true;
+
+    const updatedTweetsUser = await updateUserTweets({user: user});
+    const autoCategoryUser = await generateAutoCategory({user: updatedTweetsUser});
+    const prevPropsUser = await updatePreviousUserProps({user: autoCategoryUser});
+
+    prevPropsUser.markModified("tweetHistograms");
+    prevPropsUser.markModified("profileHistograms");
+    prevPropsUser.markModified("tweets");
+
+    const savedUser = await prevPropsUser.save();
+
+    if (configuration.verbose){
+      console.log(chalkLog("TFE | >>> SAVED USER"
+        + " | " + printUser({user: savedUser})
+      ));
+      console.log(chalkLog("TFE | >>> SAVED USER TWEETS"
+        + " | SINCE: " + savedUser.tweets.sinceId
+        + " | TWEETS: " + savedUser.tweets.tweetIds.length
+      ));
+      console.log(chalkLog("TFE | >>> SAVED USER TWEET HISTOGRAMS"
+        + "\n" + jsonPrint(savedUser.tweetHistograms)
+      ));
+      console.log(chalkLog("TFE | >>> SAVED USER PROFILE HISTOGRAMS"
+        + "\n" + jsonPrint(savedUser.profileHistograms)
+      ));
     }
 
-    try {
+    return savedUser;
 
-      const user = params.user;
-      user.following = true;
-
-      const updatedTweetsUser = await updateUserTweets({user: user});
-      const autoCategoryUser = await generateAutoCategory({user: updatedTweetsUser});
-      const prevPropsUser = await updatePreviousUserProps({user: autoCategoryUser});
-
-      prevPropsUser.markModified("tweetHistograms");
-      prevPropsUser.markModified("profileHistograms");
-      prevPropsUser.markModified("tweets");
-
-      const savedUser = await prevPropsUser.save();
-
-      if (configuration.verbose){
-        console.log(chalkLog("TFE | >>> SAVED USER"
-          + " | " + printUser({user: savedUser})
-        ));
-        console.log(chalkLog("TFE | >>> SAVED USER TWEETS"
-          + " | SINCE: " + savedUser.tweets.sinceId
-          + " | TWEETS: " + savedUser.tweets.tweetIds.length
-        ));
-        console.log(chalkLog("TFE | >>> SAVED USER TWEET HISTOGRAMS"
-          + "\n" + jsonPrint(savedUser.tweetHistograms)
-        ));
-        console.log(chalkLog("TFE | >>> SAVED USER PROFILE HISTOGRAMS"
-          + "\n" + jsonPrint(savedUser.profileHistograms)
-        ));
-      }
-
-      return savedUser;
-
-    }
-    catch(err) {
-      console.log(chalkError("TFE | *** processUser ERROR: " + err));
-      throw err;
-    }
-
-  // });
+  }
+  catch(err) {
+    console.log(chalkError("TFE | *** processUser ERROR: " + err));
+    throw err;
+  }
 }
 
 function updatePreviousUserProps(params){
@@ -5411,7 +5403,6 @@ function updatePreviousUserProps(params){
 
       resolve(user);
     });
-
   });
 }
 
@@ -5630,45 +5621,40 @@ async function initProcessUserQueueInterval(interval) {
   }, interval);
 
   return;
-
 }
 
 async function initUnfollowableUserSet(){
 
-  // return new Promise(async function(resolve, reject){
+  try {
 
-    try {
+    const unfollowableUserSetObj = await tcUtils.loadFile({
+      folder: configDefaultFolder, 
+      file: unfollowableUserFile, 
+      loadLocalFile: true,
+      noErrorNotFound: true
+    });
 
-      const unfollowableUserSetObj = await tcUtils.loadFile({
-        folder: configDefaultFolder, 
-        file: unfollowableUserFile, 
-        loadLocalFile: true,
-        noErrorNotFound: true
-      });
+    if (unfollowableUserSetObj) {
 
-      if (unfollowableUserSetObj) {
+      unfollowableUserSet = new Set(unfollowableUserSetObj.userIds);
 
-        unfollowableUserSet = new Set(unfollowableUserSetObj.userIds);
+      console.log(chalk.bold.black("TFE | INIT UNFOLLOWABLE USERS | " + unfollowableUserSet.size + " USERS"));
 
-        console.log(chalk.bold.black("TFE | INIT UNFOLLOWABLE USERS | " + unfollowableUserSet.size + " USERS"));
-
-        return unfollowableUserSet;
-      }
+      return unfollowableUserSet;
     }
-    catch(err){
-      if (err.code === "ENOTFOUND") {
-        console.log(chalkError("TFE | *** LOAD UNFOLLOWABLE USERS ERROR: FILE NOT FOUND:  " 
-          + configDefaultFolder + "/" + unfollowableUserFile
-        ));
-      }
-      else {
-        console.log(chalkError("TFE | *** LOAD UNFOLLOWABLE USERS ERROR: " + err));
-      }
-
-      throw err;
+  }
+  catch(err){
+    if (err.code === "ENOTFOUND") {
+      console.log(chalkError("TFE | *** LOAD UNFOLLOWABLE USERS ERROR: FILE NOT FOUND:  " 
+        + configDefaultFolder + "/" + unfollowableUserFile
+      ));
+    }
+    else {
+      console.log(chalkError("TFE | *** LOAD UNFOLLOWABLE USERS ERROR: " + err));
     }
 
-  // });
+    throw err;
+  }
 }
 
 function resetGlobalHistograms(params){
