@@ -4,7 +4,7 @@
   "description": "twitter user follower explorer",
   "main": "twitterFollowerExplorer.js",
   "dependencies": {
-    "@google-cloud/language": "^3.2.4",
+    "@google-cloud/language": "^3.2.5",
     "@google/maps": "^0.5.5",
     "@slack/client": "^5.0.2",
     "@threeceelabs/histogram-parser": "^1.0.20",
@@ -90,7 +90,7 @@
     "url-regex": "^5.0.0",
     "valid-url": "^1.0.9",
     "watch": "^1.0.2",
-    "write-json-file": "^4.1.1",
+    "write-json-file": "^4.2.0",
     "yamljs": "^0.3.0",
     "yauzl": "^2.10.0"
   },
