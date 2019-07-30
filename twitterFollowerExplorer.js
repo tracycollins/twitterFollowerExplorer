@@ -385,7 +385,7 @@ statsObj.userReadyAck = false;
 statsObj.userReadyAckWait = 0;
 statsObj.userReadyTransmitted = false;
 
-statsObj.sentFetchUserTweetsEndFlag = false;
+statsObj.fetchUserTweetsEndFlag = false;
 
 statsObj.users = {};
 statsObj.users.categorized = {};
@@ -1193,9 +1193,9 @@ function initCategorizedUserIdSet(){
           return reject(err);
         }
 
+        statsObj.fetchUserTweetsEndFlag = true;
         resolve();
 
-        // statsObj.sentFetchUserTweetsEndFlag = true;
         // childParams.command.fetchUserTweetsEndFlag = true;
         // childParams.command.userArray = [];
 
@@ -5260,13 +5260,14 @@ async function updateUserTweets(params){
 
     const histogramIncompleteFlag = await histogramIncomplete(user.tweetHistograms);
 
-    if (statsObj.sentFetchUserTweetsEndFlag){
-      console.log(chalkAlert("TFE | updateUserTweets | XXX SKIP FETCH TWEETS | END FLAG ALREADY SENT | "
-        + " | FLAG: " + statsObj.sentFetchUserTweetsEndFlag
+    if (statsObj.fetchUserTweetsEndFlag){
+      console.log(chalkAlert("TFE | END FLAG ALREADY SENT | "
+        + " | FLAG: " + statsObj.fetchUserTweetsEndFlag
         + " | @" + user.screenName
       ));
     }
-    else if (configuration.testFetchTweetsMode || (!userTweetFetchSet.has(user.nodeId) && histogramIncompleteFlag)) { 
+    
+    if (configuration.testFetchTweetsMode || (!userTweetFetchSet.has(user.nodeId) && histogramIncompleteFlag)) { 
 
       if (configuration.testFetchTweetsMode) {
         console.log(chalkAlert("TFE | updateUserTweets | !!! TEST MODE FETCH TWEETS"
@@ -5480,17 +5481,20 @@ async function initProcessUserQueueInterval(interval) {
 
     const allEmpty = allQueuesEmpty();
 
-    if (statsObj.processedStartFlag && allEmpty){
+    if (statsObj.fetchUserTweetsEndFlag && statsObj.processedStartFlag && allEmpty){
+
       console.log(chalkBlue(
           "\n=============================="
         + "\nTFE | --- ALL QUEUES EMPTY ---"
         + "\n==============================\n"
       ));
+
       const childParams = {};
       childParams.command = {};
       childParams.command.childId = "tfe_node_child_altthreecee00"
       childParams.command.op = "FETCH_USER_TWEETS_END";
       childParams.command.fetchUserTweetsEndFlag = true;
+
       childSend(childParams).
       then(function(){
         clearInterval(processUserQueueInterval);
