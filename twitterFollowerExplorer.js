@@ -78,8 +78,8 @@ const FETCH_COUNT = 200;
 const TEST_TWEET_FETCH_COUNT = 11;
 
 const TEST_MODE_NUM_NN = 10;
-const TEST_FETCH_COUNT = 10;
-const TEST_TOTAL_FETCH = 47;
+const TEST_FETCH_COUNT = 200;
+const TEST_TOTAL_FETCH = 1000;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -214,12 +214,12 @@ const sizeof = require("object-sizeof");
 
 const fs = require("fs");
 const { promisify } = require("util");
-const readFileAsync = promisify(fs.readFile);
+// const readFileAsync = promisify(fs.readFile);
 const renameFileAsync = promisify(fs.rename);
 const unlinkFileAsync = promisify(fs.unlink);
-const statFileAsync = promisify(fs.stat);
+// const statFileAsync = promisify(fs.stat);
 
-const parseJson = require("parse-json");
+// const parseJson = require("parse-json");
 const debug = require("debug")("TFE");
 const util = require("util");
 const deepcopy = require("deep-copy");
@@ -286,6 +286,8 @@ statsObj.pid = process.pid;
 statsObj.cpus = os.cpus().length;
 
 statsObj.runId = MODULE_ID.toLowerCase() + "_" + getTimeStamp();
+
+statsObj.processedStartFlag = false;
 
 statsObj.hostname = hostname;
 statsObj.startTime = getTimeStamp();
@@ -1265,9 +1267,9 @@ process.on("unhandledRejection", function(err, promise) {
 // CONFIGURATION
 //=========================================================================
 
-const prevHostConfigFileModifiedMoment = moment("2010-01-01");
-const prevDefaultConfigFileModifiedMoment = moment("2010-01-01");
-let prevConfigFileModifiedMoment = moment("2010-01-01");
+// const prevHostConfigFileModifiedMoment = moment("2010-01-01");
+// const prevDefaultConfigFileModifiedMoment = moment("2010-01-01");
+// let prevConfigFileModifiedMoment = moment("2010-01-01");
 
 let defaultConfiguration = {}; // general configuration for TFE
 let hostConfiguration = {}; // host-specific configuration for TFE
@@ -1575,7 +1577,7 @@ const configDefaultFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility/defau
 const configHostFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility",hostname);
 
 const configDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
-const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
+const configHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 
 const childPidFolderLocal = DROPBOX_ROOT_FOLDER + "/config/utility/" + hostname + "/children";
 
@@ -1587,7 +1589,7 @@ const defaultTrainingSetFolder = configDefaultFolder + "/trainingSets";
 const globalBestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "/config/utility/best/neuralNetworks");
 const globalBestNetworkArchiveFolder = globalBestNetworkFolder + "/archive";
 
-const localBestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility", hostname);
+// const localBestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility", hostname);
 const bestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility/best/neuralNetworks");
 
 configuration.neuralNetworkFolder = configHostFolder + "/neuralNetworks";
@@ -1868,11 +1870,11 @@ async function loadAllConfigFiles(){
     console.log(chalkInfo(MODULE_ID_PREFIX + " | <<< LOADED DEFAULT CONFIG " + configDefaultFolder + "/" + configDefaultFile));
   }
   
-  const hostConfig = await loadConfigFile({folder: configHostFolder, file: dropboxConfigHostFile, noErrorNotFound: true});
+  const hostConfig = await loadConfigFile({folder: configHostFolder, file: configHostFile, noErrorNotFound: true});
 
   if (hostConfig) {
     hostConfiguration = hostConfig;
-    console.log(chalkInfo(MODULE_ID_PREFIX + " | <<< LOADED HOST CONFIG " + configHostFolder + "/" + dropboxConfigHostFile));
+    console.log(chalkInfo(MODULE_ID_PREFIX + " | <<< LOADED HOST CONFIG " + configHostFolder + "/" + configHostFile));
   }
 
   await loadInputsDropbox({folder: configDefaultFolder, file: defaultInputsConfigFile, noErrorNotFound: false});
@@ -2682,69 +2684,62 @@ async function loadBestNetworksDatabase(paramsIn) {
 
 async function loadBestNeuralNetworks() {
 
-  // return new Promise(async function(resolve, reject){
+  statsObj.status = "LOAD BEST NN";
 
-    statsObj.status = "LOAD BEST NN";
+  console.log(chalkLog("TFE | LOADING NEURAL NETWORKS"
+    + " | FOLDER: " + bestNetworkFolder
+  ));
 
-    console.log(chalkLog("TFE | LOADING NEURAL NETWORKS"
-      + " | FOLDER: " + bestNetworkFolder
-    ));
-
-    try {
-      await loadBestNetworksFolder({folder: bestNetworkFolder});
-      await loadBestNetworksDatabase();
-      return;
-    }
-    catch(err){
-      console.log(chalkError("TFE | *** LOAD BEST NETWORKS ERROR: " + err));
-      throw err;
-    }
-
-  // });
+  try {
+    await loadBestNetworksFolder({folder: bestNetworkFolder});
+    await loadBestNetworksDatabase();
+    return;
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** LOAD BEST NETWORKS ERROR: " + err));
+    throw err;
+  }
 }
 
 async function loadMaxInputDropbox(params) {
 
   statsObj.status = "LOAD MAX INPUT + NORMALIZATION";
 
-  // return new Promise(async function(resolve, reject){
+  const folder = params.folder;
+  const file = params.file;
 
-    const folder = params.folder;
-    const file = params.file;
+  console.log(chalkNetwork("TFE | LOADING DROPBOX MAX INPUT HASHMAP + NORMALIZATION | " + folder + "/" + file));
 
-    console.log(chalkNetwork("TFE | LOADING DROPBOX MAX INPUT HASHMAP + NORMALIZATION | " + folder + "/" + file));
+  try {
 
-    try {
+    const maxInputHashMapObj = await tcUtils.loadFile({folder: folder, file: file, loadLocalFile: true});
 
-      const maxInputHashMapObj = await tcUtils.loadFile({folder: folder, file: file, loadLocalFile: true});
-
-      if ((maxInputHashMapObj === undefined) || !maxInputHashMapObj) {
-        console.log(chalkError("TFE | DROPBOX MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED ??? "));
-        return new Error("DROPBOX MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED");
-      }
-
-      maxInputHashMap = {};
-      maxInputHashMap = deepcopy(maxInputHashMapObj.maxInputHashMap);
-
-      normalization = {};
-      normalization = deepcopy(maxInputHashMapObj.normalization);
-
-      console.log(chalkBlue("TFE | MAX INPUT HASHMAP"
-        + " | KEYS (INPUT TYPES)\n" + jsonPrint(Object.keys(maxInputHashMap))
-      ));
-
-      console.log(chalkBlue("TFE | NORMALIZATION"
-        + "\n" + jsonPrint(normalization)
-      ));
-
-      return;
-    }
-    catch(err){
-      console.log(chalkError("TFE | DROPBOX MAX INPUT HASHMAP FILE ERROR: " + err));
-      throw err;
+    if ((maxInputHashMapObj === undefined) || !maxInputHashMapObj) {
+      console.log(chalkError("TFE | DROPBOX MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED ??? "));
+      return new Error("DROPBOX MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED");
     }
 
-  // });
+    maxInputHashMap = {};
+    maxInputHashMap = deepcopy(maxInputHashMapObj.maxInputHashMap);
+
+    normalization = {};
+    normalization = deepcopy(maxInputHashMapObj.normalization);
+
+    console.log(chalkBlue("TFE | MAX INPUT HASHMAP"
+      + " | KEYS (INPUT TYPES)\n" + jsonPrint(Object.keys(maxInputHashMap))
+    ));
+
+    console.log(chalkBlue("TFE | NORMALIZATION"
+      + "\n" + jsonPrint(normalization)
+    ));
+
+    return;
+  }
+  catch(err){
+    console.log(chalkError("TFE | DROPBOX MAX INPUT HASHMAP FILE ERROR: " + err));
+    throw err;
+  }
+
 }
 
 const watchOptions = {
@@ -2753,7 +2748,7 @@ const watchOptions = {
   ignoreNotPermitted: true,
 }
 
-async function initWatchConfig(params){
+async function initWatchConfig(){
 
   statsObj.status = "INIT WATCH CONFIG";
 
@@ -5486,7 +5481,11 @@ async function initProcessUserQueueInterval(interval) {
     const allEmpty = allQueuesEmpty();
 
     if (statsObj.processedStartFlag && allEmpty){
-      console.log(chalkBlue("TFE | ALL QUEUES EMPTY"));
+      console.log(chalkBlue(
+          "\n=============================="
+        + "\nTFE | --- ALL QUEUES EMPTY ---"
+        + "\n==============================\n"
+      ));
       const childParams = {};
       childParams.command = {};
       childParams.command.childId = "tfe_node_child_altthreecee00"
@@ -5611,17 +5610,6 @@ async function initProcessUserQueueInterval(interval) {
         statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
 
         if (statsObj.users.processed % 100 === 0) { showStats(); }
-
-        // userUpdated = await updatePreviousUserProps({user: processedUser});
-
-
-        // userUpdated = await userServerController.findOneUserV2({user: userUpdated, mergeHistograms: false, noInc: true});
-
-        // if (configuration.verbose){
-        //   console.log(chalkLog("TFE | UPDATED USER DB"
-        //     + " | " + printUser({user: userUpdated})
-        //   ));
-        // }
 
         statsObj.queues.processUserQueue.busy = false;
       }
