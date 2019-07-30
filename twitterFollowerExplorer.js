@@ -1194,6 +1194,12 @@ function initCategorizedUserIdSet(){
         }
 
         statsObj.fetchUserTweetsEndFlag = true;
+
+        console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
+          + " | TOT CAT: " + statsObj.users.categorized.total
+        ));
+
+
         resolve();
 
         // childParams.command.fetchUserTweetsEndFlag = true;
@@ -5258,13 +5264,6 @@ async function updateUserTweets(params){
 
   const histogramIncompleteFlag = await histogramIncomplete(user.tweetHistograms);
 
-  if (statsObj.fetchUserTweetsEndFlag){
-    console.log(chalkAlert("TFE | FETCH USER TWEETS END FLAG SENT | "
-      + " | FLAG: " + statsObj.fetchUserTweetsEndFlag
-      + " | @" + user.screenName
-    ));
-  }
-  
   if (configuration.testFetchTweetsMode || (!userTweetFetchSet.has(user.nodeId) && histogramIncompleteFlag)) { 
 
     if (configuration.testFetchTweetsMode) {

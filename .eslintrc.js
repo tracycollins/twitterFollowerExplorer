@@ -10,6 +10,7 @@ module.exports = {
         "sourceType": "module"
     },
     "rules": {
+        "require-atomic-updates": "off",
         "no-console": "off",
         "accessor-pairs": "error",
         "array-bracket-spacing": [
