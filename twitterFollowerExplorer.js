@@ -214,7 +214,7 @@ const sizeof = require("object-sizeof");
 
 const fs = require("fs");
 const { promisify } = require("util");
-// const readFileAsync = promisify(fs.readFile);
+const readdirAsync = promisify(fs.readdir);
 const renameFileAsync = promisify(fs.rename);
 const unlinkFileAsync = promisify(fs.unlink);
 // const statFileAsync = promisify(fs.stat);
@@ -1862,7 +1862,6 @@ async function loadConfigFile(params) {
     ));
     throw err;
   }
-
 }
 
 async function loadAllConfigFiles(){
