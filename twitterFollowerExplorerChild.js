@@ -1,7 +1,6 @@
  /*jslint node: true */
 /*jshint sub:true*/
 
-
 const TEST_MODE = false; // applies only to parent
 
 const MODULE_NAME = "tfcChild";
@@ -10,7 +9,7 @@ const MODULE_ID_PREFIX = "TFC";
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 
-const DEFAULT_IDLE_TIMEOUT = ONE_MINUTE;
+const DEFAULT_IDLE_TIMEOUT = 2*ONE_MINUTE;
 
 const DEFAULT_INPUTS_BINARY_MODE = true;
 const DEFAULT_FETCH_COUNT = 200;
@@ -39,8 +38,6 @@ const QUIT_WAIT_INTERVAL = ONE_SECOND;
 const SAVE_CACHE_DEFAULT_TTL = 60;
 const SAVE_FILE_QUEUE_INTERVAL = 5*ONE_SECOND;
 const FSM_TICK_INTERVAL = ONE_SECOND;
-
-const DROPBOX_LIST_FOLDER_LIMIT = 50;
 
 //=========================================================================
 // MODULE REQUIRES
@@ -223,6 +220,7 @@ statsObj.threeceeUser.endFetch = false;
 statsObj.threeceeUser.nextCursor = false;
 statsObj.threeceeUser.nextCursorValid = false;
 statsObj.threeceeUser.friendsFetched = 0;
+statsObj.threeceeUser.twitterRateLimitExceptionFlag = false;
 
 const TWITTER_RATE_LIMIT_RESOURCES = {
   application: ["rate_limit_status"],
@@ -553,39 +551,11 @@ function getElapsedTimeStamp(){
 // ==================================================================
 // DROPBOX
 // ==================================================================
-const fetch = require("isomorphic-fetch"); // or another library of choice.
-const Dropbox = require("dropbox").Dropbox;
 
 configuration.DROPBOX = {};
 
-configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
-configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY;
-configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
 configuration.DROPBOX.DROPBOX_CONFIG_FILE = process.env.DROPBOX_CONFIG_FILE || MODULE_NAME + "Config.json";
 configuration.DROPBOX.DROPBOX_STATS_FILE = process.env.DROPBOX_STATS_FILE || MODULE_NAME + "Stats.json";
-
-const dropboxRemoteClient = new Dropbox({ 
-  accessToken: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN,
-  fetch: fetch
-});
-
-const dropboxLocalClient = { // offline mode
-  filesListFolder: filesListFolderLocal,
-  filesUpload: function(){},
-  filesDownload: function(){},
-  filesGetMetadata: filesGetMetadataLocal,
-  filesDelete: function(){}
-};
-
-let dropboxClient;
-
-if (configuration.offlineMode) {
-  dropboxClient = dropboxLocalClient;
-}
-else {
-  dropboxClient = dropboxRemoteClient;
-}
-
 
 function filesListFolderLocal(options){
 
@@ -697,7 +667,6 @@ saveCache.on("set", function(file, fileObj) {
 function saveFile(params, callback){
 
   const fullPath = params.folder + "/" + params.file;
-  const limit = params.limit || DROPBOX_LIST_FOLDER_LIMIT;
 
   debug(chalkInfo("LOAD FOLDER " + params.folder));
   debug(chalkInfo("LOAD FILE " + params.file));
@@ -705,12 +674,12 @@ function saveFile(params, callback){
 
   const options = {};
 
-  if (params.localFlag) {
+  // if (params.localFlag) {
 
     const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
 
     showStats();
-    console.log(chalkBlue(MODULE_ID_PREFIX + " | ... SAVING DROPBOX LOCALLY"
+    console.log(chalkBlue(MODULE_ID_PREFIX + " | ... SAVING"
       + " | " + objSizeMBytes.toFixed(3) + " MB"
       + " | " + fullPath
     ));
@@ -718,7 +687,7 @@ function saveFile(params, callback){
     writeJsonFile(fullPath, params.obj, { mode: 0o777 }).
     then(function() {
 
-      console.log(chalkBlue(MODULE_ID_PREFIX + " | SAVED DROPBOX LOCALLY"
+      console.log(chalkBlue(MODULE_ID_PREFIX + " | SAVED"
         + " | " + objSizeMBytes.toFixed(3) + " MB"
         + " | " + fullPath
       ));
@@ -733,114 +702,12 @@ function saveFile(params, callback){
       ));
       if (callback !== undefined) { return callback(error); }
     });
-  }
-  else {
-
-    options.contents = JSON.stringify(params.obj, null, 2);
-    options.autorename = params.autorename || false;
-    options.mode = params.mode || "overwrite";
-    options.path = fullPath;
-
-    const dbFileUpload = function () {
-
-      dropboxClient.filesUpload(options).
-      then(function(){
-        debug(chalkLog("SAVED DROPBOX JSON | " + options.path));
-        if (callback !== undefined) { return callback(null); }
-      }).
-      catch(function(error){
-        if (error.status === 413){
-          console.error(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
-            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-            + " | ERROR: 413"
-            + " | ERROR: FILE TOO LARGE"
-          ));
-          if (callback !== undefined) { return callback(error.error_summary); }
-        }
-        else if (error.status === 429){
-          console.error(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
-            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-            + " | ERROR: TOO MANY WRITES"
-          ));
-          if (callback !== undefined) { return callback(error.error_summary); }
-        }
-        else if (error.status === 500){
-          console.error(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
-            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-            + " | ERROR: DROPBOX SERVER ERROR"
-          ));
-          if (callback !== undefined) { return callback(error.error_summary); }
-        }
-        else {
-          console.trace(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
-            + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-            + " | ERROR: " + error
-          ));
-          if (callback !== undefined) { return callback(error); }
-        }
-      });
-    };
-
-    if (options.mode === "add") {
-
-      dropboxClient.filesListFolder({path: params.folder, limit: limit}).
-      then(function(response){
-
-        debug(chalkLog("DROPBOX LIST FOLDER"
-          + " | ENTRIES: " + response.entries.length
-          + " | MORE: " + response.has_more
-          + " | PATH:" + options.path
-        ));
-
-        let fileExits = false;
-
-        async.each(response.entries, function(entry, cb){
-
-          console.log(chalkLog(MODULE_ID_PREFIX + " | DROPBOX FILE"
-            + " | " + params.folder
-            + " | LAST MOD: " + moment(new Date(entry.client_modified)).format(compactDateTimeFormat)
-            + " | " + entry.name
-          ));
-
-          if (entry.name === params.file) {
-            fileExits = true;
-          }
-
-          cb();
-
-        }, function(err){
-          if (err) {
-            console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR DROPBOX SAVE FILE: " + err));
-            if (callback !== undefined) { 
-              return callback(err, null);
-            }
-            return;
-          }
-          if (fileExits) {
-            console.log(chalkAlert(MODULE_ID_PREFIX + " | ... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
-            if (callback !== undefined) { callback(err, null); }
-          }
-          else {
-            console.log(chalkAlert(MODULE_ID_PREFIX + " | ... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
-            dbFileUpload();
-          }
-        });
-      }).
-      catch(function(err){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX FILES LIST FOLDER ERROR: " + err));
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX FILES LIST FOLDER ERROR\n" + jsonPrint(err)));
-        if (callback !== undefined) { callback(err, null); }
-      });
-    }
-    else {
-      dbFileUpload();
-    }
-  }
+  // }
 }
 
 function initSaveFileQueue(cnf) {
 
-  console.log(chalkLog(MODULE_ID_PREFIX + " | INIT DROPBOX SAVE FILE INTERVAL | " + msToTime(cnf.saveFileQueueInterval)));
+  console.log(chalkLog(MODULE_ID_PREFIX + " | INIT SAVE FILE INTERVAL | " + msToTime(cnf.saveFileQueueInterval)));
 
   clearInterval(saveFileQueueInterval);
 
@@ -2128,7 +1995,7 @@ function fsmStart(p) {
     const params = p || {};
     const interval = params.fsmTickInterval || configuration.fsmTickInterval;
 
-    console.log(chalkLog(MODULE_ID_PREFIX + " | FSM START | TICK INTERVAL | " + msToTime(interval)));
+    console.log(chalkLog(MODULE_ID_PREFIX + " | CHILD FSM START | TICK INTERVAL | " + msToTime(interval)));
 
     clearInterval(fsmTickInterval);
 
@@ -2206,7 +2073,9 @@ process.on("message", async function(m) {
     break;
 
     case "FETCH_USER_TWEETS":
-      m.userArray.forEach(function(user){
+
+      // m.userArray.forEach(function(user){
+      for (const user of m.userArray){
 
         if (m.priority) {
 
@@ -2229,8 +2098,18 @@ process.on("message", async function(m) {
         else {
           fetchUserTweetsQueue.push(user);
           statsObj.queues.fetchUserTweetsQueue.size = fetchUserTweetsQueue.length;
+
+          console.log(chalkBlue(MODULE_ID_PREFIX
+            + " | >>> FETCH_USER_TWEETS"
+            + " | PRIORITY: " + m.priority
+            + " | END FLAG: " + m.fetchUserTweetsEndFlag
+            + " | USER ARRAY: " + m.userArray.length
+            + " | FUTQ: " + fetchUserTweetsQueue.length
+            + " | @" + user.screenName
+          ));
+
         }
-      });
+      }
 
       if (m.fetchUserTweetsEndFlag) {
         statsObj.fetchUserTweetsEndFlag = m.fetchUserTweetsEndFlag;
