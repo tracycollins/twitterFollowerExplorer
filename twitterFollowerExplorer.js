@@ -3935,8 +3935,8 @@ function initUserDbUpdateQueueInterval(interval) {
           statsObj.users.dbUpdated += 1;
 
           if (configuration.verbose || configuration.testMode || (statsObj.users.dbUpdated % 100 === 0)){
-            console.log(chalkInfo("TFE | US UPD<"
-              + "[ DB UPDATED: " + statsObj.users.dbUpdated + "]"
+            console.log(chalkInfo("TFE | USER UPDATE"
+              + " [" + statsObj.users.dbUpdated + " UPDATED]"
               + " | " + updatedUserObj.nodeId
               + " | TW: " + updatedUserObj.isTwitterUser
               + " | C: " + updatedUserObj.category
