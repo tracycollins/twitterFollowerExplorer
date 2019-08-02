@@ -336,7 +336,6 @@ function initActivateNetworkInterval(interval){
             await nnTools.printNetworkResults();
           }
 
-
           if (configuration.testMode 
             || configuration.verbose
             || (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank)
