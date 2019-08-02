@@ -2099,14 +2099,16 @@ process.on("message", async function(m) {
           fetchUserTweetsQueue.push(user);
           statsObj.queues.fetchUserTweetsQueue.size = fetchUserTweetsQueue.length;
 
-          console.log(chalkBlue(MODULE_ID_PREFIX
-            + " | >>> FETCH_USER_TWEETS"
-            + " | PRIORITY: " + m.priority
-            + " | END FLAG: " + m.fetchUserTweetsEndFlag
-            + " | USER ARRAY: " + m.userArray.length
-            + " | FUTQ: " + fetchUserTweetsQueue.length
-            + " | @" + user.screenName
-          ));
+          if (configuration.verbose || configuration.testMode || (fetchUserTweetsQueue.length % 100 === 0)){
+            console.log(chalkBlue(MODULE_ID_PREFIX
+              + " | >>> FETCH_USER_TWEETS"
+              + " | PRIORITY: " + m.priority
+              + " | END FLAG: " + m.fetchUserTweetsEndFlag
+              + " | USER ARRAY: " + m.userArray.length
+              + " | FUTQ: " + fetchUserTweetsQueue.length
+              + " | @" + user.screenName
+            ));
+          }
 
         }
       }
