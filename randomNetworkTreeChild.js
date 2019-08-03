@@ -25,8 +25,6 @@ const MAX_Q_SIZE = 2000;
 const defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
-const HashMap = require("hashmap").HashMap;
-const networksHashMap = new HashMap();
 const activateNetworkQueue = [];
 let maxQueueFlag = false;
 
@@ -252,6 +250,9 @@ function showStats(options){
     console.log(chalk.gray("RNT | == * == S"
       + " | E: " + statsObj.elapsed
       + " | S: " + moment(parseInt(statsObj.startTime)).format(compactDateTimeFormat)
+      + " | ANQ: " + activateNetworkQueue.length
+      + " | HEAP: " + statsObj.heap.toFixed(3) + " MB"
+      + " | MAX HEAP: " + statsObj.maxHeap.toFixed(3) + " MB"
     ));
   }
 }
@@ -297,13 +298,17 @@ function initActivateNetworkInterval(interval){
     messageObj.category = "none";
     messageObj.categoryAuto = "none";
 
+    let activateNetworkObj = {};
+    let activateNetworkResults = {};
+    let currentBestNetworkStats = {};
+
     activateNetworkInterval = setInterval(async function(){ 
 
       if (statsObj.networksLoaded && (activateNetworkQueue.length > 0) && !activateNetworkIntervalBusy) {
 
         activateNetworkIntervalBusy = true;
 
-        const activateNetworkObj = activateNetworkQueue.shift();
+        activateNetworkObj = activateNetworkQueue.shift();
 
         messageObj.user = activateNetworkObj.user;
         if (!messageObj.user.friends || (messageObj.user.friends === undefined)){
@@ -312,15 +317,14 @@ function initActivateNetworkInterval(interval){
 
         try {
 
-          const activateNetworkResults = await nnTools.activate({ user: activateNetworkObj.user });
+          activateNetworkResults = await nnTools.activate({ user: activateNetworkObj.user });
 
-          const currentBestNetworkStats = await nnTools.updateNetworkStats({
+          currentBestNetworkStats = await nnTools.updateNetworkStats({
             user: activateNetworkObj.user,
             networkOutput: activateNetworkResults.networkOutput, 
             expectedCategory: activateNetworkResults.user.category
           });
 
-          // if (statsObj.currentBestNetwork.matchRate < currentBestNetworkStats.matchRate) {
           if (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank){
             printNetworkObj("NNT | +++ UPDATE BEST NETWORK"
               + " | @" + messageObj.user.screenName 
@@ -360,9 +364,14 @@ function initActivateNetworkInterval(interval){
 
           messageObj.queue = activateNetworkQueue.length;
 
-          process.send(messageObj);
+          process.send(messageObj, function(err){
+            if (err) { 
+              console.trace(chalkError("RNT | *** SEND ERROR | NETWORK_OUTPUT | " + err));
+              quit("SEND NETWORK_OUTPUT ERROR");
+            }
+            activateNetworkIntervalBusy = false;
+          });
 
-          activateNetworkIntervalBusy = false;
         }
         catch(err){
 
@@ -377,7 +386,7 @@ function initActivateNetworkInterval(interval){
         if (maxQueueFlag && (activateNetworkQueue.length < MAX_Q_SIZE)) {
           process.send({op: "QUEUE_READY", queue: activateNetworkQueue.length}, function(err){
             if (err) { 
-              console.trace(chalkError("RNT | SEND ERROR | QUEUE_READY | " + err));
+              console.trace(chalkError("RNT | *** SEND ERROR | QUEUE_READY | " + err));
               quit("SEND QUEUE_READY ERROR");
             }
           });
@@ -386,7 +395,7 @@ function initActivateNetworkInterval(interval){
         else if (activateNetworkQueue.length === 0){
           process.send({op: "QUEUE_EMPTY", queue: activateNetworkQueue.length}, function(err){
             if (err) { 
-              console.trace(chalkError("RNT | SEND ERROR | QUEUE_EMPTY | " + err));
+              console.trace(chalkError("RNT | *** SEND ERROR | QUEUE_EMPTY | " + err));
               quit("SEND QUEUE_EMPTY ERROR");
             }
           });
@@ -395,7 +404,7 @@ function initActivateNetworkInterval(interval){
         else if (!maxQueueFlag && (activateNetworkQueue.length >= MAX_Q_SIZE)) {
           process.send({op: "QUEUE_FULL", queue: activateNetworkQueue.length}, function(err){
             if (err) { 
-              console.trace(chalkError("RNT | SEND ERROR | QUEUE_FULL | " + err));
+              console.trace(chalkError("RNT | *** SEND ERROR | QUEUE_FULL | " + err));
               quit("SEND QUEUE_FULL ERROR");
             }
           });
@@ -404,7 +413,7 @@ function initActivateNetworkInterval(interval){
         else {
           process.send({op: "QUEUE_STATS", queue: activateNetworkQueue.length}, function(err){
             if (err) { 
-              console.trace(chalkError("RNT | SEND ERROR | QUEUE_STATS | " + err));
+              console.trace(chalkError("RNT | *** SEND ERROR | QUEUE_STATS | " + err));
               quit("SEND QUEUE_STATS ERROR");
             }
           });
@@ -449,9 +458,6 @@ function busy(){
 }
 
 function resetStats(callback){
-
-  networksHashMap.clear();
-  statsObj.loadedNetworks = {};
 
   statsObj.categorize.endTime = moment().valueOf();
   statsObj.categorize.bestNetwork = statsObj.bestNetwork;
@@ -528,7 +534,6 @@ process.on("message", async function(m) {
     break;
 
     case "LOAD_MAX_INPUTS_HASHMAP":
-      // tcUtils.setMaxInputHashMap(m.maxInputHashMap);
       await nnTools.setMaxInputHashMap(m.maxInputHashMap);
       console.log(chalkLog("RNT | LOAD_MAX_INPUTS_HASHMAP"
         + " | " + Object.keys(tcUtils.getMaxInputHashMap())
@@ -536,11 +541,9 @@ process.on("message", async function(m) {
     break;
 
     case "LOAD_NORMALIZATION":
-      // tcUtils.setNormalization(m.normalization);
       await nnTools.setNormalization(m.normalization);
       console.log(chalkLog("RNT | LOAD_NORMALIZATION"
         + "\n" + jsonPrint(m.normalization)
-        // + "\n" + jsonPrint(tcUtils.getNormalization())
       ));
     break;
 
@@ -587,7 +590,8 @@ process.on("message", async function(m) {
     case "GET_STATS":
       try {
         await nnTools.printNetworkResults({title: "GET STATS"});
-        process.send({ op: "STATS", loadedNetworks: statsObj.loadedNetworks, queue: activateNetworkQueue.length }, function(err){
+        const stats = await nnTools.getNetworkStats();
+        process.send({ op: "STATS", loadedNetworks: stats, queue: activateNetworkQueue.length }, function(err){
           if (err) { 
             console.log(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
             console.error.bind(console, "RNT | *** SEND ERROR | STATS | " + err);
@@ -690,16 +694,11 @@ process.on("message", async function(m) {
 const DROPBOX_RNT_CONFIG_FILE = process.env.DROPBOX_RNT_CONFIG_FILE || "randomNetworkTreeConfig.json";
 const DROPBOX_RNT_STATS_FILE = process.env.DROPBOX_RNT_STATS_FILE || "randomNetworkTreeStats.json";
 
-const dropboxConfigFolder = "/config/utility";
-const dropboxConfigFile = hostname + "_" + DROPBOX_RNT_CONFIG_FILE;
 const statsFolder = "/stats/" + hostname;
 const statsFile = DROPBOX_RNT_STATS_FILE;
 
 console.log("RNT | DROPBOX_RNT_CONFIG_FILE: " + DROPBOX_RNT_CONFIG_FILE);
 console.log("RNT | DROPBOX_RNT_STATS_FILE : " + DROPBOX_RNT_STATS_FILE);
-
-debug("dropboxConfigFolder : " + dropboxConfigFolder);
-debug("dropboxConfigFile : " + dropboxConfigFile);
 
 debug("statsFolder : " + statsFolder);
 debug("statsFile : " + statsFile);
