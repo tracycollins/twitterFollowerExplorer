@@ -4855,6 +4855,7 @@ async function userProfileChangeHistogram(params) {
           }).
           then(function(imageParseResults){
             if (imageParseResults) { 
+              user.bannerImageAnalyzed = user.bannerImageUrl; 
               bannerImageAnalyzedFlag = true;
               cb(null, imageParseResults);
             }
@@ -4895,6 +4896,7 @@ async function userProfileChangeHistogram(params) {
           }).
           then(function(imageParseResults){
             if (imageParseResults) { 
+              user.profileImageAnalyzed = user.profileImageUrl; 
               profileImageAnalyzedFlag = true;
               cb(null, imageParseResults);
             }
@@ -5045,21 +5047,20 @@ async function updateUserHistograms(params) {
 
     if (results && results.languageAnalyzedFlag) {
       user.languageAnalyzed = true;
-      user.markModified("languageAnalyzed");
     }
 
     if (results && results.bannerImageAnalyzedFlag) {
       user.bannerImageAnalyzed = user.bannerImageUrl;
       user.previousBannerImageUrl = user.bannerImageUrl;
-      user.markModified("bannerImageAnalyzed");
-      user.markModified("previousBannerImageUrl");
+      // user.markModified("bannerImageAnalyzed");
+      // user.markModified("previousBannerImageUrl");
     }
 
     if (results && results.profileImageAnalyzedFlag) {
       user.profileImageAnalyzed = user.profileImageUrl;
       user.previousProfileImageUrl = user.profileImageUrl;
-      user.markModified("profileImageAnalyzed");
-      user.markModified("previousProfileImageUrl");
+      // user.markModified("profileImageAnalyzed");
+      // user.markModified("previousProfileImageUrl");
     }
 
     user.lastHistogramTweetId = user.statusId;
