@@ -4419,7 +4419,7 @@ async function analyzeLanguage(params){
       results.sentiment.magnitude = sentiment.magnitude;
       results.sentiment.comp = 100*sentiment.score*sentiment.magnitude;
 
-      console.log(chalkInfo("TFE | LANG SENTIMENT"
+      console.log(chalkInfo("TFE | +++ LANG SENTIMENT"
         + " | M: " + results.sentiment.magnitude.toFixed(5)
         + " | S: " + results.sentiment.score.toFixed(5)
         + " | C: " + results.sentiment.comp.toFixed(5)
