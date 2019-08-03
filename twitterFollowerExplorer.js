@@ -4841,7 +4841,7 @@ async function userProfileChangeHistogram(params) {
         }
 
         if (
-            (configuration.enableImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl !== user.bannerImageAnalyzed)
+            (configuration.enableImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl != user.bannerImageAnalyzed)
           || (configuration.forceImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined))
           )
         ){
@@ -4882,7 +4882,7 @@ async function userProfileChangeHistogram(params) {
         }
 
         if (
-            (configuration.enableImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined) && (user.profileImageUrl !== user.profileImageAnalyzed)
+            (configuration.enableImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined) && (user.profileImageUrl != user.profileImageAnalyzed)
           || (configuration.forceImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined))
           )
         ){
