@@ -217,12 +217,9 @@ const sizeof = require("object-sizeof");
 
 const fs = require("fs");
 const { promisify } = require("util");
-// const readdirAsync = promisify(fs.readdir);
 const renameFileAsync = promisify(fs.rename);
 const unlinkFileAsync = promisify(fs.unlink);
-// const statFileAsync = promisify(fs.stat);
 
-// const parseJson = require("parse-json");
 const debug = require("debug")("TFE");
 const util = require("util");
 const deepcopy = require("deep-copy");
@@ -5615,9 +5612,9 @@ async function initProcessUserQueueInterval(interval) {
           return;
         }
 
-        const user = await global.globalUser.findOne({nodeId: mObj.nodeId});
+        const u = await global.globalUser.findOne({nodeId: mObj.nodeId});
 
-        if (!user) {
+        if (!u) {
           console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
             + " | NID: " + mObj.nodeId
             + " | @" + mObj.screenName
@@ -5626,6 +5623,8 @@ async function initProcessUserQueueInterval(interval) {
           statsObj.queues.processUserQueue.busy = false;
           return;
         }
+
+        const user = await tcUtils.encodeHistogramUrls({user: u});
 
         if (configuration.verbose){
           console.log(chalkLog("TFE | FOUND USER DB"
