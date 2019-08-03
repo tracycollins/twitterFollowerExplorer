@@ -4676,57 +4676,6 @@ async function userProfileChangeHistogram(params) {
 
   const user = params.user;
 
-  let sentimentHistogram = {};
-  sentimentHistogram.sentiment = {};
-
-  if (!userProfileChanges) {
-
-    if (configuration.enableLanguageAnalysis
-      && !statsObj.languageQuotaFlag
-      && (!user.profileHistograms.sentiment 
-        || (user.profileHistograms.sentiment === undefined)
-        || (Object.keys(user.profileHistograms.sentiment).length === 0)
-        )
-    ) {
-
-      const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
-
-      try{
-        userProfileChanges = [];
-        userProfileChanges.push("sentiment");
-        sentimentHistogram = await analyzeLanguage({screenName: user.screenName, text: profileText});
-        languageAnalyzedFlag = true;
-        statsObj.languageQuotaFlag = false;
-      }
-      catch(err){
-        if (err.code === 3) {
-          console.log(chalkAlert("TFE | UNSUPPORTED LANG"
-            + " | NID: " + user.nodeId
-            + " | @" + user.screenName
-            + " | " + err
-          ));
-        }
-        else if (err.code === 8) {
-          console.error(chalkAlert("TFE"
-            + " | " + getTimeStamp()
-            + " | LANGUAGE QUOTA"
-            + " | RESOURCE_EXHAUSTED"
-            + " | NID: " + user.nodeId
-            + " | @" + user.screenName
-          ));
-          statsObj.languageQuotaFlag = moment().valueOf();
-          startQuotaTimeOutTimer();
-        }
-        else {
-          console.error(chalkError("TFE | *** LANGUAGE TEXT ERROR"
-            + " | " + err
-            + "\n" + jsonPrint(err)
-          ));
-        }
-      }
-    }
-  }
-
   let text = "";
   const urlsHistogram = {};
   urlsHistogram.urls = {};
@@ -4734,6 +4683,58 @@ async function userProfileChangeHistogram(params) {
   const locationsHistogram = {};
   locationsHistogram.locations = {};
 
+  let sentimentHistogram = {};
+  sentimentHistogram.sentiment = {};
+
+  if (!userProfileChanges
+    && configuration.enableLanguageAnalysis
+    && !statsObj.languageQuotaFlag
+    && (!user.profileHistograms.sentiment 
+      || (user.profileHistograms.sentiment === undefined)
+      || (Object.keys(user.profileHistograms.sentiment).length === 0)
+      )
+  ) {
+
+    userProfileChanges = [];
+    userProfileChanges.push("sentiment");
+
+    const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
+
+    try{
+      // userProfileChanges = [];
+      // userProfileChanges.push("sentiment");
+      sentimentHistogram = await analyzeLanguage({screenName: user.screenName, text: profileText});
+      languageAnalyzedFlag = true;
+      statsObj.languageQuotaFlag = false;
+    }
+    catch(err){
+      if (err.code === 3) {
+        console.log(chalkAlert("TFE | UNSUPPORTED LANG"
+          + " | NID: " + user.nodeId
+          + " | @" + user.screenName
+          + " | " + err
+        ));
+      }
+      else if (err.code === 8) {
+        console.error(chalkAlert("TFE"
+          + " | " + getTimeStamp()
+          + " | LANGUAGE QUOTA"
+          + " | RESOURCE_EXHAUSTED"
+          + " | NID: " + user.nodeId
+          + " | @" + user.screenName
+        ));
+        statsObj.languageQuotaFlag = moment().valueOf();
+        startQuotaTimeOutTimer();
+      }
+      else {
+        console.error(chalkError("TFE | *** LANGUAGE TEXT ERROR"
+          + " | " + err
+          + "\n" + jsonPrint(err)
+        ));
+      }
+    }
+  }
+  
   async.eachSeries(userProfileChanges, function(userProp, cb){
 
     let userPropValue = false;
@@ -4823,7 +4824,6 @@ async function userProfileChangeHistogram(params) {
         console.log(chalkError("TFE | UNKNOWN USER PROPERTY: " + userProp));
         return cb(new Error("UNKNOWN USER PROPERTY: " + userProp));
     }
-
   }, function(err){
 
     if (err) {
@@ -5002,6 +5002,7 @@ async function userProfileChangeHistogram(params) {
       });
     });
   });
+
 }
 
 async function updateUserHistograms(params) {
@@ -5047,6 +5048,11 @@ async function updateUserHistograms(params) {
 
     if (results && results.languageAnalyzedFlag) {
       user.languageAnalyzed = true;
+      console.log(chalkLog("TFE | updateUserHistograms | LANG ANALYZED"
+        + " | " + user.userId
+        + " | @" + user.screenName
+        + " | LANG ANZD: " + user.languageAnalyzed
+      ));
     }
 
     if (results && results.bannerImageAnalyzedFlag) {
@@ -5075,8 +5081,8 @@ async function updateUserHistograms(params) {
       console.log(chalkLog("TFE | TEST MODE | ADD RANDOM FRNDs IDs"
         + " | " + savedUser.userId
         + " | @" + savedUser.screenName
+        + " | LANG ANZD: " + savedUser.languageAnalyzed
         + " | " + savedUser.friends.length + "FRNDs"
-        // + "\n" + user.friends
       ));
     }
 
