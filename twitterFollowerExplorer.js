@@ -5051,11 +5051,15 @@ async function updateUserHistograms(params) {
     if (results && results.bannerImageAnalyzedFlag) {
       user.bannerImageAnalyzed = user.bannerImageUrl;
       user.previousBannerImageUrl = user.bannerImageUrl;
+      user.markModified("bannerImageAnalyzed");
+      user.markModified("previousBannerImageUrl");
     }
 
     if (results && results.profileImageAnalyzedFlag) {
       user.profileImageAnalyzed = user.profileImageUrl;
       user.previousProfileImageUrl = user.profileImageUrl;
+      user.markModified("profileImageAnalyzed");
+      user.markModified("previousProfileImageUrl");
     }
 
     user.lastHistogramTweetId = user.statusId;
@@ -5626,6 +5630,43 @@ async function initProcessUserQueueInterval(interval) {
 
         const user = await tcUtils.encodeHistogramUrls({user: u});
 
+        if (!user.latestTweets || (user.latestTweets === undefined)) { 
+          user.latestTweets = [];
+        }
+        if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { 
+          user.tweetHistograms = {}; 
+        }
+        if (!user.profileHistograms || (user.profileHistograms === undefined)) { 
+          user.profileHistograms = {}; 
+        }
+
+        user.markModified("profileHistograms");
+        user.markModified("tweetHistograms");
+        user.markModified("latestTweets");
+
+        if (user.profileHistograms.sentiment && (user.profileHistograms.sentiment !== undefined)) {
+
+          if (user.profileHistograms.sentiment.magnitude !== undefined){
+            if (user.profileHistograms.sentiment.magnitude < 0){
+              console.log(chalkAlert("TFE | !!! NORMALIZATION MAG LESS THAN 0 | CLAMPED: " + user.profileHistograms.sentiment.magnitude));
+              user.profileHistograms.sentiment.magnitude = 0;
+            }
+          }
+
+          if (user.profileHistograms.sentiment.score !== undefined){
+            if (user.profileHistograms.sentiment.score < -1.0){
+              console.log(chalkAlert("TFE | !!! NORMALIZATION SCORE LESS THAN -1.0 | CLAMPED: " + user.profileHistograms.sentiment.score));
+              user.profileHistograms.sentiment.score = -1.0;
+            }
+
+            if (user.profileHistograms.sentiment.score > 1.0){
+              console.log(chalkAlert("TFE | !!! NORMALIZATION SCORE GREATER THAN 1.0 | CLAMPED: " + user.profileHistograms.sentiment.score));
+              user.profileHistograms.sentiment.score = 1.0;
+            }
+          }
+
+        }
+
         if (configuration.verbose){
           console.log(chalkLog("TFE | FOUND USER DB"
             + " | " + printUser({user: user})
@@ -5660,18 +5701,6 @@ async function initProcessUserQueueInterval(interval) {
           user.lastSeen = mObj.latestTweets[0].created_at;
         }
 
-        if (!user.latestTweets || (user.latestTweets === undefined)) { 
-          user.latestTweets = [];
-          user.markModified("latestTweets");
-        }
-        if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { 
-          user.tweetHistograms = {}; 
-          user.markModified("tweetHistograms");
-        }
-        if (!user.profileHistograms || (user.profileHistograms === undefined)) { 
-          user.profileHistograms = {}; 
-          user.markModified("profileHistograms");
-        }
 
         defaults(user.tweets, userTweetsDefault);
         user.markModified("tweets");
