@@ -1702,7 +1702,6 @@ const hostInputsConfigFile = hostname + "_networkInputsConfig.json";
 
 const testDataUserFolder = configHostFolder + "/test/testData/user";
 
-
 function filesListFolder(params){
   return new Promise(function(resolve, reject) {
 
@@ -1984,7 +1983,6 @@ async function loadAllConfigFiles(){
   configuration.twitterUsers = _.uniq(configuration.twitterUsers);
 
   return;
-
 }
 
 
