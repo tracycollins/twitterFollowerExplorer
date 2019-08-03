@@ -3924,7 +3924,7 @@ function initUserDbUpdateQueueInterval(interval) {
               + " [UDUQ: " + userDbUpdateQueue.length + "]"
               + " [" + statsObj.users.dbUpdated + " UPDATED]"
               + " | " + updatedUserObj.nodeId
-              + " | TW: " + updatedUserObj.isTwitterUser
+              + " | LANG ANZD: " + updatedUserObj.languageAnalyzed
               + " | C: " + updatedUserObj.category
               + " | CA: " + updatedUserObj.categoryAuto
               + " | @" + updatedUserObj.screenName
@@ -5029,28 +5029,23 @@ async function updateUserHistograms(params) {
 
     const results = await userProfileChangeHistogram({user: user});
 
-    if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
+    if (results && results.userProfileChanges) {
 
-      if (results.languageAnalyzedFlag) {
-        user.languageAnalyzed = true;
-        user.markModified("languageAnalyzed");
-      }
-
-      if (results.userProfileChanges) {
-
-        // results.userProfileChanges.forEach(function(prop){
-        for (const prop of results.userProfileChanges){
-          if (user[prop] && (user[prop] !== undefined)){
-            console.log(chalkLog("TFE | -<- PROP CHANGE | @" + user.screenName 
-              + " | " + prop + " -<- " + user[prop]
-            ));
-          }
+      for (const prop of results.userProfileChanges){
+        if (user[prop] && (user[prop] !== undefined)){
+          console.log(chalkLog("TFE | -<- PROP CHANGE | @" + user.screenName 
+            + " | " + prop + " -<- " + user[prop]
+          ));
         }
-
       }
 
       user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.histograms });
       user.markModified("profileHistograms");
+    }
+
+    if (results && results.languageAnalyzedFlag) {
+      user.languageAnalyzed = true;
+      user.markModified("languageAnalyzed");
     }
 
     if (results && results.bannerImageAnalyzedFlag) {
