@@ -5031,6 +5031,11 @@ async function updateUserHistograms(params) {
 
     if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
 
+      if (results.languageAnalyzedFlag) {
+        user.languageAnalyzed = true;
+        user.markModified("languageAnalyzed");
+      }
+
       if (results.userProfileChanges) {
 
         // results.userProfileChanges.forEach(function(prop){
