@@ -5027,7 +5027,7 @@ async function updateUserHistograms(params) {
 
   try {
 
-    const results = userProfileChangeHistogram({user: user});
+    const results = await userProfileChangeHistogram({user: user});
 
     if (results && (results.userProfileChanges || results.languageAnalyzedFlag)) {
 
@@ -5745,65 +5745,6 @@ async function initProcessUserQueueInterval(interval) {
 
   return;
 }
-
-// async function initUnfollowableUserSet(){
-
-//   try {
-
-//     console.log(chalkLog("TFE | ... INIT UNFOLLOWABLE USERS"));
-
-//     const unfollowableUserSetObj = await tcUtils.loadFile({
-//       folder: configDefaultFolder, 
-//       file: unfollowableUserFile, 
-//       loadLocalFile: true,
-//       noErrorNotFound: true
-//     });
-
-//     if (unfollowableUserSetObj) {
-
-//       unfollowableUserSet = new Set(unfollowableUserSetObj.userIds);
-
-//       console.log(chalkBlue("TFE | INIT UNFOLLOWABLE USERS | " + unfollowableUserSet.size + " USERS"));
-
-//       return unfollowableUserSet;
-//     }
-//   }
-//   catch(err){
-//     if (err.code === "ENOTFOUND") {
-//       console.log(chalkError("TFE | *** LOAD UNFOLLOWABLE USERS ERROR: FILE NOT FOUND:  " 
-//         + configDefaultFolder + "/" + unfollowableUserFile
-//       ));
-//     }
-//     else {
-//       console.log(chalkError("TFE | *** LOAD UNFOLLOWABLE USERS ERROR: " + err));
-//     }
-
-//     throw err;
-//   }
-// }
-
-// function resetGlobalHistograms(params){
-
-//   return new Promise(function(resolve, reject){
-
-//     if (!params.inputTypes) {
-//       return reject(new Error("inputTypes UNDEFINED"));
-//     }
-
-//     globalHistograms = {};
-//     statsObj.histograms = {};
-
-//     params.inputTypes.forEach(function(type){
-
-//       globalHistograms[type] = {};
-//       statsObj.histograms[type] = {};
-
-//     });
-
-//     resolve();
-
-//   });
-// }
 
 statsObj.fsmState = "RESET";
 
