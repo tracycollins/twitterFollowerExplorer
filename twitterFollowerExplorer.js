@@ -4686,6 +4686,9 @@ async function userProfileChangeHistogram(params) {
   let sentimentHistogram = {};
   sentimentHistogram.sentiment = {};
 
+
+  // KLUDGE !!!! THIS IS PROBLEMATIC:  async.eachSeries probably executes before the if block below
+
   if (!userProfileChanges
     && configuration.enableLanguageAnalysis
     && !statsObj.languageQuotaFlag
@@ -5043,7 +5046,7 @@ async function updateUserHistograms(params) {
       }
 
       user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.histograms });
-      user.markModified("profileHistograms");
+      // user.markModified("profileHistograms");
     }
 
     if (results && results.languageAnalyzedFlag) {
@@ -5072,22 +5075,22 @@ async function updateUserHistograms(params) {
     user.lastHistogramTweetId = user.statusId;
     user.lastHistogramQuoteId = user.quotedStatusId;
 
-    const savedUser = await user.save();
+    // const savedUser = await user.save();
 
-    if (configuration.testMode && savedUser.friends.length === 0) {
+    // if (configuration.testMode && savedUser.friends.length === 0) {
 
-      savedUser.friends = Array.from({ length: randomInt(1,47) }, () => (Math.floor(Math.random() * 123456789).toString()));
+    //   savedUser.friends = Array.from({ length: randomInt(1,47) }, () => (Math.floor(Math.random() * 123456789).toString()));
 
-      console.log(chalkLog("TFE | TEST MODE | ADD RANDOM FRNDs IDs"
-        + " | " + savedUser.userId
-        + " | @" + savedUser.screenName
-        + " | LANG ANZD: " + savedUser.languageAnalyzed
-        + " | " + savedUser.friends.length + "FRNDs"
-      ));
-    }
+    //   console.log(chalkLog("TFE | TEST MODE | ADD RANDOM FRNDs IDs"
+    //     + " | " + savedUser.userId
+    //     + " | @" + savedUser.screenName
+    //     + " | LANG ANZD: " + savedUser.languageAnalyzed
+    //     + " | " + savedUser.friends.length + "FRNDs"
+    //   ));
+    // }
 
-    await updateGlobalHistograms({user: savedUser});
-    return savedUser;
+    await updateGlobalHistograms({user: user});
+    return user;
 
   }
   catch(err){
@@ -5150,7 +5153,7 @@ async function fetchUserTweets(params){
       ));
       
       user.tweetHistograms = {};
-      user.markModified("tweetHistograms");
+      // user.markModified("tweetHistograms");
     }
 
     if (params.force) {
@@ -5159,7 +5162,7 @@ async function fetchUserTweets(params){
     }
 
     defaults(user.tweets, userTweetsDefault);
-    user.markModified("tweets");
+    // user.markModified("tweets");
 
     const childParams = {};
 
@@ -5178,7 +5181,7 @@ async function fetchUserTweets(params){
       const latestTweets = await processPriorityUserTweets({user: user});
       if (latestTweets) { 
         user.latestTweets = latestTweets;
-        user.markModified("latestTweets");
+        // user.markModified("latestTweets");
       }
       return user;
     }
@@ -5304,8 +5307,8 @@ function processUserTweetArray(params){
         ));
       }
 
-      user.markModified("tweets");
-      user.markModified("tweetHistograms");
+      // user.markModified("tweets");
+      // user.markModified("tweetHistograms");
 
       resolve(user);
     });
@@ -5383,7 +5386,7 @@ async function updateUserTweets(params){
     }
 
     user.tweetHistograms = {};
-    user.markModified("tweetHistograms");
+    // user.markModified("tweetHistograms");
     user = await fetchUserTweets({user: user, force: true});
     userTweetFetchSet.add(user.nodeId);
   }
@@ -5442,6 +5445,7 @@ async function processUser(params) {
     prevPropsUser.markModified("tweetHistograms");
     prevPropsUser.markModified("profileHistograms");
     prevPropsUser.markModified("tweets");
+    prevPropsUser.markModified("latestTweets");
 
     const savedUser = await prevPropsUser.save();
 
@@ -5647,9 +5651,9 @@ async function initProcessUserQueueInterval(interval) {
           user.profileHistograms = {}; 
         }
 
-        user.markModified("profileHistograms");
-        user.markModified("tweetHistograms");
-        user.markModified("latestTweets");
+        // user.markModified("profileHistograms");
+        // user.markModified("tweetHistograms");
+        // user.markModified("latestTweets");
 
         if (user.profileHistograms.sentiment && (user.profileHistograms.sentiment !== undefined)) {
 
@@ -5710,7 +5714,7 @@ async function initProcessUserQueueInterval(interval) {
 
 
         defaults(user.tweets, userTweetsDefault);
-        user.markModified("tweets");
+        // user.markModified("tweets");
 
         if (!mObj.latestTweets || (mObj.latestTweets === undefined)) { mObj.latestTweets = []; }
 
