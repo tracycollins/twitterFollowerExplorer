@@ -197,7 +197,7 @@ const languageClient = new Language.LanguageServiceClient();
 const path = require("path");
 const watch = require("watch");
 const defaults = require("object.defaults");
-const randomInt = require("random-int");
+// const randomInt = require("random-int");
 const urlParse = require("url-parse");
 const moment = require("moment");
 const HashMap = require("hashmap").HashMap;
@@ -2905,7 +2905,7 @@ async function pruneGlobalHistograms(p) {
         inputTypeMin = (configuration.testMode) ? 10 : DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL;
       break;
       default:
-        inputTypeMin = DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
+        inputTypeMin = (configuration.testMode) ? 2 : DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
     }
 
     async.each(Object.keys(globalHistograms[inputType]), function(item, cb1) {
@@ -4206,9 +4206,8 @@ function emptyHistogram(histogram){
     if (histogram === undefined) { return resolve(true); }
     if (histogram === {}) { return resolve(true); }
 
-    // Object.keys(histogram).forEach(function(histogramType){
     for (const histogramType of Object.keys(histogram)){
-      if ((histogramType !== "sentiment") && (Object.keys(histogram[histogramType]).length > 0)) { return resolve(false); }
+      if (Object.keys(histogram[histogramType]).length > 0) { return resolve(false); }
     }
 
     resolve(true);
@@ -4264,7 +4263,7 @@ async function checkUserProfileChanged(params) {
   if (checkPropertyChange(user, "screenName")) { results.push("screenName"); }
   if (checkPropertyChange(user, "url")) { results.push("url"); }
 
-  if (results.length === 0) { return; }
+  // if (results.length === 0) { return; }
   return results;
 }
 
@@ -4373,8 +4372,7 @@ async function analyzeLanguage(params){
       type: "PLAIN_TEXT"
     };
 
-    const results = {};
-    results.sentiment = {};
+    const sentimentHistogram = {};
 
     let responses;
 
@@ -4384,21 +4382,21 @@ async function analyzeLanguage(params){
 
       const sentiment = responses[0].documentSentiment;
 
-      results.sentiment.score = sentiment.score;
-      results.sentiment.magnitude = sentiment.magnitude;
-      results.sentiment.comp = 100*sentiment.score*sentiment.magnitude;
+      sentimentHistogram.score = sentiment.score;
+      sentimentHistogram.magnitude = sentiment.magnitude;
+      sentimentHistogram.comp = 100*sentiment.score*sentiment.magnitude;
 
       console.log(chalkInfo("TFE | +++ LANG SENTIMENT"
-        + " | M: " + results.sentiment.magnitude.toFixed(5)
-        + " | S: " + results.sentiment.score.toFixed(5)
-        + " | C: " + results.sentiment.comp.toFixed(5)
+        + " | M: " + sentimentHistogram.magnitude.toFixed(5)
+        + " | S: " + sentimentHistogram.score.toFixed(5)
+        + " | C: " + sentimentHistogram.comp.toFixed(5)
         + " | @" + params.screenName
       ));
 
       statsObj.analyzer.analyzed += 1;
       statsObj.analyzer.total += 1;
 
-      return results;
+      return sentimentHistogram;
 
     }
     catch(err){
@@ -4634,61 +4632,42 @@ async function processLocationChange(params){
   }
 }
 
-async function userProfileChangeHistogram(params) {
-
-  let userProfileChanges = false;
-  let bannerImageAnalyzedFlag = false;
-  let languageAnalyzedFlag = false;
-  let profileImageAnalyzedFlag = false;
-
-  userProfileChanges = await checkUserProfileChanged(params);
+async function userLanguageSentiment(params){
 
   const user = params.user;
 
-  let text = "";
-  const urlsHistogram = {};
-  urlsHistogram.urls = {};
+  const profileHistogramsEmpty = await emptyHistogram(user.profileHistograms);
 
-  const locationsHistogram = {};
-  locationsHistogram.locations = {};
+  if (profileHistogramsEmpty) { user.profileHistograms = {}; }
 
-  let sentimentHistogram = {};
-  sentimentHistogram.sentiment = {};
+  const sentimentHistogramEmpty = await emptyHistogram(user.profileHistograms.sentiment);
 
+  if (sentimentHistogramEmpty) { user.profileHistograms.sentiment = {}; }
 
-  // KLUDGE !!!! THIS IS PROBLEMATIC:  async.eachSeries probably executes before the if block below
+  if (configuration.enableLanguageAnalysis && !statsObj.languageQuotaFlag) {
 
-  if (!userProfileChanges
-    && configuration.enableLanguageAnalysis
-    && !statsObj.languageQuotaFlag
-    && (!user.profileHistograms.sentiment 
-      || (user.profileHistograms.sentiment === undefined)
-      || (Object.keys(user.profileHistograms.sentiment).length === 0)
-      )
-  ) {
+    let profileText = "";
 
-    userProfileChanges = [];
-    userProfileChanges.push("sentiment");
-
-    const profileText = user.name + "\n@" + user.screenName + "\n" + user.location + "\n" + user.description;
+    if (user.name) { profileText = user.name; }
+    if (user.screenName) { profileText += "\n" + user.screenName; }
+    if (user.location) { profileText += "\n" + user.location; }
+    if (user.description) { profileText += "\n" + user.description; }
 
     try{
-      // userProfileChanges = [];
-      // userProfileChanges.push("sentiment");
-      sentimentHistogram = await analyzeLanguage({screenName: user.screenName, text: profileText});
-      languageAnalyzedFlag = true;
+      const sentiment = await analyzeLanguage({screenName: user.screenName, text: profileText});
       statsObj.languageQuotaFlag = false;
+      return sentiment;
     }
     catch(err){
       if (err.code === 3) {
-        console.log(chalkAlert("TFE | UNSUPPORTED LANG"
+        console.log(chalkAlert("TFE | userLanguageSentiment | UNSUPPORTED LANG"
           + " | NID: " + user.nodeId
           + " | @" + user.screenName
           + " | " + err
         ));
       }
       else if (err.code === 8) {
-        console.error(chalkAlert("TFE"
+        console.error(chalkAlert("TFE | userLanguageSentiment"
           + " | " + getTimeStamp()
           + " | LANGUAGE QUOTA"
           + " | RESOURCE_EXHAUSTED"
@@ -4699,281 +4678,299 @@ async function userProfileChangeHistogram(params) {
         startQuotaTimeOutTimer();
       }
       else {
-        console.error(chalkError("TFE | *** LANGUAGE TEXT ERROR"
+        console.error(chalkError("TFE | *** userLanguageSentiment LANGUAGE TEXT ERROR"
           + " | " + err
           + "\n" + jsonPrint(err)
         ));
       }
+      throw err;
     }
   }
-  
-  async.eachSeries(userProfileChanges, function(userProp, cb){
+  else {
+    return user;
+  }
+}
 
-    let userPropValue = false;
+function processUserProfileChanges(params){
 
-    if (user[userProp] && (user[userProp] !== undefined)) {
-      userPropValue = user[userProp].toLowerCase();
+  const user = params.user;
+
+  return new Promise(function(resolve, reject){
+
+    if (params.userProfileChanges.length === 0) {
+      return resolve(user);
     }
 
-    const prevUserProp = "previous" + _.upperFirst(userProp);
+    let text = "";
+    const urlsHistogram = {};
+    urlsHistogram.urls = {};
 
-    let domain;
-    let domainNodeId;
-    let nodeId;
+    const locationsHistogram = {};
+    locationsHistogram.locations = {};
 
-    user[prevUserProp] = (user[prevUserProp] === undefined) ? null : user[prevUserProp];
+    async.eachSeries(params.userProfileChanges, function(userProp, cb){
 
-    if (!userPropValue && (userPropValue !== undefined)) {
-      // if (configuration.verbose) {
+      let userPropValue = false;
+
+      if (user[userProp] && (user[userProp] !== undefined)) {
+        userPropValue = user[userProp].toLowerCase();
+      }
+
+      const prevUserProp = "previous" + _.upperFirst(userProp);
+
+      let domain;
+      let domainNodeId;
+      let nodeId;
+
+      user[prevUserProp] = (user[prevUserProp] === undefined) ? null : user[prevUserProp];
+
+      if (!userPropValue && (userPropValue !== undefined)) {
         console.log(chalkLog(MODULE_ID_PREFIX
-          + " | ??? userProfileChangeHistogram USER PROP VALUE FALSE"
+          + " | --- processUserProfileChanges USER PROP VALUE FALSE"
           + " | @" + user.screenName
           + " | PROP: " + userProp
           + " | VALUE: " + userPropValue
         ));
-      // }
-      user[prevUserProp] = user[userProp];
-      return cb();
-    }
+        user[prevUserProp] = user[userProp];
+        return cb();
+      }
 
-    switch (userProp) {
+      switch (userProp) {
 
-      case "sentiment":
-        cb();
-      break;
-
-      case "location":
-        processLocationChange({user: user, userPropValue: userPropValue, text: text})
-        .then(function(results){
-          locationsHistogram.locations = results.locations;
-          user.location = results.user.location;
-          user.previousLocation = results.user.previousLocation;
-          text = results.text;
+        case "sentiment":
           cb();
-        })
-        .catch(function(e0){
-          cb(e0);
-        });
-      break;
+        break;
 
-      case "name":
-      case "description":
-        text += userPropValue + "\n";
-        user[prevUserProp] = user[userProp];
-        cb();
-      break;
+        case "location":
+          processLocationChange({user: user, userPropValue: userPropValue, text: text})
+          .then(function(results){
+            locationsHistogram.locations = results.locations;
+            user.location = results.user.location;
+            user.previousLocation = results.user.previousLocation;
+            text = results.text;
+            cb();
+          })
+          .catch(function(e0){
+            cb(e0);
+          });
+        break;
 
-      case "screenName":
-        text += "@" + userPropValue + "\n";
-        user[prevUserProp] = user[userProp];
-        cb();
-      break;
-
-      case "url":
-      case "profileUrl":
-      case "expandedUrl":
-      case "bannerImageUrl":
-      case "profileImageUrl":
-
-        if (userPropValue && (typeof userPropValue === "string")){
-          domain = urlParse(userPropValue.toLowerCase()).hostname;
-          nodeId = btoa(userPropValue.toLowerCase());
-
-          if (userPropValue && domain) { 
-            domainNodeId = btoa(domain);
-            urlsHistogram.urls[domainNodeId] = (urlsHistogram.urls[domainNodeId] === undefined) ? 1 : urlsHistogram.urls[domainNodeId] + 1; 
-          }
-          urlsHistogram.urls[nodeId] = (urlsHistogram.urls[nodeId] === undefined) ? 1 : urlsHistogram.urls[nodeId] + 1;
+        case "name":
+        case "description":
+          text += userPropValue + "\n";
           user[prevUserProp] = user[userProp];
           cb();
-        }
-        else{
+        break;
+
+        case "screenName":
+          text += "@" + userPropValue + "\n";
+          user[prevUserProp] = user[userProp];
           cb();
-        }
-      break;
+        break;
 
-      default:
-        console.log(chalkError("TFE | UNKNOWN USER PROPERTY: " + userProp));
-        return cb(new Error("UNKNOWN USER PROPERTY: " + userProp));
-    }
-  }, function(err){
+        case "url":
+        case "profileUrl":
+        case "expandedUrl":
+        case "bannerImageUrl":
+        case "profileImageUrl":
 
-    if (err) {
-      console.trace(chalkError("TFE | USER PROFILE HISTOGRAM ERROR: " + err));
-      throw err;
-    }
+          if (userPropValue && (typeof userPropValue === "string")){
+            domain = urlParse(userPropValue.toLowerCase()).hostname;
+            nodeId = btoa(userPropValue.toLowerCase());
 
-    async.parallel({
-
-      bannerImageHist: function(cb) {
-
-        if(statsObj.imageParser.rateLimitFlag){
-          console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
-          return cb(null);
-        }
-
-        if (
-            (configuration.enableImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl != user.bannerImageAnalyzed)
-          || (configuration.forceImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined))
-          )
-        ){
-
-          parseImage({
-            screenName: user.screenName, 
-            category: user.category, 
-            imageUrl: user.bannerImageUrl, 
-            histograms: user.profileHistograms,
-            updateGlobalHistograms: false
-          }).
-          then(function(imageParseResults){
-            if (imageParseResults) { 
-              user.bannerImageAnalyzed = user.bannerImageUrl; 
-              bannerImageAnalyzedFlag = true;
-              cb(null, imageParseResults);
+            if (userPropValue && domain) { 
+              domainNodeId = btoa(domain);
+              urlsHistogram.urls[domainNodeId] = (urlsHistogram.urls[domainNodeId] === undefined) ? 1 : urlsHistogram.urls[domainNodeId] + 1; 
             }
-            else{
-              cb(null, {});
-            }
-          }).
-          catch(function(err){
-            console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-            cb(err, null);
-          });
+            urlsHistogram.urls[nodeId] = (urlsHistogram.urls[nodeId] === undefined) ? 1 : urlsHistogram.urls[nodeId] + 1;
+            user[prevUserProp] = user[userProp];
+            cb();
+          }
+          else{
+            cb();
+          }
+        break;
 
-        }
-        else {
-          cb(null, {});
-        }
-      }, 
+        default:
+          console.log(chalkError("TFE | UNKNOWN USER PROPERTY: " + userProp));
+          return cb(new Error("UNKNOWN USER PROPERTY: " + userProp));
+      }
+    }, function(err){
 
-      profileImageHist: function(cb) {
+      if (err) {
+        console.trace(chalkError("TFE | processUserProfileChanges USER PROFILE HISTOGRAM ERROR: " + err));
+        return reject(err);
+      }
 
-        if(statsObj.imageParser.rateLimitFlag){
-          console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
-          return cb(null);
-        }
+      async.parallel({
 
-        if (
-            (configuration.enableImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined) && (user.profileImageUrl != user.profileImageAnalyzed)
-          || (configuration.forceImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined))
-          )
-        ){
+        bannerImageHist: function(cb) {
 
-          parseImage({
-            screenName: user.screenName, 
-            category: user.category, 
-            imageUrl: user.profileImageUrl, 
-            histograms: user.profileHistograms,
-            updateGlobalHistograms: false
-          }).
-          then(function(imageParseResults){
-            if (imageParseResults) { 
-              user.profileImageAnalyzed = user.profileImageUrl; 
-              profileImageAnalyzedFlag = true;
-              cb(null, imageParseResults);
-            }
-            else{
-              cb(null, {});
-            }
-          }).
-          catch(function(err){
-            console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-            cb(err, null);
-          });
+          if(statsObj.imageParser.rateLimitFlag){
+            console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
+            return cb(null);
+          }
 
-        }
-        else {
-          cb(null, {});
-        }
-      }, 
+          if (
+              (configuration.enableImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl != user.bannerImageAnalyzed)
+            || (configuration.forceImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined))
+            )
+          ){
 
-      textHist: function(cb){
-
-        if (text && (text !== undefined)){
-
-          if (configuration.enableLanguageAnalysis && !statsObj.languageQuotaFlag) {
-
-            analyzeLanguage({screenName: user.screenName, text: text})
-            .then(function(sentHist){
-              sentimentHistogram = sentHist;
-              languageAnalyzedFlag = true;
-              statsObj.languageQuotaFlag = false;
-            })
-            .catch(function(e){
-              if (e.code === 3) {
-                console.log(chalkLog("TFE | UNSUPPORTED LANG"
-                  + " | " + e
-                ));
+            parseImage({
+              screenName: user.screenName, 
+              category: user.category, 
+              imageUrl: user.bannerImageUrl, 
+              histograms: user.profileHistograms,
+              updateGlobalHistograms: false
+            }).
+            then(function(imageParseResults){
+              if (imageParseResults) { 
+                user.bannerImageAnalyzed = user.bannerImageUrl; 
+                // bannerImageAnalyzedFlag = true;
+                cb(null, imageParseResults);
               }
-              else if (e.code === 8) {
-                console.error(chalkAlert("TFE"
-                  + " | LANGUAGE QUOTA"
-                  + " | RESOURCE_EXHAUSTED"
-                ));
-                statsObj.languageQuotaFlag = moment().valueOf();
-                startQuotaTimeOutTimer();
+              else{
+                cb(null, {});
               }
-              else {
-                console.error(chalkError("TFE | *** LANGUAGE TEXT ERROR"
-                  + " | " + e
-                  + "\n" + jsonPrint(e)
-                ));
-              }
+            }).
+            catch(function(err){
+              console.log(chalkError("TFE | processUserProfileChanges USER PROFILE BANNER IMAGE HISTOGRAM ERROR: " + err));
+              cb(err, null);
             });
 
           }
+          else {
+            cb(null, {});
+          }
+        }, 
 
-          parseText({ category: user.category, text: text, updateGlobalHistograms: false }).
-          then(function(textParseResults){
+        profileImageHist: function(cb) {
 
-            cb(null, textParseResults);
+          if(statsObj.imageParser.rateLimitFlag){
+            console.log(chalk.yellow("TFE | processUserProfileChanges VISION RATE LIMITED | @" + user.screenName));
+            return cb(null);
+          }
 
-          }).
-          catch(function(err){
-            if (err) {
-              console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-            }
-            cb(err, null);
-          });
+          if (
+              (configuration.enableImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined) && (user.profileImageUrl != user.profileImageAnalyzed)
+            || (configuration.forceImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined))
+            )
+          ){
+
+            parseImage({
+              screenName: user.screenName, 
+              category: user.category, 
+              imageUrl: user.profileImageUrl, 
+              histograms: user.profileHistograms,
+              updateGlobalHistograms: false
+            }).
+            then(function(imageParseResults){
+              if (imageParseResults) { 
+                user.profileImageAnalyzed = user.profileImageUrl; 
+                cb(null, imageParseResults);
+              }
+              else{
+                cb(null, {});
+              }
+            }).
+            catch(function(err){
+              console.log(chalkError("TFE | processUserProfileChanges USER PROFILE IMAGE HISTOGRAM ERROR: " + err));
+              cb(err, null);
+            });
+
+          }
+          else {
+            cb(null, {});
+          }
+        }, 
+
+        profileTextHist: function(cb){
+
+          if (text && (text !== undefined)){
+
+            parseText({ category: user.category, text: text, updateGlobalHistograms: false }).
+            then(function(textParseResults){
+              cb(null, textParseResults);
+            }).
+            catch(function(err){
+              if (err) {
+                console.log(chalkError("TFE | processUserProfileChanges USER PROFILE PARSE TEXT ERROR: " + err));
+              }
+              cb(err, null);
+            });
+          }
+          else {
+            cb(null, {});
+          }
+        },
+
+        sentimentHist: function(cb){
+
+          const userProfileSentimentChanges = params.userProfileChanges.includes("name") 
+            || params.userProfileChanges.includes("screenName")
+            || params.userProfileChanges.includes("location")
+            || params.userProfileChanges.includes("description")
+            || !user.profileHistograms.sentiment
+            || (user.profileHistograms.sentiment === undefined)
+            || (user.profileHistograms.sentiment == {});
+
+          if (configuration.enableLanguageAnalysis && !statsObj.languageQuotaFlag && userProfileSentimentChanges){
+            userLanguageSentiment({user: user}).
+            then(function(sentiment){
+              cb(null, sentiment);
+            }).
+            catch(function(err){
+              cb(err, null);
+            })
+          }
+          else{ cb(null, null); }
         }
-        else {
-          cb(null, {});
+
+      }, function(err, results){
+
+        if (err) {
+          console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+          return reject(err);
         }
-      }
 
-    }, function(err, results){
-
-      if (err) {
-        console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-        throw err;
-      }
-
-      mergeHistogramsArray( {
-        histogramArray: [
-          results.textHist, 
-          results.bannerImageHist, 
-          results.profileImageHist, 
-          urlsHistogram,
-          locationsHistogram,
-          sentimentHistogram
-        ]
-      } ).
-      then(function(histogramsMerged){
-        return {
-          user: user,
-          userProfileChanges: userProfileChanges, 
-          histograms: histogramsMerged, 
-          languageAnalyzedFlag: languageAnalyzedFlag, 
-          bannerImageAnalyzedFlag: bannerImageAnalyzedFlag, 
-          profileImageAnalyzedFlag: profileImageAnalyzedFlag
-        };
-      }).
-      catch(function(err){
-        console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-        throw err;
+        mergeHistogramsArray( {
+          histogramArray: [
+            user.profileHistograms,
+            results.profileTextHist, 
+            results.bannerImageHist, 
+            results.profileImageHist, 
+            urlsHistogram,
+            locationsHistogram,
+          ]
+        } ).
+        then(function(histogramsMerged){
+          user.profileHistograms = histogramsMerged;
+          user.profileHistograms.sentiment = (results.sentimentHist) ? results.sentimentHist : {};
+          resolve(user);
+        }).
+        catch(function(err){
+          console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
+          return reject(err);
+        });
       });
     });
+
   });
+}
+
+async function userProfileChangeHistogram(params) {
+
+  try{
+    const user = params.user;
+    const userProfileChanges = await checkUserProfileChanged(params);
+    const processUser = await processUserProfileChanges({user: user, userProfileChanges: userProfileChanges});
+    return processUser;
+  }
+  catch(err){
+    console.log(chalkError(MODULE_ID_PREFIX + " | *** userProfileChangeHistogram ERROR: " + err));
+    throw err;
+  }
 
 }
 
@@ -5002,45 +4999,10 @@ async function updateUserHistograms(params) {
 
   try {
 
-    const results = await userProfileChangeHistogram({user: user});
+    const processedUser = await userProfileChangeHistogram({user: user});
 
-    if (results && results.userProfileChanges) {
-
-      for (const prop of results.userProfileChanges){
-        if (user[prop] && (user[prop] !== undefined)){
-          console.log(chalkLog("TFE | -<- PROP CHANGE | @" + user.screenName 
-            + " | " + prop + " -<- " + user[prop]
-          ));
-        }
-      }
-
-      user.profileHistograms = await mergeHistograms.merge({ histogramA: user.profileHistograms, histogramB: results.histograms });
-    }
-
-    if (results && results.languageAnalyzedFlag) {
-      user.languageAnalyzed = true;
-      console.log(chalkLog("TFE | updateUserHistograms | LANG ANALYZED"
-        + " | " + user.userId
-        + " | @" + user.screenName
-        + " | LANG ANZD: " + user.languageAnalyzed
-      ));
-    }
-
-    if (results && results.bannerImageAnalyzedFlag) {
-      user.bannerImageAnalyzed = user.bannerImageUrl;
-      user.previousBannerImageUrl = user.bannerImageUrl;
-    }
-
-    if (results && results.profileImageAnalyzedFlag) {
-      user.profileImageAnalyzed = user.profileImageUrl;
-      user.previousProfileImageUrl = user.profileImageUrl;
-    }
-
-    user.lastHistogramTweetId = user.statusId;
-    user.lastHistogramQuoteId = user.quotedStatusId;
-
-    await updateGlobalHistograms({user: user});
-    return user;
+    await updateGlobalHistograms({user: processedUser});
+    return processedUser;
 
   }
   catch(err){
