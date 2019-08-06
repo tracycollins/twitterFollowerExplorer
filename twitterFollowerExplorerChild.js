@@ -190,6 +190,7 @@ statsObj.elapsedMS = 0;
 statsObj.elapsed = getElapsedTimeStamp();
 
 statsObj.users = {};
+statsObj.users.fetched = 0;
 
 statsObj.tweets = {};
 statsObj.tweets.fetched = 0;
@@ -1466,7 +1467,6 @@ function initFetchUserTweets(p) {
 
         const user = fetchUserTweetsQueue.shift();
 
-        console.log(chalkLog("TFC | <<< FETCHED USER Q [" + fetchUserTweetsQueue.length + "] | @" + user.screenName));
 
         idleStartMoment = moment();
 
@@ -1480,21 +1480,22 @@ function initFetchUserTweets(p) {
 
           latestTweets = await fetchUserTweets({ user: user, excludeUser: false });
 
+          statsObj.users.fetched += 1;
+
           if (latestTweets.length > 0) {
-
             statsObj.tweets.fetched += latestTweets.length;
+          }
 
-            if (configuration.testMode || user.priority || (statsObj.tweets.fetched % 100 === 0)) {
-              console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
-                + " | FUTQ: " + fetchUserTweetsQueue.length
-                + " | PRIORITY: " + user.priority
-                + " [ " + latestTweets.length + " LATEST / " + statsObj.tweets.fetched + " TOT FETCHED ]"
-                + " | " + user.userId
-                + " | @" + user.screenName
-                + " | SINCE: " + user.tweets.sinceId
-              ));
-            }
-
+          if (configuration.testMode || user.priority || (statsObj.users.fetched % 100 === 0)) {
+            console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
+              + " | USERS FETCHED: " + statsObj.users.fetched
+              + " | FUTQ: " + fetchUserTweetsQueue.length
+              + " | PRIORITY: " + user.priority
+              + " [ " + latestTweets.length + " LATEST / " + statsObj.tweets.fetched + " TOT FETCHED ]"
+              + " | " + user.userId
+              + " | @" + user.screenName
+              + " | SINCE: " + user.tweets.sinceId
+            ));
           }
 
           process.send(
