@@ -4900,7 +4900,6 @@ async function userProfileChangeHistogram(params) {
     console.log(chalkError(MODULE_ID_PREFIX + " | *** userProfileChangeHistogram ERROR: " + err));
     throw err;
   }
-
 }
 
 async function updateUserHistograms(params) {

@@ -591,7 +591,7 @@ process.on("message", async function(m) {
       try {
         await nnTools.printNetworkResults({title: "GET STATS"});
         const stats = await nnTools.getNetworkStats();
-        process.send({ op: "STATS", loadedNetworks: stats, queue: activateNetworkQueue.length }, function(err){
+        process.send({ op: "STATS", loadedNetworks: stats.networks, queue: activateNetworkQueue.length }, function(err){
           if (err) { 
             console.log(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
             console.error.bind(console, "RNT | *** SEND ERROR | STATS | " + err);
