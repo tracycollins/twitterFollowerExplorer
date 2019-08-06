@@ -2369,14 +2369,6 @@ async function loadNetworkFile(params){
 
           await renameFileAsync(path.join(folder, entry.name), path.join(globalBestNetworkArchiveFolder, entry.name));
 
-          // await tcUtils.fileMove({
-          //   noErrorNotFound: true,
-          //   srcFolder: folder, 
-          //   srcFile: entry.name, 
-          //   dstFolder: globalBestNetworkArchiveFolder, 
-          //   dstFile: entry.name
-          // });
-
           const updateDbNetworkParams = {};
 
           updateDbNetworkParams.networkObj = networkObj;
@@ -2439,13 +2431,7 @@ async function loadNetworkFile(params){
           + " > " + globalBestNetworkArchiveFolder
       ));
 
-      await tcUtils.fileMove({
-        noErrorNotFound: true,
-        srcFolder: folder, 
-        srcFile: entry.name, 
-        dstFolder: globalBestNetworkArchiveFolder, 
-        dstFile: entry.name
-      });
+      await renameFileAsync(path.join(folder, entry.name), path.join(globalBestNetworkArchiveFolder, entry.name));
 
       updateDbNetworkParams.networkObj.archived = true;
 
