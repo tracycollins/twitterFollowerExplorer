@@ -23,9 +23,7 @@ const TEST_TOTAL_FETCH = 47;
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
 
-
 const MIN_TWEET_ID = 1000000;
-
 
 const DEFAULT_FORCE_LANG_ANALYSIS = false;
 const DEFAULT_ENABLE_LANG_ANALYSIS = true;
@@ -154,9 +152,6 @@ DEFAULT_INPUT_TYPES.forEach(function(type){
   globalHistograms[type] = {};
 });
 
-// const unfollowableUserFile = "unfollowableUser.json";
-// let unfollowableUserSet = new Set();
-
 let configuration = {};
 configuration.offlineMode = false;
 configuration.verbose = false;
@@ -197,7 +192,6 @@ const languageClient = new Language.LanguageServiceClient();
 const path = require("path");
 const watch = require("watch");
 const defaults = require("object.defaults");
-// const randomInt = require("random-int");
 const urlParse = require("url-parse");
 const moment = require("moment");
 const HashMap = require("hashmap").HashMap;
@@ -683,9 +677,6 @@ async function initSlackWebClient(){
         console.log("TFE | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
       }
 
-      // const botsInfoResponse = await slackWebClient.bots.info();
-      // console.log("TFE | SLACK WEB BOTS INFO RESPONSE\n" + jsonPrint(botsInfoResponse));
-
       const conversationsListResponse = await slackWebClient.conversations.list({token: slackOAuthAccessToken});
 
       conversationsListResponse.channels.forEach(async function(channel){
@@ -861,7 +852,6 @@ function startImageParserRateTimitTimeout(p) {
       statsObj.imageParser.rateLimitFlag = false;
     }
   }, period);
-
 }
 
 async function loadInputs(params) {
@@ -1014,47 +1004,6 @@ function updateDbNetwork(params) {
 
   });
 }
-
-// const defaultUserProjectionObj = {
-//   bannerImageAnalyzed: 1,
-//   bannerImageUrl: 1,
-//   category: 1,
-//   categoryAuto: 1,
-//   description: 1,
-//   expandedUrl: 1,
-//   followersCount: 1,
-//   following: 1,
-//   friends: 1,
-//   friendsCount: 1,
-//   ignored: 1,
-//   lang: 1,
-//   location: 1,
-//   mentions: 1,
-//   name: 1,
-//   nodeId: 1,
-//   previousBannerImageUrl: 1,
-//   previousDescription: 1,
-//   previousExpandedUrl: 1,
-//   previousLocation: 1,
-//   previousName: 1,
-//   previousProfileImageUrl: 1,
-//   previousProfileUrl: 1,
-//   previousScreenName: 1,
-//   previousStatusId: 1,
-//   previousUrl: 1,
-//   profileHistograms: 1,
-//   profileImageAnalyzed: 1,
-//   profileImageUrl: 1,
-//   profileUrl: 1,
-//   screenName: 1,
-//   statusesCount: 1,
-//   statusId: 1,
-//   threeceeFollowing: 1,
-//   tweetHistograms: 1,
-//   tweets: 1,
-//   url: 1,
-//   userId: 1
-// };
 
 function convertUserHistograms(params) {
 
@@ -1264,8 +1213,6 @@ function initCategorizedUserIdSet(){
 
 //=========================================================================
 //=========================================================================
-//const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
-
 process.title = MODULE_ID.toLowerCase() + "_" + process.pid;
 
 process.on("exit", function(code, signal) {
@@ -1316,10 +1263,6 @@ process.on("unhandledRejection", function(err, promise) {
 // CONFIGURATION
 //=========================================================================
 
-// const prevHostConfigFileModifiedMoment = moment("2010-01-01");
-// const prevDefaultConfigFileModifiedMoment = moment("2010-01-01");
-// let prevConfigFileModifiedMoment = moment("2010-01-01");
-
 let defaultConfiguration = {}; // general configuration for TFE
 let hostConfiguration = {}; // host-specific configuration for TFE
 
@@ -1354,7 +1297,6 @@ async function initConfig(cnf) {
 
       const configArgs = Object.keys(configuration);
 
-      // configArgs.forEach(function(arg){
       for (const arg of configArgs){
         if (_.isObject(configuration[arg])) {
           console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + "\n" + jsonPrint(configuration[arg]));
@@ -1538,7 +1480,6 @@ async function showStats(options) {
     }
     else {
 
-      // Object.keys(childHashMap).forEach(function(childId) {
       for (const childId of Object.keys(childHashMap)) {
 
         console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS CHILD"
@@ -2032,7 +1973,6 @@ const intervalsSet = new Set();
 function clearAllIntervals(){
   return new Promise(function(resolve, reject){
     try {
-      // [...intervalsSet].forEach(function(intervalHandle){
       for (const intervalHandle of intervalsSet){
         console.log(chalkInfo(MODULE_ID_PREFIX + " | CLEAR INTERVAL | " + intervalHandle));
         clearInterval(intervalHandle);
@@ -2371,7 +2311,6 @@ async function initTwitterConfig(params) {
     console.log(chalkError("TFE | *** LOADED TWITTER CONFIG ERROR: ERROR: " + err));
     throw err;
   }
-
 }
 
 function isBestNetwork(p){
@@ -2574,7 +2513,6 @@ async function loadBestNetworksFolder(params) {
 
   const loadNetworkFilePromiseArray = [];
 
-  // resultsArray.forEach(function(entry){
   for (const entry of resultsArray){
     if (!entry.name.endsWith(".json") || entry.name.startsWith("bestRuntimeNetwork")) {
       console.log(chalkWarn("TFE | ... SKIP LOAD FOLDER BEST NETWORKS | " + folder + "/" + entry.name));
@@ -2787,7 +2725,6 @@ async function loadMaxInput(params) {
     console.log(chalkError("TFE | DROPBOX MAX INPUT HASHMAP FILE ERROR: " + err));
     throw err;
   }
-
 }
 
 const watchOptions = {
@@ -2814,7 +2751,6 @@ async function initWatchConfig(){
 
         const configArgs = Object.keys(configuration);
 
-        // configArgs.forEach(function(arg){
         for (const arg of configArgs){
           if (_.isObject(configuration[arg])) {
             console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + "\n" + jsonPrint(configuration[arg]));
@@ -2854,7 +2790,6 @@ async function initWatchConfig(){
   });
 
   return;
-
 }
 
 
@@ -2879,7 +2814,6 @@ function generateObjFromArray(params){
     });
 
   });
-
 }
 
 async function pruneGlobalHistograms(p) {
@@ -2952,7 +2886,6 @@ async function pruneGlobalHistograms(p) {
     return;
 
   });
-
 }
 
 async function updateGlobalHistograms(params) {
@@ -3034,7 +2967,6 @@ async function updateGlobalHistograms(params) {
     return;
 
   });
-
 }
 
 function initRandomNetworks(){
@@ -3118,7 +3050,6 @@ async function initMaxInputHashMap(){
     console.log(chalkError("TFE | *** INIT MAX INPUT HASHMAP ERROR: RNT NOT INITIALIZED *** "));
     return new Error("RNT NOT INITIALIZED");
   }
-
 }
 
 async function initNetworks(){
@@ -3283,7 +3214,6 @@ function updateNetworkStats(params) {
           select({ overallMatchRate: 1, successRate: 1, networkId: 1, inputsId: 1 }).
           exec();
 
-        // networkObjArray.forEach(function(networkObj){
         for (const networkObj of networkObjArray){
           if (networkObj.inputsId && (networkObj.inputsId !== undefined)) {
 
@@ -3406,7 +3336,6 @@ function runEnable(displayArgs) {
   const runEnableKeys = Object.keys(runEnableArgs);
   if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
 
-  // runEnableKeys.forEach(function(key) {
   for (const key of runEnableKeys){
     if (displayArgs) { console.log(chalkInfo("TFE | runEnable | " + key + ": " + runEnableArgs[key])); }
     if (!runEnableArgs[key]) {
@@ -4365,46 +4294,46 @@ function processTweetObj(params){
 
 async function analyzeLanguage(params){
 
-    debug(chalkAlert("analyzeLanguage\n" + jsonPrint(params)));
+  debug(chalkAlert("analyzeLanguage\n" + jsonPrint(params)));
 
-    const document = {
-      "content": params.text,
-      type: "PLAIN_TEXT"
-    };
+  const document = {
+    "content": params.text,
+    type: "PLAIN_TEXT"
+  };
 
-    const sentimentHistogram = {};
+  const sentimentHistogram = {};
 
-    let responses;
+  let responses;
 
-    try {
+  try {
 
-      responses = await languageClient.analyzeSentiment({document: document});
+    responses = await languageClient.analyzeSentiment({document: document});
 
-      const sentiment = responses[0].documentSentiment;
+    const sentiment = responses[0].documentSentiment;
 
-      sentimentHistogram.score = sentiment.score;
-      sentimentHistogram.magnitude = sentiment.magnitude;
-      sentimentHistogram.comp = 100*sentiment.score*sentiment.magnitude;
+    sentimentHistogram.score = sentiment.score;
+    sentimentHistogram.magnitude = sentiment.magnitude;
+    sentimentHistogram.comp = 100*sentiment.score*sentiment.magnitude;
 
-      console.log(chalkInfo("TFE | +++ LANG SENTIMENT"
-        + " | M: " + sentimentHistogram.magnitude.toFixed(5)
-        + " | S: " + sentimentHistogram.score.toFixed(5)
-        + " | C: " + sentimentHistogram.comp.toFixed(5)
-        + " | @" + params.screenName
-      ));
+    statsObj.analyzer.analyzed += 1;
+    statsObj.analyzer.total += 1;
 
-      statsObj.analyzer.analyzed += 1;
-      statsObj.analyzer.total += 1;
+    console.log(chalkInfo("TFE | +++ LANG SENTIMENT"
+      + " [" + statsObj.analyzer.analyzed + " TOT ANALYZED]"
+      + " | M: " + sentimentHistogram.magnitude.toFixed(5)
+      + " | S: " + sentimentHistogram.score.toFixed(5)
+      + " | C: " + sentimentHistogram.comp.toFixed(5)
+      + " | @" + params.screenName
+    ));
 
-      return sentimentHistogram;
-
-    }
-    catch(err){
-      console.log(chalkError("*** LANGUAGE ANALYZER ERROR", err));
-      statsObj.analyzer.errors += 1;
-      statsObj.analyzer.total += 1;
-      throw err;
-    }
+    return sentimentHistogram;
+  }
+  catch(err){
+    console.log(chalkError("*** LANGUAGE ANALYZER ERROR", err));
+    statsObj.analyzer.errors += 1;
+    statsObj.analyzer.total += 1;
+    throw err;
+  }
 }
 
 let startQuotaTimeOut;
@@ -5013,23 +4942,23 @@ async function updateUserHistograms(params) {
 
 async function generateAutoCategory(params) {
 
-    statsObj.status = "GEN AUTO CAT";
+  statsObj.status = "GEN AUTO CAT";
 
-    try{
+  try{
 
-      const user = await updateUserHistograms({user: params.user});
+    const user = await updateUserHistograms({user: params.user});
 
-      activateNetworkQueue.push({user: user});
+    activateNetworkQueue.push({user: user});
 
-      statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
+    statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
 
-      return user;
+    return user;
 
-    }
-    catch(err){
-      console.log(chalkError("TFE | *** generateAutoCategory ERROR: " + err));
-      throw err;
-    }
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** generateAutoCategory ERROR: " + err));
+    throw err;
+  }
 }
 
 async function processPriorityUserTweets(){
@@ -6603,7 +6532,6 @@ async function childSendAll(p){
 
   try {
 
-    // Object.keys(childHashMap).forEach(async function(childId) {
     for (const childId of Object.keys(childHashMap)){
 
       if (childHashMap[childId] !== undefined) {
@@ -6619,444 +6547,442 @@ async function childSendAll(p){
     console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD SEND ALL ERROR: " + err));
     throw err;
   }
-
 }
 
 async function childInit(p){
 
-    const params = p || {};
-    const childId = params.childId;
-    const threeceeUser = params.threeceeUser;
-    const config = params.config || {};
-    const verbose = params.verbose || false;
+  const params = p || {};
+  const childId = params.childId;
+  const threeceeUser = params.threeceeUser;
+  const config = params.config || {};
+  const verbose = params.verbose || false;
 
-    statsObj.status = "INIT CHILD | CH ID: " + childId + " | " + threeceeUser;
+  statsObj.status = "INIT CHILD | CH ID: " + childId + " | " + threeceeUser;
 
-    const command = {
-      op: "INIT",
-      childId: childId,
-      threeceeUser: threeceeUser,
-      verbose: verbose,
-      config: config
-    };
+  const command = {
+    op: "INIT",
+    childId: childId,
+    threeceeUser: threeceeUser,
+    verbose: verbose,
+    config: config
+  };
 
-    try {
-      const response = await childSend({childId: childId, command: command});
-      return response;
-    }
-    catch(err){
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD SEND INIT ERROR"
-        + " | ERR: " + err
-        + "\nCOMMAND\n" + jsonPrint(command)
-      ));
-      throw err;
-    }
+  try {
+    const response = await childSend({childId: childId, command: command});
+    return response;
+  }
+  catch(err){
+    console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD SEND INIT ERROR"
+      + " | ERR: " + err
+      + "\nCOMMAND\n" + jsonPrint(command)
+    ));
+    throw err;
+  }
 }
 
 async function childCreate(p){
 
-    const params = p || {};
-    const args = params.args || [];
+  const params = p || {};
+  const args = params.args || [];
 
-    const childId = params.childId;
-    const appPath = params.appPath;
-    const env = params.env;
-    const config = params.config || {};
+  const childId = params.childId;
+  const appPath = params.appPath;
+  const env = params.env;
+  const config = params.config || {};
 
-    let child = {};
-    const options = {};
+  let child = {};
+  const options = {};
 
-    if (statsObj.user[config.threeceeUser] === undefined) {
-      statsObj.user[config.threeceeUser] = {};
-      statsObj.user[config.threeceeUser].friendsCount = 1;
-      statsObj.user[config.threeceeUser].friendsProcessed = 0;
-      statsObj.user[config.threeceeUser].percentProcessed = 0;
-      statsObj.user[config.threeceeUser].friendsProcessStart = moment();
-    }
+  if (statsObj.user[config.threeceeUser] === undefined) {
+    statsObj.user[config.threeceeUser] = {};
+    statsObj.user[config.threeceeUser].friendsCount = 1;
+    statsObj.user[config.threeceeUser].friendsProcessed = 0;
+    statsObj.user[config.threeceeUser].percentProcessed = 0;
+    statsObj.user[config.threeceeUser].friendsProcessStart = moment();
+  }
 
-    if (hostname === "google") {
-      options.cwd = params.cwd || "/home/tc/twitterFollowerExplorer";
+  if (hostname === "google") {
+    options.cwd = params.cwd || "/home/tc/twitterFollowerExplorer";
+  }
+  else {
+    options.cwd = params.cwd || "/Volumes/RAID1/projects/twitterFollowerExplorer";
+  }
+
+  statsObj.status = "CHILD CREATE | CH ID: " + childId + " | APP: " + appPath;
+
+  console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CREATE CHILD | " + childId));
+
+  try {
+
+    if (env) {
+      options.env = env;
     }
     else {
-      options.cwd = params.cwd || "/Volumes/RAID1/projects/twitterFollowerExplorer";
+      options.env = {};
+      options.env = configuration.DROPBOX;
+      options.env.DROPBOX_STATS_FILE = statsObj.runId + "_" + childId + ".json";
+      options.env.CHILD_ID = childId;
+      options.env.NODE_ENV = "production";
     }
 
-    statsObj.status = "CHILD CREATE | CH ID: " + childId + " | APP: " + appPath;
+    childHashMap[childId] = {};
+    childHashMap[childId].status = "NEW";
+    childHashMap[childId].messageQueue = [];
 
-    console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CREATE CHILD | " + childId));
+    console.log("CHILD FORK: appPath: " + appPath);
+    console.log("CHILD FORK: args: " + args);
+    console.log("CHILD FORK: options\n" + jsonPrint(options));
 
-    try {
+    child = cp.fork(appPath, args, options);
 
-      if (env) {
-        options.env = env;
-      }
-      else {
-        options.env = {};
-        options.env = configuration.DROPBOX;
-        options.env.DROPBOX_STATS_FILE = statsObj.runId + "_" + childId + ".json";
-        options.env.CHILD_ID = childId;
-        options.env.NODE_ENV = "production";
-      }
+    childHashMap[childId].pid = child.pid;
 
-      childHashMap[childId] = {};
-      childHashMap[childId].status = "NEW";
-      childHashMap[childId].messageQueue = [];
+    child.on("message", async function(m){
+      switch(m.op) {
 
-      console.log("CHILD FORK: appPath: " + appPath);
-      console.log("CHILD FORK: args: " + args);
-      console.log("CHILD FORK: options\n" + jsonPrint(options));
+        case "QUIT":
 
-      child = cp.fork(appPath, args, options);
+          console.log(chalkError("TFE | *** CHILD QUIT | " + m.threeceeUser + " | CAUSE: " + m.cause));
 
-      childHashMap[childId].pid = child.pid;
-
-      child.on("message", async function(m){
-        switch(m.op) {
-
-          case "QUIT":
-
-            console.log(chalkError("TFE | *** CHILD QUIT | " + m.threeceeUser + " | CAUSE: " + m.cause));
-
-            if (childHashMap[childId]) { 
-              childHashMap[childId].status = "QUIT"; 
-
-              if (m.error) { 
-                childHashMap[childId].error = m.error;
-                console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
-              }
-            }
-          break;
-
-          case "EXIT":
-
-            console.log(chalkError("TFE | *** CHILD EXIT | " + m.threeceeUser + " | CAUSE: " + m.cause));
-
-            childHashMap[childId].status = "EXIT";
+          if (childHashMap[childId]) { 
+            childHashMap[childId].status = "QUIT"; 
 
             if (m.error) { 
               childHashMap[childId].error = m.error;
               console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
             }
-          break;
+          }
+        break;
 
-          case "ERROR":
+        case "EXIT":
 
-            if (m.type === "USER_NOT_AUTHORIZED") {
-              console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT AUTHORIZED " + m.userId));
+          console.log(chalkError("TFE | *** CHILD EXIT | " + m.threeceeUser + " | CAUSE: " + m.cause));
 
-              userErrorSet.add(m.userId);
+          childHashMap[childId].status = "EXIT";
 
-              statsObj.users.fetchErrors = userErrorSet.size;
+          if (m.error) { 
+            childHashMap[childId].error = m.error;
+            console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
+          }
+        break;
 
-              categorizedUserIdSet.delete(m.userId);
+        case "ERROR":
 
-              global.globalUser.deleteOne({nodeId: m.userId}, function(err){
-                if (err) {
-                  console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
-                }
-                else {
-                  console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
-                }
-              });
+          if (m.type === "USER_NOT_AUTHORIZED") {
+            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT AUTHORIZED " + m.userId));
 
-              break;
-            }
-            else if (m.type === "USER_BLOCKED") {
+            userErrorSet.add(m.userId);
 
-              console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER BLOCKED " + m.userId));
+            statsObj.users.fetchErrors = userErrorSet.size;
 
-              userErrorSet.add(m.userId);
+            categorizedUserIdSet.delete(m.userId);
 
-              statsObj.users.fetchErrors = userErrorSet.size;
-
-              categorizedUserIdSet.delete(m.userId);
-
-              global.globalUser.deleteOne({nodeId: m.userId}, function(err){
-                if (err) {
-                  console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
-                }
-                else {
-                  console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
-                }
-              });
-
-              break;
-            }
-            else if (m.type === "USER_NOT_FOUND") {
-
-              console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT FOUND " + m.userId));
-
-              userErrorSet.add(m.userId);
-
-              statsObj.users.fetchErrors = userErrorSet.size;
-
-              categorizedUserIdSet.delete(m.userId);
-
-              global.globalUser.deleteOne({nodeId: m.userId}, function(err){
-                if (err) {
-                  console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
-                }
-                else {
-                  console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
-                }
-              });
-
-              break;
-            }
-            else {
-
-              console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
-              childHashMap[childId].status = "ERROR";
-
-              if (m.error) { 
-                childHashMap[childId].error = m.error;
-                console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
+            global.globalUser.deleteOne({nodeId: m.userId}, function(err){
+              if (err) {
+                console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
               }
-
-              if (m.type === "INVALID_TOKEN") {
-                childHashMap[childId].status = "DISABLED";
+              else {
+                console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
               }
+            });
 
-              await childInit({childId: childId, threeceeUser: m.threeceeUser, config: childHashMap[childId].config});
+            break;
+          }
+          else if (m.type === "USER_BLOCKED") {
 
-              break;
-            }
+            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER BLOCKED " + m.userId));
 
-          case "INIT":
-          case "INIT_COMPLETE":
-          case "IDLE":
-          case "RESET":
-          case "READY":
-          case "FETCH_START":
-          case "FETCH":
-          case "FETCH_END":
-            console.log(chalkTwitter("TFE | CHILD | OP: " + m.op + " | 3C @" + m.threeceeUser));
-            childHashMap[childId].status = m.op;
-          break;
+            userErrorSet.add(m.userId);
 
-          case "PAUSE_RATE_LIMIT":
-            console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT"
-              + " | " + m.threeceeUser 
-              + " | REMAIN raw: " + m.remainingTime
-              + " | REMAIN: " + msToTime(parseInt(m.remainingTime))
-            ));
-            childHashMap[childId].status = "PAUSE_RATE_LIMIT";
-          break;
+            statsObj.users.fetchErrors = userErrorSet.size;
 
-          case "THREECEE_USER":
+            categorizedUserIdSet.delete(m.userId);
 
-            console.log(chalkTwitter("TFE | THREECEE_USER"
-              + " | @" + m.threeceeUser.screenName
-              + " | Ts: " + m.threeceeUser.statusesCount
-              + " | FRNDs: " + m.threeceeUser.friendsCount
-              + " | FLWRs: " + m.threeceeUser.followersCount
-            ));
-
-            if (statsObj.user[m.threeceeUser.screenName] === undefined) { 
-              statsObj.user[m.threeceeUser.screenName] = {};
-              statsObj.user[m.threeceeUser.screenName].friendsProcessStart = moment();
-            }
-
-            statsObj.user[m.threeceeUser.screenName].statusesCount = m.threeceeUser.statusesCount;
-            statsObj.user[m.threeceeUser.screenName].friendsCount = m.threeceeUser.friendsCount;
-            statsObj.user[m.threeceeUser.screenName].followersCount = m.threeceeUser.followersCount;
-
-            statsObj.users.total = 0;
-
-            // Object.keys(statsObj.user).forEach(function(tcUser) {
-            for (const tcUser of Object.keys(statsObj.user)){
-
-              if ((statsObj.user[tcUser] !== undefined) 
-                && (statsObj.user[tcUser].friendsCount !== undefined)
-                && (childHashMap[m.childId].status !== "DISABLED")
-                && (childHashMap[m.childId].status !== "ERROR")
-                && (childHashMap[m.childId].status !== "RESET")
-              ) { 
-                statsObj.users.total += statsObj.user[tcUser].friendsCount;
+            global.globalUser.deleteOne({nodeId: m.userId}, function(err){
+              if (err) {
+                console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
               }
-
-            }
-          break;
-
-          case "USER_FRIENDS":
-
-            if (categorizedUserIdSet.has(m.userId)){
-
-              processUserQueue.push(m);
-              statsObj.queues.processUserQueue.size = processUserQueue.length;
-
-              if (configuration.verbose){
-                console.log(chalkTwitter("TFE | USER_FRIENDS"
-                  + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
-                  + " | UID: " + m.userId
-                  + " | FRNDs: " + m.friends.length
-                ));
+              else {
+                console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
               }
-            }
-          break;
+            });
 
-          case "USER_TWEETS":
+            break;
+          }
+          else if (m.type === "USER_NOT_FOUND") {
 
-            // {
-            //   op: "USER_TWEETS",
-            //   nodeId: user.nodeId,
-            //   priority: user.priority,
-            //   latestTweets: latestTweets
-            // }, 
+            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT FOUND " + m.userId));
 
-            if (m.priority) {
-              priorityUserTweetsQueue.push(m);
-              myEmitter.emit("priorityUserTweetsEvent");
-            }
+            userErrorSet.add(m.userId);
 
-            if (categorizedUserIdSet.has(m.nodeId)){
+            statsObj.users.fetchErrors = userErrorSet.size;
 
-              processUserQueue.push(m);
-              statsObj.queues.processUserQueue.size = processUserQueue.length;
+            categorizedUserIdSet.delete(m.userId);
 
-              if (configuration.verbose){
-                console.log(chalkTwitter("TFE | USER_TWEETS"
-                  + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
-                  + " | NID: " + m.nodeId
-                  + " | LTs: " + m.latestTweets.length
-                ));
+            global.globalUser.deleteOne({nodeId: m.userId}, function(err){
+              if (err) {
+                console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
               }
-            }
-          break;
+              else {
+                console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
+              }
+            });
 
-          case "FRIEND_RAW":
+            break;
+          }
+          else {
+
+            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
+            childHashMap[childId].status = "ERROR";
+
+            if (m.error) { 
+              childHashMap[childId].error = m.error;
+              console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
+            }
+
+            if (m.type === "INVALID_TOKEN") {
+              childHashMap[childId].status = "DISABLED";
+            }
+
+            await childInit({childId: childId, threeceeUser: m.threeceeUser, config: childHashMap[childId].config});
+
+            break;
+          }
+
+        case "INIT":
+        case "INIT_COMPLETE":
+        case "IDLE":
+        case "RESET":
+        case "READY":
+        case "FETCH_START":
+        case "FETCH":
+        case "FETCH_END":
+          console.log(chalkTwitter("TFE | CHILD | OP: " + m.op + " | 3C @" + m.threeceeUser));
+          childHashMap[childId].status = m.op;
+        break;
+
+        case "PAUSE_RATE_LIMIT":
+          console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT"
+            + " | " + m.threeceeUser 
+            + " | REMAIN raw: " + m.remainingTime
+            + " | REMAIN: " + msToTime(parseInt(m.remainingTime))
+          ));
+          childHashMap[childId].status = "PAUSE_RATE_LIMIT";
+        break;
+
+        case "THREECEE_USER":
+
+          console.log(chalkTwitter("TFE | THREECEE_USER"
+            + " | @" + m.threeceeUser.screenName
+            + " | Ts: " + m.threeceeUser.statusesCount
+            + " | FRNDs: " + m.threeceeUser.friendsCount
+            + " | FLWRs: " + m.threeceeUser.followersCount
+          ));
+
+          if (statsObj.user[m.threeceeUser.screenName] === undefined) { 
+            statsObj.user[m.threeceeUser.screenName] = {};
+            statsObj.user[m.threeceeUser.screenName].friendsProcessStart = moment();
+          }
+
+          statsObj.user[m.threeceeUser.screenName].statusesCount = m.threeceeUser.statusesCount;
+          statsObj.user[m.threeceeUser.screenName].friendsCount = m.threeceeUser.friendsCount;
+          statsObj.user[m.threeceeUser.screenName].followersCount = m.threeceeUser.followersCount;
+
+          statsObj.users.total = 0;
+
+          for (const tcUser of Object.keys(statsObj.user)){
+
+            if ((statsObj.user[tcUser] !== undefined) 
+              && (statsObj.user[tcUser].friendsCount !== undefined)
+              && (childHashMap[m.childId].status !== "DISABLED")
+              && (childHashMap[m.childId].status !== "ERROR")
+              && (childHashMap[m.childId].status !== "RESET")
+            ) { 
+              statsObj.users.total += statsObj.user[tcUser].friendsCount;
+            }
+
+          }
+        break;
+
+        case "USER_FRIENDS":
+
+          if (categorizedUserIdSet.has(m.userId)){
 
             processUserQueue.push(m);
-
             statsObj.queues.processUserQueue.size = processUserQueue.length;
 
-            if (configuration.verbose || saveRawFriendFlag) {
-              console.log(chalkInfo("TFE | TEST DATA: FRIEND_RAW"
-                + " [ PUQ: " + processUserQueue.length + " ]"
-                + " | 3C @" + m.threeceeUser
-                + " | @" + m.friend.screen_name
-                + " | FLWRs: " + m.friend.followers_count
-                + " | FRNDs: " + m.friend.friends_count
-                + " | Ts: " + m.friend.statuses_count
-                + " | LATESTs: " + m.friend.latestTweets.length
+            if (configuration.verbose){
+              console.log(chalkTwitter("TFE | USER_FRIENDS"
+                + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
+                + " | UID: " + m.userId
+                + " | FRNDs: " + m.friends.length
               ));
-
-              if (saveRawFriendFlag){
-                const file = "user_" + m.friend.id_str + ".json";
-                console.log(chalkLog("TFE | SAVE FRIEND_RAW FILE"
-                  + " | " + testDataUserFolder + "/" + file
-                ));
-                debug(chalkAlert("TFE | SAVE FRIEND_RAW FILE"
-                  + " | " + testDataUserFolder + "/" + file
-                  + "\n" + jsonPrint(m.friend)
-                ));
-                statsObj.rawFriend = m.friend;
-                saveFileQueue.push({folder: testDataUserFolder, file: file, obj: m.friend});
-                saveRawFriendFlag = false;
-              }
             }
+          }
+        break;
 
-            // if (m.follow) {
-            //   try { 
-            //   }
-            //   catch(err){
-            //     console.log(chalkError("TFE | *** SLACK FOLLOW MESSAGE ERROR: " + err));
-            //   }
-            // }
-          break;
+        case "USER_TWEETS":
 
-          case "UNFOLLOWED":
+          // {
+          //   op: "USER_TWEETS",
+          //   nodeId: user.nodeId,
+          //   priority: user.priority,
+          //   latestTweets: latestTweets
+          // }, 
 
-            console.log(chalkLog("TFE | CHILD UNFOLLOWED"
-              + " | " + m.threeceeUser
-              + " | UID: " + m.user.id_str
-              + " | @" + m.user.screen_name
-              + " | FLWRs: " + m.user.followers_count
-              + " | FRNDs: " + m.user.friends_count
-              + " | Ts: " + m.user.statuses_count
+          if (m.priority) {
+            priorityUserTweetsQueue.push(m);
+            myEmitter.emit("priorityUserTweetsEvent");
+          }
+
+          if (categorizedUserIdSet.has(m.nodeId)){
+
+            processUserQueue.push(m);
+            statsObj.queues.processUserQueue.size = processUserQueue.length;
+
+            if (configuration.verbose){
+              console.log(chalkTwitter("TFE | USER_TWEETS"
+                + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
+                + " | NID: " + m.nodeId
+                + " | LTs: " + m.latestTweets.length
+              ));
+            }
+          }
+        break;
+
+        case "FRIEND_RAW":
+
+          processUserQueue.push(m);
+
+          statsObj.queues.processUserQueue.size = processUserQueue.length;
+
+          if (configuration.verbose || saveRawFriendFlag) {
+            console.log(chalkInfo("TFE | TEST DATA: FRIEND_RAW"
+              + " [ PUQ: " + processUserQueue.length + " ]"
+              + " | 3C @" + m.threeceeUser
+              + " | @" + m.friend.screen_name
+              + " | FLWRs: " + m.friend.followers_count
+              + " | FRNDs: " + m.friend.friends_count
+              + " | Ts: " + m.friend.statuses_count
+              + " | LATESTs: " + m.friend.latestTweets.length
             ));
-          break;
 
-          case "STATS":
-
-            m.statsObj.startTimeMoment = getTimeStamp(m.statsObj.startTimeMoment);
-
-            childHashMap[childId].status = m.statsObj.fsmState;
-            childHashMap[childId].statsObj = m.statsObj;
-
-            if (childId === "tfe_node_child_altthreecee00"){
-              statsObj.queues.fetchUserTweetsQueue = m.statsObj.queues.fetchUserTweetsQueue;
-              // console.log(chalkLog("TFE | CHILD STATS"
-              //   + " | " + m.threeceeUser
-              //   + " | " + getTimeStamp() + " ___________________________\n"
-              //   + jsonPrint(m.statsObj, "TFC | STATS ")
-              //   + "\nTFC | CHILD STATS___________________________"
-              // ));
-            }
-
-            if (configuration.verbose) {
-              console.log(chalkLog("TFE | CHILD STATS"
-                + " | " + m.threeceeUser
-                + " | " + getTimeStamp() + " ___________________________\n"
-                + jsonPrint(m.statsObj, "TFC | STATS ")
-                + "\nTFC | CHILD STATS___________________________"
+            if (saveRawFriendFlag){
+              const file = "user_" + m.friend.id_str + ".json";
+              console.log(chalkLog("TFE | SAVE FRIEND_RAW FILE"
+                + " | " + testDataUserFolder + "/" + file
               ));
+              debug(chalkAlert("TFE | SAVE FRIEND_RAW FILE"
+                + " | " + testDataUserFolder + "/" + file
+                + "\n" + jsonPrint(m.friend)
+              ));
+              statsObj.rawFriend = m.friend;
+              saveFileQueue.push({folder: testDataUserFolder, file: file, obj: m.friend});
+              saveRawFriendFlag = false;
             }
-          break;
+          }
 
-          default:
-            console.log(chalkError("TFE | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
-            quit("UNKNOWN OP" + m.op);
-        }
-      });
+          // if (m.follow) {
+          //   try { 
+          //   }
+          //   catch(err){
+          //     console.log(chalkError("TFE | *** SLACK FOLLOW MESSAGE ERROR: " + err));
+          //   }
+          // }
+        break;
 
-      childHashMap[childId].child = child;
-      childHashMap[childId].config = {};
-      childHashMap[childId].config = config;
+        case "UNFOLLOWED":
 
-      const initResponse = await childInit({ childId: childId, threeceeUser: config.threeceeUser, config: config });
+          console.log(chalkLog("TFE | CHILD UNFOLLOWED"
+            + " | " + m.threeceeUser
+            + " | UID: " + m.user.id_str
+            + " | @" + m.user.screen_name
+            + " | FLWRs: " + m.user.followers_count
+            + " | FRNDs: " + m.user.friends_count
+            + " | Ts: " + m.user.statuses_count
+          ));
+        break;
 
-      const childPidFile = await touchChildPidFile({ childId: childId, pid: child.pid });
+        case "STATS":
 
-      childHashMap[childId].childPidFile = childPidFile;
+          m.statsObj.startTimeMoment = getTimeStamp(m.statsObj.startTimeMoment);
 
-      child.on("close", function(){
-        console.log(chalkAlert(MODULE_ID_PREFIX + " | CHILD CLOSED | " + childId));
-        shell.cd(childPidFolderLocal);
-        shell.rm(childPidFile);
-        delete childHashMap[childId];
-      });
+          childHashMap[childId].status = m.statsObj.fsmState;
+          childHashMap[childId].statsObj = m.statsObj;
 
-      child.on("exit", function(code, signal){
-        console.log(chalkAlert(MODULE_ID_PREFIX 
-          + " | CHILD EXITED | " + childId 
-          + " | CODE: " + code 
-          + " | SIGNAL: " + signal
-        ));
-        shell.cd(childPidFolderLocal);
-        shell.rm(childPidFile);
-        delete childHashMap[childId];
-      });
+          if (childId === "tfe_node_child_altthreecee00"){
+            statsObj.queues.fetchUserTweetsQueue = m.statsObj.queues.fetchUserTweetsQueue;
+            // console.log(chalkLog("TFE | CHILD STATS"
+            //   + " | " + m.threeceeUser
+            //   + " | " + getTimeStamp() + " ___________________________\n"
+            //   + jsonPrint(m.statsObj, "TFC | STATS ")
+            //   + "\nTFC | CHILD STATS___________________________"
+            // ));
+          }
 
-      if (quitFlag) {
-        console.log(chalkAlert(MODULE_ID_PREFIX
-          + " | KILL CHILD IN CREATE ON QUIT FLAG"
-          + " | " + getTimeStamp()
-          + " | " + childId
-        ));
-        child.kill();
+          if (configuration.verbose) {
+            console.log(chalkLog("TFE | CHILD STATS"
+              + " | " + m.threeceeUser
+              + " | " + getTimeStamp() + " ___________________________\n"
+              + jsonPrint(m.statsObj, "TFC | STATS ")
+              + "\nTFC | CHILD STATS___________________________"
+            ));
+          }
+        break;
+
+        default:
+          console.log(chalkError("TFE | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
+          quit("UNKNOWN OP" + m.op);
       }
+    });
 
-      return initResponse;
-    }
-    catch(err){
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD INIT ERROR"
-        + " | ERR: " + err
-        + "\nCONFIG\n" + jsonPrint(config)
-        + "\nENV\n" + jsonPrint(options.env)
+    childHashMap[childId].child = child;
+    childHashMap[childId].config = {};
+    childHashMap[childId].config = config;
+
+    const initResponse = await childInit({ childId: childId, threeceeUser: config.threeceeUser, config: config });
+
+    const childPidFile = await touchChildPidFile({ childId: childId, pid: child.pid });
+
+    childHashMap[childId].childPidFile = childPidFile;
+
+    child.on("close", function(){
+      console.log(chalkAlert(MODULE_ID_PREFIX + " | CHILD CLOSED | " + childId));
+      shell.cd(childPidFolderLocal);
+      shell.rm(childPidFile);
+      delete childHashMap[childId];
+    });
+
+    child.on("exit", function(code, signal){
+      console.log(chalkAlert(MODULE_ID_PREFIX 
+        + " | CHILD EXITED | " + childId 
+        + " | CODE: " + code 
+        + " | SIGNAL: " + signal
       ));
-      throw err;
+      shell.cd(childPidFolderLocal);
+      shell.rm(childPidFile);
+      delete childHashMap[childId];
+    });
+
+    if (quitFlag) {
+      console.log(chalkAlert(MODULE_ID_PREFIX
+        + " | KILL CHILD IN CREATE ON QUIT FLAG"
+        + " | " + getTimeStamp()
+        + " | " + childId
+      ));
+      child.kill();
     }
+
+    return initResponse;
+  }
+  catch(err){
+    console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD INIT ERROR"
+      + " | ERR: " + err
+      + "\nCONFIG\n" + jsonPrint(config)
+      + "\nENV\n" + jsonPrint(options.env)
+    ));
+    throw err;
+  }
 }
 
 async function childCheckState (params) {
@@ -7071,7 +6997,6 @@ async function childCheckState (params) {
 
   let allCheckState = true;
 
-  // Object.keys(childHashMap).forEach(function(childId){
   for (const childId of Object.keys(childHashMap)){
 
     const child = childHashMap[childId];
@@ -7110,7 +7035,6 @@ async function childCheckState (params) {
   // }
 
   return allCheckState;
-
 }
 
 console.log(MODULE_ID_PREFIX + " | =================================");

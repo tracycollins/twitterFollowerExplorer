@@ -55,11 +55,9 @@ const merge = require("deepmerge");
 const writeJsonFile = require("write-json-file");
 const sizeof = require("object-sizeof");
 
-const fs = require("fs");
 const debug = require("debug")("tfe");
 const util = require("util");
 const deepcopy = require("deep-copy");
-const async = require("async");
 const omit = require("object.omit");
 
 const chalk = require("chalk");
@@ -355,14 +353,15 @@ function initConfig(cnf) {
 
       const configArgs = Object.keys(configuration);
 
-      configArgs.forEach(function(arg){
+      // configArgs.forEach(function(arg){
+      for (const arg of configArgs){
         if (_.isObject(configuration[arg])) {
           console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + "\n" + jsonPrint(configuration[arg]));
         }
         else {
           console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + ": " + configuration[arg]);
         }
-      });
+      }
       
       resolve(configuration);
 
@@ -557,73 +556,6 @@ configuration.DROPBOX = {};
 configuration.DROPBOX.DROPBOX_CONFIG_FILE = process.env.DROPBOX_CONFIG_FILE || MODULE_NAME + "Config.json";
 configuration.DROPBOX.DROPBOX_STATS_FILE = process.env.DROPBOX_STATS_FILE || MODULE_NAME + "Stats.json";
 
-function filesListFolderLocal(options){
-
-  return new Promise(function(resolve, reject) {
-
-    const fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + options.path;
-
-    fs.readdir(fullPath, function(err, items){
-      if (err) {
-        reject(err);
-      }
-      else {
-
-        const itemArray = [];
-
-        async.each(items, function(item, cb){
-
-          itemArray.push(
-            {
-              name: item, 
-              client_modified: false,
-              content_hash: false,
-              path_display: fullPath + "/" + item
-            }
-          );
-          cb();
-
-        }, function(err){
-
-          if (err) {
-            console.log(chalkError("TFC | *** FILE LIST FOLDER ERROR: " + err));
-            return reject(err);
-          }
-
-          const response = {
-            cursor: false,
-            has_more: false,
-            entries: itemArray
-          };
-
-          resolve(response);
-        });
-        }
-    });
-  });
-}
-
-function filesGetMetadataLocal(options){
-
-  return new Promise(function(resolve, reject) {
-
-    const fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + options.path;
-
-    fs.stat(fullPath, function(err, stats){
-      if (err) {
-        reject(err);
-      }
-      else {
-        const response = {
-          client_modified: stats.mtimeMs
-        };
-        
-        resolve(response);
-      }
-    });
-  });
-}
-
 //=========================================================================
 // FILE SAVE
 //=========================================================================
@@ -672,37 +604,32 @@ function saveFile(params, callback){
   debug(chalkInfo("LOAD FILE " + params.file));
   debug(chalkInfo("FULL PATH " + fullPath));
 
-  const options = {};
+  const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
 
-  // if (params.localFlag) {
+  showStats();
+  console.log(chalkBlue(MODULE_ID_PREFIX + " | ... SAVING"
+    + " | " + objSizeMBytes.toFixed(3) + " MB"
+    + " | " + fullPath
+  ));
 
-    const objSizeMBytes = sizeof(params.obj)/ONE_MEGABYTE;
+  writeJsonFile(fullPath, params.obj, { mode: 0o777 }).
+  then(function() {
 
-    showStats();
-    console.log(chalkBlue(MODULE_ID_PREFIX + " | ... SAVING"
+    console.log(chalkBlue(MODULE_ID_PREFIX + " | SAVED"
       + " | " + objSizeMBytes.toFixed(3) + " MB"
       + " | " + fullPath
     ));
+    if (callback !== undefined) { return callback(null); }
 
-    writeJsonFile(fullPath, params.obj, { mode: 0o777 }).
-    then(function() {
-
-      console.log(chalkBlue(MODULE_ID_PREFIX + " | SAVED"
-        + " | " + objSizeMBytes.toFixed(3) + " MB"
-        + " | " + fullPath
-      ));
-      if (callback !== undefined) { return callback(null); }
-
-    }).
-    catch(function(error){
-      console.trace(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
-        + " | !!! ERROR DROBOX LOCAL JSON WRITE | FILE: " + fullPath 
-        + " | ERROR: " + error
-        + " | ERROR\n" + jsonPrint(error)
-      ));
-      if (callback !== undefined) { return callback(error); }
-    });
-  // }
+  }).
+  catch(function(error){
+    console.trace(chalkError(MODULE_ID_PREFIX + " | " + moment().format(compactDateTimeFormat) 
+      + " | !!! ERROR DROBOX LOCAL JSON WRITE | FILE: " + fullPath 
+      + " | ERROR: " + error
+      + " | ERROR\n" + jsonPrint(error)
+    ));
+    if (callback !== undefined) { return callback(error); }
+  });
 }
 
 function initSaveFileQueue(cnf) {
@@ -1429,9 +1356,8 @@ function checkRateLimit(){
 
       }
 
-      Object.keys(TWITTER_RATE_LIMIT_RESOURCES).forEach(function(resource){
-
-        Object.keys(statsObj.threeceeUser.twitterRateLimit[resource]).forEach(async function(endPoint){
+      for (const resource of Object.keys(TWITTER_RATE_LIMIT_RESOURCES)){
+        for (const endPoint of Object.keys(statsObj.threeceeUser.twitterRateLimit[resource])){
 
           const key = data.resources[resource]["/" + resource + "/" + endPoint];
 
@@ -1454,17 +1380,24 @@ function checkRateLimit(){
             ));
           }
 
-          const flag = await checkEndPointRateLimit({resource: resource, endPoint: endPoint, dataResources: data.resources});
+          // const flag = await checkEndPointRateLimit({resource: resource, endPoint: endPoint, dataResources: data.resources});
+          checkEndPointRateLimit({resource: resource, endPoint: endPoint, dataResources: data.resources}).
+          then(function(flag){
+            if (flag) { 
+              results.anyRateLimitFlag = true;
+              objectPath.set(results, "flags." + resource + "." + endPoint, flag);
+            }
 
-          if (flag) { 
-            results.anyRateLimitFlag = true;
-            objectPath.set(results, "flags." + resource + "." + endPoint, flag);
-          }
+            resolve(results);
+          }).
+          catch(function(err){
+            return reject(err);
+          });
 
-        });
-      });
+        }
+      }
 
-      resolve(results);
+      // resolve(results);
     });
 
   });
@@ -2074,7 +2007,6 @@ process.on("message", async function(m) {
 
     case "FETCH_USER_TWEETS":
 
-      // m.userArray.forEach(function(user){
       for (const user of m.userArray){
 
         if (m.priority) {
