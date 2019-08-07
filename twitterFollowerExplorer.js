@@ -4367,7 +4367,7 @@ async function processLocationChange(params){
 
   locations[nodeId] = (locations[nodeId] === undefined) ? 1 : locations[nodeId] + 1;
 
-  let locationDoc = await global.globalLocation.findOne({nodeId: nodeId});
+  let locationDoc = await global.globalLocation.findOne({nodeId: nodeId}).exec();
 
   if (!locationDoc) {
 
@@ -5453,7 +5453,7 @@ async function initProcessUserQueueInterval(interval) {
           return;
         }
 
-        const u = await global.globalUser.findOne({nodeId: mObj.nodeId});
+        const u = await global.globalUser.findOne({nodeId: mObj.nodeId}).exec();
 
         if (!u) {
           console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
