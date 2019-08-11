@@ -1023,6 +1023,7 @@ function convertUserHistograms(params) {
         debug(chalkError(MODULE_ID_PREFIX + " | convertedTweetHistograms\n" + jsonPrint(convertedTweetHistograms)));
 
         user.tweetHistograms = convertedTweetHistograms;
+        user.profileHistograms = user.profileHistograms || {};
 
         tcUtils.convertHistogramToBinary({histogram: user.profileHistograms})
         .then(function(convertedProfileHistograms){
