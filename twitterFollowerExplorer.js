@@ -1036,13 +1036,13 @@ function convertUserHistograms(params) {
 
         })
         .catch(function(e){
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms ERROR: " + e));
+          console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms user.profileHistograms ERROR: " + e));
           return cb(e);
         });
 
       })
       .catch(function(e){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms ERROR: " + e));
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms user.tweetHistograms ERROR: " + e));
         return cb(e);
       });
 
