@@ -1038,6 +1038,7 @@ function convertUserHistograms(params) {
         })
         .catch(function(e){
           console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms user.profileHistograms ERROR: " + e));
+          console.log(chalkError("user\n" + jsonPrint(user)));
           return cb(e);
         });
 
