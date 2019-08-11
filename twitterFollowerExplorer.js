@@ -1017,7 +1017,7 @@ function convertUserHistograms(params) {
       const user = params.usersHashMap[nodeId];
       categorizedUserIdSet.add(nodeId);
 
-      tcUtils.convertHistogramToBinary({histogram: user.tweetHistograms})
+      tcUtils.convertHistogramToBinary({histogram: user.tweetHistograms, verbose: configuration.verbose})
       .then(function(convertedTweetHistograms){
 
         debug(chalkError(MODULE_ID_PREFIX + " | convertedTweetHistograms\n" + jsonPrint(convertedTweetHistograms)));
@@ -1025,7 +1025,7 @@ function convertUserHistograms(params) {
         user.tweetHistograms = convertedTweetHistograms;
         user.profileHistograms = user.profileHistograms || {};
 
-        tcUtils.convertHistogramToBinary({histogram: user.profileHistograms})
+        tcUtils.convertHistogramToBinary({histogram: user.profileHistograms, verbose: configuration.verbose})
         .then(function(convertedProfileHistograms){
 
           debug(chalkError(MODULE_ID_PREFIX + " | convertedProfileHistograms\n" + jsonPrint(convertedProfileHistograms)));
@@ -1584,7 +1584,7 @@ const globalBestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "/config/utility/
 const globalBestNetworkArchiveFolder = globalBestNetworkFolder + "/archive";
 const bestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility/best/neuralNetworks");
 
-configuration.neuralNetworkFolder = configHostFolder + "/neuralNetworks";
+configuration.neuralNetworkFolder = configDefaultFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
 const defaultMaxInputHashmapFile = "maxInputHashMap.json";
