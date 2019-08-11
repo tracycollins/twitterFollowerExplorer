@@ -2060,7 +2060,7 @@ async function quit(opts) {
         ));
       }
       else {
-        console.log(chalkBlueBold(MODULE_ID_PREFIX + " | ALL PROCESSES COMPLETE | QUITTING"
+        console.log(chalkGreen(MODULE_ID_PREFIX + " | ALL PROCESSES COMPLETE | QUITTING"
           + " | SAVE CACHE KEYS: " + saveCache.getStats().keys
           + " | SAVE FILE BUSY: " + statsObj.queues.saveFileQueue.busy
           + " | SAVE FILE Q: " + statsObj.queues.saveFileQueue.size
@@ -2513,7 +2513,7 @@ async function loadBestNetworksFolder(params) {
 
   await Promise.all(loadNetworkFilePromiseArray)
   .then(function(){
-    console.log(chalkWarn("TFE | +++ LOAD FOLDER BEST NETWORKS COMPLETE | " + folder));
+    console.log(chalkGreen("TFE | +++ LOAD FOLDER BEST NETWORKS COMPLETE | " + folder));
     return;
   });
 }
@@ -3054,7 +3054,7 @@ async function initNetworks(){
   .then(async function(){
     await initMaxInputHashMap();
     await initRandomNetworks();
-    console.log(chalkWarn("TFE | +++ LOAD BEST NETWORKS COMPLETE"));
+    console.log(chalkGreen("TFE | +++ LOAD BEST NETWORKS COMPLETE"));
     return;
   });
 
