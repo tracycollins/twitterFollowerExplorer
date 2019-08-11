@@ -1011,13 +1011,14 @@ function convertUserHistograms(params) {
 
     const userNodeIdArray = Object.keys(params.usersHashMap);
     const userArray =[];
+    const verbose = params.verbose || configuration.verbose;
 
     async.eachSeries(userNodeIdArray, function(nodeId, cb){
 
       const user = params.usersHashMap[nodeId];
       categorizedUserIdSet.add(nodeId);
 
-      tcUtils.convertHistogramToBinary({histogram: user.tweetHistograms, verbose: configuration.verbose})
+      tcUtils.convertHistogramToBinary({histogram: user.tweetHistograms, verbose: verbose})
       .then(function(convertedTweetHistograms){
 
         debug(chalkError(MODULE_ID_PREFIX + " | convertedTweetHistograms\n" + jsonPrint(convertedTweetHistograms)));
@@ -1025,7 +1026,7 @@ function convertUserHistograms(params) {
         user.tweetHistograms = convertedTweetHistograms;
         user.profileHistograms = user.profileHistograms || {};
 
-        tcUtils.convertHistogramToBinary({histogram: user.profileHistograms, verbose: configuration.verbose})
+        tcUtils.convertHistogramToBinary({histogram: user.profileHistograms, verbose: verbose})
         .then(function(convertedProfileHistograms){
 
           debug(chalkError(MODULE_ID_PREFIX + " | convertedProfileHistograms\n" + jsonPrint(convertedProfileHistograms)));
