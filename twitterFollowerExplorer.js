@@ -2504,7 +2504,12 @@ async function loadBestNetworksDatabase(p) {
   const randomUntestedPerInputsLimit = params.randomUntestedPerInputsLimit || configuration.randomUntestedPerInputsLimit;
   const networkDatabaseLoadPerInputsLimit = params.networkDatabaseLoadPerInputsLimit || configuration.networkDatabaseLoadPerInputsLimit;
 
-  console.log(chalkLog("TFE | LOAD BEST NETWORKS DATABASE"));
+  console.log(chalkBlue("TFE | ... LOADING BEST NETWORKS DATABASE"
+    + " | GLOBAL MIN SUCCESS RATE: " + globalMinSuccessRate.toFixed(2) + "%"
+    + " | MIN TEST CYCs: " + minTestCycles
+    + " | PER INPUTS LIMIT: " + networkDatabaseLoadPerInputsLimit
+    + " | PER RANDOM UNTESTED LIMIT: " + randomUntestedPerInputsLimit
+  ));
 
   statsObj.status = "LOAD BEST NNs DATABASE";
   
