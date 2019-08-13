@@ -320,6 +320,8 @@ statsObj.geo.total = 0;
 statsObj.geo.hitRate = 0;
 
 statsObj.imageParser = {};
+statsObj.imageParser.parsed = 0;
+statsObj.imageParser.errors = 0;
 statsObj.imageParser.rateLimitFlag = false;
 
 statsObj.analyzer = {};
@@ -3964,7 +3966,9 @@ function parseImage(params){
 
     twitterImageParser.parseImage(params).
     then(function(hist){
+      statsObj.imageParser.parsed += 1;
       console.log(chalkLog("TFE | +++ IMAGE PARSE" 
+        + " | PARSED: " + statsObj.imageParser.parsed
         + " | CAT: " + params.category
         + " | @" + params.screenName
         + " | " + params.imageUrl
@@ -3981,6 +3985,7 @@ function parseImage(params){
 
         return resolve();
       }
+      statsObj.imageParser.errors += 1;
       console.log(chalkError("TFE | *** IMAGE PARSER ERROR: " + err));
       console.error(err);
       reject(err);
