@@ -69,7 +69,7 @@ const DEFAULT_CURSOR_BATCH_SIZE = 100;
 const TEST_CURSOR_BATCH_SIZE = 5;
 
 const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
-const DEFAULT_MIN_TEST_CYCLES = 3;
+const DEFAULT_MIN_TEST_CYCLES = 10;
 const DEFAULT_MIN_WORD_LENGTH = 3;
 // const DEFAULT_RANDOM_UNTESTED_LIMIT = 25;
 const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
@@ -4274,9 +4274,31 @@ async function analyzeLanguage(params){
     return sentimentHistogram;
   }
   catch(err){
-    console.log(chalkError("*** LANGUAGE ANALYZER ERROR", err));
+    console.log(chalkError("*** LANGUAGE ANALYZER ERROR" + err));
     statsObj.analyzer.errors += 1;
     statsObj.analyzer.total += 1;
+
+    if (err.code == 3) {
+      console.log(chalkAlert("TFE | analyzeLanguage | UNSUPPORTED LANG"
+        + " | " + err
+      ));
+    }
+    else if (err.code == 8) {
+      console.error(chalkAlert("TFE | analyzeLanguage"
+        + " | " + getTimeStamp()
+        + " | LANGUAGE QUOTA"
+        + " | RESOURCE_EXHAUSTED"
+      ));
+      statsObj.languageQuotaFlag = moment().valueOf();
+      startQuotaTimeOutTimer();
+    }
+    else {
+      console.error(chalkError("TFE | *** analyzeLanguage LANGUAGE TEXT ERROR"
+        + " | " + err
+        + "\n" + jsonPrint(err)
+      ));
+    }
+
     throw err;
   }
 }
@@ -4527,42 +4549,19 @@ async function userLanguageSentiment(params){
     if (user.location) { profileText += "\n" + user.location; }
     if (user.description) { profileText += "\n" + user.description; }
 
-    try{
-      const sentiment = await analyzeLanguage({screenName: user.screenName, text: profileText});
-      statsObj.languageQuotaFlag = false;
-      return sentiment;
-    }
-    catch(err){
-      if (err.code == 3) {
-        console.log(chalkAlert("TFE | userLanguageSentiment | UNSUPPORTED LANG"
-          + " | NID: " + user.nodeId
-          + " | @" + user.screenName
-          + " | " + err
-        ));
-      }
-      else if (err.code == 8) {
-        console.error(chalkAlert("TFE | userLanguageSentiment"
-          + " | " + getTimeStamp()
-          + " | LANGUAGE QUOTA"
-          + " | RESOURCE_EXHAUSTED"
-          + " | NID: " + user.nodeId
-          + " | @" + user.screenName
-        ));
-        statsObj.languageQuotaFlag = moment().valueOf();
-        startQuotaTimeOutTimer();
-      }
-      else {
-        console.error(chalkError("TFE | *** userLanguageSentiment LANGUAGE TEXT ERROR"
-          + " | " + err
-          + "\n" + jsonPrint(err)
-        ));
-      }
-      throw err;
-    }
+    const sentiment = await analyzeLanguage({screenName: user.screenName, text: profileText});
+    statsObj.languageQuotaFlag = false;
+    return sentiment;
   }
   else {
-    return user;
+    return;
   }
+}
+
+const defaultSentiment = {
+  score: 0,
+  magnitude: 0,
+  comp: 0
 }
 
 function processUserProfileChanges(params){
@@ -4795,6 +4794,12 @@ function processUserProfileChanges(params){
               cb(null, sentiment);
             }).
             catch(function(err){
+              if (err.code == 3){ // unsupported lang
+                return cb(null, defaultSentiment); // don't analyze again
+              }
+              if (err.code == 8){ // quota error
+                return cb(null, null);
+              }
               cb(err, null);
             })
           }
@@ -4820,7 +4825,7 @@ function processUserProfileChanges(params){
         } ).
         then(function(histogramsMerged){
           user.profileHistograms = histogramsMerged;
-          user.profileHistograms.sentiment = (results.sentimentHist) ? results.sentimentHist : {};
+          user.profileHistograms.sentiment = (results.sentimentHist && results.sentimentHist !== undefined) ? results.sentimentHist : {};
           resolve(user);
         }).
         catch(function(err){
