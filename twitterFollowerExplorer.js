@@ -27,6 +27,7 @@ const MIN_TWEET_ID = 1000000;
 
 const DEFAULT_FORCE_LANG_ANALYSIS = false;
 const DEFAULT_ENABLE_LANG_ANALYSIS = true;
+const DEFAULT_LANG_QUOTA_TIMEOUT_DURATION = 15*ONE_MINUTE;
 
 const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
 const DEFAULT_ENABLE_IMAGE_ANALYSIS = true;
@@ -157,7 +158,7 @@ configuration.offlineMode = false;
 configuration.verbose = false;
 configuration.networkDatabaseLoadPerInputsLimit = 3;
 configuration.randomUntestedPerInputsLimit = 3;
-configuration.languageQuotaTimoutDuration = 10*ONE_MINUTE;
+configuration.languageQuotaTimoutDuration = DEFAULT_LANG_QUOTA_TIMEOUT_DURATION;
 configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
 configuration.forceLanguageAnalysis = DEFAULT_FORCE_LANG_ANALYSIS;
 configuration.enableImageAnalysis = DEFAULT_ENABLE_IMAGE_ANALYSIS;
@@ -1768,6 +1769,11 @@ async function loadConfigFile(params) {
     if (loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS !== undefined) {
       console.log("TFE | LOADED TFE_ENABLE_LANG_ANALYSIS: " + loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS);
       newConfiguration.enableLanguageAnalysis = loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS;
+    }
+
+    if (loadedConfigObj.TFE_LANG_QUOTA_TIMEOUT_DURATION !== undefined) {
+      console.log("TFE | LOADED TFE_LANG_QUOTA_TIMEOUT_DURATION: " + loadedConfigObj.TFE_LANG_QUOTA_TIMEOUT_DURATION);
+      newConfiguration.languageQuotaTimoutDuration = loadedConfigObj.TFE_LANG_QUOTA_TIMEOUT_DURATION;
     }
 
     if (loadedConfigObj.TFE_FORCE_LANG_ANALYSIS !== undefined) {
