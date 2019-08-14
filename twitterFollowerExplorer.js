@@ -2641,143 +2641,6 @@ async function loadBestNetworksDatabase(p) {
   });
 }
 
-// async function loadBestNetworksDatabaseOld(paramsIn) {
-
-//   const params = (paramsIn === undefined) ? {} : paramsIn;
-
-//   const minTestCycles = (params.minTestCycles !== undefined) ? params.minTestCycles : configuration.minTestCycles;
-//   const globalMinSuccessRate = params.globalMinSuccessRate || configuration.globalMinSuccessRate;
-//   const randomUntestedLimit = params.randomUntestedLimit || configuration.randomUntestedLimit;
-//   let networkDatabaseLoadLimit = params.networkDatabaseLoadLimit || configuration.networkDatabaseLoadLimit;
-
-//   if (configuration.testMode) {
-//     networkDatabaseLoadLimit = TEST_MODE_NUM_NN;
-//   }
-
-//   console.log(chalkLog("TFE | LOAD BEST NETWORKS DATABASE"));
-
-//   statsObj.status = "LOAD BEST NNs DATABASE";
-  
-//   statsObj.newBestNetwork = false;
-//   statsObj.numNetworksLoaded = 0;
-
-//   const inputsIdArray = [...inputsIdSet];
-
-//   if (configuration.verbose) { console.log(chalkLog("inputsIdArray\n" + jsonPrint(inputsIdArray))); }
-
-//   let query = {};
-//   query.inputsId = { "$in": inputsIdArray };
-
-//   if (minTestCycles) {
-//     query = {};
-//     query.$and = [
-//       { inputsId: { "$in": inputsIdArray } },
-//       { overallMatchRate: { "$gte": globalMinSuccessRate } },
-//       { testCycles: { "$gte": minTestCycles } }
-//     ];
-//   }
-
-//   const randomUntestedQuery = {};
-//   randomUntestedQuery.$and = [
-//     { inputsId: { "$in": inputsIdArray } },
-//     { successRate: { "$gte": globalMinSuccessRate } },
-//     { testCycles: { "$lt": minTestCycles } }
-//   ];
-
-//   if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
-
-//   let nnArrayTopOverallMatchRate = [];
-//   let nnArrayRandomUntested = [];
-//   let nnArray = [];
-
-//   console.log(chalkBlue("TFE | LOADING " + networkDatabaseLoadLimit + " BEST NNs (by OAMR) FROM DB ..."));
-
-//   nnArrayTopOverallMatchRate = await global.globalNeuralNetwork.find(query)
-//   .lean()
-//   .sort({"overallMatchRate": -1})
-//   .limit(networkDatabaseLoadLimit)
-//   .exec();
-
-//   console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs (by OAMR) FROM DB ..."));
-
-//   console.log(chalkBlue("TFE | LOADING " + randomUntestedLimit + " UNTESTED NNs FROM DB ..."));
-
-//   nnArrayRandomUntested = await global.globalNeuralNetwork.find(randomUntestedQuery)
-//   .lean()
-//   .sort({"overallMatchRate": -1})
-//   .limit(randomUntestedLimit)
-//   .exec();
-
-//   console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
-
-//   nnArray = _.concat(nnArrayTopOverallMatchRate, nnArrayRandomUntested);
-
-//   if (nnArray.length == 0){
-//     console.log(chalkAlert("TFE | ??? NO NEURAL NETWORKS NOT FOUND IN DATABASE"
-//       + "\nQUERY\n" + jsonPrint(query)
-//       + "\nRANDOM QUERY\n" + jsonPrint(randomUntestedQuery)
-//     ));
-
-//     console.log(chalkAlert("TFE | RETRY NEURAL NN DB SEARCH"
-//       + "\nQUERY\n" + jsonPrint(query)
-//       + "\nRANDOM QUERY\n" + jsonPrint(randomUntestedQuery)
-//     ));
-//     return false;
-//   }
-
-//   console.log(chalkBlueBold("TFE | LOADING " + nnArray.length + " NNs FROM DB ..."));
-
-//   bestNetwork = nnArray[0];
-//   bestNetwork.isValid = true;
-//   bestNetwork = networkDefaults(bestNetwork );
-
-//   currentBestNetwork = nnArray[0];
-//   currentBestNetwork.isValid = true;
-//   currentBestNetwork = networkDefaults(currentBestNetwork);
-
-//   statsObj.bestRuntimeNetworkId = bestNetwork.networkId;
-
-//   bestNetworkHashMap.set(statsObj.bestRuntimeNetworkId, bestNetwork);
-
-//   console.log(chalk.bold.blue("TFE | +++ BEST DB NN"
-//     + " | " + bestNetwork.networkId
-//     + " | INPUT ID: " + bestNetwork.inputsId
-//     + " | INs: " + bestNetwork.numInputs
-//     + " | SR: " + bestNetwork.successRate.toFixed(2) + "%"
-//     + " | MR: " + bestNetwork.matchRate.toFixed(2) + "%"
-//     + " | OAMR: " + bestNetwork.overallMatchRate.toFixed(2) + "%"
-//     + " | TCs: " + bestNetwork.testCycles
-//     + " | TCH: " + bestNetwork.testCycleHistory.length
-//   ));
-
-//   async.eachSeries(nnArray, function(networkObj, cb){
-
-//     bestNetworkHashMap.set(networkObj.networkId, networkObj);
-
-//     console.log(chalkInfo("TFE | ADD NN --> HM"
-//       + " | " + networkObj.networkId
-//       + " | INPUT ID: " + networkObj.inputsId
-//       + " | INs: " + networkObj.numInputs
-//       + " | SR: " + networkObj.successRate.toFixed(2) + "%"
-//       + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
-//       + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-//       + " | TCs: " + networkObj.testCycles
-//       + " | TCH: " + networkObj.testCycleHistory.length
-//     ));
-
-//     async.setImmediate(function() { cb(); });
-
-//   }, function(err){
-//     if (err) {
-//       throw err;
-//     }
-
-//     console.log(chalk.bold.blue("TFE | NN HASHMAP: " + bestNetworkHashMap.size));
-
-//     return bestNetwork;
-//   });
-// }
-
 async function loadBestNeuralNetworks() {
 
   statsObj.status = "LOAD BEST NN";
@@ -2902,30 +2765,6 @@ async function initWatchConfig(){
   return;
 }
 
-
-function generateObjFromArray(params){
-
-  return new Promise(function(resolve, reject){
-
-    const keys = params.keys || [];
-    const value = params.value || 0;
-    const result = {};
-
-    async.each(keys, function(key, cb){
-
-      result[key.toString()] = value;
-      cb();
-
-    }, function(err){
-      if (err) {
-        return reject(err);
-      }
-      resolve(result);
-    });
-
-  });
-}
-
 async function pruneGlobalHistograms(p) {
 
   const params = p || {};
@@ -3006,7 +2845,7 @@ async function updateGlobalHistograms(params) {
 
   try {
     mergedHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
-    mergedHistograms.friends = await generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
+    mergedHistograms.friends = await tcUtils.generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
   }
   catch(err){
     console.log(chalkError("TFE | *** UPDATE GLOBAL HISTOGRAMS ERROR: " + err));
