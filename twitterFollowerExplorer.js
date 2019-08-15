@@ -3102,9 +3102,9 @@ function updateNetworkStats(params) {
 
         const testHistoryItem = {
           testCycle: networkObj.testCycles,
-          match: params.networkStatsObj[nnId].match,
-          mismatch: params.networkStatsObj[nnId].mismatch,
-          total: params.networkStatsObj[nnId].total,
+          match: params.networkStatsObj[nnId].meta.match,
+          mismatch: params.networkStatsObj[nnId].meta.mismatch,
+          total: params.networkStatsObj[nnId].meta.total,
           matchRate: params.networkStatsObj[nnId].matchRate,
           rank: params.networkStatsObj[nnId].rank,
           timeStampString: moment().format(compactDateTimeFormat),
