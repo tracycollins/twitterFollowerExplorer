@@ -632,6 +632,7 @@ process.on("message", async function(m) {
     case "LOAD_NETWORK_DONE":
       console.log(chalkLog("RNT | LOAD_NETWORK_DONE"));
       statsObj.networksLoaded = true;
+      await nnTools.printNetworkResults();
     break;
     
     case "ACTIVATE":
