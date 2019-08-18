@@ -4604,7 +4604,7 @@ function processUserProfileChanges(params){
       user[prevUserProp] = (user[prevUserProp] === undefined) ? null : user[prevUserProp];
 
       if (!userPropValue && (userPropValue !== undefined)) {
-        console.log(chalkLog(MODULE_ID_PREFIX
+        debug(chalkLog(MODULE_ID_PREFIX
           + " | --- processUserProfileChanges USER PROP VALUE FALSE"
           + " | @" + user.screenName
           + " | PROP: " + userProp
