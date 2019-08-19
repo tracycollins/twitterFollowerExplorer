@@ -6782,14 +6782,6 @@ async function childCreate(p){
               saveRawFriendFlag = false;
             }
           }
-
-          // if (m.follow) {
-          //   try { 
-          //   }
-          //   catch(err){
-          //     console.log(chalkError("TFE | *** SLACK FOLLOW MESSAGE ERROR: " + err));
-          //   }
-          // }
         break;
 
         case "UNFOLLOWED":
@@ -6813,12 +6805,6 @@ async function childCreate(p){
 
           if (childId == "tfe_node_child_altthreecee00"){
             statsObj.queues.fetchUserTweetsQueue = m.statsObj.queues.fetchUserTweetsQueue;
-            // console.log(chalkLog("TFE | CHILD STATS"
-            //   + " | " + m.threeceeUser
-            //   + " | " + getTimeStamp() + " ___________________________\n"
-            //   + jsonPrint(m.statsObj, "TFC | STATS ")
-            //   + "\nTFC | CHILD STATS___________________________"
-            // ));
           }
 
           if (configuration.verbose) {
