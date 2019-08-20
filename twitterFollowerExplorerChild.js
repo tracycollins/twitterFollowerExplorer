@@ -1486,11 +1486,11 @@ function initFetchUserTweets(p) {
             statsObj.tweets.fetched += latestTweets.length;
           }
 
-          if (configuration.testMode || user.priority || (statsObj.users.fetched % 100 === 0)) {
+          if (configuration.testMode || user.priorityFlag || (statsObj.users.fetched % 100 === 0)) {
             console.log(chalkLog("TFC | +++ FETCHED USER TWEETS" 
               + " | USERS FETCHED: " + statsObj.users.fetched
               + " | FUTQ: " + fetchUserTweetsQueue.length
-              + " | PRIORITY: " + user.priority
+              + " | PRIORITY: " + user.priorityFlag
               + " [ " + latestTweets.length + " LATEST / " + statsObj.tweets.fetched + " TOT FETCHED ]"
               + " | " + user.userId
               + " | @" + user.screenName
@@ -1502,7 +1502,7 @@ function initFetchUserTweets(p) {
             {
               op: "USER_TWEETS",
               nodeId: user.nodeId,
-              priority: user.priority,
+              priorityFlag: user.priorityFlag,
               latestTweets: latestTweets
             }, 
 
@@ -2010,9 +2010,9 @@ process.on("message", async function(m) {
 
       for (const user of m.userArray){
 
-        if (m.priority) {
+        if (m.priorityFlag) {
 
-          user.priority = true;
+          user.priorityFlag = true;
 
           fetchUserTweetsQueue.unshift(user);
 
@@ -2020,7 +2020,7 @@ process.on("message", async function(m) {
 
           debug(chalkBlue(MODULE_ID_PREFIX
             + " | >>> PRIORITY | FETCH_USER_TWEETS"
-            + " | PRIORITY: " + m.priority
+            + " | PRIORITY: " + m.priorityFlag
             + " | END FLAG: " + m.fetchUserTweetsEndFlag
             + " | USER ARRAY: " + m.userArray.length
             + " | FUTQ: " + fetchUserTweetsQueue.length
@@ -2029,13 +2029,14 @@ process.on("message", async function(m) {
 
         }
         else {
+          user.priorityFlag = false;
           fetchUserTweetsQueue.push(user);
           statsObj.queues.fetchUserTweetsQueue.size = fetchUserTweetsQueue.length;
 
           if (configuration.verbose || configuration.testMode || (fetchUserTweetsQueue.length % 100 === 0)){
             console.log(chalkBlue(MODULE_ID_PREFIX
               + " | >>> FETCH_USER_TWEETS"
-              + " | PRIORITY: " + m.priority
+              + " | PRIORITY: " + m.priorityFlag
               + " | END FLAG: " + m.fetchUserTweetsEndFlag
               + " | USER ARRAY: " + m.userArray.length
               + " | FUTQ: " + fetchUserTweetsQueue.length
@@ -2052,7 +2053,7 @@ process.on("message", async function(m) {
 
       debug(chalkBlue(MODULE_ID_PREFIX
         + " | FETCH_USER_TWEETS"
-        + " | PRIORITY: " + m.priority
+        + " | PRIORITY: " + m.priorityFlag
         + " | END FLAG: " + m.fetchUserTweetsEndFlag
         + " | USER ARRAY: " + m.userArray.length
         + " | FUTQ: " + fetchUserTweetsQueue.length

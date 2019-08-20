@@ -5170,7 +5170,10 @@ async function updateUserTweets(params){
 
   const histogramIncompleteFlag = await histogramIncomplete(user.tweetHistograms);
 
-  if (configuration.testFetchTweetsMode || (!userTweetFetchSet.has(user.nodeId) && histogramIncompleteFlag)) { 
+  if (configuration.testFetchTweetsMode 
+    || (!userTweetFetchSet.has(user.nodeId) && (histogramIncompleteFlag || user.priorityFlag))) { 
+
+    userTweetFetchSet.add(user.nodeId);
 
     if (configuration.testFetchTweetsMode) {
       console.log(chalkAlert("TFE | updateUserTweets | !!! TEST MODE FETCH TWEETS"
@@ -5184,9 +5187,8 @@ async function updateUserTweets(params){
     }
 
     user.tweetHistograms = {};
-    // user.markModified("tweetHistograms");
     user = await fetchUserTweets({user: user, force: true});
-    userTweetFetchSet.add(user.nodeId);
+    userTweetFetchSet.delete(user.nodeId);
   }
 
   if (user.latestTweets.length == 0) { 
@@ -5438,6 +5440,7 @@ async function initProcessUserQueueInterval(interval) {
         }
 
         const user = await tcUtils.encodeHistogramUrls({user: u});
+        user.priorityFlag = mObj.priorityFlag;
 
         if (!user.latestTweets || (user.latestTweets === undefined)) { 
           user.latestTweets = [];
@@ -6737,11 +6740,11 @@ async function childCreate(p){
           // {
           //   op: "USER_TWEETS",
           //   nodeId: user.nodeId,
-          //   priority: user.priority,
+          //   priority: user.priorityFlag,
           //   latestTweets: latestTweets
           // }, 
 
-          if (m.priority) {
+          if (m.priorityFlag) {
             priorityUserTweetsHashMap.set(m.nodeId, m);
             myEmitter.emit("priorityUserTweetsEvent_" + m.nodeId);
           }
