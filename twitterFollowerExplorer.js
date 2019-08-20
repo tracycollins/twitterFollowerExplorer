@@ -139,8 +139,6 @@ const DEFAULT_INPUT_TYPES = [
 
 DEFAULT_INPUT_TYPES.sort();
 
-const priorityUserTweetsQueue = [];
-
 const inputsIdSet = new Set();
 const bestInputsSet = new Set();
 const skipLoadNetworkSet = new Set();
@@ -250,6 +248,8 @@ const chalkAlert = chalk.red;
 const chalkWarn = chalk.yellow;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
+
+const priorityUserTweetsHashMap = new HashMap();
 
 const bestNetworkHashMap = new HashMap();
 let maxInputHashMap = {};
@@ -4916,16 +4916,26 @@ async function generateAutoCategory(params) {
   }
 }
 
-async function processPriorityUserTweets(){
+async function processPriorityUserTweets(params){
 
-  await waitEvent({ event: "priorityUserTweetsEvent"});
+  await waitEvent({ event: "priorityUserTweetsEvent_" + params.nodeId});
 
-  if (priorityUserTweetsQueue.length == 0) {
-    console.log(chalkAlert("TFE | ??? PRORITY USER TWEETS QUEUE EMPTY"));
+  if (priorityUserTweetsHashMap.size == 0) {
+    console.log(chalkAlert("TFE | ??? PRORITY USER TWEETS HASHMAP EMPTY"
+      + " | EVENT: priorityUserTweetsEvent_" + params.nodeId
+    ));
     return;
   }
 
-  const obj = priorityUserTweetsQueue.shift();
+  if (!priorityUserTweetsHashMap.has(params.nodeId)) {
+    console.log(chalkAlert("TFE | ??? USER NOT IN PRORITY USER TWEETS HASHMAP"
+      + " | EVENT: priorityUserTweetsEvent_" + params.nodeId
+    ));
+    return;
+  }
+
+  const obj = priorityUserTweetsHashMap.get(params.nodeId);
+  priorityUserTweetsHashMap.delete(params.nodeId);
 
   return obj.latestTweets;
 }
@@ -4970,7 +4980,7 @@ async function fetchUserTweets(params){
 
   try{
     await childSend(childParams);
-    const latestTweets = await processPriorityUserTweets({user: user});
+    const latestTweets = await processPriorityUserTweets({nodeId: user.nodeId});
     if (latestTweets) { 
       user.latestTweets = latestTweets;
       // user.markModified("latestTweets");
@@ -6732,8 +6742,8 @@ async function childCreate(p){
           // }, 
 
           if (m.priority) {
-            priorityUserTweetsQueue.push(m);
-            myEmitter.emit("priorityUserTweetsEvent");
+            priorityUserTweetsHashMap.set(m.nodeId, m);
+            myEmitter.emit("priorityUserTweetsEvent_" + m.nodeId);
           }
 
           if (categorizedUserIdSet.has(m.nodeId)){
