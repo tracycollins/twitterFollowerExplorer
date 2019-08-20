@@ -355,7 +355,7 @@ statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
 
 statsObj.queues.langAnalyzerQueue = {};
 statsObj.queues.langAnalyzerQueue.busy = false;
-statsObj.queues.langAnalyzerQueue.size = false;
+statsObj.queues.langAnalyzerQueue.size = 0;
 
 statsObj.queues.saveFileQueue = {};
 statsObj.queues.saveFileQueue.busy = false;
@@ -5340,7 +5340,7 @@ function printUser(params) {
   }
 }
 
-function allQueuesEmpty(){
+async function allQueuesEmpty(){
 
   if (statsObj.queues.fetchUserTweetsQueue.busy) { return false; }
   if (statsObj.queues.fetchUserTweetsQueue.size > 0) { return false; }
@@ -5355,7 +5355,8 @@ function allQueuesEmpty(){
   if (statsObj.queues.langAnalyzerQueue.size > 0) { return false; }
 
   if (statsObj.queues.activateNetworkQueue.busy) { return false; }
-  if (activateNetworkQueue.length > 0) { return false; }
+  if (statsObj.queues.activateNetworkQueue.size > 0) { return false; }
+  // if (activateNetworkQueue.length > 0) { return false; }
 
   if (statsObj.queues.userDbUpdateQueue.busy) { return false; }
   if (userDbUpdateQueue.length > 0) { return false; }
@@ -5378,7 +5379,7 @@ async function initProcessUserQueueInterval(interval) {
 
   processUserQueueInterval = setInterval(async function () {
 
-    const allEmpty = allQueuesEmpty();
+    const allEmpty = await allQueuesEmpty();
 
     if (statsObj.fetchUserTweetsEndFlag && statsObj.processedStartFlag && allEmpty){
 

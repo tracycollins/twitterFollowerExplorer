@@ -646,9 +646,6 @@ process.on("message", async function(m) {
         console.log(chalkWarn("RNT | ACTIVATE | UNDEFINED USER TWEET HISTOGRAMS | @" + m.obj.user.screenName));
         m.obj.user.tweetHistograms = {};
       }
-      else if (configuration.testMode){
-        console.log(chalkLog("RNT | ACTIVATE | USER TWEET HISTOGRAMS | @" + m.obj.user.screenName + " | " + Object.keys(m.obj.user.tweetHistograms)));
-      }
 
       if (!m.obj.user.friends || (m.obj.user.friends === undefined)) {
         console.log(chalkWarn("RNT | ACTIVATE | UNDEFINED USER FRIENDS | @" + m.obj.user.screenName));
@@ -657,8 +654,8 @@ process.on("message", async function(m) {
 
       activateNetworkQueue.push(m.obj);
 
-      if (configuration.verbose) {
-        console.log(chalkInfo("RNT | ### ACTIVATE"
+      if (configuration.verbose || configuration.testMode) {
+        console.log(chalkInfo("RNT | >>> ACTIVATE Q"
           + " [" + activateNetworkQueue.length + "]"
           + " | " + getTimeStamp()
           + " | " + m.obj.user.nodeId
