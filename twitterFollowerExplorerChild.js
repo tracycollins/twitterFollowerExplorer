@@ -1786,61 +1786,64 @@ const fsmStates = {
 
             const resources = Object.keys(results.flags);
             const resource = (resources.length > 0) ? resources[0] : false;
-            const endPoints = results.flags.resource;
-            const endPoint = endPoints[0];
 
-            const timeout = Math.max(statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remainingTime, ONE_MINUTE);
+            if (resource) {
 
-            process.send({op: "PAUSE_RATE_LIMIT", 
-              threeceeUser: configuration.threeceeUser,
-              exceptionAt: statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionAt.valueOf(),
-              remainingTime: statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remainingTime,
-              exceptionFlag: statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag,
-              resetAt: statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt
-            });
+              const endPoints = results.flags.resource;
+              const endPoint = endPoints[0];
 
+              const timeout = Math.max(statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remainingTime, ONE_MINUTE);
 
-            if ((resource === "friends") && (endPoint === "ids")) {
-
-              console.log(chalkAlert(MODULE_ID_PREFIX
-                + " | >>> SET RATE LIMIT TIMEOUT FRIENDS_IDS"
-                + " | " + msToTime(timeout)
-                + " | @" + configuration.threeceeUser
-              ));
-
-              // const delayEventName = params.delayEventName;
-              // const period = params.period || 10*ONE_SECOND;
-              // const verbose = params.verbose || false;
-              childEvents.once("fetchUserFriendsIdsRateLimitExpired", function(){
-
-                statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag = false;
-
-                console.log(chalkGreen(MODULE_ID_PREFIX
-                  + " | XXX RATE LIMIT END FRIENDS_IDS"
-                ));
-
+              process.send({op: "PAUSE_RATE_LIMIT", 
+                threeceeUser: configuration.threeceeUser,
+                exceptionAt: statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionAt.valueOf(),
+                remainingTime: statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remainingTime,
+                exceptionFlag: statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag,
+                resetAt: statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt
               });
 
-              delayEvent({delayEventName: "fetchUserFriendsIdsRateLimitExpired", period: timeout, verbose: true});
-
-            }
-            else {
-
-              console.log(chalkAlert(MODULE_ID_PREFIX
-                + " | >>> SET RATE LIMIT TIMEOUT"
-                + " | " + msToTime(timeout)
-                + " | @" + configuration.threeceeUser
-              ));
-
-              rateLimitTimeout = setTimeout(function(){
+              if ((resource === "friends") && (endPoint === "ids")) {
 
                 console.log(chalkAlert(MODULE_ID_PREFIX
-                  + " | --- RATE LIMIT TIMEOUT END"
+                  + " | >>> SET RATE LIMIT TIMEOUT FRIENDS_IDS"
+                  + " | " + msToTime(timeout)
                   + " | @" + configuration.threeceeUser
                 ));
 
-                fsm.fsm_rateLimitEnd();
-              }, timeout);
+                // const delayEventName = params.delayEventName;
+                // const period = params.period || 10*ONE_SECOND;
+                // const verbose = params.verbose || false;
+                childEvents.once("fetchUserFriendsIdsRateLimitExpired", function(){
+
+                  statsObj.threeceeUser.twitterRateLimit.friends.ids.exceptionFlag = false;
+
+                  console.log(chalkGreen(MODULE_ID_PREFIX
+                    + " | XXX RATE LIMIT END FRIENDS_IDS"
+                  ));
+
+                });
+
+                delayEvent({delayEventName: "fetchUserFriendsIdsRateLimitExpired", period: timeout, verbose: true});
+              }
+              else {
+
+                console.log(chalkAlert(MODULE_ID_PREFIX
+                  + " | >>> SET RATE LIMIT TIMEOUT"
+                  + " | " + msToTime(timeout)
+                  + " | @" + configuration.threeceeUser
+                ));
+
+                rateLimitTimeout = setTimeout(function(){
+
+                  console.log(chalkAlert(MODULE_ID_PREFIX
+                    + " | --- RATE LIMIT TIMEOUT END"
+                    + " | @" + configuration.threeceeUser
+                  ));
+
+                  fsm.fsm_rateLimitEnd();
+                }, timeout);
+              }
+
             }
 
           }
