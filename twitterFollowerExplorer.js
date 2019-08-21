@@ -5580,7 +5580,7 @@ function waitEvent(params) {
     debug(chalkInfo("TFE | ... WAIT EVENT: " + params.event));
 
     myEmitter.once(params.event, function(){
-      debug(chalkInfo("TFE | !!! WAIT EVENT FIRED: " + params.event));
+      console.log(chalkInfo("TFE | >>> WAIT EVENT FIRED: " + params.event));
       resolve();
     });
 
@@ -6384,6 +6384,8 @@ async function childQuitAll(p){
   return;
 }
 
+let childSendInterval;
+
 function childSend(p){
 
   return new Promise(function(resolve, reject){
@@ -6400,6 +6402,14 @@ function childSend(p){
       console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX CHILD SEND ABORTED | CHILD NOT CONNECTED OR UNDEFINED | " + childId));
       return reject(new Error("CHILD NOT CONNECTED OR UNDEFINED: " + childId));
     }
+
+    clearInterval(childSendInterval);
+
+    setInterval(function(){
+
+      return reject(new Error("CHILD SEND TIMEOUT\nCOMMAND", command));
+
+    }, 5*ONE_SECOND);
 
     childHashMap[childId].child.send(command, function(err) {
       if (err) {
