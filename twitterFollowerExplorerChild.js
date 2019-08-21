@@ -2031,7 +2031,7 @@ process.on("message", async function(m) {
 
           statsObj.queues.fetchUserTweetsQueue.size = fetchUserTweetsQueue.length;
 
-          debug(chalkBlue(MODULE_ID_PREFIX
+          console.log(chalkBlue(MODULE_ID_PREFIX
             + " | >>> PRIORITY | FETCH_USER_TWEETS"
             + " | PRIORITY: " + m.priorityFlag
             + " | END FLAG: " + m.fetchUserTweetsEndFlag

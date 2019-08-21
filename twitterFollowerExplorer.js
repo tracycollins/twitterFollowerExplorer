@@ -1100,7 +1100,7 @@ function initCategorizedUserIdSet(){
     childParams.command = {};
     childParams.command.childId = "tfe_node_child_altthreecee00"
     childParams.command.op = "FETCH_USER_TWEETS";
-    childParams.command.priority = false;
+    childParams.command.priorityFlag = false;
     childParams.command.userArray = [];
     childParams.command.fetchUserTweetsEndFlag = false;
 
@@ -4961,6 +4961,11 @@ async function fetchUserTweets(params){
   }
 
   if (params.force) {
+
+    console.log(chalkAlert("TFE | fetchUserTweets | !!! FORCE"
+      + " | @" + user.screenName
+    ));
+
     delete user.tweets;
     user.tweets = {};
   }
@@ -4973,11 +4978,11 @@ async function fetchUserTweets(params){
   childParams.command.childId = "tfe_node_child_altthreecee00"
   childParams.command.op = "FETCH_USER_TWEETS";
   childParams.command.userArray = [];
-  childParams.command.priority = true;
+  childParams.command.priorityFlag = true;
   childParams.command.fetchUserTweetsEndFlag = false;
   childParams.command.userArray.push(user);
 
-  debug(chalkAlert("TFE | >>> PRIORITY USER FETCH TWEETS | @" + user.screenName));
+  console.log(chalkAlert("TFE | fetchUserTweets | >>> PRIORITY FETCH TWEETS | @" + user.screenName));
 
   try{
     await childSend(childParams);
@@ -5173,14 +5178,14 @@ async function updateUserTweets(params){
       ));
     }
     else{
-      console.log(chalkInfo("TFE | >>> PRIORITY FETCH TWEETS"
+      console.log(chalkInfo("TFE | updateUserTweets | >>> PRIORITY FETCH TWEETS"
         + " | @" + user.screenName
       ));
     }
 
     user.tweetHistograms = {};
     user = await fetchUserTweets({user: user, force: true});
-    userTweetFetchSet.delete(user.nodeId);
+    // userTweetFetchSet.delete(user.nodeId);
   }
 
   if (user.latestTweets.length == 0) { 
@@ -5256,6 +5261,8 @@ async function processUser(params) {
         + "\n" + jsonPrint(savedUser.profileHistograms)
       ));
     }
+
+    userTweetFetchSet.delete(savedUser.nodeId);
 
     return savedUser;
 
@@ -6750,18 +6757,19 @@ async function childCreate(p){
             priorityUserTweetsHashMap.set(m.nodeId, m);
             myEmitter.emit("priorityUserTweetsEvent_" + m.nodeId);
           }
+          else{
+            if (categorizedUserIdSet.has(m.nodeId)){
 
-          if (categorizedUserIdSet.has(m.nodeId)){
+              processUserQueue.push(m);
+              statsObj.queues.processUserQueue.size = processUserQueue.length;
 
-            processUserQueue.push(m);
-            statsObj.queues.processUserQueue.size = processUserQueue.length;
-
-            if (configuration.verbose){
-              console.log(chalkTwitter("TFE | USER_TWEETS"
-                + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
-                + " | NID: " + m.nodeId
-                + " | LTs: " + m.latestTweets.length
-              ));
+              if (configuration.verbose){
+                console.log(chalkTwitter("TFE | USER_TWEETS"
+                  + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
+                  + " | NID: " + m.nodeId
+                  + " | LTs: " + m.latestTweets.length
+                ));
+              }
             }
           }
         break;
