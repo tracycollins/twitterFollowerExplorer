@@ -4270,8 +4270,8 @@ async function analyzeLanguage(params){
     statsObj.analyzer.analyzed += 1;
     statsObj.analyzer.total += 1;
 
-    console.log(chalkInfo("TFE | +++ LANG SENTIMENT"
-      + " [" + statsObj.analyzer.analyzed + " TOT ANALYZED]"
+    console.log(chalkLog("TFE | +++ LANG SENT"
+      + " [" + statsObj.analyzer.analyzed + "]"
       + " | M: " + sentimentHistogram.magnitude.toFixed(5)
       + " | S: " + sentimentHistogram.score.toFixed(5)
       + " | C: " + sentimentHistogram.comp.toFixed(5)
