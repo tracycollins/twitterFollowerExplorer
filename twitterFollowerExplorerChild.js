@@ -810,108 +810,126 @@ Object.keys(TWITTER_RATE_LIMIT_RESOURCES).forEach(function(resource){
   });
 });
 
-function initTwitter(twitterConfig){
+async function getTwitterAccountSettings(){
 
-  return new Promise(function(resolve, reject){
+  twitClient.get("account/settings", async function(err, accountSettings, response) {
 
-    if (!twitClient || (twitClient === undefined)){
-
-      console.log(chalkTwitter("TFC | INITIALIZING TWITTER" 
-        + " | " + getTimeStamp() 
-        + " | @" + configuration.threeceeUser 
-        + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
-      ));
-
-      twitClient = new Twit(twitterConfig);
-
-    }
-    else {
-
-      console.log(chalkLog("TFC | TWITTER ALREADY INITIALIZED" 
-        + " | " + getTimeStamp() 
-        + " | @" + configuration.threeceeUser 
-      ));
-
-      return resolve();
+    if (configuration.verbose) {
+      debug("TFC | TWITTER ACCOUNT SETTINGS response\n", response);
     }
 
-    twitClient.get("account/settings", async function(err, accountSettings, response) {
+    if (err){
 
-      if (configuration.verbose) {
-        debug("TFC | TWITTER ACCOUNT SETTINGS response\n", response);
-      }
+      if (err.code === 88){
 
-      if (err){
+        statsObj.threeceeUser.twitterRateLimit.account.settings.exceptionAt = moment();
+        statsObj.threeceeUser.twitterRateLimit.account.settings.exceptionFlag = true;
 
-        if (err.code === 88){
-
-          statsObj.threeceeUser.twitterRateLimit.account.settings.exceptionAt = moment();
-          statsObj.threeceeUser.twitterRateLimit.account.settings.exceptionFlag = true;
-
-          fsm.fsm_rateLimitStart();
-          return resolve(err);
-        }
-        else if (err.code === 89){
-
-          console.log(chalkAlert("TFC | *** TWITTER ACCOUNT SETTINGS ERROR | INVALID OR EXPIRED TOKEN" 
-            + " | @" + configuration.threeceeUser 
-            + " | " + getTimeStamp() 
-            + " | ERR CODE: " + err.code
-          ));
-
-          statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
-          statsObj.threeceeUser.err = err;
-
-          process.send({op: "ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
-          fsm.fsm_error();
-
-          return reject(err);
-        }
-
-        else {
-
-          console.log(chalkError("TFC | *** TWITTER ACCOUNT SETTINGS ERROR"
-            + " | @" + configuration.threeceeUser 
-            + " | " + getTimeStamp() 
-            + " | ERR CODE: " + err.code
-            + " | " + err.message
-          ));
-
-          fsm.fsm_error();
-
-          return reject(err);
-
-        }
-      }
-
-      const userScreenName = accountSettings.screen_name.toLowerCase();
-
-      debug(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: @" + userScreenName));
-
-      try {
-        await twitterUserUpdate();
-        resolve();
-      }
-      catch(e){
-        e.user = userScreenName;
-
-        if (e.code === 88) {
-          return resolve(err);
-        }
-
-        console.log(chalkError("TFC | *** TWITTER USER UPDATE ERROR" 
+        console.log(chalkAlert("TFC | *** TWITTER ACCOUNT SETTINGS RATE LIMIT" 
+          + " | @" + configuration.threeceeUser 
           + " | " + getTimeStamp() 
-          + " | @" + userScreenName 
-          + "\n" + jsonPrint(e)
+          + " | ERR CODE: " + err.code
         ));
 
-        fsm.fsm_error();
-
-        return reject(e);
+        process.send({op: "ERROR", type: "RATE_LIMIT", threeceeUser: configuration.threeceeUser, error: err});
+        fsm.fsm_rateLimitStart();
+        throw err;
+        // return resolve("RATE_LIMIT");
       }
-    });
+      
+      if (err.code === 89){
 
+        console.log(chalkAlert("TFC | *** TWITTER ACCOUNT SETTINGS ERROR | INVALID OR EXPIRED TOKEN" 
+          + " | @" + configuration.threeceeUser 
+          + " | " + getTimeStamp() 
+          + " | ERR CODE: " + err.code
+        ));
+
+        statsObj.threeceeUser = Object.assign({}, threeceeUserDefaults, statsObj.threeceeUser);  
+        statsObj.threeceeUser.err = err;
+
+        process.send({op: "ERROR", type: "INVALID_TOKEN", threeceeUser: configuration.threeceeUser, error: err});
+        fsm.fsm_error();
+        throw err;
+      }
+
+      console.log(chalkError("TFC | *** TWITTER ACCOUNT SETTINGS ERROR"
+        + " | @" + configuration.threeceeUser 
+        + " | " + getTimeStamp() 
+        + " | ERR CODE: " + err.code
+        + " | " + err.message
+      ));
+
+      process.send({op: "ERROR", type: "UNKNOWN", threeceeUser: configuration.threeceeUser, error: err});
+      fsm.fsm_error();
+      throw err;
+
+    }
+
+    const userScreenName = accountSettings.screen_name.toLowerCase();
+
+    debug(chalkInfo(getTimeStamp() + " | TWITTER ACCOUNT: @" + userScreenName));
+
+    try {
+      await twitterUserUpdate();
+      return;
+    }
+    catch(e){
+
+      e.user = userScreenName;
+
+      if (e.code === 88) {
+        statsObj.threeceeUser.twitterRateLimit.account.settings.exceptionAt = moment();
+        statsObj.threeceeUser.twitterRateLimit.account.settings.exceptionFlag = true;
+
+        console.log(chalkAlert("TFC | *** TWITTER ACCOUNT SETTINGS RATE LIMIT" 
+          + " | @" + configuration.threeceeUser 
+          + " | " + getTimeStamp() 
+          + " | ERR CODE: " + err.code
+        ));
+
+        fsm.fsm_rateLimitStart();
+        throw e;
+      }
+
+      console.log(chalkError("TFC | *** TWITTER USER UPDATE ERROR" 
+        + " | " + getTimeStamp() 
+        + " | @" + userScreenName 
+        + "\n" + jsonPrint(e)
+      ));
+
+      fsm.fsm_error();
+
+      throw e;
+    }
   });
+}
+
+async function initTwitter(twitterConfig){
+
+  if (!twitClient || (twitClient === undefined)){
+
+    console.log(chalkTwitter("TFC | INITIALIZING TWITTER" 
+      + " | " + getTimeStamp() 
+      + " | @" + configuration.threeceeUser 
+      + "\ntwitterConfig\n" + jsonPrint(twitterConfig)
+    ));
+
+    twitClient = new Twit(twitterConfig);
+
+  }
+  else {
+
+    console.log(chalkLog("TFC | TWITTER ALREADY INITIALIZED" 
+      + " | " + getTimeStamp() 
+      + " | @" + configuration.threeceeUser 
+    ));
+
+    return;
+  }
+
+  await getTwitterAccountSettings();
+  return;
 }
 
 function resetTwitterUserState(){
@@ -1159,32 +1177,24 @@ function twitterUsersShow(){
 
 async function twitterUserUpdate(){
 
-  // return new Promise(function(resolve, reject){
+  if (statsObj.threeceeUser.twitterRateLimit.users.exceptionFlag || statsObj.threeceeUser.twitterRateLimit.friends.exceptionFlag) {
+    console.log(chalkAlert("TFC | twitterUserUpdate | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
+    return;
+  }
 
-    if (statsObj.threeceeUser.twitterRateLimit.users.exceptionFlag || statsObj.threeceeUser.twitterRateLimit.friends.exceptionFlag) {
-      console.log(chalkAlert("TFC | twitterUserUpdate | SKIPPING ... RATE LIMIT | @" + configuration.threeceeUser));
-      return;
-    }
-
-    try {
-      await twitterUsersShow();
-      return;
-    }
-    catch(err){
-      console.log(chalkError("TFC | *** TWITTER SHOW USER ERROR"
-        + " | @" + configuration.threeceeUser 
-        + " | " + getTimeStamp() 
-        + " | ERR CODE: " + err.code
-        + " | " + err.message
-      ));
-
-      if (err.code === 88) {
-        return;
-      }
-      return err;
-    }
-
-  // });
+  try {
+    await twitterUsersShow();
+    return;
+  }
+  catch(err){
+    console.log(chalkError("TFC | *** TWITTER SHOW USER ERROR"
+      + " | @" + configuration.threeceeUser 
+      + " | " + getTimeStamp() 
+      + " | ERR CODE: " + err.code
+      + " | " + err.message
+    ));
+    throw err;
+  }
 }
 
 function checkEndPointRateLimit(params){
@@ -1991,13 +2001,13 @@ process.on("message", async function(m) {
 
       try {
         await initTwitter(m.config.twitterConfig);
+        fsm.fsm_init();
       }
       catch(err){
-       console.log(chalkError("TFC | *** INIT TWITTER ERROR: " + err
-        ));
+       console.log(chalkError("TFC | *** INIT TWITTER ERROR: " + err));
+       fsm.fsm_error();
       }
 
-      fsm.fsm_init();
     break;
 
     case "IDLE":

@@ -4079,21 +4079,17 @@ function checkPropertyChange(user, prop){
   return false;
 }
 
-function emptyHistogram(histogram){
+async function emptyHistogram(histogram){
 
-  return new Promise(function(resolve){
+  if (!histogram) { return true; }
+  if (histogram === undefined) { return true; }
+  if (histogram == {}) { return true; }
 
-    if (!histogram) { return resolve(true); }
-    if (histogram === undefined) { return resolve(true); }
-    if (histogram == {}) { return resolve(true); }
+  for (const histogramType of Object.keys(histogram)){
+    if (Object.keys(histogram[histogramType]).length > 0) { return false; }
+  }
 
-    for (const histogramType of Object.keys(histogram)){
-      if (Object.keys(histogram[histogramType]).length > 0) { return resolve(false); }
-    }
-
-    resolve(true);
-
-  });
+  return true;
 }
 
 async function checkUserProfileChanged(params) {
@@ -4209,7 +4205,7 @@ function processTweetObj(params){
           
           default:
             console.log(chalkError("TFE | *** UNKNOWN ENTITY TYPE: " + entityType));
-            throw new Error("UNKNOWN ENTITY TYPE: " + entityType);
+            return cb1(new Error("UNKNOWN ENTITY TYPE: " + entityType));
         }
 
         if (!histograms[entityType] || (histograms[entityType] === undefined)){
@@ -4225,7 +4221,12 @@ function processTweetObj(params){
 
         async.setImmediate(function() { cb1(); });
 
-      }, function(){
+      }, function(e){
+
+        if (e){
+          console.log(chalkError("TFE | *** processTweetObj ERROR: " + e));
+          return cb0(e);
+        }
 
         async.setImmediate(function() { cb0(); });
 
@@ -4572,9 +4573,9 @@ const defaultSentiment = {
 
 function processUserProfileChanges(params){
 
-  const user = params.user;
-
   return new Promise(function(resolve, reject){
+
+    const user = params.user;
 
     if (params.userProfileChanges.length == 0) {
       return resolve(user);
@@ -5101,13 +5102,8 @@ function processUserTweetArray(params){
           + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
           + " | Ts: " + user.tweets.tweetIds.length
           + " | @" + user.screenName
-          // + "\nTFE | THG\n" + jsonPrint(user.tweetHistograms)
         ));
       }
-
-      // user.markModified("tweets");
-      // user.markModified("tweetHistograms");
-
       resolve(user);
     });
 
@@ -5116,52 +5112,48 @@ function processUserTweetArray(params){
 
 async function processUserTweets(params){
 
-  // return new Promise(function(resolve, reject){
+  let user = {};
+  user = params.user;
 
-    let user = {};
-    user = params.user;
+  const tweets = params.tweets;
 
-    const tweets = params.tweets;
+  const tscParams = {};
 
-    const tscParams = {};
+  tscParams.globalTestMode = configuration.globalTestMode;
+  tscParams.testMode = configuration.testMode;
+  tscParams.inc = false;
+  tscParams.twitterEvents = configEvents;
+  tscParams.tweetStatus = {};
 
-    tscParams.globalTestMode = configuration.globalTestMode;
-    tscParams.testMode = configuration.testMode;
-    tscParams.inc = false;
-    tscParams.twitterEvents = configEvents;
-    tscParams.tweetStatus = {};
+  let tweetHistogramsEmpty = false;
 
-    let tweetHistogramsEmpty = false;
+  try{
+    tweetHistogramsEmpty = await emptyHistogram(user.tweetHistograms);
 
-    try{
-      tweetHistogramsEmpty = await emptyHistogram(user.tweetHistograms);
+    const processedUser = await processUserTweetArray({user: user, forceFetch: tweetHistogramsEmpty, tweets: tweets, tscParams: tscParams});
 
-      const processedUser = await processUserTweetArray({user: user, forceFetch: tweetHistogramsEmpty, tweets: tweets, tscParams: tscParams});
-
-      if (tweetHistogramsEmpty) {
-        console.log(chalkLog("TFE | >>> processUserTweetArray USER"
-          + " | " + printUser({user: processedUser})
-        ));
-        debug(chalkLog("TFE | >>> processUserTweetArray USER TWEETS"
-          + " | SINCE: " + processedUser.tweets.sinceId
-          + " | TWEETS: " + processedUser.tweets.tweetIds.length
-        ));
-        debug(chalkLog("TFE | >>> processUserTweetArray USER TWEET HISTOGRAMS"
-          + "\n" + jsonPrint(processedUser.tweetHistograms)
-        ));
-        debug(chalkLog("TFE | >>> processUserTweetArray USER PROFILE HISTOGRAMS"
-          + "\n" + jsonPrint(processedUser.profileHistograms)
-        ));
-      }
-
-      return processedUser;
-    }
-    catch(err){
-      console.log(chalkError("TFE | *** processUserTweetArray ERROR: " + err));
-      throw err;
+    if (tweetHistogramsEmpty) {
+      console.log(chalkLog("TFE | >>> processUserTweetArray USER"
+        + " | " + printUser({user: processedUser})
+      ));
+      debug(chalkLog("TFE | >>> processUserTweetArray USER TWEETS"
+        + " | SINCE: " + processedUser.tweets.sinceId
+        + " | TWEETS: " + processedUser.tweets.tweetIds.length
+      ));
+      debug(chalkLog("TFE | >>> processUserTweetArray USER TWEET HISTOGRAMS"
+        + "\n" + jsonPrint(processedUser.tweetHistograms)
+      ));
+      debug(chalkLog("TFE | >>> processUserTweetArray USER PROFILE HISTOGRAMS"
+        + "\n" + jsonPrint(processedUser.profileHistograms)
+      ));
     }
 
-  // });
+    return processedUser;
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** processUserTweetArray ERROR: " + err));
+    throw err;
+  }
 }
 
 async function updateUserTweets(params){
@@ -5473,7 +5465,6 @@ async function initProcessUserQueueInterval(interval) {
               user.profileHistograms.sentiment.score = 1.0;
             }
           }
-
         }
 
         if (configuration.verbose){
