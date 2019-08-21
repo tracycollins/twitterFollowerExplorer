@@ -23,7 +23,8 @@ const TEST_TOTAL_FETCH = 47;
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
 
-const MIN_TWEET_ID = 1000000;
+const MAX_TWEET_ID = "9999999999999999999999999999999";
+const MIN_TWEET_ID = "1000000";
 
 const DEFAULT_FORCE_LANG_ANALYSIS = false;
 const DEFAULT_ENABLE_LANG_ANALYSIS = true;
@@ -4942,7 +4943,7 @@ async function processPriorityUserTweets(params){
 }
 
 const userTweetsDefault = {
-  maxId: MIN_TWEET_ID,
+  // maxId: MAX_TWEET_ID,
   sinceId: MIN_TWEET_ID,
   tweetIds: []
 }
@@ -5039,9 +5040,9 @@ function processUserTweetArray(params){
       tscParams.tweetStatus.user = user;
       tscParams.tweetStatus.user.isNotRaw = true;
 
-      if (tweet.id_str.toString() > user.tweets.maxId.toString()) {
-        user.tweets.maxId = tweet.id_str.toString();
-      }
+      // if (tweet.id_str.toString() > user.tweets.maxId.toString()) {
+      //   user.tweets.maxId = tweet.id_str.toString();
+      // }
 
       if (tweet.id_str.toString() > user.tweets.sinceId.toString()) {
         user.tweets.sinceId = tweet.id_str.toString();
@@ -5523,7 +5524,7 @@ async function initProcessUserQueueInterval(interval) {
             + " | UID: " + processedUser.userId
             + " | @" + processedUser.screenName
             + " | Ts SINCE: " + processedUser.tweets.sinceId
-            + " MAX: " + processedUser.tweets.maxId
+            // + " MAX: " + processedUser.tweets.maxId
             + " Ts: " + processedUser.tweets.tweetIds.length
           ));
         }

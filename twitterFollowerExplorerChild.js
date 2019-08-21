@@ -984,12 +984,12 @@ function fetchUserTweets(params){
     fetchUserTweetsParams.trim_user = false;
 
     if (params.excludeUser) { fetchUserTweetsParams.trim_user = true; } 
-    if (params.user.maxId) { fetchUserTweetsParams.max_id = params.user.maxId; } 
+    // if (params.user.maxId) { fetchUserTweetsParams.max_id = params.user.maxId; } 
     if (params.user.sinceId) { fetchUserTweetsParams.since_id = params.user.sinceId; } 
 
     if (!params.user.tweetHistograms || (params.user.tweetHistograms === undefined)|| (params.user.tweetHistograms === {})){
       console.log(chalk.yellow("TFC | fetchUserTweets | tweetHistograms UNDEFINED | RESET MAX/SINCE IDs | @" + params.user.screenName));
-      delete fetchUserTweetsParams.max_id;
+      // delete fetchUserTweetsParams.max_id;
       delete fetchUserTweetsParams.since_id;
     }
 
