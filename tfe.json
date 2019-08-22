@@ -4,7 +4,7 @@
     "name": "tfe",
     "script": "twitterFollowerExplorer.js",
     "cwd": "/Volumes/RAID1/projects/twitterFollowerExplorer",
-    "node_args": "--max-old-space-size=12288",
+    "node_args": "--max-old-space-size=16384",
     "autorestart": false,
     "restart_delay": 3600000,
     "env": {
