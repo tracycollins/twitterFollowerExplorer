@@ -23,7 +23,6 @@ const TEST_TOTAL_FETCH = 47;
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
 
-const MAX_TWEET_ID = "9999999999999999999999999999999";
 const MIN_TWEET_ID = "1000000";
 
 const DEFAULT_FORCE_LANG_ANALYSIS = false;
@@ -34,8 +33,8 @@ const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
 const DEFAULT_ENABLE_IMAGE_ANALYSIS = true;
 
 const DEFAULT_MAX_USER_TWEETIDS = 500;
-const DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL = 10;
-const DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL = 250;
+// const DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL = 10;
+// const DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL = 250;
 const DEFAULT_IMAGE_PARSE_RATE_LIMIT_TIMEOUT = ONE_MINUTE;
 
 const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
@@ -83,8 +82,8 @@ const LAC_CHILD_ID = CHILD_PREFIX + "_child_lac";
 
 const DEFAULT_MIN_INTERVAL = 2;
 
-const ONE_KILOBYTE = 1024;
-const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
+// const ONE_KILOBYTE = 1024;
+// const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
@@ -184,17 +183,9 @@ configuration.networkDatabaseLoadLimit = (TEST_MODE) ? TEST_MODE_NUM_NN : DEFAUL
 // HOST
 //=========================================================================
 
-const googleMapsClient = require("@google/maps").createClient({
-  key: "AIzaSyDBxA6RmuBcyj-t7gfvK61yp8CDNnRLUlc"
-});
-
-const Language = require("@google-cloud/language");
-const languageClient = new Language.LanguageServiceClient();
-
 const path = require("path");
 const watch = require("watch");
 const defaults = require("object.defaults");
-const urlParse = require("url-parse");
 const moment = require("moment");
 const HashMap = require("hashmap").HashMap;
 const pick = require("object.pick");
@@ -207,9 +198,7 @@ const objectPath = require("object-path");
 const NodeCache = require("node-cache");
 const merge = require("deepmerge");
 const btoa = require("btoa");
-const MergeHistograms = require("@threeceelabs/mergehistograms");
-const mergeHistograms = new MergeHistograms();
-const sizeof = require("object-sizeof");
+// const sizeof = require("object-sizeof");
 
 const fs = require("fs");
 const { promisify } = require("util");
@@ -528,9 +517,6 @@ else {
 }
 configuration.childIdPrefix = DEFAULT_CHILD_ID_PREFIX;
 
-const twitterTextParser = require("@threeceelabs/twitter-text-parser");
-const twitterImageParser = require("@threeceelabs/twitter-image-parser");
-
 //=========================================================================
 // SLACK
 //=========================================================================
@@ -837,28 +823,6 @@ const statsPickArray = [
 ];
 
 statsObjSmall = pick(statsObj, statsPickArray);
-
-let imageParserRateTimitTimeout;
-
-function startImageParserRateTimitTimeout(p) {
-
-  const params = p || {};
-  const period = params.period || configuration.imageParserRateTimitTimeout;
-  const verbose = params.verbose || true;
-
-  clearTimeout(imageParserRateTimitTimeout);
-
-  if (verbose) {
-    console.log(chalkLog(MODULE_ID_PREFIX + " | +++ RATE LIMIT TIMEOUT START | NOW: " + getTimeStamp() + " | PERIOD: " + msToTime(period)));
-  }
-
-  imageParserRateTimitTimeout = setTimeout(function(){
-    if (verbose) {
-      console.log(chalkLog(MODULE_ID_PREFIX + " | XXX RATE LIMIT TIMEOUT END | NOW: " + getTimeStamp() + " | PERIOD: " + msToTime(period)));
-      statsObj.imageParser.rateLimitFlag = false;
-    }
-  }, period);
-}
 
 async function loadInputs(params) {
 
@@ -1870,7 +1834,6 @@ async function loadAllConfigFiles(){
   return;
 }
 
-
 //=========================================================================
 // FILE SAVE
 //=========================================================================
@@ -2772,159 +2735,6 @@ async function initWatchConfig(){
   return;
 }
 
-async function pruneGlobalHistograms(p) {
-
-  const params = p || {};
-
-  statsObj.status = "PRUNE GLOBAL HISTOGRAMS";
-
-  let inputTypeMin = params.defaultInputTypeMin || DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
-
-  async.eachSeries(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
-
-    if (!globalHistograms[inputType] || (globalHistograms[inputType] === undefined)){
-      return cb0();
-    }
-
-    const initialNumberOfItems = Object.keys(globalHistograms[inputType]).length;
-
-    let prunedItems = 0;
-
-    switch (inputType) {
-      case "friends":
-        inputTypeMin = (configuration.testMode) ? 10 : DEFAULT_FRIENDS_HISTOGRAM_ITEM_TOTAL;
-      break;
-      default:
-        inputTypeMin = (configuration.testMode) ? 2 : DEFAULT_MIN_HISTOGRAM_ITEM_TOTAL;
-    }
-
-    async.each(Object.keys(globalHistograms[inputType]), function(item, cb1) {
-
-      if (globalHistograms[inputType][item].total < inputTypeMin) {
-
-        prunedItems += 1;
-
-        if (configuration.verbose) {
-          debug(chalkLog(MODULE_ID_PREFIX
-            + " | HISTOGRAM ITEM LESS THAN MIN (" + inputTypeMin + ") ... DELETING"
-            + " | " + inputType.toUpperCase()
-            + " | TOTAL: " + globalHistograms[inputType][item].total
-            + " | " + item
-          ));
-        }
-
-        delete globalHistograms[inputType][item];
-      }
-
-      cb1();
-
-    }, function(err) {
-
-      if (err) { throw err; }
-
-      const percent = 100 * prunedItems/initialNumberOfItems;
-
-      console.log(chalkAlert(MODULE_ID_PREFIX
-        + " | " + inputType.toUpperCase()
-        + " | " + inputTypeMin + " MIN"
-        + " | PRUNED " + prunedItems
-        + "/" + initialNumberOfItems + " ITEMS (" + percent.toFixed(2) + "%)"
-      ));
-
-      cb0();
-
-    });
-
-  }, function(err) {
-
-    if (err) { throw err; }
-
-    return;
-
-  });
-}
-
-async function updateGlobalHistograms(params) {
-
-  statsObj.status = "UPDATE GLOBAL HISTOGRAMS";
-
-  let mergedHistograms = {};
-
-  try {
-    mergedHistograms = await mergeHistograms.merge({ histogramA: params.user.profileHistograms, histogramB: params.user.tweetHistograms });
-    mergedHistograms.friends = await tcUtils.generateObjFromArray({ keys: params.user.friends, value: 1 }); // [ 1,2,3... ] => { 1:1, 2:1, 3:1, ... }
-  }
-  catch(err){
-    console.log(chalkError("TFE | *** UPDATE GLOBAL HISTOGRAMS ERROR: " + err));
-    throw err;
-  }
-
-  async.each(DEFAULT_INPUT_TYPES, function(inputType, cb0) {
-
-    if (!mergedHistograms[inputType] || (mergedHistograms[inputType] === undefined)){
-      return cb0();
-    }
-
-    if (globalHistograms[inputType] === undefined) { globalHistograms[inputType] = {}; }
-
-    async.each(Object.keys(mergedHistograms[inputType]), function(item, cb1) {
-
-      if (globalHistograms[inputType][item] === undefined) {
-        globalHistograms[inputType][item] = {};
-        globalHistograms[inputType][item].total = 0;
-        globalHistograms[inputType][item].left = 0;
-        globalHistograms[inputType][item].leftRatio = 0;
-        globalHistograms[inputType][item].neutral = 0;
-        globalHistograms[inputType][item].neutralRatio = 0;
-        globalHistograms[inputType][item].right = 0;
-        globalHistograms[inputType][item].rightRatio = 0;
-        globalHistograms[inputType][item].positive = 0;
-        globalHistograms[inputType][item].positiveRatio = 0;
-        globalHistograms[inputType][item].negative = 0;
-        globalHistograms[inputType][item].negativeRatio = 0;
-        globalHistograms[inputType][item].none = 0;
-        globalHistograms[inputType][item].uncategorized = 0;
-      }
-
-      globalHistograms[inputType][item].total += 1;
-
-      if (params.user.category) {
-        if (params.user.category == "left") { globalHistograms[inputType][item].left += 1; }
-        if (params.user.category == "neutral") { globalHistograms[inputType][item].neutral += 1; }
-        if (params.user.category == "right") { globalHistograms[inputType][item].right += 1; }
-        if (params.user.category == "positive") { globalHistograms[inputType][item].positive += 1; }
-        if (params.user.category == "negative") { globalHistograms[inputType][item].negative += 1; }
-        if (params.user.category == "none") { globalHistograms[inputType][item].none += 1; }
-      }
-      else {
-        globalHistograms[inputType][item].uncategorized += 1;
-      }
-
-      globalHistograms[inputType][item].leftRatio = globalHistograms[inputType][item].left/globalHistograms[inputType][item].total;
-      globalHistograms[inputType][item].neutralRatio = globalHistograms[inputType][item].neutral/globalHistograms[inputType][item].total;
-      globalHistograms[inputType][item].rightRatio = globalHistograms[inputType][item].right/globalHistograms[inputType][item].total;
-      globalHistograms[inputType][item].positiveRatio = globalHistograms[inputType][item].positive/globalHistograms[inputType][item].total;
-      globalHistograms[inputType][item].negativeRatio = globalHistograms[inputType][item].negative/globalHistograms[inputType][item].total;
-
-      cb1();
-
-    }, function(err) {
-
-      if (err) { throw err; }
-
-      cb0();
-
-    });
-
-  }, function(err) {
-
-    if (err) { throw err; }
-
-    return;
-
-  });
-}
-
 function initRandomNetworks(){
 
   statsObj.status = "INIT RAN NNs";
@@ -3024,7 +2834,6 @@ async function initNetworks(){
     console.log(chalkGreen("TFE | +++ LOAD BEST NETWORKS COMPLETE"));
     return;
   });
-
 }
 
 function saveNetworkHashMap(params, callback) {
@@ -3906,180 +3715,6 @@ function initRandomNetworkTreeChild() {
   });
 }
 
-async function parseText(params){
-
-  params.updateGlobalHistograms = (params.updateGlobalHistograms !== undefined) ? params.updateGlobalHistograms : false;
-  params.category = (params.category !== undefined) ? params.category : "none";
-  params.minWordLength = params.minWordLength || configuration.minWordLength;
-
-  try {
-    const hist = await twitterTextParser.parseText(params);
-    return hist;
-  }
-  catch(err){
-    console.log(chalkError("*** TWITTER TEXT PARSER ERROR: " + err));
-    console.error(err);
-    throw err;
-  }
-}
-
-function parseImage(params){
-
-  return new Promise(function(resolve, reject) {
-
-    params.updateGlobalHistograms = (params.updateGlobalHistograms !== undefined) ? params.updateGlobalHistograms : false;
-    params.category = params.category || "none";
-
-    twitterImageParser.parseImage(params).
-    then(function(hist){
-      statsObj.imageParser.parsed += 1;
-      console.log(chalkLog("TFE | +++ IMAGE PARSE" 
-        + " | PARSED: " + statsObj.imageParser.parsed
-        + " | CAT: " + params.category
-        + " | @" + params.screenName
-        + " | " + params.imageUrl
-      ));
-      resolve(hist);
-    }).
-    catch(function(err){
-
-      if (err.code == 8){
-        console.log(chalkError("TFE | *** IMAGE PARSER | RATE LIMIT: " + err));
-        statsObj.imageParser.rateLimitFlag = true;
-
-        startImageParserRateTimitTimeout(configuration.imageParserRateTimitTimeout);
-
-        return resolve();
-      }
-      statsObj.imageParser.errors += 1;
-      console.log(chalkError("TFE | *** IMAGE PARSER ERROR: " + err));
-      console.error(err);
-      reject(err);
-    });
-  });
-}
-
-function geoCode(params) {
-
-  return new Promise(function(resolve, reject){
-
-    const components = {};
-    let placeId = false;
-    let geoValid = false;
-    let formattedAddress;
-
-    googleMapsClient.geocode({ address: params.address }, function(err, response) {
-      if (err) {
-        console.log(chalkError("TCS | *** GEOCODE ERROR: " + err));
-        return reject(err);
-      }
-      if (response.json.results.length > 0) {
-
-        geoValid = true;
-        placeId = response.json.results[0].place_id;
-        formattedAddress = response.json.results[0].formatted_address;
-
-        debug(chalkLog("TCS | GEOCODE"
-          + " | " + params.address
-          + " | PLACE ID: " + placeId
-          + " | FORMATTED: " + response.json.results[0].formatted_address
-        ));
-
-        async.each(response.json.results[0].address_components, function(addressComponent, cb0){
-
-          if (!addressComponent.types || addressComponent.types === undefined || addressComponent.types.length == 0){
-            async.setImmediate(function() { return cb0(); });
-          }
-
-          async.eachOf(addressComponent.types, function(addressComponentType, index, cb1){
-            switch(addressComponentType){
-              case "country":
-              case "locality":
-              case "sublocality":
-              case "sublocality_level_1":
-              case "administrative_area_level_1":
-              case "administrative_area_level_2":
-              case "administrative_area_level_3":
-                components[addressComponentType] = addressComponent.long_name;
-
-                debug(chalkInfo("TCS | GEOCODE | +++ ADDRESS COMPONENT"
-                  + " | " + params.address
-                  + " | FORMATTED: " + response.json.results[0].formatted_address
-                  + " | TYPE: " + addressComponentType
-                  + " | " + components[addressComponentType]
-                ));
-
-              break;
-              default:
-            }
-            cb1();
-          }, function(){
-            async.setImmediate(function() { cb0(); });
-          });
-
-        }, function(err){
-          if (err) {
-
-            console.log(chalkError("TCS | *** GEOCODE ERROR: " + err));
-            return reject(err);
-          }
-
-          debug(chalkLog("TCS | GEOCODE"
-            + " | " + params.address
-            + " | PLACE ID: " + placeId
-            + " | FORMATTED: " + response.json.results[0].formatted_address
-            // + "\n" + jsonPrint(response.json)
-          ));
-
-          resolve({ 
-            geoValid: geoValid,
-            placeId: placeId, 
-            formattedAddress: formattedAddress, 
-            components: components, 
-            raw: response.json 
-          });
-        });
-      }
-      else {
-        resolve({ 
-          geoValid: geoValid,
-          placeId: placeId, 
-          formattedAddress: formattedAddress, 
-          components: components, 
-          raw: response.json 
-        });
-      }
-
-    });
-
-  });
-}
-
-function mergeHistogramsArray(params) {
-  return new Promise(function(resolve, reject){
-
-    let resultHistogram = {};
-
-    async.eachSeries(params.histogramArray, async function(histogram){
-      
-      resultHistogram = await mergeHistograms.merge({ histogramA: resultHistogram, histogramB: histogram });
-      return;
-
-    }, function(err){
-      if (err) {
-        return reject(err);
-      }
-      resolve(resultHistogram);
-    })
-  });
-}
-
-function checkPropertyChange(user, prop){
-  const prevProp = "previous" + _.upperFirst(prop);
-  if (user[prop] && (user[prop] !== undefined) && (user[prevProp] != user[prop])) { return true; }
-  return false;
-}
-
 async function emptyHistogram(histogram){
 
   if (!histogram) { return true; }
@@ -4091,57 +3726,6 @@ async function emptyHistogram(histogram){
   }
 
   return true;
-}
-
-async function checkUserProfileChanged(params) {
-
-  const user = params.user;
-
-  let profileHistogramsEmpty = false;
-
-  try{
-    profileHistogramsEmpty = await emptyHistogram(user.profileHistograms);
-  }
-  catch(err){
-    console.log(chalkError("TFE | *** ALL HISTOGRAMS profileHistogramsEmpty ERROR: " + err));
-    throw err;
-  }
-
-  if (profileHistogramsEmpty){
-
-    console.log(chalkInfo(
-      "TFE | USER PROFILE HISTOGRAMS EMPTY" 
-      + " | RST PREV PROP VALUES" 
-      + " | @" + user.screenName 
-      + "\nTFE | PROFILE HISTOGRAMS\n" + jsonPrint(user.profileHistograms) 
-    ));
-
-    user.previousBannerImageUrl = null;
-    user.previousProfileImageUrl = null;
-
-    user.previousDescription = null;
-    user.previousExpandedUrl = null;
-    user.previousLocation = null;
-    user.previousName = null;
-    user.previousProfileUrl = null;
-    user.previousScreenName = null;
-    user.previousUrl = null;
-  }
-
-  const results = [];
-
-  if (!user.bannerImageAnalyzed || checkPropertyChange(user, "bannerImageUrl")) { results.push("bannerImageUrl"); }
-  if (!user.profileImageAnalyzed || checkPropertyChange(user, "profileImageUrl")) { results.push("profileImageUrl"); }
-
-  if (checkPropertyChange(user, "description")) { results.push("description"); }
-  if (checkPropertyChange(user, "expandedUrl")) { results.push("expandedUrl"); }
-  if (checkPropertyChange(user, "location")) { results.push("location"); }
-  if (checkPropertyChange(user, "name")) { results.push("name"); }
-  if (checkPropertyChange(user, "profileUrl")) { results.push("profileUrl"); }
-  if (checkPropertyChange(user, "screenName")) { results.push("screenName"); }
-  if (checkPropertyChange(user, "url")) { results.push("url"); }
-
-  return results;
 }
 
 function processTweetObj(params){
@@ -4245,665 +3829,13 @@ function processTweetObj(params){
   });
 }
 
-async function analyzeLanguage(params){
-
-  debug(chalkAlert("analyzeLanguage\n" + jsonPrint(params)));
-
-  const document = {
-    "content": params.text,
-    type: "PLAIN_TEXT"
-  };
-
-  const sentimentHistogram = {};
-
-  let responses;
-
-  try {
-
-    responses = await languageClient.analyzeSentiment({document: document});
-
-    const sentiment = responses[0].documentSentiment;
-
-    sentimentHistogram.score = sentiment.score;
-    sentimentHistogram.magnitude = sentiment.magnitude;
-    sentimentHistogram.comp = 100*sentiment.score*sentiment.magnitude;
-
-    statsObj.analyzer.analyzed += 1;
-    statsObj.analyzer.total += 1;
-
-    console.log(chalkLog("TFE | +++ LANG SENT"
-      + " [" + statsObj.analyzer.analyzed + "]"
-      + " | M: " + sentimentHistogram.magnitude.toFixed(5)
-      + " | S: " + sentimentHistogram.score.toFixed(5)
-      + " | C: " + sentimentHistogram.comp.toFixed(5)
-      + " | @" + params.screenName
-    ));
-
-    return sentimentHistogram;
-  }
-  catch(err){
-    console.log(chalkError("*** LANGUAGE ANALYZER ERROR" + err));
-    statsObj.analyzer.errors += 1;
-    statsObj.analyzer.total += 1;
-
-    if (err.code == 3) {
-      console.log(chalkAlert("TFE | analyzeLanguage | UNSUPPORTED LANG"
-        + " | " + err
-      ));
-    }
-    else if (err.code == 8) {
-      console.error(chalkAlert("TFE | analyzeLanguage"
-        + " | " + getTimeStamp()
-        + " | LANGUAGE QUOTA"
-        + " | RESOURCE_EXHAUSTED"
-      ));
-      statsObj.languageQuotaFlag = moment().valueOf();
-      startQuotaTimeOutTimer();
-    }
-    else {
-      console.error(chalkError("TFE | *** analyzeLanguage LANGUAGE TEXT ERROR"
-        + " | " + err
-        + "\n" + jsonPrint(err)
-      ));
-    }
-
-    throw err;
-  }
-}
-
-let startQuotaTimeOut;
-
-function startQuotaTimeOutTimer(p){
-
-  const params = p || {};
-
-  params.duration = params.duration || configuration.languageQuotaTimoutDuration;
-
-  clearTimeout(startQuotaTimeOut);
-
-  console.log(chalkAlert("TFE | *** START LANG QUOTA TIMEOUT"
-    + " | " + getTimeStamp()
-    + " | DURATION: " + msToTime(configuration.languageQuotaTimoutDuration)
-  ));
-
-  startQuotaTimeOut = setTimeout(function(){
-
-    statsObj.languageQuotaFlag = false;
-
-    console.log(chalkAlert("TFE | *** END LANG QUOTA TIMEOUT"
-      + " | " + getTimeStamp()
-      + " | DURATION: " + msToTime(configuration.languageQuotaTimoutDuration)
-    ));
-
-  }, params.duration);
-}
-
-async function processLocationChange(params){
-
-  const locations = params.locations || {};
-  const user = params.user;
-  const userPropValue = params.userPropValue;
-
-  let text = params.text;
-  text += userPropValue + "\n";
-
-  let name = userPropValue.trim().toLowerCase();
-  name = name.replace(/\./gi, "");
-
-  const lastSeen = Date.now();
-
-  const nodeId = btoa(name);
-
-  locations[nodeId] = (locations[nodeId] === undefined) ? 1 : locations[nodeId] + 1;
-
-  let locationDoc = await global.globalLocation.findOne({nodeId: nodeId}).exec();
-
-  if (!locationDoc) {
-
-    debug(chalkInfo("TFE | --- LOC DB MISS"
-      + " | NID: " + nodeId
-      + " | N: " + name + " / " + userPropValue
-    ));
-
-    locationDoc = new global.globalLocation({
-      nodeId: nodeId,
-      name: name,
-      nameRaw: userPropValue,
-      geoSearch: false,
-      geoValid: false,
-      lastSeen: lastSeen,
-      mentions: 0
-    });
-
-    if (configuration.geoCodeEnabled) {
-
-      const geoCodeResults = await geoCode({address: name});
-
-      if (geoCodeResults && geoCodeResults.placeId) {
-
-        locationDoc.geoValid = true;
-        locationDoc.geo = geoCodeResults;
-        locationDoc.placeId = geoCodeResults.placeId;
-        locationDoc.formattedAddress = geoCodeResults.formattedAddress;
-
-        await locationDoc.save();
-
-        statsObj.geo.hits += 1;
-        statsObj.geo.total += 1;
-        statsObj.geo.hitRate = 100*(statsObj.geo.hits/statsObj.geo.total);
-
-        debug(chalk.blue("TFE | +++ LOC GEO HIT "
-          + " | GEO: " + locationDoc.geoValid
-          + "  H " + statsObj.geo.hits
-          + "  M " + statsObj.geo.misses
-          + "  T " + statsObj.geo.total
-          + " HR: " + statsObj.geo.hitRate.toFixed(2)
-          + " | PID: " + locationDoc.placeId 
-          + " | NID: " + locationDoc.nodeId
-          + " | N: " + locationDoc.name + " / " + locationDoc.nameRaw
-          + " | A: " + locationDoc.formattedAddress
-        ));
-
-        user.geoValid = geoCodeResults.geoValid;
-        user.geo = geoCodeResults;
-
-        locations[geoCodeResults.placeId] = (locations[geoCodeResults.placeId] === undefined) 
-          ? 1 
-          : locations[geoCodeResults.placeId] + 1;
-
-        user.previousLocation = user.location;
-        locationDoc.geoSearch = true;
-
-        return {user: user, locations: locations, text: text};
-
-      } 
-      else {
-
-        await locationDoc.save();
-
-        statsObj.geo.misses += 1;
-        statsObj.geo.total += 1;
-        statsObj.geo.hitRate = 100*(statsObj.geo.hits/statsObj.geo.total);
-
-        debug(chalkLog("TFE | --- LOC GEO MISS"
-          + " | GEO: " + locationDoc.geoValid
-          + "  H " + statsObj.geo.hits
-          + "  M " + statsObj.geo.misses
-          + "  T " + statsObj.geo.total
-          + " HR: " + statsObj.geo.hitRate.toFixed(2)
-          + " | NID: " + locationDoc.nodeId
-          + " | N: " + locationDoc.name + " / " + locationDoc.nameRaw
-        ));
-
-        user.previousLocation = user.location;
-        return {user: user, locations: locations, text: text};
-      }
-    }
-    return {user: user, locations: locations, text: text};
-  }
-  else {
-
-    locationDoc.mentions += 1;
-    locationDoc.lastSeen = lastSeen;
-
-    debug(chalk.green("TFE | +++ LOC DB HIT "
-      + " | GEO: " + locationDoc.geoValid
-      + "  H " + statsObj.geo.hits
-      + "  M " + statsObj.geo.misses
-      + "  T " + statsObj.geo.total
-      + " HR: " + statsObj.geo.hitRate.toFixed(2)
-      + " | PID: " + locationDoc.placeId 
-      + " | NID: " + locationDoc.nodeId
-      + " | N: " + locationDoc.name + " / " + locationDoc.nameRaw
-      + " | A: " + locationDoc.formattedAddress
-    ));
-
-    if (locationDoc.geoValid) {
-      if (configuration.geoCodeEnabled 
-        && (!locationDoc.geoSearch || !locationDoc.geo || locationDoc.geo === undefined)) {
-
-        const geoCodeResults = await geoCode({address: name});
-
-        if (geoCodeResults && geoCodeResults.placeId) {
-
-          locationDoc.geoValid = true;
-          locationDoc.geo = geoCodeResults;
-          locationDoc.placeId = geoCodeResults.placeId;
-          locationDoc.formattedAddress = geoCodeResults.formattedAddress;
-
-          statsObj.geo.hits += 1;
-          statsObj.geo.total += 1;
-          statsObj.geo.hitRate = 100*(statsObj.geo.hits/statsObj.geo.total);
-
-          debug(chalk.blue("TFE | +++ LOC GEO HIT "
-            + " | GEO: " + locationDoc.geoValid
-            + "  H " + statsObj.geo.hits
-            + "  M " + statsObj.geo.misses
-            + "  T " + statsObj.geo.total
-            + " HR: " + statsObj.geo.hitRate.toFixed(2)
-            + " | PID: " + locationDoc.placeId 
-            + " | NID: " + locationDoc.nodeId
-            + " | N: " + locationDoc.name + " / " + locationDoc.nameRaw
-            + " | A: " + locationDoc.formattedAddress
-          ));
-
-          user.geoValid = geoCodeResults.geoValid;
-          user.geo = geoCodeResults;
-
-          locations[geoCodeResults.placeId] = (locations[geoCodeResults.placeId] === undefined) 
-            ? 1 
-            : locations[geoCodeResults.placeId] + 1;
-
-          user.previousLocation = user.location;
-          locationDoc.geoSearch = true;
-
-          await locationDoc.save();
-          return {user: user, locations: locations, text: text};
-        } 
-        else {
-
-          await locationDoc.save();
-
-          statsObj.geo.misses += 1;
-          statsObj.geo.total += 1;
-          statsObj.geo.hitRate = 100*(statsObj.geo.hits/statsObj.geo.total);
-
-          debug(chalkLog("TFE | --- LOC GEO MISS"
-            + " | GEO: " + locationDoc.geoValid
-            + "  H " + statsObj.geo.hits
-            + "  M " + statsObj.geo.misses
-            + "  T " + statsObj.geo.total
-            + " HR: " + statsObj.geo.hitRate.toFixed(2)
-            + " | NID: " + locationDoc.nodeId
-            + " | N: " + locationDoc.name + " / " + locationDoc.nameRaw
-          ));
-
-          user.previousLocation = user.location;
-          return {user: user, locations: locations, text: text};
-        }
-      }
-    }
-
-    await locationDoc.save();
-
-    const key = (locationDoc.placeId && locationDoc.placeId !== undefined) ? locationDoc.placeId : locationDoc.nodeId;
-
-    locations[key] = (locations[key] === undefined) ? 1 : locations[key] + 1;
-
-    user.previousLocation = user.location;
-
-    return {user: user, locations: locations, text: text};
-  }
-}
-
-async function userLanguageSentiment(params){
-
-  const user = params.user;
-
-  const profileHistogramsEmpty = await emptyHistogram(user.profileHistograms);
-
-  if (profileHistogramsEmpty) { user.profileHistograms = {}; }
-
-  const sentimentHistogramEmpty = await emptyHistogram(user.profileHistograms.sentiment);
-
-  if (sentimentHistogramEmpty) { user.profileHistograms.sentiment = {}; }
-
-  if (configuration.enableLanguageAnalysis && !statsObj.languageQuotaFlag) {
-
-    let profileText = "";
-
-    if (user.name) { profileText = user.name; }
-    if (user.screenName) { profileText += "\n" + user.screenName; }
-    if (user.location) { profileText += "\n" + user.location; }
-    if (user.description) { profileText += "\n" + user.description; }
-
-    const sentiment = await analyzeLanguage({screenName: user.screenName, text: profileText});
-    statsObj.languageQuotaFlag = false;
-    return sentiment;
-  }
-  else {
-    return;
-  }
-}
-
-const defaultSentiment = {
-  score: 0,
-  magnitude: 0,
-  comp: 0
-}
-
-function processUserProfileChanges(params){
-
-  return new Promise(function(resolve, reject){
-
-    const user = params.user;
-
-    if (params.userProfileChanges.length == 0) {
-      return resolve(user);
-    }
-
-    let text = "";
-    const urlsHistogram = {};
-    urlsHistogram.urls = {};
-
-    const locationsHistogram = {};
-    locationsHistogram.locations = {};
-
-    async.eachSeries(params.userProfileChanges, function(userProp, cb){
-
-      let userPropValue = false;
-
-      if (user[userProp] && (user[userProp] !== undefined)) {
-        userPropValue = user[userProp].toLowerCase();
-      }
-
-      const prevUserProp = "previous" + _.upperFirst(userProp);
-
-      let domain;
-      let domainNodeId;
-      let nodeId;
-
-      user[prevUserProp] = (user[prevUserProp] === undefined) ? null : user[prevUserProp];
-
-      if (!userPropValue && (userPropValue !== undefined)) {
-        debug(chalkLog(MODULE_ID_PREFIX
-          + " | --- processUserProfileChanges USER PROP VALUE FALSE"
-          + " | @" + user.screenName
-          + " | PROP: " + userProp
-          + " | VALUE: " + userPropValue
-        ));
-        user[prevUserProp] = user[userProp];
-        return cb();
-      }
-
-      switch (userProp) {
-
-        case "sentiment":
-          cb();
-        break;
-
-        case "location":
-          processLocationChange({user: user, userPropValue: userPropValue, text: text})
-          .then(function(results){
-            locationsHistogram.locations = results.locations;
-            user.location = results.user.location;
-            user.previousLocation = results.user.previousLocation;
-            text = results.text;
-            cb();
-          })
-          .catch(function(e0){
-            cb(e0);
-          });
-        break;
-
-        case "name":
-        case "description":
-          text += userPropValue + "\n";
-          user[prevUserProp] = user[userProp];
-          cb();
-        break;
-
-        case "screenName":
-          text += "@" + userPropValue + "\n";
-          user[prevUserProp] = user[userProp];
-          cb();
-        break;
-
-        case "url":
-        case "profileUrl":
-        case "expandedUrl":
-        case "bannerImageUrl":
-        case "profileImageUrl":
-
-          if (userPropValue && (typeof userPropValue == "string")){
-            domain = urlParse(userPropValue.toLowerCase()).hostname;
-            nodeId = btoa(userPropValue.toLowerCase());
-
-            if (userPropValue && domain) { 
-              domainNodeId = btoa(domain);
-              urlsHistogram.urls[domainNodeId] = (urlsHistogram.urls[domainNodeId] === undefined) ? 1 : urlsHistogram.urls[domainNodeId] + 1; 
-            }
-            urlsHistogram.urls[nodeId] = (urlsHistogram.urls[nodeId] === undefined) ? 1 : urlsHistogram.urls[nodeId] + 1;
-            user[prevUserProp] = user[userProp];
-            cb();
-          }
-          else{
-            cb();
-          }
-        break;
-
-        default:
-          console.log(chalkError("TFE | UNKNOWN USER PROPERTY: " + userProp));
-          return cb(new Error("UNKNOWN USER PROPERTY: " + userProp));
-      }
-    }, function(err){
-
-      if (err) {
-        console.trace(chalkError("TFE | processUserProfileChanges USER PROFILE HISTOGRAM ERROR: " + err));
-        return reject(err);
-      }
-
-      async.parallel({
-
-        bannerImageHist: function(cb) {
-
-          if(statsObj.imageParser.rateLimitFlag){
-            console.log(chalk.yellow("TFE | VISION RATE LIMITED | @" + user.screenName));
-            return cb(null);
-          }
-
-          if (
-              (configuration.enableImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined) && (user.bannerImageUrl != user.bannerImageAnalyzed)
-            || (configuration.forceImageAnalysis && user.bannerImageUrl && (user.bannerImageUrl !== undefined))
-            )
-          ){
-
-            parseImage({
-              screenName: user.screenName, 
-              category: user.category, 
-              imageUrl: user.bannerImageUrl, 
-              histograms: user.profileHistograms,
-              updateGlobalHistograms: false
-            }).
-            then(function(imageParseResults){
-              if (imageParseResults) { 
-                user.bannerImageAnalyzed = user.bannerImageUrl; 
-                // bannerImageAnalyzedFlag = true;
-                cb(null, imageParseResults);
-              }
-              else{
-                cb(null, {});
-              }
-            }).
-            catch(function(err){
-              console.log(chalkError("TFE | processUserProfileChanges USER PROFILE BANNER IMAGE HISTOGRAM ERROR: " + err));
-              cb(err, null);
-            });
-
-          }
-          else {
-            cb(null, {});
-          }
-        }, 
-
-        profileImageHist: function(cb) {
-
-          if(statsObj.imageParser.rateLimitFlag){
-            console.log(chalk.yellow("TFE | processUserProfileChanges VISION RATE LIMITED | @" + user.screenName));
-            return cb(null);
-          }
-
-          if (
-              (configuration.enableImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined) && (user.profileImageUrl != user.profileImageAnalyzed)
-            || (configuration.forceImageAnalysis && user.profileImageUrl && (user.profileImageUrl !== undefined))
-            )
-          ){
-
-            parseImage({
-              screenName: user.screenName, 
-              category: user.category, 
-              imageUrl: user.profileImageUrl, 
-              histograms: user.profileHistograms,
-              updateGlobalHistograms: false
-            }).
-            then(function(imageParseResults){
-              if (imageParseResults) { 
-                user.profileImageAnalyzed = user.profileImageUrl; 
-                cb(null, imageParseResults);
-              }
-              else{
-                cb(null, {});
-              }
-            }).
-            catch(function(err){
-              console.log(chalkError("TFE | processUserProfileChanges USER PROFILE IMAGE HISTOGRAM ERROR: " + err));
-              cb(err, null);
-            });
-
-          }
-          else {
-            cb(null, {});
-          }
-        }, 
-
-        profileTextHist: function(cb){
-
-          if (text && (text !== undefined)){
-
-            parseText({ category: user.category, text: text, updateGlobalHistograms: false }).
-            then(function(textParseResults){
-              cb(null, textParseResults);
-            }).
-            catch(function(err){
-              if (err) {
-                console.log(chalkError("TFE | processUserProfileChanges USER PROFILE PARSE TEXT ERROR: " + err));
-              }
-              cb(err, null);
-            });
-          }
-          else {
-            cb(null, {});
-          }
-        },
-
-        sentimentHist: function(cb){
-
-          const userProfileSentimentChanges = params.userProfileChanges.includes("name") 
-            || params.userProfileChanges.includes("screenName")
-            || params.userProfileChanges.includes("location")
-            || params.userProfileChanges.includes("description")
-            || !user.profileHistograms.sentiment
-            || (user.profileHistograms.sentiment === undefined)
-            || (user.profileHistograms.sentiment == {});
-
-          if (configuration.enableLanguageAnalysis && !statsObj.languageQuotaFlag && userProfileSentimentChanges){
-            userLanguageSentiment({user: user}).
-            then(function(sentiment){
-              cb(null, sentiment);
-            }).
-            catch(function(err){
-              if (err.code == 3){ // unsupported lang
-                return cb(null, defaultSentiment); // don't analyze again
-              }
-              if (err.code == 8){ // quota error
-                return cb(null, null);
-              }
-              cb(err, null);
-            })
-          }
-          else{ cb(null, null); }
-        }
-
-      }, function(err, results){
-
-        if (err) {
-          console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-          return reject(err);
-        }
-
-        mergeHistogramsArray( {
-          histogramArray: [
-            user.profileHistograms,
-            results.profileTextHist, 
-            results.bannerImageHist, 
-            results.profileImageHist, 
-            urlsHistogram,
-            locationsHistogram,
-          ]
-        } ).
-        then(function(histogramsMerged){
-          user.profileHistograms = histogramsMerged;
-          user.profileHistograms.sentiment = (results.sentimentHist && results.sentimentHist !== undefined) ? results.sentimentHist : {};
-          resolve(user);
-        }).
-        catch(function(err){
-          console.log(chalkError("TFE | USER PROFILE CHANGE HISTOGRAM ERROR: " + err));
-          return reject(err);
-        });
-      });
-    });
-
-  });
-}
-
-async function userProfileChangeHistogram(params) {
-
-  try{
-    const user = params.user;
-    const userProfileChanges = await checkUserProfileChanged(params);
-    const processUser = await processUserProfileChanges({user: user, userProfileChanges: userProfileChanges});
-    return processUser;
-  }
-  catch(err){
-    console.log(chalkError(MODULE_ID_PREFIX + " | *** userProfileChangeHistogram ERROR: " + err));
-    throw err;
-  }
-}
-
-async function updateUserHistograms(params) {
-
-  if ((params.user === undefined) || !params.user) {
-    console.log(chalkError("TFE | *** updateUserHistograms USER UNDEFINED"));
-    const err = new Error("TFE | *** updateUserHistograms USER UNDEFINED");
-    console.error(err);
-    throw err;
-  }
-
-  const user = params.user;
-
-  if (!user.profileHistograms || (user.profileHistograms === undefined)){ 
-    user.profileHistograms = {};
-  }
-
-  if (!user.tweetHistograms || (user.tweetHistograms === undefined)){ 
-    user.tweetHistograms = {};
-  }
-
-  if (!user.friends || (user.friends === undefined)){ 
-    user.friends = [];
-  }
-
-  try {
-
-    const processedUser = await userProfileChangeHistogram({user: user});
-
-    await updateGlobalHistograms({user: processedUser});
-    return processedUser;
-
-  }
-  catch(err){
-    console.log(chalkError("TFE | *** updateUserHistograms ERROR: " + err));
-    throw err;
-  }
-}
-
 async function generateAutoCategory(params) {
 
   statsObj.status = "GEN AUTO CAT";
 
   try{
 
-    const user = await updateUserHistograms({user: params.user});
+    const user = await tcUtils.updateUserHistograms({user: params.user});
 
     activateNetworkQueue.push({user: user});
 
@@ -4943,7 +3875,6 @@ async function processPriorityUserTweets(params){
 }
 
 const userTweetsDefault = {
-  // maxId: MAX_TWEET_ID,
   sinceId: MIN_TWEET_ID,
   tweetIds: []
 }
@@ -5086,7 +4017,7 @@ function processUserTweetArray(params){
         statsObj.twitter.tweetsTotal += 1;
 
         if (configuration.testMode || configuration.verbose) {
-          console.log(chalkInfo("TFE | ... TWEET ALREADY PROCESSED"
+          console.log(chalkLog("TFE | ... TWEET ALREADY PROCESSED"
             + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
             + " | TW: " + tweet.id_str
             + " | TWs: " + user.tweets.tweetIds.length
@@ -5913,64 +4844,31 @@ const fsmStates = {
           }
         }
 
+        let histogramsSavedFlag = false;
+
         try{
-          await pruneGlobalHistograms();
+          await tcUtils.pruneGlobalHistograms();
+
+          let rootFolder;
+
+          if (configuration.testMode) {
+            rootFolder = (hostname == PRIMARY_HOST) 
+            ? defaultHistogramsFolder + "_test/types/" 
+            : localHistogramsFolder + "_test/types/";
+          }
+          else {
+            rootFolder = (hostname == PRIMARY_HOST) 
+            ? defaultHistogramsFolder + "/types/" 
+            : localHistogramsFolder + "/types/";
+          }
+
+          console.log(chalkInfo("TFE | ... SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
+          await tcUtils.saveGlobalHistograms({rootFolder: rootFolder});
+          histogramsSavedFlag = true;
         }
         catch(err){
           console.log(chalkError("TFE | *** PRUNE GLOBAL HISTOGRAMS ERROR: " + err));
         }
-
-        let histogramsSavedFlag = false;
-
-        console.log(chalkInfo("TFE | SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
-
-        async.eachSeries(DEFAULT_INPUT_TYPES, function(type, cb){
-
-          if (!globalHistograms[type] || (globalHistograms[type] === undefined)){
-            globalHistograms[type] = {};
-          }
-
-          const histObj = {};
-
-          histObj.histogramsId = hostname + "_" + process.pid + "_" + getTimeStamp() + "_" + type;
-          histObj.meta = {};
-          histObj.meta.timeStamp = moment().valueOf();
-          histObj.meta.type = type;
-          histObj.meta.numEntries = Object.keys(globalHistograms[type]).length;
-          histObj.histograms = {};
-          histObj.histograms[type] = globalHistograms[type];
-
-          let folder;
-
-          if (configuration.testMode) {
-            folder = (hostname == PRIMARY_HOST) 
-            ? defaultHistogramsFolder + "_test/types/" + type 
-            : localHistogramsFolder + "_test/types/" + type;
-          }
-          else {
-            folder = (hostname == PRIMARY_HOST) 
-            ? defaultHistogramsFolder + "/types/" + type 
-            : localHistogramsFolder + "/types/" + type;
-          }
-
-          const file = "histograms_" + type + ".json";
-          const sizeInMBs = sizeof(globalHistograms[type])/ONE_MEGABYTE;
-
-          console.log(chalk.bold.blue("TFE | SAVING HISTOGRAM"
-            + " | TYPE: " + type
-            + " | ID: " + histObj.histogramsId
-            + " | ENTRIES: " + histObj.meta.numEntries
-            + " | SIZE: " + sizeInMBs.toFixed(3) + " MB"
-            + " | PATH: " + folder + "/" + file
-          ));
-
-          saveFileQueue.push({folder: folder, file: file, obj: histObj});
-
-          cb();
-
-        }, function(){
-          histogramsSavedFlag = true;
-        });
 
         statsObj.loadedNetworksFlag = false;
 
@@ -6971,6 +5869,7 @@ setTimeout(async function(){
       + "\n" + MODULE_ID_PREFIX + " | --------------------------------------------------------"
     ));
 
+    await tcUtils.initSaveFileQueue();
     await connectDb();
     await fsmStart();
     await initUserDbUpdateQueueInterval(USER_DB_UPDATE_QUEUE_INTERVAL);
