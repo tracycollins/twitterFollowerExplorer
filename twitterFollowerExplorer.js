@@ -308,6 +308,8 @@ statsObj.currentBestNetworkId = false;
 
 statsObj.randomNetworkTree = {};
 statsObj.randomNetworkTree.memoryUsage = {};
+statsObj.randomNetworkTree.memoryUsage.heap = 0;
+statsObj.randomNetworkTree.memoryUsage.maxHeap = 0;
 
 statsObj.geo = {};
 statsObj.geo.hits = 0;
@@ -1445,8 +1447,9 @@ async function showStats(options) {
       objectPath.set(statsObj, ["children", childId, "status"], childHashMap[childId].status);
     }
 
-    console.log(chalkAlert(MODULE_ID_PREFIX + " | RNT STATUS"
-      + "\n" + jsonPrint(statsObj.randomNetworkTree)
+    console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT STATUS"
+      + " | HEAP: " + statsObj.randomNetworkTree.memoryUsage.heap.toFixed(3)
+      + " | MAX HEAP: " + statsObj.randomNetworkTree.memoryUsage.maxHeap.toFixed(3)
     ));
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"

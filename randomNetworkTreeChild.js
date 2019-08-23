@@ -239,11 +239,15 @@ statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
 statsObj.startTime = moment().valueOf();
 statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
 
+function updateMemoryStats(){
+  statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
+  statsObj.memoryUsage.maxHeap = Math.max(statsObj.memoryUsage.maxHeap, statsObj.memoryUsage.heap);
+}
+
 function showStats(options){
 
   statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
-  statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
-  statsObj.memoryUsage.maxHeap = Math.max(statsObj.memoryUsage.maxHeap, statsObj.memoryUsage.heap);
+  updateMemoryStats();
 
   if (options) {
     console.log("RNT | = NT STATS\n" + jsonPrint(statsObj));
@@ -367,10 +371,9 @@ function initActivateNetworkInterval(interval){
 
           messageObj.queue = activateNetworkQueue.length;
 
-          statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
-          statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+          updateMemoryStats();
 
-          messageObj.memoryUsage = statsObj.memoryUsage
+          messageObj.memoryUsage = statsObj.memoryUsage;
 
           process.send(messageObj, function(err){
             if (err) { 
@@ -556,8 +559,8 @@ process.on("message", async function(m) {
     break;
 
     case "GET_BUSY":
-      statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
-      statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+
+      updateMemoryStats();
 
       cause = busy();
       if (cause) {
@@ -600,8 +603,7 @@ process.on("message", async function(m) {
 
     case "GET_STATS":
       try {
-        statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
-        statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+        updateMemoryStats();
         await nnTools.printNetworkResults({title: "GET STATS"});
         const stats = await nnTools.getNetworkStats();
         process.send({ op: "STATS", loadedNetworks: stats.networks, queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
@@ -621,8 +623,7 @@ process.on("message", async function(m) {
     break;
 
     case "QUIT":
-      statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
-      statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+      updateMemoryStats();
       process.send({ op: "IDLE", queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
@@ -679,8 +680,7 @@ process.on("message", async function(m) {
         ));
       }
 
-      statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
-      statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+      updateMemoryStats();
 
       process.send({op: "NETWORK_BUSY", queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage}, function(err){
         if (err) { 
@@ -730,8 +730,7 @@ function initStatsUpdate(cnf){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
     statsObj.timeStamp = moment().format(defaultDateTimeFormat);
 
-    statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
-    statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+    updateMemoryStats();
 
     if (busy()) {
       process.send({ op: "BUSY", cause: busy(), queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage });
