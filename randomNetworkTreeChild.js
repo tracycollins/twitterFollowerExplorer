@@ -232,16 +232,18 @@ statsObj.categorize.skipped = 0;
 
 statsObj.hostname = hostname;
 statsObj.pid = process.pid;
-statsObj.heap = process.memoryUsage().heapUsed/(1024*1024);
-statsObj.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+statsObj.memoryUsage = {};
+statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
+statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
 
 statsObj.startTime = moment().valueOf();
 statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
 
 function showStats(options){
+
   statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
-  statsObj.heap = process.memoryUsage().heapUsed/(1024*1024);
-  statsObj.maxHeap = Math.max(statsObj.maxHeap, statsObj.heap);
+  statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
+  statsObj.memoryUsage.maxHeap = Math.max(statsObj.memoryUsage.maxHeap, statsObj.memoryUsage.heap);
 
   if (options) {
     console.log("RNT | = NT STATS\n" + jsonPrint(statsObj));
@@ -251,8 +253,8 @@ function showStats(options){
       + " | E: " + statsObj.elapsed
       + " | S: " + moment(parseInt(statsObj.startTime)).format(compactDateTimeFormat)
       + " | ANQ: " + activateNetworkQueue.length
-      + " | HEAP: " + statsObj.heap.toFixed(3) + " MB"
-      + " | MAX HEAP: " + statsObj.maxHeap.toFixed(3) + " MB"
+      + " | HEAP: " + statsObj.memoryUsage.heap.toFixed(3) + " MB"
+      + " | MAX HEAP: " + statsObj.memoryUsage.maxHeap.toFixed(3) + " MB"
     ));
   }
 }
@@ -297,6 +299,7 @@ function initActivateNetworkInterval(interval){
     messageObj.user = null;
     messageObj.category = "none";
     messageObj.categoryAuto = "none";
+    messageObj.memoryUsage = {};
 
     let activateNetworkObj = {};
     let activateNetworkResults = {};
@@ -363,6 +366,11 @@ function initActivateNetworkInterval(interval){
           messageObj.categoryAuto = activateNetworkResults.categoryAuto;
 
           messageObj.queue = activateNetworkQueue.length;
+
+          statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
+          statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+
+          messageObj.memoryUsage = statsObj.memoryUsage
 
           process.send(messageObj, function(err){
             if (err) { 
@@ -520,7 +528,7 @@ process.on("message", async function(m) {
 
       await initActivateNetworkInterval(m.interval);
 
-      process.send({ op: "IDLE", queue: activateNetworkQueue.length }, function(err){
+      process.send({ op: "IDLE", queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -548,9 +556,12 @@ process.on("message", async function(m) {
     break;
 
     case "GET_BUSY":
+      statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
+      statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+
       cause = busy();
       if (cause) {
-        process.send({ op: "BUSY", cause: cause, queue: activateNetworkQueue.length }, function(err){
+        process.send({ op: "BUSY", cause: cause, queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | BUSY | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | BUSY | " + err);
@@ -558,7 +569,7 @@ process.on("message", async function(m) {
       });
       }
       else {
-        process.send({ op: "IDLE", queue: activateNetworkQueue.length }, function(err){
+        process.send({ op: "IDLE", queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -570,7 +581,7 @@ process.on("message", async function(m) {
     case "STATS":
       showStats(m.options);
       if (busy()) {
-        process.send({ op: "BUSY", cause: busy(), queue: activateNetworkQueue.length }, function(err){
+        process.send({ op: "BUSY", cause: busy(), queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | BUSY | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | BUSY | " + err);
@@ -578,7 +589,7 @@ process.on("message", async function(m) {
       });
       }
       else {
-        process.send({ op: "IDLE", queue: activateNetworkQueue.length }, function(err){
+        process.send({ op: "IDLE", queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
         if (err) { 
           console.log(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -589,9 +600,11 @@ process.on("message", async function(m) {
 
     case "GET_STATS":
       try {
+        statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
+        statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
         await nnTools.printNetworkResults({title: "GET STATS"});
         const stats = await nnTools.getNetworkStats();
-        process.send({ op: "STATS", loadedNetworks: stats.networks, queue: activateNetworkQueue.length }, function(err){
+        process.send({ op: "STATS", loadedNetworks: stats.networks, queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
           if (err) { 
             console.log(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
             console.error.bind(console, "RNT | *** SEND ERROR | STATS | " + err);
@@ -608,7 +621,9 @@ process.on("message", async function(m) {
     break;
 
     case "QUIT":
-      process.send({ op: "IDLE", queue: activateNetworkQueue.length }, function(err){
+      statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
+      statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+      process.send({ op: "IDLE", queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
         if (err) { 
           console.trace(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
@@ -664,14 +679,17 @@ process.on("message", async function(m) {
         ));
       }
 
-      process.send({op: "NETWORK_BUSY", queue: activateNetworkQueue.length}, function(err){
+      statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
+      statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+
+      process.send({op: "NETWORK_BUSY", queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage}, function(err){
         if (err) { 
           console.error.bind(console, "RNT | *** SEND ERROR | NETWORK_BUSY | " + err);
         }
       });
 
       if (!maxQueueFlag && (activateNetworkQueue.length >= MAX_Q_SIZE)) {
-        process.send({op: "QUEUE_FULL", queue: activateNetworkQueue.length}, function(err){
+        process.send({op: "QUEUE_FULL", queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage}, function(err){
           if (err) { 
             console.error.bind(console, "RNT | *** SEND ERROR | QUEUE_FULL | " + err);
           }
@@ -712,11 +730,14 @@ function initStatsUpdate(cnf){
     statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
     statsObj.timeStamp = moment().format(defaultDateTimeFormat);
 
+    statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
+    statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
+
     if (busy()) {
-      process.send({ op: "BUSY", cause: busy(), queue: activateNetworkQueue.length });
+      process.send({ op: "BUSY", cause: busy(), queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage });
     }
     else {
-      process.send({ op: "IDLE", queue: activateNetworkQueue.length });
+      process.send({ op: "IDLE", queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage });
     }
 
   }, cnf.statsUpdateIntervalTime);

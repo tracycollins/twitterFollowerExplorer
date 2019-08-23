@@ -306,6 +306,9 @@ statsObj.loadedNetworksFlag = false;
 statsObj.bestNetworkId = false;
 statsObj.currentBestNetworkId = false;
 
+statsObj.randomNetworkTree = {};
+statsObj.randomNetworkTree.memoryUsage = {};
+
 statsObj.geo = {};
 statsObj.geo.hits = 0;
 statsObj.geo.misses = 0;
@@ -565,7 +568,7 @@ function slackSendWebMessage(msgObj){
         message.attachments = msgObj.attachments;
       }
 
-      console.log(chalkBlueBold("TFE | SLACK WEB | SEND\n" + jsonPrint(message)));
+      console.log(chalkBlueBold("TFE | >>> SLACK WEB | SEND | " + message.text));
       slackWebClient.chat.postMessage(message);
       resolve();
     }
@@ -819,6 +822,7 @@ const statsPickArray = [
   "userReadyAck", 
   "userReadyAckWait", 
   "userReadyTransmitted",
+  "randomNetworkTree",
   "queues"
 ];
 
@@ -1441,6 +1445,9 @@ async function showStats(options) {
       objectPath.set(statsObj, ["children", childId, "status"], childHashMap[childId].status);
     }
 
+    console.log(chalkAlert(MODULE_ID_PREFIX + " | RNT STATUS"
+      + "\n" + jsonPrint(statsObj.randomNetworkTree)
+    ));
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
       + " | START: " + statsObj.startTime
@@ -3331,6 +3338,8 @@ async function processRandomNetworkTreeMessage(params){
 
       statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
 
+      statsObj.randomNetworkTree.memoryUsage = m.memoryUsage;
+
       debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
       debug(chalkAlert("RNT NETWORK_OUTPUT | " + m.currentBestNetwork.networkId));
 
@@ -3634,7 +3643,7 @@ function initRandomNetworkTreeChild() {
 
       console.log(chalkBlue("TFE | INIT RANDOM NN TREE CHILD PROCESS"));
 
-      randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`);
+      randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`, { execArgv: ['--max-old-space-size=4096'] });
 
       randomNetworkTree.on("message", function(m) {
         switch (m.op) {
