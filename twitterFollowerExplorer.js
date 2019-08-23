@@ -3646,7 +3646,7 @@ function initRandomNetworkTreeChild() {
 
       console.log(chalkBlue("TFE | INIT RANDOM NN TREE CHILD PROCESS"));
 
-      randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`, { execArgv: ['--max-old-space-size=8192'] });
+      randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`, { execArgv: ['--max-old-space-size=16384'] });
 
       randomNetworkTree.on("message", function(m) {
         switch (m.op) {
