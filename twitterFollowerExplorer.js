@@ -3783,18 +3783,18 @@ function initRandomNetworkTreeChild() {
   });
 }
 
-async function emptyHistogram(histogram){
+// async function emptyHistogram(histogram){
 
-  if (!histogram) { return true; }
-  if (histogram === undefined) { return true; }
-  if (histogram == {}) { return true; }
+//   if (!histogram) { return true; }
+//   if (histogram === undefined) { return true; }
+//   if (histogram == {}) { return true; }
 
-  for (const histogramType of Object.keys(histogram)){
-    if (Object.keys(histogram[histogramType]).length > 0) { return false; }
-  }
+//   for (const histogramType of Object.keys(histogram)){
+//     if (Object.keys(histogram[histogramType]).length > 0) { return false; }
+//   }
 
-  return true;
-}
+//   return true;
+// }
 
 function processTweetObj(params){
 
@@ -4133,7 +4133,7 @@ async function processUserTweets(params){
   let tweetHistogramsEmpty = false;
 
   try{
-    tweetHistogramsEmpty = await emptyHistogram(user.tweetHistograms);
+    tweetHistogramsEmpty = await tcUtils.emptyHistogram(user.tweetHistograms);
 
     const processedUser = await processUserTweetArray({user: user, forceFetch: tweetHistogramsEmpty, tweets: tweets, tscParams: tscParams});
 
