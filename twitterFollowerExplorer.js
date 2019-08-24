@@ -99,9 +99,9 @@ const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL; // ms
 let waitFileSaveInterval;
 let randomNetworkTreeMessageRxQueueInterval;
 
-const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 69;
-const DEFAULT_LOCAL_MIN_SUCCESS_RATE = 60;
-const DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE = 65;
+const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
+// const DEFAULT_LOCAL_MIN_SUCCESS_RATE = 60;
+// const DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE = 65;
 
 const SAVE_CACHE_DEFAULT_TTL = 60;
 const SAVE_FILE_QUEUE_INTERVAL = 5*ONE_SECOND;
@@ -793,14 +793,15 @@ if (process.env.TFE_QUIT_ON_COMPLETE !== undefined) {
 configuration.globalMinSuccessRate = (process.env.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) 
   ? process.env.TFE_GLOBAL_MIN_SUCCESS_RATE 
   : DEFAULT_GLOBAL_MIN_SUCCESS_RATE;
-configuration.localMinSuccessRate = (process.env.TFE_LOCAL_MIN_SUCCESS_RATE !== undefined) 
-  ? process.env.TFE_LOCAL_MIN_SUCCESS_RATE 
-  : DEFAULT_LOCAL_MIN_SUCCESS_RATE;
+  
+// configuration.localMinSuccessRate = (process.env.TFE_LOCAL_MIN_SUCCESS_RATE !== undefined) 
+//   ? process.env.TFE_LOCAL_MIN_SUCCESS_RATE 
+//   : DEFAULT_LOCAL_MIN_SUCCESS_RATE;
 
 // delete local nn's at start that are below  
-configuration.localPurgeMinSuccessRate = (process.env.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE !== undefined) 
-  ? process.env.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE 
-  : DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE;
+// configuration.localPurgeMinSuccessRate = (process.env.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE !== undefined) 
+//   ? process.env.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE 
+//   : DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE;
 
 configuration.DROPBOX = {};
 configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
@@ -1760,20 +1761,20 @@ async function loadConfigFile(params) {
       newConfiguration.histogramParseTotalMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN;
     }
 
-    if (loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE !== undefined) {
-      console.log("TFE | LOADED TFE_LOCAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE);
-      newConfiguration.localMinSuccessRate = loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE;
-    }
+    // if (loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE !== undefined) {
+    //   console.log("TFE | LOADED TFE_LOCAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE);
+    //   newConfiguration.localMinSuccessRate = loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE;
+    // }
 
     if (loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) {
       console.log("TFE | LOADED TFE_GLOBAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE);
       newConfiguration.globalMinSuccessRate = loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE;
     }
 
-    if (loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE !== undefined) {
-      console.log("TFE | LOADED TFE_LOCAL_PURGE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE);
-      newConfiguration.localPurgeMinSuccessRate = loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE;
-    }
+    // if (loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE !== undefined) {
+    //   console.log("TFE | LOADED TFE_LOCAL_PURGE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE);
+    //   newConfiguration.localPurgeMinSuccessRate = loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE;
+    // }
 
     if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined) {
       console.log("TFE | LOADED TFE_NUM_RANDOM_NETWORKS: " + loadedConfigObj.TFE_NUM_RANDOM_NETWORKS);
