@@ -388,10 +388,18 @@ function initActivateNetworkInterval(interval){
 
           console.trace(chalkError("RNT | *** ACTIVATE NETWORK ERROR"
             + " | @" + activateNetworkObj.user.screenName
-            + " | ", err
+            + " | " + err
           ));
 
-          activateNetworkIntervalBusy = false;
+          process.send({op: "ERROR", errorType: "ACTIVATE_ERROR", error: err, queue: activateNetworkQueue.length}, function(err){
+
+            activateNetworkIntervalBusy = false;
+            if (err) { 
+              console.trace(chalkError("RNT | *** SEND ERROR | ERROR | " + err));
+              quit("SEND ERROR ERROR");
+            }
+          });
+
         }
 
         if (maxQueueFlag && (activateNetworkQueue.length < MAX_Q_SIZE)) {

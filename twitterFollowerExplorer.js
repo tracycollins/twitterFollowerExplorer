@@ -793,7 +793,7 @@ if (process.env.TFE_QUIT_ON_COMPLETE !== undefined) {
 configuration.globalMinSuccessRate = (process.env.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) 
   ? process.env.TFE_GLOBAL_MIN_SUCCESS_RATE 
   : DEFAULT_GLOBAL_MIN_SUCCESS_RATE;
-  
+
 // configuration.localMinSuccessRate = (process.env.TFE_LOCAL_MIN_SUCCESS_RATE !== undefined) 
 //   ? process.env.TFE_LOCAL_MIN_SUCCESS_RATE 
 //   : DEFAULT_LOCAL_MIN_SUCCESS_RATE;
@@ -3253,6 +3253,15 @@ async function processRandomNetworkTreeMessage(params){
       console.log(chalkLog("TFE | RNT IDLE "));
       return;
 
+    case "ERROR":
+      if (m.errorType == "ACTIVATE_ERROR") {
+        console.log(chalkAlert("TFE | RNT | *** ACTIVATE_ERROR: " + m.error));
+        return;     
+      }
+      console.log(chalkError("TFE | RNT | *** ERROR: " + m.error));
+      quit();
+    break;
+
     case "STATS":
 
       statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
@@ -3464,6 +3473,11 @@ async function processRandomNetworkTreeMessage(params){
           + " | CA: " + m.categoryAuto
         ));
       }
+
+      statsObj.users.processed += 1;
+      statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
+
+      if (statsObj.users.processed % 100 == 0) { showStats(); }
 
       randomNetworkTreeMessageRxQueueReadyFlag = true;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
@@ -4518,10 +4532,10 @@ async function initProcessUserQueueInterval(interval) {
           ));
         }
 
-        statsObj.users.processed += 1;
-        statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
+        // statsObj.users.processed += 1;
+        // statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
 
-        if (statsObj.users.processed % 100 == 0) { showStats(); }
+        // if (statsObj.users.processed % 100 == 0) { showStats(); }
 
         statsObj.queues.processUserQueue.busy = false;
       }
