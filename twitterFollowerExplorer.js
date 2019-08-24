@@ -72,24 +72,19 @@ const TEST_CURSOR_BATCH_SIZE = 5;
 const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
 const DEFAULT_MIN_TEST_CYCLES = 10;
 const DEFAULT_MIN_WORD_LENGTH = 3;
-// const DEFAULT_RANDOM_UNTESTED_LIMIT = 25;
 const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
 
-let saveRawFriendFlag = true;
+// let saveRawFriendFlag = true;
 
 const RNT_CHILD_ID = CHILD_PREFIX + "_child_rnt";
-const LAC_CHILD_ID = CHILD_PREFIX + "_child_lac";
+// const LAC_CHILD_ID = CHILD_PREFIX + "_child_lac";
 
 const DEFAULT_MIN_INTERVAL = 2;
-
-// const ONE_KILOBYTE = 1024;
-// const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
-
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
 const FSM_TICK_INTERVAL = ONE_SECOND;
 const STATS_UPDATE_INTERVAL = ONE_MINUTE;
-const DEFAULT_CHILD_PING_INTERVAL = ONE_MINUTE;
+// const DEFAULT_CHILD_PING_INTERVAL = ONE_MINUTE;
 
 const PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
@@ -142,7 +137,7 @@ DEFAULT_INPUT_TYPES.sort();
 const inputsIdSet = new Set();
 const bestInputsSet = new Set();
 const skipLoadNetworkSet = new Set();
-const userErrorSet = new Set();
+// const userErrorSet = new Set();
 const userTweetFetchSet = new Set();
 
 const globalHistograms = {};
@@ -189,12 +184,12 @@ const defaults = require("object.defaults");
 const moment = require("moment");
 const HashMap = require("hashmap").HashMap;
 const pick = require("object.pick");
-const shell = require("shelljs");
-const touch = require("touch");
-const kill = require("tree-kill");
+// const shell = require("shelljs");
+// const touch = require("touch");
+// const kill = require("tree-kill");
 const _ = require("lodash");
 const treeify = require("treeify");
-const objectPath = require("object-path");
+// const objectPath = require("object-path");
 const NodeCache = require("node-cache");
 const merge = require("deepmerge");
 const btoa = require("btoa");
@@ -239,7 +234,7 @@ const chalkWarn = chalk.yellow;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 
-const priorityUserTweetsHashMap = new HashMap();
+// const priorityUserTweetsHashMap = new HashMap();
 
 const bestNetworkHashMap = new HashMap();
 let maxInputHashMap = {};
@@ -340,9 +335,9 @@ statsObj.languageQuotaFlag = false;
 
 statsObj.queues = {};
 
-statsObj.queues.fetchUserTweetsQueue = {};
-statsObj.queues.fetchUserTweetsQueue.busy = false;
-statsObj.queues.fetchUserTweetsQueue.size = 0;
+statsObj.queues.fetchUserQueue = {};
+statsObj.queues.fetchUserQueue.busy = false;
+statsObj.queues.fetchUserQueue.size = 0;
 
 statsObj.queues.randomNetworkTreeActivateQueue = {};
 statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
@@ -379,7 +374,7 @@ statsObj.userReadyAck = false;
 statsObj.userReadyAckWait = 0;
 statsObj.userReadyTransmitted = false;
 
-statsObj.fetchUserTweetsEndFlag = false;
+statsObj.fetchUserEndFlag = false;
 
 statsObj.users = {};
 statsObj.users.categorized = {};
@@ -509,18 +504,20 @@ function getElapsedTimeStamp(){
 }
 
 
-//=========================================================================
-// TFE SPECIFIC
-//=========================================================================
-const DEFAULT_CHILD_ID_PREFIX = "tfe_node_child";
+// //=========================================================================
+// // TFE SPECIFIC
+// //=========================================================================
+// const DEFAULT_CHILD_ID_PREFIX = "tfe_node_child";
 
-if (hostname == "google") {
-  configuration.childAppPath = "/home/tc/twitterFollowerExplorer/twitterFollowerExplorerChild.js";
-}
-else {
-  configuration.childAppPath = "/Volumes/RAID1/projects/twitterFollowerExplorer/twitterFollowerExplorerChild.js";
-}
-configuration.childIdPrefix = DEFAULT_CHILD_ID_PREFIX;
+// if (hostname == "google") {
+//   // configuration.childAppPath = "/home/tc/twitterFollowerExplorer/twitterFollowerExplorerChild.js";
+//   configuration.childAppPath = "/home/tc/twitterFollowerExplorer/tfeChild.js";
+// }
+// else {
+//   // configuration.childAppPath = "/Volumes/RAID1/projects/twitterFollowerExplorer/twitterFollowerExplorerChild.js";
+//   configuration.childAppPath = "/Volumes/RAID1/projects/twitterFollowerExplorer/tfeChild.js";
+// }
+// configuration.childIdPrefix = DEFAULT_CHILD_ID_PREFIX;
 
 //=========================================================================
 // SLACK
@@ -774,7 +771,7 @@ async function initSlackRtmClient(){
 
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.processName = process.env.TFE_PROCESS_NAME || "tfe_node";
-configuration.childPingAllInterval = DEFAULT_CHILD_PING_INTERVAL;
+// configuration.childPingAllInterval = DEFAULT_CHILD_PING_INTERVAL;
 configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
 configuration.imageParserRateTimitTimeout = DEFAULT_IMAGE_PARSE_RATE_LIMIT_TIMEOUT;
 configuration.interruptFlag = false;
@@ -897,16 +894,16 @@ function printNetworkObj(title, nObj, format) {
 
   console.log(chalkFormat(title
     + " | RNK: " + networkObj.rank
-    + " | ARCHIVED: " + networkObj.archived
+    + " | ARCHVD: " + networkObj.archived
     + " | TECH: " + networkObj.networkTechnology
     + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
     + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
     + " | SR: " + networkObj.successRate.toFixed(2) + "%"
-    + " | CR: " + getTimeStamp(networkObj.createdAt)
-    + " | TC:  " + networkObj.testCycles
+    // + " | CR: " + getTimeStamp(networkObj.createdAt)
+    + " | TC: " + networkObj.testCycles
     + " | TCH: " + networkObj.testCycleHistory.length
     + " | INs: " + networkObj.numInputs
-    + " | IN ID:  " + networkObj.inputsId
+    + " | IN: " + networkObj.inputsId
     + " | " + networkObj.networkId
   ));
 }
@@ -1067,13 +1064,13 @@ function initCategorizedUserIdSet(){
     statsObj.users.categorized.mismatched = 0;
     statsObj.users.categorized.matchRate = 0;
 
-    const childParams = {};
-    childParams.command = {};
-    childParams.command.childId = "tfe_node_child_altthreecee00"
-    childParams.command.op = "FETCH_USER_TWEETS";
-    childParams.command.priorityFlag = false;
-    childParams.command.userArray = [];
-    childParams.command.fetchUserTweetsEndFlag = false;
+    // const childParams = {};
+    // childParams.command = {};
+    // childParams.command.childId = "tfe_node_child_altthreecee00"
+    // childParams.command.op = "FETCH_USER";
+    // childParams.command.priorityFlag = false;
+    // childParams.command.userArray = [];
+    // childParams.command.fetchUserEndFlag = false;
 
     async.whilst(
 
@@ -1102,36 +1099,61 @@ function initCategorizedUserIdSet(){
 
             statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
 
-
             convertUserHistograms({usersHashMap: results.obj}).
             then(function(usersArray){
 
-              childParams.command.userArray = usersArray;
+              for(const user of usersArray){
 
-              childSend(childParams).
-              then(function(){
-                if (configuration.testMode || configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
+                processUserQueue.push(user);
 
-                  console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-                    + " | UIDs: " + childParams.command.userArray.length
-                    + " | TOT CAT: " + statsObj.users.categorized.total
-                    + " | LIMIT: " + p.limit
-                    + " | SKIP: " + p.skip
-                    + " | " + statsObj.users.categorized.manual + " MAN"
-                    + " | " + statsObj.users.categorized.auto + " AUTO"
-                    + " | " + statsObj.users.categorized.matched + " MATCHED"
-                    + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-                    + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-                  ));
-                }
+                // if (configuration.testMode || configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
 
-                p.skip += results.count;
-                cb();
-              }).
-              catch(function(e){
-                console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: childSend FETCH_USER_TWEETS ERROR: " + e));
-                return cb(err);
-              });
+                //   console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
+                //     + " | UIDs: " + usersArray.length
+                //     + " | PUQ: " + processUserQueue.length
+                //     + " | TOT CAT: " + statsObj.users.categorized.total
+                //     + " | LIMIT: " + p.limit
+                //     + " | SKIP: " + p.skip
+                //     + " | " + statsObj.users.categorized.manual + " MAN"
+                //     + " | " + statsObj.users.categorized.auto + " AUTO"
+                //     + " | " + statsObj.users.categorized.matched + " MATCHED"
+                //     + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+                //     + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+                //   ));
+                // }
+
+              }
+
+
+              p.skip += results.count;
+              cb();
+
+              // childParams.command.userArray = usersArray;
+
+              // childSend(childParams).
+              // then(function(){
+              //   if (configuration.testMode || configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
+
+              //     console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
+              //       + " | UIDs: " + childParams.command.userArray.length
+              //       + " | TOT CAT: " + statsObj.users.categorized.total
+              //       + " | LIMIT: " + p.limit
+              //       + " | SKIP: " + p.skip
+              //       + " | " + statsObj.users.categorized.manual + " MAN"
+              //       + " | " + statsObj.users.categorized.auto + " AUTO"
+              //       + " | " + statsObj.users.categorized.matched + " MATCHED"
+              //       + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+              //       + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+              //     ));
+              //   }
+              //
+              //   p.skip += results.count;
+              //   cb();
+              // }).
+              // catch(function(e){
+              //   console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: childSend FETCH_USER_TWEETS ERROR: " + e));
+              //   return cb(err);
+              // });
 
             }).
             catch(function(err){
@@ -1164,7 +1186,7 @@ function initCategorizedUserIdSet(){
           return reject(err);
         }
 
-        statsObj.fetchUserTweetsEndFlag = true;
+        statsObj.fetchUserEndFlag = true;
 
         console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
           + " | TOT CAT: " + statsObj.users.categorized.total
@@ -1428,7 +1450,7 @@ async function showStats(options) {
 
   statsObj.remainingTimeMs = statsObj.users.processRateMS * statsObj.users.numProcessRemaining;
 
-  await childStatsAll();
+  // await childStatsAll();
 
   statsObjSmall = pick(statsObj, statsPickArray);
 
@@ -1438,14 +1460,14 @@ async function showStats(options) {
   }
   else {
 
-    for (const childId of Object.keys(childHashMap)) {
+    // for (const childId of Object.keys(childHashMap)) {
 
-      console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS CHILD"
-        + " | CHILD ID: " + childId + " | CH FSM: " + childHashMap[childId].status
-      ));
+    //   console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS CHILD"
+    //     + " | CHILD ID: " + childId + " | CH FSM: " + childHashMap[childId].status
+    //   ));
 
-      objectPath.set(statsObj, ["children", childId, "status"], childHashMap[childId].status);
-    }
+    //   objectPath.set(statsObj, ["children", childId, "status"], childHashMap[childId].status);
+    // }
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT STATUS"
       + " | HEAP: " + statsObj.randomNetworkTree.memoryUsage.heap.toFixed(3)
@@ -1532,7 +1554,7 @@ const configHostFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility", hostna
 const configDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 const configHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 
-const childPidFolderLocal = DROPBOX_ROOT_FOLDER + "/config/utility/" + hostname + "/children";
+// const childPidFolderLocal = DROPBOX_ROOT_FOLDER + "/config/utility/" + hostname + "/children";
 
 const statsFolder = path.join(DROPBOX_ROOT_FOLDER, "stats", hostname);
 const statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
@@ -1554,7 +1576,7 @@ const defaultHistogramsFolder = configDefaultFolder + "/histograms";
 const defaultInputsConfigFile = "default_networkInputsConfig.json";
 const hostInputsConfigFile = hostname + "_networkInputsConfig.json";
 
-const testDataUserFolder = configHostFolder + "/test/testData/user";
+// const testDataUserFolder = configHostFolder + "/test/testData/user";
 
 function filesListFolder(params){
   return new Promise(function(resolve, reject) {
@@ -1991,7 +2013,7 @@ async function quit(opts) {
 
   try{
     if (!configuration.offlineMode) { await slackSendWebMessage({channel: slackChannel, text: slackText}); }
-    await childQuitAll();
+    // await childQuitAll();
     await showStats(true);
   }
   catch(err){
@@ -2028,20 +2050,20 @@ async function quit(opts) {
         ));
       }
 
-      const command = 'pkill ' + configuration.childIdPrefix + '*';
+      // const command = 'pkill ' + configuration.childIdPrefix + '*';
 
-      shell.exec(command, function(code, stdout, stderr){
+      // shell.exec(command, function(code, stdout, stderr){
 
-        console.log(chalkAlert(MODULE_ID_PREFIX + " | KILL ALL CHILD"
-          + "\nCOMMAND: " + command
-          + "\nCODE:    " + code
-          + "\nSTDOUT:  " + stdout
-          + "\nSTDERR:  " + stderr
-        ));
+      //   console.log(chalkAlert(MODULE_ID_PREFIX + " | KILL ALL CHILD"
+      //     + "\nCOMMAND: " + command
+      //     + "\nCODE:    " + code
+      //     + "\nSTDOUT:  " + stdout
+      //     + "\nSTDERR:  " + stderr
+      //   ));
 
-        shell.cd(childPidFolderLocal);
-        shell.rm(configuration.childIdPrefix + "*");
-      });
+      //   shell.cd(childPidFolderLocal);
+      //   shell.rm(configuration.childIdPrefix + "*");
+      // });
 
       if (!global.globalDbConnection) {
         process.exit();
@@ -2084,7 +2106,7 @@ const verbose = { name: "verbose", alias: "V", type: Boolean };
 const testMode = { name: "testMode", alias: "X", type: Boolean};
 const offlineMode = { name: "offlineMode", alias: "O", type: Boolean};
 
-const maxNumberChildren = { name: "maxNumberChildren", alias: "N", type: Number};
+// const maxNumberChildren = { name: "maxNumberChildren", alias: "N", type: Number};
 const useLocalTrainingSets = { name: "useLocalTrainingSets", alias: "L", type: Boolean};
 const loadAllInputs = { name: "loadAllInputs", type: Boolean};
 const loadTrainingSetFromFile = { name: "loadTrainingSetFromFile", alias: "t", type: Boolean};
@@ -2097,7 +2119,7 @@ const useBestNetwork = { name: "useBestNetwork", alias: "b", type: Boolean };
 const evolveIterations = { name: "evolveIterations", alias: "I", type: Number};
 
 const optionDefinitions = [
-  maxNumberChildren,
+  // maxNumberChildren,
   useLocalTrainingSets,
   loadAllInputs,
   loadTrainingSetFromFile,
@@ -2166,17 +2188,17 @@ function toggleVerbose(){
 
   randomNetworkTree.send({ op: "VERBOSE", verbose: configuration.verbose});
 
-  const command = {};
-  command.op = "VERBOSE";
-  command.verbose = configuration.verbose;
+  // const command = {};
+  // command.op = "VERBOSE";
+  // command.verbose = configuration.verbose;
 
-  childSendAll({command: command}).
-  then(function(){
+  // childSendAll({command: command}).
+  // then(function(){
 
-  }).
-  catch(function(err){
-    console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR VERBOSE: " + err));
-  });
+  // }).
+  // catch(function(err){
+  //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR VERBOSE: " + err));
+  // });
 }
 
 function initStdIn() {
@@ -2240,42 +2262,42 @@ const Stately = require("stately.js");
 
 let fsmTickInterval;
 let fsmPreviousState = "RESET";
-const createChildrenInProgress = false;
-let killAllInProgress = false;
+// const createChildrenInProgress = false;
+// let killAllInProgress = false;
 
 //=========================================================================
 // TWITTER
 //=========================================================================
-async function initTwitterConfig(params) {
+// async function initTwitterConfig(params) {
 
-  statsObj.status = "INIT TWITTER | @" + params.threeceeUser;
+//   statsObj.status = "INIT TWITTER | @" + params.threeceeUser;
 
-  const twitterConfigFile = params.threeceeUser + ".json";
+//   const twitterConfigFile = params.threeceeUser + ".json";
 
-  debug(chalkInfo("INIT TWITTER USER @" + params.threeceeUser + " | " + twitterConfigFile));
+//   debug(chalkInfo("INIT TWITTER USER @" + params.threeceeUser + " | " + twitterConfigFile));
 
-  const folder = path.join(DROPBOX_ROOT_FOLDER, configuration.twitterConfigFolder);
+//   const folder = path.join(DROPBOX_ROOT_FOLDER, configuration.twitterConfigFolder);
 
-  try {
-    const twitterConfig = await tcUtils.loadFile({folder: folder, file: twitterConfigFile});
+//   try {
+//     const twitterConfig = await tcUtils.loadFile({folder: folder, file: twitterConfigFile});
 
-    twitterConfig.threeceeUser = params.threeceeUser;
+//     twitterConfig.threeceeUser = params.threeceeUser;
 
-    console.log(chalkTwitter("TFE | LOADED TWITTER CONFIG"
-      + " | @" + params.threeceeUser
-      + " | CONFIG FILE: " + folder + "/" + twitterConfigFile
-    ));
+//     console.log(chalkTwitter("TFE | LOADED TWITTER CONFIG"
+//       + " | @" + params.threeceeUser
+//       + " | CONFIG FILE: " + folder + "/" + twitterConfigFile
+//     ));
 
-    return twitterConfig;
-  }
-  catch(err){
-    console.log(chalkError("TFE | *** LOADED TWITTER CONFIG ERROR: FILE:  " 
-      + folder + "/" + twitterConfigFile
-    ));
-    console.log(chalkError("TFE | *** LOADED TWITTER CONFIG ERROR: ERROR: " + err));
-    throw err;
-  }
-}
+//     return twitterConfig;
+//   }
+//   catch(err){
+//     console.log(chalkError("TFE | *** LOADED TWITTER CONFIG ERROR: FILE:  " 
+//       + folder + "/" + twitterConfigFile
+//     ));
+//     console.log(chalkError("TFE | *** LOADED TWITTER CONFIG ERROR: ERROR: " + err));
+//     throw err;
+//   }
+// }
 
 function isBestNetwork(p){
 
@@ -2381,7 +2403,7 @@ async function loadNetworkFile(params){
   updateDbNetworkParams.networkObj = networkObj;
   updateDbNetworkParams.incrementTestCycles = false;
   updateDbNetworkParams.addToTestHistory = false;
-  updateDbNetworkParams.verbose = configuration.testMode;
+  updateDbNetworkParams.verbose = configuration.verbose;
 
   if (skipLoadNetworkSet.has(networkObj.networkId) && !networkObj.archived) {
 
@@ -2608,7 +2630,7 @@ async function loadBestNetworksDatabase(p) {
       + " | TCH: " + networkObj.testCycleHistory.length
     ));
 
-    async.setImmediate(function() { cb(); });
+    cb();
 
   }, function(err){
     if (err) {
@@ -2782,6 +2804,7 @@ function initRandomNetworks(){
       }, function(err){
 
         if (err) { 
+          console.log(chalkError("TFE | *** SEND NN > RNT ERROR: " + err));
           statsObj.loadedNetworksFlag = false;
           reject(err);
         }
@@ -2839,8 +2862,10 @@ async function initNetworks(){
     loadMaxInput({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile})
   ])
   .then(async function(){
+
+    console.log(chalkAlert("TFE | +++ NETWORKS INITIALIZED"));
+
     await initMaxInputHashMap();
-    await initRandomNetworks();
     console.log(chalkGreen("TFE | +++ LOAD BEST NETWORKS COMPLETE"));
     return;
   });
@@ -2943,14 +2968,13 @@ function updateNetworkStats(params) {
 
         try {
           nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
+          bestNetworkHashMap.set(nnDbUpdated.networkId, nnDbUpdated);
+          return;
         }
         catch(err){
           console.log(chalkError("TFE | *** NN DB UPDATE ERROR: " + err));
           return(err);
         }
-
-        bestNetworkHashMap.set(nnDbUpdated.networkId, nnDbUpdated);
-        return;
 
       }
       else {
@@ -3862,86 +3886,86 @@ async function generateAutoCategory(params) {
   }
 }
 
-async function processPriorityUserTweets(params){
+// async function processPriorityUserTweets(params){
 
-  await waitEvent({ event: "priorityUserTweetsEvent_" + params.nodeId});
+//   await waitEvent({ event: "priorityUserTweetsEvent_" + params.nodeId});
 
-  if (priorityUserTweetsHashMap.size == 0) {
-    console.log(chalkAlert("TFE | ??? PRORITY USER TWEETS HASHMAP EMPTY"
-      + " | EVENT: priorityUserTweetsEvent_" + params.nodeId
-    ));
-    return;
-  }
+//   if (priorityUserTweetsHashMap.size == 0) {
+//     console.log(chalkAlert("TFE | ??? PRORITY USER TWEETS HASHMAP EMPTY"
+//       + " | EVENT: priorityUserTweetsEvent_" + params.nodeId
+//     ));
+//     return;
+//   }
 
-  if (!priorityUserTweetsHashMap.has(params.nodeId)) {
-    console.log(chalkAlert("TFE | ??? USER NOT IN PRORITY USER TWEETS HASHMAP"
-      + " | EVENT: priorityUserTweetsEvent_" + params.nodeId
-    ));
-    return;
-  }
+//   if (!priorityUserTweetsHashMap.has(params.nodeId)) {
+//     console.log(chalkAlert("TFE | ??? USER NOT IN PRORITY USER TWEETS HASHMAP"
+//       + " | EVENT: priorityUserTweetsEvent_" + params.nodeId
+//     ));
+//     return;
+//   }
 
-  const obj = priorityUserTweetsHashMap.get(params.nodeId);
-  priorityUserTweetsHashMap.delete(params.nodeId);
+//   const obj = priorityUserTweetsHashMap.get(params.nodeId);
+//   priorityUserTweetsHashMap.delete(params.nodeId);
 
-  return obj.latestTweets;
-}
+//   return obj.latestTweets;
+// }
 
 const userTweetsDefault = {
   sinceId: MIN_TWEET_ID,
   tweetIds: []
 }
 
-async function fetchUserTweets(params){
+// async function fetchUserTweets(params){
 
-  const user = params.user;
+//   const user = params.user;
 
-  if (!user.tweetHistograms || (user.tweetHistograms === undefined) || (user.tweetHistograms == {})) { 
+//   if (!user.tweetHistograms || (user.tweetHistograms === undefined) || (user.tweetHistograms == {})) { 
 
-    console.log(chalkAlert("TFE | fetchUserTweets | *** USER tweetHistograms UNDEFINED"
-      + " | @" + user.screenName
-    ));
+//     console.log(chalkAlert("TFE | fetchUserTweets | *** USER tweetHistograms UNDEFINED"
+//       + " | @" + user.screenName
+//     ));
     
-    user.tweetHistograms = {};
-  }
+//     user.tweetHistograms = {};
+//   }
 
-  if (params.force) {
+//   if (params.force) {
 
-    console.log(chalkAlert("TFE | fetchUserTweets | !!! FORCE"
-      + " | @" + user.screenName
-    ));
+//     console.log(chalkAlert("TFE | fetchUserTweets | !!! FORCE"
+//       + " | @" + user.screenName
+//     ));
 
-    delete user.tweets;
-    user.tweets = {};
-  }
+//     delete user.tweets;
+//     user.tweets = {};
+//   }
 
-  defaults(user.tweets, userTweetsDefault);
+//   defaults(user.tweets, userTweetsDefault);
 
-  const childParams = {};
+//   const childParams = {};
 
-  childParams.command = {};
-  childParams.command.childId = "tfe_node_child_altthreecee00"
-  childParams.command.op = "FETCH_USER_TWEETS";
-  childParams.command.userArray = [];
-  childParams.command.priorityFlag = true;
-  childParams.command.fetchUserTweetsEndFlag = false;
-  childParams.command.userArray.push(user);
+//   childParams.command = {};
+//   childParams.command.childId = "tfe_node_child_altthreecee00"
+//   childParams.command.op = "FETCH_USER_TWEETS";
+//   childParams.command.userArray = [];
+//   childParams.command.priorityFlag = true;
+//   childParams.command.fetchUserEndFlag = false;
+//   childParams.command.userArray.push(user);
 
-  console.log(chalkAlert("TFE | fetchUserTweets | >>> PRIORITY FETCH TWEETS | @" + user.screenName));
+//   console.log(chalkAlert("TFE | fetchUserTweets | >>> PRIORITY FETCH TWEETS | @" + user.screenName));
 
-  try{
-    await childSend(childParams);
-    const latestTweets = await processPriorityUserTweets({nodeId: user.nodeId});
-    if (latestTweets) { 
-      user.latestTweets = latestTweets;
-      // user.markModified("latestTweets");
-    }
-    return user;
-  }
-  catch(err){
-    console.log(chalkAlert("TFE | fetchUserTweets | *** childSend ERROR: " + err));
-    throw err;
-  }
-}
+//   try{
+//     await childSend(childParams);
+//     const latestTweets = await processPriorityUserTweets({nodeId: user.nodeId});
+//     if (latestTweets) { 
+//       user.latestTweets = latestTweets;
+//       // user.markModified("latestTweets");
+//     }
+//     return user;
+//   }
+//   catch(err){
+//     console.log(chalkAlert("TFE | fetchUserTweets | *** childSend ERROR: " + err));
+//     throw err;
+//   }
+// }
 
 function histogramIncomplete(histogram){
 
@@ -4107,7 +4131,7 @@ async function processUserTweets(params){
 
 async function updateUserTweets(params){
 
-  let user = params.user;
+  const user = params.user;
 
   const histogramIncompleteFlag = await histogramIncomplete(user.tweetHistograms);
 
@@ -4128,7 +4152,8 @@ async function updateUserTweets(params){
     }
 
     user.tweetHistograms = {};
-    user = await fetchUserTweets({user: user, force: true});
+    const latestTweets = await tcUtils.fetchUserTweets({user: user, force: true});
+    if (latestTweets) { user.latestTweets = latestTweets; }
     // userTweetFetchSet.delete(user.nodeId);
   }
 
@@ -4275,7 +4300,7 @@ function printUser(params) {
     + " | M  " + user.mentions
     + " | LS " + getTimeStamp(user.lastSeen)
     + " | FWG " + user.following 
-    + " | 3C " + user.threeceeFollowing 
+    // + " | 3C " + user.threeceeFollowing 
     + " | LC " + user.location
     + " | C M " + user.category + " A " + user.categoryAuto;
 
@@ -4285,8 +4310,8 @@ function printUser(params) {
 
 async function allQueuesEmpty(){
 
-  if (statsObj.queues.fetchUserTweetsQueue.busy) { return false; }
-  if (statsObj.queues.fetchUserTweetsQueue.size > 0) { return false; }
+  if (statsObj.queues.fetchUserQueue.busy) { return false; }
+  if (statsObj.queues.fetchUserQueue.size > 0) { return false; }
 
   if (statsObj.queues.processUserQueue.busy) { return false; }
   if (processUserQueue.size > 0) { return false; }
@@ -4324,7 +4349,7 @@ async function initProcessUserQueueInterval(interval) {
 
     const allEmpty = await allQueuesEmpty();
 
-    if (statsObj.fetchUserTweetsEndFlag && statsObj.processedStartFlag && allEmpty){
+    if (statsObj.fetchUserEndFlag && statsObj.processedStartFlag && allEmpty){
 
       console.log(chalkBlue(
           "\n=============================="
@@ -4332,20 +4357,23 @@ async function initProcessUserQueueInterval(interval) {
         + "\n==============================\n"
       ));
 
-      const childParams = {};
-      childParams.command = {};
-      childParams.command.childId = "tfe_node_child_altthreecee00"
-      childParams.command.op = "FETCH_USER_TWEETS_END";
-      childParams.command.fetchUserTweetsEndFlag = true;
+      fsm.fsm_fetchAllEnd(); 
 
-      childSend(childParams).
-      then(function(){
-        clearInterval(processUserQueueInterval);
-      }).
-      catch(function(err){
-        console.log(chalkError("TFE | *** CHILD SEND END ERROR: " + err));
-        clearInterval(processUserQueueInterval);
-      });
+      clearInterval(processUserQueueInterval);
+      // const childParams = {};
+      // childParams.command = {};
+      // childParams.command.childId = "tfe_node_child_altthreecee00"
+      // childParams.command.op = "FETCH_USER_END";
+      // childParams.command.fetchUserEndFlag = true;
+
+      // childSend(childParams).
+      // then(function(){
+      //   clearInterval(processUserQueueInterval);
+      // }).
+      // catch(function(err){
+      //   console.log(chalkError("TFE | *** CHILD SEND END ERROR: " + err));
+      //   clearInterval(processUserQueueInterval);
+      // });
     }
     else if (!statsObj.queues.processUserQueue.busy && processUserQueue.length > 0) {
 
@@ -4496,19 +4524,19 @@ async function initProcessUserQueueInterval(interval) {
 
 statsObj.fsmState = "RESET";
 
-const fetchAllReady = function(){
+// const fetchAllReady = function(){
 
-  statsObj.queues.processUserQueue.size = processUserQueue.length;
+//   statsObj.queues.processUserQueue.size = processUserQueue.length;
 
-  if (configuration.verbose) {
-    console.log(chalkLog("fetchAllReady"
-      + " | loadedNetworksFlag: " + statsObj.loadedNetworksFlag
-      + " | statsObj.queues.processUserQueue.busy: " + statsObj.queues.processUserQueue.busy
-      + " | statsObj.queues.processUserQueue.size: " + statsObj.queues.processUserQueue.size
-    ));
-  }
-  return (statsObj.loadedNetworksFlag && !statsObj.queues.processUserQueue.busy && (statsObj.queues.processUserQueue.size == 0) );
-};
+//   if (configuration.verbose) {
+//     console.log(chalkLog("fetchAllReady"
+//       + " | loadedNetworksFlag: " + statsObj.loadedNetworksFlag
+//       + " | statsObj.queues.processUserQueue.busy: " + statsObj.queues.processUserQueue.busy
+//       + " | statsObj.queues.processUserQueue.size: " + statsObj.queues.processUserQueue.size
+//     ));
+//   }
+//   return (statsObj.loadedNetworksFlag && !statsObj.queues.processUserQueue.busy && (statsObj.queues.processUserQueue.size == 0) );
+// };
 
 function reporter(event, oldState, newState) {
 
@@ -4552,8 +4580,8 @@ const fsmStates = {
         statsObj.status = "FSM RESET";
 
         try{
-          await childQuitAll();
-          await childKillAll();
+          // await childQuitAll();
+          // await childKillAll();
           await showStats(true);
         }
         catch(err){
@@ -4565,32 +4593,34 @@ const fsmStates = {
 
     fsm_tick: function() {
 
-      if (getChildProcesses() > 0) {
+      fsm.fsm_resetEnd();
 
-        if (!killAllInProgress) {
+      // if (getChildProcesses() > 0) {
 
-          killAllInProgress = true;
+      //   if (!killAllInProgress) {
 
-          childKillAll().
-            then(function(){
-              killAllInProgress = false;
-            }).
-            catch(function(err){
-              killAllInProgress = false;
-              console.log(chalkError(MODULE_ID_PREFIX + " | KILL ALL CHILD ERROR: " + err));
-            });
-        }
-      }
-      else {
-        childCheckState({checkState: "RESET", noChildrenTrue: true}).then(function(allChildrenReset){
-          console.log(chalkTwitter(MODULE_ID_PREFIX + " | ALL CHILDREN RESET: " + allChildrenReset));
-          if (!killAllInProgress && allChildrenReset) { fsm.fsm_resetEnd(); }
-        }).
-        catch(function(err){
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN RESET ERROR: " + err));
-          fsm.fsm_error();
-        });
-      }
+      //     killAllInProgress = true;
+
+      //     childKillAll().
+      //       then(function(){
+      //         killAllInProgress = false;
+      //       }).
+      //       catch(function(err){
+      //         killAllInProgress = false;
+      //         console.log(chalkError(MODULE_ID_PREFIX + " | KILL ALL CHILD ERROR: " + err));
+      //       });
+      //   }
+      // }
+      // else {
+        // childCheckState({checkState: "RESET", noChildrenTrue: true}).then(function(allChildrenReset){
+        //   console.log(chalkTwitter(MODULE_ID_PREFIX + " | ALL CHILDREN RESET: " + allChildrenReset));
+        //   if (!killAllInProgress && allChildrenReset) { fsm.fsm_resetEnd(); }
+        // }).
+        // catch(function(err){
+        //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN RESET ERROR: " + err));
+        //   fsm.fsm_error();
+        // });
+      // }
     },
 
     "fsm_resetEnd": "IDLE"
@@ -4623,27 +4653,28 @@ const fsmStates = {
 
         statsObj.status = "FSM IDLE";
 
-        childCheckState({checkState: "IDLE", noChildrenTrue: true}).then(function(allChildrenIdle){
-          console.log(chalkTwitter(MODULE_ID_PREFIX + " | ALL CHILDREN IDLE: " + allChildrenIdle));
-        }).
-        catch(function(err){
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN IDLE ERROR: " + err));
-          fsm.fsm_error();
-        });
+        // childCheckState({checkState: "IDLE", noChildrenTrue: true}).then(function(allChildrenIdle){
+        //   console.log(chalkTwitter(MODULE_ID_PREFIX + " | ALL CHILDREN IDLE: " + allChildrenIdle));
+        // }).
+        // catch(function(err){
+        //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN IDLE ERROR: " + err));
+        //   fsm.fsm_error();
+        // });
       }
 
     },
 
     fsm_tick: function() {
 
-      childCheckState({checkState: "IDLE", noChildrenTrue: true}).then(function(allChildrenIdle){
-        debug("INIT TICK | ALL CHILDREN IDLE: " + allChildrenIdle );
-        if (allChildrenIdle) { fsm.fsm_init(); }
-      }).
-      catch(function(err){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN IDLE ERROR: " + err));
-        fsm.fsm_error();
-      });
+      fsm.fsm_init();
+      // childCheckState({checkState: "IDLE", noChildrenTrue: true}).then(function(allChildrenIdle){
+      //   debug("INIT TICK | ALL CHILDREN IDLE: " + allChildrenIdle );
+      //   if (allChildrenIdle) { fsm.fsm_init(); }
+      // }).
+      // catch(function(err){
+      //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN IDLE ERROR: " + err));
+      //   fsm.fsm_error();
+      // });
 
     },
 
@@ -4663,7 +4694,8 @@ const fsmStates = {
         try {
           console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT"));
           await initNetworks();
-          await childCreateAll();
+          await initRandomNetworks();
+          fsm.fsm_ready(); 
           console.log(chalkBlue(MODULE_ID_PREFIX + " | CREATED ALL CHILDREN: " + Object.keys(childHashMap).length));
         }
         catch(err){
@@ -4675,23 +4707,25 @@ const fsmStates = {
     },
     fsm_tick: function() {
 
-      childCheckState({
-        checkState: "READY", 
-        noChildrenTrue: false, 
-        exceptionStates: ["PAUSE_RATE_LIMIT", "ERROR"]
-      }).then(function(allChildrenReady){
+      // fsm.fsm_ready(); 
 
-        debug("READY INIT"
-          + " | ALL CHILDREN READY: " + allChildrenReady
-        );
+      // childCheckState({
+      //   checkState: "READY", 
+      //   noChildrenTrue: false, 
+      //   exceptionStates: ["PAUSE_RATE_LIMIT", "ERROR"]
+      // }).then(function(allChildrenReady){
 
-        if (allChildrenReady && !createChildrenInProgress) { fsm.fsm_ready(); }
+      //   debug("READY INIT"
+      //     + " | ALL CHILDREN READY: " + allChildrenReady
+      //   );
 
-      }).
-      catch(function(err){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN READY ERROR: " + err));
-        fsm.fsm_error();
-      });
+      //   if (allChildrenReady && !createChildrenInProgress) { fsm.fsm_ready(); }
+
+      // }).
+      // catch(function(err){
+      //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN READY ERROR: " + err));
+      //   fsm.fsm_error();
+      // });
 
     },
     "fsm_quit": "QUIT",
@@ -4708,41 +4742,43 @@ const fsmStates = {
 
         statsObj.status = "FSM READY";
 
-        childCheckState({
-          checkState: "READY", 
-          noChildrenTrue: false, 
-          exceptionStates: ["PAUSE_RATE_LIMIT", "ERROR"]
-        }).then(function(allChildrenReady){
-          console.log(MODULE_ID_PREFIX + " | ALL CHILDREN READY: " + allChildrenReady);
-        }).
-        catch(function(err){
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN READY ERROR: " + err));
-          fsm.fsm_error();
-        });
+        // childCheckState({
+        //   checkState: "READY", 
+        //   noChildrenTrue: false, 
+        //   exceptionStates: ["PAUSE_RATE_LIMIT", "ERROR"]
+        // }).then(function(allChildrenReady){
+        //   console.log(MODULE_ID_PREFIX + " | ALL CHILDREN READY: " + allChildrenReady);
+        // }).
+        // catch(function(err){
+        //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN READY ERROR: " + err));
+        //   fsm.fsm_error();
+        // });
 
       }
     },
     fsm_tick: function() {
 
-      childCheckState({
-        checkState: "READY", 
-        noChildrenTrue: false, 
-        exceptionStates: ["ERROR"]
-      }).then(function(allChildrenReady){
+      fsm.fsm_fetchAll();
 
-        debug("READY TICK"
-          + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
-          + " | Q SIZE: " + statsObj.queues.processUserQueue.size
-          + " | ALL CHILDREN READY: " + allChildrenReady
-        );
-        if (!allChildrenReady) { childSendAll({op: "READY"}); }
-        if (allChildrenReady && fetchAllReady()) { fsm.fsm_fetchAll(); }
+      // childCheckState({
+      //   checkState: "READY", 
+      //   noChildrenTrue: false, 
+      //   exceptionStates: ["ERROR"]
+      // }).then(function(allChildrenReady){
 
-      }).
-      catch(function(err){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN READY ERROR: " + err));
-        fsm.fsm_error();
-      });
+      //   debug("READY TICK"
+      //     + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
+      //     + " | Q SIZE: " + statsObj.queues.processUserQueue.size
+      //     + " | ALL CHILDREN READY: " + allChildrenReady
+      //   );
+      //   if (!allChildrenReady) { childSendAll({op: "READY"}); }
+      //   if (allChildrenReady && fetchAllReady()) { fsm.fsm_fetchAll(); }
+
+      // }).
+      // catch(function(err){
+      //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN READY ERROR: " + err));
+      //   fsm.fsm_error();
+      // });
 
     },
     "fsm_fetchAll": "FETCH_ALL",
@@ -4760,7 +4796,7 @@ const fsmStates = {
         statsObj.status = "FSM FETCH_ALL";
 
         try{
-          await childSendAll({op: "FETCH_START"});
+          // await childSendAll({op: "FETCH_START"});
           await initCategorizedUserIdSet();
           console.log("TFE | FETCH_ALL | onEnter | " + event);
         }
@@ -4776,34 +4812,36 @@ const fsmStates = {
       statsObj.queues.processUserQueue.size = processUserQueue.length;
       statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
 
-      childCheckState({
-        checkState: "FETCH_END", 
-        noChildrenTrue: false, 
-        exceptionStates: ["ERROR"]
-      }).
-      then(function(allChildrenFetchEnd){
-        debug("FETCH_END TICK"
-          + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
-          + " | Q SIZE: " + statsObj.queues.processUserQueue.size
-          + " | ALL CHILDREN FETCH_END: " + allChildrenFetchEnd
-        );
+      // fsm.fsm_fetchAllEnd(); 
 
-        statsObj.allChildrenFetchEnd = allChildrenFetchEnd;
+      // childCheckState({
+      //   checkState: "FETCH_END", 
+      //   noChildrenTrue: false, 
+      //   exceptionStates: ["ERROR"]
+      // }).
+      // then(function(allChildrenFetchEnd){
+      //   debug("FETCH_END TICK"
+      //     + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
+      //     + " | Q SIZE: " + statsObj.queues.processUserQueue.size
+      //     + " | ALL CHILDREN FETCH_END: " + allChildrenFetchEnd
+      //   );
 
-        if (allChildrenFetchEnd
-          && !statsObj.queues.processUserQueue.busy
-          && (statsObj.queues.processUserQueue.size == 0)
-          ) 
-        { 
-          console.log(chalkAlert("FSM | allChildrenFetchEnd | STATS QUEUES\n" + jsonPrint(statsObj.queues)));
-          fsm.fsm_fetchAllEnd(); 
-        }
+      //   statsObj.allChildrenFetchEnd = allChildrenFetchEnd;
 
-      }).
-      catch(function(err){
-        console.log(chalkError("TFE | *** ALL CHILDREN FETCH_END ERROR: " + err));
-        fsm.fsm_error();
-      });
+      //   if (allChildrenFetchEnd
+      //     && !statsObj.queues.processUserQueue.busy
+      //     && (statsObj.queues.processUserQueue.size == 0)
+      //     ) 
+      //   { 
+      //     console.log(chalkAlert("FSM | allChildrenFetchEnd | STATS QUEUES\n" + jsonPrint(statsObj.queues)));
+      //     fsm.fsm_fetchAllEnd(); 
+      //   }
+
+      // }).
+      // catch(function(err){
+      //   console.log(chalkError("TFE | *** ALL CHILDREN FETCH_END ERROR: " + err));
+      //   fsm.fsm_error();
+      // });
 
     },
     "fsm_error": "ERROR",
@@ -4923,7 +4961,7 @@ const fsmStates = {
               randomNetworkTree.send({op: "RESET_STATS"});
             }
 
-            childSendAll({op: "RESET_TWITTER_USER_STATE"});
+            // childSendAll({op: "RESET_TWITTER_USER_STATE"});
 
             try {
 
@@ -5002,844 +5040,839 @@ configuration.reinitializeChildOnClose = false;
 const cp = require("child_process");
 const childHashMap = {};
 
-function touchChildPidFile(params){
+// function touchChildPidFile(params){
 
-  return new Promise(function(resolve, reject){
+//   return new Promise(function(resolve, reject){
 
-    try{
+//     try{
 
-      const childPidFile = params.childId + "=" + params.pid;
+//       const childPidFile = params.childId + "=" + params.pid;
 
-      const folder = params.folder || childPidFolderLocal;
+//       const folder = params.folder || childPidFolderLocal;
 
-      shell.mkdir("-p", folder);
+//       shell.mkdir("-p", folder);
 
-      const path = folder + "/" + childPidFile;
+//       const path = folder + "/" + childPidFile;
 
-      touch.sync(path, { force: true });
+//       touch.sync(path, { force: true });
 
-      console.log(chalkBlue(MODULE_ID_PREFIX + " | TOUCH CHILD PID FILE: " + path));
-      resolve(path);
-    }
-    catch(err){
-      return reject(err);
-    }
+//       console.log(chalkBlue(MODULE_ID_PREFIX + " | TOUCH CHILD PID FILE: " + path));
+//       resolve(path);
+//     }
+//     catch(err){
+//       return reject(err);
+//     }
 
-  });
-}
+//   });
+// }
 
-function getChildProcesses(){
+// function getChildProcesses(){
 
-  return new Promise(function(resolve, reject){
+//   return new Promise(function(resolve, reject){
 
-    const childPidArray = [];
+//     const childPidArray = [];
 
-    // DEFAULT_CHILD_ID_PREFIX_XXX=[pid] 
+//     // DEFAULT_CHILD_ID_PREFIX_XXX=[pid] 
 
-    shell.mkdir("-p", childPidFolderLocal);
+//     shell.mkdir("-p", childPidFolderLocal);
 
-    console.log("SHELL: cd " + childPidFolderLocal);
-    shell.cd(childPidFolderLocal);
+//     console.log("SHELL: cd " + childPidFolderLocal);
+//     shell.cd(childPidFolderLocal);
 
-    const childPidFileNameArray = shell.ls(configuration.childIdPrefix + "*");
+//     const childPidFileNameArray = shell.ls(configuration.childIdPrefix + "*");
 
-    async.eachSeries(childPidFileNameArray, function (childPidFileName, cb) {
+//     async.eachSeries(childPidFileNameArray, function (childPidFileName, cb) {
 
-      console.log("SHELL: childPidFileName: " + childPidFileName);
+//       console.log("SHELL: childPidFileName: " + childPidFileName);
 
-      const childPidStringArray = childPidFileName.split("=");
-      const childId = childPidStringArray[0];
-      const childPid = parseInt(childPidStringArray[1]);
+//       const childPidStringArray = childPidFileName.split("=");
+//       const childId = childPidStringArray[0];
+//       const childPid = parseInt(childPidStringArray[1]);
 
-      console.log("SHELL: CHILD ID: " + childId + " | PID: " + childPid);
+//       console.log("SHELL: CHILD ID: " + childId + " | PID: " + childPid);
 
-      if (childHashMap[childId]) {
-        debug("CHILD HM HIT"
-          + " | ID: " + childId 
-          + " | SHELL PID: " + childPid 
-          + " | HM PID: " + childHashMap[childId].pid 
-          + " | STATUS: " + childHashMap[childId].status
-        );
-      }
-      else {
-        console.log("CHILD HM MISS | ID: " + childId + " | PID: " + childPid + " | STATUS: UNKNOWN");
-      }
+//       if (childHashMap[childId]) {
+//         debug("CHILD HM HIT"
+//           + " | ID: " + childId 
+//           + " | SHELL PID: " + childPid 
+//           + " | HM PID: " + childHashMap[childId].pid 
+//           + " | STATUS: " + childHashMap[childId].status
+//         );
+//       }
+//       else {
+//         console.log("CHILD HM MISS | ID: " + childId + " | PID: " + childPid + " | STATUS: UNKNOWN");
+//       }
 
-      if ((childHashMap[childId] !== undefined) && (childHashMap[childId].pid == childPid)) {
-        // cool kid
-        childPidArray.push({ pid: childPid, childId: childId});
+//       if ((childHashMap[childId] !== undefined) && (childHashMap[childId].pid == childPid)) {
+//         // cool kid
+//         childPidArray.push({ pid: childPid, childId: childId});
 
-        console.log(chalkInfo(MODULE_ID_PREFIX + " | FOUND CHILD"
-          + " [ " + childPidArray.length + " CHILDREN ]"
-          + " | ID: " + childId
-          + " | PID: " + childPid
-          + " | FILE: " + childPidFileName
-        ));
+//         console.log(chalkInfo(MODULE_ID_PREFIX + " | FOUND CHILD"
+//           + " [ " + childPidArray.length + " CHILDREN ]"
+//           + " | ID: " + childId
+//           + " | PID: " + childPid
+//           + " | FILE: " + childPidFileName
+//         ));
 
-        cb();
+//         cb();
 
-      }
-      else {
+//       }
+//       else {
 
-        console.log("SHELL: CHILD NOT IN HASH | ID: " + childId + " | PID: " + childPid);
+//         console.log("SHELL: CHILD NOT IN HASH | ID: " + childId + " | PID: " + childPid);
 
-        if (childHashMap[childId] === undefined) {
-          console.log(chalkAlert(MODULE_ID_PREFIX + " | *** CHILD NOT IN HM"
-            + " | " + childId
-          ));
-        }
+//         if (childHashMap[childId] === undefined) {
+//           console.log(chalkAlert(MODULE_ID_PREFIX + " | *** CHILD NOT IN HM"
+//             + " | " + childId
+//           ));
+//         }
 
-        if (childHashMap[childId] && childHashMap[childId].pid === undefined) {
-          console.log(chalkAlert(MODULE_ID_PREFIX + " | *** CHILD PID HM MISMATCH"
-            + " | " + childId
-            + " | HM PID: " + childHashMap[childId].pid
-            + " | PID: " + childPid
-          ));
-        }
+//         if (childHashMap[childId] && childHashMap[childId].pid === undefined) {
+//           console.log(chalkAlert(MODULE_ID_PREFIX + " | *** CHILD PID HM MISMATCH"
+//             + " | " + childId
+//             + " | HM PID: " + childHashMap[childId].pid
+//             + " | PID: " + childPid
+//           ));
+//         }
 
-        console.log(chalkAlert(MODULE_ID_PREFIX + " | *** CHILD ZOMBIE"
-          + " | " + childId
-          + " | TERMINATING ..."
-        ));
+//         console.log(chalkAlert(MODULE_ID_PREFIX + " | *** CHILD ZOMBIE"
+//           + " | " + childId
+//           + " | TERMINATING ..."
+//         ));
 
-        kill(childPid, function(err){
+//         kill(childPid, function(err){
 
-          if (err) {
-            console.log(chalkError(MODULE_ID_PREFIX + " | *** KILL ZOMBIE ERROR: ", err));
-            return cb(err);
-          }
+//           if (err) {
+//             console.log(chalkError(MODULE_ID_PREFIX + " | *** KILL ZOMBIE ERROR: ", err));
+//             return cb(err);
+//           }
 
-          shell.cd(childPidFolderLocal);
-          shell.rm(childId + "*");
+//           shell.cd(childPidFolderLocal);
+//           shell.rm(childId + "*");
 
-          delete childHashMap[childId];
+//           delete childHashMap[childId];
 
-          console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX CHILD ZOMBIE"
-            + " [ " + childPidArray.length + " CHILDREN ]"
-            + " | ID: " + childId
-            + " | PID: " + childPid
-          ));
+//           console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX CHILD ZOMBIE"
+//             + " [ " + childPidArray.length + " CHILDREN ]"
+//             + " | ID: " + childId
+//             + " | PID: " + childPid
+//           ));
 
-          cb();
+//           cb();
 
-        });
+//         });
 
-      }
+//       }
 
-    }, function(err){
-      if (err) {
-        return reject(err);
-      }
+//     }, function(err){
+//       if (err) {
+//         return reject(err);
+//       }
 
-      resolve(childPidArray);
+//       resolve(childPidArray);
 
-    });
+//     });
 
-  });
-}
+//   });
+// }
 
-function childKill(params){
+// function childKill(params){
 
-  return new Promise(function(resolve, reject){
+//   return new Promise(function(resolve, reject){
 
-    let pid;
+//     let pid;
 
-    if ((params.pid === undefined) && childHashMap[params.childId] === undefined) {
-      return reject(new Error("CHILD ID NOT FOUND: " + params.childId));
-    }
+//     if ((params.pid === undefined) && childHashMap[params.childId] === undefined) {
+//       return reject(new Error("CHILD ID NOT FOUND: " + params.childId));
+//     }
 
-    if (params.pid) {
-      pid = params.pid;
-    }
-    else if (params.childId && childHashMap[params.childId] !== undefined) {
-      pid = childHashMap[params.childId].pid;
-    }
+//     if (params.pid) {
+//       pid = params.pid;
+//     }
+//     else if (params.childId && childHashMap[params.childId] !== undefined) {
+//       pid = childHashMap[params.childId].pid;
+//     }
 
 
-    kill(pid, function(err){
+//     kill(pid, function(err){
 
-      if (err) { return reject(err); }
-      resolve(params);
+//       if (err) { return reject(err); }
+//       resolve(params);
 
-    });
+//     });
 
-  });
-}
+//   });
+// }
 
-async function childKillAll(){
+// async function childKillAll(){
 
-  console.log("KILL ALL");
+//   console.log("KILL ALL");
 
-  // return new Promise(async function(resolve, reject){
+//   const childPidArray = await getChildProcesses({searchTerm: configuration.childIdPrefix});
 
-      const childPidArray = await getChildProcesses({searchTerm: configuration.childIdPrefix});
+//   console.log(chalkAlert("getChildProcesses childPidArray\n" + jsonPrint(childPidArray)));
+//   if (childPidArray && (childPidArray.length > 0)) {
 
-      console.log(chalkAlert("getChildProcesses childPidArray\n" + jsonPrint(childPidArray)));
-      if (childPidArray && (childPidArray.length > 0)) {
+//     async.eachSeries(childPidArray, function(childObj, cb){
 
-        async.eachSeries(childPidArray, function(childObj, cb){
+//       childKill({pid: childObj.pid}).
+//       then(function(){
+//         console.log(chalkAlert(MODULE_ID_PREFIX + " | KILL ALL | KILLED | PID: " + childObj.pid + " | CH ID: " + childObj.childId));
+//         cb();
+//       }).
+//       catch(function(err){
+//         console.log(chalkError(MODULE_ID_PREFIX + " | *** KILL CHILD ERROR"
+//           + " | PID: " + childObj.pid
+//           + " | ERROR: " + err
+//         ));
+//         return cb(err);
+//       });
 
-          childKill({pid: childObj.pid}).
-          then(function(){
-            console.log(chalkAlert(MODULE_ID_PREFIX + " | KILL ALL | KILLED | PID: " + childObj.pid + " | CH ID: " + childObj.childId));
-            cb();
-          }).
-          catch(function(err){
-            console.log(chalkError(MODULE_ID_PREFIX + " | *** KILL CHILD ERROR"
-              + " | PID: " + childObj.pid
-              + " | ERROR: " + err
-            ));
-            return cb(err);
-          });
+//     }, function(err){
 
-        }, function(err){
+//       if (err){
+//         throw err;
+//       }
 
-          if (err){
-            throw err;
-          }
+//       return childPidArray;
 
-          return childPidArray;
+//     });
+//   }
+//   else {
 
-        });
-      }
-      else {
+//     console.log(chalkBlue(MODULE_ID_PREFIX + " | KILL ALL | NO CHILDREN"));
+//     return childPidArray;
+//   }
+// }
 
-        console.log(chalkBlue(MODULE_ID_PREFIX + " | KILL ALL | NO CHILDREN"));
-        return childPidArray;
-      }
+// function childCreateAll(p){
 
-  // });
-}
+//   return new Promise(function(resolve, reject){
 
-function childCreateAll(p){
+//     const params = p || {};
+//     params.config = params.config || {};
 
-  return new Promise(function(resolve, reject){
+//     const createParams = {};
 
-    const params = p || {};
-    params.config = params.config || {};
+//     createParams.args = [];
+//     createParams.options = {};
+//     createParams.options.cwd = "/Volumes/RAID1/projects/twitterFollowerExplorer";
+//     createParams.options.env = {};
+//     createParams.options.env = configuration.DROPBOX;
+//     createParams.options.env.NODE_ENV = "production";
 
-    const createParams = {};
+//     createParams.verbose = params.verbose || configuration.verbose;
+//     createParams.appPath = params.appPath || configuration.childAppPath;
 
-    createParams.args = [];
-    createParams.options = {};
-    createParams.options.cwd = "/Volumes/RAID1/projects/twitterFollowerExplorer";
-    createParams.options.env = {};
-    createParams.options.env = configuration.DROPBOX;
-    createParams.options.env.NODE_ENV = "production";
+//     createParams.config = {};
+//     createParams.config.verbose = configuration.verbose;
+//     createParams.config.testMode = configuration.testMode;
+//     createParams.config.tweetFetchCount = (configuration.testMode) ? TEST_TWEET_FETCH_COUNT : configuration.tweetFetchCount;
+//     createParams.config.fetchCount = (configuration.testMode) ? TEST_FETCH_COUNT : configuration.fetchCount;
+//     createParams.config.totalFetchCount = (configuration.testMode) ? TEST_TOTAL_FETCH : configuration.totalFetchCount;
+//     createParams.config.fetchUserInterval = (configuration.testMode) ? TEST_FETCH_USER_INTERVAL : configuration.fetchUserInterval;
 
-    createParams.verbose = params.verbose || configuration.verbose;
-    createParams.appPath = params.appPath || configuration.childAppPath;
+//     createParams.config.twitterConfig = {};
 
-    createParams.config = {};
-    createParams.config.verbose = configuration.verbose;
-    createParams.config.testMode = configuration.testMode;
-    createParams.config.tweetFetchCount = (configuration.testMode) ? TEST_TWEET_FETCH_COUNT : configuration.tweetFetchCount;
-    createParams.config.fetchCount = (configuration.testMode) ? TEST_FETCH_COUNT : configuration.fetchCount;
-    createParams.config.totalFetchCount = (configuration.testMode) ? TEST_TOTAL_FETCH : configuration.totalFetchCount;
-    createParams.config.fetchUserInterval = (configuration.testMode) ? TEST_FETCH_USER_INTERVAL : configuration.fetchUserInterval;
+//     createParams.config = merge(createParams.config, params.config);
 
-    createParams.config.twitterConfig = {};
+//     console.log(chalkLog("TFE | CHILD CREATE ALL: " + configuration.twitterUsers));
 
-    createParams.config = merge(createParams.config, params.config);
+//     async.each(configuration.twitterUsers, async function(threeceeUser){
 
-    console.log(chalkLog("TFE | CHILD CREATE ALL: " + configuration.twitterUsers));
+//         const childId = configuration.childIdPrefix + "_" + threeceeUser.toLowerCase();
 
-    async.each(configuration.twitterUsers, async function(threeceeUser){
+//         createParams.childId = childId;
+//         createParams.config.threeceeUser = threeceeUser;
+//         createParams.config.twitterConfig = await initTwitterConfig({threeceeUser: threeceeUser});
+//         createParams.options.env.CHILD_ID = childId;
+//         createParams.options.env.THREECEE_USER = threeceeUser;
 
-        const childId = configuration.childIdPrefix + "_" + threeceeUser.toLowerCase();
+//         if (configuration.verbose) { console.log("createParams\n" + jsonPrint(createParams)); }
 
-        createParams.childId = childId;
-        createParams.config.threeceeUser = threeceeUser;
-        createParams.config.twitterConfig = await initTwitterConfig({threeceeUser: threeceeUser});
-        createParams.options.env.CHILD_ID = childId;
-        createParams.options.env.THREECEE_USER = threeceeUser;
+//         await childCreate(createParams);
+//         return;
 
-        if (configuration.verbose) { console.log("createParams\n" + jsonPrint(createParams)); }
+//     },
 
-        await childCreate(createParams);
-        return;
+//     function(err){
+//       if (err) {
+//         console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR CREATE ALL CHILDREN: " + err));
+//         return reject(err);
+//       }
+//       resolve();
+//     });
+//   });
+// }
 
-    },
+// async function childStatsAll(p){
 
-    function(err){
-      if (err) {
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR CREATE ALL CHILDREN: " + err));
-        return reject(err);
-      }
-      resolve();
-    });
-  });
-}
+//   const params = p || {};
 
-async function childStatsAll(p){
+//   const now = params.now || false;
 
-  const params = p || {};
+//   const defaultCommand = {};
+//   defaultCommand.op = "STATS";
+//   defaultCommand.now = now;
 
-  const now = params.now || false;
+//   const command = params.command || defaultCommand;
 
-  const defaultCommand = {};
-  defaultCommand.op = "STATS";
-  defaultCommand.now = now;
+//   await childSendAll({command: command});
+//   return;
+// }
 
-  const command = params.command || defaultCommand;
+// async function childQuitAll(p){
 
-  await childSendAll({command: command});
-  return;
-}
+//   const params = p || {};
+//   const now = params.now || false;
 
-async function childQuitAll(p){
+//   const defaultCommand = {};
+//   defaultCommand.op = "QUIT";
+//   defaultCommand.now = now;
 
-  const params = p || {};
-  const now = params.now || false;
+//   const command = params.command || defaultCommand;
 
-  const defaultCommand = {};
-  defaultCommand.op = "QUIT";
-  defaultCommand.now = now;
+//   await childSendAll({command: command});
+//   return;
+// }
 
-  const command = params.command || defaultCommand;
+// let childSendInterval;
 
-  await childSendAll({command: command});
-  return;
-}
+// function childSend(p){
 
-let childSendInterval;
+//   return new Promise(function(resolve, reject){
 
-function childSend(p){
+//     const params = p || {};
+//     const childId = params.command.childId;
+//     const command = params.command;
 
-  return new Promise(function(resolve, reject){
+//     statsObj.status = "SEND CHILD | CH ID: " + childId + " | " + command.op;
 
-    const params = p || {};
-    const childId = params.command.childId;
-    const command = params.command;
+//     if (configuration.verbose) { console.log(chalkLog(MODULE_ID_PREFIX + " | " + statsObj.status)); }
 
-    statsObj.status = "SEND CHILD | CH ID: " + childId + " | " + command.op;
+//     if (childHashMap[childId] === undefined || !childHashMap[childId].child || !childHashMap[childId].child.connected) {
+//       console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX CHILD SEND ABORTED | CHILD NOT CONNECTED OR UNDEFINED | " + childId));
+//       return reject(new Error("CHILD NOT CONNECTED OR UNDEFINED: " + childId));
+//     }
 
-    if (configuration.verbose) { console.log(chalkLog(MODULE_ID_PREFIX + " | " + statsObj.status)); }
+//     clearInterval(childSendInterval);
 
-    if (childHashMap[childId] === undefined || !childHashMap[childId].child || !childHashMap[childId].child.connected) {
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX CHILD SEND ABORTED | CHILD NOT CONNECTED OR UNDEFINED | " + childId));
-      return reject(new Error("CHILD NOT CONNECTED OR UNDEFINED: " + childId));
-    }
+//     setInterval(function(){
 
-    clearInterval(childSendInterval);
+//       return reject(new Error("CHILD SEND TIMEOUT\nCOMMAND", command));
 
-    setInterval(function(){
+//     }, 5*ONE_SECOND);
 
-      return reject(new Error("CHILD SEND TIMEOUT\nCOMMAND", command));
+//     childHashMap[childId].child.send(command, function(err) {
+//       if (err) {
+//         console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD SEND INIT ERROR"
+//           + " | OP: " + command.op
+//           + " | ERR: " + err
+//         ));
+//         return reject(err);
+//       }
+//       resolve();
+//     });
 
-    }, 5*ONE_SECOND);
+//   });
+// }
 
-    childHashMap[childId].child.send(command, function(err) {
-      if (err) {
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD SEND INIT ERROR"
-          + " | OP: " + command.op
-          + " | ERR: " + err
-        ));
-        return reject(err);
-      }
-      resolve();
-    });
+// async function childSendAll(p){
 
-  });
-}
+//   const params = p || {};
+//   let op = "PING";
 
-async function childSendAll(p){
+//   if (params.command) {
+//     op = params.command.op;
+//   }
+//   else if (params.op) {
+//     op = params.op;
+//   }
 
-  const params = p || {};
-  let op = "PING";
+//   const now = params.now || true;
 
-  if (params.command) {
-    op = params.command.op;
-  }
-  else if (params.op) {
-    op = params.op;
-  }
+//   const defaultCommand = {};
+//   defaultCommand.op = op;
+//   defaultCommand.now = now;
+//   defaultCommand.pingId = getTimeStamp();
 
-  const now = params.now || true;
+//   const command = params.command || defaultCommand;
 
-  const defaultCommand = {};
-  defaultCommand.op = op;
-  defaultCommand.now = now;
-  defaultCommand.pingId = getTimeStamp();
+//   try {
 
-  const command = params.command || defaultCommand;
+//     for (const childId of Object.keys(childHashMap)){
 
-  try {
+//       if (childHashMap[childId] !== undefined) {
+//         command.childId = childId;
 
-    for (const childId of Object.keys(childHashMap)){
+//         await childSend({command: command});
+//       }
+//     }
 
-      if (childHashMap[childId] !== undefined) {
-        command.childId = childId;
+//     return;
+//   }
+//   catch(err){
+//     console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD SEND ALL ERROR: " + err));
+//     throw err;
+//   }
+// }
 
-        await childSend({command: command});
-      }
-    }
+// async function childInit(p){
 
-    return;
-  }
-  catch(err){
-    console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD SEND ALL ERROR: " + err));
-    throw err;
-  }
-}
+//   const params = p || {};
+//   const childId = params.childId;
+//   const threeceeUser = params.threeceeUser;
+//   const config = params.config || {};
+//   const verbose = params.verbose || false;
 
-async function childInit(p){
+//   statsObj.status = "INIT CHILD | CH ID: " + childId + " | " + threeceeUser;
 
-  const params = p || {};
-  const childId = params.childId;
-  const threeceeUser = params.threeceeUser;
-  const config = params.config || {};
-  const verbose = params.verbose || false;
+//   const command = {
+//     op: "INIT",
+//     childId: childId,
+//     threeceeUser: threeceeUser,
+//     verbose: verbose,
+//     config: config
+//   };
 
-  statsObj.status = "INIT CHILD | CH ID: " + childId + " | " + threeceeUser;
+//   try {
+//     const response = await childSend({childId: childId, command: command});
+//     return response;
+//   }
+//   catch(err){
+//     console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD SEND INIT ERROR"
+//       + " | ERR: " + err
+//       + "\nCOMMAND\n" + jsonPrint(command)
+//     ));
+//     throw err;
+//   }
+// }
 
-  const command = {
-    op: "INIT",
-    childId: childId,
-    threeceeUser: threeceeUser,
-    verbose: verbose,
-    config: config
-  };
+// async function childCreate(p){
 
-  try {
-    const response = await childSend({childId: childId, command: command});
-    return response;
-  }
-  catch(err){
-    console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD SEND INIT ERROR"
-      + " | ERR: " + err
-      + "\nCOMMAND\n" + jsonPrint(command)
-    ));
-    throw err;
-  }
-}
+//   const params = p || {};
+//   const args = params.args || [];
 
-async function childCreate(p){
+//   const childId = params.childId;
+//   const appPath = params.appPath;
+//   const env = params.env;
+//   const config = params.config || {};
 
-  const params = p || {};
-  const args = params.args || [];
+//   let child = {};
+//   const options = {};
 
-  const childId = params.childId;
-  const appPath = params.appPath;
-  const env = params.env;
-  const config = params.config || {};
+//   if (statsObj.user[config.threeceeUser] === undefined) {
+//     statsObj.user[config.threeceeUser] = {};
+//     statsObj.user[config.threeceeUser].friendsCount = 1;
+//     statsObj.user[config.threeceeUser].friendsProcessed = 0;
+//     statsObj.user[config.threeceeUser].percentProcessed = 0;
+//     statsObj.user[config.threeceeUser].friendsProcessStart = moment();
+//   }
 
-  let child = {};
-  const options = {};
+//   if (hostname == "google") {
+//     options.cwd = params.cwd || "/home/tc/twitterFollowerExplorer";
+//   }
+//   else {
+//     options.cwd = params.cwd || "/Volumes/RAID1/projects/twitterFollowerExplorer";
+//   }
 
-  if (statsObj.user[config.threeceeUser] === undefined) {
-    statsObj.user[config.threeceeUser] = {};
-    statsObj.user[config.threeceeUser].friendsCount = 1;
-    statsObj.user[config.threeceeUser].friendsProcessed = 0;
-    statsObj.user[config.threeceeUser].percentProcessed = 0;
-    statsObj.user[config.threeceeUser].friendsProcessStart = moment();
-  }
+//   statsObj.status = "CHILD CREATE | CH ID: " + childId + " | APP: " + appPath;
 
-  if (hostname == "google") {
-    options.cwd = params.cwd || "/home/tc/twitterFollowerExplorer";
-  }
-  else {
-    options.cwd = params.cwd || "/Volumes/RAID1/projects/twitterFollowerExplorer";
-  }
+//   console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CREATE CHILD | " + childId));
 
-  statsObj.status = "CHILD CREATE | CH ID: " + childId + " | APP: " + appPath;
+//   try {
 
-  console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CREATE CHILD | " + childId));
+//     if (env) {
+//       options.env = env;
+//     }
+//     else {
+//       options.env = {};
+//       options.env = configuration.DROPBOX;
+//       options.env.DROPBOX_STATS_FILE = statsObj.runId + "_" + childId + ".json";
+//       options.env.CHILD_ID = childId;
+//       options.env.NODE_ENV = "production";
+//     }
 
-  try {
+//     childHashMap[childId] = {};
+//     childHashMap[childId].status = "NEW";
+//     childHashMap[childId].messageQueue = [];
 
-    if (env) {
-      options.env = env;
-    }
-    else {
-      options.env = {};
-      options.env = configuration.DROPBOX;
-      options.env.DROPBOX_STATS_FILE = statsObj.runId + "_" + childId + ".json";
-      options.env.CHILD_ID = childId;
-      options.env.NODE_ENV = "production";
-    }
+//     console.log("CHILD FORK: appPath: " + appPath);
+//     console.log("CHILD FORK: args: " + args);
+//     console.log("CHILD FORK: options\n" + jsonPrint(options));
 
-    childHashMap[childId] = {};
-    childHashMap[childId].status = "NEW";
-    childHashMap[childId].messageQueue = [];
+//     child = cp.fork(appPath, args, options);
 
-    console.log("CHILD FORK: appPath: " + appPath);
-    console.log("CHILD FORK: args: " + args);
-    console.log("CHILD FORK: options\n" + jsonPrint(options));
+//     childHashMap[childId].pid = child.pid;
 
-    child = cp.fork(appPath, args, options);
+//     child.on("message", async function(m){
+//       switch(m.op) {
 
-    childHashMap[childId].pid = child.pid;
+//         case "QUIT":
 
-    child.on("message", async function(m){
-      switch(m.op) {
+//           console.log(chalkError("TFE | *** CHILD QUIT | " + m.threeceeUser + " | CAUSE: " + m.cause));
 
-        case "QUIT":
+//           if (childHashMap[childId]) { 
+//             childHashMap[childId].status = "QUIT"; 
 
-          console.log(chalkError("TFE | *** CHILD QUIT | " + m.threeceeUser + " | CAUSE: " + m.cause));
+//             if (m.error) { 
+//               childHashMap[childId].error = m.error;
+//               console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
+//             }
+//           }
+//         break;
 
-          if (childHashMap[childId]) { 
-            childHashMap[childId].status = "QUIT"; 
+//         case "EXIT":
 
-            if (m.error) { 
-              childHashMap[childId].error = m.error;
-              console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
-            }
-          }
-        break;
+//           console.log(chalkError("TFE | *** CHILD EXIT | " + m.threeceeUser + " | CAUSE: " + m.cause));
 
-        case "EXIT":
+//           childHashMap[childId].status = "EXIT";
 
-          console.log(chalkError("TFE | *** CHILD EXIT | " + m.threeceeUser + " | CAUSE: " + m.cause));
+//           if (m.error) { 
+//             childHashMap[childId].error = m.error;
+//             console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
+//           }
+//         break;
 
-          childHashMap[childId].status = "EXIT";
+//         case "ERROR":
 
-          if (m.error) { 
-            childHashMap[childId].error = m.error;
-            console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
-          }
-        break;
+//           if (m.type == "USER_NOT_AUTHORIZED") {
+//             console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT AUTHORIZED " + m.userId));
 
-        case "ERROR":
+//             userErrorSet.add(m.userId);
 
-          if (m.type == "USER_NOT_AUTHORIZED") {
-            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT AUTHORIZED " + m.userId));
+//             statsObj.users.fetchErrors = userErrorSet.size;
 
-            userErrorSet.add(m.userId);
+//             categorizedUserIdSet.delete(m.userId);
 
-            statsObj.users.fetchErrors = userErrorSet.size;
+//             global.globalUser.deleteOne({nodeId: m.userId}, function(err){
+//               if (err) {
+//                 console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
+//               }
+//               else {
+//                 console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
+//               }
+//             });
 
-            categorizedUserIdSet.delete(m.userId);
+//             break;
+//           }
+//           else if (m.type == "USER_BLOCKED") {
 
-            global.globalUser.deleteOne({nodeId: m.userId}, function(err){
-              if (err) {
-                console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
-              }
-              else {
-                console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
-              }
-            });
+//             console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER BLOCKED " + m.userId));
 
-            break;
-          }
-          else if (m.type == "USER_BLOCKED") {
+//             userErrorSet.add(m.userId);
 
-            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER BLOCKED " + m.userId));
+//             statsObj.users.fetchErrors = userErrorSet.size;
 
-            userErrorSet.add(m.userId);
+//             categorizedUserIdSet.delete(m.userId);
 
-            statsObj.users.fetchErrors = userErrorSet.size;
+//             global.globalUser.deleteOne({nodeId: m.userId}, function(err){
+//               if (err) {
+//                 console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
+//               }
+//               else {
+//                 console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
+//               }
+//             });
 
-            categorizedUserIdSet.delete(m.userId);
+//             break;
+//           }
+//           else if (m.type == "USER_NOT_FOUND") {
 
-            global.globalUser.deleteOne({nodeId: m.userId}, function(err){
-              if (err) {
-                console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
-              }
-              else {
-                console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
-              }
-            });
+//             console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT FOUND " + m.userId));
 
-            break;
-          }
-          else if (m.type == "USER_NOT_FOUND") {
+//             userErrorSet.add(m.userId);
 
-            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | USER NOT FOUND " + m.userId));
+//             statsObj.users.fetchErrors = userErrorSet.size;
 
-            userErrorSet.add(m.userId);
+//             categorizedUserIdSet.delete(m.userId);
 
-            statsObj.users.fetchErrors = userErrorSet.size;
+//             global.globalUser.deleteOne({nodeId: m.userId}, function(err){
+//               if (err) {
+//                 console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
+//               }
+//               else {
+//                 console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
+//               }
+//             });
 
-            categorizedUserIdSet.delete(m.userId);
+//             break;
+//           }
+//           else {
 
-            global.globalUser.deleteOne({nodeId: m.userId}, function(err){
-              if (err) {
-                console.log(chalkError("TFE | *** DELETE USER ERROR: " + err));
-              }
-              else {
-                console.log(chalkAlert("TFE | XXX DELETED USER | " + m.userId));
-              }
-            });
+//             console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
+//             childHashMap[childId].status = "ERROR";
 
-            break;
-          }
-          else {
+//             if (m.error) { 
+//               childHashMap[childId].error = m.error;
+//               console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
+//             }
 
-            console.log(chalkError("TFE | *** CHILD ERROR | " + m.threeceeUser + " | TYPE: " + m.type));
-            childHashMap[childId].status = "ERROR";
+//             if (m.type == "INVALID_TOKEN") {
+//               childHashMap[childId].status = "DISABLED";
+//             }
 
-            if (m.error) { 
-              childHashMap[childId].error = m.error;
-              console.log(chalkError("TFE | *** CHILD ERROR\n" + jsonPrint(m.error))); 
-            }
+//             await childInit({childId: childId, threeceeUser: m.threeceeUser, config: childHashMap[childId].config});
 
-            if (m.type == "INVALID_TOKEN") {
-              childHashMap[childId].status = "DISABLED";
-            }
+//             break;
+//           }
 
-            await childInit({childId: childId, threeceeUser: m.threeceeUser, config: childHashMap[childId].config});
+//         case "INIT":
+//         case "INIT_COMPLETE":
+//         case "IDLE":
+//         case "RESET":
+//         case "READY":
+//         case "FETCH_START":
+//         case "FETCH":
+//         case "FETCH_END":
+//           console.log(chalkTwitter("TFE | CHILD | OP: " + m.op + " | 3C @" + m.threeceeUser));
+//           childHashMap[childId].status = m.op;
+//         break;
 
-            break;
-          }
+//         case "PAUSE_RATE_LIMIT":
+//           console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT"
+//             + " | " + m.threeceeUser 
+//             + " | REMAIN raw: " + m.remainingTime
+//             + " | REMAIN: " + msToTime(parseInt(m.remainingTime))
+//           ));
+//           childHashMap[childId].status = "PAUSE_RATE_LIMIT";
+//         break;
 
-        case "INIT":
-        case "INIT_COMPLETE":
-        case "IDLE":
-        case "RESET":
-        case "READY":
-        case "FETCH_START":
-        case "FETCH":
-        case "FETCH_END":
-          console.log(chalkTwitter("TFE | CHILD | OP: " + m.op + " | 3C @" + m.threeceeUser));
-          childHashMap[childId].status = m.op;
-        break;
+//         case "THREECEE_USER":
 
-        case "PAUSE_RATE_LIMIT":
-          console.log(chalkTwitter("TFE | CHILD PAUSE_RATE_LIMIT"
-            + " | " + m.threeceeUser 
-            + " | REMAIN raw: " + m.remainingTime
-            + " | REMAIN: " + msToTime(parseInt(m.remainingTime))
-          ));
-          childHashMap[childId].status = "PAUSE_RATE_LIMIT";
-        break;
+//           console.log(chalkTwitter("TFE | THREECEE_USER"
+//             + " | @" + m.threeceeUser.screenName
+//             + " | Ts: " + m.threeceeUser.statusesCount
+//             + " | FRNDs: " + m.threeceeUser.friendsCount
+//             + " | FLWRs: " + m.threeceeUser.followersCount
+//           ));
 
-        case "THREECEE_USER":
+//           if (statsObj.user[m.threeceeUser.screenName] === undefined) { 
+//             statsObj.user[m.threeceeUser.screenName] = {};
+//             statsObj.user[m.threeceeUser.screenName].friendsProcessStart = moment();
+//           }
 
-          console.log(chalkTwitter("TFE | THREECEE_USER"
-            + " | @" + m.threeceeUser.screenName
-            + " | Ts: " + m.threeceeUser.statusesCount
-            + " | FRNDs: " + m.threeceeUser.friendsCount
-            + " | FLWRs: " + m.threeceeUser.followersCount
-          ));
+//           statsObj.user[m.threeceeUser.screenName].statusesCount = m.threeceeUser.statusesCount;
+//           statsObj.user[m.threeceeUser.screenName].friendsCount = m.threeceeUser.friendsCount;
+//           statsObj.user[m.threeceeUser.screenName].followersCount = m.threeceeUser.followersCount;
 
-          if (statsObj.user[m.threeceeUser.screenName] === undefined) { 
-            statsObj.user[m.threeceeUser.screenName] = {};
-            statsObj.user[m.threeceeUser.screenName].friendsProcessStart = moment();
-          }
+//           statsObj.users.total = 0;
 
-          statsObj.user[m.threeceeUser.screenName].statusesCount = m.threeceeUser.statusesCount;
-          statsObj.user[m.threeceeUser.screenName].friendsCount = m.threeceeUser.friendsCount;
-          statsObj.user[m.threeceeUser.screenName].followersCount = m.threeceeUser.followersCount;
+//           for (const tcUser of Object.keys(statsObj.user)){
 
-          statsObj.users.total = 0;
+//             if ((statsObj.user[tcUser] !== undefined) 
+//               && (statsObj.user[tcUser].friendsCount !== undefined)
+//               && (childHashMap[m.childId].status != "DISABLED")
+//               && (childHashMap[m.childId].status != "ERROR")
+//               && (childHashMap[m.childId].status != "RESET")
+//             ) { 
+//               statsObj.users.total += statsObj.user[tcUser].friendsCount;
+//             }
 
-          for (const tcUser of Object.keys(statsObj.user)){
+//           }
+//         break;
 
-            if ((statsObj.user[tcUser] !== undefined) 
-              && (statsObj.user[tcUser].friendsCount !== undefined)
-              && (childHashMap[m.childId].status != "DISABLED")
-              && (childHashMap[m.childId].status != "ERROR")
-              && (childHashMap[m.childId].status != "RESET")
-            ) { 
-              statsObj.users.total += statsObj.user[tcUser].friendsCount;
-            }
+//         case "USER_FRIENDS":
 
-          }
-        break;
+//           if (categorizedUserIdSet.has(m.userId)){
 
-        case "USER_FRIENDS":
+//             processUserQueue.push(m);
+//             statsObj.queues.processUserQueue.size = processUserQueue.length;
 
-          if (categorizedUserIdSet.has(m.userId)){
+//             if (configuration.verbose){
+//               console.log(chalkTwitter("TFE | USER_FRIENDS"
+//                 + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
+//                 + " | UID: " + m.userId
+//                 + " | FRNDs: " + m.friends.length
+//               ));
+//             }
+//           }
+//         break;
 
-            processUserQueue.push(m);
-            statsObj.queues.processUserQueue.size = processUserQueue.length;
+//         case "USER_TWEETS":
 
-            if (configuration.verbose){
-              console.log(chalkTwitter("TFE | USER_FRIENDS"
-                + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
-                + " | UID: " + m.userId
-                + " | FRNDs: " + m.friends.length
-              ));
-            }
-          }
-        break;
+//           // {
+//           //   op: "USER_TWEETS",
+//           //   nodeId: user.nodeId,
+//           //   priority: user.priorityFlag,
+//           //   latestTweets: latestTweets
+//           // }, 
 
-        case "USER_TWEETS":
+//           if (m.priorityFlag) {
+//             priorityUserTweetsHashMap.set(m.nodeId, m);
+//             myEmitter.emit("priorityUserTweetsEvent_" + m.nodeId);
+//           }
+//           else{
+//             if (categorizedUserIdSet.has(m.nodeId)){
 
-          // {
-          //   op: "USER_TWEETS",
-          //   nodeId: user.nodeId,
-          //   priority: user.priorityFlag,
-          //   latestTweets: latestTweets
-          // }, 
+//               processUserQueue.push(m);
+//               statsObj.queues.processUserQueue.size = processUserQueue.length;
 
-          if (m.priorityFlag) {
-            priorityUserTweetsHashMap.set(m.nodeId, m);
-            myEmitter.emit("priorityUserTweetsEvent_" + m.nodeId);
-          }
-          else{
-            if (categorizedUserIdSet.has(m.nodeId)){
+//               if (configuration.verbose){
+//                 console.log(chalkTwitter("TFE | USER_TWEETS"
+//                   + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
+//                   + " | NID: " + m.nodeId
+//                   + " | LTs: " + m.latestTweets.length
+//                 ));
+//               }
+//             }
+//           }
+//         break;
 
-              processUserQueue.push(m);
-              statsObj.queues.processUserQueue.size = processUserQueue.length;
+//         case "FRIEND_RAW":
 
-              if (configuration.verbose){
-                console.log(chalkTwitter("TFE | USER_TWEETS"
-                  + " [ PUQ: " + statsObj.queues.processUserQueue.size + "]"
-                  + " | NID: " + m.nodeId
-                  + " | LTs: " + m.latestTweets.length
-                ));
-              }
-            }
-          }
-        break;
+//           processUserQueue.push(m);
 
-        case "FRIEND_RAW":
+//           statsObj.queues.processUserQueue.size = processUserQueue.length;
 
-          processUserQueue.push(m);
+//           if (configuration.verbose || saveRawFriendFlag) {
+//             console.log(chalkInfo("TFE | TEST DATA: FRIEND_RAW"
+//               + " [ PUQ: " + processUserQueue.length + " ]"
+//               + " | 3C @" + m.threeceeUser
+//               + " | @" + m.friend.screen_name
+//               + " | FLWRs: " + m.friend.followers_count
+//               + " | FRNDs: " + m.friend.friends_count
+//               + " | Ts: " + m.friend.statuses_count
+//               + " | LATESTs: " + m.friend.latestTweets.length
+//             ));
 
-          statsObj.queues.processUserQueue.size = processUserQueue.length;
+//             if (saveRawFriendFlag){
+//               const file = "user_" + m.friend.id_str + ".json";
+//               console.log(chalkLog("TFE | SAVE FRIEND_RAW FILE"
+//                 + " | " + testDataUserFolder + "/" + file
+//               ));
+//               debug(chalkAlert("TFE | SAVE FRIEND_RAW FILE"
+//                 + " | " + testDataUserFolder + "/" + file
+//                 + "\n" + jsonPrint(m.friend)
+//               ));
+//               statsObj.rawFriend = m.friend;
+//               saveFileQueue.push({folder: testDataUserFolder, file: file, obj: m.friend});
+//               saveRawFriendFlag = false;
+//             }
+//           }
+//         break;
 
-          if (configuration.verbose || saveRawFriendFlag) {
-            console.log(chalkInfo("TFE | TEST DATA: FRIEND_RAW"
-              + " [ PUQ: " + processUserQueue.length + " ]"
-              + " | 3C @" + m.threeceeUser
-              + " | @" + m.friend.screen_name
-              + " | FLWRs: " + m.friend.followers_count
-              + " | FRNDs: " + m.friend.friends_count
-              + " | Ts: " + m.friend.statuses_count
-              + " | LATESTs: " + m.friend.latestTweets.length
-            ));
+//         case "UNFOLLOWED":
 
-            if (saveRawFriendFlag){
-              const file = "user_" + m.friend.id_str + ".json";
-              console.log(chalkLog("TFE | SAVE FRIEND_RAW FILE"
-                + " | " + testDataUserFolder + "/" + file
-              ));
-              debug(chalkAlert("TFE | SAVE FRIEND_RAW FILE"
-                + " | " + testDataUserFolder + "/" + file
-                + "\n" + jsonPrint(m.friend)
-              ));
-              statsObj.rawFriend = m.friend;
-              saveFileQueue.push({folder: testDataUserFolder, file: file, obj: m.friend});
-              saveRawFriendFlag = false;
-            }
-          }
-        break;
+//           console.log(chalkLog("TFE | CHILD UNFOLLOWED"
+//             + " | " + m.threeceeUser
+//             + " | UID: " + m.user.id_str
+//             + " | @" + m.user.screen_name
+//             + " | FLWRs: " + m.user.followers_count
+//             + " | FRNDs: " + m.user.friends_count
+//             + " | Ts: " + m.user.statuses_count
+//           ));
+//         break;
 
-        case "UNFOLLOWED":
+//         case "STATS":
 
-          console.log(chalkLog("TFE | CHILD UNFOLLOWED"
-            + " | " + m.threeceeUser
-            + " | UID: " + m.user.id_str
-            + " | @" + m.user.screen_name
-            + " | FLWRs: " + m.user.followers_count
-            + " | FRNDs: " + m.user.friends_count
-            + " | Ts: " + m.user.statuses_count
-          ));
-        break;
+//           m.statsObj.startTimeMoment = getTimeStamp(m.statsObj.startTimeMoment);
 
-        case "STATS":
+//           childHashMap[childId].status = m.statsObj.fsmState;
+//           childHashMap[childId].statsObj = m.statsObj;
 
-          m.statsObj.startTimeMoment = getTimeStamp(m.statsObj.startTimeMoment);
+//           if (childId == "tfe_node_child_altthreecee00"){
+//             statsObj.queues.fetchUserQueue = m.statsObj.queues.fetchUserQueue;
+//           }
 
-          childHashMap[childId].status = m.statsObj.fsmState;
-          childHashMap[childId].statsObj = m.statsObj;
+//           if (configuration.verbose) {
+//             console.log(chalkLog("TFE | CHILD STATS"
+//               + " | " + m.threeceeUser
+//               + " | " + getTimeStamp() + " ___________________________\n"
+//               + jsonPrint(m.statsObj, "TFC | STATS ")
+//               + "\nTFC | CHILD STATS___________________________"
+//             ));
+//           }
+//         break;
 
-          if (childId == "tfe_node_child_altthreecee00"){
-            statsObj.queues.fetchUserTweetsQueue = m.statsObj.queues.fetchUserTweetsQueue;
-          }
+//         default:
+//           console.log(chalkError("TFE | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
+//           quit("UNKNOWN OP" + m.op);
+//       }
+//     });
 
-          if (configuration.verbose) {
-            console.log(chalkLog("TFE | CHILD STATS"
-              + " | " + m.threeceeUser
-              + " | " + getTimeStamp() + " ___________________________\n"
-              + jsonPrint(m.statsObj, "TFC | STATS ")
-              + "\nTFC | CHILD STATS___________________________"
-            ));
-          }
-        break;
+//     childHashMap[childId].child = child;
+//     childHashMap[childId].config = {};
+//     childHashMap[childId].config = config;
 
-        default:
-          console.log(chalkError("TFE | CHILD " + m.threeceeUser + " | UNKNOWN OP: " + m.op));
-          quit("UNKNOWN OP" + m.op);
-      }
-    });
+//     const initResponse = await childInit({ childId: childId, threeceeUser: config.threeceeUser, config: config });
+//     const childPidFile = await touchChildPidFile({ childId: childId, pid: child.pid });
 
-    childHashMap[childId].child = child;
-    childHashMap[childId].config = {};
-    childHashMap[childId].config = config;
+//     childHashMap[childId].childPidFile = childPidFile;
 
-    const initResponse = await childInit({ childId: childId, threeceeUser: config.threeceeUser, config: config });
+//     child.on("close", function(){
+//       console.log(chalkAlert(MODULE_ID_PREFIX + " | CHILD CLOSED | " + childId));
+//       shell.cd(childPidFolderLocal);
+//       shell.rm(childPidFile);
+//       delete childHashMap[childId];
+//     });
 
-    const childPidFile = await touchChildPidFile({ childId: childId, pid: child.pid });
+//     child.on("exit", function(code, signal){
+//       console.log(chalkAlert(MODULE_ID_PREFIX 
+//         + " | CHILD EXITED | " + childId 
+//         + " | CODE: " + code 
+//         + " | SIGNAL: " + signal
+//       ));
+//       shell.cd(childPidFolderLocal);
+//       shell.rm(childPidFile);
+//       delete childHashMap[childId];
+//     });
 
-    childHashMap[childId].childPidFile = childPidFile;
+//     if (quitFlag) {
+//       console.log(chalkAlert(MODULE_ID_PREFIX
+//         + " | KILL CHILD IN CREATE ON QUIT FLAG"
+//         + " | " + getTimeStamp()
+//         + " | " + childId
+//       ));
+//       child.kill();
+//     }
 
-    child.on("close", function(){
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | CHILD CLOSED | " + childId));
-      shell.cd(childPidFolderLocal);
-      shell.rm(childPidFile);
-      delete childHashMap[childId];
-    });
+//     return initResponse;
+//   }
+//   catch(err){
+//     console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD INIT ERROR"
+//       + " | ERR: " + err
+//       + "\nCONFIG\n" + jsonPrint(config)
+//       + "\nENV\n" + jsonPrint(options.env)
+//     ));
+//     throw err;
+//   }
+// }
 
-    child.on("exit", function(code, signal){
-      console.log(chalkAlert(MODULE_ID_PREFIX 
-        + " | CHILD EXITED | " + childId 
-        + " | CODE: " + code 
-        + " | SIGNAL: " + signal
-      ));
-      shell.cd(childPidFolderLocal);
-      shell.rm(childPidFile);
-      delete childHashMap[childId];
-    });
+// async function childCheckState (params) {
 
-    if (quitFlag) {
-      console.log(chalkAlert(MODULE_ID_PREFIX
-        + " | KILL CHILD IN CREATE ON QUIT FLAG"
-        + " | " + getTimeStamp()
-        + " | " + childId
-      ));
-      child.kill();
-    }
+//   const checkState = params.checkState;
+//   const noChildrenTrue = params.noChildrenTrue || false;
+//   const exceptionStates = params.exceptionStates || [];
 
-    return initResponse;
-  }
-  catch(err){
-    console.log(chalkError(MODULE_ID_PREFIX + " | *** CHILD INIT ERROR"
-      + " | ERR: " + err
-      + "\nCONFIG\n" + jsonPrint(config)
-      + "\nENV\n" + jsonPrint(options.env)
-    ));
-    throw err;
-  }
-}
+//   if (Object.keys(childHashMap).length == 0) {
+//     return noChildrenTrue;
+//   }
 
-async function childCheckState (params) {
+//   let allCheckState = true;
 
-  const checkState = params.checkState;
-  const noChildrenTrue = params.noChildrenTrue || false;
-  const exceptionStates = params.exceptionStates || [];
+//   for (const childId of Object.keys(childHashMap)){
 
-  if (Object.keys(childHashMap).length == 0) {
-    return noChildrenTrue;
-  }
+//     const child = childHashMap[childId];
 
-  let allCheckState = true;
+//     if (child === undefined) { 
+//       console.error("CHILD UNDEFINED");
+//       throw new Error("CHILD UNDEFINED");
+//     }
+//     else if ((child == RNT_CHILD_ID) || (child == LAC_CHILD_ID)) {
+//       debug("SKIP CHECK STATE");
+//     }
+//     else {
+//       const cs = ((child.status == "DISABLED") || (child.status == checkState) || exceptionStates.includes(child.status));
 
-  for (const childId of Object.keys(childHashMap)){
+//       if (!cs) {
+//         allCheckState = false;
+//       } 
+//     }
+//   }
 
-    const child = childHashMap[childId];
-
-    if (child === undefined) { 
-      console.error("CHILD UNDEFINED");
-      throw new Error("CHILD UNDEFINED");
-    }
-    else if ((child == RNT_CHILD_ID) || (child == LAC_CHILD_ID)) {
-      debug("SKIP CHECK STATE");
-    }
-    else {
-      const cs = ((child.status == "DISABLED") || (child.status == checkState) || exceptionStates.includes(child.status));
-
-      if (!cs) {
-        allCheckState = false;
-      } 
-    }
-  }
-
-  return allCheckState;
-}
+//   return allCheckState;
+// }
 
 console.log(MODULE_ID_PREFIX + " | =================================");
 console.log(MODULE_ID_PREFIX + " | HOST:          " + hostname);
@@ -5867,6 +5900,9 @@ setTimeout(async function(){
     if (!configuration.offlineMode){
       initSlackRtmClient();
       await initSlackWebClient();
+      const twitterParams = await tcUtils.initTwitterConfig();
+      const twitClient = await tcUtils.initTwitter({twitterConfig: twitterParams});
+      await tcUtils.getTwitterAccountSettings();
     }
 
     initSaveFileQueue(configuration);
