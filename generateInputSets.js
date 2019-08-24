@@ -35,6 +35,7 @@ configuration.inputsFilePrefix = DEFAULT_INPUTS_FILE_PREFIX;
 configuration.testMode = GLOBAL_TEST_MODE;
 configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 
+configuration.minDominantMin = DEFAULT_DOM_MIN;
 configuration.minInputsGenerated = DEFAULT_MIN_INPUTS_GENERATED;
 configuration.maxInputsGenerated = DEFAULT_MAX_INPUTS_GENERATED;
 configuration.minNumInputsPerType = DEFAULT_MIN_NUM_INPUTS_PER_TYPE;
@@ -116,10 +117,8 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const MAX_TEST_INPUTS = 10000
 
-
 const INIT_DOM_MIN = 0.999999;
 const INIT_TOT_MIN = 100;
-
 
 const OFFLINE_MODE = false;
 
@@ -827,9 +826,9 @@ function generateInputSets(params) {
           // "uncategorized": 0
 
           if (
-               (params.histogramsObj.histograms[type][input].leftRatio >= DEFAULT_DOM_MIN)
-            || (params.histogramsObj.histograms[type][input].neutralRatio >= DEFAULT_DOM_MIN)
-            || (params.histogramsObj.histograms[type][input].rightRatio >= DEFAULT_DOM_MIN)
+               (params.histogramsObj.histograms[type][input].leftRatio >= configuration.minDominantMin)
+            || (params.histogramsObj.histograms[type][input].neutralRatio >= configuration.minDominantMin)
+            || (params.histogramsObj.histograms[type][input].rightRatio >= configuration.minDominantMin)
             ) 
           {
             newInputsObj.inputs[type].push(input);
@@ -1948,6 +1947,7 @@ setTimeout(async function(){
 
       await connectDb();
       await runMain();
+      quit();
 
     }
     catch(err){
