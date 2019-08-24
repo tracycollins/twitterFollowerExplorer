@@ -1124,6 +1124,21 @@ function initCategorizedUserIdSet(){
 
               }
 
+              if (configuration.testMode || configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
+
+                console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
+                  + " | UIDs: " + usersArray.length
+                  + " | PUQ: " + processUserQueue.length
+                  + " | TOT CAT: " + statsObj.users.categorized.total
+                  + " | LIMIT: " + p.limit
+                  + " | SKIP: " + p.skip
+                  + " | " + statsObj.users.categorized.manual + " MAN"
+                  + " | " + statsObj.users.categorized.auto + " AUTO"
+                  + " | " + statsObj.users.categorized.matched + " MATCHED"
+                  + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+                  + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+                ));
+              }
 
               p.skip += results.count;
               cb();
