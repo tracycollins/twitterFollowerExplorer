@@ -2044,14 +2044,16 @@ async function quit(opts) {
   }
 
   clearInterval(quitWaitInterval);
+  
+  await clearAllIntervals();
 
-  intervalsSet.add("quitWaitInterval");
+  // intervalsSet.add("quitWaitInterval");
 
   quitWaitInterval = setInterval(async function() {
 
     if (readyToQuit()) {
 
-      await clearAllIntervals();
+      clearInterval(quitWaitInterval);
 
       if (forceQuitFlag) {
         console.log(chalkAlert(MODULE_ID_PREFIX + " | *** FORCE QUIT"
@@ -3624,6 +3626,8 @@ function initUserDbUpdateQueueInterval(interval) {
 
     clearInterval(userDbUpdateQueueInterval);
 
+    intervalsSet.add("userDbUpdateQueueInterval");
+
     statsObj.queues.userDbUpdateQueue.busy = false;
     userDbUpdateQueueReadyFlag = true;
 
@@ -4375,6 +4379,8 @@ async function initProcessUserQueueInterval(interval) {
   statsObj.processedStartFlag = false;
   clearInterval(processUserQueueInterval);
 
+  intervalsSet.add("processUserQueueInterval");
+
   processUserStartTimeMoment = moment();
 
   processUserQueueInterval = setInterval(async function () {
@@ -4540,9 +4546,9 @@ async function initProcessUserQueueInterval(interval) {
         statsObj.queues.processUserQueue.busy = false;
       }
       catch(err){
-        console.trace(chalkError("TFE | *** ERROR processUser"
+        console.log(chalkError("TFE | *** ERROR processUser"
           + " | USER ID: " + mObj.userId
-          + " | ", err
+          + " | " + err
         ));
         console.log(err);
         statsObj.queues.processUserQueue.busy = false;
