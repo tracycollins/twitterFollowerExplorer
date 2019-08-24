@@ -1485,6 +1485,8 @@ async function showStats(options) {
     // }
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT STATUS"
+      + " | MRXQ: " + randomNetworkTreeMessageRxQueue.length
+      + " | ANQ: " + statsObj.queues.activateNetworkQueue.size
       + " | HEAP: " + statsObj.randomNetworkTree.memoryUsage.heap.toFixed(3)
       + " | MAX HEAP: " + statsObj.randomNetworkTree.memoryUsage.maxHeap.toFixed(3)
     ));
@@ -5916,7 +5918,7 @@ setTimeout(async function(){
       initSlackRtmClient();
       await initSlackWebClient();
       const twitterParams = await tcUtils.initTwitterConfig();
-      const twitClient = await tcUtils.initTwitter({twitterConfig: twitterParams});
+      await tcUtils.initTwitter({twitterConfig: twitterParams});
       await tcUtils.getTwitterAccountSettings();
     }
 
