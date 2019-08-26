@@ -4107,7 +4107,6 @@ async function processUser(params) {
     }
 
     userTweetFetchSet.delete(savedUser.nodeId);
-
     return savedUser;
 
   }
@@ -4175,7 +4174,6 @@ function printUser(params) {
     + " | M  " + user.mentions
     + " | LS " + getTimeStamp(user.lastSeen)
     + " | FWG " + user.following 
-    // + " | 3C " + user.threeceeFollowing 
     + " | LC " + user.location
     + " | C M " + user.category + " A " + user.categoryAuto;
 
@@ -4199,7 +4197,6 @@ async function allQueuesEmpty(){
 
   if (statsObj.queues.activateNetworkQueue.busy) { return false; }
   if (statsObj.queues.activateNetworkQueue.size > 0) { return false; }
-  // if (activateNetworkQueue.length > 0) { return false; }
 
   if (statsObj.queues.userDbUpdateQueue.busy) { return false; }
   if (userDbUpdateQueue.length > 0) { return false; }
@@ -4358,15 +4355,9 @@ async function initProcessUserQueueInterval(interval) {
             + " | UID: " + processedUser.userId
             + " | @" + processedUser.screenName
             + " | Ts SINCE: " + processedUser.tweets.sinceId
-            // + " MAX: " + processedUser.tweets.maxId
             + " Ts: " + processedUser.tweets.tweetIds.length
           ));
         }
-
-        // statsObj.users.processed += 1;
-        // statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
-
-        // if (statsObj.users.processed % 100 == 0) { showStats(); }
 
         statsObj.queues.processUserQueue.busy = false;
       }
@@ -4429,8 +4420,6 @@ const fsmStates = {
         statsObj.status = "FSM RESET";
 
         try{
-          // await childQuitAll();
-          // await childKillAll();
           await showStats(true);
         }
         catch(err){
