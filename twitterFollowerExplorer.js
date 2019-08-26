@@ -9,7 +9,7 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const TEST_MODE = false; // applies only to parent
 const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
 
-const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
+// const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
 
 const FETCH_COUNT = 200;
@@ -17,8 +17,8 @@ const FETCH_COUNT = 200;
 const TEST_TWEET_FETCH_COUNT = 11;
 
 const TEST_MODE_NUM_NN = 5;
-const TEST_FETCH_COUNT = 10;
-const TEST_TOTAL_FETCH = 47;
+const TEST_FETCH_COUNT = 100;
+const TEST_TOTAL_FETCH = 500;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -74,7 +74,7 @@ const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
 
 const RNT_CHILD_ID = CHILD_PREFIX + "_child_rnt";
 
-const DEFAULT_MIN_INTERVAL = 2;
+const DEFAULT_MIN_INTERVAL = 1;
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
 const FSM_TICK_INTERVAL = ONE_SECOND;
@@ -83,7 +83,7 @@ const PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 
-const FETCH_USER_INTERVAL = 5 * ONE_MINUTE;
+// const FETCH_USER_INTERVAL = 5 * ONE_MINUTE;
 const DEFAULT_NUM_NN = 20; // TOP n NNs of each inputsId are loaded from DB
 
 const RANDOM_NETWORK_TREE_INTERVAL = DEFAULT_MIN_INTERVAL;
@@ -161,7 +161,7 @@ configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : TEST_FETCH_COUNT;
 configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : FETCH_COUNT;
 configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
-configuration.fetchUserInterval = (TEST_MODE) ? TEST_FETCH_USER_INTERVAL : FETCH_USER_INTERVAL;
+// configuration.fetchUserInterval = (TEST_MODE) ? TEST_FETCH_USER_INTERVAL : FETCH_USER_INTERVAL;
 configuration.fsmTickInterval = FSM_TICK_INTERVAL;
 configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 configuration.networkDatabaseLoadLimit = (TEST_MODE) ? TEST_MODE_NUM_NN : DEFAULT_NUM_NN;
@@ -1706,10 +1706,10 @@ async function loadConfigFile(params) {
       }
     }
 
-    if (loadedConfigObj.TFE_FETCH_USER_INTERVAL !== undefined) {
-      console.log("TFE | LOADED TFE_FETCH_USER_INTERVAL: " + loadedConfigObj.TFE_FETCH_USER_INTERVAL);
-      newConfiguration.fetchUserInterval = loadedConfigObj.TFE_FETCH_USER_INTERVAL;
-    }
+    // if (loadedConfigObj.TFE_FETCH_USER_INTERVAL !== undefined) {
+    //   console.log("TFE | LOADED TFE_FETCH_USER_INTERVAL: " + loadedConfigObj.TFE_FETCH_USER_INTERVAL);
+    //   newConfiguration.fetchUserInterval = loadedConfigObj.TFE_FETCH_USER_INTERVAL;
+    // }
 
     if (loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT !== undefined) {
       console.log("TFE | LOADED TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT: " + loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT);
