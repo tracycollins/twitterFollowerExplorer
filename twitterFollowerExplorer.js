@@ -4605,32 +4605,32 @@ const fsmStates = {
           }
         }
 
-        let histogramsSavedFlag = false;
+        // let histogramsSavedFlag = false;
 
-        try{
+        // try{
 
-          let rootFolder;
+        //   let rootFolder;
 
-          if (configuration.testMode) {
-            rootFolder = (hostname == PRIMARY_HOST) 
-            ? defaultHistogramsFolder + "_test/types/" 
-            : localHistogramsFolder + "_test/types/";
-          }
-          else {
-            rootFolder = (hostname == PRIMARY_HOST) 
-            ? defaultHistogramsFolder + "/types/" 
-            : localHistogramsFolder + "/types/";
-          }
+        //   if (configuration.testMode) {
+        //     rootFolder = (hostname == PRIMARY_HOST) 
+        //     ? defaultHistogramsFolder + "_test/types/" 
+        //     : localHistogramsFolder + "_test/types/";
+        //   }
+        //   else {
+        //     rootFolder = (hostname == PRIMARY_HOST) 
+        //     ? defaultHistogramsFolder + "/types/" 
+        //     : localHistogramsFolder + "/types/";
+        //   }
 
-          console.log(chalkInfo("TFE | ... SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
+        //   console.log(chalkInfo("TFE | ... SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
 
-          await tcUtils.saveGlobalHistograms({rootFolder: rootFolder});
+        //   await tcUtils.saveGlobalHistograms({rootFolder: rootFolder});
 
-          histogramsSavedFlag = true;
-        }
-        catch(err){
-          console.log(chalkError("TFE | *** PRUNE GLOBAL HISTOGRAMS ERROR: " + err));
-        }
+        //   histogramsSavedFlag = true;
+        // }
+        // catch(err){
+        //   console.log(chalkError("TFE | *** PRUNE GLOBAL HISTOGRAMS ERROR: " + err));
+        // }
 
         statsObj.loadedNetworksFlag = false;
 
@@ -4704,7 +4704,7 @@ const fsmStates = {
           }
           else {
             console.log(chalk.bold.blue("TFE | WAITING FOR NNs TO BE SAVED ..."
-              + " | HISTOGRAMS SAVED: " + histogramsSavedFlag
+              // + " | HISTOGRAMS SAVED: " + histogramsSavedFlag
               + " | SAVE Q: " + saveFileQueue.length
             ));
           }
