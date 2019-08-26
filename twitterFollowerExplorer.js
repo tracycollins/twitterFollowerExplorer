@@ -2957,7 +2957,7 @@ function updateNetworkStats(params) {
           find(query).
           lean().
           sort({"overallMatchRate": -1}).
-          limit(100).
+          limit(50).
           select({ overallMatchRate: 1, successRate: 1, networkId: 1, inputsId: 1 }).
           exec();
 
@@ -4189,7 +4189,7 @@ async function allQueuesEmpty(){
   if (statsObj.queues.fetchUserQueue.size > 0) { return false; }
 
   if (statsObj.queues.processUserQueue.busy) { return false; }
-  if (processUserQueue.size > 0) { return false; }
+  if (statsObj.queues.processUserQueue.size > 0) { return false; }
 
   if (statsObj.queues.randomNetworkTreeActivateQueue.busy) { return false; }
   if (statsObj.queues.randomNetworkTreeActivateQueue.size > 0) { return false; }
@@ -4237,20 +4237,6 @@ async function initProcessUserQueueInterval(interval) {
       fsm.fsm_fetchAllEnd(); 
 
       clearInterval(processUserQueueInterval);
-      // const childParams = {};
-      // childParams.command = {};
-      // childParams.command.childId = "tfe_node_child_altthreecee00"
-      // childParams.command.op = "FETCH_USER_END";
-      // childParams.command.fetchUserEndFlag = true;
-
-      // childSend(childParams).
-      // then(function(){
-      //   clearInterval(processUserQueueInterval);
-      // }).
-      // catch(function(err){
-      //   console.log(chalkError("TFE | *** CHILD SEND END ERROR: " + err));
-      //   clearInterval(processUserQueueInterval);
-      // });
     }
     else if (!statsObj.queues.processUserQueue.busy && processUserQueue.length > 0) {
 
@@ -4457,33 +4443,6 @@ const fsmStates = {
     fsm_tick: function() {
 
       fsm.fsm_resetEnd();
-
-      // if (getChildProcesses() > 0) {
-
-      //   if (!killAllInProgress) {
-
-      //     killAllInProgress = true;
-
-      //     childKillAll().
-      //       then(function(){
-      //         killAllInProgress = false;
-      //       }).
-      //       catch(function(err){
-      //         killAllInProgress = false;
-      //         console.log(chalkError(MODULE_ID_PREFIX + " | KILL ALL CHILD ERROR: " + err));
-      //       });
-      //   }
-      // }
-      // else {
-        // childCheckState({checkState: "RESET", noChildrenTrue: true}).then(function(allChildrenReset){
-        //   console.log(chalkTwitter(MODULE_ID_PREFIX + " | ALL CHILDREN RESET: " + allChildrenReset));
-        //   if (!killAllInProgress && allChildrenReset) { fsm.fsm_resetEnd(); }
-        // }).
-        // catch(function(err){
-        //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN RESET ERROR: " + err));
-        //   fsm.fsm_error();
-        // });
-      // }
     },
 
     "fsm_resetEnd": "IDLE"
@@ -4501,44 +4460,21 @@ const fsmStates = {
         statsObj.status = "FSM ERROR";
 
         quit({cause: "FSM ERROR"});
-
       }
-
     },
-
   },
 
   "IDLE": {
     onEnter: function(event, oldState, newState) {
-
       if (event != "fsm_tick") {
         reporter(event, oldState, newState);
-
         statsObj.status = "FSM IDLE";
-
-        // childCheckState({checkState: "IDLE", noChildrenTrue: true}).then(function(allChildrenIdle){
-        //   console.log(chalkTwitter(MODULE_ID_PREFIX + " | ALL CHILDREN IDLE: " + allChildrenIdle));
-        // }).
-        // catch(function(err){
-        //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN IDLE ERROR: " + err));
-        //   fsm.fsm_error();
-        // });
       }
 
     },
 
     fsm_tick: function() {
-
       fsm.fsm_init();
-      // childCheckState({checkState: "IDLE", noChildrenTrue: true}).then(function(allChildrenIdle){
-      //   debug("INIT TICK | ALL CHILDREN IDLE: " + allChildrenIdle );
-      //   if (allChildrenIdle) { fsm.fsm_init(); }
-      // }).
-      // catch(function(err){
-      //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN IDLE ERROR: " + err));
-      //   fsm.fsm_error();
-      // });
-
     },
 
     "fsm_init": "INIT",
@@ -4568,29 +4504,10 @@ const fsmStates = {
 
       }
     },
+
     fsm_tick: function() {
-
-      // fsm.fsm_ready(); 
-
-      // childCheckState({
-      //   checkState: "READY", 
-      //   noChildrenTrue: false, 
-      //   exceptionStates: ["PAUSE_RATE_LIMIT", "ERROR"]
-      // }).then(function(allChildrenReady){
-
-      //   debug("READY INIT"
-      //     + " | ALL CHILDREN READY: " + allChildrenReady
-      //   );
-
-      //   if (allChildrenReady && !createChildrenInProgress) { fsm.fsm_ready(); }
-
-      // }).
-      // catch(function(err){
-      //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN READY ERROR: " + err));
-      //   fsm.fsm_error();
-      // });
-
     },
+
     "fsm_quit": "QUIT",
     "fsm_exit": "EXIT",
     "fsm_error": "ERROR",
@@ -4602,47 +4519,11 @@ const fsmStates = {
     onEnter: function(event, oldState, newState) {
       if (event != "fsm_tick") {
         reporter(event, oldState, newState);
-
         statsObj.status = "FSM READY";
-
-        // childCheckState({
-        //   checkState: "READY", 
-        //   noChildrenTrue: false, 
-        //   exceptionStates: ["PAUSE_RATE_LIMIT", "ERROR"]
-        // }).then(function(allChildrenReady){
-        //   console.log(MODULE_ID_PREFIX + " | ALL CHILDREN READY: " + allChildrenReady);
-        // }).
-        // catch(function(err){
-        //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN READY ERROR: " + err));
-        //   fsm.fsm_error();
-        // });
-
       }
     },
     fsm_tick: function() {
-
       fsm.fsm_fetchAll();
-
-      // childCheckState({
-      //   checkState: "READY", 
-      //   noChildrenTrue: false, 
-      //   exceptionStates: ["ERROR"]
-      // }).then(function(allChildrenReady){
-
-      //   debug("READY TICK"
-      //     + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
-      //     + " | Q SIZE: " + statsObj.queues.processUserQueue.size
-      //     + " | ALL CHILDREN READY: " + allChildrenReady
-      //   );
-      //   if (!allChildrenReady) { childSendAll({op: "READY"}); }
-      //   if (allChildrenReady && fetchAllReady()) { fsm.fsm_fetchAll(); }
-
-      // }).
-      // catch(function(err){
-      //   console.log(chalkError(MODULE_ID_PREFIX + " | *** ALL CHILDREN READY ERROR: " + err));
-      //   fsm.fsm_error();
-      // });
-
     },
     "fsm_fetchAll": "FETCH_ALL",
     "fsm_quit": "QUIT",
@@ -4659,7 +4540,6 @@ const fsmStates = {
         statsObj.status = "FSM FETCH_ALL";
 
         try{
-          // await childSendAll({op: "FETCH_START"});
           await initCategorizedUserIdSet();
           console.log("TFE | FETCH_ALL | onEnter | " + event);
         }
@@ -4674,38 +4554,6 @@ const fsmStates = {
 
       statsObj.queues.processUserQueue.size = processUserQueue.length;
       statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
-
-      // fsm.fsm_fetchAllEnd(); 
-
-      // childCheckState({
-      //   checkState: "FETCH_END", 
-      //   noChildrenTrue: false, 
-      //   exceptionStates: ["ERROR"]
-      // }).
-      // then(function(allChildrenFetchEnd){
-      //   debug("FETCH_END TICK"
-      //     + " | Q BUSY: " + statsObj.queues.processUserQueue.busy
-      //     + " | Q SIZE: " + statsObj.queues.processUserQueue.size
-      //     + " | ALL CHILDREN FETCH_END: " + allChildrenFetchEnd
-      //   );
-
-      //   statsObj.allChildrenFetchEnd = allChildrenFetchEnd;
-
-      //   if (allChildrenFetchEnd
-      //     && !statsObj.queues.processUserQueue.busy
-      //     && (statsObj.queues.processUserQueue.size == 0)
-      //     ) 
-      //   { 
-      //     console.log(chalkAlert("FSM | allChildrenFetchEnd | STATS QUEUES\n" + jsonPrint(statsObj.queues)));
-      //     fsm.fsm_fetchAllEnd(); 
-      //   }
-
-      // }).
-      // catch(function(err){
-      //   console.log(chalkError("TFE | *** ALL CHILDREN FETCH_END ERROR: " + err));
-      //   fsm.fsm_error();
-      // });
-
     },
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
@@ -4760,7 +4608,6 @@ const fsmStates = {
         let histogramsSavedFlag = false;
 
         try{
-          await tcUtils.pruneGlobalHistograms();
 
           let rootFolder;
 
@@ -4776,7 +4623,9 @@ const fsmStates = {
           }
 
           console.log(chalkInfo("TFE | ... SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
+
           await tcUtils.saveGlobalHistograms({rootFolder: rootFolder});
+
           histogramsSavedFlag = true;
         }
         catch(err){
@@ -4947,6 +4796,7 @@ setTimeout(async function(){
     ));
 
     await tcUtils.initSaveFileQueue();
+    await tcUtils.redisFlush();
     await connectDb();
     await fsmStart();
     await initUserDbUpdateQueueInterval(USER_DB_UPDATE_QUEUE_INTERVAL);
