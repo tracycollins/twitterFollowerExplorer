@@ -4784,7 +4784,6 @@ setTimeout(async function(){
     ));
 
     await tcUtils.initSaveFileQueue();
-    await tcUtils.redisFlush();
     await connectDb();
     await fsmStart();
     await initUserDbUpdateQueueInterval(USER_DB_UPDATE_QUEUE_INTERVAL);
