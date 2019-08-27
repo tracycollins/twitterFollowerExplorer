@@ -1007,7 +1007,6 @@ function convertUserHistograms(params) {
     });
 
   });
-
 }
 
 function initCategorizedUserIdSet(){
