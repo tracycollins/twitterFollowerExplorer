@@ -4392,18 +4392,18 @@ function reporter(event, oldState, newState) {
   ));
 }
 
-function waitEvent(params) {
-  return new Promise(function(resolve){
+// function waitEvent(params) {
+//   return new Promise(function(resolve){
 
-    debug(chalkInfo("TFE | ... WAIT EVENT: " + params.event));
+//     debug(chalkInfo("TFE | ... WAIT EVENT: " + params.event));
 
-    myEmitter.once(params.event, function(){
-      console.log(chalkInfo("TFE | >>> WAIT EVENT FIRED: " + params.event));
-      resolve();
-    });
+//     myEmitter.once(params.event, function(){
+//       console.log(chalkInfo("TFE | >>> WAIT EVENT FIRED: " + params.event));
+//       resolve();
+//     });
 
-  });
-}
+//   });
+// }
 
 const fsmStates = {
 
@@ -4586,7 +4586,7 @@ const fsmStates = {
           randomNetworkTree.send({op: "GET_STATS"});
           console.log(chalkLog("TFE | PAUSING FOR RNT GET_STATS RESPONSE ..."));
           try{
-            await waitEvent({ event: "allNetworksUpdated"});
+            await tcUtils.waitEvent({ event: "allNetworksUpdated"});
           }
           catch(err){
             console.log(chalkError("TFE | *** WAIT EVENT ERROR: " + err));
