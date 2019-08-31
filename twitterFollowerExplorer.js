@@ -205,10 +205,6 @@ const configEvents = new EventEmitter2({
   verboseMemoryLeak: true
 });
 
-class MyEmitter extends EventEmitter {}
-
-const myEmitter = new MyEmitter();
-
 const chalk = require("chalk");
 const chalkNetwork = chalk.blue;
 const chalkBlueBold = chalk.blue.bold;
@@ -1554,8 +1550,8 @@ configuration.neuralNetworkFile = "";
 
 const defaultMaxInputHashmapFile = "maxInputHashMap.json";
 
-const localHistogramsFolder = configHostFolder + "/histograms";
-const defaultHistogramsFolder = configDefaultFolder + "/histograms";
+// const localHistogramsFolder = configHostFolder + "/histograms";
+// const defaultHistogramsFolder = configDefaultFolder + "/histograms";
 
 const defaultInputsConfigFile = "default_networkInputsConfig.json";
 const hostInputsConfigFile = hostname + "_networkInputsConfig.json";
@@ -2818,43 +2814,49 @@ async function initNetworks(){
   });
 }
 
-function saveNetworkHashMap(params, callback) {
+function saveNetworkHashMap(params) {
 
-  statsObj.status = "SAVE NN HASHMAP";
+  return new Promise(function(resolve, reject){
 
-  const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
+    statsObj.status = "SAVE NN HASHMAP";
 
-  const nnIds = bestNetworkHashMap.keys();
+    const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
 
-  console.log(chalkNetwork("TFE | UPDATING NNs IN FOLDER " + folder));
+    const nnIds = bestNetworkHashMap.keys();
 
-  async.eachSeries(nnIds, function(nnId, cb0) {
+    console.log(chalkNetwork("TFE | UPDATING NNs IN FOLDER " + folder));
 
-    const networkObj = bestNetworkHashMap.get(nnId);
+    async.eachSeries(nnIds, function(nnId, cb) {
 
-    printNetworkObj("TFE | SAVING NN", networkObj);
+      const networkObj = bestNetworkHashMap.get(nnId);
 
-    statsObj.status = "SAVE NN HASHMAP | SAVE Q: " + saveFileQueue.length;
+      printNetworkObj("TFE | SAVING NN", networkObj);
 
-    const file = nnId + ".json";
+      statsObj.status = "SAVE NN HASHMAP | SAVE Q: " + saveFileQueue.length;
 
-    if (params.saveImmediate) {
-      saveFileQueue.push({folder: folder, file: file, obj: networkObj});
-      debug(chalkNetwork("SAVING NN (Q)"
-        + " | " + networkObj.networkId
-      ));
-      cb0();
-    }
-    else {
-      saveCache.set(file, {folder: folder, file: file, obj: networkObj});
-      debug(chalkNetwork("SAVING NN ($)"
-        + " | " + networkObj.networkId
-      ));
-      cb0();
-    }
+      const file = nnId + ".json";
 
-  }, function(err) {
-    if (callback !== undefined) { callback(err); }
+      if (params.saveImmediate) {
+        saveFileQueue.push({folder: folder, file: file, obj: networkObj});
+        debug(chalkNetwork("SAVING NN (Q)"
+          + " | " + networkObj.networkId
+        ));
+        cb();
+      }
+      else {
+        saveCache.set(file, {folder: folder, file: file, obj: networkObj});
+        debug(chalkNetwork("SAVING NN ($)"
+          + " | " + networkObj.networkId
+        ));
+        cb();
+      }
+
+    }, function(err) {
+      if (err) { return reject(err); }
+      console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ saveNetworkHashMap COMPLETE"));
+      resolve();
+    });
+
   });
 }
 
@@ -2881,7 +2883,7 @@ function updateNetworkStats(params) {
       + " | ADD TEST HISTORY: " + addToTestHistory
     ));
 
-    async.eachSeries(nnIds, async function(nnId) {
+    async.eachSeries(nnIds, function(nnId, cb) {
 
       if (bestNetworkHashMap.has(nnId)) {
 
@@ -2911,24 +2913,22 @@ function updateNetworkStats(params) {
           verbose: configuration.testMode
         };
 
-        let nnDbUpdated;
-
-        try {
-          nnDbUpdated = await updateDbNetwork(updateDbNetworkParams);
+        updateDbNetwork(updateDbNetworkParams)
+        .then(function(nnDbUpdated){
           bestNetworkHashMap.set(nnDbUpdated.networkId, nnDbUpdated);
-          return;
-        }
-        catch(err){
-          console.log(chalkError("TFE | *** NN DB UPDATE ERROR: " + err));
-          return(err);
-        }
+          cb();
+        })
+        .catch(function(err){
+          console.log(chalkError(MODULE_ID_PREFIX + " | *** updateDbNetwork ERROR: " + err));
+          return cb(err);
+        });
 
       }
       else {
         console.log(chalkAlert("TFE | ??? NN NOT IN BEST NN HASHMAP ???"
           + " | NNID: " + nnId
         ));
-        return;
+        cb();
       }
     }, async function(err) {
 
@@ -2993,10 +2993,9 @@ function updateNetworkStats(params) {
 
         saveFileQueue.push({folder: folder, file: file, obj: bestInputsConfigObj});
 
-        saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb}, function() {
-          statsObj.status = statsObj.fsmState;
-          resolve();
-        });
+        await saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb});
+        console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ updateNetworkStats COMPLETE"));
+        resolve();
 
       }
       catch(e){
@@ -3241,7 +3240,7 @@ async function processRandomNetworkTreeMessage(params){
         randomNetworkTreeMessageRxQueueReadyFlag = true;
         statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
 
-        myEmitter.emit("allNetworksUpdated");
+        tcUtils.emitter.emit("allNetworksUpdated");
         return;
 
       }
@@ -4392,19 +4391,6 @@ function reporter(event, oldState, newState) {
   ));
 }
 
-// function waitEvent(params) {
-//   return new Promise(function(resolve){
-
-//     debug(chalkInfo("TFE | ... WAIT EVENT: " + params.event));
-
-//     myEmitter.once(params.event, function(){
-//       console.log(chalkInfo("TFE | >>> WAIT EVENT FIRED: " + params.event));
-//       resolve();
-//     });
-
-//   });
-// }
-
 const fsmStates = {
 
   "RESET": {
@@ -4586,6 +4572,7 @@ const fsmStates = {
           randomNetworkTree.send({op: "GET_STATS"});
           console.log(chalkLog("TFE | PAUSING FOR RNT GET_STATS RESPONSE ..."));
           try{
+            console.log(chalkLog(MODULE_ID_PREFIX + " | ... WAIT EVENT: allNetworksUpdated"));
             await tcUtils.waitEvent({ event: "allNetworksUpdated"});
           }
           catch(err){
