@@ -12,6 +12,9 @@ const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
 // const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
 
+const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
+const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
+
 const FETCH_COUNT = 200;
 
 const TEST_TWEET_FETCH_COUNT = 11;
@@ -142,8 +145,8 @@ DEFAULT_INPUT_TYPES.forEach(function(type){
 let configuration = {};
 configuration.offlineMode = false;
 configuration.verbose = false;
-configuration.networkDatabaseLoadPerInputsLimit = 1;
-configuration.randomUntestedPerInputsLimit = 1;
+configuration.networkDatabaseLoadPerInputsLimit = DEFAULT_NN_DB_LOAD_PER_INPUTS;
+configuration.randomUntestedPerInputsLimit = DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS;
 configuration.languageQuotaTimoutDuration = DEFAULT_LANG_QUOTA_TIMEOUT_DURATION;
 configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
 configuration.forceLanguageAnalysis = DEFAULT_FORCE_LANG_ANALYSIS;
@@ -1638,6 +1641,21 @@ async function loadConfigFile(params) {
       if ((loadedConfigObj.TFE_TEST_MODE == false) || (loadedConfigObj.TFE_TEST_MODE == "false")) {
         newConfiguration.testMode = false;
       }
+    }
+
+    if (loadedConfigObj.TFE_NN_DB_LOAD_PER_INPUTS !== undefined) {
+      console.log("TFE | LOADED TFE_NN_DB_LOAD_PER_INPUTS: " + loadedConfigObj.TFE_NN_DB_LOAD_PER_INPUTS);
+      newConfiguration.networkDatabaseLoadPerInputsLimit = loadedConfigObj.TFE_NN_DB_LOAD_PER_INPUTS;
+    }
+
+    if (loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS !== undefined) {
+      console.log("TFE | LOADED TFE_RANDOM_UNTESTED_NN_PER_INPUTS: " + loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS);
+      newConfiguration.randomUntestedPerInputsLimit = loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS;
+    }
+
+    if (loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS !== undefined) {
+      console.log("TFE | LOADED TFE_RANDOM_UNTESTED_NN_PER_INPUTS: " + loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS);
+      newConfiguration.threeceeAutoFollowUser = loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS;
     }
 
     if (loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER !== undefined) {
