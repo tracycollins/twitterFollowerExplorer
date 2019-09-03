@@ -8,8 +8,6 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const TEST_MODE = false; // applies only to parent
 const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
-
-// const TEST_FETCH_USER_INTERVAL = 15 * ONE_SECOND;
 const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
 
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
@@ -86,18 +84,14 @@ const PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 
-// const FETCH_USER_INTERVAL = 5 * ONE_MINUTE;
 const DEFAULT_NUM_NN = 20; // TOP n NNs of each inputsId are loaded from DB
+const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
 
 const RANDOM_NETWORK_TREE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL; // ms
 
 let waitFileSaveInterval;
 let randomNetworkTreeMessageRxQueueInterval;
-
-const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
-// const DEFAULT_LOCAL_MIN_SUCCESS_RATE = 60;
-// const DEFAULT_LOCAL_PURGE_MIN_SUCCESS_RATE = 65;
 
 const SAVE_CACHE_DEFAULT_TTL = 60;
 const SAVE_FILE_QUEUE_INTERVAL = 5*ONE_SECOND;
@@ -133,7 +127,6 @@ DEFAULT_INPUT_TYPES.sort();
 const inputsIdSet = new Set();
 const bestInputsSet = new Set();
 const skipLoadNetworkSet = new Set();
-// const userErrorSet = new Set();
 const userTweetFetchSet = new Set();
 
 const globalHistograms = {};
@@ -164,7 +157,6 @@ configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : TEST_FETCH_COUNT;
 configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : FETCH_COUNT;
 configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
-// configuration.fetchUserInterval = (TEST_MODE) ? TEST_FETCH_USER_INTERVAL : FETCH_USER_INTERVAL;
 configuration.fsmTickInterval = FSM_TICK_INTERVAL;
 configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 configuration.networkDatabaseLoadLimit = (TEST_MODE) ? TEST_MODE_NUM_NN : DEFAULT_NUM_NN;
@@ -486,22 +478,6 @@ function getElapsedTimeStamp(){
   return msToTime(statsObj.elapsedMS);
 }
 
-
-// //=========================================================================
-// // TFE SPECIFIC
-// //=========================================================================
-// const DEFAULT_CHILD_ID_PREFIX = "tfe_node_child";
-
-// if (hostname == "google") {
-//   // configuration.childAppPath = "/home/tc/twitterFollowerExplorer/twitterFollowerExplorerChild.js";
-//   configuration.childAppPath = "/home/tc/twitterFollowerExplorer/tfeChild.js";
-// }
-// else {
-//   // configuration.childAppPath = "/Volumes/RAID1/projects/twitterFollowerExplorer/twitterFollowerExplorerChild.js";
-//   configuration.childAppPath = "/Volumes/RAID1/projects/twitterFollowerExplorer/tfeChild.js";
-// }
-// configuration.childIdPrefix = DEFAULT_CHILD_ID_PREFIX;
-
 //=========================================================================
 // SLACK
 //=========================================================================
@@ -754,7 +730,6 @@ async function initSlackRtmClient(){
 
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.processName = process.env.TFE_PROCESS_NAME || "tfe_node";
-// configuration.childPingAllInterval = DEFAULT_CHILD_PING_INTERVAL;
 configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
 configuration.imageParserRateTimitTimeout = DEFAULT_IMAGE_PARSE_RATE_LIMIT_TIMEOUT;
 configuration.interruptFlag = false;
@@ -780,7 +755,6 @@ configuration.globalMinSuccessRate = (process.env.TFE_GLOBAL_MIN_SUCCESS_RATE !=
 configuration.DROPBOX = {};
 configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
 configuration.DROPBOX.DROPBOX_TFE_STATS_FILE = process.env.DROPBOX_TFE_STATS_FILE || "twitterFollowerExplorerStats.json";
-
 
 const statsPickArray = [
   "pid", 
@@ -1553,9 +1527,6 @@ configuration.neuralNetworkFile = "";
 
 const defaultMaxInputHashmapFile = "maxInputHashMap.json";
 
-// const localHistogramsFolder = configHostFolder + "/histograms";
-// const defaultHistogramsFolder = configDefaultFolder + "/histograms";
-
 const defaultInputsConfigFile = "default_networkInputsConfig.json";
 const hostInputsConfigFile = hostname + "_networkInputsConfig.json";
 
@@ -1719,11 +1690,6 @@ async function loadConfigFile(params) {
       }
     }
 
-    // if (loadedConfigObj.TFE_FETCH_USER_INTERVAL !== undefined) {
-    //   console.log("TFE | LOADED TFE_FETCH_USER_INTERVAL: " + loadedConfigObj.TFE_FETCH_USER_INTERVAL);
-    //   newConfiguration.fetchUserInterval = loadedConfigObj.TFE_FETCH_USER_INTERVAL;
-    // }
-
     if (loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT !== undefined) {
       console.log("TFE | LOADED TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT: " + loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT);
       newConfiguration.imageParserRateTimitTimeout = loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT;
@@ -1739,20 +1705,10 @@ async function loadConfigFile(params) {
       newConfiguration.histogramParseTotalMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN;
     }
 
-    // if (loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE !== undefined) {
-    //   console.log("TFE | LOADED TFE_LOCAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE);
-    //   newConfiguration.localMinSuccessRate = loadedConfigObj.TFE_LOCAL_MIN_SUCCESS_RATE;
-    // }
-
     if (loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) {
       console.log("TFE | LOADED TFE_GLOBAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE);
       newConfiguration.globalMinSuccessRate = loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE;
     }
-
-    // if (loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE !== undefined) {
-    //   console.log("TFE | LOADED TFE_LOCAL_PURGE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE);
-    //   newConfiguration.localPurgeMinSuccessRate = loadedConfigObj.TFE_LOCAL_PURGE_MIN_SUCCESS_RATE;
-    // }
 
     if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined) {
       console.log("TFE | LOADED TFE_NUM_RANDOM_NETWORKS: " + loadedConfigObj.TFE_NUM_RANDOM_NETWORKS);
