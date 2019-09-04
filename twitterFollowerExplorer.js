@@ -1656,17 +1656,6 @@ async function loadConfigFile(params) {
       console.log(chalkLog("TFE | TEST MODE | networkDatabaseLoadLimit: " + newConfiguration.networkDatabaseLoadLimit));
     }
 
-
-    if (loadedConfigObj.TFE_FETCH_ALL_INTERVAL !== undefined) {
-      console.log("TFE | LOADED TFE_FETCH_ALL_INTERVAL: " + loadedConfigObj.TFE_FETCH_ALL_INTERVAL);
-      newConfiguration.fetchAllIntervalTime = loadedConfigObj.TFE_FETCH_ALL_INTERVAL; 
-    }
-
-    if (newConfiguration.testMode) {
-      newConfiguration.fetchAllIntervalTime = TEST_MODE_FETCH_ALL_INTERVAL;
-      console.log(chalkLog("TFE | TEST MODE | fetchAllIntervalTime: " + newConfiguration.fetchAllIntervalTime));
-    }
-
     if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined) {
       console.log("TFE | LOADED TFE_BEST_NN_INCREMENTAL_UPDATE: " + loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE);
       newConfiguration.bestNetworkIncrementalUpdate = loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE;
@@ -1730,6 +1719,16 @@ async function loadConfigFile(params) {
     if (loadedConfigObj.TFE_FORCE_LANG_ANALYSIS !== undefined) {
       console.log("TFE | LOADED TFE_FORCE_LANG_ANALYSIS: " + loadedConfigObj.TFE_FORCE_LANG_ANALYSIS);
       newConfiguration.forceLanguageAnalysis = loadedConfigObj.TFE_FORCE_LANG_ANALYSIS;
+    }
+
+    if (loadedConfigObj.TFE_ENABLE_GEOCODE !== undefined) {
+      console.log("TFE | LOADED TFE_ENABLE_GEOCODE: " + loadedConfigObj.TFE_ENABLE_GEOCODE);
+      newConfiguration.enableGeoCode = loadedConfigObj.TFE_ENABLE_GEOCODE;
+    }
+
+    if (loadedConfigObj.TFE_FORCE_GEOCODE !== undefined) {
+      console.log("TFE | LOADED TFE_FORCE_GEOCODE: " + loadedConfigObj.TFE_FORCE_GEOCODE);
+      newConfiguration.forceGeoCode = loadedConfigObj.TFE_FORCE_GEOCODE;
     }
 
     if (loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS !== undefined) {
