@@ -26,6 +26,9 @@ const QUIT_ON_COMPLETE = true;
 
 const MIN_TWEET_ID = "1000000";
 
+const DEFAULT_ENABLE_GEOCODE = true;
+const DEFAULT_FORCE_GEOCODE = false;
+
 const DEFAULT_FORCE_LANG_ANALYSIS = false;
 const DEFAULT_ENABLE_LANG_ANALYSIS = true;
 const DEFAULT_LANG_QUOTA_TIMEOUT_DURATION = 15*ONE_MINUTE;
@@ -141,11 +144,16 @@ configuration.verbose = false;
 configuration.networkDatabaseLoadPerInputsLimit = DEFAULT_NN_DB_LOAD_PER_INPUTS;
 configuration.randomUntestedPerInputsLimit = DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS;
 configuration.languageQuotaTimoutDuration = DEFAULT_LANG_QUOTA_TIMEOUT_DURATION;
+
 configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
 configuration.forceLanguageAnalysis = DEFAULT_FORCE_LANG_ANALYSIS;
+
 configuration.enableImageAnalysis = DEFAULT_ENABLE_IMAGE_ANALYSIS;
 configuration.forceImageAnalysis = DEFAULT_FORCE_IMAGE_ANALYSIS;
-configuration.geoCodeEnabled = false;
+
+configuration.enableGeoCode = DEFAULT_ENABLE_GEOCODE;
+configuration.forceGeoCode = DEFAULT_FORCE_GEOCODE;
+
 configuration.bestNetworkIncrementalUpdate = DEFAULT_BEST_INCREMENTAL_UPDATE;
 configuration.archiveNetworkOnInputsMiss = DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
 configuration.minWordLength = DEFAULT_MIN_WORD_LENGTH;
@@ -190,7 +198,6 @@ const async = require("async");
 const { WebClient } = require("@slack/client");
 const { RTMClient } = require("@slack/client");
 
-const EventEmitter = require("eventemitter3");
 const EventEmitter2 = require("eventemitter2").EventEmitter2;
 
 const configEvents = new EventEmitter2({
@@ -317,10 +324,6 @@ statsObj.queues.fetchUserQueue.size = 0;
 statsObj.queues.randomNetworkTreeActivateQueue = {};
 statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
 statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
-
-statsObj.queues.langAnalyzerQueue = {};
-statsObj.queues.langAnalyzerQueue.busy = false;
-statsObj.queues.langAnalyzerQueue.size = 0;
 
 statsObj.queues.saveFileQueue = {};
 statsObj.queues.saveFileQueue.busy = false;
@@ -563,7 +566,6 @@ function slackMessageHandler(message){
         case "FSM FETCH_ALL":
         case "GEN AUTO CAT":
         case "INIT CHILD":
-        case "INIT LANG ANALYZER":
         case "INIT MAX INPUT HASHMAP":
         case "INIT NNs":
         case "INIT RAN NNs":
@@ -3029,7 +3031,6 @@ function initActivateNetworkQueueInterval(interval) {
     }, interval);
 
     resolve();
-
   });
 }
 
@@ -3599,7 +3600,6 @@ function initRandomNetworkTreeChild() {
       verbose: configuration.verbose 
     };
 
-
     if (randomNetworkTree === undefined) {
 
       randomNetworkTreeReadyFlag = false;
@@ -4164,9 +4164,6 @@ async function allQueuesEmpty(){
   if (statsObj.queues.randomNetworkTreeActivateQueue.busy) { return false; }
   if (statsObj.queues.randomNetworkTreeActivateQueue.size > 0) { return false; }
 
-  if (statsObj.queues.langAnalyzerQueue.busy) { return false; }
-  if (statsObj.queues.langAnalyzerQueue.size > 0) { return false; }
-
   if (statsObj.queues.activateNetworkQueue.busy) { return false; }
   if (statsObj.queues.activateNetworkQueue.size > 0) { return false; }
 
@@ -4728,6 +4725,9 @@ setTimeout(async function(){
       initSlackRtmClient();
       await initSlackWebClient();
       const twitterParams = await tcUtils.initTwitterConfig();
+      tcUtils.setEnableLanguageAnalysis(configuration.enableLanguageAnalysis);
+      tcUtils.setEnableImageAnalysis(configuration.enableImageAnalysis);
+      tcUtils.setEnableGeoCode(configuration.enableGeoCode);
       await tcUtils.initTwitter({twitterConfig: twitterParams});
       await tcUtils.getTwitterAccountSettings();
     }
@@ -4748,9 +4748,11 @@ setTimeout(async function(){
     await connectDb();
     await fsmStart();
     await initUserDbUpdateQueueInterval(USER_DB_UPDATE_QUEUE_INTERVAL);
+
     await initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
     await initActivateNetworkQueueInterval(ACTIVATE_NETWORK_QUEUE_INTERVAL);
     await initRandomNetworkTreeChild();
+
     await initWatchConfig();
     await initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
 
