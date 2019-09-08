@@ -1197,110 +1197,6 @@ async function twitterUserUpdate(){
   }
 }
 
-// function checkEndPointRateLimit(params){
-
-//   return new Promise(function(resolve){
-
-//     const resource = params.resource;
-//     const endPoint = params.endPoint;
-//     const dataResources = params.dataResources;
-//     const key = "/" + resource + "/" + endPoint;
-
-//     if (moment().isAfter(statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt) 
-//       || (statsObj.threeceeUser.twitterRateLimit[resource][endPoint].limit === statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remaining))
-//     {
-
-//       clearTimeout(rateLimitTimeout[resource][endPoint]);
-
-//       if (statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag) {
-
-//         statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag = false;
-
-//         console.log(chalkInfo(MODULE_ID_PREFIX + " | XXX RESET RATE LIMIT"
-//           + " | @" + configuration.threeceeUser
-//           + " | RSRC: " + resource
-//           + " | END: " + endPoint
-//           + " | LIM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].limit
-//           + " | REM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remaining
-//           + " | EXP: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionAt.format(compactDateTimeFormat)
-//           + " | RST: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt.format(compactDateTimeFormat)
-//           + " | NOW: " + moment().format(compactDateTimeFormat)
-//           + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remainingTime)
-//         ));
-
-//         fsm.fsm_rateLimitEnd();
-
-//       }
-//     }
-//     else if (dataResources[resource][key].remaining === 0){
-
-//       if (!statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag) {
-//         statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag = true;
-//       }
-
-//       if (statsObj.fsmState !== "PAUSE_RATE_LIMIT"){
-//         console.log(chalkAlert(MODULE_ID_PREFIX + " | *** SHOW USER ERROR | RATE LIMIT EXCEEDED" 
-//           + " | @" + configuration.threeceeUser
-//           + " | RSRC: " + resource
-//           + " | END: " + endPoint
-//           + " | LIM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].limit
-//           + " | REM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remaining
-//           + " | EXP: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionAt.format(compactDateTimeFormat)
-//           + " | RST: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt.format(compactDateTimeFormat)
-//           + " | NOW: " + moment().format(compactDateTimeFormat)
-//           + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remainingTime)
-//         ));
-//         fsm.fsm_rateLimitStart();
-//       }
-//       else {
-//         console.log(chalkLog(MODULE_ID_PREFIX + " | --- RATE LIMIT"
-//           + " | @" + configuration.threeceeUser
-//           + " | RSRC: " + resource
-//           + " | END: " + endPoint
-//           + " | LIM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].limit
-//           + " | REM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remaining
-//           + " | EXP: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionAt.format(compactDateTimeFormat)
-//           + " | RST: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt.format(compactDateTimeFormat)
-//           + " | NOW: " + moment().format(compactDateTimeFormat)
-//           + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remainingTime)
-//         ));
-//       }
-//     }
-//     else if (statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag){
-
-//       console.log(chalkLog(MODULE_ID_PREFIX + " | --- RATE LIMIT"
-//         + " | @" + configuration.threeceeUser
-//         + " | RSRC: " + resource
-//         + " | END: " + endPoint
-//         + " | LIM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].limit
-//         + " | REM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remaining
-//         + " | EXP: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionAt.format(compactDateTimeFormat)
-//         + " | RST: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt.format(compactDateTimeFormat)
-//         + " | NOW: " + moment().format(compactDateTimeFormat)
-//         + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remainingTime)
-//       ));
-//     }
-//     else {
-//       if (configuration.verbose) {
-//         console.log(chalkInfo(MODULE_ID_PREFIX + " | ... NO RATE LIMIT"
-//           + " | @" + configuration.threeceeUser
-//           + " | RSRC: " + resource
-//           + " | END: " + endPoint
-//           + " | LIM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].limit
-//           + " | REM: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remaining
-//           + " | EXP: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionAt.format(compactDateTimeFormat)
-//           + " | RST: " + statsObj.threeceeUser.twitterRateLimit[resource][endPoint].resetAt.format(compactDateTimeFormat)
-//           + " | NOW: " + moment().format(compactDateTimeFormat)
-//           + " | IN " + msToTime(statsObj.threeceeUser.twitterRateLimit[resource][endPoint].remainingTime)
-//         ));
-//       }
-//     }
-
-//     resolve(statsObj.threeceeUser.twitterRateLimit[resource][endPoint].exceptionFlag);
-
-//   });
-// }
-
 function checkRateLimit(){
 
   return new Promise(function(resolve, reject){
@@ -1413,7 +1309,6 @@ function checkRateLimit(){
 
   });
 }
-
 
 let fetchUserQueueInterval;
 intervalsSet.add("fetchUserQueueInterval");
@@ -1567,7 +1462,6 @@ function initFetchUser(p) {
     resolve();
   });
 }
-
 
 //=========================================================================
 // FSM
@@ -2123,7 +2017,6 @@ process.on("message", async function(m) {
         + " | " + m.op
       ));
   }
-
 });
 
 setTimeout(async function(){
