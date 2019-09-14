@@ -8,7 +8,6 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const TEST_MODE = false; // applies only to parent
 const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
-const TEST_MODE_FETCH_ALL_INTERVAL = 2*ONE_MINUTE;
 
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
@@ -3040,31 +3039,37 @@ runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
 runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
 
 function runEnable(displayArgs) {
-  if (randomNetworkTree && (randomNetworkTree !== undefined)) {
-    randomNetworkTree.send({op: "GET_BUSY"});
-  }
-  else {
-    randomNetworkTreeReadyFlag = true;
-    randomNetworkTreeMessageRxQueueReadyFlag = true;
-  }
-  runEnableArgs.userServerControllerReady = userServerControllerReady;
-  runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
-  runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
-  runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
 
-  const runEnableKeys = Object.keys(runEnableArgs);
-  if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
+  return new Promise(function(resolve){
 
-  for (const key of runEnableKeys){
-    if (displayArgs) { console.log(chalkInfo("TFE | runEnable | " + key + ": " + runEnableArgs[key])); }
-    if (!runEnableArgs[key]) {
-      if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
-      return false;
+    if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+      randomNetworkTree.send({op: "GET_BUSY"});
     }
-  }
+    else {
+      randomNetworkTreeReadyFlag = true;
+      randomNetworkTreeMessageRxQueueReadyFlag = true;
+    }
 
-  if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
-  return true;
+    runEnableArgs.userServerControllerReady = userServerControllerReady;
+    runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
+    runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
+    runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
+
+    const runEnableKeys = Object.keys(runEnableArgs);
+    if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
+
+    for (const key of runEnableKeys){
+      if (displayArgs) { console.log(chalkInfo("TFE | runEnable | " + key + ": " + runEnableArgs[key])); }
+      if (!runEnableArgs[key]) {
+        if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
+        resolve(false);
+      }
+    }
+
+    if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
+    resolve(true);
+
+  });
 }
 
 function updateBestNetworkStats(params) {
@@ -3151,7 +3156,7 @@ async function processRandomNetworkTreeMessage(params){
       randomNetworkTreeReadyFlag = true;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
       statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
-      runEnable();
+      await runEnable();
       console.log(chalkLog("TFE | RNT IDLE "));
       return;
 
@@ -3230,7 +3235,7 @@ async function processRandomNetworkTreeMessage(params){
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
       statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
       debug(chalkInfo("RNT NETWORK_READY ..."));
-      runEnable();
+      await runEnable();
       return;
 
     case "NETWORK_BUSY":
@@ -3252,7 +3257,7 @@ async function processRandomNetworkTreeMessage(params){
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
       randomNetworkTreeReadyFlag = true;
       debug(chalkInfo("RNT Q READY"));
-      runEnable();
+      await runEnable();
       return;
 
     case "QUEUE_EMPTY":
@@ -3261,7 +3266,7 @@ async function processRandomNetworkTreeMessage(params){
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
       randomNetworkTreeReadyFlag = true;
       debug(chalkInfo("RNT Q EMPTY"));
-      runEnable();
+      await runEnable();
       return;
 
     case "QUEUE_FULL":
@@ -3278,7 +3283,7 @@ async function processRandomNetworkTreeMessage(params){
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
       statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
       console.log(chalkTwitter("TFE | " + getTimeStamp() + " | RNT_TEST_PASS | RNT READY: " + randomNetworkTreeReadyFlag));
-      runEnable();
+      await runEnable();
       return;
 
     case "RNT_TEST_FAIL":
@@ -3292,99 +3297,100 @@ async function processRandomNetworkTreeMessage(params){
 
     case "NETWORK_OUTPUT":
 
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      try{
+        statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
 
-      statsObj.randomNetworkTree.memoryUsage = m.memoryUsage;
+        statsObj.randomNetworkTree.memoryUsage = m.memoryUsage;
 
-      debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
-      debug(chalkAlert("RNT NETWORK_OUTPUT | " + m.currentBestNetwork.networkId));
+        debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
+        debug(chalkAlert("RNT NETWORK_OUTPUT | " + m.currentBestNetwork.networkId));
 
-      if (m.currentBestNetwork === undefined 
-        || !m.currentBestNetwork 
-        || !m.currentBestNetwork.networkId 
-        || m.currentBestNetwork === undefined
-      ) {
-        console.log(chalkError("TFE | *** NETWORK_OUTPUT BEST NN NOT DEFINED\n" + jsonPrint(m.currentBestNetwork)));
+        if (m.currentBestNetwork === undefined 
+          || !m.currentBestNetwork 
+          || !m.currentBestNetwork.networkId 
+          || m.currentBestNetwork === undefined
+        ) {
+          console.log(chalkError("TFE | *** NETWORK_OUTPUT BEST NN NOT DEFINED\n" + jsonPrint(m.currentBestNetwork)));
+          return;
+        }
+
+        statsObj.currentBestNetworkId = m.currentBestNetwork.networkId;
+
+        if (bestNetworkHashMap.has(statsObj.currentBestNetworkId)) {
+
+          currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
+
+          if ((m.currentBestNetwork.matchRate > currentBestNetwork.matchRate) 
+            && (currentBestNetwork.networkId != m.currentBestNetwork.networkId)){
+            printNetworkObj(MODULE_ID_PREFIX + " | +++ NEW CURRENT BEST NN", currentBestNetwork, chalkGreen);
+          }
+
+          currentBestNetwork.matchRate = m.currentBestNetwork.matchRate;
+          currentBestNetwork.overallMatchRate = m.currentBestNetwork.overallMatchRate;
+          currentBestNetwork.successRate = m.currentBestNetwork.successRate;
+
+          await updateBestNetworkStats({networkObj: currentBestNetwork});
+        
+          bestNetworkHashMap.set(statsObj.currentBestNetworkId, currentBestNetwork);
+
+          if ((hostname == PRIMARY_HOST) 
+            && (statsObj.prevBestNetworkId != statsObj.currentBestNetworkId) 
+            && configuration.bestNetworkIncrementalUpdate) 
+          {
+            statsObj.prevBestNetworkId = statsObj.currentBestNetworkId;
+            saveBestNetworkFileCache({network: m.currentBestNetwork});
+          }
+
+          debug(chalkAlert("NETWORK_OUTPUT"
+            + " | " + moment().format(compactDateTimeFormat)
+            + " | " + m.currentBestNetwork.networkId
+            + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
+            + " | MR: " + m.currentBestNetwork.matchRate.toFixed(2) + "%"
+            + " | OAMR: " + m.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+            + " | @" + m.user.screenName
+            + " | C: " + m.user.category
+            + " | CA: " + m.categoryAuto
+          ));
+
+          user = {};
+          user = m.user;
+          user.category = m.category;
+          user.categoryAuto = m.categoryAuto;
+          userDbUpdateQueue.push(user);
+          statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
+        }
+        else {
+          console.log(chalkError("TFE | *** ERROR:  NETWORK_OUTPUT | BEST NN NOT IN HASHMAP???"
+            + " | " + moment().format(compactDateTimeFormat)
+            + " | BEST RT NN ID: " + statsObj.currentBestNetworkId
+            + " | BEST NN ID: " + m.currentBestNetwork.networkId
+            + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
+            + " | MR: " + m.currentBestNetwork.matchRate.toFixed(2) + "%"
+            + " | OAMR: " + m.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+            + " | TC: " + m.currentBestNetwork.testCycles
+            // + " | TCH: " + m.currentBestNetwork.testCycleHistory.length
+            + " | @" + m.user.screenName
+            + " | C: " + m.user.category
+            + " | CA: " + m.categoryAuto
+          ));
+        }
+
+        statsObj.users.processed += 1;
+        statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
+
+        if (statsObj.users.processed % 100 == 0) { showStats(); }
+
+        randomNetworkTreeMessageRxQueueReadyFlag = true;
+        statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
+        await runEnable();
         return;
       }
-      statsObj.currentBestNetworkId = m.currentBestNetwork.networkId
-
-      if (bestNetworkHashMap.has(statsObj.currentBestNetworkId)) {
-
-        currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
-
-        if ((m.currentBestNetwork.matchRate > currentBestNetwork.matchRate) 
-          && (currentBestNetwork.networkId != m.currentBestNetwork.networkId)){
-          printNetworkObj(MODULE_ID_PREFIX + " | +++ NEW CURRENT BEST NN", currentBestNetwork, chalkGreen);
-        }
-
-        currentBestNetwork.matchRate = m.currentBestNetwork.matchRate;
-        currentBestNetwork.overallMatchRate = m.currentBestNetwork.overallMatchRate;
-        currentBestNetwork.successRate = m.currentBestNetwork.successRate;
-
-        try{
-          await updateBestNetworkStats({networkObj: currentBestNetwork});
-        }
-        catch(err){
-          console.log(chalkError(MODULE_ID_PREFIX
-            + " | *** ERROR update best network stats: " + err
-          ));
-          throw err;
-        }
-
-        bestNetworkHashMap.set(statsObj.currentBestNetworkId, currentBestNetwork);
-
-        if ((hostname == PRIMARY_HOST) 
-          && (statsObj.prevBestNetworkId != statsObj.currentBestNetworkId) 
-          && configuration.bestNetworkIncrementalUpdate) 
-        {
-          statsObj.prevBestNetworkId = statsObj.currentBestNetworkId;
-          saveBestNetworkFileCache({network: m.currentBestNetwork});
-        }
-
-        debug(chalkAlert("NETWORK_OUTPUT"
-          + " | " + moment().format(compactDateTimeFormat)
-          + " | " + m.currentBestNetwork.networkId
-          + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
-          + " | MR: " + m.currentBestNetwork.matchRate.toFixed(2) + "%"
-          + " | OAMR: " + m.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
-          + " | @" + m.user.screenName
-          + " | C: " + m.user.category
-          + " | CA: " + m.categoryAuto
+      catch(err){
+        console.log(chalkError(MODULE_ID_PREFIX
+          + " | *** ERROR update best network stats: " + err
         ));
-
-        user = {};
-        user = m.user;
-        user.category = m.category;
-        user.categoryAuto = m.categoryAuto;
-        userDbUpdateQueue.push(user);
-        statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
+        throw err;
       }
-      else {
-        console.log(chalkError("TFE | *** ERROR:  NETWORK_OUTPUT | BEST NN NOT IN HASHMAP???"
-          + " | " + moment().format(compactDateTimeFormat)
-          + " | BEST RT NN ID: " + statsObj.currentBestNetworkId
-          + " | BEST NN ID: " + m.currentBestNetwork.networkId
-          + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
-          + " | MR: " + m.currentBestNetwork.matchRate.toFixed(2) + "%"
-          + " | OAMR: " + m.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
-          + " | TC: " + m.currentBestNetwork.testCycles
-          // + " | TCH: " + m.currentBestNetwork.testCycleHistory.length
-          + " | @" + m.user.screenName
-          + " | C: " + m.user.category
-          + " | CA: " + m.categoryAuto
-        ));
-      }
-
-      statsObj.users.processed += 1;
-      statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
-
-      if (statsObj.users.processed % 100 == 0) { showStats(); }
-
-      randomNetworkTreeMessageRxQueueReadyFlag = true;
-      statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-      runEnable();
-      return;
 
     case "BEST_MATCH_RATE":
 
@@ -3473,7 +3479,7 @@ async function processRandomNetworkTreeMessage(params){
 
       randomNetworkTreeMessageRxQueueReadyFlag = true;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-      runEnable();
+      await runEnable();
       return;
 
     default:
