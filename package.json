@@ -5,7 +5,7 @@
   "main": "twitterFollowerExplorer.js",
   "dependencies": {
     "@google-cloud/language": "^3.2.6",
-    "@google/maps": "^0.5.5",
+    "@google/maps": "^1.0.0",
     "@slack/client": "^5.0.2",
     "@threeceelabs/histogram-parser": "^1.0.20",
     "@threeceelabs/mergehistograms": "^1.0.6",
