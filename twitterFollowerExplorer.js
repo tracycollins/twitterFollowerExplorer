@@ -3882,7 +3882,7 @@ function processUserTweetArray(params){
           statsObj.twitter.tweetsTotal += 1;
 
           if (forceFetch || configuration.testMode || configuration.verbose || (statsObj.twitter.tweetsTotal % 100 == 0)) {
-            console.log(chalkTwitter("TFE | +++ PROCESSED TWEET"
+            console.log(chalkInfo("TFE | +++ PROCESSED TWEET"
               + " | FORCE: " + forceFetch
               + " [ P/H/T " + statsObj.twitter.tweetsProcessed + "/" + statsObj.twitter.tweetsHits + "/" + statsObj.twitter.tweetsTotal + "]"
               + " | TW: " + tweet.id_str
