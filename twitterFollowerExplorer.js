@@ -1003,8 +1003,6 @@ function initCategorizedUserIdSet(){
     p.batchSize = (configuration.testMode) ? TEST_CURSOR_BATCH_SIZE : DEFAULT_CURSOR_BATCH_SIZE;
     p.toObject = true;
 
-    // p.projection = defaultUserProjectionObj;
-
     let more = true;
     statsObj.users.categorized.total = 0;
     statsObj.users.categorized.manual = 0;
@@ -1012,14 +1010,6 @@ function initCategorizedUserIdSet(){
     statsObj.users.categorized.matched = 0;
     statsObj.users.categorized.mismatched = 0;
     statsObj.users.categorized.matchRate = 0;
-
-    // const childParams = {};
-    // childParams.command = {};
-    // childParams.command.childId = "tfe_node_child_altthreecee00"
-    // childParams.command.op = "FETCH_USER";
-    // childParams.command.priorityFlag = false;
-    // childParams.command.userArray = [];
-    // childParams.command.fetchUserEndFlag = false;
 
     async.whilst(
 
