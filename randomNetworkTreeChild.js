@@ -389,7 +389,7 @@ function initActivateNetworkInterval(interval){
 
           console.trace(chalkError("RNT | *** ACTIVATE NETWORK ERROR"
             + " | @" + activateNetworkObj.user.screenName
-            + " | " + err
+            + "\n" + jsonPrint(err)
           ));
 
           process.send({op: "ERROR", errorType: "ACTIVATE_ERROR", error: err, queue: activateNetworkQueue.length}, function(err){
@@ -649,8 +649,13 @@ process.on("message", async function(m) {
         await nnTools.loadNetwork({networkObj: m.networkObj, isBestNetwork: m.isBestNetwork});
       }
       catch(err){
-        console.trace(chalkError("RNT | *** LOAD NETWORK ERROR | " + err));
-        quit("LOAD NETWORK ERROR");
+        console.log(chalkError("RNT | *** LOAD NETWORK ERROR"
+          + " | TECH: " + m.networkObj.networkTechnology
+          + " | NN ID: " + m.networkObj.networkId
+          + " | INPUTS ID: " + m.networkObj.inputsId
+          + " | " + err
+        ));
+        // quit("LOAD NETWORK ERROR");
       }
     break;
 

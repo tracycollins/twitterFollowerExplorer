@@ -3175,6 +3175,11 @@ async function processRandomNetworkTreeMessage(params){
           addToTestHistory: true
         });
 
+        if (!bestNetworkHashMap.has(statsObj.currentBestNetworkId)){
+          console.log(chalkAlert(MODULE_ID_PREFIX + " | *** NN NOT IN BEST NETWORK HASHMAP: " + statsObj.currentBestNetworkId));
+          return;
+        }
+
         currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
 
         if ((hostname == PRIMARY_HOST) || configuration.testMode) {
@@ -4041,10 +4046,10 @@ async function processUser(params) {
     throw new Error("processUser userServerController UNDEFINED");
   }
 
-  try {
+  const user = params.user;
+  user.following = true;
 
-    const user = params.user;
-    user.following = true;
+  try {
 
     const updatedTweetsUser = await updateUserTweets({user: user});
     const autoCategoryUser = await generateAutoCategory({user: updatedTweetsUser});
@@ -4078,8 +4083,34 @@ async function processUser(params) {
 
   }
   catch(err) {
-    console.log(chalkError("TFE | *** processUser ERROR: " + err));
+
+    if ((err.code === 34) || (err.statusCode === 404)){
+
+      console.log(chalkError("TFE | *** processUser ERROR"
+        + " | NID: " + user.nodeId
+        + " | @" + user.screenName
+        + " | ERR CODE: " + err.code
+        + " | ERR STATUS CODE: " + err.statusCode
+        + " | USER_NOT_FOUND ... DELETING ..."
+      ));
+
+      userTweetFetchSet.delete(user.nodeId);
+      await global.globalUser.deleteOne({ "nodeId": user.nodeId });
+
+      return;
+    }
+
+    console.log(chalkError("TFE | *** processUser ERROR"
+      + " | NID: " + user.nodeId
+      + " | @" + user.screenName
+      + " | ERR CODE: " + err.code
+      + " | ERR STATUS CODE: " + err.statusCode
+      + " | " + err
+    ));
+
+    userTweetFetchSet.delete(user.nodeId);
     throw err;
+
   }
 }
 
