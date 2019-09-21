@@ -4084,14 +4084,14 @@ async function processUser(params) {
   }
   catch(err) {
 
-    if ((err.code === 34) || (err.statusCode === 404)){
+    if ((err.code === 34) || (err.statusCode === 401) || (err.statusCode === 404)){
 
       console.log(chalkError("TFE | *** processUser ERROR"
         + " | NID: " + user.nodeId
         + " | @" + user.screenName
         + " | ERR CODE: " + err.code
         + " | ERR STATUS CODE: " + err.statusCode
-        + " | USER_NOT_FOUND ... DELETING ..."
+        + " | USER_NOT_FOUND or UNAUTHORIZED ... DELETING ..."
       ));
 
       userTweetFetchSet.delete(user.nodeId);
