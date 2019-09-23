@@ -928,60 +928,63 @@ function updateDbNetwork(params) {
   });
 }
 
-function convertUserHistograms(params) {
+// function convertUserHistograms(params) {
 
-  return new Promise(function(resolve, reject){
+//   return new Promise(function(resolve, reject){
 
-    const userNodeIdArray = Object.keys(params.usersHashMap);
-    const userArray =[];
-    const verbose = params.verbose || configuration.verbose;
+//     const userNodeIdArray = Object.keys(params.usersHashMap);
+//     const userArray =[];
+//     const verbose = params.verbose || configuration.verbose;
 
-    async.eachSeries(userNodeIdArray, function(nodeId, cb){
+//     async.eachSeries(userNodeIdArray, function(nodeId, cb){
 
-      const user = params.usersHashMap[nodeId];
-      categorizedUserIdSet.add(nodeId);
+//       const user = params.usersHashMap[nodeId];
+//       categorizedUserIdSet.add(nodeId);
 
-      tcUtils.convertHistogramToBinary({histogram: user.tweetHistograms, verbose: verbose})
-      .then(function(convertedTweetHistograms){
+//       userArray.push(user);
+//       cb();
 
-        debug(chalkError(MODULE_ID_PREFIX + " | convertedTweetHistograms\n" + jsonPrint(convertedTweetHistograms)));
+//       // tcUtils.convertHistogramToBinary({histogram: user.tweetHistograms, verbose: verbose})
+//       // .then(function(convertedTweetHistograms){
 
-        user.tweetHistograms = convertedTweetHistograms;
-        user.profileHistograms = user.profileHistograms || {};
+//       //   debug(chalkError(MODULE_ID_PREFIX + " | convertedTweetHistograms\n" + jsonPrint(convertedTweetHistograms)));
 
-        tcUtils.convertHistogramToBinary({histogram: user.profileHistograms, verbose: verbose})
-        .then(function(convertedProfileHistograms){
+//       //   user.tweetHistograms = convertedTweetHistograms;
+//       //   user.profileHistograms = user.profileHistograms || {};
 
-          debug(chalkError(MODULE_ID_PREFIX + " | convertedProfileHistograms\n" + jsonPrint(convertedProfileHistograms)));
+//       //   tcUtils.convertHistogramToBinary({histogram: user.profileHistograms, verbose: verbose})
+//       //   .then(function(convertedProfileHistograms){
 
-          user.profileHistograms = convertedProfileHistograms;
-          userArray.push(user);
+//       //     debug(chalkError(MODULE_ID_PREFIX + " | convertedProfileHistograms\n" + jsonPrint(convertedProfileHistograms)));
 
-          cb();
+//       //     user.profileHistograms = convertedProfileHistograms;
+//       //     userArray.push(user);
 
-        })
-        .catch(function(e){
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms user.profileHistograms ERROR: " + e));
-          console.log(chalkError("user\n" + jsonPrint(user)));
-          return cb(e);
-        });
+//       //     cb();
 
-      })
-      .catch(function(e){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms user.tweetHistograms ERROR: " + e));
-        return cb(e);
-      });
+//       //   })
+//       //   .catch(function(e){
+//       //     console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms user.profileHistograms ERROR: " + e));
+//       //     console.log(chalkError("user\n" + jsonPrint(user)));
+//       //     return cb(e);
+//       //   });
+
+//       // })
+//       // .catch(function(e){
+//       //   console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms user.tweetHistograms ERROR: " + e));
+//       //   return cb(e);
+//       // });
 
 
-    }, function(err){
-      if (err) { 
-        return reject(err);
-      }
-      resolve(userArray);
-    });
+//     }, function(err){
+//       if (err) { 
+//         return reject(err);
+//       }
+//       resolve(userArray);
+//     });
 
-  });
-}
+//   });
+// }
 
 function initCategorizedUserIdSet(){
 
@@ -1038,81 +1041,32 @@ function initCategorizedUserIdSet(){
 
             statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
 
-            convertUserHistograms({usersHashMap: results.obj}).
-            then(function(usersArray){
+            const userIdArray = Object.keys(results.obj);
 
-              for(const user of usersArray){
+            for(const userId of userIdArray){
+              categorizedUserIdSet.add(userId);
+              const user = results.obj[userId];
+              processUserQueue.push(user);
+            }
 
-                processUserQueue.push(user);
+            if (configuration.testMode || configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
 
-                // if (configuration.testMode || configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
+              console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
+                + " | UIDs: " + userIdArray.length
+                + " | PUQ: " + processUserQueue.length
+                + " | TOT CAT: " + statsObj.users.categorized.total
+                + " | LIMIT: " + p.limit
+                + " | SKIP: " + p.skip
+                + " | " + statsObj.users.categorized.manual + " MAN"
+                + " | " + statsObj.users.categorized.auto + " AUTO"
+                + " | " + statsObj.users.categorized.matched + " MATCHED"
+                + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+                + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+              ));
+            }
 
-                //   console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-                //     + " | UIDs: " + usersArray.length
-                //     + " | PUQ: " + processUserQueue.length
-                //     + " | TOT CAT: " + statsObj.users.categorized.total
-                //     + " | LIMIT: " + p.limit
-                //     + " | SKIP: " + p.skip
-                //     + " | " + statsObj.users.categorized.manual + " MAN"
-                //     + " | " + statsObj.users.categorized.auto + " AUTO"
-                //     + " | " + statsObj.users.categorized.matched + " MATCHED"
-                //     + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-                //     + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-                //   ));
-                // }
-
-              }
-
-              if (configuration.testMode || configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
-
-                console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-                  + " | UIDs: " + usersArray.length
-                  + " | PUQ: " + processUserQueue.length
-                  + " | TOT CAT: " + statsObj.users.categorized.total
-                  + " | LIMIT: " + p.limit
-                  + " | SKIP: " + p.skip
-                  + " | " + statsObj.users.categorized.manual + " MAN"
-                  + " | " + statsObj.users.categorized.auto + " AUTO"
-                  + " | " + statsObj.users.categorized.matched + " MATCHED"
-                  + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-                  + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-                ));
-              }
-
-              p.skip += results.count;
-              cb();
-
-              // childParams.command.userArray = usersArray;
-
-              // childSend(childParams).
-              // then(function(){
-              //   if (configuration.testMode || configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
-
-              //     console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-              //       + " | UIDs: " + childParams.command.userArray.length
-              //       + " | TOT CAT: " + statsObj.users.categorized.total
-              //       + " | LIMIT: " + p.limit
-              //       + " | SKIP: " + p.skip
-              //       + " | " + statsObj.users.categorized.manual + " MAN"
-              //       + " | " + statsObj.users.categorized.auto + " AUTO"
-              //       + " | " + statsObj.users.categorized.matched + " MATCHED"
-              //       + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-              //       + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-              //     ));
-              //   }
-              //
-              //   p.skip += results.count;
-              //   cb();
-              // }).
-              // catch(function(e){
-              //   console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: childSend FETCH_USER_TWEETS ERROR: " + e));
-              //   return cb(err);
-              // });
-
-            }).
-            catch(function(err){
-              return cb(err);
-            });
+            p.skip += results.count;
+            cb();
 
           }
           else {
