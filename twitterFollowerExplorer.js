@@ -3363,7 +3363,7 @@ async function processRandomNetworkTreeMessage(params){
         currentBestNetwork = bestNetworkHashMap.get(m.networkId);
 
         currentBestNetwork.matchRate = m.matchRate;
-        currentBestNetwork.overallMatchRate = m.overallMatchRate;
+        // currentBestNetwork.overallMatchRate = m.overallMatchRate;
 
         bestNetworkHashMap.set(m.networkId, currentBestNetwork);
 
