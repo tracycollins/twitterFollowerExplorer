@@ -162,7 +162,7 @@ let configuration = {};
 
 configuration.verbose =false;
 configuration.threeceeUser = process.env.THREECEE_USER;
-configuration.inputsBinaryMode = DEFAULT_INPUTS_BINARY_MODE;
+configuration.binaryMode = DEFAULT_INPUTS_BINARY_MODE;
 configuration.testMode = TEST_MODE;
 configuration.idleTimeout = DEFAULT_IDLE_TIMEOUT;
 configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : DEFAULT_TWEET_FETCH_COUNT;

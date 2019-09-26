@@ -18,7 +18,7 @@ const DEFAULT_INPUT_TYPES = [
 
 DEFAULT_INPUT_TYPES.sort();
 
-const DEFAULT_INPUTS_BINARY_MODE = false;
+const DEFAULT_BINARY_MODE = true;
 const ONE_SECOND = Number(1000);
 const MAX_Q_SIZE = 2000;
 
@@ -34,7 +34,7 @@ let activateNetworkIntervalBusy = false;
 let statsUpdateInterval;
 
 const configuration = {};
-configuration.inputsBinaryMode = DEFAULT_INPUTS_BINARY_MODE;
+configuration.binaryMode = DEFAULT_BINARY_MODE;
 configuration.verbose = false;
 configuration.globalTestMode = false;
 configuration.testMode = false; // 
@@ -551,6 +551,13 @@ process.on("message", async function(m) {
     case "VERBOSE":
       console.log(chalkAlert("RNT | SET VERBOSE: " + m.verbose));
       configuration.verbose = m.verbose;
+    break;
+
+    case "SET_BINARY_MODE":
+      await nnTools.setBinaryMode(m.binaryMode);
+      console.log(chalkLog("RNT | SET_BINARY_MODE"
+        + " | " + m.binaryMode
+      ));
     break;
 
     case "LOAD_MAX_INPUTS_HASHMAP":
