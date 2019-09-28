@@ -891,6 +891,7 @@ function updateDbNetwork(params) {
     };
 
     update.$set = { 
+      networkRaw: networkObj.networkRaw,
       archived: networkObj.archived,
       matchRate: networkObj.matchRate, 
       overallMatchRate: networkObj.overallMatchRate,
@@ -927,64 +928,6 @@ function updateDbNetwork(params) {
 
   });
 }
-
-// function convertUserHistograms(params) {
-
-//   return new Promise(function(resolve, reject){
-
-//     const userNodeIdArray = Object.keys(params.usersHashMap);
-//     const userArray =[];
-//     const verbose = params.verbose || configuration.verbose;
-
-//     async.eachSeries(userNodeIdArray, function(nodeId, cb){
-
-//       const user = params.usersHashMap[nodeId];
-//       categorizedUserIdSet.add(nodeId);
-
-//       userArray.push(user);
-//       cb();
-
-//       // tcUtils.convertHistogramToBinary({histogram: user.tweetHistograms, verbose: verbose})
-//       // .then(function(convertedTweetHistograms){
-
-//       //   debug(chalkError(MODULE_ID_PREFIX + " | convertedTweetHistograms\n" + jsonPrint(convertedTweetHistograms)));
-
-//       //   user.tweetHistograms = convertedTweetHistograms;
-//       //   user.profileHistograms = user.profileHistograms || {};
-
-//       //   tcUtils.convertHistogramToBinary({histogram: user.profileHistograms, verbose: verbose})
-//       //   .then(function(convertedProfileHistograms){
-
-//       //     debug(chalkError(MODULE_ID_PREFIX + " | convertedProfileHistograms\n" + jsonPrint(convertedProfileHistograms)));
-
-//       //     user.profileHistograms = convertedProfileHistograms;
-//       //     userArray.push(user);
-
-//       //     cb();
-
-//       //   })
-//       //   .catch(function(e){
-//       //     console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms user.profileHistograms ERROR: " + e));
-//       //     console.log(chalkError("user\n" + jsonPrint(user)));
-//       //     return cb(e);
-//       //   });
-
-//       // })
-//       // .catch(function(e){
-//       //   console.log(chalkError(MODULE_ID_PREFIX + " | *** convertUserHistograms user.tweetHistograms ERROR: " + e));
-//       //   return cb(e);
-//       // });
-
-
-//     }, function(err){
-//       if (err) { 
-//         return reject(err);
-//       }
-//       resolve(userArray);
-//     });
-
-//   });
-// }
 
 function initCategorizedUserIdSet(){
 
@@ -2440,13 +2383,9 @@ async function loadBestNetworksDatabase(p) {
 
   if (nnArray.length == 0){
     console.log(chalkAlert("TFE | ??? NO NEURAL NETWORKS NOT FOUND IN DATABASE"
-      // + "\nQUERY\n" + jsonPrint(query)
-      // + "\nRANDOM QUERY\n" + jsonPrint(randomUntestedQuery)
     ));
 
     console.log(chalkAlert("TFE | RETRY NEURAL NN DB SEARCH"
-      // + "\nQUERY\n" + jsonPrint(query)
-      // + "\nRANDOM QUERY\n" + jsonPrint(randomUntestedQuery)
     ));
     return false;
   }
@@ -2783,6 +2722,15 @@ function saveNetworkHashMap(params) {
 
 function updateNetworkStats(params) {
 
+  // await updateNetworkStats({
+  //   networks: m.networks, 
+  //   saveImmediate: true, 
+  //   updateDb: true, 
+  //   updateOverallMatchRate: true,
+  //   incrementTestCycles: true,
+  //   addToTestHistory: true
+  // });
+
   return new Promise(function(resolve, reject){
 
     statsObj.status = "UPDATE DB NN STATS";
@@ -2794,7 +2742,7 @@ function updateNetworkStats(params) {
     const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : false;
     const minTestCycles = params.minTestCycles || configuration.minTestCycles;
 
-    const nnIds = Object.keys(params.networkStatsObj);
+    const nnIds = Object.keys(params.networks);
 
     console.log(chalkTwitter("TFE | UPDATE NN STATS"
       + " | " + nnIds.length + " | NETWORKS"
@@ -2811,17 +2759,17 @@ function updateNetworkStats(params) {
         const networkObj = bestNetworkHashMap.get(nnId);
 
         networkObj.incrementTestCycles = incrementTestCycles;
-        networkObj.rank = params.networkStatsObj[nnId].rank;
-        networkObj.matchRate = params.networkStatsObj[nnId].matchRate;
-        networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networkStatsObj[nnId].matchRate : params.networkStatsObj[nnId].overallMatchRate;
+        networkObj.rank = params.networks[nnId].rank;
+        networkObj.matchRate = params.networks[nnId].matchRate;
+        networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networks[nnId].matchRate : params.networks[nnId].overallMatchRate;
 
         const testHistoryItem = {
           testCycle: networkObj.testCycles,
-          match: params.networkStatsObj[nnId].meta.match,
-          mismatch: params.networkStatsObj[nnId].meta.mismatch,
-          total: params.networkStatsObj[nnId].meta.total,
-          matchRate: params.networkStatsObj[nnId].matchRate,
-          rank: params.networkStatsObj[nnId].rank,
+          match: params.networks[nnId].meta.match,
+          mismatch: params.networks[nnId].meta.mismatch,
+          total: params.networks[nnId].meta.total,
+          matchRate: params.networks[nnId].matchRate,
+          rank: params.networks[nnId].rank,
           timeStampString: moment().format(compactDateTimeFormat),
           timeStamp: moment()
         };
@@ -2849,7 +2797,7 @@ function updateNetworkStats(params) {
         console.log(chalkAlert("TFE | ??? NN NOT IN BEST NN HASHMAP ???"
           + " | NNID: " + nnId
         ));
-        cb();
+        return cb(new Error("NN NOT IN BEST NN HASHMAP"));
       }
     }, async function(err) {
 
@@ -3124,7 +3072,7 @@ async function processRandomNetworkTreeMessage(params){
 
       try {
         await updateNetworkStats({
-          networkStatsObj: m.loadedNetworks, 
+          networks: m.networks, 
           saveImmediate: true, 
           updateDb: true, 
           updateOverallMatchRate: true,
@@ -4017,7 +3965,7 @@ async function processUser(params) {
     prevPropsUser.markModified("tweets");
     prevPropsUser.markModified("latestTweets");
 
-    const savedUser = await prevPropsUser.save();
+    const savedUser = await prevPropsUser.save().exec();
 
     if (configuration.verbose){
       console.log(chalkLog("TFE | >>> SAVED USER"

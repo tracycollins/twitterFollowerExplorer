@@ -622,7 +622,7 @@ process.on("message", async function(m) {
         updateMemoryStats();
         await nnTools.printNetworkResults({title: "GET STATS"});
         const stats = await nnTools.getNetworkStats();
-        process.send({ op: "STATS", loadedNetworks: stats.networks, queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
+        process.send({ op: "STATS", networks: stats.networks, queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
           if (err) { 
             console.log(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
             console.error.bind(console, "RNT | *** SEND ERROR | STATS | " + err);
