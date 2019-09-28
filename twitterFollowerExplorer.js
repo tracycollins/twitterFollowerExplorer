@@ -2839,9 +2839,9 @@ function updateNetworkStats(params) {
             console.log(chalkVal("TFE | +++ BEST INPUTS SET"
               + " [" + bestInputsSet.size + "]"
               + " | INPUTS ID: " + networkObj.inputsId
-              + " | NID: " + networkObj.networkId
-              + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
               + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+              + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+              + " | NID: " + networkObj.networkId
             ));
           }
         }
