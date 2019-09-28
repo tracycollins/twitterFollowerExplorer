@@ -3759,10 +3759,6 @@ function processUserTweetArray(params){
       tscParams.tweetStatus.user = user;
       tscParams.tweetStatus.user.isNotRaw = true;
 
-      // if (tweet.id_str.toString() > user.tweets.maxId.toString()) {
-      //   user.tweets.maxId = tweet.id_str.toString();
-      // }
-
       if (tweet.id_str.toString() > user.tweets.sinceId.toString()) {
         user.tweets.sinceId = tweet.id_str.toString();
       }
@@ -3906,7 +3902,6 @@ async function updateUserTweets(params){
     user.tweetHistograms = {};
     const latestTweets = await tcUtils.fetchUserTweets({user: user, force: true});
     if (latestTweets) { user.latestTweets = latestTweets; }
-    // userTweetFetchSet.delete(user.nodeId);
   }
 
   if (user.latestTweets.length == 0) { 
@@ -3965,7 +3960,7 @@ async function processUser(params) {
     prevPropsUser.markModified("tweets");
     prevPropsUser.markModified("latestTweets");
 
-    const savedUser = await prevPropsUser.save().exec();
+    const savedUser = await prevPropsUser.save();
 
     if (configuration.verbose){
       console.log(chalkLog("TFE | >>> SAVED USER"
