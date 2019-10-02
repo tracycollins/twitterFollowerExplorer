@@ -389,8 +389,10 @@ function initActivateNetworkInterval(interval){
 
           console.trace(chalkError("RNT | *** ACTIVATE NETWORK ERROR"
             + " | @" + activateNetworkObj.user.screenName
-            + "\n" + jsonPrint(err)
+            + " | " + err
           ));
+
+          
 
           process.send({op: "ERROR", errorType: "ACTIVATE_ERROR", error: err, queue: activateNetworkQueue.length}, function(err){
 
