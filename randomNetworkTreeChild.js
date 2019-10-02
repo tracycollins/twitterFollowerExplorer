@@ -324,7 +324,7 @@ function initActivateNetworkInterval(interval){
 
         try {
 
-          activateNetworkResults = await nnTools.activate({ user: activateNetworkObj.user });
+          activateNetworkResults = await nnTools.activate({ user: activateNetworkObj.user, convertDatumFlag: true });
 
           currentBestNetworkStats = await nnTools.updateNetworkStats({
             sortBy: "matchRate",
