@@ -392,8 +392,6 @@ function initActivateNetworkInterval(interval){
             + " | " + err
           ));
 
-          
-
           process.send({op: "ERROR", errorType: "ACTIVATE_ERROR", error: err, queue: activateNetworkQueue.length}, function(err){
 
             activateNetworkIntervalBusy = false;
@@ -440,6 +438,7 @@ function initActivateNetworkInterval(interval){
             }
           });
         }
+
       }
     }, interval);
 
@@ -653,9 +652,15 @@ process.on("message", async function(m) {
     break;
 
     case "LOAD_NETWORK":
-
       try {
         await nnTools.loadNetwork({networkObj: m.networkObj, isBestNetwork: m.isBestNetwork});
+
+        process.send({op: "LOAD_NETWORK_OK", networkId: m.networkObj.networkId}, function(err){
+          if (err) { 
+            console.error.bind(console, "RNT | *** SEND ERROR | LOAD_NETWORK_OK | " + err);
+          }
+        });
+
       }
       catch(err){
         console.log(chalkError("RNT | *** LOAD NETWORK ERROR"
@@ -664,7 +669,14 @@ process.on("message", async function(m) {
           + " | INPUTS ID: " + m.networkObj.inputsId
           + " | " + err
         ));
-        // quit("LOAD NETWORK ERROR");
+        await nnTools.deleteNetwork({networkId: m.networkObj.networkId});
+
+        process.send({op: "LOAD_NETWORK_ERROR", networkId: m.networkObj.networkId}, function(err){
+          if (err) { 
+            console.error.bind(console, "RNT | *** SEND ERROR | LOAD_NETWORK_ERROR | " + err);
+          }
+        });
+
       }
     break;
 

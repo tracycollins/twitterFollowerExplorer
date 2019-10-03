@@ -2577,14 +2577,14 @@ function initRandomNetworks(){
 
     statsObj.loadedNetworksFlag = false;
 
-    if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+    if (randomNetworkTree && (randomNetworkTree !== undefined) && randomNetworkTree) {
 
       let isBestNetworkFlag = false;
 
       async.eachSeries(bestNetworkHashMap.values(), function(networkObj, cb){
 
         if (networkObj.networkId == bestNetwork.networkId) {
-          console.log(chalkGreen("TFE | LOAD_NETWORK BEST: " + networkObj.networkId));
+          console.log(chalkGreen("TFE | LOAD NETWORK | BEST: " + networkObj.networkId));
           isBestNetworkFlag = true;
         }
         else {
@@ -2593,11 +2593,23 @@ function initRandomNetworks(){
 
         randomNetworkTree.send({ op: "LOAD_NETWORK", networkObj: networkObj, isBestNetwork: isBestNetworkFlag }, function(err) {
 
-          if (err) { return cb(err); }
+          if (err) { 
+            console.log(chalkError(MODULE_ID_PREFIX + " | *** RNT SEND LOAD_NETWORK ERROR: " + err));
+            return cb(err);
+          }
 
-          console.log(chalkBlue("TFE | SENT NN > RNT : " + networkObj.networkId));
+          console.log(chalkBlue(MODULE_ID_PREFIX + " | SENT NN > RNT : " + networkObj.networkId));
+          console.log(chalkLog(MODULE_ID_PREFIX + " | ... WAIT EVENT: LOAD_NETWORK"));
 
-          cb();
+          tcUtils.waitEvent({event: "LOAD_NETWORK"})
+          .then(function(status){
+            console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT > LOAD_NETWORK: STATUS: " + status));
+            cb();
+          })
+          .catch(function(e){
+            console.log(chalkError(MODULE_ID_PREFIX + " | *** WAIT LOAD_NETWORK EVENT ERROR: " + e));
+            return cb(e);
+          });
 
         });
 
@@ -3521,6 +3533,14 @@ function initRandomNetworkTreeChild() {
               + " [" + randomNetworkTreeMessageRxQueue.length + "]"
               + " | " + m.op
             ));
+          break;
+          case "LOAD_NETWORK_OK":
+            randomNetworkTreeReadyFlag = true;
+            tcUtils.emitter.emit("LOAD_NETWORK", {status: "OK"});
+          break;
+          case "LOAD_NETWORK_ERROR":
+            randomNetworkTreeReadyFlag = true;
+            tcUtils.emitter.emit("LOAD_NETWORK", {status: "ERROR"});
           break;
           case "BUSY":
             randomNetworkTreeReadyFlag = false;
