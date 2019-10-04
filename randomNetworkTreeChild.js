@@ -387,7 +387,7 @@ function initActivateNetworkInterval(interval){
         }
         catch(err){
 
-          console.trace(chalkError("RNT | *** ACTIVATE NETWORK ERROR"
+          console.log(chalkError("RNT | *** ACTIVATE NETWORK ERROR"
             + " | @" + activateNetworkObj.user.screenName
             + " | " + err
           ));
@@ -631,7 +631,7 @@ process.on("message", async function(m) {
         });
       }
       catch(err){
-        console.trace(chalkError("RNT | *** PRINT NETWORK STATS ERROR | " + err));
+        console.log(chalkError("RNT | *** PRINT NETWORK STATS ERROR | " + err));
       }
     break;
 
