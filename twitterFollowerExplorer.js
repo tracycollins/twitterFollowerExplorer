@@ -56,6 +56,9 @@ const tcuChildName = MODULE_ID_PREFIX + "_TCU";
 const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
 const tcUtils = new ThreeceeUtilities(tcuChildName);
 
+const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
+const nnTools = new NeuralNetworkTools(MODULE_ID_PREFIX + "_NNT");
+
 let DROPBOX_ROOT_FOLDER;
 
 if (hostname == "google") {
@@ -2129,12 +2132,14 @@ async function loadNetworkFile(params){
   const folder = params.folder;
   const entry = params.entry;
 
-  const networkObj = await tcUtils.loadFileRetry({folder: folder, file: entry.name});
+  const nnObj = await tcUtils.loadFileRetry({folder: folder, file: entry.name});
 
-  if (!networkObj || networkObj=== undefined) {
+  if (!nnObj || nnObj=== undefined) {
     console.log(chalkError("NO BEST NN FOUND? | " + folder + "/" + entry.name));
     return;
   }
+
+  const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
 
   if (!inputsIdSet.has(networkObj.inputsId)){
     console.log(chalkLog("TFE | LOAD BEST NN HM INPUTS ID MISS ... SKIP HM ADD"
@@ -4498,33 +4503,6 @@ const fsmStates = {
           }
         }
 
-        // let histogramsSavedFlag = false;
-
-        // try{
-
-        //   let rootFolder;
-
-        //   if (configuration.testMode) {
-        //     rootFolder = (hostname == PRIMARY_HOST) 
-        //     ? defaultHistogramsFolder + "_test/types/" 
-        //     : localHistogramsFolder + "_test/types/";
-        //   }
-        //   else {
-        //     rootFolder = (hostname == PRIMARY_HOST) 
-        //     ? defaultHistogramsFolder + "/types/" 
-        //     : localHistogramsFolder + "/types/";
-        //   }
-
-        //   console.log(chalkInfo("TFE | ... SAVING HISTOGRAMS | TYPES: " + Object.keys(globalHistograms)));
-
-        //   await tcUtils.saveGlobalHistograms({rootFolder: rootFolder});
-
-        //   histogramsSavedFlag = true;
-        // }
-        // catch(err){
-        //   console.log(chalkError("TFE | *** PRUNE GLOBAL HISTOGRAMS ERROR: " + err));
-        // }
-
         statsObj.loadedNetworksFlag = false;
 
         if (slackWebClient !== undefined){
@@ -4565,8 +4543,6 @@ const fsmStates = {
             if (randomNetworkTree && (randomNetworkTree !== undefined)) { 
               randomNetworkTree.send({op: "RESET_STATS"});
             }
-
-            // childSendAll({op: "RESET_TWITTER_USER_STATE"});
 
             try {
 
