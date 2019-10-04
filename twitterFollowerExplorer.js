@@ -880,6 +880,8 @@ function updateDbNetwork(params) {
       seedNetworkId: networkObj.seedNetworkId,
       seedNetworkRes: networkObj.seedNetworkRes,
       network: networkObj.network,
+      networkRaw: networkObj.networkRaw,
+      networkJson: networkObj.networkJson,
       successRate: networkObj.successRate, 
       numInputs: networkObj.numInputs,
       numOutputs: networkObj.numOutputs,
@@ -891,7 +893,6 @@ function updateDbNetwork(params) {
     };
 
     update.$set = { 
-      networkRaw: networkObj.networkRaw,
       archived: networkObj.archived,
       matchRate: networkObj.matchRate, 
       overallMatchRate: networkObj.overallMatchRate,
