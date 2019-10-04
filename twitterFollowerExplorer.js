@@ -2141,127 +2141,129 @@ async function loadNetworkFile(params){
 
   try{
     const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
-  }
-  catch(err){
-    throw err;
-  }
 
-  if (!inputsIdSet.has(networkObj.inputsId)){
-    console.log(chalkLog("TFE | LOAD BEST NN HM INPUTS ID MISS ... SKIP HM ADD"
-      + " | IN: " + networkObj.numInputs
-      + " | " + networkObj.networkId 
-      + " | INPUTS ID: " + networkObj.inputsId 
-    ));
-
-    if (configuration.archiveNetworkOnInputsMiss && !networkObj.archived) {
-
-      console.log(chalkLog("TFE | ARCHIVE NN ON INPUTS ID MISS"
+    if (!inputsIdSet.has(networkObj.inputsId)){
+      console.log(chalkLog("TFE | LOAD BEST NN HM INPUTS ID MISS ... SKIP HM ADD"
         + " | IN: " + networkObj.numInputs
         + " | " + networkObj.networkId 
         + " | INPUTS ID: " + networkObj.inputsId 
-        + "\nTFE | FROM: " + folder + "/" + entry.name
-        + " | TO: " + globalBestNetworkArchiveFolder
       ));
 
-      try{
+      if (configuration.archiveNetworkOnInputsMiss && !networkObj.archived) {
 
-        await renameFileAsync(path.join(folder, entry.name), path.join(globalBestNetworkArchiveFolder, entry.name));
-
-        const updateDbNetworkParams = {};
-
-        updateDbNetworkParams.networkObj = networkObj;
-        updateDbNetworkParams.incrementTestCycles = false;
-        updateDbNetworkParams.addToTestHistory = false;
-        updateDbNetworkParams.verbose = configuration.testMode;
-
-        updateDbNetworkParams.networkObj.archived = true;
-
-        await updateDbNetwork(updateDbNetworkParams);
-        return;
-      }
-      catch(err){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** RENAME ERROR: " + err
-          + " | " + path.join(folder, entry.name)
+        console.log(chalkLog("TFE | ARCHIVE NN ON INPUTS ID MISS"
+          + " | IN: " + networkObj.numInputs
+          + " | " + networkObj.networkId 
+          + " | INPUTS ID: " + networkObj.inputsId 
+          + "\nTFE | FROM: " + folder + "/" + entry.name
+          + " | TO: " + globalBestNetworkArchiveFolder
         ));
+
+        try{
+
+          await renameFileAsync(path.join(folder, entry.name), path.join(globalBestNetworkArchiveFolder, entry.name));
+
+          const updateDbNetworkParams = {};
+
+          updateDbNetworkParams.networkObj = networkObj;
+          updateDbNetworkParams.incrementTestCycles = false;
+          updateDbNetworkParams.addToTestHistory = false;
+          updateDbNetworkParams.verbose = configuration.testMode;
+
+          updateDbNetworkParams.networkObj.archived = true;
+
+          await updateDbNetwork(updateDbNetworkParams);
+          return;
+        }
+        catch(err){
+          console.log(chalkError(MODULE_ID_PREFIX + " | *** RENAME ERROR: " + err
+            + " | " + path.join(folder, entry.name)
+          ));
+        }
       }
     }
+    else if (isBestNetwork({networkObj: networkObj}) && !bestNetworkHashMap.has(networkObj.networkId)){
+
+      bestNetworkHashMap.set(networkObj.networkId, networkObj);
+
+      printNetworkObj(
+        MODULE_ID_PREFIX 
+          + " | +++ NN"
+          + " [" + bestNetworkHashMap.size + " HM]"
+          + " [" + skipLoadNetworkSet.size + " SKIPPED]",
+        networkObj,
+        chalkGreen
+      );
+    }
+    else if (!isBestNetwork({networkObj: networkObj})) {
+
+      skipLoadNetworkSet.add(networkObj.networkId);
+
+      printNetworkObj(
+        MODULE_ID_PREFIX 
+          + " | ... NN"
+          + " [" + bestNetworkHashMap.size + " HM]"
+          + " [" + skipLoadNetworkSet.size + " SKIPPED]",
+        networkObj,
+        chalk.gray
+      );
+    }
+
+    const updateDbNetworkParams = {};
+
+    updateDbNetworkParams.networkObj = networkObj;
+    updateDbNetworkParams.incrementTestCycles = false;
+    updateDbNetworkParams.addToTestHistory = false;
+    updateDbNetworkParams.verbose = configuration.verbose;
+
+    if (skipLoadNetworkSet.has(networkObj.networkId) && !networkObj.archived) {
+
+      console.log(chalk.black.bold(
+        MODULE_ID_PREFIX 
+          + " | vvv ARCHIVE NN"
+          + " | " + folder + "/" + entry.name
+          + " > " + globalBestNetworkArchiveFolder
+      ));
+
+      await renameFileAsync(path.join(folder, entry.name), path.join(globalBestNetworkArchiveFolder, entry.name));
+
+      updateDbNetworkParams.networkObj.archived = true;
+
+      await updateDbNetwork(updateDbNetworkParams);
+      return;
+    }
+    else {
+      if (networkObj.archived) {
+
+        if (networkObj.overallMatchRate >= configuration.globalMinSuccessRate) {
+
+          printNetworkObj(
+            MODULE_ID_PREFIX + " | ??? NN ARCHIVED BUT GLOBAL SUCCESS | SKIP DELETE", 
+            networkObj
+          );
+          return;
+        }
+        else {
+          console.log(chalkLog(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | " + networkObj.networkId));
+
+          await updateDbNetwork(updateDbNetworkParams);
+          
+          const deletePath = folder + "/" + entry.name;
+
+          console.log(chalkLog(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | DELETING: " + deletePath));
+
+          await unlinkFileAsync(deletePath);
+          console.log(chalkAlert(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | DELETED: " + deletePath));
+          return;
+
+        }
+      }
+    }
+
   }
-  else if (isBestNetwork({networkObj: networkObj}) && !bestNetworkHashMap.has(networkObj.networkId)){
-
-    bestNetworkHashMap.set(networkObj.networkId, networkObj);
-
-    printNetworkObj(
-      MODULE_ID_PREFIX 
-        + " | +++ NN"
-        + " [" + bestNetworkHashMap.size + " HM]"
-        + " [" + skipLoadNetworkSet.size + " SKIPPED]",
-      networkObj,
-      chalkGreen
-    );
-  }
-  else if (!isBestNetwork({networkObj: networkObj})) {
-
-    skipLoadNetworkSet.add(networkObj.networkId);
-
-    printNetworkObj(
-      MODULE_ID_PREFIX 
-        + " | ... NN"
-        + " [" + bestNetworkHashMap.size + " HM]"
-        + " [" + skipLoadNetworkSet.size + " SKIPPED]",
-      networkObj,
-      chalk.gray
-    );
-  }
-
-  const updateDbNetworkParams = {};
-
-  updateDbNetworkParams.networkObj = networkObj;
-  updateDbNetworkParams.incrementTestCycles = false;
-  updateDbNetworkParams.addToTestHistory = false;
-  updateDbNetworkParams.verbose = configuration.verbose;
-
-  if (skipLoadNetworkSet.has(networkObj.networkId) && !networkObj.archived) {
-
-    console.log(chalk.black.bold(
-      MODULE_ID_PREFIX 
-        + " | vvv ARCHIVE NN"
-        + " | " + folder + "/" + entry.name
-        + " > " + globalBestNetworkArchiveFolder
-    ));
-
-    await renameFileAsync(path.join(folder, entry.name), path.join(globalBestNetworkArchiveFolder, entry.name));
-
-    updateDbNetworkParams.networkObj.archived = true;
-
-    await updateDbNetwork(updateDbNetworkParams);
+  catch(err){
+    console.log(chalkAlert(MODULE_ID_PREFIX + " | *** NN CONVERT ERROR ... SKIP LOAD | " + nnObj.networkId + " | " + err));
     return;
-  }
-  else {
-    if (networkObj.archived) {
-
-      if (networkObj.overallMatchRate >= configuration.globalMinSuccessRate) {
-
-        printNetworkObj(
-          MODULE_ID_PREFIX + " | ??? NN ARCHIVED BUT GLOBAL SUCCESS | SKIP DELETE", 
-          networkObj
-        );
-        return;
-      }
-      else {
-        console.log(chalkLog(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | " + networkObj.networkId));
-
-        await updateDbNetwork(updateDbNetworkParams);
-        
-        const deletePath = folder + "/" + entry.name;
-
-        console.log(chalkLog(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | DELETING: " + deletePath));
-
-        await unlinkFileAsync(deletePath);
-        console.log(chalkAlert(MODULE_ID_PREFIX + " | ... NN ALREADY ARCHIVED | DELETED: " + deletePath));
-        return;
-
-      }
-    }
   }
 }
 
@@ -2308,6 +2310,10 @@ async function loadBestNetworksFolder(params) {
   .then(function(){
     console.log(chalkGreen("TFE | +++ LOAD FOLDER BEST NETWORKS COMPLETE | " + folder));
     return;
+  })
+  .catch(function(err){
+    console.log(chalkError("TFE | *** LOAD FOLDER BEST NETWORKS ERROR: " + err));
+    throw err;
   });
 }
 
