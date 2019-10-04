@@ -2139,7 +2139,12 @@ async function loadNetworkFile(params){
     return;
   }
 
-  const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
+  try{
+    const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
+  }
+  catch(err){
+    throw err;
+  }
 
   if (!inputsIdSet.has(networkObj.inputsId)){
     console.log(chalkLog("TFE | LOAD BEST NN HM INPUTS ID MISS ... SKIP HM ADD"
@@ -2230,7 +2235,6 @@ async function loadNetworkFile(params){
 
     await updateDbNetwork(updateDbNetworkParams);
     return;
-
   }
   else {
     if (networkObj.archived) {
