@@ -2469,7 +2469,6 @@ async function loadBestNetworksDatabase(p) {
   catch(e){
     throw e;
   }
-
 }
 
 async function loadBestNeuralNetworks() {
