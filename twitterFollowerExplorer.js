@@ -55,7 +55,6 @@ const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 const wordAssoDb = require("@threeceelabs/mongoose-twitter");
 let dbConnection;
 
-
 const tcuChildName = MODULE_ID_PREFIX + "_TCU";
 const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
 const tcUtils = new ThreeceeUtilities(tcuChildName);
