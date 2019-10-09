@@ -78,15 +78,12 @@ userServerController.on("ready", function(appname){
 
 const TweetServerController = require("@threeceelabs/tweet-server-controller");
 const tweetServerController = new TweetServerController(MODULE_ID_PREFIX + "_TSC");
-let tweetServerControllerReady = false;
 
 tweetServerController.on("error", function(err){
-  tweetServerControllerReady = false;
   console.log(chalkError(MODULE_ID_PREFIX + " | *** TSC ERROR | " + err));
 });
 
 tweetServerController.on("ready", function(appname){
-  tweetServerControllerReady = true;
   console.log(chalk.green(MODULE_ID_PREFIX + " | TSC READY | " + appname));
 });
 
@@ -2335,8 +2332,7 @@ async function loadBestNetworksDatabase(p) {
     nnArrayTopOverallMatchRate = await wordAssoDb.NeuralNetwork.find(query)
     .lean()
     .sort({"overallMatchRate": -1})
-    .limit(networkDatabaseLoadPerInputsLimit)
-    .exec();
+    .limit(networkDatabaseLoadPerInputsLimit);
 
     console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
 
@@ -2345,8 +2341,7 @@ async function loadBestNetworksDatabase(p) {
     nnArrayRandomUntested = await wordAssoDb.NeuralNetwork.find(randomUntestedQuery)
     .lean()
     .sort({"overallMatchRate": -1})
-    .limit(randomUntestedPerInputsLimit)
-    .exec();
+    .limit(randomUntestedPerInputsLimit);
 
     console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
 
@@ -2822,8 +2817,7 @@ function updateNetworkStats(params) {
           lean().
           sort({"overallMatchRate": -1}).
           limit(50).
-          select({ overallMatchRate: 1, successRate: 1, networkId: 1, inputsId: 1 }).
-          exec();
+          select({ overallMatchRate: 1, successRate: 1, networkId: 1, inputsId: 1 });
 
         for (const networkObj of networkObjArray){
           if (networkObj.inputsId && (networkObj.inputsId !== undefined)) {
@@ -4158,7 +4152,7 @@ async function initProcessUserQueueInterval(interval) {
           return;
         }
 
-        const u = await wordAssoDb.User.findOne({nodeId: mObj.nodeId}).exec();
+        const u = await wordAssoDb.User.findOne({nodeId: mObj.nodeId});
 
         if (!u) {
           console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
