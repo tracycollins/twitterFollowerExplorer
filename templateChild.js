@@ -102,6 +102,7 @@ DEFAULT_CONFIGURATION.hostname = DEFAULT_CONFIGURATION.hostname.replace(/.home/g
 DEFAULT_CONFIGURATION.hostname = DEFAULT_CONFIGURATION.hostname.replace(/.at.net/g, "");
 DEFAULT_CONFIGURATION.hostname = DEFAULT_CONFIGURATION.hostname.replace(/.fios-router.home/g, "");
 DEFAULT_CONFIGURATION.hostname = DEFAULT_CONFIGURATION.hostname.replace(/word0-instance-1/g, "google");
+DEFAULT_CONFIGURATION.hostname = DEFAULT_CONFIGURATION.hostname.replace(/word-1/g, "google");
 DEFAULT_CONFIGURATION.hostname = DEFAULT_CONFIGURATION.hostname.replace(/word/g, "google");
 
 DEFAULT_CONFIGURATION.processName = "templateChild";
