@@ -128,7 +128,7 @@ let waitFileSaveInterval;
 let randomNetworkTreeMessageRxQueueInterval;
 
 const SAVE_CACHE_DEFAULT_TTL = 60;
-const SAVE_FILE_QUEUE_INTERVAL = 5*ONE_SECOND;
+const SAVE_FILE_QUEUE_INTERVAL = ONE_SECOND;
 
 const USER_PROFILE_PROPERTY_ARRAY = [
   "bannerImageUrl",
