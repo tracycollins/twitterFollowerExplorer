@@ -319,6 +319,7 @@ function initActivateNetworkInterval(interval){
 
         messageObj.user = activateNetworkObj.user;
         if (!messageObj.user.friends || (messageObj.user.friends === undefined)){
+          console.log(chalkLog("RNT | !!! NO USER FRIENDS | @" + messageObj.user.screenName));
           messageObj.user.friends = [];
         }
 
@@ -334,14 +335,14 @@ function initActivateNetworkInterval(interval){
           });
 
           if (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank){
-            printNetworkObj("NNT | +++ UPDATE BEST NETWORK"
+            printNetworkObj("RNT | +++ UPDATE BEST NETWORK"
               + " | @" + messageObj.user.screenName 
               + " | CM: " + messageObj.user.category, currentBestNetworkStats, chalk.black
             );
             await nnTools.printNetworkResults();
           }
           else if (currentBestNetworkStats.meta.total % 100 === 0) {
-            printNetworkObj("NNT | NETWORK STATS"
+            printNetworkObj("RNT | NETWORK STATS"
               + " | @" + messageObj.user.screenName 
               + " | CM: " + messageObj.user.category, currentBestNetworkStats, chalk.black
             );
