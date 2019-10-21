@@ -2389,62 +2389,61 @@ async function loadBestNetworksDatabase(p) {
     //   + " | TCH: " + bestNetwork.testCycleHistory.length
     // ));
 
-    let nnArrayIndex = 0;
+    let networkObj;
 
     for(const nnObj of nnArray){
 
       try{
-
-        const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
-
-        console.log(chalkBlueBold("TFE | CONVERT NETWORK: " + nnObj.networkId));
-
-
-        if (!networkObj || networkObj == undefined) {
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** NETWORK CONVERT UNDEFINED ... SKIPPING: " + nnObj.networkId));
-        }
-        else{
-
-          if (networkObj.overallMatchRate > bestNetwork.overallMatchRate){        
-
-            bestNetwork.isValid = true;
-            bestNetwork = networkDefaults(bestNetwork);
-
-            currentBestNetwork = bestNetwork
-
-            statsObj.bestRuntimeNetworkId = bestNetwork.networkId;
-
-            bestNetworkHashMap.set(statsObj.bestRuntimeNetworkId, bestNetwork);
-
-            console.log(chalk.bold.blue("TFE | +++ BEST DB NN"
-              + " | " + bestNetwork.networkId
-              + " | INPUT ID: " + bestNetwork.inputsId
-              + " | INs: " + bestNetwork.numInputs
-              + " | SR: " + bestNetwork.successRate.toFixed(2) + "%"
-              + " | MR: " + bestNetwork.matchRate.toFixed(2) + "%"
-              + " | OAMR: " + bestNetwork.overallMatchRate.toFixed(2) + "%"
-              + " | TCs: " + bestNetwork.testCycles
-              + " | TCH: " + bestNetwork.testCycleHistory.length
-            ));
-          }
-
-          bestNetworkHashMap.set(networkObj.networkId, networkObj);
-
-          console.log(chalkInfo("TFE | ADD NN --> HM"
-            + " | " + networkObj.networkId
-            + " | INPUT ID: " + networkObj.inputsId
-            + " | INs: " + networkObj.numInputs
-            + " | SR: " + networkObj.successRate.toFixed(2) + "%"
-            + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
-            + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-            + " | TCs: " + networkObj.testCycles
-            + " | TCH: " + networkObj.testCycleHistory.length
-          ));
-        }
-
+        networkObj = await nnTools.convertNetwork({networkObj: nnObj});
       }
       catch(e){
         console.log(chalkError(MODULE_ID_PREFIX + " | *** LOAD DB NETWORK CONVERT ERROR ... SKIPPING: " + nnObj.networkId));
+        continue;
+      }
+
+      console.log(chalkBlueBold("TFE | CONVERT NETWORK: " + nnObj.networkId));
+
+      if (!networkObj || networkObj == undefined) {
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** NETWORK CONVERT UNDEFINED ... SKIPPING: " + nnObj.networkId));
+      }
+      else{
+
+        if (networkObj.overallMatchRate > bestNetwork.overallMatchRate){        
+
+          bestNetwork = networkObj;
+          bestNetwork.isValid = true;
+          bestNetwork = networkDefaults(bestNetwork);
+
+          currentBestNetwork = bestNetwork
+
+          statsObj.bestRuntimeNetworkId = bestNetwork.networkId;
+
+          bestNetworkHashMap.set(statsObj.bestRuntimeNetworkId, bestNetwork);
+
+          console.log(chalk.bold.blue("TFE | +++ BEST DB NN"
+            + " | " + bestNetwork.networkId
+            + " | INPUT ID: " + bestNetwork.inputsId
+            + " | INs: " + bestNetwork.numInputs
+            + " | SR: " + bestNetwork.successRate.toFixed(2) + "%"
+            + " | MR: " + bestNetwork.matchRate.toFixed(2) + "%"
+            + " | OAMR: " + bestNetwork.overallMatchRate.toFixed(2) + "%"
+            + " | TCs: " + bestNetwork.testCycles
+            + " | TCH: " + bestNetwork.testCycleHistory.length
+          ));
+        }
+
+        bestNetworkHashMap.set(networkObj.networkId, networkObj);
+
+        console.log(chalkInfo("TFE | ADD NN --> HM"
+          + " | " + networkObj.networkId
+          + " | INPUT ID: " + networkObj.inputsId
+          + " | INs: " + networkObj.numInputs
+          + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+          + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
+          + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+          + " | TCs: " + networkObj.testCycles
+          + " | TCH: " + networkObj.testCycleHistory.length
+        ));
       }
 
     }
