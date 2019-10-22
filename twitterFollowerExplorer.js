@@ -2808,7 +2808,7 @@ function updateNetworkStats(params) {
 
         query.$and = [
           { inputsId: { "$in": inputsIdArray } },
-          { testCycles: { "$gte": minTestCycles } }
+          { testCycles: { "$gt": 0 } }
         ]
 
         let chalkVal = chalkLog;
