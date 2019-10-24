@@ -1847,21 +1847,6 @@ async function quit(opts) {
         ));
       }
 
-      // const command = 'pkill ' + configuration.childIdPrefix + '*';
-
-      // shell.exec(command, function(code, stdout, stderr){
-
-      //   console.log(chalkAlert(MODULE_ID_PREFIX + " | KILL ALL CHILD"
-      //     + "\nCOMMAND: " + command
-      //     + "\nCODE:    " + code
-      //     + "\nSTDOUT:  " + stdout
-      //     + "\nSTDERR:  " + stderr
-      //   ));
-
-      //   shell.cd(childPidFolderLocal);
-      //   shell.rm(configuration.childIdPrefix + "*");
-      // });
-
       if (!dbConnection) {
         process.exit();
       }
@@ -2360,99 +2345,65 @@ async function loadBestNetworksDatabase(p) {
 
   console.log(chalkBlueBold("TFE | LOADING " + nnArray.length + " NNs FROM DB ..."));
 
-  try {
+  let networkObj;
 
-    // console.log(chalkBlueBold("TFE | CONVERT BEST NETWORK: " + nnArray[0].networkId));
+  for(const nnObj of nnArray){
 
-    // bestNetwork = await nnTools.convertNetwork({networkObj: nnArray[0]});
+    try{
+      networkObj = await nnTools.convertNetwork({networkObj: nnObj});
+    }
+    catch(e){
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** LOAD DB NETWORK CONVERT ERROR ... SKIPPING: " + nnObj.networkId));
+      continue;
+    }
 
-    // // bestNetwork = nnArray[0];
-    // bestNetwork.isValid = true;
-    // bestNetwork = networkDefaults(bestNetwork);
+    console.log(chalkBlueBold("TFE | CONVERT NETWORK: " + nnObj.networkId));
 
-    // currentBestNetwork = bestNetwork
-    // // currentBestNetwork.isValid = true;
-    // // currentBestNetwork = networkDefaults(currentBestNetwork);
+    if (!networkObj || networkObj == undefined) {
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** NETWORK CONVERT UNDEFINED ... SKIPPING: " + nnObj.networkId));
+    }
+    else{
 
-    // statsObj.bestRuntimeNetworkId = bestNetwork.networkId;
+      if (networkObj.overallMatchRate > bestNetwork.overallMatchRate){        
 
-    // bestNetworkHashMap.set(statsObj.bestRuntimeNetworkId, bestNetwork);
+        bestNetwork = networkObj;
+        bestNetwork.isValid = true;
+        bestNetwork = networkDefaults(bestNetwork);
 
-    // console.log(chalk.bold.blue("TFE | +++ BEST DB NN"
-    //   + " | " + bestNetwork.networkId
-    //   + " | INPUT ID: " + bestNetwork.inputsId
-    //   + " | INs: " + bestNetwork.numInputs
-    //   + " | SR: " + bestNetwork.successRate.toFixed(2) + "%"
-    //   + " | MR: " + bestNetwork.matchRate.toFixed(2) + "%"
-    //   + " | OAMR: " + bestNetwork.overallMatchRate.toFixed(2) + "%"
-    //   + " | TCs: " + bestNetwork.testCycles
-    //   + " | TCH: " + bestNetwork.testCycleHistory.length
-    // ));
+        currentBestNetwork = bestNetwork
 
-    let networkObj;
+        statsObj.bestRuntimeNetworkId = bestNetwork.networkId;
 
-    for(const nnObj of nnArray){
+        bestNetworkHashMap.set(statsObj.bestRuntimeNetworkId, bestNetwork);
 
-      try{
-        networkObj = await nnTools.convertNetwork({networkObj: nnObj});
-      }
-      catch(e){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** LOAD DB NETWORK CONVERT ERROR ... SKIPPING: " + nnObj.networkId));
-        continue;
-      }
-
-      console.log(chalkBlueBold("TFE | CONVERT NETWORK: " + nnObj.networkId));
-
-      if (!networkObj || networkObj == undefined) {
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** NETWORK CONVERT UNDEFINED ... SKIPPING: " + nnObj.networkId));
-      }
-      else{
-
-        if (networkObj.overallMatchRate > bestNetwork.overallMatchRate){        
-
-          bestNetwork = networkObj;
-          bestNetwork.isValid = true;
-          bestNetwork = networkDefaults(bestNetwork);
-
-          currentBestNetwork = bestNetwork
-
-          statsObj.bestRuntimeNetworkId = bestNetwork.networkId;
-
-          bestNetworkHashMap.set(statsObj.bestRuntimeNetworkId, bestNetwork);
-
-          console.log(chalk.bold.blue("TFE | +++ BEST DB NN"
-            + " | " + bestNetwork.networkId
-            + " | INPUT ID: " + bestNetwork.inputsId
-            + " | INs: " + bestNetwork.numInputs
-            + " | SR: " + bestNetwork.successRate.toFixed(2) + "%"
-            + " | MR: " + bestNetwork.matchRate.toFixed(2) + "%"
-            + " | OAMR: " + bestNetwork.overallMatchRate.toFixed(2) + "%"
-            + " | TCs: " + bestNetwork.testCycles
-            + " | TCH: " + bestNetwork.testCycleHistory.length
-          ));
-        }
-
-        bestNetworkHashMap.set(networkObj.networkId, networkObj);
-
-        console.log(chalkInfo("TFE | ADD NN --> HM"
-          + " | " + networkObj.networkId
-          + " | INPUT ID: " + networkObj.inputsId
-          + " | INs: " + networkObj.numInputs
-          + " | SR: " + networkObj.successRate.toFixed(2) + "%"
-          + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
-          + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-          + " | TCs: " + networkObj.testCycles
-          + " | TCH: " + networkObj.testCycleHistory.length
+        console.log(chalk.bold.blue("TFE | +++ BEST DB NN"
+          + " | " + bestNetwork.networkId
+          + " | INPUT ID: " + bestNetwork.inputsId
+          + " | INs: " + bestNetwork.numInputs
+          + " | SR: " + bestNetwork.successRate.toFixed(2) + "%"
+          + " | MR: " + bestNetwork.matchRate.toFixed(2) + "%"
+          + " | OAMR: " + bestNetwork.overallMatchRate.toFixed(2) + "%"
+          + " | TCs: " + bestNetwork.testCycles
+          + " | TCH: " + bestNetwork.testCycleHistory.length
         ));
       }
 
-    }
+      bestNetworkHashMap.set(networkObj.networkId, networkObj);
 
-    return bestNetwork;
+      console.log(chalkInfo("TFE | ADD NN --> HM"
+        + " | " + networkObj.networkId
+        + " | INPUT ID: " + networkObj.inputsId
+        + " | INs: " + networkObj.numInputs
+        + " | SR: " + networkObj.successRate.toFixed(2) + "%"
+        + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
+        + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+        + " | TCs: " + networkObj.testCycles
+        + " | TCH: " + networkObj.testCycleHistory.length
+      ));
+    }
   }
-  catch(e){
-    throw e;
-  }
+
+  return bestNetwork;
 }
 
 async function loadBestNeuralNetworks() {
@@ -2720,20 +2671,13 @@ function saveNetworkHashMap(params) {
 
       const file = nnId + ".json";
 
-      if (params.saveImmediate) {
-        saveFileQueue.push({folder: folder, file: file, obj: networkObj});
-        debug(chalkNetwork("SAVING NN (Q)"
-          + " | " + networkObj.networkId
-        ));
-        cb();
-      }
-      else {
-        saveCache.set(file, {folder: folder, file: file, obj: networkObj});
-        debug(chalkNetwork("SAVING NN ($)"
-          + " | " + networkObj.networkId
-        ));
-        cb();
-      }
+      saveFileQueue.push({folder: folder, file: file, obj: networkObj});
+
+      debug(chalkNetwork("SAVING NN (Q)"
+        + " | " + networkObj.networkId
+      ));
+
+      cb();
 
     }, function(err) {
       if (err) { return reject(err); }
@@ -2746,15 +2690,6 @@ function saveNetworkHashMap(params) {
 
 function updateNetworkStats(params) {
 
-  // await updateNetworkStats({
-  //   networks: m.networks, 
-  //   saveImmediate: true, 
-  //   updateDb: true, 
-  //   updateOverallMatchRate: true,
-  //   incrementTestCycles: true,
-  //   addToTestHistory: true
-  // });
-
   return new Promise(function(resolve, reject){
 
     statsObj.status = "UPDATE DB NN STATS";
@@ -2764,7 +2699,7 @@ function updateNetworkStats(params) {
     const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
     const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
     const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : false;
-    const minTestCycles = params.minTestCycles || configuration.minTestCycles;
+    // const minTestCycles = params.minTestCycles || configuration.minTestCycles;
 
     const nnIds = Object.keys(params.networks);
 
