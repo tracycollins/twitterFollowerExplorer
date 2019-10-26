@@ -651,114 +651,101 @@ function slackMessageHandler(message){
 }
 
 async function initSlackWebClient(){
+  try {
 
-  // return new Promise(function(resolve, reject){
+    slackWebClient = new WebClient(slackRtmToken);
 
-    try {
+    const testResponse = await slackWebClient.api.test();
+    if (configuration.verbose) {
+      console.log("TFE | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
+    }
 
-      slackWebClient = new WebClient(slackRtmToken);
+    const conversationsListResponse = await slackWebClient.conversations.list({token: slackOAuthAccessToken});
 
-      const testResponse = await slackWebClient.api.test();
-      if (configuration.verbose) {
-        console.log("TFE | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
-      }
+    conversationsListResponse.channels.forEach(async function(channel){
 
-      const conversationsListResponse = await slackWebClient.conversations.list({token: slackOAuthAccessToken});
+      debug(chalkLog("TFE | CHANNEL | " + channel.id + " | " + channel.name));
 
-      conversationsListResponse.channels.forEach(async function(channel){
-  
-        debug(chalkLog("TFE | CHANNEL | " + channel.id + " | " + channel.name));
+      if (channel.name == slackChannel) {
+        configuration.slackChannel = channel;
 
-        if (channel.name == slackChannel) {
-          configuration.slackChannel = channel;
+        const message = {
+          token: slackOAuthAccessToken, 
+          channel: configuration.slackChannel.id,
+          text: "OP"
+        };
 
-          const message = {
-            token: slackOAuthAccessToken, 
-            channel: configuration.slackChannel.id,
-            text: "OP"
-          };
+        message.attachments = [];
+        message.attachments.push({
+          text: "INIT", 
+          fields: [ 
+            { title: "SRC", value: hostname + "_" + process.pid }, 
+            { title: "MOD", value: MODULE_NAME }, 
+            { title: "DST", value: "ALL" } 
+          ]
+        });
 
-          message.attachments = [];
-          message.attachments.push({
-            text: "INIT", 
-            fields: [ 
-              { title: "SRC", value: hostname + "_" + process.pid }, 
-              { title: "MOD", value: MODULE_NAME }, 
-              { title: "DST", value: "ALL" } 
-            ]
-          });
-
-          const chatPostMessageResponse = await slackWebClient.chat.postMessage(message);
-          if (configuration.verbose) {
-            console.log("TFE | SLACK WEB CHAT POST MESSAGE RESPONSE\n" + jsonPrint(chatPostMessageResponse));
-          }
-
+        const chatPostMessageResponse = await slackWebClient.chat.postMessage(message);
+        if (configuration.verbose) {
+          console.log("TFE | SLACK WEB CHAT POST MESSAGE RESPONSE\n" + jsonPrint(chatPostMessageResponse));
         }
 
-        channelsHashMap.set(channel.id, channel);
-      });
+      }
 
-      console.log("TFE | SLACK WEB BOTS INITIALIZED");
-      return;
+      channelsHashMap.set(channel.id, channel);
+    });
 
-    }
-    catch(err){
-      console.log(chalkError("TFE | *** INIT SLACK WEB CLIENT ERROR: " + err));
-      throw err;
-    }
-
-  // });
+    console.log("TFE | SLACK WEB BOTS INITIALIZED");
+    return;
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** INIT SLACK WEB CLIENT ERROR: " + err));
+    throw err;
+  }
 }
 
 async function initSlackRtmClient(){
+  try {
 
-  // return new Promise(async function(resolve, reject){
+    slackRtmClient = new RTMClient(slackRtmToken);
 
-    try {
+    const slackInfo = await slackRtmClient.start();
 
-      slackRtmClient = new RTMClient(slackRtmToken);
+    if (configuration.verbose) {
+      console.log(chalkInfo("TFE | SLACK RTM | INFO\n" + jsonPrint(slackInfo)));
+    }
 
-      const slackInfo = await slackRtmClient.start();
+    slackRtmClient.on("slack_event", async function(eventType, event){
+      switch (eventType) {
+        case "pong":
+          debug(chalkLog("TFE | SLACK RTM PONG | " + getTimeStamp() + " | " + event.reply_to));
+        break;
+        default: debug(chalkInfo("TFE | SLACK RTM EVENT | " + getTimeStamp() + " | " + eventType + "\n" + jsonPrint(event)));
+      }
+    });
 
-      if (configuration.verbose) {
-        console.log(chalkInfo("TFE | SLACK RTM | INFO\n" + jsonPrint(slackInfo)));
+
+    slackRtmClient.on("message", async function(message){
+      if (configuration.verbose) { console.log(chalkLog("TFE | RTM R<\n" + jsonPrint(message))); }
+      debug(`TFE | SLACK RTM MESSAGE | R< | CH: ${message.channel} | USER: ${message.user} | ${message.text}`);
+
+      try {
+        await slackMessageHandler(message);
+      }
+      catch(err){
+        console.log(chalkError("TFE | *** SLACK RTM MESSAGE ERROR: " + err));
       }
 
-      slackRtmClient.on("slack_event", async function(eventType, event){
-        switch (eventType) {
-          case "pong":
-            debug(chalkLog("TFE | SLACK RTM PONG | " + getTimeStamp() + " | " + event.reply_to));
-          break;
-          default: debug(chalkInfo("TFE | SLACK RTM EVENT | " + getTimeStamp() + " | " + eventType + "\n" + jsonPrint(event)));
-        }
-      });
+    });
 
-
-      slackRtmClient.on("message", async function(message){
-        if (configuration.verbose) { console.log(chalkLog("TFE | RTM R<\n" + jsonPrint(message))); }
-        debug(`TFE | SLACK RTM MESSAGE | R< | CH: ${message.channel} | USER: ${message.user} | ${message.text}`);
-
-        try {
-          await slackMessageHandler(message);
-        }
-        catch(err){
-          console.log(chalkError("TFE | *** SLACK RTM MESSAGE ERROR: " + err));
-        }
-
-      });
-
-      slackRtmClient.on("ready", async function(){
-        if (configuration.verbose) { await slackSendRtmMessage(hostname + " | TFE | SLACK RTM READY"); }
-      });
-
-
-    }
-    catch(err){
-      console.log(chalkError("TFE | *** INIT SLACK RTM CLIENT | " + err));
-      throw err;
-    }
-
-  // });
+    slackRtmClient.on("ready", async function(){
+      if (configuration.verbose) { await slackSendRtmMessage(hostname + " | TFE | SLACK RTM READY"); }
+    });
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** INIT SLACK RTM CLIENT | " + err));
+    throw err;
+  }
 }
 
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
@@ -2051,7 +2038,7 @@ function isBestNetwork(p){
   const minOverallMatchRate = (params.minOverallMatchRate !== undefined) ? params.minOverallMatchRate : configuration.globalMinSuccessRate;
   const minTestCycles = (params.minTestCycles !== undefined) ? params.minTestCycles : configuration.minTestCycles;
 
-  if (params.networkObj.testCycles < minTestCycles){
+  if (params.networkObj.testCycles <= minTestCycles){
     debug("minTestCycles: " + params.networkObj.testCycles);
     return true;
   }
@@ -2259,9 +2246,9 @@ async function loadBestNetworksDatabase(p) {
   const params = p || {};
 
   const minTestCycles = (params.minTestCycles !== undefined) ? params.minTestCycles : configuration.minTestCycles;
-  const globalMinSuccessRate = params.globalMinSuccessRate || configuration.globalMinSuccessRate;
-  const randomUntestedPerInputsLimit = params.randomUntestedPerInputsLimit || configuration.randomUntestedPerInputsLimit;
-  const networkDatabaseLoadPerInputsLimit = params.networkDatabaseLoadPerInputsLimit || configuration.networkDatabaseLoadPerInputsLimit;
+  const globalMinSuccessRate = (params.globalMinSuccessRate !== undefined) ? params.globalMinSuccessRate : configuration.globalMinSuccessRate;
+  const randomUntestedPerInputsLimit = (params.randomUntestedPerInputsLimit !== undefined) ? params.randomUntestedPerInputsLimit : configuration.randomUntestedPerInputsLimit;
+  const networkDatabaseLoadPerInputsLimit = (params.networkDatabaseLoadPerInputsLimit !== undefined) ? params.networkDatabaseLoadPerInputsLimit : configuration.networkDatabaseLoadPerInputsLimit;
 
   console.log(chalkBlue("TFE | ... LOADING BEST NETWORKS DATABASE"
     + " | GLOBAL MIN SUCCESS RATE: " + globalMinSuccessRate.toFixed(2) + "%"
@@ -2283,11 +2270,10 @@ async function loadBestNetworksDatabase(p) {
 
   for (const inputsId of inputsIdArray) {
 
-    console.log(chalkLog(MODULE_ID_PREFIX
-      + " | ... LOADING NN FROM DB | INPUTS ID: " + inputsId
-    ));
+    console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING NN FROM DB | INPUTS ID: " + inputsId));
 
     let query = {};
+
     query.inputsId = inputsId;
 
     if (minTestCycles) {
@@ -2295,17 +2281,18 @@ async function loadBestNetworksDatabase(p) {
       query.$and = [
         { networkTechnology: "neataptic" },
         { inputsId: inputsId },
-        { overallMatchRate: { "$gte": globalMinSuccessRate } },
-        { testCycles: { "$gte": minTestCycles } }
+        { overallMatchRate: { "$gte": globalMinSuccessRate } }
+        // { testCycles: { "$gte": minTestCycles } }
       ];
     }
 
     const randomUntestedQuery = {};
+
     randomUntestedQuery.$and = [
       { networkTechnology: "neataptic" },
       { inputsId: inputsId },
       { successRate: { "$gte": globalMinSuccessRate } },
-      { testCycles: { "$lt": minTestCycles } }
+      { testCycles: { "$lte": minTestCycles } }
     ];
 
     if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
@@ -2313,7 +2300,7 @@ async function loadBestNetworksDatabase(p) {
     let nnArrayTopOverallMatchRate = [];
     let nnArrayRandomUntested = [];
 
-    console.log(chalkBlue("TFE | ... LOADING " + networkDatabaseLoadPerInputsLimit + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
+    console.log(chalkLog("TFE | ... LOADING " + networkDatabaseLoadPerInputsLimit + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
 
     nnArrayTopOverallMatchRate = await wordAssoDb.NeuralNetwork.find(query)
     .lean()
@@ -2322,7 +2309,7 @@ async function loadBestNetworksDatabase(p) {
 
     console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
 
-    console.log(chalkBlue("TFE | LOADING " + randomUntestedPerInputsLimit + " UNTESTED NNs FROM DB ..."));
+    console.log(chalkLog("TFE | LOADING " + randomUntestedPerInputsLimit + " UNTESTED NNs FROM DB ..."));
 
     nnArrayRandomUntested = await wordAssoDb.NeuralNetwork.find(randomUntestedQuery)
     .lean()
@@ -2699,7 +2686,6 @@ function updateNetworkStats(params) {
     const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
     const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
     const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : false;
-    // const minTestCycles = params.minTestCycles || configuration.minTestCycles;
 
     const nnIds = Object.keys(params.networks);
 
