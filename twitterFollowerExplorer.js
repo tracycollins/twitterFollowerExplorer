@@ -1322,7 +1322,7 @@ function filesListFolder(params){
 
         const itemArray = [];
 
-        async.each(items, function(item, cb){
+        async.eachSeries(items, function(item, cb){
 
           itemArray.push(
             {
@@ -1877,7 +1877,7 @@ function loadCommandLineArgs(){
 
     const commandLineConfigKeys = Object.keys(commandLineConfig);
 
-    async.each(commandLineConfigKeys, function(arg, cb){
+    async.eachSeries(commandLineConfigKeys, function(arg, cb){
 
       if (arg == "evolveIterations"){
         configuration.evolve.iterations = commandLineConfig[arg];
@@ -3629,7 +3629,7 @@ function histogramIncomplete(histogram){
     if (histogram === undefined) { return resolve(true); }
     if (histogram == {}) { return resolve(true); }
 
-    async.each(Object.values(histogram), function(value, cb){
+    async.eachSeries(Object.values(histogram), function(value, cb){
 
       if (value == {}) { return cb(); }
       if ((value !== undefined) && (Object.keys(value).length > 0)) { return cb("valid"); }
@@ -3926,7 +3926,7 @@ function updatePreviousUserProps(params){
 
     const user = params.user;
 
-    async.each(USER_PROFILE_PROPERTY_ARRAY, function(userProp, cb){
+    async.eachSeries(USER_PROFILE_PROPERTY_ARRAY, function(userProp, cb){
 
       const prevUserProp = "previous" + _.upperFirst(userProp);
 
