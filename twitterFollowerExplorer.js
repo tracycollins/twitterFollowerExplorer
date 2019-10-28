@@ -60,6 +60,10 @@ const tcuChildName = MODULE_ID_PREFIX + "_TCU";
 const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
 const tcUtils = new ThreeceeUtilities(tcuChildName);
 
+const jsonPrint = tcUtils.jsonPrint;
+const msToTime = tcUtils.msToTime;
+const getTimeStamp = tcUtils.getTimeStamp;
+
 const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
 const nnTools = new NeuralNetworkTools(MODULE_ID_PREFIX + "_NNT");
 
@@ -211,7 +215,6 @@ const moment = require("moment");
 const HashMap = require("hashmap").HashMap;
 const pick = require("object.pick");
 const _ = require("lodash");
-const treeify = require("treeify");
 const NodeCache = require("node-cache");
 const merge = require("deepmerge");
 const btoa = require("btoa");
@@ -452,59 +455,6 @@ currentBestNetwork.testCycleHistory = [];
 //=========================================================================
 // MISC FUNCTIONS (own module?)
 //=========================================================================
-function jsonPrint(obj) {
-  if (obj) {
-    // return stringify(obj, { maxItems: Infinity });
-    return treeify.asTree(obj, true, true);
-  }
-  else {
-    return "UNDEFINED";
-  }
-}
-
-function msToTime(d) {
-
-  let duration = d;
-
-  let sign = 1;
-
-  if (duration < 0) {
-    sign = -1;
-    duration = -duration;
-  }
-
-  let seconds = parseInt((duration / 1000) % 60);
-  let minutes = parseInt((duration / (1000 * 60)) % 60);
-  let hours = parseInt((duration / (1000 * 60 * 60)) % 24);
-  let days = parseInt(duration / (1000 * 60 * 60 * 24));
-  days = (days < 10) ? "0" + days : days;
-  hours = (hours < 10) ? "0" + hours : hours;
-  minutes = (minutes < 10) ? "0" + minutes : minutes;
-  seconds = (seconds < 10) ? "0" + seconds : seconds;
-
-  if (sign > 0) return days + ":" + hours + ":" + minutes + ":" + seconds;
-  return "- " + days + ":" + hours + ":" + minutes + ":" + seconds;
-}
-
-function getTimeStamp(inputTime) {
-  let currentTimeStamp;
-  if (inputTime === undefined) {
-    currentTimeStamp = moment().format(compactDateTimeFormat);
-    return currentTimeStamp;
-  }
-  else if (moment.isMoment(inputTime)) {
-    currentTimeStamp = moment(inputTime).format(compactDateTimeFormat);
-    return currentTimeStamp;
-  }
-  else if (moment.isDate(new Date(inputTime))) {
-    currentTimeStamp = moment(new Date(inputTime)).format(compactDateTimeFormat);
-    return currentTimeStamp;
-  }
-  else {
-    currentTimeStamp = moment(parseInt(inputTime)).format(compactDateTimeFormat);
-    return currentTimeStamp;
-  }
-}
 
 function getElapsedTimeStamp(){
   statsObj.elapsedMS = moment().valueOf() - startTimeMoment.valueOf();
@@ -1010,7 +960,7 @@ function initCategorizedUserIdSet(){
               processUserQueue.push(user);
             }
 
-            if (configuration.testMode || configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
+            if (configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
 
               console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
                 + " | UIDs: " + userIdArray.length
@@ -3403,7 +3353,7 @@ function initUserDbUpdateQueueInterval(interval) {
 
           statsObj.users.dbUpdated += 1;
 
-          if (configuration.verbose || configuration.testMode || (statsObj.users.dbUpdated % 100 == 0)){
+          if (configuration.verbose || (statsObj.users.dbUpdated % 100 == 0)){
             console.log(chalkInfo("TFE | USER UPDATE"
               + " [UDUQ: " + userDbUpdateQueue.length + "]"
               + " [" + statsObj.users.dbUpdated + " UPDATED]"

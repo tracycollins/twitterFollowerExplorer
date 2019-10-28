@@ -43,7 +43,6 @@ configuration.keepaliveInterval = 30*ONE_SECOND;
 const os = require("os");
 const util = require("util");
 const moment = require("moment");
-const treeify = require("treeify");
 const debug = require("debug")("rnt");
 const debugCache = require("debug")("cache");
 const defaults = require("object.defaults");
@@ -72,56 +71,6 @@ const chalkError = chalk.bold.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 const chalkConnect = chalk.blue;
-
-const jsonPrint = function (obj){
-  if (obj) {
-    return treeify.asTree(obj, true, true);
-  }
-  else {
-    return "UNDEFINED";
-  }
-};
-
-function getTimeStamp(inputTime) {
-  let currentTimeStamp;
-
-  if (inputTime === undefined) {
-    currentTimeStamp = moment().format(defaultDateTimeFormat);
-    return currentTimeStamp;
-  }
-  else if (moment.isMoment(inputTime)) {
-    currentTimeStamp = moment(inputTime).format(defaultDateTimeFormat);
-    return currentTimeStamp;
-  }
-  else {
-    currentTimeStamp = moment(parseInt(inputTime)).format(defaultDateTimeFormat);
-    return currentTimeStamp;
-  }
-}
-
-function msToTime(d) {
-
-  let sign = 1;
-
-  let duration = d;
-
-  if (duration < 0) {
-    sign = -1;
-    duration = -duration;
-  }
-
-  let seconds = parseInt((duration / 1000) % 60);
-  let minutes = parseInt((duration / (1000 * 60)) % 60);
-  let hours = parseInt((duration / (1000 * 60 * 60)) % 24);
-  let days = parseInt(duration / (1000 * 60 * 60 * 24));
-  days = (days < 10) ? "0" + days : days;
-  hours = (hours < 10) ? "0" + hours : hours;
-  minutes = (minutes < 10) ? "0" + minutes : minutes;
-  seconds = (seconds < 10) ? "0" + seconds : seconds;
-
-  if (sign > 0) return days + ":" + hours + ":" + minutes + ":" + seconds;
-  return "- " + days + ":" + hours + ":" + minutes + ":" + seconds;
-}
 
 const networkDefaults = {};
 
@@ -238,7 +187,7 @@ statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
 statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
 
 statsObj.startTime = moment().valueOf();
-statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
+statsObj.elapsed = tcUtils.msToTime(moment().valueOf() - statsObj.startTime);
 
 function updateMemoryStats(){
   statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
@@ -247,11 +196,11 @@ function updateMemoryStats(){
 
 function showStats(options){
 
-  statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
+  statsObj.elapsed = tcUtils.msToTime(moment().valueOf() - statsObj.startTime);
   updateMemoryStats();
 
   if (options) {
-    console.log("RNT | = NT STATS\n" + jsonPrint(statsObj));
+    console.log("RNT | = NT STATS\n" + tcUtils.jsonPrint(statsObj));
   }
   else {
     console.log(chalk.gray("RNT | == * == S"
@@ -342,7 +291,7 @@ function initActivateNetworkInterval(interval){
             );
             await nnTools.printNetworkResults();
           }
-          else if (currentBestNetworkStats.meta.total % 100 === 0) {
+          else if (configuration.testMode || (currentBestNetworkStats.meta.total % 100 === 0)) {
             printNetworkObj("RNT | NETWORK STATS"
               + " | @" + messageObj.user.screenName 
               + " | CM: " + messageObj.user.category, currentBestNetworkStats, chalk.black
@@ -350,8 +299,7 @@ function initActivateNetworkInterval(interval){
             await nnTools.printNetworkResults();
           }
 
-          if (configuration.testMode 
-            || configuration.verbose
+          if (configuration.verbose
             || (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank)
           ) {
             console.log("RNT | BEST NN"
@@ -455,7 +403,7 @@ function printCategorizeHistory(){
     console.log(chalkInfo("RNT | CATGORIZE HISTORY"
       + " | S: " + moment(catStats.startTime).format(compactDateTimeFormat)
       + " E: " + moment(catStats.endTime).format(compactDateTimeFormat)
-      + " R: " + msToTime(catStats.endTime - catStats.startTime)
+      + " R: " + tcUtils.msToTime(catStats.endTime - catStats.startTime)
       + "\nRNT | BEST: " + catStats.bestNetwork.networkId
       + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SR"
       + " - MR: " + catStats.bestNetwork.matchRate.toFixed(2) + "% MR"
@@ -539,7 +487,7 @@ process.on("message", async function(m) {
       configuration.verbose = m.verbose || configuration.verbose;
       configuration.testMode = m.testMode || configuration.testMode;
 
-      console.log(chalkLog("RNT | INIT | INTERVAL: " + m.interval + "\n" + jsonPrint(configuration)));
+      console.log(chalkLog("RNT | INIT | INTERVAL: " + m.interval + "\n" + tcUtils.jsonPrint(configuration)));
 
       await initActivateNetworkInterval(m.interval);
 
@@ -573,7 +521,7 @@ process.on("message", async function(m) {
     case "LOAD_NORMALIZATION":
       await nnTools.setNormalization(m.normalization);
       console.log(chalkLog("RNT | LOAD_NORMALIZATION"
-        + "\n" + jsonPrint(m.normalization)
+        + "\n" + tcUtils.jsonPrint(m.normalization)
       ));
     break;
 
@@ -707,10 +655,10 @@ process.on("message", async function(m) {
 
       activateNetworkQueue.push(m.obj);
 
-      if (configuration.verbose || configuration.testMode) {
+      if (configuration.verbose) {
         console.log(chalkInfo("RNT | >>> ACTIVATE Q"
           + " [" + activateNetworkQueue.length + "]"
-          + " | " + getTimeStamp()
+          + " | " + tcUtils.getTimeStamp()
           + " | " + m.obj.user.nodeId
           + " | @" + m.obj.user.screenName
           + " | C: " + m.obj.user.category
@@ -738,9 +686,9 @@ process.on("message", async function(m) {
     default:
       console.log(chalkError("RNT | *** UNKNOWN OP ERROR"
         + " | " + m.op
-        + "\n" + jsonPrint(m)
+        + "\n" + tcUtils.jsonPrint(m)
       ));
-      console.error.bind(console, "RNT | *** UNKNOWN OP ERROR | " + m.op + "\n" + jsonPrint(m));
+      console.error.bind(console, "RNT | *** UNKNOWN OP ERROR | " + m.op + "\n" + tcUtils.jsonPrint(m));
   }
 });
 
@@ -764,7 +712,7 @@ function initStatsUpdate(cnf){
 
   statsUpdateInterval = setInterval(function () {
 
-    statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
+    statsObj.elapsed = tcUtils.msToTime(moment().valueOf() - statsObj.startTime);
     statsObj.timeStamp = moment().format(defaultDateTimeFormat);
 
     updateMemoryStats();
@@ -796,7 +744,7 @@ function initialize(cnf, callback){
 
   cnf.statsUpdateIntervalTime = process.env.RNT_STATS_UPDATE_INTERVAL || 1000;
 
-  console.log("RNT | CONFIG\n" + jsonPrint(cnf));
+  console.log("RNT | CONFIG\n" + tcUtils.jsonPrint(cnf));
 
   callback(null, cnf);
 }
@@ -808,11 +756,11 @@ setTimeout(function(){
     initializeBusy = false;
 
     if (err && (err.status !== 404)) {
-      console.log(chalkError("RNT | *** INIT ERROR\n" + jsonPrint(err)));
+      console.log(chalkError("RNT | *** INIT ERROR\n" + tcUtils.jsonPrint(err)));
       console.error.bind(console, "RNT | *** INIT ERROR: " + err);
       quit(err);
     }
-    console.log(chalkInfo("RNT | " + cnf.processName + " STARTED " + getTimeStamp() + "\n" + jsonPrint(cnf)));
+    console.log(chalkInfo("RNT | " + cnf.processName + " STARTED " + tcUtils.getTimeStamp() + "\n" + tcUtils.jsonPrint(cnf)));
     initStatsUpdate(cnf);
   });
 }, Number(ONE_SECOND));
