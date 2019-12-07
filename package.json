@@ -4,7 +4,7 @@
   "description": "twitter user follower explorer",
   "main": "twitterFollowerExplorer.js",
   "dependencies": {
-    "@google-cloud/language": "^3.6.2",
+    "@google-cloud/language": "^3.6.3",
     "@google/maps": "^1.0.2",
     "@slack/client": "^5.0.2",
     "@threeceelabs/histogram-parser": "^1.0.20",
@@ -54,7 +54,7 @@
     "minimatch": "^3.0.4",
     "moment": "^2.24.0",
     "mongodb": "^3.3.5",
-    "mongoose": "^5.7.13",
+    "mongoose": "^5.7.14",
     "mongoose-paginate": "^5.0.3",
     "neataptic": "^1.4.7",
     "node-cache": "^5.0.2",

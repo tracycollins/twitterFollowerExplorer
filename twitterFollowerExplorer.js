@@ -2229,7 +2229,7 @@ async function loadBestNetworksDatabase(p) {
     if (minTestCycles) {
       query = {};
       query.$and = [
-        { networkTechnology: "neataptic" },
+        // { networkTechnology: "neataptic" },
         { inputsId: inputsId },
         { overallMatchRate: { "$gte": globalMinSuccessRate } }
         // { testCycles: { "$gte": minTestCycles } }
@@ -2239,7 +2239,7 @@ async function loadBestNetworksDatabase(p) {
     const randomUntestedQuery = {};
 
     randomUntestedQuery.$and = [
-      { networkTechnology: "neataptic" },
+      // { networkTechnology: "neataptic" },
       { inputsId: inputsId },
       { successRate: { "$gte": globalMinSuccessRate } },
       { testCycles: { "$lte": minTestCycles } }
