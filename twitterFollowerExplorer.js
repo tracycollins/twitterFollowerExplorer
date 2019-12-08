@@ -16,7 +16,7 @@ const FETCH_COUNT = 200;
 
 const TEST_TWEET_FETCH_COUNT = 11;
 
-const TEST_MODE_NUM_NN = 5;
+const TEST_MODE_NUM_NN = 10;
 const TEST_FETCH_COUNT = 100;
 const TEST_TOTAL_FETCH = 500;
 
@@ -2013,7 +2013,16 @@ async function loadNetworkFile(params){
     return;
   }
 
+  if (nnObj.evolve.options.networkTechnology && nnObj.evolve.options.networkTechnology !== nnObj.networkTechnology) {
+    console.log(chalkAlert(MODULE_ID_PREFIX
+      + " | !!! INCORRECT NETWORK TECH | CHANGE " + nnObj.networkTechnology + " -> " + nnObj.evolve.options.networkTechnology
+      + " | " + nnObj.networkId 
+    ));
+    nnObj.networkTechnology = nnObj.evolve.options.networkTechnology;
+  } 
+
   try{
+
     const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
 
     if (!inputsIdSet.has(networkObj.inputsId)){
