@@ -2021,6 +2021,14 @@ async function loadNetworkFile(params){
     nnObj.networkTechnology = nnObj.evolve.options.networkTechnology;
   } 
 
+  if (nnObj.testCycleHistory && nnObj.testCycleHistory !== undefined && nnObj.testCycleHistory.length > 0) {
+    nnObj.previousRank = nnObj.testCycleHistory[nnObj.testCycleHistory.length-1].rank;
+    console.log(chalkAlert(MODULE_ID_PREFIX
+      + " | PREV RANK " + nnObj.previousRank
+      + " | " + nnObj.networkId 
+    ));
+  } 
+
   try{
 
     const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
