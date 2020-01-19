@@ -268,6 +268,7 @@ function initActivateNetworkInterval(interval){
         activateNetworkObj = activateNetworkQueue.shift();
 
         messageObj.user = activateNetworkObj.user;
+        
         if (!messageObj.user.friends || (messageObj.user.friends === undefined)){
           console.log(chalkLog("RNT | !!! NO USER FRIENDS | @" + messageObj.user.screenName));
           messageObj.user.friends = [];
