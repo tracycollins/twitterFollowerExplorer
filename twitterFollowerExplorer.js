@@ -9,6 +9,7 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const TEST_MODE = false; // applies only to parent
 const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
 
+const DEFAULT_USER_PROFILE_ONLY_FLAG = false;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
 
@@ -167,12 +168,6 @@ const bestInputsSet = new Set();
 const skipLoadNetworkSet = new Set();
 const userTweetFetchSet = new Set();
 
-const globalHistograms = {};
-
-DEFAULT_INPUT_TYPES.forEach(function(type){
-  globalHistograms[type] = {};
-});
-
 let configuration = {};
 configuration.offlineMode = false;
 configuration.verbose = false;
@@ -193,6 +188,7 @@ configuration.bestNetworkIncrementalUpdate = DEFAULT_BEST_INCREMENTAL_UPDATE;
 configuration.archiveNetworkOnInputsMiss = DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
 configuration.minWordLength = DEFAULT_MIN_WORD_LENGTH;
 configuration.minTestCycles = DEFAULT_MIN_TEST_CYCLES;
+configuration.userProfileOnlyFlag = DEFAULT_USER_PROFILE_ONLY_FLAG;
 configuration.testMode = TEST_MODE;
 configuration.testFetchTweetsMode = TEST_FETCH_TWEETS_MODE;
 configuration.globalTestMode = GLOBAL_TEST_MODE;
@@ -1384,6 +1380,16 @@ async function loadConfigFile(params) {
     }
 
     console.log(chalkInfo(MODULE_ID_PREFIX + " | LOADED CONFIG FILE: " + params.file + "\n" + jsonPrint(loadedConfigObj)));
+
+    if (loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG !== undefined) {
+      console.log("TFE | LOADED TFE_USER_PROFILE_ONLY_FLAG: " + loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG);
+      if ((loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG == true) || (loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG == "true")) {
+        newConfiguration.userProfileOnlyFlag = true;
+      }
+      if ((loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG == false) || (loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG == "false")) {
+        newConfiguration.userProfileOnlyFlag = false;
+      }
+    }
 
     if (loadedConfigObj.TFE_TEST_MODE !== undefined) {
       console.log("TFE | LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
@@ -2608,6 +2614,8 @@ async function initNetworks(){
     console.log(chalkAlert("TFE | +++ NETWORKS INITIALIZED"));
 
     await randomNetworkTree.send({ op: "SET_BINARY_MODE", binaryMode: true });
+    await randomNetworkTree.send({ op: "SET_USER_PROFILE_ONLY_FLAG", userProfileOnlyFlag: configuration.userProfileOnlyFlag });
+
     console.log(chalkBlue("TFE | SENT BINARY MODE > RNT"));
 
     await initMaxInputHashMap();
@@ -3424,7 +3432,8 @@ function initRandomNetworkTreeChild() {
     const rntInitParams = { 
       op: "INIT", 
       childId: RNT_CHILD_ID, 
-      interval: RANDOM_NETWORK_TREE_INTERVAL, 
+      interval: RANDOM_NETWORK_TREE_INTERVAL,
+      userProfileOnlyFlag: configuration.userProfileOnlyFlag,
       testMode: configuration.testMode, 
       verbose: configuration.verbose 
     };

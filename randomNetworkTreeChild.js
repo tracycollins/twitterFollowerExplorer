@@ -18,6 +18,7 @@ const DEFAULT_INPUT_TYPES = [
 
 DEFAULT_INPUT_TYPES.sort();
 
+const DEFAULT_USER_PROFILE_ONLY_FLAG = false;
 const DEFAULT_BINARY_MODE = true;
 const ONE_SECOND = Number(1000);
 const MAX_Q_SIZE = 2000;
@@ -35,6 +36,7 @@ let statsUpdateInterval;
 
 const configuration = {};
 configuration.binaryMode = DEFAULT_BINARY_MODE;
+configuration.userProfileOnlyFlag = DEFAULT_USER_PROFILE_ONLY_FLAG;
 configuration.verbose = false;
 configuration.globalTestMode = false;
 configuration.testMode = false; // 
@@ -276,7 +278,10 @@ function initActivateNetworkInterval(interval){
 
         try {
 
-          activateNetworkResults = await nnTools.activate({ user: activateNetworkObj.user, convertDatumFlag: true });
+          activateNetworkResults = await nnTools.activate({ 
+            user: activateNetworkObj.user,
+            convertDatumFlag: true
+          });
 
           currentBestNetworkStats = await nnTools.updateNetworkStats({
             sortBy: "matchRate",
@@ -487,6 +492,7 @@ process.on("message", async function(m) {
 
       configuration.verbose = m.verbose || configuration.verbose;
       configuration.testMode = m.testMode || configuration.testMode;
+      configuration.userProfileOnlyFlag = m.userProfileOnlyFlag || configuration.userProfileOnlyFlag;
 
       console.log(chalkLog("RNT | INIT | INTERVAL: " + m.interval + "\n" + tcUtils.jsonPrint(configuration)));
 
@@ -503,6 +509,14 @@ process.on("message", async function(m) {
     case "VERBOSE":
       console.log(chalkAlert("RNT | SET VERBOSE: " + m.verbose));
       configuration.verbose = m.verbose;
+    break;
+
+    case "SET_USER_PROFILE_ONLY_FLAG":
+      await nnTools.setUserProfileOnlyFlag(m.userProfileOnlyFlag);
+      configuration.userProfileOnlyFlag = m.userProfileOnlyFlag;
+      console.log(chalkLog("RNT | SET_USER_PROFILE_ONLY_FLAG"
+        + " | " + m.userProfileOnlyFlag
+      ));
     break;
 
     case "SET_BINARY_MODE":
