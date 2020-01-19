@@ -2304,6 +2304,15 @@ async function loadBestNetworksDatabase(p) {
   for(const nnObj of nnArray){
 
     try{
+
+      if (nnObj.testCycleHistory && nnObj.testCycleHistory !== undefined && nnObj.testCycleHistory.length > 0) {
+        nnObj.previousRank = nnObj.testCycleHistory[nnObj.testCycleHistory.length-1].rank;
+        console.log(chalkAlert(MODULE_ID_PREFIX
+          + " | PREV RANK " + nnObj.previousRank
+          + " | " + nnObj.networkId 
+        ));
+      } 
+
       networkObj = await nnTools.convertNetwork({networkObj: nnObj});
     }
     catch(e){
@@ -2332,6 +2341,8 @@ async function loadBestNetworksDatabase(p) {
 
         console.log(chalk.bold.blue("TFE | +++ BEST DB NN"
           + " | " + bestNetwork.networkId
+          + " | RANK: " + bestNetwork.rank
+          + " | PREV RANK: " + bestNetwork.previousRank
           + " | INPUT ID: " + bestNetwork.inputsId
           + " | INs: " + bestNetwork.numInputs
           + " | SR: " + bestNetwork.successRate.toFixed(2) + "%"
@@ -2346,6 +2357,8 @@ async function loadBestNetworksDatabase(p) {
 
       console.log(chalkInfo("TFE | ADD NN --> HM"
         + " | " + networkObj.networkId
+        + " | RANK: " + networkObj.rank
+        + " | PREV RANK: " + networkObj.previousRank
         + " | INPUT ID: " + networkObj.inputsId
         + " | INs: " + networkObj.numInputs
         + " | SR: " + networkObj.successRate.toFixed(2) + "%"
