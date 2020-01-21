@@ -2,6 +2,8 @@ const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 const CHILD_PREFIX = "tfe_node";
 
+const bestNetworkIdArrayFile = "bestNetworkIdArray.json";
+
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
@@ -2029,7 +2031,7 @@ async function loadNetworkFile(params){
 
   if (nnObj.testCycleHistory && nnObj.testCycleHistory !== undefined && nnObj.testCycleHistory.length > 0) {
     nnObj.previousRank = nnObj.testCycleHistory[nnObj.testCycleHistory.length-1].rank;
-    console.log(chalkAlert(MODULE_ID_PREFIX
+    console.log(chalkLog(MODULE_ID_PREFIX
       + " | PREV RANK " + nnObj.previousRank
       + " | " + nnObj.networkId 
     ));
@@ -2087,7 +2089,7 @@ async function loadNetworkFile(params){
         MODULE_ID_PREFIX 
           + " | +++ NN"
           + " [" + bestNetworkHashMap.size + " HM]"
-          + " [" + skipLoadNetworkSet.size + " SKIPPED]",
+          + " [" + skipLoadNetworkSet.size + " SKP]",
         networkObj,
         chalkGreen
       );
@@ -2100,7 +2102,7 @@ async function loadNetworkFile(params){
         MODULE_ID_PREFIX 
           + " | ... NN"
           + " [" + bestNetworkHashMap.size + " HM]"
-          + " [" + skipLoadNetworkSet.size + " SKIPPED]",
+          + " [" + skipLoadNetworkSet.size + " SKP]",
         networkObj,
         chalk.gray
       );
@@ -2313,7 +2315,7 @@ async function loadBestNetworksDatabase(p) {
 
       if (nnObj.testCycleHistory && nnObj.testCycleHistory !== undefined && nnObj.testCycleHistory.length > 0) {
         nnObj.previousRank = nnObj.testCycleHistory[nnObj.testCycleHistory.length-1].rank;
-        console.log(chalkAlert(MODULE_ID_PREFIX
+        console.log(chalkLog(MODULE_ID_PREFIX
           + " | PREV RANK " + nnObj.previousRank
           + " | " + nnObj.networkId 
         ));
@@ -2630,9 +2632,14 @@ function saveNetworkHashMap(params) {
 
     statsObj.status = "SAVE NN HASHMAP";
 
-    const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
 
     const nnIds = bestNetworkHashMap.keys();
+
+    const configFolder = (hostname == PRIMARY_HOST) ? configDefaultFolder : configHostFolder;
+
+    saveFileQueue.push({folder: configFolder, file: bestNetworkIdArrayFile, obj: nnIds});
+
+    const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
 
     console.log(chalkNetwork("TFE | UPDATING NNs IN FOLDER " + folder));
 
@@ -2656,6 +2663,7 @@ function saveNetworkHashMap(params) {
 
     }, function(err) {
       if (err) { return reject(err); }
+
       console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ saveNetworkHashMap COMPLETE"));
       resolve();
     });
