@@ -1,22 +1,23 @@
 /*jslint node: true */
 // "use strict";
 
-const DEFAULT_INPUT_TYPES = [
-  "emoji",
-  "friends",
-  "hashtags",  
-  "images", 
-  "locations", 
-  "media", 
-  "mentions", 
-  "places", 
-  "sentiment", 
-  "urls", 
-  "userMentions", 
-  "words"
-];
+// const DEFAULT_INPUT_TYPES = [
+//   "emoji",
+//   "friends",
+//   "hashtags",  
+//   "images", 
+//   "locations", 
+//   "media", 
+//   "mentions",
+//   "ngrams",
+//   "places", 
+//   "sentiment", 
+//   "urls", 
+//   "userMentions", 
+//   "words"
+// ];
 
-DEFAULT_INPUT_TYPES.sort();
+// DEFAULT_INPUT_TYPES.sort();
 
 const DEFAULT_USER_PROFILE_ONLY_FLAG = false;
 const DEFAULT_BINARY_MODE = true;

@@ -156,6 +156,7 @@ const DEFAULT_INPUT_TYPES = [
   "locations", 
   "media", 
   "mentions", 
+  "ngrams", 
   "places", 
   "sentiment", 
   "urls", 
@@ -3582,6 +3583,7 @@ function processTweetObj(params){
           case "locations":
           case "images":
           case "media":
+          case "ngrams":
           case "emoji":
           case "places":
             entity = entityObj.nodeId;
@@ -3716,7 +3718,7 @@ function processUserTweetArray(params){
 
         try {
 
-          const tweetObj = await tweetServerController.createStreamTweet(tscParams);
+          const tweetObj = await tweetServerController.createStreamTweetAsync(tscParams);
 
           if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { user.tweetHistograms = {}; }
 
