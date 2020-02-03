@@ -1,6 +1,4 @@
-/*jslint node: true */
-// "use strict";
-
+const MODULE_ID_PREFIX = "RNT";
 // const DEFAULT_INPUT_TYPES = [
 //   "emoji",
 //   "friends",
@@ -49,6 +47,8 @@ const moment = require("moment");
 const debug = require("debug")("rnt");
 const debugCache = require("debug")("cache");
 const defaults = require("object.defaults");
+
+global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 
 const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
 const nnTools = new NeuralNetworkTools("RNT_NNT");
@@ -191,6 +191,54 @@ statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
 
 statsObj.startTime = moment().valueOf();
 statsObj.elapsed = tcUtils.msToTime(moment().valueOf() - statsObj.startTime);
+
+//=========================================================================
+// MONGO DB
+//=========================================================================
+
+async function connectDb(){
+
+  try {
+
+    statsObj.status = "CONNECTING MONGO DB";
+
+    console.log(chalkLog(MODULE_ID_PREFIX + " | CONNECT MONGO DB ..."));
+
+    const db = await global.wordAssoDb.connect(MODULE_ID_PREFIX + "_" + process.pid);
+
+    db.on("error", async function(err){
+      statsObj.status = "MONGO ERROR";
+      statsObj.dbConnectionReady = false;
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR"));
+      db.close();
+      quit({cause: "MONGO DB ERROR: " + err});
+    });
+
+    db.on("close", async function(err){
+      statsObj.status = "MONGO CLOSED";
+      statsObj.dbConnectionReady = false;
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED"));
+      quit({cause: "MONGO DB CLOSED: " + err});
+    });
+
+    db.on("disconnected", async function(){
+      statsObj.status = "MONGO DISCONNECTED";
+      statsObj.dbConnectionReady = false;
+      console.log(chalkAlert(MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED"));
+      quit({cause: "MONGO DB DISCONNECTED"});
+    });
+
+    console.log(chalk.green(MODULE_ID_PREFIX + " | MONGOOSE DEFAULT CONNECTION OPEN"));
+
+    statsObj.dbConnectionReady = true;
+
+    return db;
+  }
+  catch(err){
+    console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECT ERROR: " + err));
+    throw err;
+  }
+}
 
 function updateMemoryStats(){
   statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
@@ -743,7 +791,7 @@ function initStatsUpdate(cnf){
   }, cnf.statsUpdateIntervalTime);
 }
 
-function initialize(cnf, callback){
+async function initialize(cnf){
 
   initializeBusy = true;
 
@@ -752,7 +800,6 @@ function initialize(cnf, callback){
   }
 
   cnf.processName = process.env.RNT_PROCESS_NAME || "randomNetworkTree";
-
   cnf.verbose = process.env.RNT_VERBOSE_MODE || configuration.verbose;
   cnf.globalTestMode = process.env.RNT_GLOBAL_TEST_MODE || false;
   cnf.testMode = process.env.RNT_TEST_MODE || configuration.testMode;
@@ -762,21 +809,29 @@ function initialize(cnf, callback){
 
   console.log("RNT | CONFIG\n" + tcUtils.jsonPrint(cnf));
 
-  callback(null, cnf);
+  await connectDb();
+  return cnf;
 }
 
-setTimeout(function(){
+setTimeout(async function(){
 
-  initialize(configuration, function(err, cnf){
-
-    initializeBusy = false;
-
+  let cnf;
+  
+  try{
+    cnf = await initialize(configuration);
+  }
+  catch(err){
     if (err && (err.status !== 404)) {
       console.log(chalkError("RNT | *** INIT ERROR\n" + tcUtils.jsonPrint(err)));
       console.error.bind(console, "RNT | *** INIT ERROR: " + err);
       quit(err);
     }
-    console.log(chalkInfo("RNT | " + cnf.processName + " STARTED " + tcUtils.getTimeStamp() + "\n" + tcUtils.jsonPrint(cnf)));
-    initStatsUpdate(cnf);
-  });
+    console.log(chalkError(MODULE_ID_PREFIX + " | " + cnf.processName + " STARTED " + tcUtils.getTimeStamp() + "\n" + tcUtils.jsonPrint(cnf)));
+  }
+
+  initializeBusy = false;
+
+  console.log(chalkInfo(MODULE_ID_PREFIX + " | " + cnf.processName + " STARTED " + tcUtils.getTimeStamp() + "\n" + tcUtils.jsonPrint(cnf)));
+  initStatsUpdate(cnf);
+
 }, Number(ONE_SECOND));

@@ -56,7 +56,7 @@ hostname = hostname.replace(/word/g, "google");
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
-const wordAssoDb = require("@threeceelabs/mongoose-twitter");
+global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 let dbConnection;
 
 const tcuChildName = MODULE_ID_PREFIX + "_TCU";
@@ -881,7 +881,7 @@ function updateDbNetwork(params) {
       setDefaultsOnInsert: true,
     };
 
-    wordAssoDb.NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
+    global.wordAssoDb.NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
 
       if (err) {
         console.log(chalkError("*** updateDbNetwork | NN FIND ONE ERROR: " + err));
@@ -1135,7 +1135,7 @@ async function connectDb(){
 
     console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CONNECT MONGO DB ..."));
 
-    const db = await wordAssoDb.connect(MODULE_ID_PREFIX + "_" + process.pid);
+    const db = await global.wordAssoDb.connect(MODULE_ID_PREFIX + "_" + process.pid);
 
     db.on("error", async function(err){
       statsObj.status = "MONGO ERROR";
@@ -2278,7 +2278,7 @@ async function loadBestNetworksDatabase(p) {
 
     console.log(chalkLog("TFE | ... LOADING " + networkDatabaseLoadPerInputsLimit + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
 
-    nnArrayTopOverallMatchRate = await wordAssoDb.NeuralNetwork.find(query)
+    nnArrayTopOverallMatchRate = await global.wordAssoDb.NeuralNetwork.find(query)
     .lean()
     .sort({"overallMatchRate": -1})
     .limit(networkDatabaseLoadPerInputsLimit);
@@ -2287,7 +2287,7 @@ async function loadBestNetworksDatabase(p) {
 
     console.log(chalkLog("TFE | LOADING " + randomUntestedPerInputsLimit + " UNTESTED NNs FROM DB ..."));
 
-    nnArrayRandomUntested = await wordAssoDb.NeuralNetwork.find(randomUntestedQuery)
+    nnArrayRandomUntested = await global.wordAssoDb.NeuralNetwork.find(randomUntestedQuery)
     .lean()
     .sort({"overallMatchRate": -1})
     .limit(randomUntestedPerInputsLimit);
@@ -2763,7 +2763,7 @@ function updateNetworkStats(params) {
 
         let chalkVal = chalkLog;
 
-        const networkObjArray = await wordAssoDb.NeuralNetwork.
+        const networkObjArray = await global.wordAssoDb.NeuralNetwork.
           find(query).
           lean().
           sort({"overallMatchRate": -1}).
@@ -3946,7 +3946,7 @@ async function processUser(params) {
       ));
 
       userTweetFetchSet.delete(user.nodeId);
-      await wordAssoDb.User.deleteOne({ "nodeId": user.nodeId });
+      await global.wordAssoDb.User.deleteOne({ "nodeId": user.nodeId });
 
       return;
     }
@@ -4105,7 +4105,7 @@ async function initProcessUserQueueInterval(interval) {
           return;
         }
 
-        const u = await wordAssoDb.User.findOne({nodeId: mObj.nodeId});
+        const u = await global.wordAssoDb.User.findOne({nodeId: mObj.nodeId});
 
         if (!u) {
           console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
