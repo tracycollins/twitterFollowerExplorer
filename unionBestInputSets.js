@@ -1,4 +1,5 @@
- /*jslint node: true */
+const MODULE_NAME = "unionBestInputSets";
+const MODULE_ID_PREFIX = "UBI";
 
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
@@ -11,6 +12,7 @@ const STATS_UPDATE_INTERVAL = ONE_MINUTE;
 
 const DEFAULT_INPUTS_FILE_PREFIX = "inputs";
 const SAVE_FILE_QUEUE_INTERVAL = 5*ONE_SECOND;
+const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
 
 let configuration = {};
 
@@ -34,12 +36,12 @@ hostname = hostname.replace(/word0-instance-1/g, "google");
 hostname = hostname.replace(/word-1/g, "google");
 hostname = hostname.replace(/word/g, "google");
 
+const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
+
 let DROPBOX_ROOT_FOLDER;
 
 const defaultUnionInputsConfigFile = "default_unionInputsConfig.json";
-const defaultNetworkInputsConfigFile = "default_networkInputsConfig.json";
 const defaultBestInputsConfigFile = "default_bestInputsConfig.json";
-const hostBestInputsConfigFile = hostname + "_bestInputsConfig.json";
 
 if (hostname === "google") {
   DROPBOX_ROOT_FOLDER = "/home/tc/Dropbox/Apps/wordAssociation";
@@ -50,18 +52,8 @@ else {
 
 const moment = require("moment");
 
-let prevHostConfigFileModifiedMoment = moment("2010-01-01");
-let prevDefaultConfigFileModifiedMoment = moment("2010-01-01");
-let prevConfigFileModifiedMoment = moment("2010-01-01");
-
 let defaultConfiguration = {}; // general configuration for UBI
 let hostConfiguration = {}; // host-specific configuration for UBI
-
-const MODULE_NAME = "unionBestInputSets";
-const MODULE_ID_PREFIX = "UBI";
-const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
-
-const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
 
 const DEFAULT_INPUT_TYPES = [
   "emoji", 
@@ -80,40 +72,107 @@ const DEFAULT_INPUT_TYPES = [
 
 DEFAULT_INPUT_TYPES.sort();
 
+const tcuChildName = MODULE_ID_PREFIX + "_TCU";
+const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
+const tcUtils = new ThreeceeUtilities(tcuChildName);
+const jsonPrint = tcUtils.jsonPrint;
+const msToTime = tcUtils.msToTime;
+const getTimeStamp = tcUtils.getTimeStamp;
+
 global.dbConnection = false;
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
 mongoose.set("useFindAndModify", false);
 
-const wordAssoDb = require("@threeceelabs/mongoose-twitter");
-
-const networkInputsModel = require("@threeceelabs/mongoose-twitter/models/networkInputs.server.model");
-let NetworkInputs;
+global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
+let dbConnection;
 
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
-
-const OFFLINE_MODE = false;
 
 const merge = require("deepmerge");
 const util = require("util");
 const _ = require("lodash");
-const treeify = require("treeify");
-
-const JSONStream = require("JSONStream");
-const jsonParse = require("safe-json-parse");
 const async = require("async");
 const debug = require("debug")("ubi");
-
+const NodeCache = require("node-cache");
 const deepcopy = require("deep-copy");
-const fs = require("fs");
-const table = require("text-table");
+const path = require("path");
 
 const chalk = require("chalk");
 const chalkBlue = chalk.blue;
+const chalkBlueBold = chalk.bold.blue;
+const chalkGreen = chalk.green;
 const chalkError = chalk.bold.red;
 const chalkAlert = chalk.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
+
+const watch = require("watch");
+
+const watchOptions = {
+  ignoreDotFiles: true,
+  ignoreUnreadableDir: true,
+  ignoreNotPermitted: true,
+}
+
+async function initWatchConfig(){
+
+  statsObj.status = "INIT WATCH CONFIG";
+
+  console.log(chalkLog(MODULE_ID_PREFIX + " | ... INIT WATCH"));
+
+  const loadConfig = async function(f){
+
+    try{
+
+      console.log(chalkInfo(MODULE_ID_PREFIX + " | +++ FILE CREATED or CHANGED | " + getTimeStamp() + " | " + f));
+
+      if (f.endsWith("unionBestInputSetsConfig.json")){
+
+        await loadAllConfigFiles();
+
+        const configArgs = Object.keys(configuration);
+
+        for (const arg of configArgs){
+          if (_.isObject(configuration[arg])) {
+            console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + "\n" + jsonPrint(configuration[arg]));
+          }
+          else {
+            console.log(MODULE_ID_PREFIX + " | _FINAL CONFIG | " + arg + ": " + configuration[arg]);
+          }
+        }
+      }
+
+    }
+    catch(err){
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** LOAD ALL CONFIGS ON CREATE ERROR: " + err));
+    }
+  }
+
+  watch.createMonitor(configDefaultFolder, watchOptions, function (monitor) {
+
+    monitor.on("created", loadConfig);
+
+    monitor.on("changed", loadConfig);
+
+    monitor.on("removed", function (f) {
+      console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
+    });
+  });
+
+  watch.createMonitor(configHostFolder, watchOptions, function (monitor) {
+
+    monitor.on("created", loadConfig);
+
+    monitor.on("changed", loadConfig);
+
+    monitor.on("removed", function (f) {
+      console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
+    });
+  });
+
+  return;
+}
 
 //=========================================================================
 // SLACK
@@ -387,7 +446,6 @@ function initSlackRtmClient(){
 
 const saveFileQueue = [];
 let saveFileQueueInterval;
-let saveFileBusy = false;
 
 const newInputsObj = {};
 newInputsObj.inputsId = ""; // will be generated after number of inputs determined
@@ -401,163 +459,28 @@ let stdin;
 
 const inputsIdSet = new Set();
 
-const fetch = require("isomorphic-fetch");
-
-function msToTime(d) {
-
-  let duration = d;
-
-  let sign = 1;
-
-  if (duration < 0) {
-    sign = -1;
-    duration = -duration;
-  }
-
-  let seconds = parseInt((duration / 1000) % 60);
-  let minutes = parseInt((duration / (1000 * 60)) % 60);
-  let hours = parseInt((duration / (1000 * 60 * 60)) % 24);
-  let days = parseInt(duration / (1000 * 60 * 60 * 24));
-  days = (days < 10) ? "0" + days : days;
-  hours = (hours < 10) ? "0" + hours : hours;
-  minutes = (minutes < 10) ? "0" + minutes : minutes;
-  seconds = (seconds < 10) ? "0" + seconds : seconds;
-
-  if (sign > 0) return days + ":" + hours + ":" + minutes + ":" + seconds;
-  return "- " + days + ":" + hours + ":" + minutes + ":" + seconds;
-}
-
 // ==================================================================
 // DROPBOX
 // ==================================================================
-const Dropbox = require("dropbox").Dropbox;
-
 const DROPBOX_MAX_FILE_UPLOAD = 140 * ONE_MEGABYTE; // bytes
 
 configuration.dropboxMaxFileUpload = DROPBOX_MAX_FILE_UPLOAD;
 
 configuration.DROPBOX = {};
 
-configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN = process.env.DROPBOX_WORD_ASSO_ACCESS_TOKEN;
-configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_KEY = process.env.DROPBOX_WORD_ASSO_APP_KEY;
-configuration.DROPBOX.DROPBOX_WORD_ASSO_APP_SECRET = process.env.DROPBOX_WORD_ASSO_APP_SECRET;
 configuration.DROPBOX.DROPBOX_CONFIG_FILE = process.env.DROPBOX_CONFIG_FILE || MODULE_NAME + "Config.json";
 configuration.DROPBOX.DROPBOX_STATS_FILE = process.env.DROPBOX_STATS_FILE || MODULE_NAME + "Stats.json";
 
-const dropboxConfigDefaultFolder = "/config/utility/default";
-const dropboxConfigHostFolder = "/config/utility/" + hostname;
+const configDefaultFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility/default");
+const configHostFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility",hostname);
 
-const defaultInputsFolder = dropboxConfigDefaultFolder + "/inputs";
-const localInputsFolder = dropboxConfigHostFolder + "/inputs";
+const configDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
+const configHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 
-const dropboxConfigDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
-const dropboxConfigHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
+const defaultInputsFolder = path.join(configDefaultFolder, "inputs");
 
-let defaultHistogramsFolder;
-
-if (hostname === PRIMARY_HOST && hostname === "google"){ 
- defaultHistogramsFolder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
-}
-else if (hostname !== PRIMARY_HOST && hostname === "google"){ 
- defaultHistogramsFolder = "/home/tc/Dropbox/Apps/wordAssociation/config/utility/google/histograms";
-}
-else if (hostname === PRIMARY_HOST && hostname !== "google"){ 
- defaultHistogramsFolder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/histograms";
-}
-else {
- defaultHistogramsFolder = "/Users/tc/Dropbox/Apps/wordAssociation/config/utility/" + hostname + "/histograms";
-}
-
-const statsFolder = "/stats/" + hostname;
+const statsFolder = path.join(DROPBOX_ROOT_FOLDER, "stats",hostname);
 const statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
-
-
-const dropboxRemoteClient = new Dropbox({ 
-  accessToken: configuration.DROPBOX.DROPBOX_WORD_ASSO_ACCESS_TOKEN,
-  fetch: fetch
-});
-
-function filesListFolderLocal(options){
-  return new Promise(function(resolve, reject) {
-
-    const fullPath = DROPBOX_ROOT_FOLDER + options.path;
-
-    fs.readdir(fullPath, function(err, items){
-      if (err) {
-        reject(err);
-      }
-      else {
-
-        const itemArray = [];
-
-        async.each(items, function(item, cb){
-
-          itemArray.push(
-            {
-              name: item, 
-              client_modified: false,
-              content_hash: false,
-              path_display: fullPath + "/" + item
-            }
-          );
-          cb();
-
-        }, function(err){
-
-          if (err) {
-            return reject(err);
-          }
-          const response = {
-            cursor: false,
-            has_more: false,
-            entries: itemArray
-          };
-
-          resolve(response);
-        });
-        }
-    });
-  });
-}
-
-function filesGetMetadataLocal(options){
-
-  return new Promise(function(resolve, reject) {
-
-    const fullPath = DROPBOX_ROOT_FOLDER + options.path;
-
-    fs.stat(fullPath, function(err, stats){
-      if (err) {
-        reject(err);
-      }
-      else {
-        const response = {
-          client_modified: stats.mtimeMs
-        };
-        
-        resolve(response);
-      }
-    });
-  });
-}
-
-const dropboxLocalClient = { // offline mode
-  filesListFolder: filesListFolderLocal,
-  filesUpload: function(){},
-  filesDownload: function(){},
-  filesGetMetadata: filesGetMetadataLocal,
-  filesDelete: function(){}
-};
-
-let dropboxClient;
-
-if (configuration.offlineMode) {
-  dropboxClient = dropboxLocalClient;
-}
-else {
-  dropboxClient = dropboxRemoteClient;
-}
-
 
 const statsObj = {};
 statsObj.hostname = hostname;
@@ -585,15 +508,6 @@ DEFAULT_INPUT_TYPES.forEach(function(type){
 });
 
 let statsUpdateInterval;
-
-const jsonPrint = function (obj){
-  if (obj) {
-    return treeify.asTree(obj, true, true);
-  }
-  else {
-    return "UNDEFINED";
-  }
-};
 
 const cla = require("command-line-args");
 
@@ -670,48 +584,42 @@ function printInputsObj(title, iObj) {
   ));
 }
 
+let netInputsIndex = 0;
 
-function unionInputSets(params) {
+async function unionInputSets(params) {
 
-  return new Promise(function(resolve, reject){
+  console.log(chalkLog("UBI | UNION INPUT SET PAIR\n" + jsonPrint(params)));
 
-    console.log(chalkLog("UBI | UNION INPUT SETS\n" + jsonPrint(params)));
+  const newInputsObj = {};
 
-    const newInputsObj = {};
+  newInputsObj.meta = {};
+  newInputsObj.meta.parents = [];
+  newInputsObj.meta.type = {};
+  newInputsObj.meta.numInputs = 0;
+  newInputsObj.inputs = {};
+  newInputsObj.inputsMinimum = {};
 
-    newInputsObj.meta = {};
-    newInputsObj.meta.parents = [];
-    newInputsObj.meta.type = {};
-    newInputsObj.meta.numInputs = 0;
-    newInputsObj.inputs = {};
-    newInputsObj.inputsMinimum = {};
+  for(const inputsId of params.parents) {
 
-    async.eachSeries(params.parents, async function(inputsId){
+    console.log(chalkInfo("UBI | UNION INPUT SET PAIR PARENT: " + inputsId));
 
-      console.log(chalkLog("UBI | UNION INPUT SET PARENT: " + inputsId));
+    let inputsObj = {};
 
-      let inputsObj = {};
+    try{
 
-      try{
-
-        inputsObj = await NetworkInputs.findOne({inputsId: inputsId}).lean(true).exec();
-        
-        if (inputsObj) {
-          console.log(chalkLog("UBI | UNION INPUT SET FOUND\n" + jsonPrint(inputsObj.meta)));
-        }
-        else{
-          console.log(chalkAlert("UBI | UNION INPUT SET NOT FOUND: " + inputsId));
-          return(new Error("INPUT NOT FOUND: " + inputsId));
-        }
+      inputsObj = await global.wordAssoDb.NetworkInputs.findOne({inputsId: inputsId}).lean(true).exec();
+      
+      if (inputsObj) {
+        console.log(chalkLog("UBI | UNION INPUT SET FOUND | " + inputsObj.inputsId));
       }
-      catch(err){
-        console.log(chalkError("UBI | UNION INPUT SETS ERROR: " + err));
-        return err;
+      else{
+        console.log(chalkAlert("UBI | UNION INPUT SET NOT FOUND: " + inputsId));
+        return(new Error("INPUT NOT FOUND: " + inputsId));
       }
 
       newInputsObj.meta.parents.push(inputsObj.inputsId);
 
-      async.each(Object.keys(inputsObj.inputs), async function(type){
+      for (const type of Object.keys(inputsObj.inputs)){
 
         newInputsObj.inputs[type] = _.union(newInputsObj.inputs[type], inputsObj.inputs[type]).sort();
 
@@ -727,641 +635,292 @@ function unionInputSets(params) {
         if (newInputsObj.inputsMinimum[type] === undefined) { newInputsObj.inputsMinimum[type] = []; }
         newInputsObj.inputsMinimum[type] = [];
 
-        return;
+      }
+    }
+    catch(err){
+      console.log(chalkError("UBI | UNION INPUT SETS ERROR: " + err));
+      throw err;
+    }
 
-      }, function(err1){
+  }
 
-        if (err1) { return err1; }
+  if (newInputsObj.meta.type === undefined) { throw new Error("newInputsObj.meta.type UNDEFINED | " + newInputsObj.inputsId); }
 
-        return;
+  for (const type in newInputsObj.meta.type){
+    newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
+  }
 
-      });
+  newInputsObj.inputsId = configuration.inputsFilePrefix 
+    + "_" + getTimeStamp() 
+    + "_" + newInputsObj.meta.numInputs 
+    + "_" + hostname 
+    + "_" + process.pid
+    + "_" + netInputsIndex
+    + "_" + "union";
 
-    }, function(err0){
+  netInputsIndex++;
+  
+  console.log(chalkBlue("UBI | NEW INPUT SETS"
+    + " | " + newInputsObj.inputsId
+    + " | " + newInputsObj.meta.numInputs + " INPUTS"
+    // + "\n" + jsonPrint(newInputsObj.meta)
+  ));
 
-      if (err0) { return reject(err0); }
+  const networkInputsDoc = new global.wordAssoDb.NetworkInputs(newInputsObj);
 
-      Object.keys(newInputsObj.meta.type).forEach(function(type){
-        newInputsObj.meta.numInputs += newInputsObj.meta.type[type].numInputs;
-      });
+  try{
+    const savedNetworkInputsDoc = await networkInputsDoc.save();
 
-      newInputsObj.inputsId = configuration.inputsFilePrefix 
-        + "_" + moment().format(compactDateTimeFormat) 
-        + "_" + newInputsObj.meta.numInputs 
-        + "_" + hostname 
-        + "_" + process.pid
-        + "_" + "union";
+    printInputsObj("UBI | +++ SAVED NETWORK INPUTS DB DOCUMENT", savedNetworkInputsDoc);
 
-      console.log(chalkBlue("UBI | NEW INPUT SETS"
-        + " | " + newInputsObj.inputsId
-        + " | " + newInputsObj.meta.numInputs + " INPUTS"
-        + "\n" + jsonPrint(newInputsObj.meta)
-      ));
+    console.log(chalkInfo("UBI | ... SAVING INPUTS FILE: " + defaultInputsFolder + "/" + newInputsObj.inputsId + ".json"));
 
+    saveFileQueue.push({folder: defaultInputsFolder, file: newInputsObj.inputsId + ".json", obj: newInputsObj});
+    return newInputsObj;
+  }
+  catch(err){
+    console.log(chalkError("UBI | *** CREATE NETWORK INPUTS DB DOCUMENT: " + err));
+    throw err;
+  }
 
-      const networkInputsDoc = new NetworkInputs(newInputsObj);
-
-      networkInputsDoc.save(async function(err, savedNetworkInputsDoc){
-
-        if (err) {
-          console.log(chalkError("UBI | *** CREATE NETWORK INPUTS DB DOCUMENT: " + err));
-        }
-        else {
-          printInputsObj("UBI | +++ SAVED NETWORK INPUTS DB DOCUMENT", savedNetworkInputsDoc);
-        }
-
-        const inFile = newInputsObj.inputsId + ".json";
-        // let inFolder = (hostname === PRIMARY_HOST) ? defaultInputsFolder : localInputsFolder;
-        let inFolder = defaultInputsFolder;
-
-        console.log(chalkInfo("UBI | ... SAVING INPUTS FILE: " + inFolder + "/" + inFile));
-
-        saveFileQueue.push({folder: inFolder, file: inFile, obj: newInputsObj});
-
-        // console.log(chalkInfo("UBI | ... UPDATING INPUTS CONFIG FILE: " + dropboxConfigDefaultFolder + "/" + defaultNetworkInputsConfigFile));
+}
 
 
-        // networkInputsConfigObj.INPUTS_IDS.push(newInputsObj.inputsId);
-        // networkInputsConfigObj.INPUTS_IDS = _.uniq(networkInputsConfigObj.INPUTS_IDS);
+//=========================================================================
+// INTERVALS
+//=========================================================================
+const intervalsSet = new Set();
 
-        // saveFileQueue.push({folder: dropboxConfigDefaultFolder, file: defaultNetworkInputsConfigFile, obj: networkInputsConfigObj});
-
-        resolve(newInputsObj);
-
-      });
-
-
-    });
-
+function clearAllIntervals(){
+  return new Promise(function(resolve, reject){
+    try {
+      for (const intervalHandle of intervalsSet){
+        console.log(chalkInfo(MODULE_ID_PREFIX + " | CLEAR INTERVAL | " + intervalHandle));
+        clearInterval(intervalHandle);
+      }
+      resolve();
+    }
+    catch(err){
+      reject(err);
+    }
   });
 }
 
 let quitWaitInterval;
+let quitFlag = false;
 
-function quit(cause){
+function readyToQuit() {
+  const flag = ((saveCache.getStats().keys == 0) && (saveFileQueue.length == 0));
+  return flag;
+}
 
-  console.log( "\nUBI | ... QUITTING ..." );
+async function quit(opts) {
 
-  if (cause) {
-    console.log( "UBI | CAUSE: " + cause );
+  if (quitFlag) {
+    console.log(chalkInfo(MODULE_ID_PREFIX + " | ALREADY IN QUIT"));
+    if (opts) {
+      console.log(chalkInfo(MODULE_ID_PREFIX + " | REDUNDANT QUIT INFO\n" + jsonPrint(opts) ));
+    }
+    return;
   }
 
-  quitWaitInterval = setInterval(function () {
+  quitFlag = true;
 
-    if (!saveFileBusy 
-      && (saveFileQueue.length === 0)
-      ){
+  const options = opts || false;
 
-      statsObj.elapsed = moment().diff(statsObj.startTimeMoment);
+  statsObj.elapsed = getElapsedTimeStamp();
+  statsObj.timeStamp = getTimeStamp();
+  statsObj.status = "QUIT";
 
-      clearInterval(statsUpdateInterval);
+  const forceQuitFlag = options.force || false;
+
+  let slackText = "QUIT";
+  if (options) {
+    slackText += " | " + options.cause;
+  }
+
+  try{
+    if (!configuration.offlineMode) { await slackSendWebMessage({channel: slackChannel, text: slackText}); }
+    // await childQuitAll();
+    await showStats(true);
+  }
+  catch(err){
+    console.log(MODULE_ID_PREFIX + " | *** QUIT ERROR: " + err);
+  }
+
+
+  if (options) {
+    console.log(MODULE_ID_PREFIX + " | QUIT INFO\n" + jsonPrint(options) );
+  }
+
+  clearInterval(quitWaitInterval);
+
+  await clearAllIntervals();
+
+  // intervalsSet.add("quitWaitInterval");
+
+  quitWaitInterval = setInterval(async function() {
+
+    if (readyToQuit()) {
+
       clearInterval(quitWaitInterval);
 
-      console.log(chalkAlert("\nUBI | ALL PROCESSES COMPLETE ... QUITTING"
-       + " | SAVE FILE BUSY: " + saveFileBusy
-       + " | SAVE FILE Q: " + saveFileQueue.length
-      ));
+      if (forceQuitFlag) {
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | *** FORCE QUIT"
+          + " | SAVE CACHE KEYS: " + saveCache.getStats().keys
+          + " | SAVE FILE BUSY: " + statsObj.queues.saveFileQueue.busy
+          + " | SAVE FILE Q: " + statsObj.queues.saveFileQueue.size
+        ));
+      }
+      else {
+        console.log(chalkGreen(MODULE_ID_PREFIX + " | ALL PROCESSES COMPLETE | QUITTING"
+          + " | SAVE CACHE KEYS: " + saveCache.getStats().keys
+          + " | SAVE FILE BUSY: " + statsObj.queues.saveFileQueue.busy
+          + " | SAVE FILE Q: " + statsObj.queues.saveFileQueue.size
+        ));
+      }
 
-      // showStats();
+      if (!dbConnection) {
+        process.exit();
+      }
+      else {
+        setTimeout(function() {
 
-      setTimeout(function(){
-        process.exit();      
-      }, 1000);
+          dbConnection.close(async function () {
+            console.log(chalkBlue(
+                MODULE_ID_PREFIX + " | ==========================\n"
+              + MODULE_ID_PREFIX + " | MONGO DB CONNECTION CLOSED\n"
+              + MODULE_ID_PREFIX + " | ==========================\n"
+            ));
+
+            process.exit();
+          });
+
+        }, 1000);
+      }
 
     }
-    else {
-      console.log(chalkInfo("UBI | ... WAITING FOR ALL PROCESSES COMPLETE BEFORE QUITTING"
-       + " | SAVE FILE BUSY: " + saveFileBusy
-       + " | SAVE FILE Q: " + saveFileQueue.length
-      ));
-    }
 
-  }, 5000);
+  }, QUIT_WAIT_INTERVAL);
 }
 
 process.on( "SIGINT", function() {
   quit("SIGINT");
 });
 
-function getTimeStamp(inputTime) {
-  let currentTimeStamp;
+const saveCacheTtl = process.env.SAVE_CACHE_DEFAULT_TTL;
+let saveCacheCheckPeriod = process.env.SAVE_CACHE_CHECK_PERIOD;
 
-  if (inputTime === undefined) {
-    currentTimeStamp = moment().format(compactDateTimeFormat);
-    return currentTimeStamp;
-  }
-  else if (moment.isMoment(inputTime)) {
-    currentTimeStamp = moment(inputTime).format(compactDateTimeFormat);
-    return currentTimeStamp;
-  }
-  else if (moment.isDate(new Date(inputTime))) {
-    currentTimeStamp = moment(new Date(inputTime)).format(compactDateTimeFormat);
-    return currentTimeStamp;
-  }
-  else {
-    currentTimeStamp = moment(parseInt(inputTime)).format(compactDateTimeFormat);
-    return currentTimeStamp;
-  }
+if (saveCacheCheckPeriod === undefined) { saveCacheCheckPeriod = 10; }
+
+const saveCache = new NodeCache({
+  stdTTL: saveCacheTtl,
+  checkperiod: saveCacheCheckPeriod
+});
+
+function saveCacheExpired(file, fileObj) {
+  debug(chalkLog("XXX $ SAVE"
+    + " [" + saveCache.getStats().keys + "]"
+    + " | " + file
+  ));
+  saveFileQueue.push(fileObj);
+  statsObj.queues.saveFileQueue.size = saveFileQueue.length;
 }
 
-function saveFile(params, callback){
+saveCache.on("expired", saveCacheExpired);
 
-  if (OFFLINE_MODE) {
-    console.log("UBI | OFFLINE_MODE: " + OFFLINE_MODE);
-    if (callback !== undefined) { 
-      return(callback(null, null));
-    }
-    return;
-  }
+saveCache.on("set", function(file, fileObj) {
+  debug(chalkLog(MODULE_ID_PREFIX + " | $$$ SAVE CACHE"
+    + " [" + saveCache.getStats().keys + "]"
+    + " | " + fileObj.folder + "/" + file
+  ));
+});
 
-  const fullPath = params.folder + "/" + params.file;
+function initSaveFileQueue(cnf) {
 
-  debug(chalkInfo("LOAD FOLDER " + params.folder));
-  debug(chalkInfo("LOAD FILE " + params.file));
-  debug(chalkInfo("FULL PATH " + fullPath));
-
-  const options = {};
-
-  options.contents = JSON.stringify(params.obj, null, 2);
-  options.path = fullPath;
-  options.mode = params.mode || "overwrite";
-  options.autorename = params.autorename || false;
-
-
-  const dbFileUpload = function () {
-    dropboxClient.filesUpload(options).
-    then(function(){
-      debug(chalkLog("UBI | SAVED DROPBOX JSON | " + options.path));
-      if (callback !== undefined) { callback(null); }
-    }).
-    catch(function(error){
-      if (error.status === 413){
-        console.error(chalkError("UBI | " + moment().format(compactDateTimeFormat) 
-          + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          + " | ERROR: 413"
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-      else if (error.status === 429){
-        console.error(chalkError("UBI | " + moment().format(compactDateTimeFormat) 
-          + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          + " | ERROR: TOO MANY WRITES"
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-      else if (error.status === 500){
-        console.error(chalkError("UBI | " + moment().format(compactDateTimeFormat) 
-          + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          + " | ERROR: DROPBOX SERVER ERROR"
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-      else {
-        console.error(chalkError("UBI | " + moment().format(compactDateTimeFormat) 
-          + " | !!! ERROR DROBOX JSON WRITE | FILE: " + fullPath 
-          + " | ERROR: " + error
-        ));
-        if (callback !== undefined) { callback(error); }
-      }
-    });
-  };
-
-  if (options.mode === "add") {
-
-    dropboxClient.filesListFolder({path: params.folder}).
-    then(function(response){
-
-      debug(chalkLog("UBI | DROPBOX LIST FOLDER"
-        + " | " + options.path
-        + " | " + jsonPrint(response)
-      ));
-
-      let fileExits = false;
-
-      async.eachSeries(response.entries, function(entry, cb){
-
-        debug(chalkInfo("DROPBOX FILE"
-          + " | " + params.folder
-          + " | " + entry.name
-        ));
-
-        if (entry.name === params.file) {
-          fileExits = true;
-        }
-
-        cb();
-
-      }, function(err){
-        if (err) {
-          console.log(chalkError("UBI | *** ERROR DROPBOX SAVE FILE: " + err));
-          if (callback !== undefined) { 
-            return(callback(err, null));
-          }
-          return;
-        }
-        if (fileExits) {
-          console.log(chalkAlert("UBI | ... DROPBOX FILE EXISTS ... SKIP SAVE | " + fullPath));
-          if (callback !== undefined) { callback(err, null); }
-        }
-        else {
-          console.log(chalkAlert("UBI | ... DROPBOX DOES NOT FILE EXIST ... SAVING | " + fullPath));
-          dbFileUpload();
-        }
-      });
-    }).
-    catch(function(err){
-      console.log(chalkError("UBI | saveFile *** DROPBOX FILES LIST FOLDER ERROR ", err));
-      if (callback !== undefined) { callback(err, null); }
-    });
-  }
-  else {
-    dbFileUpload();
-  }
-}
-
-function initSaveFileQueue(cnf){
-
-  console.log(chalkBlue("UBI | INIT DROPBOX SAVE FILE INTERVAL | " + cnf.saveFileQueueInterval + " MS"));
+  console.log(chalkLog(MODULE_ID_PREFIX + " | INIT SAVE FILE INTERVAL | " + msToTime(cnf.saveFileQueueInterval)));
 
   clearInterval(saveFileQueueInterval);
 
-  saveFileQueueInterval = setInterval(function () {
+  saveFileQueueInterval = setInterval(async function () {
 
-    if (!saveFileBusy && saveFileQueue.length > 0) {
+    if (!statsObj.queues.saveFileQueue.busy && saveFileQueue.length > 0) {
 
-      saveFileBusy = true;
+      statsObj.queues.saveFileQueue.busy = true;
 
       const saveFileObj = saveFileQueue.shift();
+      saveFileObj.verbose = true;
 
-      saveFile(saveFileObj, function(err){
-        if (err) {
-          console.log(chalkError("UBI | *** SAVE FILE ERROR ... RETRY | " + saveFileObj.folder + "/" + saveFileObj.file));
-          saveFileQueue.push(saveFileObj);
-        }
-        else {
-          console.log(chalkLog("UBI | SAVED FILE | " + saveFileObj.folder + "/" + saveFileObj.file));
-        }
-        saveFileBusy = false;
-      });
+      statsObj.queues.saveFileQueue.size = saveFileQueue.length;
+
+      try{
+        await tcUtils.saveFile(saveFileObj);
+        console.log(chalkLog(
+          MODULE_ID_PREFIX 
+          + " | SAVED FILE"
+          + " [Q: " + saveFileQueue.length + "] " 
+          + " [$: " + saveCache.getStats().keys + "] " 
+          + saveFileObj.folder + "/" + saveFileObj.file
+        ));
+        statsObj.queues.saveFileQueue.busy = false;
+      }
+      catch(err){
+        console.log(chalkError(MODULE_ID_PREFIX 
+          + " | *** SAVE FILE ERROR ... RETRY"
+          + " | ERROR: " + err
+          + " | " + saveFileObj.folder + "/" + saveFileObj.file
+        ));
+        saveFileQueue.push(saveFileObj);
+        statsObj.queues.saveFileQueue.size = saveFileQueue.length;
+        statsObj.queues.saveFileQueue.busy = false;
+      }
+
     }
-
   }, cnf.saveFileQueueInterval);
 }
 
-// function loadFile(params) {
+async function connectDb(){
 
-//   return new Promise(async function(resolve, reject){
+  try {
 
-//     const folder = params.folder;
-//     const file = params.file;
-//     const streamMode = params.streamMode || false;
+    statsObj.status = "CONNECTING MONGO DB";
 
-//     debug(chalkInfo("LOAD FOLDER " + folder));
-//     debug(chalkInfo("LOAD FILE " + file));
-//     debug(chalkInfo("FULL folder " + folder + "/" + file));
+    console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CONNECT MONGO DB ..."));
 
-//     let fullPath = folder + "/" + file;
+    const db = await global.wordAssoDb.connect(MODULE_ID_PREFIX + "_" + process.pid);
 
-//     if (OFFLINE_MODE) {
-
-//       if (hostname !== PRIMARY_HOST) {
-
-//         fullPath = "/Users/tc/Dropbox/Apps/wordAssociation" + folder + "/" + file;
-//         debug(chalkInfo("OFFLINE_MODE: FULL PATH " + fullPath));
-
-//         const pathExists = fs.existsSync(fullPath);
-
-//         if (!pathExists) {
-//           console.log(chalkAlert("UBI | !!! PATH DOES NOT EXIST ... SKIPPING LOAD: " + fullPath));
-//           return reject(new Error("PATH DOES NOT EXIST: " + fullPath));
-//         }
-
-//       }
-//       fs.readFile(fullPath, "utf8", function(err, data) {
-//         if (err) {
-//           console.log(chalkError("UBI | LOAD FILE ERROR: " + err));
-//           return reject(err);
-//         }
-//         debug(chalkLog(getTimeStamp()
-//           + " | LOADING FILE FROM DROPBOX FILE"
-//           + " | " + fullPath
-//         ));
-
-//         if (file.match(/\.json$/gi)) {
-//           try {
-//             const fileObj = JSON.parse(data);
-//             resolve(fileObj);
-//           }
-//           catch(e){
-//             console.trace(chalkError("UBI | JSON PARSE ERROR: " + e));
-//             return reject(e);
-//           }
-//         }
-//         else {
-//           resolve();
-//         }
-//       });
-//      }
-//     else if (streamMode) {
-
-//       console.log(chalkInfo("UBI | STREAM MODE: FULL PATH " + fullPath));
-
-//       const pathExists = fs.existsSync(fullPath);
-
-//       if (!pathExists) {
-//         console.log(chalkAlert("UBI | !!! PATH DOES NOT EXIST ... SKIPPING LOAD: " + fullPath));
-//         return reject(new Error("PATH DOES NOT EXIST: " + fullPath));
-//       }
-
-//       const fileObj = {};
-
-//       let totalInputs = 0;
-//       let lessThanMin = 0;
-//       let moreThanMin = 0;
-
-//       let totalCategorized = 0;
-//       let maxTotalCategorized = 0;
-
-//       const pipeline = fs.createReadStream(fullPath).pipe(JSONStream.parse("$*.$*.$*"));
-
-//       pipeline.on("data", function(obj){
-
-//         totalInputs += 1;
-
-//         totalCategorized = obj.value.total - obj.value.uncategorized;
-//         maxTotalCategorized = Math.max(maxTotalCategorized, totalCategorized);
-
-//         if (totalCategorized >= configuration.minTotalMin) {
-
-//           moreThanMin += 1;
-
-//           debug(chalkLog("UBI | +++ INPUT"
-//             + " [" + moreThanMin + "]"
-//             + " | " + params.type
-//             + " | " + obj.key
-//             + " | TOT CAT: " + totalCategorized 
-//             + " | MAX TOT CAT: " + maxTotalCategorized 
-//             // + "\nVALUE\n" + jsonPrint(obj.value)
-//           ));
-
-//           fileObj[obj.key] = obj.value;
-//         }
-//         else {
-//           lessThanMin += 1;
-//         }
-
-//         debug("data: " + jsonPrint(obj));
-
-//         if (configuration.verbose && totalInputs % 10000 === 0) {
-//           console.log(chalkLog("UBI | STREAM BEST INPUTS | " + fullPath + " | BEST INPUTS: " + totalInputs));
-//         }
-
-//       });
-
-//       pipeline.on("header", function(header){
-//         console.log("UBI | HEADER: " + jsonPrint(header));
-//       });
-
-//       pipeline.on("footer", function(footer){
-//         console.log("UBI | FOOTER: " + jsonPrint(footer));
-//       });
-
-//       pipeline.on("close", function(){
-//         if (configuration.verbose) { console.log(chalkInfo("UBI | STREAM CLOSED | BEST INPUTS: " + totalInputs + " | " + fullPath)); }
-//         return resolve({ obj: fileObj, maxTotalCategorized: maxTotalCategorized, totalInputs: totalInputs, lessThanMin: lessThanMin, moreThanMin: moreThanMin });
-//       });
-
-//       pipeline.on("end", function(){
-//         if (configuration.verbose) { console.log(chalkInfo("UBI | STREAM END | BEST INPUTS: " + totalInputs + " | " + fullPath)); }
-//         return resolve({ obj: fileObj, maxTotalCategorized: maxTotalCategorized, totalInputs: totalInputs, lessThanMin: lessThanMin, moreThanMin: moreThanMin });
-//       });
-
-//       pipeline.on("finish", function(){
-//         if (configuration.verbose) { console.log(chalkInfo("UBI | STREAM FINISH | BEST INPUTS: " + totalInputs + " | " + fullPath)); }
-//         return resolve({ obj: fileObj, maxTotalCategorized: maxTotalCategorized, totalInputs: totalInputs, lessThanMin: lessThanMin, moreThanMin: moreThanMin });
-//       });
-
-//       pipeline.on("error", function(err){
-//         console.log(chalkError("UBI | STREAM ERROR | BEST INPUTS: " + totalInputs + " | " + fullPath));
-//         console.log(chalkError("UBI | *** LOAD FILE ERROR: " + err));
-//         return reject(err);
-//       });
-//     }
-//     else {
-//       dropboxClient.filesDownload({path: fullPath}).
-//       then(function(data) {
-//         console.log("UBI | " + chalkLog(getTimeStamp()
-//           + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
-//         ));
-
-//         if (file.match(/\.json$/gi)) {
-//           const payload = data.fileBinary;
-//           debug(payload);
-
-//           try {
-//             const fileObj = JSON.parse(payload);
-//             return resolve(fileObj);
-//           }
-//           catch(e){
-//             console.trace(chalkError("UBI | JSON PARSE ERROR: " + e));
-//             return reject(e);
-//           }
-//         }
-//         else {
-//           resolve();
-//         }
-//       }).
-//       catch(function(error) {
-
-//         if (error.response !== undefined) {
-
-//           if (error.response.status === 404) {
-//             console.error(chalkError("UBI | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND" + " ... SKIPPING ..."));
-//             return reject(error);
-//           }
-//           if (error.response.status === 409) {
-//             console.error(chalkError("UBI | !!! DROPBOX READ FILE " + fullPath + " NOT FOUND" + " ... SKIPPING ..."));
-//             return reject(error);
-//           }
-//           if (error.response.status === 0) {
-//             console.error(chalkError("UBI | !!! DROPBOX NO RESPONSE"
-//               + " ... NO INTERNET CONNECTION? ... SKIPPING ..."));
-//             return reject(error);
-//           }
-//         }
-
-//         console.log(chalkError("UBI | !!! DROPBOX READ " + fullPath + " ERROR"));
-//         console.log(chalkError("UBI |\n", error));
-//         console.log(chalkError("UBI | " + jsonPrint(error)));
-
-//         return reject(error);
-
-//       });
-//     }
-
-//   });
-// }
-function loadFile(params) {
-
-  return new Promise(async function(resolve, reject){
-
-    const noErrorNotFound = params.noErrorNotFound || false;
-
-    let fullPath = params.path || params.folder + "/" + params.file;
-
-    debug(chalkInfo("LOAD PATH " + params.path));
-    debug(chalkInfo("LOAD FOLDER " + params.folder));
-    debug(chalkInfo("LOAD FILE " + params.file));
-    debug(chalkInfo("FULL PATH " + fullPath));
-
-
-    if (configuration.offlineMode || params.loadLocalFile) {
-
-      fullPath = DROPBOX_ROOT_FOLDER + fullPath;
-
-      fs.readFile(fullPath, "utf8", function(err, data) {
-
-        if (err) {
-          console.log(chalkError("fs readFile ERROR: " + err));
-          return reject(err);
-        }
-
-        console.log(chalkInfo(getTimeStamp()
-          + " | LOADING FILE FROM DROPBOX"
-          + " | " + fullPath
-        ));
-
-        if (fullPath.match(/\.json$/gi)) {
-
-          jsonParse(data, function(err, fileObj){
-            if (err) {
-              console.log(chalkError(getTimeStamp()
-                + " | *** LOAD FILE FROM DROPBOX ERROR"
-                + " | " + fullPath
-                + " | " + err
-              ));
-
-              return reject(err);
-            }
-
-            const fileObjSizeMbytes = sizeof(fileObj)/ONE_MEGABYTE;
-
-            console.log(chalkInfo(getTimeStamp()
-              + " | LOADED FILE FROM DROPBOX"
-              + " | " + fileObjSizeMbytes.toFixed(2) + " MB"
-              + " | " + fullPath
-            ));
-
-            return resolve(fileObj);
-
-          });
-        }
-
-        console.log(chalkError(getTimeStamp()
-          + " | SKIP LOAD FILE FROM DROPBOX"
-          + " | " + fullPath
-        ));
-        resolve();
-
-      });
-
-     }
-    else {
-
-      dropboxClient.filesDownload({path: fullPath}).
-      then(function(data) {
-
-        debug(chalkLog(getTimeStamp()
-          + " | LOADING FILE FROM DROPBOX FILE: " + fullPath
-        ));
-
-        if (fullPath.match(/\.json$/gi)) {
-
-          const payload = data.fileBinary;
-
-          if (!payload || (payload === undefined)) {
-            return reject(new Error(MODULE_ID_PREFIX + " LOAD FILE PAYLOAD UNDEFINED"));
-          }
-
-          jsonParse(payload, function(err, fileObj){
-            if (err) {
-              console.log(chalkError(getTimeStamp()
-                + " | *** LOAD FILE FROM DROPBOX ERROR"
-                + " | " + fullPath
-                + " | " + err
-              ));
-
-              return reject(err);
-            }
-
-            return resolve(fileObj);
-
-          });
-
-        }
-        else {
-          resolve();
-        }
-      }).
-      catch(function(err) {
-
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX loadFile ERROR: " + fullPath));
-        
-        if ((err.status === 409) || (err.status === 404)) {
-          if (noErrorNotFound) {
-            if (configuration.verbose) { console.log(chalkLog(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND")); }
-            return resolve(new Error("NOT FOUND"));
-          }
-          console.log(chalkAlert(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND ... SKIPPING ..."));
-          return resolve(err);
-        }
-        
-        if (err.status === 0) {
-          console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX NO RESPONSE"
-            + " | NO INTERNET CONNECTION? SKIPPING ..."));
-          return resolve(new Error("NO INTERNET"));
-        }
-
-        reject(err);
-
-      });
-    }
-  });
-}
-
-function connectDb(){
-
-  return new Promise(function(resolve, reject){
-
-    statsObj.status = "CONNECT DB";
-
-    wordAssoDb.connect("UBI_" + process.pid, function(err, db){
-      if (err) {
-        console.log(chalkError("*** UBI | MONGO DB CONNECTION ERROR: " + err));
-        return reject(err);
-      }
-
-      db.on("error", function(){
-        console.error.bind(console, "*** UBI | MONGO DB CONNECTION ERROR ***\n");
-        console.log(chalkError("*** UBI | MONGO DB CONNECTION ERROR ***\n"));
-        db.close();
-      });
-
-      db.on("disconnected", function(){
-        console.error.bind(console, "*** UBI | MONGO DB DISCONNECTED ***\n");
-        console.log(chalkAlert("*** UBI | MONGO DB DISCONNECTED ***\n"));
-      });
-
-
-      console.log(chalkBlue("UBI | MONGOOSE DEFAULT CONNECTION OPEN"));
-
-      NetworkInputs = mongoose.model("NetworkInputs", networkInputsModel.NetworkInputsSchema);
-
-      resolve(db);
-
+    db.on("error", async function(err){
+      statsObj.status = "MONGO ERROR";
+      statsObj.dbConnectionReady = false;
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR"));
+      db.close();
+      quit({cause: "MONGO DB ERROR: " + err});
     });
 
-  });
+    db.on("close", async function(err){
+      statsObj.status = "MONGO CLOSED";
+      statsObj.dbConnectionReady = false;
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED"));
+      quit({cause: "MONGO DB CLOSED: " + err});
+    });
+
+    db.on("disconnected", async function(){
+      statsObj.status = "MONGO DISCONNECTED";
+      statsObj.dbConnectionReady = false;
+      console.log(chalkAlert(MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED"));
+      quit({cause: "MONGO DB DISCONNECTED"});
+    });
+
+    console.log(chalk.green(MODULE_ID_PREFIX + " | MONGOOSE DEFAULT CONNECTION OPEN"));
+
+    statsObj.dbConnectionReady = true;
+
+    return db;
+  }
+  catch(err){
+    console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECT ERROR: " + err));
+    throw err;
+  }
 }
 
 function getElapsedTimeStamp(){
@@ -1375,11 +934,8 @@ function initStatsUpdate() {
 
     console.log(chalkLog(MODULE_ID_PREFIX + " | INIT STATS UPDATE INTERVAL | " + msToTime(configuration.statsUpdateIntervalTime)));
 
-
     statsObj.elapsed = getElapsedTimeStamp();
     statsObj.timeStamp = getTimeStamp();
-
-    saveFile({localFlag: false, folder: statsFolder, file: statsFile, obj: statsObj});
 
     clearInterval(statsUpdateInterval);
 
@@ -1388,7 +944,7 @@ function initStatsUpdate() {
       statsObj.elapsed = getElapsedTimeStamp();
       statsObj.timeStamp = getTimeStamp();
 
-      saveFileQueue.push({localFlag: false, folder: statsFolder, file: statsFile, obj: statsObj});
+      saveFileQueue.push({folder: statsFolder, file: statsFile, obj: statsObj});
       statsObj.queues.saveFileQueue.size = saveFileQueue.length;
 
       try{
@@ -1470,188 +1026,101 @@ function loadCommandLineArgs(){
   });
 }
 
-function getFileMetadata(params) {
+async function loadConfigFile(params) {
 
-  return new Promise(function(resolve, reject){
+  let fullPath;
 
-    const fullPath = params.folder + "/" + params.file;
-    debug(chalkInfo("FOLDER " + params.folder));
-    debug(chalkInfo("FILE " + params.file));
-    debug(chalkInfo("getFileMetadata FULL PATH: " + fullPath));
+  try {
+
+    fullPath = path.join(params.folder, params.file);
 
     if (configuration.offlineMode) {
-      dropboxClient = dropboxLocalClient;
-    }
-    else {
-      dropboxClient = dropboxRemoteClient;
+      await loadCommandLineArgs();
+      return;
     }
 
-    dropboxClient.filesGetMetadata({path: fullPath}).
-    then(function(response) {
-      // debug(chalkInfo("FILE META\n" + jsonPrint(response)));
-      resolve(response);
-    }).
-    catch(function(err) {
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX getFileMetadata ERROR: " + fullPath));
+    const newConfiguration = {};
+    newConfiguration.evolve = {};
 
-      if ((err.status === 404) || (err.status === 409)) {
-        console.error(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX READ FILE " + fullPath + " NOT FOUND"));
-      }
-      if (err.status === 0) {
-        console.error(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX NO RESPONSE"));
-      }
+    const loadedConfigObj = await tcUtils.loadFile({folder: params.folder, file: params.file, noErrorNotFound: params.noErrorNotFound });
 
-      reject(err);
-
-    });
-
-  });
-}
-
-function loadConfigFile(params) {
-
-  return new Promise(async function(resolve, reject){
-
-    const fullPath = params.folder + "/" + params.file;
-
-    try {
-
-      if (params.file === dropboxConfigDefaultFile) {
-        prevConfigFileModifiedMoment = moment(prevDefaultConfigFileModifiedMoment);
+    if (loadedConfigObj === undefined) {
+      if (params.noErrorNotFound) {
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | ... SKIP LOAD CONFIG FILE: " + params.folder + "/" + params.file));
+        return newConfiguration;
       }
       else {
-        prevConfigFileModifiedMoment = moment(prevHostConfigFileModifiedMoment);
-      }
-
-      if (configuration.offlineMode) {
-        await loadCommandLineArgs();
-        return resolve();
-      }
-
-      try {
-
-        const response = await getFileMetadata({folder: params.folder, file: params.file});
-
-        const fileModifiedMoment = moment(new Date(response.client_modified));
-        
-        if (fileModifiedMoment.isSameOrBefore(prevConfigFileModifiedMoment)){
-
-          console.log(chalkInfo(MODULE_ID_PREFIX + " | CONFIG FILE BEFORE OR EQUAL"
-            + " | " + fullPath
-            + " | PREV: " + prevConfigFileModifiedMoment.format(compactDateTimeFormat)
-            + " | " + fileModifiedMoment.format(compactDateTimeFormat)
-          ));
-          return resolve();
-        }
-
-        console.log(chalkLog(MODULE_ID_PREFIX + " | +++ CONFIG FILE AFTER ... LOADING"
-          + " | " + fullPath
-          + " | PREV: " + prevConfigFileModifiedMoment.format(compactDateTimeFormat)
-          + " | " + fileModifiedMoment.format(compactDateTimeFormat)
-        ));
-
-        prevConfigFileModifiedMoment = moment(fileModifiedMoment);
-
-        if (params.file === dropboxConfigDefaultFile) {
-          prevDefaultConfigFileModifiedMoment = moment(fileModifiedMoment);
-        }
-        else {
-          prevHostConfigFileModifiedMoment = moment(fileModifiedMoment);
-        }
-
-      }
-      catch(err){
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX CONFIG LOAD FILE getFileMetadata ERROR: " + err));
-        return reject(err);
-      }
-
-
-      const loadedConfigObj = await loadFile({folder: params.folder, file: params.file, noErrorNotFound: true });
-
-      if (loadedConfigObj === undefined) {
         console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX CONFIG LOAD FILE ERROR | JSON UNDEFINED ??? "));
-        return reject(new Error("JSON UNDEFINED"));
+        throw new Error("JSON UNDEFINED");
       }
-
-      if (loadedConfigObj instanceof Error) {
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX CONFIG LOAD FILE ERROR: " + loadedConfigObj));
-      }
-
-      console.log(chalkInfo(MODULE_ID_PREFIX + " | LOADED CONFIG FILE: " + params.file + "\n" + jsonPrint(loadedConfigObj)));
-
-      const newConfiguration = {};
-
-      if (loadedConfigObj.UBI_INPUTS_FILE_PREFIX !== undefined){
-        console.log("UBI | LOADED UBI_INPUTS_FILE_PREFIX: " + loadedConfigObj.UBI_INPUTS_FILE_PREFIX);
-        newConfiguration.inputsFilePrefix = loadedConfigObj.UBI_INPUTS_FILE_PREFIX;
-      }
-
-      if (loadedConfigObj.UBI_TEST_MODE !== undefined){
-        console.log("UBI | LOADED UBI_TEST_MODE: " + loadedConfigObj.UBI_TEST_MODE);
-        newConfiguration.testMode = loadedConfigObj.UBI_TEST_MODE;
-      }
-
-      if (loadedConfigObj.UBI_QUIT_ON_COMPLETE !== undefined){
-        console.log("UBI | LOADED UBI_QUIT_ON_COMPLETE: " + loadedConfigObj.UBI_QUIT_ON_COMPLETE);
-        newConfiguration.quitOnComplete = loadedConfigObj.UBI_QUIT_ON_COMPLETE;
-      }
-
-      if (loadedConfigObj.UBI_ENABLE_STDIN !== undefined){
-        console.log("UBI | LOADED UBI_ENABLE_STDIN: " + loadedConfigObj.UBI_ENABLE_STDIN);
-        newConfiguration.enableStdin = loadedConfigObj.UBI_ENABLE_STDIN;
-      }
-
-      if (loadedConfigObj.UBI_KEEPALIVE_INTERVAL !== undefined) {
-        console.log("UBI | LOADED UBI_KEEPALIVE_INTERVAL: " + loadedConfigObj.UBI_KEEPALIVE_INTERVAL);
-        newConfiguration.keepaliveInterval = loadedConfigObj.UBI_KEEPALIVE_INTERVAL;
-      }
-
-      resolve(newConfiguration);
-    }
-    catch(err){
-      console.error(chalkError(MODULE_ID_PREFIX + " | ERROR LOAD DROPBOX CONFIG: " + fullPath
-        + "\n" + jsonPrint(err)
-      ));
-      reject(err);
     }
 
-  });
+    if (loadedConfigObj instanceof Error) {
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** DROPBOX CONFIG LOAD FILE ERROR: " + loadedConfigObj));
+    }
+
+    console.log(chalkInfo(MODULE_ID_PREFIX + " | LOADED CONFIG FILE: " + params.file + "\n" + jsonPrint(loadedConfigObj)));
+
+    if (loadedConfigObj.UBI_INPUTS_FILE_PREFIX !== undefined){
+      console.log("UBI | LOADED UBI_INPUTS_FILE_PREFIX: " + loadedConfigObj.UBI_INPUTS_FILE_PREFIX);
+      newConfiguration.inputsFilePrefix = loadedConfigObj.UBI_INPUTS_FILE_PREFIX;
+    }
+
+    if (loadedConfigObj.UBI_TEST_MODE !== undefined){
+      console.log("UBI | LOADED UBI_TEST_MODE: " + loadedConfigObj.UBI_TEST_MODE);
+      newConfiguration.testMode = loadedConfigObj.UBI_TEST_MODE;
+    }
+
+    if (loadedConfigObj.UBI_QUIT_ON_COMPLETE !== undefined){
+      console.log("UBI | LOADED UBI_QUIT_ON_COMPLETE: " + loadedConfigObj.UBI_QUIT_ON_COMPLETE);
+      newConfiguration.quitOnComplete = loadedConfigObj.UBI_QUIT_ON_COMPLETE;
+    }
+
+    if (loadedConfigObj.UBI_ENABLE_STDIN !== undefined){
+      console.log("UBI | LOADED UBI_ENABLE_STDIN: " + loadedConfigObj.UBI_ENABLE_STDIN);
+      newConfiguration.enableStdin = loadedConfigObj.UBI_ENABLE_STDIN;
+    }
+
+    if (loadedConfigObj.UBI_KEEPALIVE_INTERVAL !== undefined) {
+      console.log("UBI | LOADED UBI_KEEPALIVE_INTERVAL: " + loadedConfigObj.UBI_KEEPALIVE_INTERVAL);
+      newConfiguration.keepaliveInterval = loadedConfigObj.UBI_KEEPALIVE_INTERVAL;
+    }
+
+
+    return newConfiguration;
+  }
+  catch(err){
+    console.log(chalkError(MODULE_ID_PREFIX + " | ERROR LOAD DROPBOX CONFIG: " + fullPath
+      + "\n" + jsonPrint(err)
+    ));
+    throw err;
+  }
 }
 
-function loadAllConfigFiles(){
+async function loadAllConfigFiles(){
 
-  return new Promise(async function(resolve, reject){
+  statsObj.status = "LOAD CONFIG";
 
-    try {
+  const defaultConfig = await loadConfigFile({folder: configDefaultFolder, file: configDefaultFile, noErrorNotFound: true});
 
-      statsObj.status = "LOAD CONFIG";
+  if (defaultConfig) {
+    defaultConfiguration = defaultConfig;
+    console.log(chalkLog(MODULE_ID_PREFIX + " | +++ RELOADED DEFAULT CONFIG " + configDefaultFolder + "/" + configDefaultFile));
+  }
+  
+  const hostConfig = await loadConfigFile({folder: configHostFolder, file: configHostFile, noErrorNotFound: true});
 
-      const defaultConfig = await loadConfigFile({folder: dropboxConfigDefaultFolder, file: dropboxConfigDefaultFile});
+  if (hostConfig) {
+    hostConfiguration = hostConfig;
+    console.log(chalkLog(MODULE_ID_PREFIX + " | +++ RELOADED HOST CONFIG " + configHostFolder + "/" + configHostFile));
+  }
+  
+  const defaultAndHostConfig = merge(defaultConfiguration, hostConfiguration); // host settings override defaults
+  const tempConfig = merge(configuration, defaultAndHostConfig); // any new settings override existing config
 
-      if (defaultConfig) {
-        defaultConfiguration = defaultConfig;
-        console.log(chalkLog(MODULE_ID_PREFIX + " | +++ RELOADED DEFAULT CONFIG " + dropboxConfigDefaultFolder + "/" + dropboxConfigDefaultFile));
-      }
-      
-      const hostConfig = await loadConfigFile({folder: dropboxConfigHostFolder, file: dropboxConfigHostFile});
+  configuration = tempConfig;
 
-      if (hostConfig) {
-        hostConfiguration = hostConfig;
-        console.log(chalkLog(MODULE_ID_PREFIX + " | +++ RELOADED HOST CONFIG " + dropboxConfigHostFolder + "/" + dropboxConfigHostFile));
-      }
-      
-      const defaultAndHostConfig = merge(defaultConfiguration, hostConfiguration); // host settings override defaults
-      const tempConfig = merge(configuration, defaultAndHostConfig); // any new settings override existing config
-
-      configuration = deepcopy(tempConfig);
-
-      resolve();
-
-    }
-    catch(err){
-      reject(err);
-    }
-  });
+  return;
 }
 
 function loadInputsDropbox(params) {
@@ -1667,7 +1136,7 @@ function loadInputsDropbox(params) {
 
     try {
 
-      const inputsConfigObj = await loadFile({folder: folder, file: file});
+      const inputsConfigObj = await tcUtils.loadFile({folder: folder, file: file});
 
       if ((inputsConfigObj === undefined) || !inputsConfigObj) {
         console.log(chalkError("UBI | DROPBOX LOAD BEST INPUTS CONFIG FILE ERROR | JSON UNDEFINED ??? "));
@@ -1726,7 +1195,7 @@ function initConfig(cnf) {
 
       await loadAllConfigFiles();
       await loadCommandLineArgs();
-      await loadInputsDropbox({folder: dropboxConfigDefaultFolder, file: defaultBestInputsConfigFile});
+      await loadInputsDropbox({folder: configDefaultFolder, file: defaultBestInputsConfigFile});
 
       const configArgs = Object.keys(configuration);
 
@@ -1759,9 +1228,9 @@ function initConfig(cnf) {
 function pairwise(list) {
   // return new Promise(async function(resolve, reject){
     if (list.length < 2) { return []; }
-    let first = list[0];
-    let rest  = list.slice(1);
-    let pairs = rest.map(function (x) { return [first, x]; });
+    const first = list[0];
+    const rest = list.slice(1);
+    const pairs = rest.map(function (x) { return [first, x]; });
     return pairs.concat(pairwise(rest));
   // });
 }
@@ -1773,7 +1242,7 @@ function runMain(){
 
       statsObj.status = "RUN MAIN";
 
-      let networkInputsConfigObj = await loadFile({folder: dropboxConfigDefaultFolder, file: defaultBestInputsConfigFile, noErrorNotFound: true });
+      const networkInputsConfigObj = await tcUtils.loadFile({folder: configDefaultFolder, file: defaultBestInputsConfigFile, noErrorNotFound: true });
 
       const parentPairs = pairwise([...inputsIdSet]);
       console.log("PARENT PAIRS\n" + jsonPrint(parentPairs));
@@ -1784,8 +1253,9 @@ function runMain(){
         networkInputsConfigObj.INPUTS_IDS = _.uniq(networkInputsConfigObj.INPUTS_IDS);
         return;
       }, function(err){
+        if (err) { throw err; }
         console.log("INPUTS_IDS\n" + jsonPrint(networkInputsConfigObj.INPUTS_IDS));
-        saveFileQueue.push({folder: dropboxConfigDefaultFolder, file: defaultUnionInputsConfigFile, obj: networkInputsConfigObj});
+        saveFileQueue.push({folder: configDefaultFolder, file: defaultUnionInputsConfigFile, obj: networkInputsConfigObj});
         resolve();
       });
 
@@ -1825,6 +1295,7 @@ setTimeout(async function(){
     try {
 
       await connectDb();
+      await initWatchConfig();
       await runMain();
       quit({cause: "DONE"});
 
