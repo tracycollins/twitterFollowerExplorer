@@ -1,21 +1,4 @@
 const MODULE_ID_PREFIX = "RNT";
-// const DEFAULT_INPUT_TYPES = [
-//   "emoji",
-//   "friends",
-//   "hashtags",  
-//   "images", 
-//   "locations", 
-//   "media", 
-//   "mentions",
-//   "ngrams",
-//   "places", 
-//   "sentiment", 
-//   "urls", 
-//   "userMentions", 
-//   "words"
-// ];
-
-// DEFAULT_INPUT_TYPES.sort();
 
 const DEFAULT_USER_PROFILE_ONLY_FLAG = false;
 const DEFAULT_BINARY_MODE = true;
