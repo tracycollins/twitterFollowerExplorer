@@ -1,7 +1,7 @@
 const MODULE_ID_PREFIX = "RNT";
 
 const DEFAULT_USER_PROFILE_ONLY_FLAG = false;
-const DEFAULT_BINARY_MODE = true;
+const DEFAULT_BINARY_MODE = false;
 const ONE_SECOND = Number(1000);
 const MAX_Q_SIZE = 2000;
 
@@ -17,7 +17,7 @@ let activateNetworkIntervalBusy = false;
 let statsUpdateInterval;
 
 const configuration = {};
-configuration.binaryMode = DEFAULT_BINARY_MODE;
+// configuration.binaryMode = DEFAULT_BINARY_MODE;
 configuration.userProfileOnlyFlag = DEFAULT_USER_PROFILE_ONLY_FLAG;
 configuration.verbose = false;
 configuration.globalTestMode = false;
@@ -551,12 +551,12 @@ process.on("message", async function(m) {
       ));
     break;
 
-    case "SET_BINARY_MODE":
-      await nnTools.setBinaryMode(m.binaryMode);
-      console.log(chalkLog("RNT | SET_BINARY_MODE"
-        + " | " + m.binaryMode
-      ));
-    break;
+    // case "SET_BINARY_MODE":
+    //   await nnTools.setBinaryMode(m.binaryMode);
+    //   console.log(chalkLog("RNT | SET_BINARY_MODE"
+    //     + " | " + m.binaryMode
+    //   ));
+    // break;
 
     case "LOAD_MAX_INPUTS_HASHMAP":
       await nnTools.setMaxInputHashMap(m.maxInputHashMap);
