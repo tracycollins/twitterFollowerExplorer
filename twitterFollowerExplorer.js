@@ -2030,6 +2030,14 @@ async function loadNetworkFile(params){
     nnObj.networkTechnology = nnObj.evolve.options.networkTechnology;
   } 
 
+  if (nnObj.evolve.options.binaryMode && nnObj.evolve.options.binaryMode !== nnObj.binaryMode) {
+    console.log(chalkAlert(MODULE_ID_PREFIX
+      + " | !!! INCORRECT BINARY MODE | CHANGE " + nnObj.binaryMode + " -> " + nnObj.evolve.options.binaryMode
+      + " | " + nnObj.networkId 
+    ));
+    nnObj.binaryMode = nnObj.evolve.options.binaryMode;
+  } 
+
   if (nnObj.testCycleHistory && nnObj.testCycleHistory !== undefined && nnObj.testCycleHistory.length > 0) {
     nnObj.previousRank = nnObj.testCycleHistory[nnObj.testCycleHistory.length-1].rank;
     console.log(chalkLog(MODULE_ID_PREFIX
