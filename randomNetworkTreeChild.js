@@ -1,7 +1,6 @@
 const MODULE_ID_PREFIX = "RNT";
 
 const DEFAULT_USER_PROFILE_ONLY_FLAG = false;
-const DEFAULT_BINARY_MODE = false;
 const ONE_SECOND = Number(1000);
 const MAX_Q_SIZE = 2000;
 
@@ -17,7 +16,6 @@ let activateNetworkIntervalBusy = false;
 let statsUpdateInterval;
 
 const configuration = {};
-// configuration.binaryMode = DEFAULT_BINARY_MODE;
 configuration.userProfileOnlyFlag = DEFAULT_USER_PROFILE_ONLY_FLAG;
 configuration.verbose = false;
 configuration.globalTestMode = false;
@@ -620,7 +618,7 @@ process.on("message", async function(m) {
         updateMemoryStats();
         await nnTools.printNetworkResults({title: "GET STATS"});
         const stats = await nnTools.getNetworkStats();
-        process.send({ op: "STATS", networks: stats.networks, queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
+        process.send({ op: "GET_STATS_RESULTS", networks: stats.networks, queue: activateNetworkQueue.length, memoryUsage: statsObj.memoryUsage }, function(err){
           if (err) { 
             console.log(chalkError("RNT | *** SEND ERROR | GET_STATS | " + err));
             console.error.bind(console, "RNT | *** SEND ERROR | STATS | " + err);

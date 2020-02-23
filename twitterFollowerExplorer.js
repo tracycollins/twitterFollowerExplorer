@@ -295,6 +295,8 @@ statsObj.remainingTimeMs = 0;
 statsObj.status = "START";
 statsObj.timeStamp = getTimeStamp();
 
+statsObj.networks = {};
+
 statsObj.bestNetwork = {};
 statsObj.bestNetwork.networkId = null;
 statsObj.bestNetwork.numInputs = 0;
@@ -3010,9 +3012,16 @@ async function processRandomNetworkTreeMessage(params){
       quit();
     break;
 
-    case "STATS":
+    case "GET_STATS_RESULTS":
+
+      // op: "GET_STATS_RESULTS", 
+      // networks: stats.networks, 
+      // queue: activateNetworkQueue.length, 
+      // memoryUsage: statsObj.memoryUsage 
 
       statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+
+      statsObj.networks = m.networks;
 
       console.log(chalkBlue("TFE | RNT | UPDATING ALL NNs STATS IN DB ..."));
 
@@ -4422,8 +4431,11 @@ const fsmStates = {
         console.log(chalkLog("TFE | Q STATS\n" + jsonPrint(statsObj.queues)));
 
         if (randomNetworkTree && (randomNetworkTree !== undefined)) {
+
           randomNetworkTree.send({op: "GET_STATS"});
+
           console.log(chalkLog("TFE | PAUSING FOR RNT GET_STATS RESPONSE ..."));
+
           try{
             console.log(chalkLog(MODULE_ID_PREFIX + " | ... WAIT EVENT: allNetworksUpdated"));
             await tcUtils.waitEvent({ event: "allNetworksUpdated"});
