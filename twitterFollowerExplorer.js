@@ -819,7 +819,6 @@ function printNetworkObj(title, nObj, format) {
     + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
     + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
     + " | SR: " + networkObj.successRate.toFixed(2) + "%"
-    // + " | CR: " + getTimeStamp(networkObj.createdAt)
     + " | TC: " + networkObj.testCycles
     + " | TCH: " + networkObj.testCycleHistory.length
     + " | INs: " + networkObj.numInputs
