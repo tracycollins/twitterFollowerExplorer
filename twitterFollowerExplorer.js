@@ -2030,7 +2030,7 @@ async function loadNetworkFile(params){
     nnObj.networkTechnology = nnObj.evolve.options.networkTechnology;
   } 
 
-  if (nnObj.evolve.options.binaryMode && nnObj.evolve.options.binaryMode !== nnObj.binaryMode) {
+  if (nnObj.evolve.options.binaryMode !== undefined && nnObj.evolve.options.binaryMode !== nnObj.binaryMode) {
     console.log(chalkAlert(MODULE_ID_PREFIX
       + " | !!! INCORRECT BINARY MODE | CHANGE " + nnObj.binaryMode + " -> " + nnObj.evolve.options.binaryMode
       + " | " + nnObj.networkId 
