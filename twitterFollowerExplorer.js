@@ -3431,6 +3431,8 @@ function initUserDbUpdateQueueInterval(interval) {
         }
         catch(err){
           console.log(chalkError("TFE | *** ERROR DB UPDATE USER - updateUserDb"
+            + " | NID: " + user.nodeId
+            + " | @" + user.screenName
             + "\n" + err
           ));
         }
