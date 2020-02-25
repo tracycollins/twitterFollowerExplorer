@@ -121,15 +121,16 @@ const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
 const FSM_TICK_INTERVAL = ONE_SECOND;
 const STATS_UPDATE_INTERVAL = ONE_MINUTE;
-const PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
-const ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
-const USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
+
+const DEFAULT_PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
+const DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
+const DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 
 const DEFAULT_NUM_NN = 20; // TOP n NNs of each inputsId are loaded from DB
 const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
 
-const RANDOM_NETWORK_TREE_INTERVAL = DEFAULT_MIN_INTERVAL;
-const RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL; // ms
+const DEFAULT_RANDOM_NETWORK_TREE_INTERVAL = DEFAULT_MIN_INTERVAL;
+const DEFAULT_RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL; // ms
 
 let waitFileSaveInterval;
 let randomNetworkTreeMessageRxQueueInterval;
@@ -174,6 +175,13 @@ const userTweetFetchSet = new Set();
 let configuration = {};
 configuration.offlineMode = false;
 configuration.verbose = false;
+
+configuration.randomNetworkTreeInterval = DEFAULT_RANDOM_NETWORK_TREE_INTERVAL;
+configuration.randomNetworkTreeMessageRxQueueInterval = DEFAULT_RANDOM_NETWORK_TREE_MSG_Q_INTERVAL;
+configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
+configuration.activateNetworkQueueInterval = DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL;
+configuration.userDbUpdateQueueInterval = DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL;
+
 configuration.networkDatabaseLoadPerInputsLimit = DEFAULT_NN_DB_LOAD_PER_INPUTS;
 configuration.randomUntestedPerInputsLimit = DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS;
 configuration.languageQuotaTimoutDuration = DEFAULT_LANG_QUOTA_TIMEOUT_DURATION;
@@ -1403,6 +1411,11 @@ async function loadConfigFile(params) {
       if ((loadedConfigObj.TFE_TEST_MODE == false) || (loadedConfigObj.TFE_TEST_MODE == "false")) {
         newConfiguration.testMode = false;
       }
+    }
+
+    if (loadedConfigObj.TFE_DEFAULT_MIN_INTERVAL !== undefined) {
+      console.log("TFE | LOADED TFE_DEFAULT_MIN_INTERVAL: " + loadedConfigObj.TFE_DEFAULT_MIN_INTERVAL);
+      newConfiguration.processUserQueueInterval = loadedConfigObj.TFE_DEFAULT_MIN_INTERVAL;
     }
 
     if (loadedConfigObj.TFE_NN_DB_LOAD_PER_INPUTS !== undefined) {
@@ -2823,9 +2836,13 @@ function updateNetworkStats(params) {
   });
 }
 
-function initActivateNetworkQueueInterval(interval) {
+function initActivateNetworkQueueInterval(p) {
 
   return new Promise(function(resolve){
+
+    const params = p || {};
+
+    const interval = params.interval || configuration.activateNetworkQueueInterval;
 
     clearInterval(activateNetworkQueueInterval);
 
@@ -3344,9 +3361,13 @@ async function processRandomNetworkTreeMessage(params){
   }
 }
 
-function initRandomNetworkTreeMessageRxQueueInterval(interval) {
+function initRandomNetworkTreeMessageRxQueueInterval(p) {
 
   return new Promise(function(resolve){
+
+    const params = p || {};
+
+    const interval = params.interval || configuration.randomNetworkTreeMessageRxQueueInterval;
 
     statsObj.status = "INIT RNT INTERVAL";
 
@@ -3376,9 +3397,13 @@ function initRandomNetworkTreeMessageRxQueueInterval(interval) {
   });
 }
 
-function initUserDbUpdateQueueInterval(interval) {
+function initUserDbUpdateQueueInterval(p) {
 
   return new Promise(function(resolve){
+
+    const params = p || {};
+
+    const interval = params.interval || configuration.userDbUpdateQueueInterval;
 
     statsObj.status = "INIT USER DB UPDATE INTERVAL";
 
@@ -3456,7 +3481,8 @@ function initRandomNetworkTreeChild() {
     const rntInitParams = { 
       op: "INIT", 
       childId: RNT_CHILD_ID, 
-      interval: RANDOM_NETWORK_TREE_INTERVAL,
+      // interval: RANDOM_NETWORK_TREE_INTERVAL,
+      interval: configuration.randomNetworkTreeInterval,
       userProfileOnlyFlag: configuration.userProfileOnlyFlag,
       testMode: configuration.testMode, 
       verbose: configuration.verbose 
@@ -4065,13 +4091,17 @@ async function allQueuesEmpty(){
   return true;
 }
 
-async function initProcessUserQueueInterval(interval) {
+async function initProcessUserQueueInterval(p) {
+
+  const params = p || {};
+
+  const interval = params.interval || configuration.processUserQueueInterval;
 
   statsObj.status = "INIT PROCESS USER QUEUE";
 
   let mObj = {};
 
-  console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + PROCESS_USER_QUEUE_INTERVAL + " MS"));
+  console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + interval + " MS"));
 
   statsObj.processedStartFlag = false;
   clearInterval(processUserQueueInterval);
@@ -4613,16 +4643,19 @@ setTimeout(async function(){
     ));
 
     await tcUtils.initSaveFileQueue();
-    await connectDb();
-    await fsmStart();
-    await initUserDbUpdateQueueInterval(USER_DB_UPDATE_QUEUE_INTERVAL);
 
-    await initRandomNetworkTreeMessageRxQueueInterval(RANDOM_NETWORK_TREE_MSG_Q_INTERVAL);
-    await initActivateNetworkQueueInterval(ACTIVATE_NETWORK_QUEUE_INTERVAL);
+    await connectDb();
+
+    await fsmStart();
+
+    await initUserDbUpdateQueueInterval({interval: configuration.userDbUpdateQueueInterval});
+    await initRandomNetworkTreeMessageRxQueueInterval({interval: configuration.randomNetworkTreeMessageRxQueueInterval});
+    await initActivateNetworkQueueInterval({interval: configuration.activateNetworkQueueInterval});
+
     await initRandomNetworkTreeChild();
 
     await initWatchConfig();
-    await initProcessUserQueueInterval(PROCESS_USER_QUEUE_INTERVAL);
+    await initProcessUserQueueInterval({interval: configuration.processUserQueueInterval});
 
   }
   catch(err){
