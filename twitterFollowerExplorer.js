@@ -116,7 +116,7 @@ const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
 
 const RNT_CHILD_ID = CHILD_PREFIX + "_child_rnt";
 
-const DEFAULT_MIN_INTERVAL = 5;
+const DEFAULT_MIN_INTERVAL = 10;
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
 const FSM_TICK_INTERVAL = ONE_SECOND;
@@ -1413,9 +1413,24 @@ async function loadConfigFile(params) {
       }
     }
 
-    if (loadedConfigObj.TFE_DEFAULT_MIN_INTERVAL !== undefined) {
-      console.log("TFE | LOADED TFE_DEFAULT_MIN_INTERVAL: " + loadedConfigObj.TFE_DEFAULT_MIN_INTERVAL);
-      newConfiguration.processUserQueueInterval = loadedConfigObj.TFE_DEFAULT_MIN_INTERVAL;
+    if (loadedConfigObj.TFE_PROCESS_USER_QUEUE_INTERVAL !== undefined) {
+      console.log("TFE | LOADED TFE_PROCESS_USER_QUEUE_INTERVAL: " + loadedConfigObj.TFE_PROCESS_USER_QUEUE_INTERVAL);
+      newConfiguration.processUserQueueInterval = loadedConfigObj.TFE_PROCESS_USER_QUEUE_INTERVAL;
+    }
+
+    if (loadedConfigObj.TFE_ACTIVATE_NETWORK_QUEUE_INTERVAL !== undefined) {
+      console.log("TFE | LOADED TFE_ACTIVATE_NETWORK_QUEUE_INTERVAL: " + loadedConfigObj.TFE_ACTIVATE_NETWORK_QUEUE_INTERVAL);
+      newConfiguration.activateNetworkQueueInterval = loadedConfigObj.TFE_ACTIVATE_NETWORK_QUEUE_INTERVAL;
+    }
+
+    if (loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL !== undefined) {
+      console.log("TFE | LOADED TFE_RANDOM_NETWORK_TREE_INTERVAL: " + loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL);
+      newConfiguration.randomNetworkTreeInterval = loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL;
+    }
+
+    if (loadedConfigObj.TFE_USER_DB_UPDATE_QUEUE_INTERVAL !== undefined) {
+      console.log("TFE | LOADED TFE_USER_DB_UPDATE_QUEUE_INTERVAL: " + loadedConfigObj.TFE_USER_DB_UPDATE_QUEUE_INTERVAL);
+      newConfiguration.userDbUpdateQueueInterval = loadedConfigObj.TFE_USER_DB_UPDATE_QUEUE_INTERVAL;
     }
 
     if (loadedConfigObj.TFE_NN_DB_LOAD_PER_INPUTS !== undefined) {
@@ -2850,7 +2865,7 @@ function initActivateNetworkQueueInterval(p) {
     statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
     statsObj.queues.activateNetworkQueue.busy = false;
 
-    console.log(chalkLog("TFE | INIT RANDOM NN TREE QUEUE INTERVAL: " + interval + " ms"));
+    console.log(chalkLog("TFE | INIT ACTIVATE NN QUEUE INTERVAL: " + interval + " ms"));
 
     activateNetworkQueueInterval = setInterval(function () {
 
@@ -3375,7 +3390,7 @@ function initRandomNetworkTreeMessageRxQueueInterval(p) {
 
     randomNetworkTreeMessageRxQueueReadyFlag = true;
 
-    console.log(chalkLog("TFE | INIT RANDOM NN TREE QUEUE INTERVAL: " + interval + " ms"));
+    console.log(chalkLog("TFE | INIT RANDOM NN TREE MSG RX QUEUE INTERVAL: " + interval + " ms"));
 
     randomNetworkTreeMessageRxQueueInterval = setInterval(async function () {
 
