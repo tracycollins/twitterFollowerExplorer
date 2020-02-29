@@ -4635,7 +4635,7 @@ setTimeout(async function(){
     statsObj.status = "START";
 
     if (!configuration.offlineMode){
-      initSlackRtmClient();
+      await initSlackRtmClient();
       await initSlackWebClient();
       const twitterParams = await tcUtils.initTwitterConfig();
       tcUtils.setEnableLanguageAnalysis(configuration.enableLanguageAnalysis);
