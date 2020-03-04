@@ -2650,11 +2650,6 @@ async function initNetworks(){
 
     console.log(chalkAlert("TFE | +++ NETWORKS INITIALIZED"));
 
-    // await randomNetworkTree.send({ op: "SET_BINARY_MODE", binaryMode: true });
-    // await randomNetworkTree.send({ op: "SET_USER_PROFILE_ONLY_FLAG", userProfileOnlyFlag: configuration.userProfileOnlyFlag });
-
-    console.log(chalkBlue("TFE | SENT BINARY MODE > RNT"));
-
     await initMaxInputHashMap();
     console.log(chalkGreen("TFE | +++ LOAD BEST NETWORKS COMPLETE"));
     return;

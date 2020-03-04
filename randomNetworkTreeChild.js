@@ -548,14 +548,7 @@ process.on("message", async function(m) {
         + " | " + m.userProfileOnlyFlag
       ));
     break;
-
-    // case "SET_BINARY_MODE":
-    //   await nnTools.setBinaryMode(m.binaryMode);
-    //   console.log(chalkLog("RNT | SET_BINARY_MODE"
-    //     + " | " + m.binaryMode
-    //   ));
-    // break;
-
+    
     case "LOAD_MAX_INPUTS_HASHMAP":
       await nnTools.setMaxInputHashMap(m.maxInputHashMap);
       console.log(chalkLog("RNT | LOAD_MAX_INPUTS_HASHMAP"
