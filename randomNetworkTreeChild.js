@@ -289,7 +289,7 @@ function initActivateNetworkInterval(interval){
 
     let activateNetworkObj = {};
     let activateNetworkResults = {};
-    let currentBestNetworkStats = {};
+    let currentBestNetwork = {};
 
     activateNetworkInterval = setInterval(async function(){ 
 
@@ -313,48 +313,48 @@ function initActivateNetworkInterval(interval){
             convertDatumFlag: true
           });
 
-          currentBestNetworkStats = await nnTools.updateNetworkStats({
+          currentBestNetwork = await nnTools.updateNetworkStats({
             sortBy: "matchRate",
             user: activateNetworkObj.user,
             networkOutput: activateNetworkResults.networkOutput, 
             expectedCategory: activateNetworkResults.user.category
           });
 
-          if (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank){
+          if (statsObj.currentBestNetwork.rank < currentBestNetwork.rank){
             printNetworkObj("RNT | +++ UPDATE BEST NETWORK"
               + " | @" + messageObj.user.screenName 
-              + " | CM: " + messageObj.user.category, currentBestNetworkStats, chalk.black
+              + " | CM: " + messageObj.user.category, currentBestNetwork, chalk.black
             );
             await nnTools.printNetworkResults();
           }
-          else if (configuration.testMode || (currentBestNetworkStats.meta.total % 100 === 0)) {
+          else if (configuration.testMode || (currentBestNetwork.meta.total % 100 === 0)) {
             printNetworkObj("RNT | NETWORK STATS"
               + " | @" + messageObj.user.screenName 
-              + " | CM: " + messageObj.user.category, currentBestNetworkStats, chalk.black
+              + " | CM: " + messageObj.user.category, currentBestNetwork, chalk.black
             );
             await nnTools.printNetworkResults();
           }
 
           if (configuration.verbose
-            || (statsObj.currentBestNetwork.rank < currentBestNetworkStats.rank)
+            || (statsObj.currentBestNetwork.rank < currentBestNetwork.rank)
           ) {
             console.log("RNT | BEST NN"
-              + " | RANK: " + currentBestNetworkStats.rank
-              + " | MR: " + currentBestNetworkStats.matchRate.toFixed(2) + "%"
-              + " | " + currentBestNetworkStats.meta.match + "/" + currentBestNetworkStats.meta.total
-              + " | MATCH: " + currentBestNetworkStats.meta.matchFlag
-              + " | " + currentBestNetworkStats.networkId
-              + " | IN: " + currentBestNetworkStats.inputsId
-              + " | OUT: " + currentBestNetworkStats.meta.output
+              + " | RANK: " + currentBestNetwork.rank
+              + " | MR: " + currentBestNetwork.matchRate.toFixed(2) + "%"
+              + " | " + currentBestNetwork.meta.match + "/" + currentBestNetwork.meta.total
+              + " | MATCH: " + currentBestNetwork.meta.matchFlag
+              + " | " + currentBestNetwork.networkId
+              + " | IN: " + currentBestNetwork.inputsId
+              + " | OUT: " + currentBestNetwork.meta.output
             );
           }
 
-          statsObj.currentBestNetwork = currentBestNetworkStats;
+          statsObj.currentBestNetwork = currentBestNetwork;
 
-          messageObj.currentBestNetwork = currentBestNetworkStats;
+          messageObj.currentBestNetwork = currentBestNetwork;
           messageObj.user = activateNetworkResults.user;
           messageObj.category = activateNetworkResults.user.category;
-          messageObj.categoryAuto = activateNetworkResults.categoryAuto;
+          messageObj.categoryAuto = currentBestNetwork.meta.categoryAuto;
 
           messageObj.queue = activateNetworkQueue.length;
 
