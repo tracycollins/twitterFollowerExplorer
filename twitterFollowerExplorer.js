@@ -1196,8 +1196,6 @@ async function showStats(options) {
 
   statsObj.remainingTimeMs = statsObj.users.processRateMS * statsObj.users.numProcessRemaining;
 
-  // await childStatsAll();
-
   statsObjSmall = pick(statsObj, statsPickArray);
 
   if (options) {
@@ -1205,15 +1203,6 @@ async function showStats(options) {
     return;
   }
   else {
-
-    // for (const childId of Object.keys(childHashMap)) {
-
-    //   console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS CHILD"
-    //     + " | CHILD ID: " + childId + " | CH FSM: " + childHashMap[childId].status
-    //   ));
-
-    //   objectPath.set(statsObj, ["children", childId, "status"], childHashMap[childId].status);
-    // }
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT STATUS"
       + " | MRXQ: " + randomNetworkTreeMessageRxQueue.length
