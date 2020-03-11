@@ -905,9 +905,137 @@ function updateDbNetwork(params) {
   });
 }
 
+// function initCategorizedUserIdSet(){
+
+//   return new Promise(function(resolve, reject){
+
+//     statsObj.status = "INIT CATEGORIZED USER ID SET";
+
+//     const p = {};
+//     p.query = {};
+//     p.query.$and = [
+//       { category: { "$in": ["left", "right", "neutral"] } },
+//       { following: true },
+//       { ignored: false }
+//     ];
+
+//     p.lean = false;
+//     p.skip = 0;
+//     p.limit = (configuration.testMode) ? TEST_FIND_CAT_USER_CURSOR_LIMIT : DEFAULT_FIND_CAT_USER_CURSOR_LIMIT;
+//     p.batchSize = (configuration.testMode) ? TEST_CURSOR_BATCH_SIZE : DEFAULT_CURSOR_BATCH_SIZE;
+//     p.toObject = true;
+
+//     let more = true;
+//     statsObj.users.categorized.total = 0;
+//     statsObj.users.categorized.manual = 0;
+//     statsObj.users.categorized.auto = 0;
+//     statsObj.users.categorized.matched = 0;
+//     statsObj.users.categorized.mismatched = 0;
+//     statsObj.users.categorized.matchRate = 0;
+
+//     async.whilst(
+
+//       function test(cbTest) { cbTest(null, more); },
+
+//       function(cb){
+
+//         userServerController.findCategorizedUsersCursor(p, function(err, results){
+
+//           if (err) {
+//             console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserIdSet: " + err));
+//             cb(err);
+//           }
+//           else if (
+//             (!configuration.testMode && results) 
+//             || (configuration.testMode && (statsObj.users.categorized.total < TEST_TOTAL_FETCH))
+//             ) 
+//           {
+
+//             more = true;
+//             statsObj.users.categorized.total += results.count;
+//             statsObj.users.categorized.manual += results.manual;
+//             statsObj.users.categorized.auto += results.auto;
+//             statsObj.users.categorized.matched += results.matched;
+//             statsObj.users.categorized.mismatched += results.mismatched;
+
+//             statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
+
+//             const userIdArray = Object.keys(results.obj);
+
+//             for(const userId of userIdArray){
+//               categorizedUserIdSet.add(userId);
+//               const user = results.obj[userId];
+//               processUserQueue.push(user);
+//             }
+
+//             if (configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
+
+//               console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
+//                 + " | UIDs: " + userIdArray.length
+//                 + " | PUQ: " + processUserQueue.length
+//                 + " | TOT CAT: " + statsObj.users.categorized.total
+//                 + " | LIMIT: " + p.limit
+//                 + " | SKIP: " + p.skip
+//                 + " | " + statsObj.users.categorized.manual + " MAN"
+//                 + " | " + statsObj.users.categorized.auto + " AUTO"
+//                 + " | " + statsObj.users.categorized.matched + " MATCHED"
+//                 + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+//                 + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+//               ));
+//             }
+
+//             p.skip += results.count;
+
+//             setTimeout(function(){
+
+//               cb();
+
+//             }, DEFAULT_CURSOR_BATCH_SIZE*DEFAULT_MIN_INTERVAL);
+
+//           }
+//           else {
+
+//             more = false;
+
+//             console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
+//               + " | TOT CAT: " + statsObj.users.categorized.total
+//               + " | " + statsObj.users.categorized.manual + " MAN"
+//               + " | " + statsObj.users.categorized.auto + " AUTO"
+//               + " | " + statsObj.users.categorized.matched + " MATCHED"
+//               + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+//               + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+//             ));
+
+//             cb();
+//           }
+
+//         });
+//       },
+
+//       function(err){
+//         if (err) {
+//           console.log(chalkError(MODULE_ID_PREFIX + " | INIT CATEGORIZED USER HASHMAP ERROR: " + err + "\n" + jsonPrint(err)));
+//           return reject(err);
+//         }
+
+//         statsObj.fetchUserEndFlag = true;
+
+//         console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
+//           + " | TOT CAT: " + statsObj.users.categorized.total
+//         ));
+
+//         resolve();
+//       }
+//     );
+
+//   });
+// }
+
 function initCategorizedUserIdSet(){
 
   return new Promise(function(resolve, reject){
+
+    let categorizedUserIdSetIntervalReady = true;
 
     statsObj.status = "INIT CATEGORIZED USER ID SET";
 
@@ -933,25 +1061,28 @@ function initCategorizedUserIdSet(){
     statsObj.users.categorized.mismatched = 0;
     statsObj.users.categorized.matchRate = 0;
 
-    async.whilst(
+    const categorizedUserIdSetInterval = setInterval(function(){
 
-      function test(cbTest) { cbTest(null, more); },
+      if (categorizedUserIdSetIntervalReady 
+        && more 
+        && (activateNetworkQueue.length < p.batchSize)
+        && (processUserQueue.length < p.batchSize)
+      ){
 
-      function(cb){
+        categorizedUserIdSetIntervalReady = false;
 
         userServerController.findCategorizedUsersCursor(p, function(err, results){
 
           if (err) {
             console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserIdSet: " + err));
-            cb(err);
+            clearInterval(categorizedUserIdSetInterval);
+            return reject(err);
           }
-          else if (
-            (!configuration.testMode && results) 
-            || (configuration.testMode && (statsObj.users.categorized.total < TEST_TOTAL_FETCH))
-            ) 
-          {
+          
+          if ((!configuration.testMode && results) || (configuration.testMode && (statsObj.users.categorized.total < TEST_TOTAL_FETCH))) {
 
             more = true;
+
             statsObj.users.categorized.total += results.count;
             statsObj.users.categorized.manual += results.manual;
             statsObj.users.categorized.auto += results.auto;
@@ -985,12 +1116,13 @@ function initCategorizedUserIdSet(){
             }
 
             p.skip += results.count;
-            cb();
+            categorizedUserIdSetIntervalReady = true;
 
           }
           else {
 
             more = false;
+            clearInterval(categorizedUserIdSetInterval);
 
             console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
               + " | TOT CAT: " + statsObj.users.categorized.total
@@ -1001,27 +1133,119 @@ function initCategorizedUserIdSet(){
               + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
             ));
 
-            cb();
+            categorizedUserIdSetIntervalReady = true;
+
+            statsObj.fetchUserEndFlag = true;
+
+            console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
+              + " | TOT CAT: " + statsObj.users.categorized.total
+            ));
+
+            resolve();
+
           }
 
         });
-      },
 
-      function(err){
-        if (err) {
-          console.log(chalkError(MODULE_ID_PREFIX + " | INIT CATEGORIZED USER HASHMAP ERROR: " + err + "\n" + jsonPrint(err)));
-          return reject(err);
-        }
-
-        statsObj.fetchUserEndFlag = true;
-
-        console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
-          + " | TOT CAT: " + statsObj.users.categorized.total
-        ));
-
-        resolve();
       }
-    );
+
+    }, DEFAULT_MIN_INTERVAL);
+
+
+    // async.whilst(
+
+    //   function test(cbTest) { cbTest(null, more); },
+
+    //   function(cb){
+
+    //     userServerController.findCategorizedUsersCursor(p, function(err, results){
+
+    //       if (err) {
+    //         console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserIdSet: " + err));
+    //         cb(err);
+    //       }
+    //       else if (
+    //         (!configuration.testMode && results) 
+    //         || (configuration.testMode && (statsObj.users.categorized.total < TEST_TOTAL_FETCH))
+    //         ) 
+    //       {
+
+    //         more = true;
+    //         statsObj.users.categorized.total += results.count;
+    //         statsObj.users.categorized.manual += results.manual;
+    //         statsObj.users.categorized.auto += results.auto;
+    //         statsObj.users.categorized.matched += results.matched;
+    //         statsObj.users.categorized.mismatched += results.mismatched;
+
+    //         statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
+
+    //         const userIdArray = Object.keys(results.obj);
+
+    //         for(const userId of userIdArray){
+    //           categorizedUserIdSet.add(userId);
+    //           const user = results.obj[userId];
+    //           processUserQueue.push(user);
+    //         }
+
+    //         if (configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
+
+    //           console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
+    //             + " | UIDs: " + userIdArray.length
+    //             + " | PUQ: " + processUserQueue.length
+    //             + " | TOT CAT: " + statsObj.users.categorized.total
+    //             + " | LIMIT: " + p.limit
+    //             + " | SKIP: " + p.skip
+    //             + " | " + statsObj.users.categorized.manual + " MAN"
+    //             + " | " + statsObj.users.categorized.auto + " AUTO"
+    //             + " | " + statsObj.users.categorized.matched + " MATCHED"
+    //             + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+    //             + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+    //           ));
+    //         }
+
+    //         p.skip += results.count;
+
+    //         setTimeout(function(){
+
+    //           cb();
+
+    //         }, DEFAULT_CURSOR_BATCH_SIZE*DEFAULT_MIN_INTERVAL);
+
+    //       }
+    //       else {
+
+    //         more = false;
+
+    //         console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
+    //           + " | TOT CAT: " + statsObj.users.categorized.total
+    //           + " | " + statsObj.users.categorized.manual + " MAN"
+    //           + " | " + statsObj.users.categorized.auto + " AUTO"
+    //           + " | " + statsObj.users.categorized.matched + " MATCHED"
+    //           + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+    //           + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+    //         ));
+
+    //         cb();
+    //       }
+
+    //     });
+    //   },
+
+    //   function(err){
+    //     if (err) {
+    //       console.log(chalkError(MODULE_ID_PREFIX + " | INIT CATEGORIZED USER HASHMAP ERROR: " + err + "\n" + jsonPrint(err)));
+    //       return reject(err);
+    //     }
+
+    //     statsObj.fetchUserEndFlag = true;
+
+    //     console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
+    //       + " | TOT CAT: " + statsObj.users.categorized.total
+    //     ));
+
+    //     resolve();
+    //   }
+    // );
 
   });
 }
@@ -3626,20 +3850,20 @@ function processTweetObj(params){
           case "ngrams":
           case "emoji":
           case "places":
-            entity = entityObj.nodeId;
+            entity = entityObj;
           break;
 
           case "urls":
-            if (entityObj.nodeId.includes(".")) { 
-              entity = btoa(entityObj.nodeId);
+            if (entityObj.includes(".")) { 
+              entity = btoa(entityObj);
             }
             else{
-              entity = entityObj.nodeId;
+              entity = entityObj;
             }
           break;
 
           case "words":
-            entity = entityObj.nodeId.toLowerCase();
+            entity = entityObj.toLowerCase();
             entity = entity.replace(/\./gi, "_")
           break;
           
