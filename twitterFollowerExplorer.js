@@ -2627,11 +2627,15 @@ async function loadBestNetworksDatabase(p) {
 
       if (nnObj.testCycleHistory && nnObj.testCycleHistory !== undefined && nnObj.testCycleHistory.length > 0) {
         nnObj.previousRank = nnObj.testCycleHistory[nnObj.testCycleHistory.length-1].rank;
-        console.log(chalkLog(MODULE_ID_PREFIX
+        console.log(chalkLog(MODULE_ID_PREFIX + " | loadBestNetworksDatabase"
           + " | PREV RANK " + nnObj.previousRank
           + " | " + nnObj.networkId 
         ));
       }
+
+      console.log(chalkInfo(MODULE_ID_PREFIX + " | loadBestNetworksDatabase"
+        + " | " + nnObj.networkId 
+      ));
 
       nnObj = await fixIncorrectNetworkMetaData({networkObj: nnObj, updateDatabaseOnly: true});
       networkObj = await nnTools.convertNetwork({networkObj: nnObj});
