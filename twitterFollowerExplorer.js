@@ -2619,11 +2619,9 @@ async function loadBestNetworksDatabase(p) {
 
   let networkObj;
 
-  for(const nnDoc of nnArray){
+  for(let nnObj of nnArray){
 
-    // try{
-
-      let nnObj = nnDoc.toObject();
+    try{
 
       if (nnObj.testCycleHistory && nnObj.testCycleHistory !== undefined && nnObj.testCycleHistory.length > 0) {
         nnObj.previousRank = nnObj.testCycleHistory[nnObj.testCycleHistory.length-1].rank;
@@ -2686,12 +2684,12 @@ async function loadBestNetworksDatabase(p) {
           + " | TCH: " + networkObj.testCycleHistory.length
         ));
       }
-    // }
-    // catch(e){
-    //   console.log(chalkError(MODULE_ID_PREFIX + " | *** LOAD DB NETWORK CONVERT ERROR ... SKIPPING: " + nnDoc.networkId));
-    //   bestNetworkHashMap.delete(nnDoc.networkId);
-    //   continue;
-    // }
+    }
+    catch(e){
+      console.log(chalkError(MODULE_ID_PREFIX + " | *** LOAD DB NETWORK CONVERT ERROR ... SKIPPING: " + nnObj.networkId));
+      bestNetworkHashMap.delete(nnObj.networkId);
+      continue;
+    }
 
   }
 
