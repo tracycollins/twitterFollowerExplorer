@@ -867,6 +867,7 @@ function updateDbNetwork(params) {
     };
 
     update.$set = { 
+      networkTechnology: networkObj.networkTechnology,
       networkJson: networkObj.networkJson,
       archived: networkObj.archived,
       matchRate: networkObj.matchRate, 
