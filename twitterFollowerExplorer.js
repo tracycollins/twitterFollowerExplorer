@@ -2255,46 +2255,50 @@ function isBestNetwork(p){
 
 async function fixIncorrectNetworkMetaData(params){
 
-  let incorrectUpdateFlag = false;
+  try{
+    let incorrectUpdateFlag = false;
 
-  if (params.networkObj.evolve.options.networkTechnology 
-    && params.networkObj.evolve.options.networkTechnology !== params.networkObj.networkTechnology) {
-    console.log(chalkAlert(MODULE_ID_PREFIX
-      + " | !!! INCORRECT NETWORK TECH | CHANGE " + params.networkObj.networkTechnology 
-      + " -> " + params.networkObj.evolve.options.networkTechnology
-      + " | " + params.networkObj.networkId 
-    ));
-    params.networkObj.networkTechnology = params.networkObj.evolve.options.networkTechnology;
-    incorrectUpdateFlag = "networkTechnology";
-  } 
+    if (params.networkObj.evolve.options.networkTechnology 
+      && params.networkObj.evolve.options.networkTechnology !== params.networkObj.networkTechnology) {
+      console.log(chalkAlert(MODULE_ID_PREFIX
+        + " | !!! INCORRECT NETWORK TECH | CHANGE " + params.networkObj.networkTechnology 
+        + " -> " + params.networkObj.evolve.options.networkTechnology
+        + " | " + params.networkObj.networkId 
+      ));
+      params.networkObj.networkTechnology = params.networkObj.evolve.options.networkTechnology;
+      incorrectUpdateFlag = "networkTechnology";
+    } 
 
-  if (params.networkObj.evolve.options.binaryMode !== undefined 
-    && params.networkObj.evolve.options.binaryMode !== params.networkObj.binaryMode) {
-    console.log(chalkAlert(MODULE_ID_PREFIX
-      + " | !!! INCORRECT BINARY MODE | CHANGE " + params.networkObj.binaryMode 
-      + " -> " + params.networkObj.evolve.options.binaryMode
-      + " | " + params.networkObj.networkId 
-    ));
-    params.networkObj.binaryMode = params.networkObj.evolve.options.binaryMode;
-    incorrectUpdateFlag = "binaryMode";
-  } 
+    if (params.networkObj.evolve.options.binaryMode !== undefined 
+      && params.networkObj.evolve.options.binaryMode !== params.networkObj.binaryMode) {
+      console.log(chalkAlert(MODULE_ID_PREFIX
+        + " | !!! INCORRECT BINARY MODE | CHANGE " + params.networkObj.binaryMode 
+        + " -> " + params.networkObj.evolve.options.binaryMode
+        + " | " + params.networkObj.networkId 
+      ));
+      params.networkObj.binaryMode = params.networkObj.evolve.options.binaryMode;
+      incorrectUpdateFlag = "binaryMode";
+    } 
 
-  if (incorrectUpdateFlag) {
-    console.log(chalkLog(MODULE_ID_PREFIX
-      + " | ... SAVING UPDATED INCORRECT NN META DATA"
-      + " | INCORRECT FLAG: " + incorrectUpdateFlag
-      + " | " + params.networkObj.networkId 
-    ));
-    if (!params.updateDatabaseOnly) {
-      await tcUtils.saveFile({folder: params.folder, file: params.file, obj: params.networkObj});
+    if (incorrectUpdateFlag) {
+      console.log(chalkLog(MODULE_ID_PREFIX
+        + " | ... SAVING UPDATED INCORRECT NN META DATA"
+        + " | INCORRECT FLAG: " + incorrectUpdateFlag
+        + " | " + params.networkObj.networkId 
+      ));
+      if (!params.updateDatabaseOnly) {
+        await tcUtils.saveFile({folder: params.folder, file: params.file, obj: params.networkObj});
+      }
+      const nnObj = await updateDbNetwork({networkObj: params.networkObj, incrementTestCycles: false, addToTestHistory: false});
+      return nnObj;
     }
-    const nnObj = await updateDbNetwork({networkObj: params.networkObj, incrementTestCycles: false, addToTestHistory: false});
-    return nnObj;
+
+    return params.networkObj;
   }
-
-  return params.networkObj;
-
-
+  catch(err){
+    console.log(chalkAlert(MODULE_ID_PREFIX + " | *** fixIncorrectNetworkMetaData ERROR | " + err));
+    throw err;
+  }
 }
 
 async function loadNetworkFile(params){
