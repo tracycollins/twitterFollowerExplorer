@@ -2931,7 +2931,7 @@ async function initNetworks(){
 
   await loadBestNeuralNetworks();
   await initRandomNetworks();
-  console.log(chalkAlert("TFE | +++ NETWORKS INITIALIZED"));
+  console.log(chalkAlert("TFE | +++ NETWORKS INITIALIZED | " + bestNetworkHashMap.size + " NETWORKS"));
   await loadMaxInput({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile});
   await initMaxInputHashMap();
   return;
