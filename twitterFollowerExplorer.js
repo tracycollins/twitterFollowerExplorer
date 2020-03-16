@@ -2835,6 +2835,13 @@ function initRandomNetworks(){
 
       console.log(chalkGreen("TFE | initRandomNetworks |  " + networkObjArray.length + " NETWORKS"));
 
+      if (networkObjArray.length === 0){
+        statsObj.loadedNetworksFlag = true;
+        randomNetworkTree.send({ op: "LOAD_NETWORK_DONE" });
+        console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT LOADED NETWORKS COMPLETE"));
+        return resolve();
+      }
+
       const randomNetworkTreeLoadNetworInterval = setInterval(function(){
 
         if (networkObjArray.length > 0 && randomNetworkTreeLoadNetworkReady){
