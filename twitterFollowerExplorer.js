@@ -2259,7 +2259,7 @@ async function loadNetworkFile(params){
   const entry = params.entry;
   let incorrectUpdateFlag = false;
 
-  const nnObj = await tcUtils.loadFileRetry({folder: folder, file: entry.name});
+  let nnObj = await tcUtils.loadFileRetry({folder: folder, file: entry.name});
 
   if (!nnObj || nnObj=== undefined) {
     console.log(chalkError("NO BEST NN FOUND? | " + folder + "/" + entry.name));
@@ -2301,6 +2301,7 @@ async function loadNetworkFile(params){
         + " | " + nnObj.networkId 
       ));
       await tcUtils.saveFile({folder: folder, file: entry.name, obj: nnObj});
+      nnObj = await updateDbNetwork({networkObj: nnObj, incrementTestCycles: false, addToTestHistory: false});
     }
 
     const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
