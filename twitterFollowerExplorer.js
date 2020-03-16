@@ -2257,6 +2257,7 @@ async function loadNetworkFile(params){
 
   const folder = params.folder;
   const entry = params.entry;
+  let incorrectUpdateFlag = false;
 
   const nnObj = await tcUtils.loadFileRetry({folder: folder, file: entry.name});
 
@@ -2271,6 +2272,7 @@ async function loadNetworkFile(params){
       + " | " + nnObj.networkId 
     ));
     nnObj.networkTechnology = nnObj.evolve.options.networkTechnology;
+    incorrectUpdateFlag = "networkTechnology";
   } 
 
   if (nnObj.evolve.options.binaryMode !== undefined && nnObj.evolve.options.binaryMode !== nnObj.binaryMode) {
@@ -2279,6 +2281,7 @@ async function loadNetworkFile(params){
       + " | " + nnObj.networkId 
     ));
     nnObj.binaryMode = nnObj.evolve.options.binaryMode;
+    incorrectUpdateFlag = "binaryMode";
   } 
 
   if (nnObj.testCycleHistory && nnObj.testCycleHistory !== undefined && nnObj.testCycleHistory.length > 0) {
@@ -2290,6 +2293,15 @@ async function loadNetworkFile(params){
   } 
 
   try{
+
+    if (incorrectUpdateFlag) {
+      console.log(chalkLog(MODULE_ID_PREFIX
+        + " | ... SAVING UPDATED INCORRECT NN META DATA"
+        + " | INCORRECT FLAG: " + incorrectUpdateFlag
+        + " | " + nnObj.networkId 
+      ));
+      await tcUtils.saveFile({folder: folder, file: entry.name, obj: nnObj});
+    }
 
     const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
 
