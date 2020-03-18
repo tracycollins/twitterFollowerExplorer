@@ -2076,8 +2076,8 @@ async function fixIncorrectNetworkMetaData(params){
       if (!params.updateDatabaseOnly) {
         await tcUtils.saveFile({folder: params.folder, file: params.file, obj: params.networkObj});
       }
-      const nnObj = await updateDbNetwork({networkObj: params.networkObj, incrementTestCycles: false, addToTestHistory: false});
-      return nnObj;
+      // const nnObj = await updateDbNetwork({networkObj: params.networkObj, incrementTestCycles: false, addToTestHistory: false});
+      // return nnObj;
     }
 
     return params.networkObj;
@@ -2316,6 +2316,64 @@ async function loadBestNetworksFolder(params) {
   });
 }
 
+async function loadNetworksOfInputs(params){
+
+  let nnArray = [];
+
+  for await(const inputsId of params.inputsIdArray) {
+
+    console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING NN FROM DB | INPUTS ID: " + inputsId));
+
+    let query = {};
+
+    query.inputsId = inputsId;
+
+    if (params.minTestCycles) {
+      query = {};
+      query.$and = [
+        { inputsId: inputsId },
+        { overallMatchRate: { "$gte": params.globalMinSuccessRate } }
+      ];
+    }
+
+    const randomUntestedQuery = {};
+
+    randomUntestedQuery.$and = [
+      { inputsId: inputsId },
+      { successRate: { "$gte": params.globalMinSuccessRate } },
+      { testCycles: { "$lte": params.minTestCycles } }
+    ];
+
+    if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
+
+    let nnArrayTopOverallMatchRate = [];
+    let nnArrayRandomUntested = [];
+
+    console.log(chalkLog("TFE | ... LOADING " + params.networkDatabaseLoadPerInputsLimit + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
+
+    nnArrayTopOverallMatchRate = await global.wordAssoDb.NeuralNetwork.find(query)
+    .lean()
+    .sort({"overallMatchRate": -1})
+    .limit(params.networkDatabaseLoadPerInputsLimit);
+
+    console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
+
+    console.log(chalkLog("TFE | LOADING " + params.randomUntestedPerInputsLimit + " UNTESTED NNs FROM DB ..."));
+
+    nnArrayRandomUntested = await global.wordAssoDb.NeuralNetwork.find(randomUntestedQuery)
+    .lean()
+    .sort({"overallMatchRate": -1})
+    .limit(params.randomUntestedPerInputsLimit);
+
+    console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
+
+    nnArray = _.concat(nnArray, nnArrayTopOverallMatchRate, nnArrayRandomUntested);
+  }
+
+  return nnArray;
+
+}
+
 async function loadBestNetworksDatabase(p) {
 
   const params = p || {};
@@ -2343,55 +2401,63 @@ async function loadBestNetworksDatabase(p) {
 
   let nnArray = [];
 
-  for (const inputsId of inputsIdArray) {
+  nnArray = await loadNetworksOfInputs({
+    inputsIdArray: inputsIdArray, 
+    globalMinSuccessRate: globalMinSuccessRate,
+    networkDatabaseLoadPerInputsLimit: networkDatabaseLoadPerInputsLimit, 
+    randomUntestedPerInputsLimit: randomUntestedPerInputsLimit, 
+    minTestCycles: minTestCycles
+  });
 
-    console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING NN FROM DB | INPUTS ID: " + inputsId));
+  // for (const inputsId of inputsIdArray) {
 
-    let query = {};
+  //   console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING NN FROM DB | INPUTS ID: " + inputsId));
 
-    query.inputsId = inputsId;
+  //   let query = {};
 
-    if (minTestCycles) {
-      query = {};
-      query.$and = [
-        { inputsId: inputsId },
-        { overallMatchRate: { "$gte": globalMinSuccessRate } }
-      ];
-    }
+  //   query.inputsId = inputsId;
 
-    const randomUntestedQuery = {};
+  //   if (minTestCycles) {
+  //     query = {};
+  //     query.$and = [
+  //       { inputsId: inputsId },
+  //       { overallMatchRate: { "$gte": globalMinSuccessRate } }
+  //     ];
+  //   }
 
-    randomUntestedQuery.$and = [
-      { inputsId: inputsId },
-      { successRate: { "$gte": globalMinSuccessRate } },
-      { testCycles: { "$lte": minTestCycles } }
-    ];
+  //   const randomUntestedQuery = {};
 
-    if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
+  //   randomUntestedQuery.$and = [
+  //     { inputsId: inputsId },
+  //     { successRate: { "$gte": globalMinSuccessRate } },
+  //     { testCycles: { "$lte": minTestCycles } }
+  //   ];
 
-    let nnArrayTopOverallMatchRate = [];
-    let nnArrayRandomUntested = [];
+  //   if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
 
-    console.log(chalkLog("TFE | ... LOADING " + networkDatabaseLoadPerInputsLimit + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
+  //   let nnArrayTopOverallMatchRate = [];
+  //   let nnArrayRandomUntested = [];
 
-    nnArrayTopOverallMatchRate = await global.wordAssoDb.NeuralNetwork.find(query)
-    .lean()
-    .sort({"overallMatchRate": -1})
-    .limit(networkDatabaseLoadPerInputsLimit);
+  //   console.log(chalkLog("TFE | ... LOADING " + networkDatabaseLoadPerInputsLimit + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
 
-    console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
+  //   nnArrayTopOverallMatchRate = await global.wordAssoDb.NeuralNetwork.find(query)
+  //   .lean()
+  //   .sort({"overallMatchRate": -1})
+  //   .limit(networkDatabaseLoadPerInputsLimit);
 
-    console.log(chalkLog("TFE | LOADING " + randomUntestedPerInputsLimit + " UNTESTED NNs FROM DB ..."));
+  //   console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
 
-    nnArrayRandomUntested = await global.wordAssoDb.NeuralNetwork.find(randomUntestedQuery)
-    .lean()
-    .sort({"overallMatchRate": -1})
-    .limit(randomUntestedPerInputsLimit);
+  //   console.log(chalkLog("TFE | LOADING " + randomUntestedPerInputsLimit + " UNTESTED NNs FROM DB ..."));
 
-    console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
+  //   nnArrayRandomUntested = await global.wordAssoDb.NeuralNetwork.find(randomUntestedQuery)
+  //   .lean()
+  //   .sort({"overallMatchRate": -1})
+  //   .limit(randomUntestedPerInputsLimit);
 
-    nnArray = _.concat(nnArray, nnArrayTopOverallMatchRate, nnArrayRandomUntested);
-  }
+  //   console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
+
+  //   nnArray = _.concat(nnArray, nnArrayTopOverallMatchRate, nnArrayRandomUntested);
+  // }
 
   if (nnArray.length == 0){
     console.log(chalkAlert("TFE | ??? NO NEURAL NETWORKS NOT FOUND IN DATABASE"
@@ -2406,7 +2472,7 @@ async function loadBestNetworksDatabase(p) {
 
   let networkObj;
 
-  for(const nnDoc of nnArray){
+  for await (const nnDoc of nnArray){
 
     try{
 
@@ -2480,7 +2546,6 @@ async function loadBestNetworksDatabase(p) {
       bestNetworkHashMap.delete(nnDoc.networkId);
       continue;
     }
-
   }
 
   console.log(chalkBlueBold(MODULE_ID_PREFIX + " | loadBestNetworksDatabase COMPLETE"));
