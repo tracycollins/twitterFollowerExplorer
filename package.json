@@ -10,7 +10,7 @@
     "@threeceelabs/histogram-parser": "^1.0.20",
     "@threeceelabs/mergehistograms": "^1.0.6",
     "@threeceelabs/mongoose-twitter": "^1.0.304",
-    "@threeceelabs/neural-network-tools": "^1.0.187",
+    "@threeceelabs/neural-network-tools": "^1.0.189",
     "@threeceelabs/threecee-utilities": "^1.0.238",
     "@threeceelabs/tweet-server-controller": "^1.0.513",
     "@threeceelabs/twitter-image-parser": "^1.0.85",
