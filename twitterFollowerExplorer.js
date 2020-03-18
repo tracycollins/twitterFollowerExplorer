@@ -407,8 +407,6 @@ statsObj.users.categorized.matched = 0;
 statsObj.users.categorized.mismatched = 0;
 statsObj.users.categorized.matchRate = 0;
 
-statsObj.users.total = 0;
-statsObj.users.fetched = 0;
 statsObj.users.fetchErrors = 0;
 statsObj.users.processed = 0;
 statsObj.users.dbUpdated = 0;
@@ -906,135 +904,9 @@ function updateDbNetwork(params) {
   });
 }
 
-// function initCategorizedUserIdSet(){
+async function initCategorizedUserIdSet(){
 
-//   return new Promise(function(resolve, reject){
-
-//     statsObj.status = "INIT CATEGORIZED USER ID SET";
-
-//     const p = {};
-//     p.query = {};
-//     p.query.$and = [
-//       { category: { "$in": ["left", "right", "neutral"] } },
-//       { following: true },
-//       { ignored: false }
-//     ];
-
-//     p.lean = false;
-//     p.skip = 0;
-//     p.limit = (configuration.testMode) ? TEST_FIND_CAT_USER_CURSOR_LIMIT : DEFAULT_FIND_CAT_USER_CURSOR_LIMIT;
-//     p.batchSize = (configuration.testMode) ? TEST_CURSOR_BATCH_SIZE : DEFAULT_CURSOR_BATCH_SIZE;
-//     p.toObject = true;
-
-//     let more = true;
-//     statsObj.users.categorized.total = 0;
-//     statsObj.users.categorized.manual = 0;
-//     statsObj.users.categorized.auto = 0;
-//     statsObj.users.categorized.matched = 0;
-//     statsObj.users.categorized.mismatched = 0;
-//     statsObj.users.categorized.matchRate = 0;
-
-//     async.whilst(
-
-//       function test(cbTest) { cbTest(null, more); },
-
-//       function(cb){
-
-//         userServerController.findCategorizedUsersCursor(p, function(err, results){
-
-//           if (err) {
-//             console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserIdSet: " + err));
-//             cb(err);
-//           }
-//           else if (
-//             (!configuration.testMode && results) 
-//             || (configuration.testMode && (statsObj.users.categorized.total < TEST_TOTAL_FETCH))
-//             ) 
-//           {
-
-//             more = true;
-//             statsObj.users.categorized.total += results.count;
-//             statsObj.users.categorized.manual += results.manual;
-//             statsObj.users.categorized.auto += results.auto;
-//             statsObj.users.categorized.matched += results.matched;
-//             statsObj.users.categorized.mismatched += results.mismatched;
-
-//             statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
-
-//             const userIdArray = Object.keys(results.obj);
-
-//             for(const userId of userIdArray){
-//               categorizedUserIdSet.add(userId);
-//               const user = results.obj[userId];
-//               processUserQueue.push(user);
-//             }
-
-//             if (configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
-
-//               console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-//                 + " | UIDs: " + userIdArray.length
-//                 + " | PUQ: " + processUserQueue.length
-//                 + " | TOT CAT: " + statsObj.users.categorized.total
-//                 + " | LIMIT: " + p.limit
-//                 + " | SKIP: " + p.skip
-//                 + " | " + statsObj.users.categorized.manual + " MAN"
-//                 + " | " + statsObj.users.categorized.auto + " AUTO"
-//                 + " | " + statsObj.users.categorized.matched + " MATCHED"
-//                 + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-//                 + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-//               ));
-//             }
-
-//             p.skip += results.count;
-
-//             setTimeout(function(){
-
-//               cb();
-
-//             }, DEFAULT_CURSOR_BATCH_SIZE*DEFAULT_MIN_INTERVAL);
-
-//           }
-//           else {
-
-//             more = false;
-
-//             console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
-//               + " | TOT CAT: " + statsObj.users.categorized.total
-//               + " | " + statsObj.users.categorized.manual + " MAN"
-//               + " | " + statsObj.users.categorized.auto + " AUTO"
-//               + " | " + statsObj.users.categorized.matched + " MATCHED"
-//               + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-//               + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-//             ));
-
-//             cb();
-//           }
-
-//         });
-//       },
-
-//       function(err){
-//         if (err) {
-//           console.log(chalkError(MODULE_ID_PREFIX + " | INIT CATEGORIZED USER HASHMAP ERROR: " + err + "\n" + jsonPrint(err)));
-//           return reject(err);
-//         }
-
-//         statsObj.fetchUserEndFlag = true;
-
-//         console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
-//           + " | TOT CAT: " + statsObj.users.categorized.total
-//         ));
-
-//         resolve();
-//       }
-//     );
-
-//   });
-// }
-
-function initCategorizedUserIdSet(){
-
-  return new Promise(function(resolve, reject){
+  try{
 
     let categorizedUserIdSetIntervalReady = true;
 
@@ -1055,12 +927,16 @@ function initCategorizedUserIdSet(){
     p.toObject = true;
 
     let more = true;
+    statsObj.users.categorized.fetched = 0;
     statsObj.users.categorized.total = 0;
     statsObj.users.categorized.manual = 0;
     statsObj.users.categorized.auto = 0;
     statsObj.users.categorized.matched = 0;
     statsObj.users.categorized.mismatched = 0;
     statsObj.users.categorized.matchRate = 0;
+
+    const usersCollection = global.dbConnection.collection("users");
+    statsObj.users.categorized.total = await usersCollection.countDocuments(p.query);
 
     const categorizedUserIdSetInterval = setInterval(function(){
 
@@ -1077,20 +953,20 @@ function initCategorizedUserIdSet(){
           if (err) {
             console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserIdSet: " + err));
             clearInterval(categorizedUserIdSetInterval);
-            return reject(err);
+            throw err;
           }
           
-          if ((!configuration.testMode && results) || (configuration.testMode && (statsObj.users.categorized.total < TEST_TOTAL_FETCH))) {
+          if ((!configuration.testMode && results) || (configuration.testMode && (statsObj.users.categorized.fetched < TEST_TOTAL_FETCH))) {
 
             more = true;
 
-            statsObj.users.categorized.total += results.count;
+            statsObj.users.categorized.fetched += results.count;
             statsObj.users.categorized.manual += results.manual;
             statsObj.users.categorized.auto += results.auto;
             statsObj.users.categorized.matched += results.matched;
             statsObj.users.categorized.mismatched += results.mismatched;
 
-            statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
+            statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.fetched);
 
             const userIdArray = Object.keys(results.obj);
 
@@ -1100,12 +976,13 @@ function initCategorizedUserIdSet(){
               processUserQueue.push(user);
             }
 
-            if (configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
+            if (configuration.verbose || (statsObj.users.categorized.fetched % 1000 == 0)) {
 
               console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
                 + " | UIDs: " + userIdArray.length
                 + " | PUQ: " + processUserQueue.length
-                + " | TOT CAT: " + statsObj.users.categorized.total
+                + " | TOT USERS: " + statsObj.users.categorized.total
+                + " | TOT FETCHED: " + statsObj.users.categorized.fetched
                 + " | LIMIT: " + p.limit
                 + " | SKIP: " + p.skip
                 + " | " + statsObj.users.categorized.manual + " MAN"
@@ -1126,7 +1003,8 @@ function initCategorizedUserIdSet(){
             clearInterval(categorizedUserIdSetInterval);
 
             console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
-              + " | TOT CAT: " + statsObj.users.categorized.total
+              + " | TOT USERS: " + statsObj.users.categorized.total
+              + " | TOT FETCHED: " + statsObj.users.categorized.fetched
               + " | " + statsObj.users.categorized.manual + " MAN"
               + " | " + statsObj.users.categorized.auto + " AUTO"
               + " | " + statsObj.users.categorized.matched + " MATCHED"
@@ -1139,11 +1017,11 @@ function initCategorizedUserIdSet(){
             statsObj.fetchUserEndFlag = true;
 
             console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
-              + " | TOT CAT: " + statsObj.users.categorized.total
+              + " | TOT USERS: " + statsObj.users.categorized.total
+              + " | TOT FETCHED: " + statsObj.users.categorized.fetched
             ));
 
-            resolve();
-
+            return;
           }
 
         });
@@ -1151,104 +1029,12 @@ function initCategorizedUserIdSet(){
       }
 
     }, DEFAULT_MIN_INTERVAL);
+  }
+  catch(err){
+    console.log(chalkError(MODULE_ID_PREFIX + " | *** initCategorizedUserIdSet ERROR: " + err));
+    throw err;
+  }
 
-
-    // async.whilst(
-
-    //   function test(cbTest) { cbTest(null, more); },
-
-    //   function(cb){
-
-    //     userServerController.findCategorizedUsersCursor(p, function(err, results){
-
-    //       if (err) {
-    //         console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserIdSet: " + err));
-    //         cb(err);
-    //       }
-    //       else if (
-    //         (!configuration.testMode && results) 
-    //         || (configuration.testMode && (statsObj.users.categorized.total < TEST_TOTAL_FETCH))
-    //         ) 
-    //       {
-
-    //         more = true;
-    //         statsObj.users.categorized.total += results.count;
-    //         statsObj.users.categorized.manual += results.manual;
-    //         statsObj.users.categorized.auto += results.auto;
-    //         statsObj.users.categorized.matched += results.matched;
-    //         statsObj.users.categorized.mismatched += results.mismatched;
-
-    //         statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.total);
-
-    //         const userIdArray = Object.keys(results.obj);
-
-    //         for(const userId of userIdArray){
-    //           categorizedUserIdSet.add(userId);
-    //           const user = results.obj[userId];
-    //           processUserQueue.push(user);
-    //         }
-
-    //         if (configuration.verbose || (statsObj.users.categorized.total % 1000 == 0)) {
-
-    //           console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-    //             + " | UIDs: " + userIdArray.length
-    //             + " | PUQ: " + processUserQueue.length
-    //             + " | TOT CAT: " + statsObj.users.categorized.total
-    //             + " | LIMIT: " + p.limit
-    //             + " | SKIP: " + p.skip
-    //             + " | " + statsObj.users.categorized.manual + " MAN"
-    //             + " | " + statsObj.users.categorized.auto + " AUTO"
-    //             + " | " + statsObj.users.categorized.matched + " MATCHED"
-    //             + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-    //             + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-    //           ));
-    //         }
-
-    //         p.skip += results.count;
-
-    //         setTimeout(function(){
-
-    //           cb();
-
-    //         }, DEFAULT_CURSOR_BATCH_SIZE*DEFAULT_MIN_INTERVAL);
-
-    //       }
-    //       else {
-
-    //         more = false;
-
-    //         console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
-    //           + " | TOT CAT: " + statsObj.users.categorized.total
-    //           + " | " + statsObj.users.categorized.manual + " MAN"
-    //           + " | " + statsObj.users.categorized.auto + " AUTO"
-    //           + " | " + statsObj.users.categorized.matched + " MATCHED"
-    //           + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-    //           + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-    //         ));
-
-    //         cb();
-    //       }
-
-    //     });
-    //   },
-
-    //   function(err){
-    //     if (err) {
-    //       console.log(chalkError(MODULE_ID_PREFIX + " | INIT CATEGORIZED USER HASHMAP ERROR: " + err + "\n" + jsonPrint(err)));
-    //       return reject(err);
-    //     }
-
-    //     statsObj.fetchUserEndFlag = true;
-
-    //     console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
-    //       + " | TOT CAT: " + statsObj.users.categorized.total
-    //     ));
-
-    //     resolve();
-    //   }
-    // );
-
-  });
 }
 
 process.title = MODULE_ID.toLowerCase() + "_" + process.pid;
@@ -1450,7 +1236,8 @@ async function showStats(options) {
     console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
       + " | PUQ: " + processUserQueue.length 
       + " | UDUQ: " + userDbUpdateQueue.length 
-      + " | PRCSSD/ERROR/REM/TOT: " + statsObj.users.processed 
+      + " | FTCHD/PRCSSD/ERR/REM/TOT: " + statsObj.users.categorized.fetched 
+      + "/" + statsObj.users.processed 
       + "/" + statsObj.users.fetchErrors 
       + "/" + statsObj.users.numProcessRemaining 
       + "/" + statsObj.users.categorized.total 
@@ -2686,6 +2473,7 @@ async function loadBestNetworksDatabase(p) {
       }
     }
     catch(e){
+      console.trace(e);
       console.log(chalkError(MODULE_ID_PREFIX + " | *** LOAD DB NETWORK CONVERT ERROR ... SKIPPING: " + nnObj.networkId));
       bestNetworkHashMap.delete(nnObj.networkId);
       continue;
@@ -3929,11 +3717,19 @@ function processTweetObj(params){
         switch (entityType) {
 
           case "hashtags":
+            if (!entityObj.nodeId || entityObj.nodeId === undefined) {
+              console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! HASTAG nodeId UNDEFINED\n" + jsonPrint(entityObj)));
+              return cb1();
+            }
             entity = "#" + entityObj.nodeId.toLowerCase();
           break;
 
           case "mentions":
           case "userMentions":
+            if (!entityObj.screenName || entityObj.screenName === undefined) {
+              console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! USER MENTION screenName UNDEFINED\n" + jsonPrint(entityObj)));
+              return cb1();
+            }
             entity = "@" + entityObj.screenName.toLowerCase();
           break;
 
