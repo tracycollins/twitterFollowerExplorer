@@ -20,7 +20,7 @@ const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
 const TEST_TWEET_FETCH_COUNT = 11;
 const TWEET_FETCH_COUNT = 100;
 
-const TEST_MODE_NUM_NN = 100;
+const TEST_MODE_NUM_NN = 10;
 // const TEST_FETCH_COUNT = 100;
 const TEST_TOTAL_FETCH = 100;
 
@@ -108,7 +108,7 @@ else {
 const DEFAULT_FIND_CAT_USER_CURSOR_LIMIT = 100;
 const TEST_FIND_CAT_USER_CURSOR_LIMIT = 10;
 const DEFAULT_CURSOR_BATCH_SIZE = 100;
-const TEST_CURSOR_BATCH_SIZE = 5;
+const TEST_CURSOR_BATCH_SIZE = 10;
 
 const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
 const DEFAULT_MIN_TEST_CYCLES = 10;
@@ -368,6 +368,9 @@ statsObj.queues.fetchUserQueue.size = 0;
 statsObj.queues.randomNetworkTreeActivateQueue = {};
 statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
 statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
+
+statsObj.queues.randomNetworkTreeRxMessageQueue = {};
+statsObj.queues.randomNetworkTreeRxMessageQueue.size = 0;
 
 statsObj.queues.saveFileQueue = {};
 statsObj.queues.saveFileQueue.busy = false;
@@ -977,7 +980,7 @@ async function initCategorizedUserIdSet(){
               processUserQueue.push(user);
             }
 
-            if (configuration.verbose || (statsObj.users.categorized.fetched % 1000 == 0)) {
+            if ((configuration.verbose && (statsObj.users.categorized.fetched % 10 == 0)) || (statsObj.users.categorized.fetched % 1000 == 0)) {
 
               console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
                 + " | UIDs: " + userIdArray.length
@@ -1004,6 +1007,7 @@ async function initCategorizedUserIdSet(){
             clearInterval(categorizedUserIdSetInterval);
 
             console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
+              + " | PUQ: " + processUserQueue.length
               + " | TOT USERS: " + statsObj.users.categorized.total
               + " | TOT FETCHED: " + statsObj.users.categorized.fetched
               + " | " + statsObj.users.categorized.manual + " MAN"
@@ -2321,7 +2325,7 @@ async function loadNetworksOfInputs(params){
 
   let nnArray = [];
 
-  for await(const inputsId of params.inputsIdArray) {
+  for (const inputsId of params.inputsIdArray) {
 
     console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING NN FROM DB | INPUTS ID: " + inputsId));
 
@@ -2369,6 +2373,7 @@ async function loadNetworksOfInputs(params){
     console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
 
     nnArray = _.concat(nnArray, nnArrayTopOverallMatchRate, nnArrayRandomUntested);
+
   }
 
   return nnArray;
@@ -2473,7 +2478,7 @@ async function loadBestNetworksDatabase(p) {
 
   let networkObj;
 
-  for await (const nnDoc of nnArray){
+  for (const nnDoc of nnArray){
 
     try{
 
@@ -3203,11 +3208,15 @@ async function processRandomNetworkTreeMessage(params){
 
   statsObj.randomNetworkTreeOp = m.op;
 
+  // rxMessageQueue: rxMessageQueue.length, 
+  // activateNetworkQueue: activateNetworkQueue.length, 
+
   switch (m.op) {
     case "IDLE":
       randomNetworkTreeReadyFlag = true;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
       await runEnable();
       console.log(chalkLog("TFE | RNT IDLE "));
       return;
@@ -3228,7 +3237,8 @@ async function processRandomNetworkTreeMessage(params){
       // queue: activateNetworkQueue.length, 
       // memoryUsage: statsObj.memoryUsage 
 
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
 
       statsObj.networks = m.networks;
 
@@ -3297,7 +3307,8 @@ async function processRandomNetworkTreeMessage(params){
       randomNetworkTreeMessageRxQueueReadyFlag = true;
       randomNetworkTreeReadyFlag = true;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
       debug(chalkInfo("RNT NETWORK_READY ..."));
       await runEnable();
       return;
@@ -3306,18 +3317,21 @@ async function processRandomNetworkTreeMessage(params){
       randomNetworkTreeMessageRxQueueReadyFlag = true;
       randomNetworkTreeReadyFlag = false;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = true;
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
       debug(chalkInfo("RNT NETWORK_BUSY ..."));
       return;
 
     case "QUEUE_STATS":
       randomNetworkTreeMessageRxQueueReadyFlag = true;
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
       return;
 
     case "QUEUE_READY":
       randomNetworkTreeMessageRxQueueReadyFlag = true;
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
       randomNetworkTreeReadyFlag = true;
       debug(chalkInfo("RNT Q READY"));
@@ -3326,7 +3340,8 @@ async function processRandomNetworkTreeMessage(params){
 
     case "QUEUE_EMPTY":
       randomNetworkTreeMessageRxQueueReadyFlag = true;
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
       randomNetworkTreeReadyFlag = true;
       debug(chalkInfo("RNT Q EMPTY"));
@@ -3335,7 +3350,8 @@ async function processRandomNetworkTreeMessage(params){
 
     case "QUEUE_FULL":
       randomNetworkTreeMessageRxQueueReadyFlag = true;
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = "QUEUE_FULL";
       randomNetworkTreeReadyFlag = false;
       console.log(chalkError("TFE | *** RNT Q FULL"));
@@ -3345,7 +3361,8 @@ async function processRandomNetworkTreeMessage(params){
       randomNetworkTreeMessageRxQueueReadyFlag = true;
       randomNetworkTreeReadyFlag = true;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
       console.log(chalkTwitter("TFE | " + getTimeStamp() + " | RNT_TEST_PASS | RNT READY: " + randomNetworkTreeReadyFlag));
       await runEnable();
       return;
@@ -3354,7 +3371,8 @@ async function processRandomNetworkTreeMessage(params){
       randomNetworkTreeMessageRxQueueReadyFlag = true;
       randomNetworkTreeReadyFlag = false;
       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
       console.log(chalkAlert("TFE | " + getTimeStamp() + " | RNT_TEST_FAIL"));
       quit({source: "RNT", error: "RNT_TEST_FAIL"});
       return;
@@ -3362,7 +3380,8 @@ async function processRandomNetworkTreeMessage(params){
     case "NETWORK_OUTPUT":
 
       try{
-        statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+        statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+        statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
 
         statsObj.randomNetworkTree.memoryUsage = m.memoryUsage;
 
@@ -3458,7 +3477,8 @@ async function processRandomNetworkTreeMessage(params){
 
     case "BEST_MATCH_RATE":
 
-      statsObj.queues.randomNetworkTreeActivateQueue.size = m.queue;
+      statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
+      statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
 
       debug(chalkAlert("\n================================================================================================\n"
         + "*** RNT_BEST_MATCH_RATE"
@@ -4282,12 +4302,15 @@ async function allQueuesEmpty(){
 
   if (statsObj.queues.randomNetworkTreeActivateQueue.busy) { return false; }
   if (statsObj.queues.randomNetworkTreeActivateQueue.size > 0) { return false; }
+  if (statsObj.queues.randomNetworkTreeRxMessageQueue.size > 0) { return false; }
 
   if (statsObj.queues.activateNetworkQueue.busy) { return false; }
   if (statsObj.queues.activateNetworkQueue.size > 0) { return false; }
 
   if (statsObj.queues.userDbUpdateQueue.busy) { return false; }
   if (userDbUpdateQueue.length > 0) { return false; }
+
+  if (randomNetworkTreeMessageRxQueue.length > 0) { return false; }
 
   return true;
 }
