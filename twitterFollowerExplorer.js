@@ -15,13 +15,14 @@ const DEFAULT_USER_PROFILE_ONLY_FLAG = false;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
 
-const FETCH_COUNT = 200;
+// const FETCH_COUNT = 200;
 
 const TEST_TWEET_FETCH_COUNT = 11;
+const TWEET_FETCH_COUNT = 100;
 
 const TEST_MODE_NUM_NN = 100;
-const TEST_FETCH_COUNT = 100;
-const TEST_TOTAL_FETCH = 500;
+// const TEST_FETCH_COUNT = 100;
+const TEST_TOTAL_FETCH = 100;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -204,8 +205,8 @@ configuration.testMode = TEST_MODE;
 configuration.testFetchTweetsMode = TEST_FETCH_TWEETS_MODE;
 configuration.globalTestMode = GLOBAL_TEST_MODE;
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
-configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : TEST_FETCH_COUNT;
-configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : FETCH_COUNT;
+configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : TWEET_FETCH_COUNT;
+// configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : FETCH_COUNT;
 configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
 configuration.fsmTickInterval = FSM_TICK_INTERVAL;
 configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
