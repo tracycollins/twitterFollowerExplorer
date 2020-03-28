@@ -48,6 +48,10 @@ const tcuChildName = "RNT_TCU";
 const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
 const tcUtils = new ThreeceeUtilities(tcuChildName);
 
+const jsonPrint = tcUtils.jsonPrint;
+const msToTime = tcUtils.msToTime;
+const getTimeStamp = tcUtils.getTimeStamp;
+
 const chalk = require("chalk");
 const chalkWarn = chalk.yellow;
 const chalkAlert = chalk.red;
@@ -90,7 +94,7 @@ function printNetworkObj(title, nObj, format) {
     + " | OR: " + nn.overallMatchRate.toFixed(2) + "%"
     + " | MR: " + nn.matchRate.toFixed(2) + "%"
     + " | SR: " + nn.successRate.toFixed(2) + "%"
-    + " | CR: " + tcUtils.getTimeStamp(nn.createdAt)
+    + " | CR: " + getTimeStamp(nn.createdAt)
     + " | TC:  " + nn.testCycles
     + " | TH: " + nn.testCycleHistory.length
     + " |  " + nn.inputsId
@@ -171,7 +175,7 @@ statsObj.memoryUsage.heap = process.memoryUsage().heapUsed/(1024*1024);
 statsObj.memoryUsage.maxHeap = process.memoryUsage().heapUsed/(1024*1024);
 
 statsObj.startTime = moment().valueOf();
-statsObj.elapsed = tcUtils.msToTime(moment().valueOf() - statsObj.startTime);
+statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
 
 //=========================================================================
 // MONGO DB
@@ -228,11 +232,11 @@ function updateMemoryStats(){
 
 function showStats(options){
 
-  statsObj.elapsed = tcUtils.msToTime(moment().valueOf() - statsObj.startTime);
+  statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
   updateMemoryStats();
 
   if (options) {
-    console.log("RNT | = NT STATS\n" + tcUtils.jsonPrint(statsObj));
+    console.log("RNT | = NT STATS\n" + jsonPrint(statsObj));
   }
   else {
     console.log(chalk.gray("RNT | == * == S"
@@ -465,7 +469,7 @@ function printCategorizeHistory(){
     console.log(chalkInfo("RNT | CATGORIZE HISTORY"
       + " | S: " + moment(catStats.startTime).format(compactDateTimeFormat)
       + " E: " + moment(catStats.endTime).format(compactDateTimeFormat)
-      + " R: " + tcUtils.msToTime(catStats.endTime - catStats.startTime)
+      + " R: " + msToTime(catStats.endTime - catStats.startTime)
       + "\nRNT | BEST: " + catStats.bestNetwork.networkId
       + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SR"
       + " - MR: " + catStats.bestNetwork.matchRate.toFixed(2) + "% MR"
@@ -566,7 +570,7 @@ async function processRxMessage(m){
         if (configuration.verbose) {
           console.log(chalkInfo("RNT | >>> ACTIVATE Q"
             + " [" + activateNetworkQueue.length + "]"
-            + " | " + tcUtils.getTimeStamp()
+            + " | " + getTimeStamp()
             + " | " + m.obj.user.nodeId
             + " | @" + m.obj.user.screenName
             + " | C: " + m.obj.user.category
@@ -603,9 +607,9 @@ async function processRxMessage(m){
       default:
         console.log(chalkError("RNT | *** UNKNOWN OP ERROR"
           + " | " + m.op
-          + "\n" + tcUtils.jsonPrint(m)
+          + "\n" + jsonPrint(m)
         ));
-        console.error.bind(console, "RNT | *** UNKNOWN OP ERROR | " + m.op + "\n" + tcUtils.jsonPrint(m));
+        console.error.bind(console, "RNT | *** UNKNOWN OP ERROR | " + m.op + "\n" + jsonPrint(m));
     }
 
     return;
@@ -659,7 +663,7 @@ process.on("message", async function(m) {
       configuration.testMode = m.testMode || configuration.testMode;
       configuration.userProfileOnlyFlag = m.userProfileOnlyFlag || configuration.userProfileOnlyFlag;
 
-      console.log(chalkLog("RNT | INIT | INTERVAL: " + m.interval + "\n" + tcUtils.jsonPrint(configuration)));
+      console.log(chalkLog("RNT | INIT | INTERVAL: " + m.interval + "\n" + jsonPrint(configuration)));
 
       await initActivateNetworkInterval(m.interval);
 
@@ -699,7 +703,7 @@ process.on("message", async function(m) {
     case "LOAD_NORMALIZATION":
       await nnTools.setNormalization(m.normalization);
       console.log(chalkLog("RNT | LOAD_NORMALIZATION"
-        + "\n" + tcUtils.jsonPrint(m.normalization)
+        + "\n" + jsonPrint(m.normalization)
       ));
     break;
 
@@ -865,9 +869,9 @@ process.on("message", async function(m) {
     default:
       console.log(chalkError("RNT | *** UNKNOWN OP ERROR"
         + " | " + m.op
-        + "\n" + tcUtils.jsonPrint(m)
+        + "\n" + jsonPrint(m)
       ));
-      console.error.bind(console, "RNT | *** UNKNOWN OP ERROR | " + m.op + "\n" + tcUtils.jsonPrint(m));
+      console.error.bind(console, "RNT | *** UNKNOWN OP ERROR | " + m.op + "\n" + jsonPrint(m));
   }
 
 });
@@ -892,7 +896,7 @@ function initStatsUpdate(cnf){
 
   statsUpdateInterval = setInterval(function () {
 
-    statsObj.elapsed = tcUtils.msToTime(moment().valueOf() - statsObj.startTime);
+    statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
     statsObj.timeStamp = moment().format(defaultDateTimeFormat);
 
     updateMemoryStats();
@@ -934,7 +938,7 @@ async function initialize(cnf){
 
   cnf.statsUpdateIntervalTime = process.env.RNT_STATS_UPDATE_INTERVAL || 1000;
 
-  console.log("RNT | CONFIG\n" + tcUtils.jsonPrint(cnf));
+  console.log("RNT | CONFIG\n" + jsonPrint(cnf));
 
   await connectDb();
   return cnf;
@@ -949,16 +953,16 @@ setTimeout(async function(){
   }
   catch(err){
     if (err && (err.status !== 404)) {
-      console.log(chalkError("RNT | *** INIT ERROR\n" + tcUtils.jsonPrint(err)));
+      console.log(chalkError("RNT | *** INIT ERROR\n" + jsonPrint(err)));
       console.error.bind(console, "RNT | *** INIT ERROR: " + err);
       quit(err);
     }
-    console.log(chalkError(MODULE_ID_PREFIX + " | " + cnf.processName + " STARTED " + tcUtils.getTimeStamp() + "\n" + tcUtils.jsonPrint(cnf)));
+    console.log(chalkError(MODULE_ID_PREFIX + " | " + cnf.processName + " STARTED " + getTimeStamp() + "\n" + jsonPrint(cnf)));
   }
 
   initializeBusy = false;
 
-  console.log(chalkInfo(MODULE_ID_PREFIX + " | " + cnf.processName + " STARTED " + tcUtils.getTimeStamp() + "\n" + tcUtils.jsonPrint(cnf)));
+  console.log(chalkInfo(MODULE_ID_PREFIX + " | " + cnf.processName + " STARTED " + getTimeStamp() + "\n" + jsonPrint(cnf)));
   initStatsUpdate(cnf);
 
 }, Number(ONE_SECOND));
