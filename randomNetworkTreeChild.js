@@ -65,6 +65,7 @@ const networkDefaults = {};
 networkDefaults.rank = Infinity;
 networkDefaults.matchRate = 0;
 networkDefaults.overallMatchRate = 0;
+networkDefaults.runtimeMatchRate = 0;
 networkDefaults.successRate = 0;
 networkDefaults.testCycles = 0;
 networkDefaults.testCycleHistory = [];
@@ -92,6 +93,7 @@ function printNetworkObj(title, nObj, format) {
   console.log(chalkFormat(title
     + " | RK: " + nn.rank.toFixed(0)
     + " | OR: " + nn.overallMatchRate.toFixed(2) + "%"
+    + " | RR: " + nn.runtimeMatchRate.toFixed(2) + "%"
     + " | MR: " + nn.matchRate.toFixed(2) + "%"
     + " | SR: " + nn.successRate.toFixed(2) + "%"
     + " | CR: " + getTimeStamp(nn.createdAt)
@@ -124,6 +126,7 @@ statsObj.bestNetwork.networkId = false;
 statsObj.bestNetwork.successRate = 0;
 statsObj.bestNetwork.matchRate = 0;
 statsObj.bestNetwork.overallMatchRate = 0;
+statsObj.bestNetwork.runtimeMatchRate = 0;
 statsObj.bestNetwork.testCycles = 0;
 statsObj.bestNetwork.total = 0;
 statsObj.bestNetwork.match = 0;
@@ -139,6 +142,7 @@ statsObj.currentBestNetwork.networkId = false;
 statsObj.currentBestNetwork.successRate = 0;
 statsObj.currentBestNetwork.matchRate = 0;
 statsObj.currentBestNetwork.overallMatchRate = 0;
+statsObj.currentBestNetwork.runtimeMatchRate = 0;
 statsObj.currentBestNetwork.testCycles = 0;
 statsObj.currentBestNetwork.total = 0;
 statsObj.currentBestNetwork.match = 0;
@@ -161,6 +165,7 @@ statsObj.categorize.match = 0;
 statsObj.categorize.mismatch = 0;
 statsObj.categorize.matchRate = 0;
 statsObj.categorize.overallMatchRate = 0;
+statsObj.categorize.runtimeMatchRate = 0;
 statsObj.categorize.left = 0;
 statsObj.categorize.neutral = 0;
 statsObj.categorize.right = 0;
@@ -474,8 +479,10 @@ function printCategorizeHistory(){
       + " - " + catStats.bestNetwork.successRate.toFixed(2) + "% SR"
       + " - MR: " + catStats.bestNetwork.matchRate.toFixed(2) + "% MR"
       + " - OMR:" + catStats.bestNetwork.overallMatchRate.toFixed(2) + "% MR"
+      + " - OMR:" + catStats.bestNetwork.runtimeMatchRate.toFixed(2) + "% MR"
       + "\nRNT | MR: " + catStats.matchRate.toFixed(2) + "%"
       + " | OMR: " + catStats.overallMatchRate.toFixed(2) + "%"
+      + " | RMR: " + catStats.runtimeMatchRate.toFixed(2) + "%"
       + " | TOT: " + catStats.total
       + " | MATCH: " + catStats.match
       + " | L: " + catStats.left
@@ -512,6 +519,7 @@ function resetStats(callback){
   statsObj.categorize.mismatch = 0;
   statsObj.categorize.matchRate = 0;
   statsObj.categorize.overallMatchRate = 0;
+  statsObj.categorize.runtimeMatchRate = 0;
   statsObj.categorize.left = 0;
   statsObj.categorize.neutral = 0;
   statsObj.categorize.right = 0;

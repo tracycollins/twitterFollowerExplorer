@@ -312,6 +312,7 @@ statsObj.bestNetwork.numInputs = 0;
 statsObj.bestNetwork.successRate = 0;
 statsObj.bestNetwork.matchRate = 0;
 statsObj.bestNetwork.overallMatchRate = 0;
+statsObj.bestNetwork.runtimeMatchRate = 0;
 statsObj.bestNetwork.testCycles = 0;
 statsObj.bestNetwork.testCycleHistory = [];
 statsObj.bestNetwork.network = {};
@@ -448,6 +449,7 @@ bestNetwork.isValid = false;
 bestNetwork.successRate = 0;
 bestNetwork.matchRate = 0;
 bestNetwork.overallMatchRate = 0;
+bestNetwork.runtimeMatchRate = 0;
 bestNetwork.testCycles = 0;
 bestNetwork.testCycleHistory = [];
 
@@ -460,6 +462,7 @@ currentBestNetwork.isValid = false;
 currentBestNetwork.successRate = 0;
 currentBestNetwork.matchRate = 0;
 currentBestNetwork.overallMatchRate = 0;
+currentBestNetwork.runtimeMatchRate = 0;
 currentBestNetwork.testCycles = 0;
 currentBestNetwork.testCycleHistory = [];
 
@@ -810,6 +813,7 @@ const networkDefaults = function (networkObj){
   if (networkObj.testCycles === undefined) { networkObj.testCycles = 0; }
   if (networkObj.testCycleHistory === undefined) { networkObj.testCycleHistory = []; }
   if (networkObj.overallMatchRate === undefined) { networkObj.overallMatchRate = 0; }
+  if (networkObj.runtimeMatchRate === undefined) { networkObj.runtimeMatchRate = 0; }
   if (networkObj.matchRate === undefined) { networkObj.matchRate = 0; }
   if (networkObj.successRate === undefined) { networkObj.successRate = 0; }
 
@@ -827,6 +831,7 @@ function printNetworkObj(title, nObj, format) {
     + " | ARCHVD: " + networkObj.archived
     + " | TECH: " + networkObj.networkTechnology
     + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+    + " | RMR: " + networkObj.runtimeMatchRate.toFixed(2) + "%"
     + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
     + " | SR: " + networkObj.successRate.toFixed(2) + "%"
     + " | TC: " + networkObj.testCycles
@@ -874,6 +879,7 @@ function updateDbNetwork(params) {
       archived: networkObj.archived,
       matchRate: networkObj.matchRate, 
       overallMatchRate: networkObj.overallMatchRate,
+      runtimeMatchRate: networkObj.runtimeMatchRate,
       rank: networkObj.rank
     };
 
@@ -1236,6 +1242,7 @@ async function showStats(options) {
       + " | SR: " + statsObj.bestNetwork.successRate.toFixed(2)
       + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(2)
       + " | OAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(2)
+      + " | RMR: " + statsObj.bestNetwork.runtimeMatchRate.toFixed(2)
     ));
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
@@ -2050,6 +2057,10 @@ async function fixIncorrectNetworkMetaData(params){
   try{
     let incorrectUpdateFlag = false;
 
+   if (params.networkObj.runtimeMatchRate === undefined) {
+      params.networkObj.runtimeMatchRate = 0;
+    }
+
     if (params.networkObj.evolve.options.networkTechnology 
       && params.networkObj.evolve.options.networkTechnology !== params.networkObj.networkTechnology) {
       console.log(chalkAlert(MODULE_ID_PREFIX
@@ -2415,56 +2426,6 @@ async function loadBestNetworksDatabase(p) {
     minTestCycles: minTestCycles
   });
 
-  // for (const inputsId of inputsIdArray) {
-
-  //   console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING NN FROM DB | INPUTS ID: " + inputsId));
-
-  //   let query = {};
-
-  //   query.inputsId = inputsId;
-
-  //   if (minTestCycles) {
-  //     query = {};
-  //     query.$and = [
-  //       { inputsId: inputsId },
-  //       { overallMatchRate: { "$gte": globalMinSuccessRate } }
-  //     ];
-  //   }
-
-  //   const randomUntestedQuery = {};
-
-  //   randomUntestedQuery.$and = [
-  //     { inputsId: inputsId },
-  //     { successRate: { "$gte": globalMinSuccessRate } },
-  //     { testCycles: { "$lte": minTestCycles } }
-  //   ];
-
-  //   if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
-
-  //   let nnArrayTopOverallMatchRate = [];
-  //   let nnArrayRandomUntested = [];
-
-  //   console.log(chalkLog("TFE | ... LOADING " + networkDatabaseLoadPerInputsLimit + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
-
-  //   nnArrayTopOverallMatchRate = await global.wordAssoDb.NeuralNetwork.find(query)
-  //   .lean()
-  //   .sort({"overallMatchRate": -1})
-  //   .limit(networkDatabaseLoadPerInputsLimit);
-
-  //   console.log(chalkBlue("TFE | FOUND " + nnArrayTopOverallMatchRate.length + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
-
-  //   console.log(chalkLog("TFE | LOADING " + randomUntestedPerInputsLimit + " UNTESTED NNs FROM DB ..."));
-
-  //   nnArrayRandomUntested = await global.wordAssoDb.NeuralNetwork.find(randomUntestedQuery)
-  //   .lean()
-  //   .sort({"overallMatchRate": -1})
-  //   .limit(randomUntestedPerInputsLimit);
-
-  //   console.log(chalkBlue("TFE | FOUND " + nnArrayRandomUntested.length + " UNTESTED NNs FROM DB ..."));
-
-  //   nnArray = _.concat(nnArray, nnArrayTopOverallMatchRate, nnArrayRandomUntested);
-  // }
-
   if (nnArray.length == 0){
     console.log(chalkAlert("TFE | ??? NO NEURAL NETWORKS NOT FOUND IN DATABASE"
     ));
@@ -2481,8 +2442,6 @@ async function loadBestNetworksDatabase(p) {
   for (const nnDoc of nnArray){
 
     try{
-
-      // let nnObj = nnDoc;
 
       if (nnDoc.testCycleHistory && nnDoc.testCycleHistory !== undefined && nnDoc.testCycleHistory.length > 0) {
         nnDoc.previousRank = nnDoc.testCycleHistory[nnDoc.testCycleHistory.length-1].rank;
@@ -2525,6 +2484,7 @@ async function loadBestNetworksDatabase(p) {
             + " | SR: " + bestNetwork.successRate.toFixed(2) + "%"
             + " | MR: " + bestNetwork.matchRate.toFixed(2) + "%"
             + " | OAMR: " + bestNetwork.overallMatchRate.toFixed(2) + "%"
+            + " | RMR: " + bestNetwork.runtimeMatchRate.toFixed(2) + "%"
             + " | TCs: " + bestNetwork.testCycles
             + " | TCH: " + bestNetwork.testCycleHistory.length
           ));
@@ -2541,6 +2501,7 @@ async function loadBestNetworksDatabase(p) {
           + " | SR: " + networkObj.successRate.toFixed(2) + "%"
           + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
           + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+          + " | RMR: " + networkObj.runtimeMatchRate.toFixed(2) + "%"
           + " | TCs: " + networkObj.testCycles
           + " | TCH: " + networkObj.testCycleHistory.length
         ));
@@ -2895,6 +2856,7 @@ function updateNetworkStats(params) {
     statsObj.status = "UPDATE DB NN STATS";
 
     const updateOverallMatchRate = (params.updateOverallMatchRate !== undefined) ? params.updateOverallMatchRate : false;
+    const updateRuntimeMatchRate = (params.updateRuntimeMatchRate !== undefined) ? params.updateRuntimeMatchRate : false;
     const saveImmediate = (params.saveImmediate !== undefined) ? params.saveImmediate : false;
     const updateDb = (params.updateDb !== undefined) ? params.updateDb : false;
     const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
@@ -2905,6 +2867,7 @@ function updateNetworkStats(params) {
     console.log(chalkTwitter("TFE | UPDATE NN STATS"
       + " | " + nnIds.length + " | NETWORKS"
       + " | UPDATE OAMR: " + updateOverallMatchRate
+      + " | UPDATE RMR: " + updateRuntimeMatchRate
       + " | UPDATE DB: " + updateDb
       + " | INC TEST CYCs: " + incrementTestCycles
       + " | ADD TEST HISTORY: " + addToTestHistory
@@ -2920,6 +2883,7 @@ function updateNetworkStats(params) {
         networkObj.rank = params.networks[nnId].rank;
         networkObj.matchRate = params.networks[nnId].matchRate;
         networkObj.overallMatchRate = (updateOverallMatchRate) ? params.networks[nnId].matchRate : params.networks[nnId].overallMatchRate;
+        networkObj.runtimeMatchRate = (updateRuntimeMatchRate) ? params.networks[nnId].matchRate : params.networks[nnId].runtimeMatchRate;
 
         const testHistoryItem = {
           testCycle: networkObj.testCycles,
@@ -2985,9 +2949,12 @@ function updateNetworkStats(params) {
           lean().
           sort({"overallMatchRate": -1}).
           limit(50).
-          select({ overallMatchRate: 1, successRate: 1, networkId: 1, inputsId: 1 });
+          select({ overallMatchRate: 1, runtimeMatchRate: 1, successRate: 1, networkId: 1, inputsId: 1 });
 
         for (const networkObj of networkObjArray){
+
+          if (networkObj.runtimeMatchRate === undefined) { networkObj.runtimeMatchRate = 0; }
+          
           if (networkObj.inputsId && (networkObj.inputsId !== undefined)) {
 
             chalkVal = (bestInputsSet.has(networkObj.inputsId)) ? chalkLog : chalkGreen;
@@ -2999,6 +2966,7 @@ function updateNetworkStats(params) {
               + " | INPUTS ID: " + networkObj.inputsId
               + " | SR: " + networkObj.successRate.toFixed(2) + "%"
               + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
+              + " | RMR: " + networkObj.runtimeMatchRate.toFixed(2) + "%"
               + " | NID: " + networkObj.networkId
             ));
           }
@@ -3008,7 +2976,6 @@ function updateNetworkStats(params) {
 
         bestInputsConfigObj.INPUTS_IDS = [];
         bestInputsConfigObj.INPUTS_IDS = [...bestInputsSet];
-
 
         let folder = configDefaultFolder;
         let file = defaultBestInputsConfigFile;
@@ -3147,6 +3114,7 @@ function updateBestNetworkStats(params) {
     statsObj.bestNetwork.successRate = networkObj.successRate || 0;
     statsObj.bestNetwork.matchRate = networkObj.matchRate || 0;
     statsObj.bestNetwork.overallMatchRate = networkObj.overallMatchRate || 0;
+    statsObj.bestNetwork.runtimeMatchRate = networkObj.runtimeMatchRate || 0;
     statsObj.bestNetwork.testCycles = networkObj.testCycles || 0;
     statsObj.bestNetwork.testCycleHistory = networkObj.testCycleHistory || [];
     statsObj.bestNetwork.input = networkObj.networkJson.input;
@@ -3173,6 +3141,7 @@ function saveBestNetworkFileCache(params) {
       + " | SR: " + params.network.successRate.toFixed(2)
       + " | MR: " + params.network.matchRate.toFixed(2)
       + " | OAMR: " + params.network.overallMatchRate.toFixed(2)
+      + " | RMR: " + params.network.runtimeMatchRate.toFixed(2)
       + " | TEST CYCs: " + params.network.testCycles
       + " | TC HISTORY: " + params.network.testCycleHistory.length
     ));
@@ -3182,6 +3151,7 @@ function saveBestNetworkFileCache(params) {
       successRate: params.network.successRate,
       matchRate: params.network.matchRate,
       overallMatchRate: params.network.overallMatchRate,
+      runtimeMatchRate: params.network.runtimeMatchRate,
       testCycles: params.network.testCycles,
       testCycleHistory: params.network.testCycleHistory,
       rank: params.network.rank,
@@ -3268,6 +3238,7 @@ async function processRandomNetworkTreeMessage(params){
             successRate: currentBestNetwork.successRate,
             matchRate: currentBestNetwork.matchRate,
             overallMatchRate: currentBestNetwork.overallMatchRate,
+            runtimeMatchRate: currentBestNetwork.runtimeMatchRate,
             testCycles: currentBestNetwork.testCycles,
             testCycleHistory: currentBestNetwork.testCycleHistory,
             rank: currentBestNetwork.rank,
@@ -3282,6 +3253,7 @@ async function processRandomNetworkTreeMessage(params){
             + " | " + currentBestNetwork.networkId
             + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
             + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
+            + " | RMR: " + currentBestNetwork.runtimeMatchRate.toFixed(2)
             + " | TEST CYCs: " + currentBestNetwork.testCycles
             + " | " + folder + "/" + file
           ));
@@ -3410,6 +3382,7 @@ async function processRandomNetworkTreeMessage(params){
 
           currentBestNetwork.matchRate = m.currentBestNetwork.matchRate;
           currentBestNetwork.overallMatchRate = m.currentBestNetwork.overallMatchRate;
+          currentBestNetwork.runtimeMatchRate = m.currentBestNetwork.runtimeMatchRate;
           currentBestNetwork.successRate = m.currentBestNetwork.successRate;
 
           await updateBestNetworkStats({networkObj: currentBestNetwork});
@@ -3430,6 +3403,7 @@ async function processRandomNetworkTreeMessage(params){
             + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
             + " | MR: " + m.currentBestNetwork.matchRate.toFixed(2) + "%"
             + " | OAMR: " + m.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+            + " | RMR: " + m.currentBestNetwork.runtimeMatchRate.toFixed(2) + "%"
             + " | @" + m.user.screenName
             + " | C: " + m.user.category
             + " | CA: " + m.categoryAuto
@@ -3450,8 +3424,8 @@ async function processRandomNetworkTreeMessage(params){
             + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
             + " | MR: " + m.currentBestNetwork.matchRate.toFixed(2) + "%"
             + " | OAMR: " + m.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
+            + " | RMR: " + m.currentBestNetwork.runtimeMatchRate.toFixed(2) + "%"
             + " | TC: " + m.currentBestNetwork.testCycles
-            // + " | TCH: " + m.currentBestNetwork.testCycleHistory.length
             + " | @" + m.user.screenName
             + " | C: " + m.user.category
             + " | CA: " + m.categoryAuto
@@ -3488,6 +3462,7 @@ async function processRandomNetworkTreeMessage(params){
         + "\n*** SR: " + m.successRate.toFixed(2) + "%"
         + " | MR: " + m.matchRate.toFixed(2) + "%"
         + " | OAMR: " + m.overallMatchRate.toFixed(2) + "%"
+        + " | RMR: " + m.runtimeMatchRate.toFixed(2) + "%"
         + "\n*** PREV: " + m.previousBestNetworkId
         + " | PMR: " + m.previousBestMatchRate.toFixed(2) + "%"
         + "\n================================================================================================\n"
@@ -3498,7 +3473,6 @@ async function processRandomNetworkTreeMessage(params){
         currentBestNetwork = bestNetworkHashMap.get(m.networkId);
 
         currentBestNetwork.matchRate = m.matchRate;
-        // currentBestNetwork.overallMatchRate = m.overallMatchRate;
 
         bestNetworkHashMap.set(m.networkId, currentBestNetwork);
 
@@ -3512,6 +3486,7 @@ async function processRandomNetworkTreeMessage(params){
             + " | " + currentBestNetwork.networkId
             + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
             + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
+            + " | RMR: " + currentBestNetwork.runtimeMatchRate.toFixed(2)
             + " | TEST CYCs: " + currentBestNetwork.testCycles
           ));
 
@@ -3520,6 +3495,7 @@ async function processRandomNetworkTreeMessage(params){
             successRate: currentBestNetwork.successRate,
             matchRate: currentBestNetwork.matchRate,
             overallMatchRate: currentBestNetwork.overallMatchRate,
+            runtimeMatchRate: currentBestNetwork.runtimeMatchRate,
             testCycles: currentBestNetwork.testCycles,
             testCycleHistory: currentBestNetwork.testCycleHistory,
             rank: currentBestNetwork.rank,
@@ -3537,6 +3513,7 @@ async function processRandomNetworkTreeMessage(params){
           + " | " + m.networkId
           + " | MR: " + m.matchRate.toFixed(2)
           + " | OAMR: " + m.overallMatchRate.toFixed(2)
+          + " | RMR: " + m.runtimeMatchRate.toFixed(2)
           + " | TC: " + m.testCycles
           + " | TCH: " + m.testCycleHistory.length
         ));
@@ -4672,6 +4649,7 @@ const fsmStates = {
           + "\nTFE |  SR:     " + statsObj.bestNetwork.successRate.toFixed(3) + "%"
           + "\nTFE |  MR:     " + statsObj.bestNetwork.matchRate.toFixed(3) + "%"
           + "\nTFE |  OAMR:   " + statsObj.bestNetwork.overallMatchRate.toFixed(3) + "%"
+          + "\nTFE |  RMR:   " + statsObj.bestNetwork.runtimeMatchRate.toFixed(3) + "%"
           + "\nTFE |  TC:     " + statsObj.bestNetwork.testCycles
           + "\nTFE |  TCH:    " + statsObj.bestNetwork.testCycleHistory.length
           + "\nTFE | TWITTER STATS\n" + jsonPrint(statsObj.twitter)
@@ -4714,6 +4692,7 @@ const fsmStates = {
           slackText = slackText + " | INPUTS ID: " + statsObj.bestNetwork.inputsId;
           slackText = slackText + "\nNN: " + statsObj.bestNetwork.networkId;
           slackText = slackText + "\nOAMR: " + statsObj.bestNetwork.overallMatchRate.toFixed(3);
+          slackText = slackText + "\nRMR: " + statsObj.bestNetwork.runtimeMatchRate.toFixed(3);
           slackText = slackText + " | MR: " + statsObj.bestNetwork.matchRate.toFixed(3);
           slackText = slackText + " | SR: " + statsObj.bestNetwork.successRate.toFixed(3);
           slackText = slackText + " | TEST CYCs: " + statsObj.bestNetwork.testCycles;
