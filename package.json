@@ -13,7 +13,7 @@
     "@threeceelabs/neural-network-tools": "^1.0.195",
     "@threeceelabs/threecee-utilities": "^1.0.255",
     "@threeceelabs/tweet-server-controller": "^1.0.513",
-    "@threeceelabs/twitter-image-parser": "^1.0.93",
+    "@threeceelabs/twitter-image-parser": "^1.0.94",
     "@threeceelabs/twitter-text-parser": "^1.0.94",
     "@threeceelabs/user-server-controller": "^1.0.520",
     "@threeceelabs/word-server-controller": "^1.0.41",
