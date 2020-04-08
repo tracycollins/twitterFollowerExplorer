@@ -3413,6 +3413,7 @@ async function processRandomNetworkTreeMessage(params){
           user = m.user;
           user.category = m.category;
           user.categoryAuto = m.categoryAuto;
+          user.categorizeNetwork = m.categorizeNetwork;
           userDbUpdateQueue.push(user);
           statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
         }
@@ -3636,6 +3637,7 @@ function initUserDbUpdateQueueInterval(p) {
               + " | LANG ANZD: " + updatedUserObj.languageAnalyzed
               + " | C: " + updatedUserObj.category
               + " | CA: " + updatedUserObj.categoryAuto
+              + " | CN: " + updatedUserObj.categorizeNetwork
               + " | @" + updatedUserObj.screenName
               + " | Ts: " + updatedUserObj.statusesCount
               + " | FLWRs: " + updatedUserObj.followersCount

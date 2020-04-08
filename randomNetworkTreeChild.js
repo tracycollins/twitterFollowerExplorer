@@ -368,6 +368,7 @@ function initActivateNetworkInterval(interval){
           messageObj.user = activateNetworkResults.user;
           messageObj.category = activateNetworkResults.user.category;
           messageObj.categoryAuto = currentBestNetwork.meta.categoryAuto;
+          messageObj.categorizeNetwork = currentBestNetwork.networkId;
 
           messageObj.rxMessageQueue = rxMessageQueue.length;
           messageObj.activateNetworkQueue = activateNetworkQueue.length;
