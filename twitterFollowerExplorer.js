@@ -2066,7 +2066,8 @@ async function fixIncorrectNetworkMetaData(params){
       params.networkObj.runtimeMatchRate = 0;
     }
 
-    if (params.networkObj.evolve.options.networkTechnology 
+    if (params.networkObj.evolve
+      && params.networkObj.evolve.options.networkTechnology 
       && params.networkObj.evolve.options.networkTechnology !== params.networkObj.networkTechnology) {
       console.log(chalkAlert(MODULE_ID_PREFIX
         + " | !!! INCORRECT NETWORK TECH | CHANGE " + params.networkObj.networkTechnology 
@@ -2077,7 +2078,8 @@ async function fixIncorrectNetworkMetaData(params){
       incorrectUpdateFlag = "networkTechnology";
     } 
 
-    if (params.networkObj.evolve.options.binaryMode !== undefined 
+    if (params.networkObj.evolve
+      && params.networkObj.evolve.options.binaryMode !== undefined 
       && params.networkObj.evolve.options.binaryMode !== params.networkObj.binaryMode) {
       console.log(chalkAlert(MODULE_ID_PREFIX
         + " | !!! INCORRECT BINARY MODE | CHANGE " + params.networkObj.binaryMode 
