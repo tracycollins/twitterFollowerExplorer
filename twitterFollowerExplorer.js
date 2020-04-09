@@ -1489,7 +1489,12 @@ async function loadConfigFile(params) {
 
     if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined) {
       console.log("TFE | LOADED TFE_BEST_NN_INCREMENTAL_UPDATE: " + loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE);
-      newConfiguration.bestNetworkIncrementalUpdate = loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE;
+      if ((loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE == true) || (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE == "true")) {
+        newConfiguration.bestNetworkIncrementalUpdate = true;
+      }
+      if ((loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE == false) || (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE == "false")) {
+        newConfiguration.bestNetworkIncrementalUpdate = false;
+      }
     }
 
     if (loadedConfigObj.TFE_QUIT_ON_COMPLETE !== undefined) {
@@ -2092,8 +2097,6 @@ async function fixIncorrectNetworkMetaData(params){
       if (!params.updateDatabaseOnly) {
         await tcUtils.saveFile({folder: params.folder, file: params.file, obj: params.networkObj});
       }
-      // const nnObj = await updateDbNetwork({networkObj: params.networkObj, incrementTestCycles: false, addToTestHistory: false});
-      // return nnObj;
     }
 
     return params.networkObj;
@@ -2108,7 +2111,6 @@ async function loadNetworkFile(params){
 
   const folder = params.folder;
   const entry = params.entry;
-  // let incorrectUpdateFlag = false;
 
   let nnObj = await tcUtils.loadFileRetry({folder: folder, file: entry.name});
 
@@ -2116,24 +2118,6 @@ async function loadNetworkFile(params){
     console.log(chalkError("NO BEST NN FOUND? | " + folder + "/" + entry.name));
     return;
   }
-
-  // if (nnObj.evolve.options.networkTechnology && nnObj.evolve.options.networkTechnology !== nnObj.networkTechnology) {
-  //   console.log(chalkAlert(MODULE_ID_PREFIX
-  //     + " | !!! INCORRECT NETWORK TECH | CHANGE " + nnObj.networkTechnology + " -> " + nnObj.evolve.options.networkTechnology
-  //     + " | " + nnObj.networkId 
-  //   ));
-  //   nnObj.networkTechnology = nnObj.evolve.options.networkTechnology;
-  //   incorrectUpdateFlag = "networkTechnology";
-  // } 
-
-  // if (nnObj.evolve.options.binaryMode !== undefined && nnObj.evolve.options.binaryMode !== nnObj.binaryMode) {
-  //   console.log(chalkAlert(MODULE_ID_PREFIX
-  //     + " | !!! INCORRECT BINARY MODE | CHANGE " + nnObj.binaryMode + " -> " + nnObj.evolve.options.binaryMode
-  //     + " | " + nnObj.networkId 
-  //   ));
-  //   nnObj.binaryMode = nnObj.evolve.options.binaryMode;
-  //   incorrectUpdateFlag = "binaryMode";
-  // } 
 
   if (nnObj.testCycleHistory && nnObj.testCycleHistory !== undefined && nnObj.testCycleHistory.length > 0) {
     nnObj.previousRank = nnObj.testCycleHistory[nnObj.testCycleHistory.length-1].rank;
@@ -2145,15 +2129,6 @@ async function loadNetworkFile(params){
 
   try{
 
-    // if (incorrectUpdateFlag) {
-    //   console.log(chalkLog(MODULE_ID_PREFIX
-    //     + " | ... SAVING UPDATED INCORRECT NN META DATA"
-    //     + " | INCORRECT FLAG: " + incorrectUpdateFlag
-    //     + " | " + nnObj.networkId 
-    //   ));
-    //   await tcUtils.saveFile({folder: folder, file: entry.name, obj: nnObj});
-    //   nnObj = await updateDbNetwork({networkObj: nnObj, incrementTestCycles: false, addToTestHistory: false});
-    // }
     nnObj = await fixIncorrectNetworkMetaData({networkObj: nnObj, folder: folder, file: entry.name});
     const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
 
