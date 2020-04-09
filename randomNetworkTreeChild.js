@@ -2,7 +2,7 @@ const MODULE_ID_PREFIX = "RNT";
 
 const DEFAULT_USER_PROFILE_ONLY_FLAG = false;
 const ONE_SECOND = Number(1000);
-const MAX_Q_SIZE = 100;
+const MAX_Q_SIZE = 20;
 
 const defaultDateTimeFormat = "YYYY-MM-DD HH:mm:ss ZZ";
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";

@@ -39,7 +39,7 @@ const DEFAULT_LANG_QUOTA_TIMEOUT_DURATION = 15*ONE_MINUTE;
 const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
 const DEFAULT_ENABLE_IMAGE_ANALYSIS = true;
 
-const DEFAULT_MAX_USER_TWEETIDS = 500;
+const DEFAULT_MAX_USER_TWEETIDS = 100;
 const DEFAULT_IMAGE_PARSE_RATE_LIMIT_TIMEOUT = ONE_MINUTE;
 
 const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
@@ -105,9 +105,9 @@ else {
   DROPBOX_ROOT_FOLDER = "/Users/tc/Dropbox/Apps/wordAssociation";
 }
 
-const DEFAULT_FIND_CAT_USER_CURSOR_LIMIT = 100;
+const DEFAULT_FIND_CAT_USER_CURSOR_LIMIT = 20;
 const TEST_FIND_CAT_USER_CURSOR_LIMIT = 10;
-const DEFAULT_CURSOR_BATCH_SIZE = 100;
+const DEFAULT_CURSOR_BATCH_SIZE = 20;
 const TEST_CURSOR_BATCH_SIZE = 10;
 
 const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
@@ -966,7 +966,8 @@ async function initCategorizedUserIdSet(){
             throw err;
           }
           
-          if ((!configuration.testMode && results) || (configuration.testMode && (statsObj.users.categorized.fetched < TEST_TOTAL_FETCH))) {
+          if ((!configuration.testMode && results) 
+            || (configuration.testMode && (statsObj.users.categorized.fetched < TEST_TOTAL_FETCH))) {
 
             more = true;
 
@@ -1888,7 +1889,6 @@ const useBestNetwork = { name: "useBestNetwork", alias: "b", type: Boolean };
 const evolveIterations = { name: "evolveIterations", alias: "I", type: Number};
 
 const optionDefinitions = [
-  // maxNumberChildren,
   useLocalTrainingSets,
   loadAllInputs,
   loadTrainingSetFromFile,
@@ -2683,10 +2683,6 @@ function initRandomNetworks(){
               console.log(chalkGreen("TFE | ... LOADING NETWORK | BEST: " + networkObj.networkId));
               isBestNetworkFlag = true;
             }
-            // else {
-            //   console.log(chalkLog("TFE | ... LOADING NETWORK | " + networkObj.networkId));
-            //   isBestNetworkFlag = false;
-            // }
 
             nnTools.printNetworkObj(MODULE_ID_PREFIX + " | LOADING NN ", networkObj, chalkLog);
 
@@ -2713,36 +2709,6 @@ function initRandomNetworks(){
             console.trace(err);
           }
 
-          // randomNetworkTree.send({ op: "LOAD_NETWORK", networkObj: networkObj, isBestNetwork: isBestNetworkFlag }, function(err) {
-
-          //   if (err) { 
-          //     console.log(chalkError(MODULE_ID_PREFIX + " | *** RNT SEND LOAD_NETWORK ERROR: " + err));
-          //     statsObj.loadedNetworksFlag = false;
-          //     throw err;
-          //   }
-
-          //   console.log(chalkBlue(MODULE_ID_PREFIX + " | SENT NN > RNT : " + networkObj.networkId));
-          //   console.log(chalkLog(MODULE_ID_PREFIX + " | ... WAIT EVENT: LOAD_NETWORK"));
-
-          //   tcUtils.waitEvent({event: "LOAD_NETWORK"}).
-          //   then(function(){
-          //     console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT LOADED NETWORK " + networkObj.networkId));
-
-          //     if (networkObjArray.length === 0){
-          //       clearInterval(randomNetworkTreeLoadNetworInterval);
-          //       statsObj.loadedNetworksFlag = true;
-          //       randomNetworkTree.send({ op: "LOAD_NETWORK_DONE" });
-          //       console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT LOADED NETWORKS COMPLETE"));
-          //       resolve();
-          //     }
-
-          //     randomNetworkTreeLoadNetworkReady = true;
-          //   }).
-          //   catch(function(e){
-          //     console.log(chalkError(MODULE_ID_PREFIX + " | *** waitEvent ERROR: " + e));
-          //   });
-
-          // });
         }
 
       }, 1000);
@@ -3686,7 +3652,7 @@ function initRandomNetworkTreeChild() {
 
       console.log(chalkBlue("TFE | INIT RANDOM NN TREE CHILD PROCESS"));
 
-      randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`, { execArgv: ['--max-old-space-size=32768'] });
+      randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`, { execArgv: ['--max-old-space-size=16384'] });
 
       randomNetworkTree.on("message", function(m) {
         switch (m.op) {
