@@ -1396,7 +1396,11 @@ async function loadConfigFile(params) {
     const newConfiguration = {};
     newConfiguration.evolve = {};
 
-    const loadedConfigObj = await tcUtils.loadFile({folder: params.folder, file: params.file, noErrorNotFound: params.noErrorNotFound });
+    const loadedConfigObj = await tcUtils.loadFile({
+      folder: params.folder, 
+      file: params.file, 
+      noErrorNotFound: params.noErrorNotFound
+    });
 
     if (loadedConfigObj === undefined) {
       if (params.noErrorNotFound) {
@@ -1636,14 +1640,22 @@ async function loadAllConfigFiles(){
 
   statsObj.status = "LOAD CONFIG";
 
-  const defaultConfig = await loadConfigFile({folder: configDefaultFolder, file: configDefaultFile});
+  const defaultConfig = await loadConfigFile({
+    folder: configDefaultFolder, 
+    file: configDefaultFile,
+    noErrorNotFound: true
+  });
 
   if (defaultConfig) {
     defaultConfiguration = defaultConfig;
     console.log(chalkInfo(MODULE_ID_PREFIX + " | <<< LOADED DEFAULT CONFIG " + configDefaultFolder + "/" + configDefaultFile));
   }
   
-  const hostConfig = await loadConfigFile({folder: configHostFolder, file: configHostFile, noErrorNotFound: true});
+  const hostConfig = await loadConfigFile({
+    folder: configHostFolder, 
+    file: configHostFile, 
+    noErrorNotFound: true
+  });
 
   if (hostConfig) {
     hostConfiguration = hostConfig;
