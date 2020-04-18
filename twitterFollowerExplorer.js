@@ -109,6 +109,9 @@ let DROPBOX_ROOT_FOLDER;
 if (hostname == "google") {
   DROPBOX_ROOT_FOLDER = "/home/tc/Dropbox/Apps/wordAssociation";
 }
+else if (hostname == "googleCloudSh") {
+  DROPBOX_ROOT_FOLDER = "/home/tc/Dropbox/Apps/wordAssociation";
+}
 else {
   DROPBOX_ROOT_FOLDER = "/Users/tc/Dropbox/Apps/wordAssociation";
 }
@@ -779,7 +782,11 @@ async function loadInputs(params) {
 
   try {
 
-    const inputsConfigObj = await tcUtils.loadFile({folder: folder, file: file, noErrorNotFound: params.noErrorNotFound});
+    const inputsConfigObj = await tcUtils.loadFile({
+      folder: folder, 
+      file: file, 
+      noErrorNotFound: params.noErrorNotFound
+    });
 
     if (!inputsConfigObj) {
       if (params.noErrorNotFound) {
