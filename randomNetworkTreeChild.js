@@ -15,13 +15,6 @@ let activateNetworkIntervalBusy = false;
 
 let statsUpdateInterval;
 
-const configuration = {};
-configuration.userProfileOnlyFlag = DEFAULT_USER_PROFILE_ONLY_FLAG;
-configuration.verbose = false;
-configuration.globalTestMode = false;
-configuration.testMode = false; // 
-configuration.keepaliveInterval = 30*ONE_SECOND;
-
 const os = require("os");
 const util = require("util");
 const moment = require("moment");
@@ -29,13 +22,9 @@ const debug = require("debug")("rnt");
 const debugCache = require("debug")("cache");
 const defaults = require("object.defaults");
 
-global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
-
-const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
-const nnTools = new NeuralNetworkTools("RNT_NNT");
-
 // GOOGLE CLOUD SHELL hostname is like: "cs-6000-devshell-vm-b4617f5d-3d18-4f0a-9418-5116e89b96e1"
 
+let hostname = os.hostname();
 if (hostname.startsWith("cs-")){
   hostname = "googleCloudSh";
 }
@@ -49,6 +38,19 @@ else{
   hostname = hostname.replace(/word-1/g, "google");
   hostname = hostname.replace(/word/g, "google");
 }
+
+const configuration = {};
+configuration.userProfileOnlyFlag = DEFAULT_USER_PROFILE_ONLY_FLAG;
+configuration.verbose = false;
+configuration.globalTestMode = false;
+configuration.testMode = false; // 
+configuration.keepaliveInterval = 30*ONE_SECOND;
+
+
+global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
+
+const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
+const nnTools = new NeuralNetworkTools("RNT_NNT");
 
 const tcuChildName = "RNT_TCU";
 const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
