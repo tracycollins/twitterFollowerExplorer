@@ -1180,15 +1180,19 @@ async function connectDb(){
 
     statsObj.status = "CONNECTING MONGO DB";
 
-    const connectDbParams = {};
-    connectDbParams.appName = MODULE_ID_PREFIX + "_" + process.pid;
-    connectDbParams.config = { wordAssoDb: "mongodb://mongo:NksWAF9HsmgPrD@127.0.0.1:27017/wordAsso?replicaSet=rs0" };
+    let wordAssoDbIpAddress = "127.0.0.1";
 
     if (hostname === "googleCloudSh"){
-      connectDbParams.config = { wordAssoDb: "mongodb://mongo:NksWAF9HsmgPrD@127.0.0.1:27017/wordAsso?replicaSet=rs0" };
+      wordAssoDbIpAddress = "10.240.0.3";
     }
 
-    console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CONNECT MONGO DB ..."));
+    const connectDbParams = {};
+
+    connectDbParams.appName = MODULE_ID_PREFIX + "_" + process.pid;
+    connectDbParams.config = {};
+    connectDbParams.config.wordAssoDb = "mongodb://mongo:NksWAF9HsmgPrD@" + wordAssoDbIpAddress + ":27017/wordAsso?replicaSet=rs0";
+
+    console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CONNECT MONGO DB | IP: " + wordAssoDbIpAddress));
 
     const db = await global.wordAssoDb.connect(connectDbParams);
 
