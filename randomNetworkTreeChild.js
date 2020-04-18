@@ -34,15 +34,21 @@ global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
 const nnTools = new NeuralNetworkTools("RNT_NNT");
 
-let hostname = os.hostname();
-hostname = hostname.replace(/\.example\.com/g, "");
-hostname = hostname.replace(/\.local/g, "");
-hostname = hostname.replace(/\.home/g, "");
-hostname = hostname.replace(/\.at\.net/g, "");
-hostname = hostname.replace(/\.fios-router\.home/g, "");
-hostname = hostname.replace(/word0-instance-1/g, "google");
-hostname = hostname.replace(/word-1/g, "google");
-hostname = hostname.replace(/word/g, "google");
+// GOOGLE CLOUD SHELL hostname is like: "cs-6000-devshell-vm-b4617f5d-3d18-4f0a-9418-5116e89b96e1"
+
+if (hostname.startsWith("cs-")){
+  hostname = "googleCloudSh";
+}
+else{
+  hostname = hostname.replace(/\.example\.com/g, "");
+  hostname = hostname.replace(/\.local/g, "");
+  hostname = hostname.replace(/\.home/g, "");
+  hostname = hostname.replace(/\.at\.net/g, "");
+  hostname = hostname.replace(/\.fios-router\.home/g, "");
+  hostname = hostname.replace(/word0-instance-1/g, "google");
+  hostname = hostname.replace(/word-1/g, "google");
+  hostname = hostname.replace(/word/g, "google");
+}
 
 const tcuChildName = "RNT_TCU";
 const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
