@@ -1183,7 +1183,7 @@ async function connectDb(){
     let wordAssoDbIpAddress = "127.0.0.1";
 
     if (hostname === "googleCloudSh"){
-      wordAssoDbIpAddress = "10.240.0.3";
+      wordAssoDbIpAddress = "104.197.93.13";
     }
 
     const connectDbParams = {};
