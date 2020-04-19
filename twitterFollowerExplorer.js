@@ -883,17 +883,17 @@ function printNetworkObj(title, nObj, format) {
   const networkObj = networkDefaults(nObj);
 
   console.log(chalkFormat(title
-    + " | RNK: " + networkObj.rank
-    + " | ARCHVD: " + networkObj.archived
-    + " | TECH: " + networkObj.networkTechnology
-    + " | OAMR: " + networkObj.overallMatchRate.toFixed(2) + "%"
-    + " | RMR: " + networkObj.runtimeMatchRate.toFixed(2) + "%"
-    + " | MR: " + networkObj.matchRate.toFixed(2) + "%"
-    + " | SR: " + networkObj.successRate.toFixed(2) + "%"
-    + " | TC: " + networkObj.testCycles
-    + " | TCH: " + networkObj.testCycleHistory.length
-    + " | INs: " + networkObj.numInputs
-    + " | IN: " + networkObj.inputsId
+    + " | R " + networkObj.rank
+    // + " | ARCHVD: " + networkObj.archived
+    + " | T " + networkObj.networkTechnology
+    + " | OR " + networkObj.overallMatchRate.toFixed(2) + "%"
+    + " | RR " + networkObj.runtimeMatchRate.toFixed(2) + "%"
+    + " | MR " + networkObj.matchRate.toFixed(2) + "%"
+    + " | SR " + networkObj.successRate.toFixed(2) + "%"
+    + " | TC " + networkObj.testCycles
+    // + " | TCH: " + networkObj.testCycleHistory.length
+    // + " | INs: " + networkObj.numInputs
+    + " | IN " + networkObj.inputsId
     + " | " + networkObj.networkId
   ));
 }
@@ -3276,35 +3276,21 @@ function initActivateNetworkQueueInterval(p) {
           if (statsObj.users.processed % 100 == 0) { showStats(); }
 
           if (statsObj.currentBestNetwork.rank < currentBestNetwork.rank){
-            printNetworkObj(MODULE_ID_PREFIX + " | +++ UPDATE BEST NETWORK"
-              + " [ ANQ: " + activateNetworkQueue.length + "]"
+            printNetworkObj(MODULE_ID_PREFIX + " | +++ UPD BEST NN"
+              + " [ANQ " + activateNetworkQueue.length + "]"
               + " | @" + anObj.user.screenName 
               + " | CM: " + anObj.user.category, currentBestNetwork, chalk.black
             );
             await nnTools.printNetworkResults();
           }
-          else if ((configuration.testMode && (currentBestNetwork.meta.total % 10 === 0)) || (currentBestNetwork.meta.total % 100 === 0)) {
-            printNetworkObj(MODULE_ID_PREFIX + " | NETWORK STATS"
-              + " [ ANQ: " + activateNetworkQueue.length + "]"
-              + " | @" + anObj.user.screenName 
-              + " | CM: " + anObj.user.category, currentBestNetwork, chalk.black
-            );
+          else if ((configuration.testMode && (currentBestNetwork.meta.total % 10 === 0)) 
+            || (currentBestNetwork.meta.total % 100 === 0)) {
+            // printNetworkObj(MODULE_ID_PREFIX + " | NN STATS"
+            //   + " [ANQ " + activateNetworkQueue.length + "]"
+            //   + " | @" + anObj.user.screenName 
+            //   + " | CM " + anObj.user.category, currentBestNetwork, chalk.black
+            // );
             await nnTools.printNetworkResults();
-          }
-
-          if (configuration.verbose
-            || (statsObj.currentBestNetwork.rank < currentBestNetwork.rank)
-          ) {
-            console.log(MODULE_ID_PREFIX + " | BEST NN"
-              + " [ ANQ: " + activateNetworkQueue.length + "]"
-              + " | RANK: " + currentBestNetwork.rank
-              + " | MR: " + currentBestNetwork.matchRate.toFixed(2) + "%"
-              + " | " + currentBestNetwork.meta.match + "/" + currentBestNetwork.meta.total
-              + " | MATCH: " + currentBestNetwork.meta.matchFlag
-              + " | " + currentBestNetwork.networkId
-              + " | IN: " + currentBestNetwork.inputsId
-              + " | OUT: " + currentBestNetwork.meta.output
-            );
           }
 
           statsObj.currentBestNetwork = currentBestNetwork;
