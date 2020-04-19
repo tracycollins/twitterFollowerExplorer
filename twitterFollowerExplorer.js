@@ -1238,7 +1238,7 @@ async function connectDb(){
     connectDbParams.config = {};
     connectDbParams.config.wordAssoDb = "mongodb://mongo:NksWAF9HsmgPrD@" + wordAssoDbIpAddress + ":27017/wordAsso?replicaSet=rs0";
 
-    console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CONNECT MONGO DB | IP: " + wordAssoDbIpAddress));
+    console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CONNECT MONGO DB\n" + jsonPrint(connectDbParams.config.wordAssoDb)));
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | CREATE SSH TUNNEL"));
 
