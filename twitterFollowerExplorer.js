@@ -15,13 +15,10 @@ const DEFAULT_USER_PROFILE_ONLY_FLAG = false;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
 
-// const FETCH_COUNT = 200;
-
 const TEST_TWEET_FETCH_COUNT = 11;
 const TWEET_FETCH_COUNT = 100;
 
 const TEST_MODE_NUM_NN = 10;
-// const TEST_FETCH_COUNT = 100;
 const TEST_TOTAL_FETCH = 100;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
@@ -64,6 +61,8 @@ else{
 }
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
+
+const tunnel = require("tunnel-ssh");
 
 global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 global.dbConnection = false;
@@ -1178,11 +1177,24 @@ async function connectDb(){
 
   try {
 
+    const sshConfig = {
+      username:"tc",
+      Password:"f0Rt53vN",
+      host:"104.197.93.13",
+      port:22,
+      privateKey:require("fs").readFileSync("/Users/tc/.ssh/google_compute_engine"),
+      passphrase:"f0Rt53vN",
+      dstPort:27017
+    };
+
     statsObj.status = "CONNECTING MONGO DB";
 
     let wordAssoDbIpAddress = "127.0.0.1";
 
     if (hostname === "googleCloudSh"){
+      wordAssoDbIpAddress = "104.197.93.13";
+    }
+    if (hostname === "mbp3"){
       wordAssoDbIpAddress = "104.197.93.13";
     }
 
@@ -1193,6 +1205,8 @@ async function connectDb(){
     connectDbParams.config.wordAssoDb = "mongodb://mongo:NksWAF9HsmgPrD@" + wordAssoDbIpAddress + ":27017/wordAsso?replicaSet=rs0";
 
     console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CONNECT MONGO DB | IP: " + wordAssoDbIpAddress));
+
+    const sshServer = await tunnel(sshConfig);
 
     const db = await global.wordAssoDb.connect(connectDbParams);
 
@@ -1223,6 +1237,7 @@ async function connectDb(){
     statsObj.dbConnectionReady = true;
 
     return db;
+
   }
   catch(err){
     console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECT ERROR: " + err));
