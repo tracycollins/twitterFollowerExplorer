@@ -21,6 +21,7 @@ const moment = require("moment");
 const debug = require("debug")("rnt");
 const debugCache = require("debug")("cache");
 const defaults = require("object.defaults");
+const tunnel = require("tunnel-ssh");
 
 // GOOGLE CLOUD SHELL hostname is like: "cs-6000-devshell-vm-b4617f5d-3d18-4f0a-9418-5116e89b96e1"
 
@@ -39,7 +40,27 @@ else{
   hostname = hostname.replace(/word/g, "google");
 }
 
+let DEFAULT_SSH_PRIVATEKEY;
+
+if (hostname.startsWith("google")) {
+  DEFAULT_SSH_PRIVATEKEY = "/home/tc/.ssh/google_compute_engine";
+}
+else {
+  DEFAULT_SSH_PRIVATEKEY = "/Users/tc/.ssh/google_compute_engine";
+}
+
 const configuration = {};
+
+configuration.ssh = {};
+configuration.ssh.username = "tc";
+configuration.ssh.Password = "f0Rt53vN";
+configuration.ssh.passphrase = "f0Rt53vN";
+configuration.ssh.privateKey = require("fs").readFileSync(DEFAULT_SSH_PRIVATEKEY);
+configuration.ssh.host = "104.197.93.13";
+configuration.ssh.port = 22;
+configuration.ssh.localHost = "127.0.0.2";
+configuration.ssh.dstPort = 27017;
+
 configuration.userProfileOnlyFlag = DEFAULT_USER_PROFILE_ONLY_FLAG;
 configuration.verbose = false;
 configuration.globalTestMode = false;
@@ -67,6 +88,8 @@ const chalkError = chalk.bold.red;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 const chalkConnect = chalk.blue;
+const chalkBlue = chalk.blue;
+const chalkBlueBold = chalk.blue.bold;
 
 const networkDefaults = {};
 
@@ -194,43 +217,118 @@ statsObj.elapsed = msToTime(moment().valueOf() - statsObj.startTime);
 // MONGO DB
 //=========================================================================
 
+// async function connectDb(){
+
+//   try {
+
+//     statsObj.status = "CONNECTING MONGO DB";
+
+//     console.log(chalkLog(MODULE_ID_PREFIX + " | CONNECT MONGO DB ..."));
+
+//     tunnel(configuration.ssh, async function(error, server) {
+
+//       const db = await global.wordAssoDb.connect(MODULE_ID_PREFIX + "_" + process.pid);
+
+//       db.on("error", async function(err){
+//         statsObj.status = "MONGO ERROR";
+//         statsObj.dbConnectionReady = false;
+//         console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR"));
+//         db.close();
+//         quit({cause: "MONGO DB ERROR: " + err});
+//       });
+
+//       db.on("close", async function(err){
+//         statsObj.status = "MONGO CLOSED";
+//         statsObj.dbConnectionReady = false;
+//         console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED"));
+//         quit({cause: "MONGO DB CLOSED: " + err});
+//       });
+
+//       db.on("disconnected", async function(){
+//         statsObj.status = "MONGO DISCONNECTED";
+//         statsObj.dbConnectionReady = false;
+//         console.log(chalkAlert(MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED"));
+//         quit({cause: "MONGO DB DISCONNECTED"});
+//       });
+
+//       console.log(chalk.green(MODULE_ID_PREFIX + " | MONGOOSE DEFAULT CONNECTION OPEN"));
+
+//       statsObj.dbConnectionReady = true;
+
+//       return db;
+
+//     });
+//   }
+//   catch(err){
+//     console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECT ERROR: " + err));
+//     throw err;
+//   }
+// }
+
 async function connectDb(){
 
   try {
 
     statsObj.status = "CONNECTING MONGO DB";
 
-    console.log(chalkLog(MODULE_ID_PREFIX + " | CONNECT MONGO DB ..."));
+    let wordAssoDbIpAddress = "127.0.0.1";
 
-    const db = await global.wordAssoDb.connect(MODULE_ID_PREFIX + "_" + process.pid);
+    if (hostname === "googleCloudSh"){
+      wordAssoDbIpAddress = "104.197.93.13";
+    }
+    if (hostname === "mbp3"){
+      wordAssoDbIpAddress = "104.197.93.13";
+    }
 
-    db.on("error", async function(err){
-      statsObj.status = "MONGO ERROR";
-      statsObj.dbConnectionReady = false;
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR"));
-      db.close();
-      quit({cause: "MONGO DB ERROR: " + err});
+    const connectDbParams = {};
+
+    connectDbParams.appName = MODULE_ID_PREFIX + "_" + process.pid;
+    connectDbParams.config = {};
+    connectDbParams.config.wordAssoDb = "mongodb://mongo:NksWAF9HsmgPrD@" + wordAssoDbIpAddress + ":27017/wordAsso?replicaSet=rs0";
+
+    console.log(chalkBlueBold(MODULE_ID_PREFIX + " | CONNECT MONGO DB | IP: " + wordAssoDbIpAddress));
+
+    tunnel(configuration.ssh, async function(error, server) {
+
+      if (error){
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** SSH ERROR: " + error));
+        throw error;
+      }
+
+      console.log(chalkBlue(MODULE_ID_PREFIX + " | +++ SSH TUNNEL OPEN"));
+
+      const db = await global.wordAssoDb.connect(connectDbParams);
+
+      db.on("error", async function(err){
+        statsObj.status = "MONGO ERROR";
+        statsObj.dbConnectionReady = false;
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR"));
+        db.close();
+        quit({cause: "MONGO DB ERROR: " + err});
+      });
+
+      db.on("close", async function(err){
+        statsObj.status = "MONGO CLOSED";
+        statsObj.dbConnectionReady = false;
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED"));
+        quit({cause: "MONGO DB CLOSED: " + err});
+      });
+
+      db.on("disconnected", async function(){
+        statsObj.status = "MONGO DISCONNECTED";
+        statsObj.dbConnectionReady = false;
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED"));
+        quit({cause: "MONGO DB DISCONNECTED"});
+      });
+
+      console.log(chalk.green(MODULE_ID_PREFIX + " | MONGOOSE DEFAULT CONNECTION OPEN"));
+
+      statsObj.dbConnectionReady = true;
+
+      return db;
+
     });
 
-    db.on("close", async function(err){
-      statsObj.status = "MONGO CLOSED";
-      statsObj.dbConnectionReady = false;
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED"));
-      quit({cause: "MONGO DB CLOSED: " + err});
-    });
-
-    db.on("disconnected", async function(){
-      statsObj.status = "MONGO DISCONNECTED";
-      statsObj.dbConnectionReady = false;
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED"));
-      quit({cause: "MONGO DB DISCONNECTED"});
-    });
-
-    console.log(chalk.green(MODULE_ID_PREFIX + " | MONGOOSE DEFAULT CONNECTION OPEN"));
-
-    statsObj.dbConnectionReady = true;
-
-    return db;
   }
   catch(err){
     console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECT ERROR: " + err));
