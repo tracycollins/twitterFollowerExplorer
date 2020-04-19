@@ -1227,9 +1227,9 @@ async function connectDb(){
     // let wordAssoDbIpAddress = "127.0.0.1";
     let wordAssoDbIpAddress = "localhost";
 
-    // if (hostname === "googleCloudSh"){
-    //   wordAssoDbIpAddress = "104.197.93.13";
-    // }
+    if (hostname === "googleCloudSh"){
+      wordAssoDbIpAddress = "104.197.93.13";
+    }
     // if (hostname === "mbp3"){
     //   wordAssoDbIpAddress = "104.197.93.13";
     // }
