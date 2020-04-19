@@ -1216,9 +1216,11 @@ async function initConfig(cnf) {
 // MONGO DB
 //=========================================================================
 
-async function connectDb(){
+function connectDb(){
 
-  try {
+  return new Promise(function(resolve, reject){
+
+  // try {
 
     statsObj.status = "CONNECTING MONGO DB";
 
@@ -1242,45 +1244,53 @@ async function connectDb(){
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | CREATE SSH TUNNEL"));
 
-    await tunnel(configuration.ssh);
+    tunnel(configuration.ssh, async function(error, server){
 
-    console.log(chalkBlue(MODULE_ID_PREFIX + " | +++ SSH TUNNEL OPEN"));
+      if (error){
+        return reject(error);
+      }
 
-    const db = await global.wordAssoDb.connect(connectDbParams);
+      console.log(chalkBlue(MODULE_ID_PREFIX + " | +++ SSH TUNNEL OPEN"));
 
-    db.on("error", async function(err){
-      statsObj.status = "MONGO ERROR";
-      statsObj.dbConnectionReady = false;
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR"));
-      db.close();
-      quit({cause: "MONGO DB ERROR: " + err});
+      const db = await global.wordAssoDb.connect(connectDbParams);
+
+      db.on("error", async function(err){
+        statsObj.status = "MONGO ERROR";
+        statsObj.dbConnectionReady = false;
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR"));
+        db.close();
+        quit({cause: "MONGO DB ERROR: " + err});
+      });
+
+      db.on("close", async function(err){
+        statsObj.status = "MONGO CLOSED";
+        statsObj.dbConnectionReady = false;
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED"));
+        quit({cause: "MONGO DB CLOSED: " + err});
+      });
+
+      db.on("disconnected", async function(){
+        statsObj.status = "MONGO DISCONNECTED";
+        statsObj.dbConnectionReady = false;
+        console.log(chalkAlert(MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED"));
+        quit({cause: "MONGO DB DISCONNECTED"});
+      });
+
+      console.log(chalk.green(MODULE_ID_PREFIX + " | MONGOOSE DEFAULT CONNECTION OPEN"));
+
+      statsObj.dbConnectionReady = true;
+
+      resolve(db);
+
     });
 
-    db.on("close", async function(err){
-      statsObj.status = "MONGO CLOSED";
-      statsObj.dbConnectionReady = false;
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED"));
-      quit({cause: "MONGO DB CLOSED: " + err});
-    });
+  // }
+  // catch(err){
+  //   console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECT ERROR: " + err));
+  //   throw err;
+  // }
 
-    db.on("disconnected", async function(){
-      statsObj.status = "MONGO DISCONNECTED";
-      statsObj.dbConnectionReady = false;
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED"));
-      quit({cause: "MONGO DB DISCONNECTED"});
-    });
-
-    console.log(chalk.green(MODULE_ID_PREFIX + " | MONGOOSE DEFAULT CONNECTION OPEN"));
-
-    statsObj.dbConnectionReady = true;
-
-    return db;
-
-  }
-  catch(err){
-    console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECT ERROR: " + err));
-    throw err;
-  }
+  });
 }
 
 async function showStats(options) {
