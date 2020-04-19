@@ -196,7 +196,7 @@ configuration.ssh.host = "104.197.93.13";
 configuration.ssh.port = 22;
 configuration.ssh.dstPort = 27017;
 
-configuration.randomNetworkTreeInterval = DEFAULT_RANDOM_NETWORK_TREE_INTERVAL;
+// configuration.randomNetworkTreeInterval = DEFAULT_RANDOM_NETWORK_TREE_INTERVAL;
 // configuration.randomNetworkTreeMessageRxQueueInterval = DEFAULT_RANDOM_NETWORK_TREE_MSG_Q_INTERVAL;
 configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
 configuration.activateNetworkQueueInterval = DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL;
@@ -1222,14 +1222,15 @@ async function connectDb(){
 
     statsObj.status = "CONNECTING MONGO DB";
 
-    let wordAssoDbIpAddress = "127.0.0.1";
+    // let wordAssoDbIpAddress = "127.0.0.1";
+    let wordAssoDbIpAddress = "localhost";
 
-    if (hostname === "googleCloudSh"){
-      wordAssoDbIpAddress = "104.197.93.13";
-    }
-    if (hostname === "mbp3"){
-      wordAssoDbIpAddress = "104.197.93.13";
-    }
+    // if (hostname === "googleCloudSh"){
+    //   wordAssoDbIpAddress = "104.197.93.13";
+    // }
+    // if (hostname === "mbp3"){
+    //   wordAssoDbIpAddress = "104.197.93.13";
+    // }
 
     const connectDbParams = {};
 
@@ -1513,10 +1514,10 @@ async function loadConfigFile(params) {
       newConfiguration.activateNetworkQueueInterval = loadedConfigObj.TFE_ACTIVATE_NETWORK_QUEUE_INTERVAL;
     }
 
-    if (loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL !== undefined) {
-      console.log("TFE | LOADED TFE_RANDOM_NETWORK_TREE_INTERVAL: " + loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL);
-      newConfiguration.randomNetworkTreeInterval = loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL;
-    }
+    // if (loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL !== undefined) {
+    //   console.log("TFE | LOADED TFE_RANDOM_NETWORK_TREE_INTERVAL: " + loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL);
+    //   newConfiguration.randomNetworkTreeInterval = loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL;
+    // }
 
     if (loadedConfigObj.TFE_USER_DB_UPDATE_QUEUE_INTERVAL !== undefined) {
       console.log("TFE | LOADED TFE_USER_DB_UPDATE_QUEUE_INTERVAL: " + loadedConfigObj.TFE_USER_DB_UPDATE_QUEUE_INTERVAL);
