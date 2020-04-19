@@ -1244,7 +1244,7 @@ function connectDb(){
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | CREATE SSH TUNNEL"));
 
-    tunnel(configuration.ssh, async function(error, server){
+    const server = tunnel(configuration.ssh, async function(error, server){
 
       if (error){
         return reject(error);
