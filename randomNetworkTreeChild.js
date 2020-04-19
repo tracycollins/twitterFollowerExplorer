@@ -880,7 +880,7 @@ process.on("message", async function(m) {
           memoryUsage: statsObj.memoryUsage
         }, function(err){
         if (err) { 
-          console.log(chalkError("RNT | *** SEND ERROR | IDLE | " + err));
+          console.log(chalkError("RNT | *** fnetSEND ERROR | IDLE | " + err));
           console.error.bind(console, "RNT | *** SEND ERROR | IDLE | " + err);
         }
       });
