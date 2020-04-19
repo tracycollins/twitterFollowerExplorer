@@ -189,8 +189,8 @@ configuration.verbose = false;
 
 configuration.ssh = {};
 configuration.ssh.username = "tc";
-configuration.ssh.password = "f0Rt53vN";
-// configuration.ssh.passphrase = "f0Rt53vN";
+// configuration.ssh.password = "f0Rt53vN";
+configuration.ssh.passphrase = "f0Rt53vN";
 configuration.ssh.privateKey = require("fs").readFileSync(DEFAULT_SSH_PRIVATEKEY);
 configuration.ssh.host = "104.197.93.13";
 configuration.ssh.port = 22;
