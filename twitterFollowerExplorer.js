@@ -41,6 +41,7 @@ const DEFAULT_IMAGE_PARSE_RATE_LIMIT_TIMEOUT = ONE_MINUTE;
 
 const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
 
+
 const os = require("os");
 let hostname = os.hostname();
 
@@ -62,7 +63,50 @@ else{
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
-const tunnel = require("tunnel-ssh");
+const path = require("path");
+const watch = require("watch");
+const defaults = require("object.defaults");
+const moment = require("moment");
+const HashMap = require("hashmap").HashMap;
+const pick = require("object.pick");
+const _ = require("lodash");
+const NodeCache = require("node-cache");
+const merge = require("deepmerge");
+const btoa = require("btoa");
+
+const fs = require("fs");
+const { promisify } = require("util");
+const renameFileAsync = promisify(fs.rename);
+const unlinkFileAsync = promisify(fs.unlink);
+
+const debug = require("debug")("TFE");
+const util = require("util");
+const deepcopy = require("deep-copy");
+const async = require("async");
+
+const { WebClient } = require("@slack/client");
+const { RTMClient } = require("@slack/client");
+
+const EventEmitter2 = require("eventemitter2").EventEmitter2;
+
+const configEvents = new EventEmitter2({
+  wildcard: true,
+  newListener: true,
+  maxListeners: 20,
+  verboseMemoryLeak: true
+});
+
+const chalk = require("chalk");
+const chalkNetwork = chalk.blue;
+const chalkBlueBold = chalk.blue.bold;
+const chalkTwitter = chalk.blue;
+const chalkBlue = chalk.blue;
+const chalkGreen = chalk.green;
+const chalkError = chalk.bold.red;
+const chalkAlert = chalk.red;
+const chalkWarn = chalk.yellow;
+const chalkLog = chalk.gray;
+const chalkInfo = chalk.black;const tunnel = require("tunnel-ssh");
 
 global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 global.dbConnection = false;
@@ -191,7 +235,7 @@ configuration.ssh = {};
 configuration.ssh.username = "tc";
 // configuration.ssh.password = "f0Rt53vN";
 configuration.ssh.passphrase = "f0Rt53vN";
-configuration.ssh.publicKey = require("fs").readFileSync(DEFAULT_SSH_PRIVATEKEY);
+configuration.ssh.privateKey = fs.readFileSync(DEFAULT_SSH_PRIVATEKEY);
 configuration.ssh.host = "104.197.93.13";
 configuration.ssh.port = 22;
 configuration.ssh.dstPort = 27017;
@@ -234,51 +278,6 @@ configuration.networkDatabaseLoadLimit = (TEST_MODE) ? TEST_MODE_NUM_NN : DEFAUL
 //=========================================================================
 // HOST
 //=========================================================================
-
-const path = require("path");
-const watch = require("watch");
-const defaults = require("object.defaults");
-const moment = require("moment");
-const HashMap = require("hashmap").HashMap;
-const pick = require("object.pick");
-const _ = require("lodash");
-const NodeCache = require("node-cache");
-const merge = require("deepmerge");
-const btoa = require("btoa");
-
-const fs = require("fs");
-const { promisify } = require("util");
-const renameFileAsync = promisify(fs.rename);
-const unlinkFileAsync = promisify(fs.unlink);
-
-const debug = require("debug")("TFE");
-const util = require("util");
-const deepcopy = require("deep-copy");
-const async = require("async");
-
-const { WebClient } = require("@slack/client");
-const { RTMClient } = require("@slack/client");
-
-const EventEmitter2 = require("eventemitter2").EventEmitter2;
-
-const configEvents = new EventEmitter2({
-  wildcard: true,
-  newListener: true,
-  maxListeners: 20,
-  verboseMemoryLeak: true
-});
-
-const chalk = require("chalk");
-const chalkNetwork = chalk.blue;
-const chalkBlueBold = chalk.blue.bold;
-const chalkTwitter = chalk.blue;
-const chalkBlue = chalk.blue;
-const chalkGreen = chalk.green;
-const chalkError = chalk.bold.red;
-const chalkAlert = chalk.red;
-const chalkWarn = chalk.yellow;
-const chalkLog = chalk.gray;
-const chalkInfo = chalk.black;
 
 const bestNetworkHashMap = new HashMap();
 let maxInputHashMap = {};
