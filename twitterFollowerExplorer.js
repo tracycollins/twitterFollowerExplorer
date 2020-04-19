@@ -1244,7 +1244,7 @@ async function connectDb(){
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | CREATE SSH TUNNEL"));
 
-    await tunnel(configuration.ssh);
+    const sshServer = await tunnel(configuration.ssh);
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | +++ SSH TUNNEL OPEN"));
 
