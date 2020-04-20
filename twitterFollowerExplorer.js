@@ -4066,7 +4066,7 @@ function processTweetObj(params){
 
           case "hashtags":
             if (!entityObj.nodeId || entityObj.nodeId === undefined) {
-              console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! HASTAG nodeId UNDEFINED\n" + jsonPrint(entityObj)));
+              console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! HASHTAG nodeId UNDEFINED", entityObj));
               return cb1();
             }
             entity = "#" + entityObj.nodeId.toLowerCase();
