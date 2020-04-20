@@ -12,7 +12,7 @@
     "@threeceelabs/mongoose-twitter": "^1.0.314",
     "@threeceelabs/neural-network-tools": "^1.0.202",
     "@threeceelabs/threecee-utilities": "^1.0.259",
-    "@threeceelabs/tweet-server-controller": "^1.0.513",
+    "@threeceelabs/tweet-server-controller": "^1.0.514",
     "@threeceelabs/twitter-image-parser": "^1.0.94",
     "@threeceelabs/twitter-text-parser": "^1.0.94",
     "@threeceelabs/user-server-controller": "^1.0.520",
