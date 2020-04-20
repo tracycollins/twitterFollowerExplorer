@@ -108,7 +108,7 @@ else{
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
-const tunnel = require("tunnel-ssh");
+// const tunnel = require("tunnel-ssh");
 
 global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 global.dbConnection = false;
@@ -1242,11 +1242,11 @@ async function connectDb(){
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | CONNECT MONGO DB\n" + jsonPrint(connectDbParams)));
 
-    console.log(chalkBlue(MODULE_ID_PREFIX + " | CREATE SSH TUNNEL"));
+    // console.log(chalkBlue(MODULE_ID_PREFIX + " | CREATE SSH TUNNEL"));
 
-    const sshServer = await tunnel(configuration.ssh);
+    // const sshServer = await tunnel(configuration.ssh);
 
-    console.log(chalkBlue(MODULE_ID_PREFIX + " | +++ SSH TUNNEL OPEN"));
+    // console.log(chalkBlue(MODULE_ID_PREFIX + " | +++ SSH TUNNEL OPEN"));
 
     const db = await global.wordAssoDb.connect(connectDbParams);
 
