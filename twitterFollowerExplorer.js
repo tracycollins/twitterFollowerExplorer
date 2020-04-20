@@ -39,7 +39,7 @@ const DEFAULT_ENABLE_IMAGE_ANALYSIS = true;
 const DEFAULT_MAX_USER_TWEETIDS = 100;
 const DEFAULT_IMAGE_PARSE_RATE_LIMIT_TIMEOUT = ONE_MINUTE;
 
-const PRIMARY_HOST = process.env.PRIMARY_HOST || "google";
+const PRIMARY_HOST = process.env.PRIMARY_HOST || "mms3";
 
 const path = require("path");
 const watch = require("watch");
@@ -171,8 +171,6 @@ const DEFAULT_MIN_TEST_CYCLES = 10;
 const DEFAULT_MIN_WORD_LENGTH = 3;
 const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
 
-// const RNT_CHILD_ID = CHILD_PREFIX + "_child_rnt";
-
 const DEFAULT_MIN_INTERVAL = 100;
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
@@ -187,10 +185,8 @@ const DEFAULT_NUM_NN = 20; // TOP n NNs of each inputsId are loaded from DB
 const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
 
 const DEFAULT_RANDOM_NETWORK_TREE_INTERVAL = DEFAULT_MIN_INTERVAL;
-// const DEFAULT_RANDOM_NETWORK_TREE_MSG_Q_INTERVAL = DEFAULT_MIN_INTERVAL; // ms
 
 let waitFileSaveInterval;
-// let randomNetworkTreeMessageRxQueueInterval;
 
 const SAVE_CACHE_DEFAULT_TTL = 60;
 const SAVE_FILE_QUEUE_INTERVAL = ONE_SECOND;
@@ -233,18 +229,6 @@ let configuration = {};
 configuration.offlineMode = false;
 configuration.verbose = false;
 
-configuration.ssh = {};
-configuration.ssh.username = "tc";
-// configuration.ssh.password = "f0Rt53vN";
-configuration.ssh.passphrase = "f0Rt53vN";
-const privateKey = fs.readFileSync(DEFAULT_SSH_PRIVATEKEY);
-configuration.ssh.privateKey = privateKey;
-configuration.ssh.host = "104.197.93.13";
-configuration.ssh.port = 22;
-configuration.ssh.dstPort = 27017;
-
-// configuration.randomNetworkTreeInterval = DEFAULT_RANDOM_NETWORK_TREE_INTERVAL;
-// configuration.randomNetworkTreeMessageRxQueueInterval = DEFAULT_RANDOM_NETWORK_TREE_MSG_Q_INTERVAL;
 configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
 configuration.activateNetworkQueueInterval = DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL;
 configuration.userDbUpdateQueueInterval = DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL;
@@ -272,7 +256,6 @@ configuration.testFetchTweetsMode = TEST_FETCH_TWEETS_MODE;
 configuration.globalTestMode = GLOBAL_TEST_MODE;
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : TWEET_FETCH_COUNT;
-// configuration.fetchCount = (TEST_MODE) ? TEST_FETCH_COUNT : FETCH_COUNT;
 configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
 configuration.fsmTickInterval = FSM_TICK_INTERVAL;
 configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
@@ -1224,15 +1207,7 @@ async function connectDb(){
 
     statsObj.status = "CONNECTING MONGO DB";
 
-    // let wordAssoDbIpAddress = "127.0.0.1";
     let wordAssoDbIpAddress = "localhost";
-
-    if (hostname === "googleCloudSh"){
-      wordAssoDbIpAddress = "104.197.93.13";
-    }
-    // if (hostname === "mbp3"){
-    //   wordAssoDbIpAddress = "104.197.93.13";
-    // }
 
     const connectDbParams = {};
 
@@ -1241,12 +1216,6 @@ async function connectDb(){
     connectDbParams.config.wordAssoDb = "mongodb://mongo:NksWAF9HsmgPrD@" + wordAssoDbIpAddress + ":27017/wordAsso?replicaSet=rs0";
 
     console.log(chalkBlue(MODULE_ID_PREFIX + " | CONNECT MONGO DB\n" + jsonPrint(connectDbParams)));
-
-    // console.log(chalkBlue(MODULE_ID_PREFIX + " | CREATE SSH TUNNEL"));
-
-    // const sshServer = await tunnel(configuration.ssh);
-
-    // console.log(chalkBlue(MODULE_ID_PREFIX + " | +++ SSH TUNNEL OPEN"));
 
     const db = await global.wordAssoDb.connect(connectDbParams);
 
@@ -2702,86 +2671,6 @@ async function initWatchConfig(){
   return;
 }
 
-// function initRandomNetworks(){
-
-//   return new Promise(function(resolve, reject){
-
-//     statsObj.status = "INIT RAN NNs";
-
-//     console.log(chalkGreen("TFE | INIT RANDOM NETWORKS"));
-
-//     statsObj.loadedNetworksFlag = false;
-
-//     if (randomNetworkTree && (randomNetworkTree !== undefined) && randomNetworkTree.send !== undefined) {
-
-//       const networkObjArray = bestNetworkHashMap.values();
-
-//       let loadNetworkReady = true;
-
-//       console.log(chalkGreen("TFE | initRandomNetworks | " + networkObjArray.length + " NETWORKS"));
-
-//       if (networkObjArray.length === 0){
-//         statsObj.loadedNetworksFlag = true;
-//         randomNetworkTree.send({ op: "LOAD_NETWORK_DONE" });
-//         console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT LOADED NETWORKS COMPLETE"));
-//         return resolve();
-//       }
-
-//       const loadNetworInterval = setInterval(async function(){
-
-//         if (networkObjArray.length > 0 && loadNetworkReady){
-
-//           try{
-//             loadNetworkReady = false;
-
-//             let isBestNetworkFlag = false;
-
-//             const networkObj = networkObjArray.shift();
-
-//             if (networkObj.networkId == bestNetwork.networkId) {
-//               console.log(chalkGreen("TFE | ... LOADING NETWORK | BEST: " + networkObj.networkId));
-//               isBestNetworkFlag = true;
-//             }
-
-//             nnTools.printNetworkObj(MODULE_ID_PREFIX + " | LOADING NN ", networkObj, chalkLog);
-
-//             randomNetworkTree.send({ op: "LOAD_NETWORK", networkObj: networkObj, isBestNetwork: isBestNetworkFlag });
-//             console.log(chalkBlue(MODULE_ID_PREFIX + " | SENT NN > RNT : " + networkObj.networkId));
-//             console.log(chalkLog(MODULE_ID_PREFIX + " | ... WAIT EVENT: LOAD_NETWORK"));
-
-//             await tcUtils.waitEvent({event: "LOAD_NETWORK", verbose: true});
-
-//             console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT LOADED NETWORK " + networkObj.networkId));
-
-//             if (networkObjArray.length === 0){
-//               clearInterval(loadNetworInterval);
-//               statsObj.loadedNetworksFlag = true;
-//               randomNetworkTree.send({ op: "LOAD_NETWORK_DONE" });
-//               console.log(chalkBlue(MODULE_ID_PREFIX + " | RNT LOADED NETWORKS COMPLETE"));
-//               resolve();
-//             }
-
-//             randomNetworkTreeLoadNetworkReady = true;
-//           }
-//           catch(err){
-//             console.log(chalkError(MODULE_ID_PREFIX + " | *** waitEvent ERROR: ", err));
-//             console.trace(err);
-//           }
-
-//         }
-
-//       }, 1000);
-
-//     }
-//     else {
-//       console.log(chalkError("TFE | *** RNT NOT INITIALIZED *** "));
-//       reject(new Error("RNT NOT INITIALIZED"));
-//     }
-
-//   });
-
-// }
-
 function initActivateNetworks(){
 
   return new Promise(function(resolve){
@@ -2845,34 +2734,7 @@ function initActivateNetworks(){
     }, 1000);
 
   });
-
 }
-// async function initMaxInputHashMap(){
-
-//   statsObj.status = "INIT MAX INPUT HASHMAP";
-
-//   if (randomNetworkTree && (randomNetworkTree !== undefined)) {
-
-//     try{
-//       await randomNetworkTree.send({ op: "LOAD_MAX_INPUTS_HASHMAP", maxInputHashMap: maxInputHashMap });
-//       console.log(chalkBlue("TFE | SENT MAX INPUTS HASHMAP > RNT"));
-
-//       await randomNetworkTree.send({ op: "LOAD_NORMALIZATION", normalization: normalization });
-//       console.log(chalkBlue("TFE | SENT NORMALIZATION > RNT"));
-
-//       return;
-//     }
-//     catch(err){
-//       console.log(chalkError("TFE | INIT MAX INPUT HASHMAP ERROR: " + err));
-//       throw err;
-//     }
-   
-//   }
-//   else {
-//     console.log(chalkError("TFE | *** INIT MAX INPUT HASHMAP ERROR: RNT NOT INITIALIZED *** "));
-//     return new Error("RNT NOT INITIALIZED");
-//   }
-// }
 
 async function initNetworks(){
 
@@ -2893,7 +2755,6 @@ async function initNetworks(){
 
   await loadMaxInput({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile});
   return;
-
 }
 
 function saveNetworkHashMap(params) {
@@ -3093,61 +2954,6 @@ function updateNetworkStats(params) {
   });
 }
 
-// function initActivateNetworkQueueInterval(p) {
-
-//   return new Promise(function(resolve){
-
-//     const params = p || {};
-
-//     const interval = params.interval || configuration.activateNetworkQueueInterval;
-
-//     clearInterval(activateNetworkQueueInterval);
-
-//     statsObj.status = "INIT RNT ACTIVATE Q INTERVAL";
-//     statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
-//     statsObj.queues.activateNetworkQueue.busy = false;
-
-//     console.log(chalkLog("TFE | INIT ACTIVATE NN QUEUE INTERVAL: " + interval + " ms"));
-
-//     activateNetworkQueueInterval = setInterval(function () {
-
-//       if (randomNetworkTreeReadyFlag && !statsObj.queues.activateNetworkQueue.busy && (activateNetworkQueue.length > 0)) {
-
-//         statsObj.queues.activateNetworkQueue.busy = true;
-
-//         const activateNetworkObj = activateNetworkQueue.shift();
-
-//         statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
-
-//         if (!activateNetworkObj.user.profileHistograms || (activateNetworkObj.user.profileHistograms === undefined)) {
-//           console.log(chalkWarn("TFE | ACTIVATE | !!! UNDEFINED USER PROFILE HISTOGRAMS | @" + activateNetworkObj.user.screenName));
-//           activateNetworkObj.user.profileHistograms = {};
-//         }
-
-//         if (!activateNetworkObj.user.tweetHistograms || (activateNetworkObj.user.tweetHistograms === undefined)) {
-//           console.log(chalkWarn("TFE | ACTIVATE | !!! UNDEFINED USER TWEET HISTOGRAMS | @" + activateNetworkObj.user.screenName));
-//           activateNetworkObj.user.tweetHistograms = {};
-//         }
-
-//         if (!activateNetworkObj.user.friends || (activateNetworkObj.user.friends === undefined)) {
-//           console.log(chalkWarn("TFE | ACTIVATE | !!! UNDEFINED USER FRIENDS | @" + activateNetworkObj.user.screenName));
-//           activateNetworkObj.user.friends = [];
-//         }
-
-//         const mObj = {op: "ACTIVATE", obj: activateNetworkObj};
-
-//         randomNetworkTree.send(mObj, function(){
-//           statsObj.queues.activateNetworkQueue.busy = false;
-//         });
-
-//       }
-
-//     }, interval);
-
-//     resolve();
-//   });
-// }
-
 let activateNetworkIntervalBusy = false;
 
 function initActivateNetworkQueueInterval(p) {
@@ -3318,43 +3124,8 @@ function initActivateNetworkQueueInterval(p) {
 
 const runEnableArgs = {};
 runEnableArgs.userServerControllerReady = userServerControllerReady;
-// runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
 runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
-// runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
 
-// function runEnable(displayArgs) {
-
-//   return new Promise(function(resolve){
-
-//     // if (randomNetworkTree && (randomNetworkTree !== undefined)) {
-//     //   randomNetworkTree.send({op: "GET_BUSY"});
-//     // }
-//     // else {
-//     //   randomNetworkTreeReadyFlag = false;
-//     //   randomNetworkTreeMessageRxQueueReadyFlag = false;
-//     // }
-
-//     runEnableArgs.userServerControllerReady = userServerControllerReady;
-//     // runEnableArgs.randomNetworkTreeReadyFlag = randomNetworkTreeReadyFlag;
-//     runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
-//     // runEnableArgs.randomNetworkTreeMessageRxQueueReadyFlag = randomNetworkTreeMessageRxQueueReadyFlag;
-
-//     const runEnableKeys = Object.keys(runEnableArgs);
-//     if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
-
-//     for (const key of runEnableKeys){
-//       if (displayArgs) { console.log(chalkInfo("TFE | runEnable | " + key + ": " + runEnableArgs[key])); }
-//       if (!runEnableArgs[key]) {
-//         if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
-//         resolve(false);
-//       }
-//     }
-
-//     if (displayArgs) { console.log(chalkInfo("TFE | ------ runEnable ------")); }
-//     resolve(true);
-
-//   });
-// }
 
 function updateBestNetworkStats(params) {
 
@@ -3426,427 +3197,6 @@ function saveBestNetworkFileCache(params) {
     resolve();
   });
 }
-
-// async function processRandomNetworkTreeMessage(params){
-
-//   const m = params.message;
-
-//   let user = {};
-//   let prevBesTFEObj = {};
-//   let fileObj = {};
-//   let file;
-
-//   statsObj.randomNetworkTreeOp = m.op;
-
-//   // rxMessageQueue: rxMessageQueue.length, 
-//   // activateNetworkQueue: activateNetworkQueue.length, 
-
-//   switch (m.op) {
-//     case "IDLE":
-//       randomNetworkTreeReadyFlag = true;
-//       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-//       await runEnable();
-//       console.log(chalkLog("TFE | RNT IDLE "));
-//       return;
-
-//     case "ERROR":
-//       if (m.errorType == "ACTIVATE_ERROR") {
-//         console.log(chalkAlert("TFE | RNT | *** ACTIVATE_ERROR: " + m.error));
-//         return;     
-//       }
-//       console.log(chalkError("TFE | RNT | *** ERROR: " + m.error));
-//       quit();
-//     break;
-
-//     case "GET_STATS_RESULTS":
-
-//       // op: "GET_STATS_RESULTS", 
-//       // networks: stats.networks, 
-//       // queue: activateNetworkQueue.length, 
-//       // memoryUsage: statsObj.memoryUsage 
-
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-
-//       statsObj.networks = m.networks;
-
-//       console.log(chalkBlue("TFE | RNT | UPDATING ALL NNs STATS IN DB ..."));
-
-//       try {
-//         await updateNetworkStats({
-//           networks: m.networks, 
-//           saveImmediate: true, 
-//           updateDb: true, 
-//           updateOverallMatchRate: true,
-//           incrementTestCycles: true,
-//           addToTestHistory: true
-//         });
-
-//         if (!bestNetworkHashMap.has(statsObj.currentBestNetworkId)){
-//           console.log(chalkAlert(MODULE_ID_PREFIX + " | *** NN NOT IN BEST NETWORK HASHMAP: " + statsObj.currentBestNetworkId));
-//           return;
-//         }
-
-//         currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
-
-//         if ((hostname == PRIMARY_HOST) || configuration.testMode) {
-
-//           const fileObj = {
-//             networkId: currentBestNetwork.networkId,
-//             successRate: currentBestNetwork.successRate,
-//             matchRate: currentBestNetwork.matchRate,
-//             overallMatchRate: currentBestNetwork.overallMatchRate,
-//             runtimeMatchRate: currentBestNetwork.runtimeMatchRate,
-//             testCycles: currentBestNetwork.testCycles,
-//             testCycleHistory: currentBestNetwork.testCycleHistory,
-//             rank: currentBestNetwork.rank,
-//             twitterStats: statsObj.twitter,
-//             updatedAt: moment()
-//           };
-
-//           const folder = (configuration.testMode) ? bestNetworkFolder + "/test" : bestNetworkFolder;
-//           const file = currentBestNetwork.networkId + ".json";
-
-//           console.log(chalkBlue("TFE | SAVING BEST NN"
-//             + " | " + currentBestNetwork.networkId
-//             + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
-//             + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
-//             + " | RMR: " + currentBestNetwork.runtimeMatchRate.toFixed(2)
-//             + " | TEST CYCs: " + currentBestNetwork.testCycles
-//             + " | " + folder + "/" + file
-//           ));
-
-//           saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
-//           saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
-//         }
-
-//         randomNetworkTreeMessageRxQueueReadyFlag = true;
-//         statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-
-//         tcUtils.emitter.emit("allNetworksUpdated");
-//         return;
-
-//       }
-//       catch(err){
-//         console.log(chalkError("TFE | *** UPDATE NN STATS ERROR: " + err));
-//         randomNetworkTreeMessageRxQueueReadyFlag = true;
-//         throw err;
-//       }
-
-//     case "NETWORK_READY":
-//       randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       randomNetworkTreeReadyFlag = true;
-//       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-//       debug(chalkInfo("RNT NETWORK_READY ..."));
-//       await runEnable();
-//       return;
-
-//     case "NETWORK_BUSY":
-//       randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       randomNetworkTreeReadyFlag = false;
-//       statsObj.queues.randomNetworkTreeActivateQueue.busy = true;
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-//       debug(chalkInfo("RNT NETWORK_BUSY ..."));
-//       return;
-
-//     case "QUEUE_STATS":
-//       randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-//       return;
-
-//     case "QUEUE_READY":
-//       randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-//       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//       randomNetworkTreeReadyFlag = true;
-//       debug(chalkInfo("RNT Q READY"));
-//       await runEnable();
-//       return;
-
-//     case "QUEUE_EMPTY":
-//       randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-//       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//       randomNetworkTreeReadyFlag = true;
-//       debug(chalkInfo("RNT Q EMPTY"));
-//       await runEnable();
-//       return;
-
-//     case "QUEUE_FULL":
-//       randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-//       statsObj.queues.randomNetworkTreeActivateQueue.busy = "QUEUE_FULL";
-//       randomNetworkTreeReadyFlag = false;
-//       console.log(chalkError("TFE | *** RNT Q FULL"));
-//       return;
-
-//     case "RNT_TEST_PASS":
-//       randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       randomNetworkTreeReadyFlag = true;
-//       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-//       console.log(chalkTwitter("TFE | " + getTimeStamp() + " | RNT_TEST_PASS | RNT READY: " + randomNetworkTreeReadyFlag));
-//       await runEnable();
-//       return;
-
-//     case "RNT_TEST_FAIL":
-//       randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       randomNetworkTreeReadyFlag = false;
-//       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-//       console.log(chalkAlert("TFE | " + getTimeStamp() + " | RNT_TEST_FAIL"));
-//       quit({source: "RNT", error: "RNT_TEST_FAIL"});
-//       return;
-
-//     case "NETWORK_OUTPUT":
-
-//       try{
-//         statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//         statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-
-//         statsObj.randomNetworkTree.memoryUsage = m.memoryUsage;
-
-//         debug(chalkAlert("RNT NETWORK_OUTPUT\n" + jsonPrint(m.output)));
-//         debug(chalkAlert("RNT NETWORK_OUTPUT | " + m.currentBestNetwork.networkId));
-
-//         if (m.currentBestNetwork === undefined 
-//           || !m.currentBestNetwork 
-//           || !m.currentBestNetwork.networkId 
-//           || m.currentBestNetwork === undefined
-//         ) {
-//           console.log(chalkError("TFE | *** NETWORK_OUTPUT BEST NN NOT DEFINED\n" + jsonPrint(m.currentBestNetwork)));
-//           return;
-//         }
-
-//         statsObj.currentBestNetworkId = m.currentBestNetwork.networkId;
-
-//         if (bestNetworkHashMap.has(statsObj.currentBestNetworkId)) {
-
-//           currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
-
-//           if ((m.currentBestNetwork.matchRate > currentBestNetwork.matchRate) 
-//             && (currentBestNetwork.networkId != m.currentBestNetwork.networkId)){
-//             printNetworkObj(MODULE_ID_PREFIX + " | +++ NEW CURRENT BEST NN", currentBestNetwork, chalkGreen);
-//           }
-
-//           currentBestNetwork.matchRate = m.currentBestNetwork.matchRate;
-//           currentBestNetwork.overallMatchRate = m.currentBestNetwork.overallMatchRate;
-//           currentBestNetwork.runtimeMatchRate = m.currentBestNetwork.runtimeMatchRate;
-//           currentBestNetwork.successRate = m.currentBestNetwork.successRate;
-
-//           await updateBestNetworkStats({networkObj: currentBestNetwork});
-        
-//           bestNetworkHashMap.set(statsObj.currentBestNetworkId, currentBestNetwork);
-
-//           if ((hostname == PRIMARY_HOST) 
-//             && (statsObj.prevBestNetworkId != statsObj.currentBestNetworkId) 
-//             && configuration.bestNetworkIncrementalUpdate) 
-//           {
-//             statsObj.prevBestNetworkId = statsObj.currentBestNetworkId;
-//             saveBestNetworkFileCache({network: m.currentBestNetwork});
-//           }
-
-//           debug(chalkAlert("NETWORK_OUTPUT"
-//             + " | " + moment().format(compactDateTimeFormat)
-//             + " | " + m.currentBestNetwork.networkId
-//             + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
-//             + " | MR: " + m.currentBestNetwork.matchRate.toFixed(2) + "%"
-//             + " | OAMR: " + m.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
-//             + " | RMR: " + m.currentBestNetwork.runtimeMatchRate.toFixed(2) + "%"
-//             + " | @" + m.user.screenName
-//             + " | C: " + m.user.category
-//             + " | CA: " + m.categoryAuto
-//           ));
-
-//           user = {};
-//           user = m.user;
-//           user.category = m.category;
-//           user.categoryAuto = m.categoryAuto;
-//           user.categorizeNetwork = m.categorizeNetwork;
-//           userDbUpdateQueue.push(user);
-//           statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
-//         }
-//         else {
-//           console.log(chalkError("TFE | *** ERROR:  NETWORK_OUTPUT | BEST NN NOT IN HASHMAP???"
-//             + " | " + moment().format(compactDateTimeFormat)
-//             + " | BEST RT NN ID: " + statsObj.currentBestNetworkId
-//             + " | BEST NN ID: " + m.currentBestNetwork.networkId
-//             + " | SR: " + currentBestNetwork.successRate.toFixed(2) + "%"
-//             + " | MR: " + m.currentBestNetwork.matchRate.toFixed(2) + "%"
-//             + " | OAMR: " + m.currentBestNetwork.overallMatchRate.toFixed(2) + "%"
-//             + " | RMR: " + m.currentBestNetwork.runtimeMatchRate.toFixed(2) + "%"
-//             + " | TC: " + m.currentBestNetwork.testCycles
-//             + " | @" + m.user.screenName
-//             + " | C: " + m.user.category
-//             + " | CA: " + m.categoryAuto
-//           ));
-//         }
-
-//         statsObj.users.processed += 1;
-//         statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
-
-//         if (statsObj.users.processed % 100 == 0) { showStats(); }
-
-//         randomNetworkTreeMessageRxQueueReadyFlag = true;
-//         statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//         await runEnable();
-//         return;
-//       }
-//       catch(err){
-//         console.log(chalkError(MODULE_ID_PREFIX
-//           + " | *** ERROR update best network stats: " + err
-//         ));
-//         throw err;
-//       }
-
-//     case "BEST_MATCH_RATE":
-
-//       statsObj.queues.randomNetworkTreeActivateQueue.size = m.activateNetworkQueue;
-//       statsObj.queues.randomNetworkTreeRxMessageQueue.size = m.rxMessageQueue;
-
-//       debug(chalkAlert("\n================================================================================================\n"
-//         + "*** RNT_BEST_MATCH_RATE"
-//         + " | " + m.networkId
-//         + " | IN ID: " + m.inputsId
-//         + " | " + m.numInputs + " IN"
-//         + "\n*** SR: " + m.successRate.toFixed(2) + "%"
-//         + " | MR: " + m.matchRate.toFixed(2) + "%"
-//         + " | OAMR: " + m.overallMatchRate.toFixed(2) + "%"
-//         + " | RMR: " + m.runtimeMatchRate.toFixed(2) + "%"
-//         + "\n*** PREV: " + m.previousBestNetworkId
-//         + " | PMR: " + m.previousBestMatchRate.toFixed(2) + "%"
-//         + "\n================================================================================================\n"
-//       ));
-
-//       if (bestNetworkHashMap.has(m.networkId)) {
-
-//         currentBestNetwork = bestNetworkHashMap.get(m.networkId);
-
-//         currentBestNetwork.matchRate = m.matchRate;
-
-//         bestNetworkHashMap.set(m.networkId, currentBestNetwork);
-
-//         if ((hostname == PRIMARY_HOST)
-//           && configuration.bestNetworkIncrementalUpdate
-//           && (statsObj.prevBestNetworkId != m.networkId)) {
-
-//           statsObj.prevBestNetworkId = m.networkId;
-
-//           console.log(chalkBlue("TFE | SAVING NEW BEST NN"
-//             + " | " + currentBestNetwork.networkId
-//             + " | MR: " + currentBestNetwork.matchRate.toFixed(2)
-//             + " | OAMR: " + currentBestNetwork.overallMatchRate.toFixed(2)
-//             + " | RMR: " + currentBestNetwork.runtimeMatchRate.toFixed(2)
-//             + " | TEST CYCs: " + currentBestNetwork.testCycles
-//           ));
-
-//           fileObj = {
-//             networkId: currentBestNetwork.networkId,
-//             successRate: currentBestNetwork.successRate,
-//             matchRate: currentBestNetwork.matchRate,
-//             overallMatchRate: currentBestNetwork.overallMatchRate,
-//             runtimeMatchRate: currentBestNetwork.runtimeMatchRate,
-//             testCycles: currentBestNetwork.testCycles,
-//             testCycleHistory: currentBestNetwork.testCycleHistory,
-//             rank: currentBestNetwork.rank,
-//             twitterStats: statsObj.twitter,
-//             updatedAt: moment()
-//           };
-
-//           file = currentBestNetwork.networkId + ".json";
-//           saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: currentBestNetwork });
-//           saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj});
-//         }
-//       }
-//       else {
-//         console.log("TFE | " + chalkError(getTimeStamp() + "??? | RNT_BEST_MATCH_RATE | NN NOT IN BEST NN HASHMAP?"
-//           + " | " + m.networkId
-//           + " | MR: " + m.matchRate.toFixed(2)
-//           + " | OAMR: " + m.overallMatchRate.toFixed(2)
-//           + " | RMR: " + m.runtimeMatchRate.toFixed(2)
-//           + " | TC: " + m.testCycles
-//           + " | TCH: " + m.testCycleHistory.length
-//         ));
-//       }
-
-//       if (m.previousBestNetworkId && bestNetworkHashMap.has(m.previousBestNetworkId)) {
-
-//         prevBesTFEObj = bestNetworkHashMap.get(m.previousBestNetworkId);
-//         prevBesTFEObj.matchRate = m.previousBestMatchRate;
-
-//         bestNetworkHashMap.set(m.previousBestNetworkId, prevBesTFEObj);
-
-//         if (hostname == PRIMARY_HOST) {
-
-//           console.log(chalkBlue("TFE | SAVING PREV BEST NN"
-//             + " | MR: " + m.previousBestMatchRate.toFixed(2) + "%"
-//             + " | " + m.previousBestNetworkId + ".json"
-//           ));
-
-//           file = m.previousBestNetworkId + ".json";
-//           saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: prevBesTFEObj });
-//         }
-//       }
-
-//       randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//       await runEnable();
-//       return;
-
-//     default:
-//       randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//       console.log(chalkError("TFE | *** UNKNOWN RNT OP | " + m.op));
-//       return;
-//   }
-// }
-
-// function initRandomNetworkTreeMessageRxQueueInterval(p) {
-
-//   return new Promise(function(resolve){
-
-//     const params = p || {};
-
-//     const interval = params.interval || configuration.randomNetworkTreeMessageRxQueueInterval;
-
-//     statsObj.status = "INIT RNT INTERVAL";
-
-//     clearInterval(randomNetworkTreeMessageRxQueueInterval);
-
-//     randomNetworkTreeMessageRxQueueReadyFlag = true;
-
-//     console.log(chalkLog("TFE | INIT RANDOM NN TREE MSG RX QUEUE INTERVAL: " + interval + " ms"));
-
-//     randomNetworkTreeMessageRxQueueInterval = setInterval(async function () {
-
-//       if (randomNetworkTreeMessageRxQueueReadyFlag && (randomNetworkTreeMessageRxQueue.length > 0)) {
-
-//         randomNetworkTreeMessageRxQueueReadyFlag = false;
-
-//         const m = randomNetworkTreeMessageRxQueue.shift();
-
-//         await processRandomNetworkTreeMessage({message: m});
-
-//         randomNetworkTreeMessageRxQueueReadyFlag = true;
-//       }
-
-//     }, interval);
-
-//     resolve();
-
-//   });
-// }
 
 function initUserDbUpdateQueueInterval(p) {
 
@@ -3923,117 +3273,6 @@ function initUserDbUpdateQueueInterval(p) {
 
   });
 }
-
-// function initRandomNetworkTreeChild() {
-
-//   statsObj.status = "INIT RNT CHILD";
-
-//   return new Promise(function(resolve, reject){
-
-//     const rntInitParams = { 
-//       op: "INIT", 
-//       childId: RNT_CHILD_ID, 
-//       // interval: RANDOM_NETWORK_TREE_INTERVAL,
-//       interval: configuration.randomNetworkTreeInterval,
-//       userProfileOnlyFlag: configuration.userProfileOnlyFlag,
-//       testMode: configuration.testMode, 
-//       verbose: configuration.verbose 
-//     };
-
-//     if (randomNetworkTree === undefined) {
-
-//       randomNetworkTreeReadyFlag = false;
-
-//       console.log(chalkBlue("TFE | INIT RANDOM NN TREE CHILD PROCESS"));
-
-//       randomNetworkTree = cp.fork(`randomNetworkTreeChild.js`, { execArgv: ['--max-old-space-size=16384'] });
-
-//       randomNetworkTree.on("message", function(m) {
-//         switch (m.op) {
-//           case "IDLE":
-//             randomNetworkTreeReadyFlag = true;
-//             debug(chalkAlert("TFE | <== RNT RX"
-//               + " [" + randomNetworkTreeMessageRxQueue.length + "]"
-//               + " | " + m.op
-//             ));
-//           break;
-//           case "LOAD_NETWORK_OK":
-//             randomNetworkTreeReadyFlag = true;
-//             tcUtils.emitter.emit("LOAD_NETWORK");
-//           break;
-//           case "LOAD_NETWORK_ERROR":
-//             randomNetworkTreeReadyFlag = true;
-//             tcUtils.emitter.emit("LOAD_NETWORK");
-//           break;
-//           case "BUSY":
-//             randomNetworkTreeReadyFlag = false;
-//             debug(chalkAlert("TFE | <== RNT RX BUSY"
-//               + " [" + randomNetworkTreeMessageRxQueue.length + "]"
-//               + " | " + m.op
-//               + " | " + m.cause
-//             ));
-//           break;
-//           default:
-//             randomNetworkTreeMessageRxQueue.push(m);
-//             debug(chalkAlert("TFE | <== RNT RX"
-//               + " [" + randomNetworkTreeMessageRxQueue.length + "]"
-//               + " | " + m.op
-//             ));
-//         }
-//       });
-
-//       randomNetworkTree.on("error", function(err) {
-//         randomNetworkTreeReadyFlag = true;
-//         statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//         statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
-//         randomNetworkTree = null;
-//         statsObj.status = "ERROR RNT";
-//         console.log(chalkError("TFE | *** randomNetworkTree ERROR *** : " + err));
-//         console.log(chalkError("TFE | *** randomNetworkTree ERROR ***\n" + jsonPrint(err)));
-//         if (!quitFlag) { quit({source: "RNT", error: err }); }
-//       });
-
-//       randomNetworkTree.on("exit", function(err) {
-//         randomNetworkTreeReadyFlag = true;
-//         statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//         statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
-//         randomNetworkTree = null;
-//         console.log(chalkError("TFE | *** randomNetworkTree EXIT ***\n" + jsonPrint(err)));
-//         if (!quitFlag) { quit({source: "RNT", error: err }); }
-//       });
-
-//       randomNetworkTree.on("close", function(code) {
-//         randomNetworkTreeReadyFlag = true;
-//         statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-//         statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
-//         randomNetworkTree = null;
-//         console.log(chalkError("TFE | *** randomNetworkTree CLOSE *** | " + code));
-//         if (!quitFlag) { quit({source: "RNT", code: code }); }
-//       });
-
-//       randomNetworkTree.send(rntInitParams, function(err) {
-//         if (err) {
-//           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
-//           return reject(err);
-//         }
-//         console.log(chalkLog("TFE | RNT CHILD INITIALIZED"));
-//         resolve();
-//       });
-//     }
-//     else {
-//       randomNetworkTree.send(rntInitParams, function(err) {
-
-//         if (err) {
-//           console.log(chalkError("TFE | *** RNT SEND INIT ERROR: " + err));
-//           return reject(err);
-//         }
-//         console.log(chalkLog("TFE | RNT CHILD INITIALIZED"));
-//         resolve();
-//       });
-//     }
-
-//   });
-// }
 
 function processTweetObj(params){
 
@@ -4530,7 +3769,6 @@ function printUser(params) {
     return text;
   }
 }
-
 
 async function allQueuesEmpty(){
 
