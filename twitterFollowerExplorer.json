@@ -8,9 +8,11 @@
     "autorestart": false,
     "restart_delay": 300000,
     "env": {
+      "PRIMARY_HOST": "mms3",
       "FORCE_COLOR": 1,
       "NODE_ENV": "production",
       "QUIT_ON_COMPLETE": true,
+      "TFE_TEST_MODE": false,
       "GCLOUD_PROJECT": "graphic-tangent-627",
       "GOOGLE_PROJECT": "graphic-tangent-627",
       "GOOGLE_PROJECT_ID": "graphic-tangent-627",

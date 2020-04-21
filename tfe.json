@@ -8,6 +8,7 @@
     "autorestart": false,
     "restart_delay": 3600000,
     "env": {
+      "PRIMARY_HOST": "mms3",
       "FORCE_COLOR": 1,
       "NODE_ENV": "production",
       "QUIT_ON_COMPLETE": true,
