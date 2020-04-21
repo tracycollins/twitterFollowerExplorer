@@ -108,8 +108,6 @@ else{
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
-// const tunnel = require("tunnel-ssh");
-
 global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 global.dbConnection = false;
 
@@ -183,8 +181,6 @@ const DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 
 const DEFAULT_NUM_NN = 20; // TOP n NNs of each inputsId are loaded from DB
 const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
-
-const DEFAULT_RANDOM_NETWORK_TREE_INTERVAL = DEFAULT_MIN_INTERVAL;
 
 let waitFileSaveInterval;
 
@@ -274,11 +270,6 @@ const categorizedUserIdSet = new Set();
 const processUserQueue = [];
 let processUserQueueInterval;
 
-// let randomNetworkTree;
-// let randomNetworkTreeMessageRxQueueReadyFlag = true;
-// let randomNetworkTreeReadyFlag = false;
-// const randomNetworkTreeMessageRxQueue = [];
-
 const activateNetworkQueue = [];
 let activateNetworkQueueInterval;
 
@@ -309,22 +300,6 @@ statsObj.status = "START";
 statsObj.timeStamp = getTimeStamp();
 
 statsObj.networks = {};
-
-// statsObj.bestNetwork = {};
-// statsObj.bestNetwork.networkId = null;
-// statsObj.bestNetwork.numInputs = 0;
-// statsObj.bestNetwork.successRate = 0;
-// statsObj.bestNetwork.matchRate = 0;
-// statsObj.bestNetwork.overallMatchRate = 0;
-// statsObj.bestNetwork.runtimeMatchRate = 0;
-// statsObj.bestNetwork.testCycles = 0;
-// statsObj.bestNetwork.testCycleHistory = [];
-// statsObj.bestNetwork.network = {};
-// statsObj.bestNetwork.networkType = null;
-// statsObj.bestNetwork.input = [];
-// statsObj.bestNetwork.inputsId = null;
-// statsObj.bestNetwork.output = [];
-// statsObj.bestNetwork.evolve = {};
 
 statsObj.bestNetwork = {};
 statsObj.bestNetwork.networkId = false;
@@ -402,13 +377,6 @@ statsObj.queues = {};
 statsObj.queues.fetchUserQueue = {};
 statsObj.queues.fetchUserQueue.busy = false;
 statsObj.queues.fetchUserQueue.size = 0;
-
-// statsObj.queues.randomNetworkTreeActivateQueue = {};
-// statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-// statsObj.queues.randomNetworkTreeActivateQueue.size = 0;
-
-// statsObj.queues.randomNetworkTreeRxMessageQueue = {};
-// statsObj.queues.randomNetworkTreeRxMessageQueue.size = 0;
 
 statsObj.queues.saveFileQueue = {};
 statsObj.queues.saveFileQueue.busy = false;
@@ -1085,7 +1053,6 @@ async function initCategorizedUserIdSet(){
     console.log(chalkError(MODULE_ID_PREFIX + " | *** initCategorizedUserIdSet ERROR: " + err));
     throw err;
   }
-
 }
 
 process.title = MODULE_ID.toLowerCase() + "_" + process.pid;
@@ -1207,7 +1174,7 @@ async function connectDb(){
 
     statsObj.status = "CONNECTING MONGO DB";
 
-    let wordAssoDbIpAddress = "localhost";
+    const wordAssoDbIpAddress = "localhost";
 
     const connectDbParams = {};
 
@@ -1980,7 +1947,6 @@ if (Object.keys(commandLineConfig).includes("help")) {
 
 statsObj.commandLineConfig = commandLineConfig;
 
-
 function loadCommandLineArgs(){
 
   return new Promise(function(resolve){
@@ -2014,7 +1980,6 @@ function toggleVerbose(){
 
   configuration.verbose = !configuration.verbose;
   console.log(chalkLog(MODULE_ID_PREFIX + " | VERBOSE: " + configuration.verbose));
-
 }
 
 function initStdIn() {
@@ -2410,7 +2375,6 @@ async function loadNetworksOfInputs(params){
   }
 
   return nnArray;
-
 }
 
 async function loadBestNetworksDatabase(p) {
@@ -3126,7 +3090,6 @@ const runEnableArgs = {};
 runEnableArgs.userServerControllerReady = userServerControllerReady;
 runEnableArgs.userDbUpdateQueueReadyFlag = userDbUpdateQueueReadyFlag;
 
-
 function updateBestNetworkStats(params) {
 
   return new Promise(function(resolve){
@@ -3274,116 +3237,6 @@ function initUserDbUpdateQueueInterval(p) {
   });
 }
 
-function processTweetObj(params){
-
-  return new Promise(function(resolve, reject){
-
-    const tweetObj = params.tweetObj;
-    const histograms = params.histograms || {};
-
-    async.eachSeries(DEFAULT_INPUT_TYPES, function(entityType, cb0){
-
-      if (!entityType || entityType === undefined) {
-        console.log(chalkAlert("TFE | ??? UNDEFINED TWEET entityType: ", entityType));
-        return cb0();
-      }
-
-      if (entityType == "user") { return cb0(); }
-      if (!tweetObj[entityType] || tweetObj[entityType] === undefined) { return cb0(); }
-      if (tweetObj[entityType].length == 0) { return cb0(); }
-
-      async.eachSeries(tweetObj[entityType], function(entityObj, cb1){
-
-        if (!entityObj) {
-          debug(chalkInfo("TFE | !!! NULL entity? | ENTITY TYPE: " + entityType + " | entityObj: " + entityObj));
-          return cb1();
-        }
-
-        let entity;
-
-        switch (entityType) {
-
-          case "hashtags":
-            // if (!entityObj.nodeId || entityObj.nodeId === undefined) {
-            //   console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! HASHTAG nodeId UNDEFINED", entityObj));
-            //   return cb1();
-            // }
-            entity = "#" + entityObj.toLowerCase();
-          break;
-
-          case "mentions":
-          case "userMentions":
-            if (!entityObj.screenName || entityObj.screenName === undefined) {
-              console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! USER MENTION screenName UNDEFINED\n" + jsonPrint(entityObj)));
-              return cb1();
-            }
-            entity = "@" + entityObj.screenName.toLowerCase();
-          break;
-
-          case "locations":
-          case "images":
-          case "media":
-          case "ngrams":
-          case "emoji":
-          case "places":
-            entity = entityObj;
-          break;
-
-          case "urls":
-            if (entityObj.includes(".")) { 
-              entity = btoa(entityObj);
-            }
-            else{
-              entity = entityObj;
-            }
-          break;
-
-          case "words":
-            entity = entityObj.toLowerCase();
-            entity = entity.replace(/\./gi, "_")
-          break;
-          
-          default:
-            console.log(chalkError("TFE | *** UNKNOWN ENTITY TYPE: " + entityType));
-            return cb1(new Error("UNKNOWN ENTITY TYPE: " + entityType));
-        }
-
-        if (!histograms[entityType] || (histograms[entityType] === undefined)){
-          histograms[entityType] = {};
-          histograms[entityType][entity] = 1;
-        }
-        else if (!histograms[entityType][entity] || (histograms[entityType][entity] === undefined)){
-          histograms[entityType][entity] = 1;
-        }
-        else{
-          histograms[entityType][entity] += 1;
-        }
-
-        async.setImmediate(function() { cb1(); });
-
-      }, function(e){
-
-        if (e){
-          console.log(chalkError("TFE | *** processTweetObj ERROR: " + e));
-          return cb0(e);
-        }
-
-        async.setImmediate(function() { cb0(); });
-
-      });
-    }, function(err){
-
-      if (err) {
-        return reject(err);
-      }
-
-      resolve(histograms);
-
-    });
-
-  });
-}
-
 async function generateAutoCategory(params) {
 
   statsObj.status = "GEN AUTO CAT";
@@ -3462,7 +3315,7 @@ function processUserTweetArray(params){
 
           if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { user.tweetHistograms = {}; }
 
-          user.tweetHistograms = await processTweetObj({tweetObj: tweetObj, histograms: user.tweetHistograms});
+          user.tweetHistograms = await tcUtils.processTweetObj({tweetObj: tweetObj, histograms: user.tweetHistograms});
           user.tweets.tweetIds = _.union(user.tweets.tweetIds, [tweet.id_str]); 
 
           statsObj.twitter.tweetsProcessed += 1;
@@ -3877,6 +3730,23 @@ async function initProcessUserQueueInterval(p) {
           user.profileHistograms = {}; 
         }
 
+        if (user.profileHistograms.images && (user.profileHistograms.images !== undefined)) {
+
+          for(const imageEntity of Object.keys(user.profileHistograms.images)){
+            if (imageEntity.includes(".")) { // mongoDb hates '.' in object property
+              const imageEntityEncoded = btoa(imageEntity);
+              user.profileHistograms.images[imageEntityEncoded] = user.profileHistograms.images[imageEntity];
+              delete user.profileHistograms.images[imageEntity];
+              console.log(chalkAlert(MODULE_ID_PREFIX
+                + " | !!! ILLEGAL PROFILE IMAGE KEY"
+                + " | NID: " + user.nodeId
+                + " | @" + user.screenName
+                + " | CONVERT " + imageEntity + " --> " + imageEntityEncoded
+              ));
+            }
+          }
+        }
+
         if (user.profileHistograms.sentiment && (user.profileHistograms.sentiment !== undefined)) {
 
           if (user.profileHistograms.sentiment.magnitude !== undefined){
@@ -4209,28 +4079,8 @@ const fsmStates = {
 
           saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
           saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
+
         }
-
-        // randomNetworkTreeMessageRxQueueReadyFlag = true;
-        // statsObj.queues.randomNetworkTreeActivateQueue.busy = false;
-
-        // return;
-
-
-        // if (randomNetworkTree && (randomNetworkTree !== undefined)) {
-
-        //   randomNetworkTree.send({op: "GET_STATS"});
-
-        //   console.log(chalkLog("TFE | PAUSING FOR RNT GET_STATS RESPONSE ..."));
-
-        //   try{
-        //     console.log(chalkLog(MODULE_ID_PREFIX + " | ... WAIT EVENT: allNetworksUpdated"));
-        //     await tcUtils.waitEvent({ event: "allNetworksUpdated"});
-        //   }
-        //   catch(err){
-        //     console.log(chalkError("TFE | *** WAIT EVENT ERROR: " + err));
-        //   }
-        // }
 
         statsObj.loadedNetworksFlag = false;
 
@@ -4301,7 +4151,6 @@ const fsmStates = {
           }
           else {
             console.log(chalk.bold.blue("TFE | WAITING FOR NNs TO BE SAVED ..."
-              // + " | HISTOGRAMS SAVED: " + histogramsSavedFlag
               + " | SAVE Q: " + saveFileQueue.length
             ));
           }
@@ -4340,14 +4189,6 @@ function fsmStart(p) {
 
   });
 }
-
-//=========================================================================
-// CHILD PROCESS
-//=========================================================================
-// configuration.reinitializeChildOnClose = false;
-
-// const cp = require("child_process");
-// const childHashMap = {};
 
 console.log(MODULE_ID_PREFIX + " | =================================");
 console.log(MODULE_ID_PREFIX + " | HOST:          " + hostname);
