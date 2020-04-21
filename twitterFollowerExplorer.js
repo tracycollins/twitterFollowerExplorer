@@ -3304,11 +3304,11 @@ function processTweetObj(params){
         switch (entityType) {
 
           case "hashtags":
-            if (!entityObj.nodeId || entityObj.nodeId === undefined) {
-              console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! HASHTAG nodeId UNDEFINED", entityObj));
-              return cb1();
-            }
-            entity = "#" + entityObj.nodeId.toLowerCase();
+            // if (!entityObj.nodeId || entityObj.nodeId === undefined) {
+            //   console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! HASHTAG nodeId UNDEFINED", entityObj));
+            //   return cb1();
+            // }
+            entity = "#" + entityObj.toLowerCase();
           break;
 
           case "mentions":
