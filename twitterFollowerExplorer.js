@@ -932,9 +932,9 @@ async function initCategorizedUserIdSet(){
     const p = {};
     p.query = {};
     p.query.$and = [
-      { category: { "$in": ["left", "right", "neutral"] } },
-      { following: true },
-      { ignored: false }
+      { category: { "$in": ["left", "right", "neutral"] } }
+      // { following: true },
+      // { ignored: { "$in": [false, "false", null] } }
     ];
 
     p.lean = false;
@@ -991,6 +991,8 @@ async function initCategorizedUserIdSet(){
             for(const userId of userIdArray){
               categorizedUserIdSet.add(userId);
               const user = results.obj[userId];
+              user.following = true;
+              user.ignored = false;
               processUserQueue.push(user);
             }
 
