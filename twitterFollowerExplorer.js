@@ -11,7 +11,6 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const TEST_MODE = false; // applies only to parent
 const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
 
-const DEFAULT_USER_PROFILE_ONLY_FLAG = false;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
 
@@ -27,17 +26,10 @@ const QUIT_ON_COMPLETE = true;
 const MIN_TWEET_ID = "1000000";
 
 const DEFAULT_ENABLE_GEOCODE = true;
-const DEFAULT_FORCE_GEOCODE = false;
 
-const DEFAULT_FORCE_LANG_ANALYSIS = false;
 const DEFAULT_ENABLE_LANG_ANALYSIS = true;
-const DEFAULT_LANG_QUOTA_TIMEOUT_DURATION = 15*ONE_MINUTE;
-
-const DEFAULT_FORCE_IMAGE_ANALYSIS = false;
-const DEFAULT_ENABLE_IMAGE_ANALYSIS = true;
 
 const DEFAULT_MAX_USER_TWEETIDS = 100;
-const DEFAULT_IMAGE_PARSE_RATE_LIMIT_TIMEOUT = ONE_MINUTE;
 
 const PRIMARY_HOST = process.env.PRIMARY_HOST || "mms3";
 
@@ -169,7 +161,7 @@ const DEFAULT_MIN_TEST_CYCLES = 10;
 const DEFAULT_MIN_WORD_LENGTH = 3;
 const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
 
-const DEFAULT_MIN_INTERVAL = 5;
+const DEFAULT_MIN_INTERVAL = 10;
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
 const FSM_TICK_INTERVAL = ONE_SECOND;
@@ -179,7 +171,6 @@ const DEFAULT_PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 
-const DEFAULT_NUM_NN = 20; // TOP n NNs of each inputsId are loaded from DB
 const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
 
 let waitFileSaveInterval;
@@ -231,22 +222,15 @@ configuration.userDbUpdateQueueInterval = DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL;
 
 configuration.networkDatabaseLoadPerInputsLimit = DEFAULT_NN_DB_LOAD_PER_INPUTS;
 configuration.randomUntestedPerInputsLimit = DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS;
-configuration.languageQuotaTimoutDuration = DEFAULT_LANG_QUOTA_TIMEOUT_DURATION;
 
 configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
-configuration.forceLanguageAnalysis = DEFAULT_FORCE_LANG_ANALYSIS;
-
-configuration.enableImageAnalysis = DEFAULT_ENABLE_IMAGE_ANALYSIS;
-configuration.forceImageAnalysis = DEFAULT_FORCE_IMAGE_ANALYSIS;
 
 configuration.enableGeoCode = DEFAULT_ENABLE_GEOCODE;
-configuration.forceGeoCode = DEFAULT_FORCE_GEOCODE;
 
 configuration.bestNetworkIncrementalUpdate = DEFAULT_BEST_INCREMENTAL_UPDATE;
 configuration.archiveNetworkOnInputsMiss = DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
 configuration.minWordLength = DEFAULT_MIN_WORD_LENGTH;
 configuration.minTestCycles = DEFAULT_MIN_TEST_CYCLES;
-configuration.userProfileOnlyFlag = DEFAULT_USER_PROFILE_ONLY_FLAG;
 configuration.testMode = TEST_MODE;
 configuration.testFetchTweetsMode = TEST_FETCH_TWEETS_MODE;
 configuration.globalTestMode = GLOBAL_TEST_MODE;
@@ -255,7 +239,6 @@ configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : TWEET_FET
 configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
 configuration.fsmTickInterval = FSM_TICK_INTERVAL;
 configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
-configuration.networkDatabaseLoadLimit = (TEST_MODE) ? TEST_MODE_NUM_NN : DEFAULT_NUM_NN;
 
 //=========================================================================
 // HOST
@@ -718,7 +701,6 @@ async function initSlackRtmClient(){
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.processName = process.env.TFE_PROCESS_NAME || "tfe_node";
 configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
-configuration.imageParserRateTimitTimeout = DEFAULT_IMAGE_PARSE_RATE_LIMIT_TIMEOUT;
 configuration.interruptFlag = false;
 
 configuration.initMainIntervalTime = DEFAULT_INIT_MAIN_INTERVAL;
@@ -1424,16 +1406,6 @@ async function loadConfigFile(params) {
 
     console.log(chalkInfo(MODULE_ID_PREFIX + " | LOADED CONFIG FILE: " + params.file + "\n" + jsonPrint(loadedConfigObj)));
 
-    if (loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG !== undefined) {
-      console.log("TFE | LOADED TFE_USER_PROFILE_ONLY_FLAG: " + loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG);
-      if ((loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG == true) || (loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG == "true")) {
-        newConfiguration.userProfileOnlyFlag = true;
-      }
-      if ((loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG == false) || (loadedConfigObj.TFE_USER_PROFILE_ONLY_FLAG == "false")) {
-        newConfiguration.userProfileOnlyFlag = false;
-      }
-    }
-
     if (loadedConfigObj.TFE_TEST_MODE !== undefined) {
       console.log("TFE | LOADED TFE_TEST_MODE: " + loadedConfigObj.TFE_TEST_MODE);
       if ((loadedConfigObj.TFE_TEST_MODE == true) || (loadedConfigObj.TFE_TEST_MODE == "true")) {
@@ -1454,11 +1426,6 @@ async function loadConfigFile(params) {
       newConfiguration.activateNetworkQueueInterval = loadedConfigObj.TFE_ACTIVATE_NETWORK_QUEUE_INTERVAL;
     }
 
-    // if (loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL !== undefined) {
-    //   console.log("TFE | LOADED TFE_RANDOM_NETWORK_TREE_INTERVAL: " + loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL);
-    //   newConfiguration.randomNetworkTreeInterval = loadedConfigObj.TFE_RANDOM_NETWORK_TREE_INTERVAL;
-    // }
-
     if (loadedConfigObj.TFE_USER_DB_UPDATE_QUEUE_INTERVAL !== undefined) {
       console.log("TFE | LOADED TFE_USER_DB_UPDATE_QUEUE_INTERVAL: " + loadedConfigObj.TFE_USER_DB_UPDATE_QUEUE_INTERVAL);
       newConfiguration.userDbUpdateQueueInterval = loadedConfigObj.TFE_USER_DB_UPDATE_QUEUE_INTERVAL;
@@ -1474,34 +1441,9 @@ async function loadConfigFile(params) {
       newConfiguration.randomUntestedPerInputsLimit = loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS;
     }
 
-    if (loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS !== undefined) {
-      console.log("TFE | LOADED TFE_RANDOM_UNTESTED_NN_PER_INPUTS: " + loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS);
-      newConfiguration.threeceeAutoFollowUser = loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS;
-    }
-
-    if (loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER !== undefined) {
-      console.log("TFE | LOADED TFE_THRECEE_AUTO_FOLLOW_USER: " + loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER);
-      newConfiguration.threeceeAutoFollowUser = loadedConfigObj.TFE_THRECEE_AUTO_FOLLOW_USER;
-    }
-
-    if (loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS !== undefined) {
-      console.log("TFE | LOADED TFE_FORCE_INIT_RANDOM_NETWORKS: " + loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS);
-      newConfiguration.forceInitRandomNetworks = loadedConfigObj.TFE_FORCE_INIT_RANDOM_NETWORKS;
-    }
-
-    if (loadedConfigObj.TFE_NUM_NN !== undefined) {
-      console.log("TFE | LOADED TFE_NUM_NN: " + loadedConfigObj.TFE_NUM_NN);
-      newConfiguration.networkDatabaseLoadLimit = loadedConfigObj.TFE_NUM_NN;
-    }
-
     if (loadedConfigObj.TFE_MIN_TEST_CYCLES !== undefined) {
       console.log("TFE | LOADED TFE_MIN_TEST_CYCLES: " + loadedConfigObj.TFE_MIN_TEST_CYCLES);
       newConfiguration.minTestCycles = loadedConfigObj.TFE_MIN_TEST_CYCLES;
-    }
-
-    if (newConfiguration.testMode) {
-      newConfiguration.networkDatabaseLoadLimit = TEST_MODE_NUM_NN;
-      console.log(chalkLog("TFE | TEST MODE | networkDatabaseLoadLimit: " + newConfiguration.networkDatabaseLoadLimit));
     }
 
     if (loadedConfigObj.TFE_BEST_NN_INCREMENTAL_UPDATE !== undefined) {
@@ -1534,29 +1476,9 @@ async function loadConfigFile(params) {
       }
     }
 
-    if (loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT !== undefined) {
-      console.log("TFE | LOADED TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT: " + loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT);
-      newConfiguration.imageParserRateTimitTimeout = loadedConfigObj.TFE_IMAGE_PARSE_RATE_LIMIT_TIMEOUT;
-    }
-
-    if (loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN !== undefined) {
-      console.log("TFE | LOADED TFE_HISTOGRAM_PARSE_DOMINANT_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN);
-      newConfiguration.histogramParseDominantMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_DOMINANT_MIN;
-    }
-
-    if (loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN !== undefined) {
-      console.log("TFE | LOADED TFE_HISTOGRAM_PARSE_TOTAL_MIN: " + loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN);
-      newConfiguration.histogramParseTotalMin = loadedConfigObj.TFE_HISTOGRAM_PARSE_TOTAL_MIN;
-    }
-
     if (loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) {
       console.log("TFE | LOADED TFE_GLOBAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE);
       newConfiguration.globalMinSuccessRate = loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE;
-    }
-
-    if (loadedConfigObj.TFE_NUM_RANDOM_NETWORKS !== undefined) {
-      console.log("TFE | LOADED TFE_NUM_RANDOM_NETWORKS: " + loadedConfigObj.TFE_NUM_RANDOM_NETWORKS);
-      newConfiguration.numRandomNetworks = loadedConfigObj.TFE_NUM_RANDOM_NETWORKS;
     }
 
     if (loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS !== undefined) {
@@ -1564,24 +1486,9 @@ async function loadConfigFile(params) {
       newConfiguration.enableLanguageAnalysis = loadedConfigObj.TFE_ENABLE_LANG_ANALYSIS;
     }
 
-    if (loadedConfigObj.TFE_LANG_QUOTA_TIMEOUT_DURATION !== undefined) {
-      console.log("TFE | LOADED TFE_LANG_QUOTA_TIMEOUT_DURATION: " + loadedConfigObj.TFE_LANG_QUOTA_TIMEOUT_DURATION);
-      newConfiguration.languageQuotaTimoutDuration = loadedConfigObj.TFE_LANG_QUOTA_TIMEOUT_DURATION;
-    }
-
-    if (loadedConfigObj.TFE_FORCE_LANG_ANALYSIS !== undefined) {
-      console.log("TFE | LOADED TFE_FORCE_LANG_ANALYSIS: " + loadedConfigObj.TFE_FORCE_LANG_ANALYSIS);
-      newConfiguration.forceLanguageAnalysis = loadedConfigObj.TFE_FORCE_LANG_ANALYSIS;
-    }
-
     if (loadedConfigObj.TFE_ENABLE_GEOCODE !== undefined) {
       console.log("TFE | LOADED TFE_ENABLE_GEOCODE: " + loadedConfigObj.TFE_ENABLE_GEOCODE);
       newConfiguration.enableGeoCode = loadedConfigObj.TFE_ENABLE_GEOCODE;
-    }
-
-    if (loadedConfigObj.TFE_FORCE_GEOCODE !== undefined) {
-      console.log("TFE | LOADED TFE_FORCE_GEOCODE: " + loadedConfigObj.TFE_FORCE_GEOCODE);
-      newConfiguration.forceGeoCode = loadedConfigObj.TFE_FORCE_GEOCODE;
     }
 
     if (loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS !== undefined) {
@@ -1589,46 +1496,9 @@ async function loadConfigFile(params) {
       newConfiguration.enableImageAnalysis = loadedConfigObj.TFE_ENABLE_IMAGE_ANALYSIS;
     }
 
-    if (loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS !== undefined) {
-      console.log("TFE | LOADED TFE_FORCE_IMAGE_ANALYSIS: " + loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS);
-      newConfiguration.forceImageAnalysis = loadedConfigObj.TFE_FORCE_IMAGE_ANALYSIS;
-    }
-
     if (loadedConfigObj.TFE_ENABLE_STDIN !== undefined) {
       console.log("TFE | LOADED TFE_ENABLE_STDIN: " + loadedConfigObj.TFE_ENABLE_STDIN);
       newConfiguration.enableStdin = loadedConfigObj.TFE_ENABLE_STDIN;
-    }
-
-    if (loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID !== undefined) {
-      console.log("TFE | LOADED TFE_NEURAL_NETWORK_FILE_PID: " + loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID);
-      newConfiguration.loadNeuralNetworkID = loadedConfigObj.TFE_NEURAL_NETWORK_FILE_PID;
-    }
-
-    if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER !== undefined) {
-      console.log("TFE | LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER: "
-        + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER));
-      newConfiguration.twitterConfigFolder = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FOLDER;
-    }
-
-    if (loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE !== undefined) {
-      console.log("TFE | LOADED DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE: "
-        + jsonPrint(loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE));
-      newConfiguration.twitterConfigFile = loadedConfigObj.DROPBOX_WORD_ASSO_DEFAULT_TWITTER_CONFIG_FILE;
-    }
-
-    if (loadedConfigObj.TFE_TWITTER_USERS !== undefined) {
-      console.log("TFE | LOADED TFE_TWITTER_USERS: " + jsonPrint(loadedConfigObj.TFE_TWITTER_USERS));
-      newConfiguration.twitterUsers = loadedConfigObj.TFE_TWITTER_USERS;
-    }
-
-    if (loadedConfigObj.TFE_TWITTER_DEFAULT_USER !== undefined) {
-      console.log("TFE | LOADED TFE_TWITTER_DEFAULT_USER: " + jsonPrint(loadedConfigObj.TFE_TWITTER_DEFAULT_USER));
-      newConfiguration.twitterDefaultUser = loadedConfigObj.TFE_TWITTER_DEFAULT_USER;
-    }
-
-    if (loadedConfigObj.TFE_KEEPALIVE_INTERVAL !== undefined) {
-      console.log("TFE | LOADED TFE_KEEPALIVE_INTERVAL: " + loadedConfigObj.TFE_KEEPALIVE_INTERVAL);
-      newConfiguration.keepaliveInterval = loadedConfigObj.TFE_KEEPALIVE_INTERVAL;
     }
 
     return newConfiguration;
@@ -1674,8 +1544,6 @@ async function loadAllConfigFiles(){
   const tempConfig = merge(configuration, defaultAndHostConfig); // any new settings override existing config
 
   configuration = deepcopy(tempConfig);
-
-  configuration.twitterUsers = _.uniq(configuration.twitterUsers);
 
   return;
 }
@@ -4242,8 +4110,6 @@ setTimeout(async function(){
 
     global.dbConnection = await connectDb();
     await initUserDbUpdateQueueInterval({interval: configuration.userDbUpdateQueueInterval});
-    // await initRandomNetworkTreeMessageRxQueueInterval({interval: configuration.randomNetworkTreeMessageRxQueueInterval});
-    // await initRandomNetworkTreeChild();
     await initWatchConfig();
     await initProcessUserQueueInterval({interval: configuration.processUserQueueInterval});
     await initNetworks();
