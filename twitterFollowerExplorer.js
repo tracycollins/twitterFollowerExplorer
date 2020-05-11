@@ -110,6 +110,8 @@ const tcUtils = new ThreeceeUtilities(tcuChildName);
 const jsonPrint = tcUtils.jsonPrint;
 const msToTime = tcUtils.msToTime;
 const getTimeStamp = tcUtils.getTimeStamp;
+const formatBoolean = tcUtils.formatBoolean;
+const formatCategory = tcUtils.formatCategory;
 
 const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
 const nnTools = new NeuralNetworkTools(MODULE_ID_PREFIX + "_NNT");
@@ -3268,16 +3270,18 @@ async function processUserTweets(params){
     const processedUser = await processUserTweetArray({user: user, forceFetch: tweetHistogramsEmpty, tweets: tweets, tscParams: tscParams});
 
     if (tweetHistogramsEmpty) {
-      console.log(chalkLog("TFE | >>> processUserTweetArray USER"
-        + " | " + printUser({user: processedUser})
-      ));
+
+      printUserObj(MODULE_ID_PREFIX + " | >>> processUserTweetArray USER", processedUser);
+
       debug(chalkLog("TFE | >>> processUserTweetArray USER TWEETS"
         + " | SINCE: " + processedUser.tweets.sinceId
         + " | TWEETS: " + processedUser.tweets.tweetIds.length
       ));
+
       debug(chalkLog("TFE | >>> processUserTweetArray USER TWEET HISTOGRAMS"
         + "\n" + jsonPrint(processedUser.tweetHistograms)
       ));
+
       debug(chalkLog("TFE | >>> processUserTweetArray USER PROFILE HISTOGRAMS"
         + "\n" + jsonPrint(processedUser.profileHistograms)
       ));
@@ -3377,16 +3381,18 @@ async function processUser(params) {
     const savedUser = await prevPropsUser.save();
 
     if (configuration.verbose){
-      console.log(chalkLog("TFE | >>> SAVED USER"
-        + " | " + printUser({user: savedUser})
-      ));
+
+      printUserObj(MODULE_ID_PREFIX + " | >>> SAVED USER", savedUser);
+
       console.log(chalkLog("TFE | >>> SAVED USER TWEETS"
         + " | SINCE: " + savedUser.tweets.sinceId
         + " | TWEETS: " + savedUser.tweets.tweetIds.length
       ));
+
       console.log(chalkLog("TFE | >>> SAVED USER TWEET HISTOGRAMS"
         + "\n" + jsonPrint(savedUser.tweetHistograms)
       ));
+
       console.log(chalkLog("TFE | >>> SAVED USER PROFILE HISTOGRAMS"
         + "\n" + jsonPrint(savedUser.profileHistograms)
       ));
@@ -3468,29 +3474,33 @@ function updatePreviousUserProps(params){
   });
 }
 
-function printUser(params) {
-  let text;
-  const user = params.user;
+const userDefaults = function (user){
+  user.rate = user.rate || 0;
+  return user;
+};
 
-  if (params.verbose) {
-    return jsonPrint(params.user);
-  } 
-  else {
-    text = user.userId
-    + " | @" + user.screenName
-    + " | " + user.name 
-    + " | LG " + user.lang
-    + " | FW " + user.followersCount
-    + " | FD " + user.friendsCount
-    + " | T " + user.statusesCount
-    + " | M  " + user.mentions
-    + " | LS " + getTimeStamp(user.lastSeen)
-    + " | FWG " + user.following 
-    + " | LC " + user.location
-    + " | C M " + user.category + " A " + user.categoryAuto;
+function printUserObj(title, u, chalkFormat) {
 
-    return text;
-  }
+  const chlk = chalkFormat || chalkInfo;
+
+  const user = userDefaults(u);
+
+  console.log(chlk(title
+    + " | " + user.nodeId
+    + " @" + user.screenName
+    + " N: " + user.name 
+    + " FC: " + user.followersCount
+    + " FD: " + user.friendsCount
+    + " T: " + user.statusesCount
+    + " M: " + user.mentions
+    + " R: " + user.rate.toFixed(2)
+    + " FW: " + formatBoolean(user.following) 
+    + " LS: " + getTimeStamp(user.lastSeen)
+    + " CN: " + user.categorizeNetwork
+    + " V: " + formatBoolean(user.categoryVerified)
+    + " M: " + formatCategory(user.category)
+    + " A: " + formatCategory(user.categoryAuto)
+  ));
 }
 
 async function allQueuesEmpty(){
@@ -3640,9 +3650,7 @@ async function initProcessUserQueueInterval(p) {
         }
 
         if (configuration.verbose){
-          console.log(chalkLog("TFE | FOUND USER DB"
-            + " | " + printUser({user: user})
-          ));
+          printUserObj(MODULE_ID_PREFIX + " | FOUND USER DB", user);
         }
 
         if ((mObj.op == "USER_TWEETS") 
