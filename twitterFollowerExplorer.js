@@ -483,44 +483,78 @@ function slackSendRtmMessage(msg){
   return slackRtmClient.sendMessage(msg, slackConversationId);
 }
 
-function slackSendWebMessage(msgObj){
+// function slackSendWebMessage(msgObj){
 
 
-  return new Promise(function(resolve, reject){
+//   return new Promise(function(resolve, reject){
 
-    try {
+//     try {
 
-      if (configuration.offlineMode) {
-        resolve();
-      }
+//       if (configuration.offlineMode) {
+//         resolve();
+//       }
 
-      if (slackWebClient === undefined) {
-        return reject(new Error("SLACK NOT INITIALIZED"));
-      }
+//       if (slackWebClient === undefined) {
+//         return reject(new Error("SLACK NOT INITIALIZED"));
+//       }
 
-      const token = msgObj.token || slackOAuthAccessToken;
-      const channel = msgObj.channel || configuration.slackChannel.id;
-      const text = msgObj.text || msgObj;
+//       const token = msgObj.token || slackOAuthAccessToken;
+//       const channel = msgObj.channel || configuration.slackChannel.id;
+//       const text = msgObj.text || msgObj;
 
-      const message = {
-        token: token, 
-        channel: channel,
-        text: text
-      };
+//       const message = {
+//         token: token, 
+//         channel: channel,
+//         text: text
+//       };
 
-      if (msgObj.attachments !== undefined) {
-        message.attachments = msgObj.attachments;
-      }
+//       if (msgObj.attachments !== undefined) {
+//         message.attachments = msgObj.attachments;
+//       }
 
-      console.log(chalkBlueBold("TFE | >>> SLACK WEB | SEND | " + message.text));
-      slackWebClient.chat.postMessage(message);
-      resolve();
+//       console.log(chalkBlueBold("TFE | >>> SLACK WEB | SEND | " + message.text));
+//       slackWebClient.chat.postMessage(message);
+//       resolve();
+//     }
+//     catch(err){
+//       reject(err);
+//     }
+
+//   });
+// }
+
+async function slackSendWebMessage(msgObj){
+
+  try{
+    
+    const token = msgObj.token || slackOAuthAccessToken;
+    const channel = msgObj.channel || configuration.slackChannel.id;
+    const text = msgObj.text || msgObj;
+
+    const message = {
+      token: token, 
+      channel: channel,
+      text: text
+    };
+
+    if (msgObj.attachments !== undefined) {
+      message.attachments = msgObj.attachments;
     }
-    catch(err){
-      reject(err);
-    }
 
-  });
+    if (slackWebClient && slackWebClient !== undefined) {
+      const sendResponse = await slackWebClient.chat.postMessage(message);
+      return sendResponse;
+    }
+    else {
+      console.log(chalkAlert(MODULE_ID_PREFIX + " | SLACK WEB NOT CONFIGURED | SKIPPING SEND SLACK MESSAGE\n" + jsonPrint(message)));
+      return;
+    }
+  }
+  catch(err){
+    console.log(chalkAlert(MODULE_ID_PREFIX + " | *** slackSendWebMessage ERROR: " + err));
+    console.log(chalkAlert(MODULE_ID_PREFIX + " | *** slackSendWebMessage msgObj\n" + jsonPrint(msgObj)));
+    throw err;
+  }
 }
 
 function slackMessageHandler(message){
@@ -608,6 +642,7 @@ async function initSlackWebClient(){
     slackWebClient = new WebClient(slackRtmToken);
 
     const testResponse = await slackWebClient.api.test();
+
     if (configuration.verbose) {
       console.log("TFE | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
     }
@@ -649,6 +684,7 @@ async function initSlackWebClient(){
 
     console.log("TFE | SLACK WEB BOTS INITIALIZED");
     return;
+
   }
   catch(err){
     console.log(chalkError("TFE | *** INIT SLACK WEB CLIENT ERROR: " + err));
@@ -4092,8 +4128,8 @@ setTimeout(async function(){
     statsObj.status = "START";
 
     // if (!configuration.offlineMode){
-      await initSlackRtmClient();
-      await initSlackWebClient();
+      initSlackRtmClient();
+      initSlackWebClient();
       const twitterParams = await tcUtils.initTwitterConfig();
       tcUtils.setEnableLanguageAnalysis(configuration.enableLanguageAnalysis);
       tcUtils.setEnableImageAnalysis(configuration.enableImageAnalysis);
