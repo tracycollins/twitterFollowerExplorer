@@ -3307,7 +3307,7 @@ async function processUserTweets(params){
 
     if (tweetHistogramsEmpty) {
 
-      printUserObj(MODULE_ID_PREFIX + " | >>> processUserTweetArray USER", processedUser);
+      // printUserObj(MODULE_ID_PREFIX + " | >>> processUserTweetArray USER", processedUser);
 
       debug(chalkLog("TFE | >>> processUserTweetArray USER TWEETS"
         + " | SINCE: " + processedUser.tweets.sinceId
@@ -3348,7 +3348,7 @@ async function updateUserTweets(params){
       ));
     }
     else{
-      console.log(chalkInfo("TFE | updateUserTweets | >>> PRIORITY FETCH TWEETS"
+      debug(chalkInfo("TFE | updateUserTweets | >>> PRIORITY FETCH TWEETS"
         + " | @" + user.screenName
       ));
     }
