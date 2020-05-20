@@ -1,6 +1,26 @@
 const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 // const CHILD_PREFIX = "tfe_node";
+const userTrainingSetPickArray = [
+  "categorizeNetwork",
+  "category",
+  "categoryAuto",
+  "categoryVerified",
+  "description",
+  "followersCount",
+  "friends",
+  "friendsCount",
+  "isBot",
+  "lang",
+  "languageAnalyzed",
+  "location",
+  "name",
+  "nodeId",
+  "profileHistograms",
+  "screenName",
+  "statusesCount",
+  "tweetHistograms"
+];
 
 const bestNetworkIdArrayFile = "bestNetworkIdArray.json";
 
@@ -30,8 +50,6 @@ const DEFAULT_ENABLE_GEOCODE = true;
 const DEFAULT_ENABLE_LANG_ANALYSIS = true;
 
 const DEFAULT_MAX_USER_TWEETIDS = 100;
-
-const PRIMARY_HOST = process.env.PRIMARY_HOST || "mms3";
 
 const path = require("path");
 const watch = require("watch");
@@ -97,6 +115,9 @@ else{
   hostname = hostname.replace(/word-1/g, "google");
   hostname = hostname.replace(/word/g, "google");
 }
+
+const PRIMARY_HOST = process.env.PRIMARY_HOST || "mms1";
+const HOST = (hostname === PRIMARY_HOST) ? "default" : "local";
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
@@ -178,7 +199,7 @@ const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
 let waitFileSaveInterval;
 
 const SAVE_CACHE_DEFAULT_TTL = 60;
-const SAVE_FILE_QUEUE_INTERVAL = ONE_SECOND;
+// const SAVE_FILE_QUEUE_INTERVAL = ONE_SECOND;
 
 const USER_PROFILE_PROPERTY_ARRAY = [
   "bannerImageUrl",
@@ -738,7 +759,7 @@ async function initSlackRtmClient(){
 
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.processName = process.env.TFE_PROCESS_NAME || "tfe_node";
-configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
+// configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
 configuration.interruptFlag = false;
 
 configuration.initMainIntervalTime = DEFAULT_INIT_MAIN_INTERVAL;
@@ -881,7 +902,7 @@ function updateDbNetwork(params) {
     const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : true;
     const verbose = params.verbose || false;
 
-    if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | >>> NN DB UPDATE ", params.networkObj, chalkInfo); }
+    // if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | >>> NN DB UPDATE ", params.networkObj, chalkInfo); }
 
     const query = { networkId: networkObj.networkId };
 
@@ -1245,6 +1266,8 @@ async function connectDb(){
 
 async function showStats(options) {
 
+  statsObj.queues.saveFileQueue.size = tcUtils.getSaveFileQueue();
+
   statsObj.elapsed = getElapsedTimeStamp();
   statsObj.timeStamp = getTimeStamp();
 
@@ -1317,8 +1340,7 @@ function initStatsUpdate() {
       statsObj.elapsed = getElapsedTimeStamp();
       statsObj.timeStamp = getTimeStamp();
 
-      saveFileQueue.push({folder: statsFolder, file: statsFile, obj: statsObj});
-      statsObj.queues.saveFileQueue.size = saveFileQueue.length;
+      statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({folder: statsFolder, file: statsFile, obj: statsObj});
 
       try{
         await showStats();
@@ -1348,6 +1370,14 @@ const configHostFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility", hostna
 
 const configDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 const configHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
+
+configuration.local = {};
+configuration.local.userArchiveFolder = path.join(configHostFolder, "trainingSets/users");
+
+configuration.default = {};
+configuration.default.userArchiveFolder = path.join(configDefaultFolder, "trainingSets/users");
+
+configuration.userArchiveFolder = configuration[HOST].userArchiveFolder;
 
 const statsFolder = path.join(DROPBOX_ROOT_FOLDER, "stats", hostname);
 const statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
@@ -1589,8 +1619,8 @@ async function loadAllConfigFiles(){
 //=========================================================================
 // FILE SAVE
 //=========================================================================
-let saveFileQueueInterval;
-const saveFileQueue = [];
+// let saveFileQueueInterval;
+// const saveFileQueue = [];
 let statsUpdateInterval;
 
 let saveCacheTtl = process.env.SAVE_CACHE_DEFAULT_TTL;
@@ -1615,8 +1645,7 @@ function saveCacheExpired(file, fileObj) {
     + " [" + saveCache.getStats().keys + "]"
     + " | " + file
   ));
-  saveFileQueue.push(fileObj);
-  statsObj.queues.saveFileQueue.size = saveFileQueue.length;
+  statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue(fileObj);
 }
 
 saveCache.on("expired", saveCacheExpired);
@@ -1627,49 +1656,6 @@ saveCache.on("set", function(file, fileObj) {
     + " | " + fileObj.folder + "/" + file
   ));
 });
-
-function initSaveFileQueue(cnf) {
-
-  console.log(chalkLog(MODULE_ID_PREFIX + " | INIT SAVE FILE INTERVAL | " + msToTime(cnf.saveFileQueueInterval)));
-
-  clearInterval(saveFileQueueInterval);
-
-  saveFileQueueInterval = setInterval(async function () {
-
-    if (!statsObj.queues.saveFileQueue.busy && saveFileQueue.length > 0) {
-
-      statsObj.queues.saveFileQueue.busy = true;
-
-      const saveFileObj = saveFileQueue.shift();
-      saveFileObj.verbose = true;
-
-      statsObj.queues.saveFileQueue.size = saveFileQueue.length;
-
-      try{
-        await tcUtils.saveFile(saveFileObj);
-        console.log(chalkLog(
-          MODULE_ID_PREFIX 
-          + " | SAVED FILE"
-          + " [Q: " + saveFileQueue.length + "] " 
-          + " [$: " + saveCache.getStats().keys + "] " 
-          + saveFileObj.folder + "/" + saveFileObj.file
-        ));
-        statsObj.queues.saveFileQueue.busy = false;
-      }
-      catch(err){
-        console.log(chalkError(MODULE_ID_PREFIX 
-          + " | *** SAVE FILE ERROR ... RETRY"
-          + " | ERROR: " + err
-          + " | " + saveFileObj.folder + "/" + saveFileObj.file
-        ));
-        saveFileQueue.push(saveFileObj);
-        statsObj.queues.saveFileQueue.size = saveFileQueue.length;
-        statsObj.queues.saveFileQueue.busy = false;
-      }
-
-    }
-  }, cnf.saveFileQueueInterval);
-}
 
 //=========================================================================
 // INTERVALS
@@ -1698,8 +1684,10 @@ function clearAllIntervals(){
 let quitWaitInterval;
 let quitFlag = false;
 
-function readyToQuit() {
-  const flag = ((saveCache.getStats().keys == 0) && (saveFileQueue.length == 0));
+const readyToQuit = function () {
+  const saveCacheKeys = saveCache.getStats().keys;
+  statsObj.queues.saveFileQueue.size = tcUtils.getSaveFileQueue();
+  const flag = ((saveCacheKeys === 0) && (statsObj.queues.saveFileQueue.size === 0));
   return flag;
 }
 
@@ -1754,6 +1742,8 @@ async function quit(opts) {
   quitWaitInterval = setInterval(async function() {
 
     if (readyToQuit()) {
+
+      await tcUtils.stopSaveFileQueue();
 
       clearInterval(quitWaitInterval);
 
@@ -2525,7 +2515,7 @@ async function initWatchConfig(){
     monitor.on("changed", loadConfig);
 
     monitor.on("removed", function (f) {
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
+      debug(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
     });
   });
 
@@ -2536,7 +2526,7 @@ async function initWatchConfig(){
     monitor.on("changed", loadConfig);
 
     monitor.on("removed", function (f) {
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
+      debug(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
     });
   });
 
@@ -2640,7 +2630,7 @@ function saveNetworkHashMap(params) {
 
     const configFolder = (hostname == PRIMARY_HOST) ? configDefaultFolder : configHostFolder;
 
-    saveFileQueue.push({folder: configFolder, file: bestNetworkIdArrayFile, obj: nnIds});
+    statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({folder: configFolder, file: bestNetworkIdArrayFile, obj: nnIds});
 
     const folder = (params.folder === undefined) ? bestNetworkFolder : params.folder;
 
@@ -2652,11 +2642,11 @@ function saveNetworkHashMap(params) {
 
       printNetworkObj("TFE | SAVING NN", networkObj);
 
-      statsObj.status = "SAVE NN HASHMAP | SAVE Q: " + saveFileQueue.length;
-
       const file = nnId + ".json";
 
-      saveFileQueue.push({folder: folder, file: file, obj: networkObj});
+      statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({folder: folder, file: file, obj: networkObj});
+
+      statsObj.status = "SAVE NN HASHMAP | SAVE Q: " + statsObj.queues.saveFileQueue.size;
 
       debug(chalkNetwork("SAVING NN (Q)"
         + " | " + networkObj.networkId
@@ -2810,7 +2800,7 @@ function updateNetworkStats(params) {
           file = hostBestInputsConfigFile;
         }
 
-        saveFileQueue.push({folder: folder, file: file, obj: bestInputsConfigObj});
+        statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({folder: folder, file: file, obj: bestInputsConfigObj});
 
         await saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb});
         console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ updateNetworkStats COMPLETE"));
@@ -3567,6 +3557,14 @@ async function initProcessUserQueueInterval(p) {
   const params = p || {};
 
   const interval = params.interval || configuration.processUserQueueInterval;
+  const folder = path.join(configuration.userArchiveFolder, "data");
+  let file;
+  let processedUser;
+  let allEmpty;
+  let dbUser;
+  let user;
+  let convertedRawUser;
+  let trainingSetUser;
 
   statsObj.status = "INIT PROCESS USER QUEUE";
 
@@ -3583,7 +3581,7 @@ async function initProcessUserQueueInterval(p) {
 
   processUserQueueInterval = setInterval(async function () {
 
-    const allEmpty = await allQueuesEmpty();
+    allEmpty = await allQueuesEmpty();
 
     if (statsObj.fetchUserEndFlag && statsObj.processedStartFlag && allEmpty){
 
@@ -3621,9 +3619,9 @@ async function initProcessUserQueueInterval(p) {
           return;
         }
 
-        const u = await global.wordAssoDb.User.findOne({nodeId: mObj.nodeId});
+        dbUser = await global.wordAssoDb.User.findOne({nodeId: mObj.nodeId});
 
-        if (!u) {
+        if (!dbUser) {
           console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
             + " | NID: " + mObj.nodeId
             + " | @" + mObj.screenName
@@ -3633,7 +3631,7 @@ async function initProcessUserQueueInterval(p) {
           return;
         }
 
-        const user = await tcUtils.encodeHistogramUrls({user: u});
+        user = await tcUtils.encodeHistogramUrls({user: dbUser});
         user.priorityFlag = mObj.priorityFlag;
 
         if (!user.latestTweets || (user.latestTweets === undefined)) { 
@@ -3694,7 +3692,7 @@ async function initProcessUserQueueInterval(p) {
           && (mObj.latestTweets[0].user.id_str == mObj.nodeId))
         {
           // update user props
-          const convertedRawUser = await userServerController.convertRawUserPromise({user: mObj.latestTweets[0].user});
+          convertedRawUser = await userServerController.convertRawUserPromise({user: mObj.latestTweets[0].user});
 
           user.bannerImageUrl = convertedRawUser.bannerImageUrl;
           user.createdAt = convertedRawUser.createdAt;
@@ -3723,7 +3721,17 @@ async function initProcessUserQueueInterval(p) {
 
         user.latestTweets = _.union(user.latestTweets, mObj.latestTweets);
 
-        const processedUser = await processUser({user: user});
+        processedUser = await processUser({user: user});
+
+        file = processedUser.nodeId + ".json";
+
+        trainingSetUser = pick(processedUser, userTrainingSetPickArray);
+
+        statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({
+          folder: folder,
+          file: file,
+          obj: trainingSetUser
+        });
 
         debug("PROCESSED USER\n" + jsonPrint(processedUser));
 
@@ -4032,7 +4040,9 @@ const fsmStates = {
 
         waitFileSaveInterval = setInterval(async function() {
 
-          if (saveFileQueue.length == 0) {
+          statsObj.queues.saveFileQueue.size = tcUtils.getSaveFileQueue();
+
+          if (statsObj.queues.saveFileQueue.size == 0) {
 
             console.log(chalk.bold.blue("TFE | ALL NNs SAVED ..."));
 
@@ -4065,7 +4075,7 @@ const fsmStates = {
           }
           else {
             console.log(chalk.bold.blue("TFE | WAITING FOR NNs TO BE SAVED ..."
-              + " | SAVE Q: " + saveFileQueue.length
+              + " | SAVE Q: " + statsObj.queues.saveFileQueue.size
             ));
           }
         }, 30*ONE_SECOND);
@@ -4127,18 +4137,18 @@ setTimeout(async function(){
 
     statsObj.status = "START";
 
-    // if (!configuration.offlineMode){
-      initSlackRtmClient();
-      initSlackWebClient();
-      const twitterParams = await tcUtils.initTwitterConfig();
-      tcUtils.setEnableLanguageAnalysis(configuration.enableLanguageAnalysis);
-      tcUtils.setEnableImageAnalysis(configuration.enableImageAnalysis);
-      tcUtils.setEnableGeoCode(configuration.enableGeoCode);
-      await tcUtils.initTwitter({twitterConfig: twitterParams});
-      await tcUtils.getTwitterAccountSettings();
-    // }
+    initSlackRtmClient();
+    initSlackWebClient();
+    const twitterParams = await tcUtils.initTwitterConfig();
+    tcUtils.setEnableLanguageAnalysis(configuration.enableLanguageAnalysis);
+    tcUtils.setEnableImageAnalysis(configuration.enableImageAnalysis);
+    tcUtils.setEnableGeoCode(configuration.enableGeoCode);
+    await tcUtils.initTwitter({twitterConfig: twitterParams});
+    await tcUtils.getTwitterAccountSettings();
 
-    initSaveFileQueue(configuration);
+    await tcUtils.initSaveFileQueue({
+      interval: 10
+    });
 
     if (configuration.testMode) {
       console.log(chalkAlert(MODULE_ID_PREFIX + " | TEST MODE"));
@@ -4149,8 +4159,6 @@ setTimeout(async function(){
       + "\n" + MODULE_ID_PREFIX + " | " + configuration.processName 
       + "\n" + MODULE_ID_PREFIX + " | --------------------------------------------------------"
     ));
-
-    await tcUtils.initSaveFileQueue();
 
     global.dbConnection = await connectDb();
     await initUserDbUpdateQueueInterval({interval: configuration.userDbUpdateQueueInterval});
