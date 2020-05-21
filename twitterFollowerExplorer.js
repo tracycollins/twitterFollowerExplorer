@@ -759,7 +759,6 @@ async function initSlackRtmClient(){
 
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.processName = process.env.TFE_PROCESS_NAME || "tfe_node";
-// configuration.saveFileQueueInterval = SAVE_FILE_QUEUE_INTERVAL;
 configuration.interruptFlag = false;
 
 configuration.initMainIntervalTime = DEFAULT_INIT_MAIN_INTERVAL;
@@ -1372,12 +1371,12 @@ const configDefaultFile = "default_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE
 const configHostFile = hostname + "_" + configuration.DROPBOX.DROPBOX_CONFIG_FILE;
 
 configuration.local = {};
-configuration.local.userArchiveFolder = path.join(configHostFolder, "trainingSets/users");
+configuration.local.userDataFolder = path.join(configHostFolder, "trainingSets/users/data");
 
 configuration.default = {};
-configuration.default.userArchiveFolder = path.join(configDefaultFolder, "trainingSets/users");
+configuration.default.userDataFolder = path.join(configDefaultFolder, "trainingSets/users/data");
 
-configuration.userArchiveFolder = configuration[HOST].userArchiveFolder;
+configuration.userDataFolder = configuration[HOST].userDataFolder;
 
 const statsFolder = path.join(DROPBOX_ROOT_FOLDER, "stats", hostname);
 const statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
@@ -1619,8 +1618,6 @@ async function loadAllConfigFiles(){
 //=========================================================================
 // FILE SAVE
 //=========================================================================
-// let saveFileQueueInterval;
-// const saveFileQueue = [];
 let statsUpdateInterval;
 
 let saveCacheTtl = process.env.SAVE_CACHE_DEFAULT_TTL;
@@ -1736,8 +1733,6 @@ async function quit(opts) {
   clearInterval(quitWaitInterval);
 
   await clearAllIntervals();
-
-  // intervalsSet.add("quitWaitInterval");
 
   quitWaitInterval = setInterval(async function() {
 
@@ -3557,7 +3552,7 @@ async function initProcessUserQueueInterval(p) {
   const params = p || {};
 
   const interval = params.interval || configuration.processUserQueueInterval;
-  const folder = path.join(configuration.userArchiveFolder, "data");
+  const folder = params.userDataFolder || configuration.userDataFolder;
   let file;
   let processedUser;
   let allEmpty;
@@ -4116,6 +4111,7 @@ function fsmStart(p) {
 
 console.log(MODULE_ID_PREFIX + " | =================================");
 console.log(MODULE_ID_PREFIX + " | HOST:          " + hostname);
+console.log(MODULE_ID_PREFIX + " | PRIMARY HOST:  " + PRIMARY_HOST);
 console.log(MODULE_ID_PREFIX + " | PROCESS TITLE: " + process.title);
 console.log(MODULE_ID_PREFIX + " | PROCESS ID:    " + process.pid);
 console.log(MODULE_ID_PREFIX + " | RUN ID:        " + statsObj.runId);
