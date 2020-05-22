@@ -2424,15 +2424,15 @@ async function loadMaxInput(params) {
   const folder = params.folder;
   const file = params.file;
 
-  console.log(chalkNetwork("TFE | LOADING DROPBOX MAX INPUT HASHMAP + NORMALIZATION | " + folder + "/" + file));
+  console.log(chalkNetwork("TFE | LOADING MAX INPUT HASHMAP + NORMALIZATION | " + folder + "/" + file));
 
   try {
 
     const maxInputHashMapObj = await tcUtils.loadFile({folder: folder, file: file, loadLocalFile: true});
 
     if ((maxInputHashMapObj === undefined) || !maxInputHashMapObj) {
-      console.log(chalkError("TFE | DROPBOX MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED ??? "));
-      return new Error("DROPBOX MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED");
+      console.log(chalkError("TFE | MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED ??? "));
+      return new Error("MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED");
     }
 
     maxInputHashMap = {};
@@ -2455,7 +2455,7 @@ async function loadMaxInput(params) {
     return;
   }
   catch(err){
-    console.log(chalkError("TFE | DROPBOX MAX INPUT HASHMAP FILE ERROR: " + err));
+    console.log(chalkError("TFE | MAX INPUT HASHMAP FILE ERROR: " + err));
     throw err;
   }
 }
@@ -2969,8 +2969,6 @@ function initActivateNetworkQueueInterval(p) {
           activateNetworkIntervalBusy = false;
 
         }
-
-
       }
 
     }, interval);
@@ -3138,7 +3136,14 @@ async function generateAutoCategory(params) {
 
     const user = await tcUtils.updateUserHistograms({user: params.user});
 
-    activateNetworkQueue.push({user: user});
+    if (user.toObject !== undefined) {
+      let userObject = user.toObject();
+      activateNetworkQueue.push({user: userObject});
+    }
+    else{
+      activateNetworkQueue.push({user: user});
+    }
+
 
     statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
 
