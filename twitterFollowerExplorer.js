@@ -3,6 +3,7 @@ const MODULE_ID_PREFIX = "TFE";
 // const CHILD_PREFIX = "tfe_node";
 const userTrainingSetPickArray = [
   "categorized",
+  "categorizedAuto",
   "categorizeNetwork",
   "category",
   "categoryAuto",
