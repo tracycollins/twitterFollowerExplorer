@@ -2,6 +2,7 @@ const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 // const CHILD_PREFIX = "tfe_node";
 const userTrainingSetPickArray = [
+  "categorized",
   "categorizeNetwork",
   "category",
   "categoryAuto",
@@ -970,12 +971,12 @@ async function initCategorizedUserIdSet(){
     statsObj.status = "INIT CATEGORIZED USER ID SET";
 
     const p = {};
-    p.query = {};
-    p.query.$and = [
-      { category: { "$in": ["left", "right", "neutral"] } }
-      // { following: true },
-      // { ignored: { "$in": [false, "false", null] } }
-    ];
+    p.query = { categorized: true };
+    // p.query.$and = [
+    //   { category: { "$in": ["left", "right", "neutral"] } }
+    //   // { following: true },
+    //   // { ignored: { "$in": [false, "false", null] } }
+    // ];
 
     p.lean = false;
     p.skip = 0;
