@@ -2022,11 +2022,15 @@ async function loadNetworkFile(params){
   }
 
   if (nnObj.testCycleHistory && nnObj.testCycleHistory !== undefined && nnObj.testCycleHistory.length > 0) {
+
     nnObj.previousRank = nnObj.testCycleHistory[nnObj.testCycleHistory.length-1].rank;
+
     console.log(chalkLog(MODULE_ID_PREFIX
       + " | PREV RANK " + nnObj.previousRank
+      + " | RANK " + nnObj.rank
       + " | " + nnObj.networkId 
     ));
+
   } 
 
   try{
@@ -2323,9 +2327,12 @@ async function loadBestNetworksDatabase(p) {
     try{
 
       if (nnDoc.testCycleHistory && nnDoc.testCycleHistory !== undefined && nnDoc.testCycleHistory.length > 0) {
+
         nnDoc.previousRank = nnDoc.testCycleHistory[nnDoc.testCycleHistory.length-1].rank;
+
         console.log(chalkLog(MODULE_ID_PREFIX + " | loadBestNetworksDatabase"
           + " | PREV RANK " + nnDoc.previousRank
+          + " | RANK " + nnDoc.rank
           + " | " + nnDoc.networkId 
         ));
       }
@@ -3134,10 +3141,13 @@ async function generateAutoCategory(params) {
 
   try{
 
-    const user = await tcUtils.updateUserHistograms({user: params.user});
+    const user = await tcUtils.updateUserHistograms({
+      user: params.user,
+      updateGlobalHistograms: true
+    });
 
     if (user.toObject !== undefined) {
-      let userObject = user.toObject();
+      const userObject = user.toObject();
       activateNetworkQueue.push({user: userObject});
     }
     else{
@@ -3647,6 +3657,7 @@ async function initProcessUserQueueInterval(p) {
         if (user.profileHistograms.images && (user.profileHistograms.images !== undefined)) {
 
           for(const imageEntity of Object.keys(user.profileHistograms.images)){
+
             if (imageEntity.includes(".")) { // mongoDb hates '.' in object property
               const imageEntityEncoded = btoa(imageEntity);
               user.profileHistograms.images[imageEntityEncoded] = user.profileHistograms.images[imageEntity];
@@ -3723,15 +3734,17 @@ async function initProcessUserQueueInterval(p) {
 
         processedUser = await processUser({user: user});
 
-        file = processedUser.nodeId + ".json";
+        if (hostname === PRIMARY_HOST) {
+          file = processedUser.nodeId + ".json";
 
-        trainingSetUser = pick(processedUser, userTrainingSetPickArray);
+          trainingSetUser = pick(processedUser, userTrainingSetPickArray);
 
-        statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({
-          folder: folder,
-          file: file,
-          obj: trainingSetUser
-        });
+          statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({
+            folder: folder,
+            file: file,
+            obj: trainingSetUser
+          });
+        }
 
         debug("PROCESSED USER\n" + jsonPrint(processedUser));
 
@@ -4001,8 +4014,26 @@ const fsmStates = {
 
           saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
           saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
-
         }
+
+
+        if (hostname === PRIMARY_HOST){
+          
+          console.log(chalkBlueBold(MODULE_ID_PREFIX
+            + " | >>> SAVE MAX INPUT HASHMAP + NORMALIZATION" 
+            + " | " + defaultTrainingSetFolder + "/" + defaultMaxInputHashmapFile
+          ));
+
+          const maxInputHashMapObj = {};
+          maxInputHashMapObj.maxInputHashMap = {};
+          maxInputHashMapObj.normalization = {};
+
+          maxInputHashMapObj.maxInputHashMap = tcUtils.getMaxInputHashMap();          
+          maxInputHashMapObj.normalization = tcUtils.getNormalization();
+
+          await tcUtils.saveFile({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile, obj: maxInputHashMap});
+        }
+
 
         statsObj.loadedNetworksFlag = false;
 
