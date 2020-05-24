@@ -1,6 +1,5 @@
 const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
-// const CHILD_PREFIX = "tfe_node";
 const userTrainingSetPickArray = [
   "categorized",
   "categorizedAuto",
@@ -33,6 +32,8 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const TEST_MODE = false; // applies only to parent
 const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
 
+const DEFAULT_UPDATE_GLOBAL_HISTOGRAMS = false;  // will be performed another module
+const DEFAULT_UPDATE_MAX_INPUT_HASHMAP = true;
 const DEFAULT_NN_NUMBER_LIMIT = 5;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
@@ -240,7 +241,8 @@ const userTweetFetchSet = new Set();
 let configuration = {};
 configuration.offlineMode = false;
 configuration.verbose = false;
-
+configuration.updateGlobalHistograms = DEFAULT_UPDATE_GLOBAL_HISTOGRAMS;
+configuration.updateMaxInputHashMap = DEFAULT_UPDATE_MAX_INPUT_HASHMAP;
 configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
 configuration.activateNetworkQueueInterval = DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL;
 configuration.userDbUpdateQueueInterval = DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL;
@@ -506,46 +508,6 @@ let slackWebClient;
 function slackSendRtmMessage(msg){
   return slackRtmClient.sendMessage(msg, slackConversationId);
 }
-
-// function slackSendWebMessage(msgObj){
-
-
-//   return new Promise(function(resolve, reject){
-
-//     try {
-
-//       if (configuration.offlineMode) {
-//         resolve();
-//       }
-
-//       if (slackWebClient === undefined) {
-//         return reject(new Error("SLACK NOT INITIALIZED"));
-//       }
-
-//       const token = msgObj.token || slackOAuthAccessToken;
-//       const channel = msgObj.channel || configuration.slackChannel.id;
-//       const text = msgObj.text || msgObj;
-
-//       const message = {
-//         token: token, 
-//         channel: channel,
-//         text: text
-//       };
-
-//       if (msgObj.attachments !== undefined) {
-//         message.attachments = msgObj.attachments;
-//       }
-
-//       console.log(chalkBlueBold("TFE | >>> SLACK WEB | SEND | " + message.text));
-//       slackWebClient.chat.postMessage(message);
-//       resolve();
-//     }
-//     catch(err){
-//       reject(err);
-//     }
-
-//   });
-// }
 
 async function slackSendWebMessage(msgObj){
 
@@ -1483,6 +1445,26 @@ async function loadConfigFile(params) {
       }
       if ((loadedConfigObj.TFE_TEST_MODE == false) || (loadedConfigObj.TFE_TEST_MODE == "false")) {
         newConfiguration.testMode = false;
+      }
+    }
+
+    if (loadedConfigObj.TFE_UPDATE_GLOBAL_HISTOGRAMS !== undefined) {
+      console.log("TFE | LOADED TFE_UPDATE_GLOBAL_HISTOGRAMS: " + loadedConfigObj.TFE_UPDATE_GLOBAL_HISTOGRAMS);
+      if ((loadedConfigObj.TFE_UPDATE_GLOBAL_HISTOGRAMS == true) || (loadedConfigObj.TFE_UPDATE_GLOBAL_HISTOGRAMS == "true")) {
+        newConfiguration.updateGlobalHistograms = true;
+      }
+      if ((loadedConfigObj.TFE_UPDATE_GLOBAL_HISTOGRAMS == false) || (loadedConfigObj.TFE_UPDATE_GLOBAL_HISTOGRAMS == "false")) {
+        newConfiguration.updateGlobalHistograms = false;
+      }
+    }
+
+    if (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP !== undefined) {
+      console.log("TFE | LOADED TFE_UPDATE_MAX_INPUT_HASHMAP: " + loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP);
+      if ((loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == true) || (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == "true")) {
+        newConfiguration.updateMaxInputHashMap = true;
+      }
+      if ((loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == false) || (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == "false")) {
+        newConfiguration.updateMaxInputHashMap = false;
       }
     }
 
@@ -3202,7 +3184,7 @@ async function generateAutoCategory(params) {
 
     const user = await tcUtils.updateUserHistograms({
       user: params.user,
-      updateGlobalHistograms: true
+      updateGlobalHistograms: configuration.updateGlobalHistograms
     });
 
     if (user.toObject !== undefined) {
@@ -4088,7 +4070,7 @@ const fsmStates = {
         }
 
 
-        if ((hostname == PRIMARY_HOST) || configuration.testMode) {
+        if (configuration.updateMaxInputHashMap && ((hostname == PRIMARY_HOST) || configuration.testMode)) {
           
           const folder = (configuration.testMode) ? defaultTrainingSetFolder + "/test" : defaultTrainingSetFolder;
 
