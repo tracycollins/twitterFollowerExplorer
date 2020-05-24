@@ -2617,6 +2617,24 @@ async function initNetworks(){
 
   await loadBestNeuralNetworks();
 
+  const bestNetworkObj = await tcUtils.loadFile({
+    folder: bestNetworkFolder, 
+    file: bestRuntimeNetworkFileName, 
+    noErrorNotFound: true
+  });
+
+  // const bestNetworkObj = {
+  //   networkId: params.network.networkId,
+  //   successRate: params.network.successRate,
+  //   matchRate: params.network.matchRate,
+  //   overallMatchRate: params.network.overallMatchRate,
+  //   runtimeMatchRate: params.network.runtimeMatchRate,
+  //   testCycles: params.network.testCycles,
+  //   testCycleHistory: params.network.testCycleHistory,
+  //   rank: params.network.rank,
+  //   updatedAt: getTimeStamp()
+  // };
+
   if (configuration.networkNumberLimit && bestNetworkHashMap.size > configuration.networkNumberLimit){
 
     console.log(chalkAlert("TFE | +++ NETWORKS NUMBER > LIMIT | REMOVING RANDOM NETWORK" 
@@ -2629,12 +2647,22 @@ async function initNetworks(){
     while (bestNetworkHashMap.size > configuration.networkNumberLimit){
 
       const nnId = nnIds.shift();
-      bestNetworkHashMap.delete(nnId);
 
-      console.log(chalkAlert("TFE | REMOVED NN" 
-        + " | LIMIT: " + configuration.networkNumberLimit
-        + " | " + bestNetworkHashMap.size + " NETWORKS"
-      ));
+      if (nnId !== bestNetworkObj.networkId){
+        bestNetworkHashMap.delete(nnId);
+        console.log(chalkAlert("TFE | REMOVED NN" 
+          + " | NNID: " + nnId
+          + " | LIMIT: " + configuration.networkNumberLimit
+          + " | " + bestNetworkHashMap.size + " NETWORKS"
+        ));
+      }
+      else{
+        console.log(chalkAlert("TFE | ... SKIP NN (BEST)" 
+          + " | NNID: " + nnId
+          + " | LIMIT: " + configuration.networkNumberLimit
+          + " | " + bestNetworkHashMap.size + " NETWORKS"
+        ));
+      }
 
     }
   }
@@ -4044,8 +4072,21 @@ const fsmStates = {
             + " | " + folder + "/" + file
           ));
 
-          saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
-          saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
+          // saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
+          // saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
+
+          statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({
+            folder: folder, 
+            file: file, 
+            obj: currentBestNetwork
+          });
+          
+          statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({
+            folder: folder, 
+            file: bestRuntimeNetworkFileName, 
+            obj: fileObj
+          });
+          
         }
 
 
@@ -4065,7 +4106,7 @@ const fsmStates = {
           maxInputHashMapObj.maxInputHashMap = tcUtils.getMaxInputHashMap();          
           maxInputHashMapObj.normalization = tcUtils.getNormalization();
 
-          await tcUtils.saveFile({folder: folder, file: defaultMaxInputHashmapFile, obj: maxInputHashMap});
+          await tcUtils.saveFileQueue({folder: folder, file: defaultMaxInputHashmapFile, obj: maxInputHashMap});
         }
 
 
