@@ -4019,11 +4019,13 @@ const fsmStates = {
         }
 
 
-        if (hostname === PRIMARY_HOST){
+        if ((hostname == PRIMARY_HOST) || configuration.testMode) {
           
+          const folder = (configuration.testMode) ? defaultTrainingSetFolder + "/test" : defaultTrainingSetFolder;
+
           console.log(chalkBlueBold(MODULE_ID_PREFIX
             + " | >>> SAVE MAX INPUT HASHMAP + NORMALIZATION" 
-            + " | " + defaultTrainingSetFolder + "/" + defaultMaxInputHashmapFile
+            + " | " + folder + "/" + defaultMaxInputHashmapFile
           ));
 
           const maxInputHashMapObj = {};
@@ -4033,7 +4035,7 @@ const fsmStates = {
           maxInputHashMapObj.maxInputHashMap = tcUtils.getMaxInputHashMap();          
           maxInputHashMapObj.normalization = tcUtils.getNormalization();
 
-          await tcUtils.saveFile({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile, obj: maxInputHashMap});
+          await tcUtils.saveFile({folder: folder, file: defaultMaxInputHashmapFile, obj: maxInputHashMap});
         }
 
 
