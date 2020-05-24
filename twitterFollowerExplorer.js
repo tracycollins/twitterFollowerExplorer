@@ -3213,7 +3213,6 @@ async function generateAutoCategory(params) {
       activateNetworkQueue.push({user: user});
     }
 
-
     statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
 
     return user;
