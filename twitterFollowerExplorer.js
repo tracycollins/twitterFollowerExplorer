@@ -33,6 +33,7 @@ const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 const TEST_MODE = false; // applies only to parent
 const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
 
+const DEFAULT_NN_NUMBER_LIMIT = 5;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
 
@@ -245,6 +246,7 @@ configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
 configuration.activateNetworkQueueInterval = DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL;
 configuration.userDbUpdateQueueInterval = DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL;
 
+configuration.networkNumberLimit = DEFAULT_NN_NUMBER_LIMIT;
 configuration.networkDatabaseLoadPerInputsLimit = DEFAULT_NN_DB_LOAD_PER_INPUTS;
 configuration.randomUntestedPerInputsLimit = DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS;
 
@@ -1510,6 +1512,11 @@ async function loadConfigFile(params) {
       newConfiguration.randomUntestedPerInputsLimit = loadedConfigObj.TFE_RANDOM_UNTESTED_NN_PER_INPUTS;
     }
 
+    if (loadedConfigObj.TFE_NN_NUMBER_LIMIT !== undefined) {
+      console.log("TFE | LOADED TFE_NN_NUMBER_LIMIT: " + loadedConfigObj.TFE_NN_NUMBER_LIMIT);
+      newConfiguration.networkNumberLimit = loadedConfigObj.TFE_NN_NUMBER_LIMIT;
+    }
+
     if (loadedConfigObj.TFE_MIN_TEST_CYCLES !== undefined) {
       console.log("TFE | LOADED TFE_MIN_TEST_CYCLES: " + loadedConfigObj.TFE_MIN_TEST_CYCLES);
       newConfiguration.minTestCycles = loadedConfigObj.TFE_MIN_TEST_CYCLES;
@@ -2609,6 +2616,29 @@ async function initNetworks(){
   console.log(chalkTwitter("TFE | INIT NETWORKS"));
 
   await loadBestNeuralNetworks();
+
+  if (configuration.networkNumberLimit && bestNetworkHashMap.size > configuration.networkNumberLimit){
+
+    console.log(chalkAlert("TFE | +++ NETWORKS NUMBER > LIMIT | REMOVING RANDOM NETWORK" 
+      + " | LIMIT: " + configuration.networkNumberLimit
+      + " | " + bestNetworkHashMap.size + " NETWORKS"
+    ));
+
+    const nnIds = _.shuffle(bestNetworkHashMap.keys());
+
+    while (bestNetworkHashMap.size > configuration.networkNumberLimit){
+
+      const nnId = nnIds.shift();
+      bestNetworkHashMap.delete(nnId);
+
+      console.log(chalkAlert("TFE | REMOVED NN" 
+        + " | LIMIT: " + configuration.networkNumberLimit
+        + " | " + bestNetworkHashMap.size + " NETWORKS"
+      ));
+
+    }
+  }
+
   await initActivateNetworks();
 
   console.log(chalkAlert("TFE | +++ NETWORKS INITIALIZED | " + bestNetworkHashMap.size + " NETWORKS"));
