@@ -1,27 +1,28 @@
 const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
-const userTrainingSetPickArray = [
-  "categorized",
-  "categorizedAuto",
-  "categorizeNetwork",
-  "category",
-  "categoryAuto",
-  "categoryVerified",
-  "description",
-  "followersCount",
-  "friends",
-  "friendsCount",
-  "isBot",
-  "lang",
-  "languageAnalyzed",
-  "location",
-  "name",
-  "nodeId",
-  "profileHistograms",
-  "screenName",
-  "statusesCount",
-  "tweetHistograms"
-];
+
+// const userTrainingSetPickArray = [
+//   "categorized",
+//   "categorizedAuto",
+//   "categorizeNetwork",
+//   "category",
+//   "categoryAuto",
+//   "categoryVerified",
+//   "description",
+//   "followersCount",
+//   "friends",
+//   "friendsCount",
+//   "isBot",
+//   "lang",
+//   "languageAnalyzed",
+//   "location",
+//   "name",
+//   "nodeId",
+//   "profileHistograms",
+//   "screenName",
+//   "statusesCount",
+//   "tweetHistograms"
+// ];
 
 const bestNetworkIdArrayFile = "bestNetworkIdArray.json";
 
@@ -967,6 +968,7 @@ async function initCategorizedUserIdSet(){
 
       if (categorizedUserIdSetIntervalReady 
         && more 
+        // && (tcUtils.getSaveFileQueue() < 20)
         && (activateNetworkQueue.length < p.batchSize)
         && (processUserQueue.length < p.batchSize)
       ){
@@ -1009,6 +1011,7 @@ async function initCategorizedUserIdSet(){
               console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
                 + " | UIDs: " + userIdArray.length
                 + " | PUQ: " + processUserQueue.length
+                // + " | SFQ: " + tcUtils.getSaveFileQueue()
                 + " | TOT USERS: " + statsObj.users.categorized.total
                 + " | TOT FETCHED: " + statsObj.users.categorized.fetched
                 + " | LIMIT: " + p.limit
@@ -3619,8 +3622,8 @@ async function initProcessUserQueueInterval(p) {
   const params = p || {};
 
   const interval = params.interval || configuration.processUserQueueInterval;
-  const folder = params.userDataFolder || configuration.userDataFolder;
-  let file;
+  // const folder = params.userDataFolder || configuration.userDataFolder;
+  // let file;
   let processedUser;
   let allEmpty;
   let dbUser;
@@ -3782,23 +3785,9 @@ async function initProcessUserQueueInterval(p) {
 
         if (!mObj.latestTweets || (mObj.latestTweets === undefined)) { mObj.latestTweets = []; }
 
-        // user.latestTweets = _.union(user.latestTweets, mObj.latestTweets);
         user.latestTweets = [...user.latestTweets, ...mObj.latestTweets];
 
         processedUser = await processUser({user: user});
-
-        if (hostname === PRIMARY_HOST) {
-
-          file = processedUser.nodeId + ".json";
-
-          const trainingSetUser = pick(processedUser, userTrainingSetPickArray);
-
-          statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({
-            folder: folder,
-            file: file,
-            obj: trainingSetUser
-          });
-        }
 
         debug("PROCESSED USER\n" + jsonPrint(processedUser));
 
