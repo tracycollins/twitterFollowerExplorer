@@ -29,10 +29,12 @@ const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+const DEFAULT_SAVE_FILE_QUEUE_INTERVAL = 100;
+
 const TEST_MODE = false; // applies only to parent
 const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
 
-const DEFAULT_UPDATE_GLOBAL_HISTOGRAMS = false;  // will be performed another module
+const DEFAULT_UPDATE_GLOBAL_HISTOGRAMS = false; // will be performed another module
 const DEFAULT_UPDATE_MAX_INPUT_HASHMAP = true;
 const DEFAULT_NN_NUMBER_LIMIT = 5;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
@@ -241,6 +243,7 @@ const userTweetFetchSet = new Set();
 let configuration = {};
 configuration.offlineMode = false;
 configuration.verbose = false;
+configuration.saveFileQueueInterval = DEFAULT_SAVE_FILE_QUEUE_INTERVAL;
 configuration.updateGlobalHistograms = DEFAULT_UPDATE_GLOBAL_HISTOGRAMS;
 configuration.updateMaxInputHashMap = DEFAULT_UPDATE_MAX_INPUT_HASHMAP;
 configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
@@ -252,7 +255,6 @@ configuration.networkDatabaseLoadPerInputsLimit = DEFAULT_NN_DB_LOAD_PER_INPUTS;
 configuration.randomUntestedPerInputsLimit = DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS;
 
 configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
-
 configuration.enableGeoCode = DEFAULT_ENABLE_GEOCODE;
 
 configuration.bestNetworkIncrementalUpdate = DEFAULT_BEST_INCREMENTAL_UPDATE;
@@ -659,6 +661,7 @@ async function initSlackWebClient(){
         });
 
         const chatPostMessageResponse = await slackWebClient.chat.postMessage(message);
+        
         if (configuration.verbose) {
           console.log("TFE | SLACK WEB CHAT POST MESSAGE RESPONSE\n" + jsonPrint(chatPostMessageResponse));
         }
@@ -1466,6 +1469,11 @@ async function loadConfigFile(params) {
       if ((loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == false) || (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == "false")) {
         newConfiguration.updateMaxInputHashMap = false;
       }
+    }
+
+    if (loadedConfigObj.TFE_SAVE_FILE_QUEUE_INTERVAL !== undefined) {
+      console.log("TFE | LOADED TFE_SAVE_FILE_QUEUE_INTERVAL: " + loadedConfigObj.TFE_SAVE_FILE_QUEUE_INTERVAL);
+      newConfiguration.saveFileQueueInterval = loadedConfigObj.TFE_SAVE_FILE_QUEUE_INTERVAL;
     }
 
     if (loadedConfigObj.TFE_PROCESS_USER_QUEUE_INTERVAL !== undefined) {
@@ -3614,7 +3622,7 @@ async function initProcessUserQueueInterval(p) {
   let dbUser;
   let user;
   let convertedRawUser;
-  let trainingSetUser;
+  // let trainingSetUser;
 
   statsObj.status = "INIT PROCESS USER QUEUE";
 
@@ -3770,14 +3778,16 @@ async function initProcessUserQueueInterval(p) {
 
         if (!mObj.latestTweets || (mObj.latestTweets === undefined)) { mObj.latestTweets = []; }
 
-        user.latestTweets = _.union(user.latestTweets, mObj.latestTweets);
+        // user.latestTweets = _.union(user.latestTweets, mObj.latestTweets);
+        user.latestTweets = [...user.latestTweets, ...mObj.latestTweets];
 
         processedUser = await processUser({user: user});
 
         if (hostname === PRIMARY_HOST) {
+
           file = processedUser.nodeId + ".json";
 
-          trainingSetUser = pick(processedUser, userTrainingSetPickArray);
+          const trainingSetUser = pick(processedUser, userTrainingSetPickArray);
 
           statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({
             folder: folder,
@@ -4233,9 +4243,7 @@ setTimeout(async function(){
     await tcUtils.initTwitter({twitterConfig: twitterParams});
     await tcUtils.getTwitterAccountSettings();
 
-    await tcUtils.initSaveFileQueue({
-      interval: 10
-    });
+    await tcUtils.initSaveFileQueue({interval: configuration.saveFileQueueInterval});
 
     if (configuration.testMode) {
       console.log(chalkAlert(MODULE_ID_PREFIX + " | TEST MODE"));
