@@ -2033,6 +2033,10 @@ async function loadNetworkFile(params){
 
   try{
 
+    nnObj.meta.total = 0;
+    nnObj.meta.match = 0;
+    nnObj.meta.mismatch = 0;
+
     nnObj = await fixIncorrectNetworkMetaData({networkObj: nnObj, folder: folder, file: entry.name});
     const networkObj = await nnTools.convertNetwork({networkObj: nnObj});
 
