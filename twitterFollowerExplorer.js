@@ -37,7 +37,7 @@ const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
 
 const DEFAULT_UPDATE_GLOBAL_HISTOGRAMS = false; // will be performed another module
 const DEFAULT_UPDATE_MAX_INPUT_HASHMAP = true;
-const DEFAULT_NN_NUMBER_LIMIT = 5;
+const DEFAULT_NN_NUMBER_LIMIT = 10;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
 
@@ -2036,6 +2036,7 @@ async function loadNetworkFile(params){
 
   try{
 
+    if (nnObj.meta === undefined) { nnObj.meta = {}; }
     nnObj.meta.total = 0;
     nnObj.meta.match = 0;
     nnObj.meta.mismatch = 0;
@@ -2163,7 +2164,7 @@ async function loadNetworkFile(params){
 
   }
   catch(err){
-    console.log(chalkAlert(MODULE_ID_PREFIX + " | *** NN CONVERT ERROR ... SKIP LOAD | " + nnObj.networkId + " | " + err));
+    console.log(chalkAlert(MODULE_ID_PREFIX + " | *** loadNetworkFile ERROR ... SKIP LOAD | " + nnObj.networkId + " | " + err));
     return;
   }
 }
