@@ -246,7 +246,7 @@ configuration.offlineMode = false;
 configuration.verbose = false;
 configuration.saveFileQueueInterval = DEFAULT_SAVE_FILE_QUEUE_INTERVAL;
 configuration.updateGlobalHistograms = DEFAULT_UPDATE_GLOBAL_HISTOGRAMS;
-configuration.updateMaxInputHashMap = DEFAULT_UPDATE_MAX_INPUT_HASHMAP;
+// configuration.updateMaxInputHashMap = DEFAULT_UPDATE_MAX_INPUT_HASHMAP;
 configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
 configuration.activateNetworkQueueInterval = DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL;
 configuration.userDbUpdateQueueInterval = DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL;
@@ -276,7 +276,7 @@ configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 //=========================================================================
 
 const bestNetworkHashMap = new HashMap();
-let maxInputHashMap = {};
+// let maxInputHashMap = {};
 let normalization = {};
 
 const categorizedUserIdSet = new Set();
@@ -1361,7 +1361,7 @@ const bestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility/best/ne
 configuration.neuralNetworkFolder = configDefaultFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
 
-const defaultMaxInputHashmapFile = "maxInputHashMap.json";
+// const defaultMaxInputHashmapFile = "maxInputHashMap.json";
 
 const defaultInputsConfigFile = "default_networkInputsConfig.json";
 const hostInputsConfigFile = hostname + "_networkInputsConfig.json";
@@ -1464,15 +1464,15 @@ async function loadConfigFile(params) {
       }
     }
 
-    if (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP !== undefined) {
-      console.log("TFE | LOADED TFE_UPDATE_MAX_INPUT_HASHMAP: " + loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP);
-      if ((loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == true) || (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == "true")) {
-        newConfiguration.updateMaxInputHashMap = true;
-      }
-      if ((loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == false) || (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == "false")) {
-        newConfiguration.updateMaxInputHashMap = false;
-      }
-    }
+    // if (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP !== undefined) {
+    //   console.log("TFE | LOADED TFE_UPDATE_MAX_INPUT_HASHMAP: " + loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP);
+    //   if ((loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == true) || (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == "true")) {
+    //     newConfiguration.updateMaxInputHashMap = true;
+    //   }
+    //   if ((loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == false) || (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == "false")) {
+    //     newConfiguration.updateMaxInputHashMap = false;
+    //   }
+    // }
 
     if (loadedConfigObj.TFE_SAVE_FILE_QUEUE_INTERVAL !== undefined) {
       console.log("TFE | LOADED TFE_SAVE_FILE_QUEUE_INTERVAL: " + loadedConfigObj.TFE_SAVE_FILE_QUEUE_INTERVAL);
@@ -2430,48 +2430,59 @@ async function loadBestNeuralNetworks() {
   }
 }
 
-async function loadMaxInput(params) {
+// async function loadMaxInput(params) {
 
-  statsObj.status = "LOAD MAX INPUT + NORMALIZATION";
+//   statsObj.status = "LOAD MAX INPUT";
 
-  const folder = params.folder;
-  const file = params.file;
+//   const folder = params.folder || path.join(configuration.defaultTrainingSetFolder, "maxInputHashMaps");
+//   // const file = params.file;
 
-  console.log(chalkNetwork("TFE | LOADING MAX INPUT HASHMAP + NORMALIZATION | " + folder + "/" + file));
+//   console.log(chalkNetwork("TFE | LOADING MAX INPUT HASHMAP FOLDER | " + folder));
 
-  try {
+//   try {
 
-    const maxInputHashMapObj = await tcUtils.loadFile({folder: folder, file: file, loadLocalFile: true});
+//     // const response = {
+//     //   cursor: false,
+//     //   has_more: false,
+//     //   entries: itemArray
+//     // };
 
-    if ((maxInputHashMapObj === undefined) || !maxInputHashMapObj) {
-      console.log(chalkError("TFE | MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED ??? "));
-      return new Error("MAX INPUT HASHMAP FILE ERROR | JSON UNDEFINED");
-    }
+//     const results = await tcUtils.filesListFolder({folder: folder});
 
-    maxInputHashMap = {};
-    maxInputHashMap = deepcopy(maxInputHashMapObj.maxInputHashMap);
+//     if ((results === undefined) || !results) {
+//       console.log(chalkError(MODULE_ID_PREFIX + " | MAX INPUT HASHMAP FOLDER ERROR | RESULTS UNDEFINED ??? "));
+//       return new Error("MAX INPUT HASHMAP FOLDER ERROR | RESULTS UNDEFINED");
+//     }
 
-    normalization = {};
-    normalization = deepcopy(maxInputHashMapObj.normalization);
+//     if (results.entries.length === 0) {
+//       console.log(chalkError(MODULE_ID_PREFIX + " | ??? MAX INPUT HASHMAP FOLDER EMPTY | " + folder));
+//       return;
+//     }
 
-    console.log(chalkBlue("TFE | MAX INPUT HASHMAP"
-      + " | KEYS (INPUT TYPES)\n" + jsonPrint(Object.keys(maxInputHashMap))
-    ));
+//     maxInputHashMap = {};
+//     maxInputHashMap = deepcopy(maxInputHashMapObj.maxInputHashMap);
 
-    console.log(chalkBlue("TFE | NORMALIZATION"
-      + "\n" + jsonPrint(normalization)
-    ));
+//     normalization = {};
+//     normalization = deepcopy(maxInputHashMapObj.normalization);
 
-    await nnTools.setMaxInputHashMap(maxInputHashMap);
-    await nnTools.setNormalization(normalization);
+//     console.log(chalkBlue("TFE | MAX INPUT HASHMAP"
+//       + " | KEYS (INPUT TYPES)\n" + jsonPrint(Object.keys(maxInputHashMap))
+//     ));
 
-    return;
-  }
-  catch(err){
-    console.log(chalkError("TFE | MAX INPUT HASHMAP FILE ERROR: " + err));
-    throw err;
-  }
-}
+//     console.log(chalkBlue("TFE | NORMALIZATION"
+//       + "\n" + jsonPrint(normalization)
+//     ));
+
+//     await nnTools.setMaxInputHashMap(maxInputHashMap);
+//     await nnTools.setNormalization(normalization);
+
+//     return;
+//   }
+//   catch(err){
+//     console.log(chalkError("TFE | MAX INPUT HASHMAP FILE ERROR: " + err));
+//     throw err;
+//   }
+// }
 
 const watchOptions = {
   ignoreDotFiles: true,
@@ -2674,7 +2685,7 @@ async function initNetworks(){
     return;
   }
 
-  await loadMaxInput({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile});
+  // await loadMaxInput({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile});
   return;
 }
 
@@ -2699,11 +2710,11 @@ function saveNetworkHashMap(params) {
 
       const networkObj = bestNetworkHashMap.get(nnId);
 
-      printNetworkObj("TFE | SAVING NN", networkObj);
+      printNetworkObj("TFE | ... SAVING NN", networkObj);
 
       const file = nnId + ".json";
 
-      statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({folder: folder, file: file, obj: networkObj});
+      statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({folder: folder, file: file, obj: networkObj, verbose: true});
 
       statsObj.status = "SAVE NN HASHMAP | SAVE Q: " + statsObj.queues.saveFileQueue.size;
 
@@ -4073,25 +4084,24 @@ const fsmStates = {
           
         }
 
-
-        if (configuration.updateMaxInputHashMap && ((hostname == PRIMARY_HOST) || configuration.testMode)) {
+        // if (configuration.updateMaxInputHashMap && ((hostname == PRIMARY_HOST) || configuration.testMode)) {
           
-          const folder = (configuration.testMode) ? defaultTrainingSetFolder + "/test" : defaultTrainingSetFolder;
+        //   const folder = (configuration.testMode) ? defaultTrainingSetFolder + "/test" : defaultTrainingSetFolder;
 
-          console.log(chalkBlueBold(MODULE_ID_PREFIX
-            + " | >>> SAVE MAX INPUT HASHMAP + NORMALIZATION" 
-            + " | " + folder + "/" + defaultMaxInputHashmapFile
-          ));
+        //   console.log(chalkBlueBold(MODULE_ID_PREFIX
+        //     + " | >>> SAVE MAX INPUT HASHMAP + NORMALIZATION" 
+        //     + " | " + folder + "/" + defaultMaxInputHashmapFile
+        //   ));
 
-          const maxInputHashMapObj = {};
-          maxInputHashMapObj.maxInputHashMap = {};
-          maxInputHashMapObj.normalization = {};
+        //   const maxInputHashMapObj = {};
+        //   maxInputHashMapObj.maxInputHashMap = {};
+        //   maxInputHashMapObj.normalization = {};
 
-          maxInputHashMapObj.maxInputHashMap = tcUtils.getMaxInputHashMap();          
-          maxInputHashMapObj.normalization = tcUtils.getNormalization();
+        //   maxInputHashMapObj.maxInputHashMap = tcUtils.getMaxInputHashMap();          
+        //   maxInputHashMapObj.normalization = tcUtils.getNormalization();
 
-          await tcUtils.saveFileQueue({folder: folder, file: defaultMaxInputHashmapFile, obj: maxInputHashMap});
-        }
+        //   await tcUtils.saveFileQueue({folder: folder, file: defaultMaxInputHashmapFile, obj: maxInputHashMap});
+        // }
 
 
         statsObj.loadedNetworksFlag = false;
