@@ -3368,9 +3368,15 @@ async function processUserTweets(params){
   let tweetHistogramsEmpty = false;
 
   try{
+    
     tweetHistogramsEmpty = await tcUtils.emptyHistogram(user.tweetHistograms);
 
-    const processedUser = await processUserTweetArray({user: user, forceFetch: tweetHistogramsEmpty, tweets: tweets, tscParams: tscParams});
+    const processedUser = await processUserTweetArray({
+      user: user, 
+      forceFetch: tweetHistogramsEmpty, 
+      tweets: tweets, 
+      tscParams: tscParams
+    });
 
     if (tweetHistogramsEmpty) {
 
