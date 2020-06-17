@@ -35,8 +35,9 @@ const DEFAULT_SAVE_FILE_QUEUE_INTERVAL = 100;
 const TEST_MODE = false; // applies only to parent
 const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
 
+const DEFAULT_ENABLE_FETCH_TWEETS = false;
 const DEFAULT_UPDATE_GLOBAL_HISTOGRAMS = false; // will be performed another module
-const DEFAULT_UPDATE_MAX_INPUT_HASHMAP = true;
+// const DEFAULT_UPDATE_MAX_INPUT_HASHMAP = true;
 const DEFAULT_NN_NUMBER_LIMIT = 10;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
@@ -244,6 +245,9 @@ const userTweetFetchSet = new Set();
 let configuration = {};
 configuration.offlineMode = false;
 configuration.verbose = false;
+
+configuration.enableFetchTweets = DEFAULT_ENABLE_FETCH_TWEETS;
+
 configuration.saveFileQueueInterval = DEFAULT_SAVE_FILE_QUEUE_INTERVAL;
 configuration.updateGlobalHistograms = DEFAULT_UPDATE_GLOBAL_HISTOGRAMS;
 // configuration.updateMaxInputHashMap = DEFAULT_UPDATE_MAX_INPUT_HASHMAP;
@@ -277,7 +281,7 @@ configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 
 const bestNetworkHashMap = new HashMap();
 // let maxInputHashMap = {};
-let normalization = {};
+// let normalization = {};
 
 const categorizedUserIdSet = new Set();
 
@@ -1352,7 +1356,7 @@ configuration.userDataFolder = configuration[HOST].userDataFolder;
 const statsFolder = path.join(DROPBOX_ROOT_FOLDER, "stats", hostname);
 const statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
 
-const defaultTrainingSetFolder = configDefaultFolder + "/trainingSets";
+// const defaultTrainingSetFolder = configDefaultFolder + "/trainingSets";
 
 const globalBestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "/config/utility/best/neuralNetworks");
 const globalBestNetworkArchiveFolder = globalBestNetworkFolder + "/archive";
@@ -1451,6 +1455,16 @@ async function loadConfigFile(params) {
       }
       if ((loadedConfigObj.TFE_TEST_MODE == false) || (loadedConfigObj.TFE_TEST_MODE == "false")) {
         newConfiguration.testMode = false;
+      }
+    }
+
+    if (loadedConfigObj.TFE_ENABLE_FETCH_TWEETS !== undefined) {
+      console.log("TFE | LOADED TFE_ENABLE_FETCH_TWEETS: " + loadedConfigObj.TFE_ENABLE_FETCH_TWEETS);
+      if ((loadedConfigObj.TFE_ENABLE_FETCH_TWEETS == true) || (loadedConfigObj.TFE_ENABLE_FETCH_TWEETS == "true")) {
+        newConfiguration.enableFetchTweets = true;
+      }
+      if ((loadedConfigObj.TFE_ENABLE_FETCH_TWEETS == false) || (loadedConfigObj.TFE_ENABLE_FETCH_TWEETS == "false")) {
+        newConfiguration.enableFetchTweets = false;
       }
     }
 
@@ -3355,6 +3369,7 @@ async function processUserTweets(params){
   let user = {};
   user = params.user;
 
+  const enableFetchTweets = params.enableFetchTweets || configuration.enableFetchTweets;
   const tweets = params.tweets;
 
   const tscParams = {};
@@ -3371,9 +3386,11 @@ async function processUserTweets(params){
     
     tweetHistogramsEmpty = await tcUtils.emptyHistogram(user.tweetHistograms);
 
+    const forceFetch = enableFetchTweets && tweetHistogramsEmpty;
+
     const processedUser = await processUserTweetArray({
       user: user, 
-      forceFetch: tweetHistogramsEmpty, 
+      forceFetch: forceFetch, 
       tweets: tweets, 
       tscParams: tscParams
     });
@@ -3464,6 +3481,8 @@ async function updateUserTweets(params){
 
 async function processUser(params) {
 
+  const enableFetchTweets = params.enableFetchTweets || configuration.enableFetchTweets;
+
   statsObj.status = "PROCESS USER";
 
   debug(chalkInfo("PROCESS USER\n" + jsonPrint(params.user)));
@@ -3478,7 +3497,11 @@ async function processUser(params) {
 
   try {
 
-    const updatedTweetsUser = await updateUserTweets({user: user});
+    let updatedTweetsUser = user;
+
+    if (enableFetchTweets){
+      updatedTweetsUser = await updateUserTweets({user: user});
+    }
     const autoCategoryUser = await generateAutoCategory({user: updatedTweetsUser});
     const prevPropsUser = await updatePreviousUserProps({user: autoCategoryUser});
 
