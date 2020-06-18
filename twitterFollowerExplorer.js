@@ -932,6 +932,7 @@ async function initCategorizedUserIdSet(p){
     const cursorParams = {};
     cursorParams.query = { categorized: true };
 
+    cursorParams.resultsArray = true;
     cursorParams.lean = false;
     cursorParams.skip = 0;
     cursorParams.limit = (configuration.testMode) ? parseInt(0.2*configuration.userCursorLimit) : configuration.userCursorLimit;
@@ -981,12 +982,11 @@ async function initCategorizedUserIdSet(p){
 
           statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.fetched);
 
-          const userIdArray = Object.keys(results.obj);
+          // const userIdArray = Object.keys(results.obj);
 
-          for(const userId of userIdArray){
-            const user = results.obj[userId];
-            processUserQueue.push(user);
-          }
+          // for(const userId of userIdArray){
+            processUserQueue.concat(results.array);
+          // }
 
           if ((configuration.verbose && (statsObj.users.categorized.fetched % 10 == 0)) 
             || (statsObj.users.categorized.fetched % 1000 == 0)) 
@@ -1443,9 +1443,9 @@ async function loadConfigFile(params) {
       newConfiguration.userCursorBatchSize = loadedConfigObj.TFE_USER_CURSOR_BATCH_SIZE;
     }
 
-    if (loadedConfigObj.TFE_USER_CURSOR_LIMITmit !== undefined) {
-      console.log("TFE | LOADED TFE_USER_CURSOR_LIMITmit: " + loadedConfigObj.TFE_USER_CURSOR_LIMITmit);
-      newConfiguration.userCursorLimit = loadedConfigObj.TFE_USER_CURSOR_LIMITmit;
+    if (loadedConfigObj.TFE_USER_CURSOR_LIMIT !== undefined) {
+      console.log("TFE | LOADED TFE_USER_CURSOR_LIMIT: " + loadedConfigObj.TFE_USER_CURSOR_LIMIT);
+      newConfiguration.userCursorLimit = loadedConfigObj.TFE_USER_CURSOR_LIMIT;
     }
 
     if (loadedConfigObj.TFE_PROCESS_USER_MAX_PARALLEL !== undefined) {
