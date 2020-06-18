@@ -1,29 +1,6 @@
 const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 
-// const userTrainingSetPickArray = [
-//   "categorized",
-//   "categorizedAuto",
-//   "categorizeNetwork",
-//   "category",
-//   "categoryAuto",
-//   "categoryVerified",
-//   "description",
-//   "followersCount",
-//   "friends",
-//   "friendsCount",
-//   "isBot",
-//   "lang",
-//   "languageAnalyzed",
-//   "location",
-//   "name",
-//   "nodeId",
-//   "profileHistograms",
-//   "screenName",
-//   "statusesCount",
-//   "tweetHistograms"
-// ];
-
 const bestNetworkIdArrayFile = "bestNetworkIdArray.json";
 
 const ONE_SECOND = 1000;
@@ -31,11 +8,11 @@ const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const DEFAULT_USER_CURSOR_BATCH_SIZE = 100;
-const DEFAULT_USER_CURSOR_LIMIT = 500;
-const DEFAULT_ENABLE_PROCESS_USER_PARALLEL = true;
+const DEFAULT_USER_CURSOR_LIMIT = 1000;
+// const DEFAULT_ENABLE_PROCESS_USER_PARALLEL = true;
 const DEFAULT_PROCESS_USER_MAX_PARALLEL = 16;
 const DEFAULT_USER_DB_UPDATE_MAX_PARALLEL = 16;
-const DEFAULT_MAX_PROCESS_USER_QUEUE = 500;
+const DEFAULT_MAX_PROCESS_USER_QUEUE = 1000;
 const DEFAULT_SAVE_FILE_QUEUE_INTERVAL = 100;
 
 const TEST_MODE = false; // applies only to parent
@@ -43,7 +20,6 @@ const TEST_FETCH_TWEETS_MODE = false; // applies only to parent
 
 const DEFAULT_ENABLE_FETCH_TWEETS = false;
 const DEFAULT_UPDATE_GLOBAL_HISTOGRAMS = false; // will be performed another module
-// const DEFAULT_UPDATE_MAX_INPUT_HASHMAP = true;
 const DEFAULT_NN_NUMBER_LIMIT = 10;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
@@ -254,7 +230,7 @@ configuration.verbose = false;
 configuration.userCursorBatchSize = DEFAULT_USER_CURSOR_BATCH_SIZE;
 configuration.userCursorLimit = DEFAULT_USER_CURSOR_LIMIT;
 configuration.maxProcessUserQueue = DEFAULT_MAX_PROCESS_USER_QUEUE;
-configuration.enableProcessUserParallel = DEFAULT_ENABLE_PROCESS_USER_PARALLEL;
+// configuration.enableProcessUserParallel = DEFAULT_ENABLE_PROCESS_USER_PARALLEL;
 configuration.userProcessMaxParallel = DEFAULT_PROCESS_USER_MAX_PARALLEL;
 configuration.userDbUpdateMaxParallel = DEFAULT_USER_DB_UPDATE_MAX_PARALLEL;
 configuration.enableFetchTweets = DEFAULT_ENABLE_FETCH_TWEETS;
@@ -1466,15 +1442,15 @@ async function loadConfigFile(params) {
       }
     }
 
-    if (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL !== undefined) {
-      console.log("TFE | LOADED TFE_ENABLE_PROCESS_USER_PARALLEL: " + loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL);
-      if ((loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == true) || (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == "true")) {
-        newConfiguration.enableProcessUserParallel = true;
-      }
-      if ((loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == false) || (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == "false")) {
-        newConfiguration.enableProcessUserParallel = false;
-      }
-    }
+    // if (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL !== undefined) {
+    //   console.log("TFE | LOADED TFE_ENABLE_PROCESS_USER_PARALLEL: " + loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL);
+    //   if ((loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == true) || (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == "true")) {
+    //     newConfiguration.enableProcessUserParallel = true;
+    //   }
+    //   if ((loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == false) || (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == "false")) {
+    //     newConfiguration.enableProcessUserParallel = false;
+    //   }
+    // }
 
     if (loadedConfigObj.TFE_PROCESS_USER_MAX_PARALLEL !== undefined) {
       console.log("TFE | LOADED TFE_PROCESS_USER_MAX_PARALLEL: " + loadedConfigObj.TFE_PROCESS_USER_MAX_PARALLEL);
@@ -3123,6 +3099,7 @@ function initUserDbUpdateQueueInterval(p) {
 
     const processUserArray = [];
     let more = false;
+    let userObj = {};
 
     userDbUpdateQueueInterval = setInterval(async function() {
 
@@ -3138,27 +3115,33 @@ function initUserDbUpdateQueueInterval(p) {
 
         while (more) {
 
-          const userObj = userDbUpdateQueue.shift();
           statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
 
-          if (userObj.end) { more = false; }
-          if (userDbUpdateQueue.length === 0) { more = false; }
+          if (userDbUpdateQueue.length > 0 && processUserArray.length < maxParallel) {
 
-          if (!more && (processUserArray.length > 0) || processUserArray.length >= maxParallel) {
-            await Promise.all(processUserArray);
+            userObj = userDbUpdateQueue.shift();
+
+            if (!userObj.end){
+              processUserArray.push(userServerController.findOneUserV2({
+                user: userObj, 
+                mergeHistograms: false, 
+                noInc: true, 
+                updateCountHistory: true
+              }));
+            }
+
+            if (userObj.end) { more = false; }
+            if (userDbUpdateQueue.length === 0) { more = false; }
+            if (processUserArray.length >= maxParallel) { more = false; }
+
           }
-          else if (userDbUpdateQueue.length > 0 && processUserArray.length < maxParallel) {
-
-            processUserArray.push(userServerController.findOneUserV2({
-              user: userObj, 
-              mergeHistograms: false, 
-              noInc: true, 
-              updateCountHistory: true
-            }));
-
-          }
-
         }
+
+        if (processUserArray.length > 0){
+          await Promise.all(processUserArray);
+          processUserArray.length = 0;
+        }
+
 
         statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
         userDbUpdateQueueReadyFlag = true;
@@ -3763,6 +3746,7 @@ async function initProcessUserQueueInterval(p) {
 
   let allEmpty;
   let more = false;
+  let userObj = {};
   const processUserArray = [];
 
   statsObj.status = "INIT PROCESS USER QUEUE";
@@ -3805,53 +3789,59 @@ async function initProcessUserQueueInterval(p) {
           showStats();
         }
 
-        if (configuration.enableProcessUserParallel){
+        // if (configuration.enableProcessUserParallel){
 
-          more = (processUserQueue.length > 0);
-          processUserArray.length = 0;
+        more = (processUserQueue.length > 0);
+        processUserArray.length = 0;
 
-          while (more) {
+        while (more) {
 
-            const userObj = processUserQueue.shift();
-            statsObj.queues.processUserQueue.size = processUserQueue.length;
+          statsObj.queues.processUserQueue.size = processUserQueue.length;
+
+          if (processUserQueue.length > 0 && processUserArray.length < maxParallel) {
+
+            userObj = processUserQueue.shift();
+
+            processUserArray.push(processUser(userObj));
 
             if (userObj.end) { more = false; }
             if (processUserQueue.length === 0) { more = false; }
-
-            if (!more && (processUserArray.length > 0) || processUserArray.length >= maxParallel) {
-              await Promise.all(processUserArray);
-            }
-            else if (processUserQueue.length > 0 && processUserArray.length < maxParallel) {
-              processUserArray.push(processUser(userObj));
-            }
+            if (processUserArray.length >= maxParallel) { more = false; }
 
           }
-
-          statsObj.queues.processUserQueue.size = processUserQueue.length;
-          statsObj.queues.processUserQueue.busy = false;
         }
-        else {
 
-          const userObj = processUserQueue.shift();
-
-          statsObj.queues.processUserQueue.size = processUserQueue.length;
-
-          if (!userObj.end) { 
-            await processUser(userObj); 
-
-            if (params.verbose || configuration.verbose){
-              console.log(chalkLog(
-                MODULE_ID_PREFIX 
-                + " | PROCESS USER"
-                + " [PUQ: " + processUserQueue.length + "]" 
-                + " | " + userObj.nodeId
-                + " | @" + userObj.screenName
-              ));
-            }
-          }
-
-          statsObj.queues.processUserQueue.busy = false;
+        if (processUserArray.length > 0){
+          await Promise.all(processUserArray);
+          processUserArray.length = 0;
         }
+
+        statsObj.queues.processUserQueue.size = processUserQueue.length;
+        statsObj.queues.processUserQueue.busy = false;
+        // }
+        // else {
+
+        //   const userObj = processUserQueue.shift();
+
+        //   statsObj.queues.processUserQueue.size = processUserQueue.length;
+
+        //   if (!userObj.end) { 
+        //     await processUser(userObj); 
+
+        //     if (params.verbose || configuration.verbose){
+        //       console.log(chalkLog(
+        //         MODULE_ID_PREFIX 
+        //         + " | PROCESS USER"
+        //         + " [PUQ: " + processUserQueue.length + "]" 
+        //         + " | " + userObj.nodeId
+        //         + " | @" + userObj.screenName
+        //       ));
+        //     }
+        //   }
+
+        //   statsObj.queues.processUserQueue.busy = false;
+        //   statsObj.queues.processUserQueue.size = processUserQueue.length;
+        // }
         
       }
       catch(err){
