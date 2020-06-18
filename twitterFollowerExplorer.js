@@ -3098,17 +3098,17 @@ function initActivateNetworkQueueInterval(p) {
         statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
 
         if (!anObj.user.profileHistograms || (anObj.user.profileHistograms === undefined)) {
-          console.log(chalkWarn("TFE | ACTIVATE | !!! UNDEFINED USER PROFILE HISTOGRAMS | @" + anObj.user.screenName));
+          debug(chalkWarn("TFE | ACTIVATE | !!! UNDEFINED USER PROFILE HISTOGRAMS | @" + anObj.user.screenName));
           anObj.user.profileHistograms = {};
         }
 
         if (!anObj.user.tweetHistograms || (anObj.user.tweetHistograms === undefined)) {
-          console.log(chalkWarn("TFE | ACTIVATE | !!! UNDEFINED USER TWEET HISTOGRAMS | @" + anObj.user.screenName));
+          debug(chalkWarn("TFE | ACTIVATE | !!! UNDEFINED USER TWEET HISTOGRAMS | @" + anObj.user.screenName));
           anObj.user.tweetHistograms = {};
         }
 
         if (!anObj.user.friends || (anObj.user.friends === undefined)) {
-          console.log(chalkWarn("TFE | ACTIVATE | !!! UNDEFINED USER FRIENDS | @" + anObj.user.screenName));
+          debug(chalkWarn("TFE | ACTIVATE | !!! UNDEFINED USER FRIENDS | @" + anObj.user.screenName));
           anObj.user.friends = [];
         }
 
