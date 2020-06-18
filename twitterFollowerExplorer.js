@@ -945,144 +945,6 @@ function updateDbNetwork(params) {
   });
 }
 
-// async function initCategorizedUserIdSet(){
-
-//   try{
-
-//     let categorizedUserIdSetIntervalReady = true;
-
-//     statsObj.status = "INIT CATEGORIZED USER ID SET";
-
-//     const p = {};
-//     p.query = { categorized: true };
-//     // p.query.$and = [
-//     //   { category: { "$in": ["left", "right", "neutral"] } }
-//     //   // { following: true },
-//     //   // { ignored: { "$in": [false, "false", null] } }
-//     // ];
-
-//     p.lean = false;
-//     p.skip = 0;
-//     p.limit = (configuration.testMode) ? TEST_FIND_CAT_USER_CURSOR_LIMIT : configuration.userCursorLimit;
-//     p.batchSize = (configuration.testMode) ? TEST_CURSOR_BATCH_SIZE : DEFAULT_CURSOR_BATCH_SIZE;
-//     p.toObject = true;
-
-//     let more = true;
-//     statsObj.users.categorized.fetched = 0;
-//     statsObj.users.categorized.total = 0;
-//     statsObj.users.categorized.manual = 0;
-//     statsObj.users.categorized.auto = 0;
-//     statsObj.users.categorized.matched = 0;
-//     statsObj.users.categorized.mismatched = 0;
-//     statsObj.users.categorized.matchRate = 0;
-
-//     const usersCollection = global.dbConnection.collection("users");
-//     statsObj.users.categorized.total = await usersCollection.countDocuments(p.query);
-
-//     const categorizedUserIdSetInterval = setInterval(function(){
-
-//       if (categorizedUserIdSetIntervalReady 
-//         && more 
-//         // && (tcUtils.getSaveFileQueue() < 20)
-//         // && (activateNetworkQueue.length < p.batchSize)
-//         && (processUserQueue.length < p.batchSize)
-//       ){
-
-//         categorizedUserIdSetIntervalReady = false;
-
-//         userServerController.findCategorizedUsersCursor(p, function(err, results){
-
-//           if (err) {
-//             console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserIdSet: " + err));
-//             clearInterval(categorizedUserIdSetInterval);
-//             throw err;
-//           }
-          
-//           if ((!configuration.testMode && results) 
-//             || (configuration.testMode && (statsObj.users.categorized.fetched < TEST_TOTAL_FETCH))) {
-
-//             more = true;
-
-//             statsObj.users.categorized.fetched += results.count;
-//             statsObj.users.categorized.manual += results.manual;
-//             statsObj.users.categorized.auto += results.auto;
-//             statsObj.users.categorized.matched += results.matched;
-//             statsObj.users.categorized.mismatched += results.mismatched;
-
-//             statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.fetched);
-
-//             const userIdArray = Object.keys(results.obj);
-
-//             for(const userId of userIdArray){
-//               categorizedUserIdSet.add(userId);
-//               const user = results.obj[userId];
-//               user.following = true;
-//               user.ignored = false;
-//               processUserQueue.push(user);
-//             }
-
-//             if ((configuration.verbose && (statsObj.users.categorized.fetched % 10 == 0)) || (statsObj.users.categorized.fetched % 1000 == 0)) {
-
-//               console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-//                 + " | UIDs: " + userIdArray.length
-//                 + " | PUQ: " + processUserQueue.length
-//                 // + " | SFQ: " + tcUtils.getSaveFileQueue()
-//                 + " | TOT USERS: " + statsObj.users.categorized.total
-//                 + " | TOT FETCHED: " + statsObj.users.categorized.fetched
-//                 + " | LIMIT: " + p.limit
-//                 + " | SKIP: " + p.skip
-//                 + " | " + statsObj.users.categorized.manual + " MAN"
-//                 + " | " + statsObj.users.categorized.auto + " AUTO"
-//                 + " | " + statsObj.users.categorized.matched + " MATCHED"
-//                 + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-//                 + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-//               ));
-//             }
-
-//             p.skip += results.count;
-//             categorizedUserIdSetIntervalReady = true;
-
-//           }
-//           else {
-
-//             more = false;
-//             clearInterval(categorizedUserIdSetInterval);
-
-//             console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
-//               + " | PUQ: " + processUserQueue.length
-//               + " | TOT USERS: " + statsObj.users.categorized.total
-//               + " | TOT FETCHED: " + statsObj.users.categorized.fetched
-//               + " | " + statsObj.users.categorized.manual + " MAN"
-//               + " | " + statsObj.users.categorized.auto + " AUTO"
-//               + " | " + statsObj.users.categorized.matched + " MATCHED"
-//               + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-//               + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-//             ));
-
-//             categorizedUserIdSetIntervalReady = true;
-
-//             statsObj.fetchUserEndFlag = true;
-
-//             console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
-//               + " | TOT USERS: " + statsObj.users.categorized.total
-//               + " | TOT FETCHED: " + statsObj.users.categorized.fetched
-//             ));
-
-//             return;
-//           }
-
-//         });
-
-//       }
-
-//     }, DEFAULT_MIN_INTERVAL);
-//   }
-//   catch(err){
-//     console.log(chalkError(MODULE_ID_PREFIX + " | *** initCategorizedUserIdSet ERROR: " + err));
-//     throw err;
-//   }
-// }
-
 async function initCategorizedUserIdSet(p){
 
   try{
@@ -1127,8 +989,6 @@ async function initCategorizedUserIdSet(p){
 
       if (categorizedUserIdSetIntervalReady 
         && more 
-        // && (tcUtils.getSaveFileQueue() < 20)
-        // && (activateNetworkQueue.length < cursorParams.batchSize)
         && (processUserQueue.length < maxProcessUserQueue)
       ){
 
@@ -1152,7 +1012,6 @@ async function initCategorizedUserIdSet(p){
           const userIdArray = Object.keys(results.obj);
 
           for(const userId of userIdArray){
-            // categorizedUserIdSet.add(userId);
             const user = results.obj[userId];
             processUserQueue.push(user);
           }
@@ -1164,7 +1023,6 @@ async function initCategorizedUserIdSet(p){
             console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
               + " | UIDs: " + userIdArray.length
               + " | PUQ: " + processUserQueue.length
-              // + " | SFQ: " + tcUtils.getSaveFileQueue()
               + " | TOT USERS: " + statsObj.users.categorized.total
               + " | TOT FETCHED: " + statsObj.users.categorized.fetched
               + " | LIMIT: " + cursorParams.limit
@@ -1186,6 +1044,7 @@ async function initCategorizedUserIdSet(p){
           processUserQueue.push({end: true});
 
           more = false;
+
           clearInterval(categorizedUserIdSetInterval);
 
           console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
@@ -2609,60 +2468,6 @@ async function loadBestNeuralNetworks() {
   }
 }
 
-// async function loadMaxInput(params) {
-
-//   statsObj.status = "LOAD MAX INPUT";
-
-//   const folder = params.folder || path.join(configuration.defaultTrainingSetFolder, "maxInputHashMaps");
-//   // const file = params.file;
-
-//   console.log(chalkNetwork("TFE | LOADING MAX INPUT HASHMAP FOLDER | " + folder));
-
-//   try {
-
-//     // const response = {
-//     //   cursor: false,
-//     //   has_more: false,
-//     //   entries: itemArray
-//     // };
-
-//     const results = await tcUtils.filesListFolder({folder: folder});
-
-//     if ((results === undefined) || !results) {
-//       console.log(chalkError(MODULE_ID_PREFIX + " | MAX INPUT HASHMAP FOLDER ERROR | RESULTS UNDEFINED ??? "));
-//       return new Error("MAX INPUT HASHMAP FOLDER ERROR | RESULTS UNDEFINED");
-//     }
-
-//     if (results.entries.length === 0) {
-//       console.log(chalkError(MODULE_ID_PREFIX + " | ??? MAX INPUT HASHMAP FOLDER EMPTY | " + folder));
-//       return;
-//     }
-
-//     maxInputHashMap = {};
-//     maxInputHashMap = deepcopy(maxInputHashMapObj.maxInputHashMap);
-
-//     normalization = {};
-//     normalization = deepcopy(maxInputHashMapObj.normalization);
-
-//     console.log(chalkBlue("TFE | MAX INPUT HASHMAP"
-//       + " | KEYS (INPUT TYPES)\n" + jsonPrint(Object.keys(maxInputHashMap))
-//     ));
-
-//     console.log(chalkBlue("TFE | NORMALIZATION"
-//       + "\n" + jsonPrint(normalization)
-//     ));
-
-//     await nnTools.setMaxInputHashMap(maxInputHashMap);
-//     await nnTools.setNormalization(normalization);
-
-//     return;
-//   }
-//   catch(err){
-//     console.log(chalkError("TFE | MAX INPUT HASHMAP FILE ERROR: " + err));
-//     throw err;
-//   }
-// }
-
 const watchOptions = {
   ignoreDotFiles: true,
   ignoreUnreadableDir: true,
@@ -2707,22 +2512,16 @@ async function initWatchConfig(){
   }
 
   watch.createMonitor(configDefaultFolder, watchOptions, function (monitor) {
-
     monitor.on("created", loadConfig);
-
     monitor.on("changed", loadConfig);
-
     monitor.on("removed", function (f) {
       debug(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
     });
   });
 
   watch.createMonitor(configHostFolder, watchOptions, function (monitor) {
-
     monitor.on("created", loadConfig);
-
     monitor.on("changed", loadConfig);
-
     monitor.on("removed", function (f) {
       debug(chalkAlert(MODULE_ID_PREFIX + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f));
     });
@@ -2758,6 +2557,7 @@ function initActivateNetworks(){
       if (networkObjArray.length > 0 && loadNetworkReady){
 
         try{
+
           loadNetworkReady = false;
 
           let isBestNetworkFlag = false;
@@ -3321,6 +3121,9 @@ function initUserDbUpdateQueueInterval(p) {
     statsObj.queues.userDbUpdateQueue.busy = false;
     userDbUpdateQueueReadyFlag = true;
 
+    const processUserArray = [];
+    let more = false;
+
     userDbUpdateQueueInterval = setInterval(async function() {
 
       if (userDbUpdateQueueReadyFlag && (userDbUpdateQueue.length > 0)) {
@@ -3329,85 +3132,38 @@ function initUserDbUpdateQueueInterval(p) {
         statsObj.queues.userDbUpdateQueue.busy = true;
         statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
 
-        try {
+        more = (userDbUpdateQueue.length > 0);
 
-          if (configuration.enableProcessUserParallel && userDbUpdateQueue.length >= maxParallel){
+        processUserArray.length = 0;
 
-            const processUserArray = [];
+        while (more) {
 
-            for(let i = 0;i < maxParallel;i++){
+          const userObj = userDbUpdateQueue.shift();
+          statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
 
-              const user = userDbUpdateQueue.shift();
+          if (userObj.end) { more = false; }
+          if (userDbUpdateQueue.length === 0) { more = false; }
 
-              processUserArray.push(userServerController.findOneUserV2({
-                user: user, 
-                mergeHistograms: false, 
-                noInc: true, 
-                updateCountHistory: true
-              }));
-
-            }
-
-            statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
-
+          if (!more && (processUserArray.length > 0) || processUserArray.length >= maxParallel) {
             await Promise.all(processUserArray);
-
-            statsObj.users.dbUpdated += processUserArray.length;
-
-            if (params.verbose || configuration.verbose){
-              console.log(chalkBlue(
-                MODULE_ID_PREFIX 
-                + " | DB UPDATE USER | MAX PARALLEL: " + maxParallel
-                + " [UDUQ: " + userDbUpdateQueue.length + "] " 
-              ));
-            }
-
-            userDbUpdateQueueReadyFlag = true;
-
-            statsObj.queues.userDbUpdateQueue.busy = false;
           }
-          else {
+          else if (userDbUpdateQueue.length > 0 && processUserArray.length < maxParallel) {
 
-            const user = userDbUpdateQueue.shift();
-
-            statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
-
-            await userServerController.findOneUserV2({
-              user: user, 
+            processUserArray.push(userServerController.findOneUserV2({
+              user: userObj, 
               mergeHistograms: false, 
               noInc: true, 
               updateCountHistory: true
-            });
+            }));
 
-            statsObj.users.dbUpdated += 1;
-
-            if (params.verbose || configuration.verbose){
-              console.log(chalkLog(
-                MODULE_ID_PREFIX 
-                + " | DB UPDATE USER"
-                + " [UDUQ: " + userDbUpdateQueue.length + "]" 
-                + " | " + user.nodeId
-                + " | @" + user.screenName
-              ));
-            }
-
-            userDbUpdateQueueReadyFlag = true;
-
-            statsObj.queues.userDbUpdateQueue.busy = false;
           }
 
         }
-        catch(err){
-          console.log(chalkError("TFE | *** ERROR DB UPDATE USER - updateUserDb"
-            // + " | NID: " + user.nodeId
-            // + " | @" + user.screenName
-            + "\n" + err
-          ));
 
-          userDbUpdateQueueReadyFlag = true;
-          statsObj.queues.userDbUpdateQueue.busy = false;
+        statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
+        userDbUpdateQueueReadyFlag = true;
+        statsObj.queues.userDbUpdateQueue.busy = false;
 
-        }
       }
 
     }, interval);
@@ -4049,7 +3805,6 @@ async function initProcessUserQueueInterval(p) {
           showStats();
         }
 
-        // if (configuration.enableProcessUserParallel && processUserQueue.length >= maxParallel){
         if (configuration.enableProcessUserParallel){
 
           more = (processUserQueue.length > 0);
@@ -4072,8 +3827,8 @@ async function initProcessUserQueueInterval(p) {
 
           }
 
+          statsObj.queues.processUserQueue.size = processUserQueue.length;
           statsObj.queues.processUserQueue.busy = false;
-
         }
         else {
 
@@ -4097,6 +3852,7 @@ async function initProcessUserQueueInterval(p) {
 
           statsObj.queues.processUserQueue.busy = false;
         }
+        
       }
       catch(err){
         console.log(chalkError("TFE | *** ERROR processUser"
@@ -4105,143 +3861,6 @@ async function initProcessUserQueueInterval(p) {
         console.log(err);
         statsObj.queues.processUserQueue.busy = false;
       }
-
-      // try {
-
-      //   if (!categorizedUserIdSet.has(mObj.nodeId)){
-      //     console.log(chalkAlert("TFE | !!! NODE ID NOT IN CATEGORIZED SET: " + mObj.nodeId));
-      //     statsObj.users.totalUsersSkipped += 1;
-      //     statsObj.queues.processUserQueue.busy = false;
-      //     return;
-      //   }
-
-      //   dbUser = await global.wordAssoDb.User.findOne({nodeId: mObj.nodeId});
-
-      //   if (!dbUser) {
-      //     console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
-      //       + " | NID: " + mObj.nodeId
-      //       + " | @" + mObj.screenName
-      //     ));
-      //     statsObj.users.totalUsersSkipped += 1;
-      //     statsObj.queues.processUserQueue.busy = false;
-      //     return;
-      //   }
-
-      //   user = await tcUtils.encodeHistogramUrls({user: dbUser});
-      //   user.priorityFlag = mObj.priorityFlag;
-
-      //   if (!user.latestTweets || (user.latestTweets === undefined)) { 
-      //     user.latestTweets = [];
-      //   }
-      //   if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { 
-      //     user.tweetHistograms = {}; 
-      //   }
-      //   if (!user.profileHistograms || (user.profileHistograms === undefined)) { 
-      //     user.profileHistograms = {}; 
-      //   }
-
-      //   if (user.profileHistograms.images && (user.profileHistograms.images !== undefined)) {
-
-      //     for(const imageEntity of Object.keys(user.profileHistograms.images)){
-
-      //       if (imageEntity.includes(".")) { // mongoDb hates '.' in object property
-      //         const imageEntityEncoded = btoa(imageEntity);
-      //         user.profileHistograms.images[imageEntityEncoded] = user.profileHistograms.images[imageEntity];
-      //         delete user.profileHistograms.images[imageEntity];
-      //         console.log(chalkAlert(MODULE_ID_PREFIX
-      //           + " | !!! ILLEGAL PROFILE IMAGE KEY"
-      //           + " | NID: " + user.nodeId
-      //           + " | @" + user.screenName
-      //           + " | CONVERT " + imageEntity + " --> " + imageEntityEncoded
-      //         ));
-      //       }
-      //     }
-      //   }
-
-      //   if (user.profileHistograms.sentiment && (user.profileHistograms.sentiment !== undefined)) {
-
-      //     if (user.profileHistograms.sentiment.magnitude !== undefined){
-      //       if (user.profileHistograms.sentiment.magnitude < 0){
-      //         console.log(chalkAlert("TFE | !!! NORMALIZATION MAG LESS THAN 0 | CLAMPED: " + user.profileHistograms.sentiment.magnitude));
-      //         user.profileHistograms.sentiment.magnitude = 0;
-      //       }
-      //     }
-
-      //     if (user.profileHistograms.sentiment.score !== undefined){
-      //       if (user.profileHistograms.sentiment.score < -1.0){
-      //         console.log(chalkAlert("TFE | !!! NORMALIZATION SCORE LESS THAN -1.0 | CLAMPED: " + user.profileHistograms.sentiment.score));
-      //         user.profileHistograms.sentiment.score = -1.0;
-      //       }
-
-      //       if (user.profileHistograms.sentiment.score > 1.0){
-      //         console.log(chalkAlert("TFE | !!! NORMALIZATION SCORE GREATER THAN 1.0 | CLAMPED: " + user.profileHistograms.sentiment.score));
-      //         user.profileHistograms.sentiment.score = 1.0;
-      //       }
-      //     }
-      //   }
-
-      //   if (configuration.verbose){
-      //     printUserObj(MODULE_ID_PREFIX + " | FOUND USER DB", user);
-      //   }
-
-      //   if ((mObj.op == "USER_TWEETS") 
-      //     && (mObj.latestTweets.length > 0) 
-      //     && (mObj.latestTweets[0].user.id_str == mObj.nodeId))
-      //   {
-      //     // update user props
-      //     convertedRawUser = await userServerController.convertRawUserPromise({user: mObj.latestTweets[0].user});
-
-      //     user.bannerImageUrl = convertedRawUser.bannerImageUrl;
-      //     user.createdAt = convertedRawUser.createdAt;
-      //     user.description = convertedRawUser.description;
-      //     user.expandedUrl = convertedRawUser.expandedUrl;
-      //     user.followersCount = convertedRawUser.followersCount;
-      //     user.friendsCount = convertedRawUser.friendsCount;
-      //     user.lang = convertedRawUser.lang;
-      //     user.location = convertedRawUser.location;
-      //     user.name = convertedRawUser.name;
-      //     user.profileImageUrl = convertedRawUser.profileImageUrl;
-      //     user.profileUrl = convertedRawUser.profileUrl;
-      //     user.quotedStatusId = convertedRawUser.quotedStatusId;
-      //     user.screenName = convertedRawUser.screenName;
-      //     user.status = convertedRawUser.status;
-      //     user.statusesCount = convertedRawUser.statusesCount;
-      //     user.statusId = convertedRawUser.statusId;
-      //     user.url = convertedRawUser.url;
-
-      //     user.lastSeen = mObj.latestTweets[0].created_at;
-      //   }
-
-      //   defaults(user.tweets, userTweetsDefault);
-
-      //   if (!mObj.latestTweets || (mObj.latestTweets === undefined)) { mObj.latestTweets = []; }
-
-      //   user.latestTweets = [...user.latestTweets, ...mObj.latestTweets];
-
-      //   processedUser = await updateUser({user: user});
-
-      //   debug("PROCESSED USER\n" + jsonPrint(processedUser));
-
-      //   if (configuration.verbose) {
-      //     console.log(chalkAlert("TFE | PROCESSED USER"
-      //       + " | UID: " + processedUser.userId
-      //       + " | @" + processedUser.screenName
-      //       + " | Ts SINCE: " + processedUser.tweets.sinceId
-      //       + " Ts: " + processedUser.tweets.tweetIds.length
-      //     ));
-      //   }
-
-      //   statsObj.queues.processUserQueue.busy = false;
-      // }
-      // catch(err){
-      //   console.log(chalkError("TFE | *** ERROR processUser"
-      //     + " | USER ID: " + mObj.userId
-      //     + " | " + err
-      //   ));
-      //   console.log(err);
-      //   statsObj.queues.processUserQueue.busy = false;
-      // }
-
     }
 
   }, interval);
