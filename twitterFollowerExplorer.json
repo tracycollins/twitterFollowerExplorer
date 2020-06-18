@@ -7,7 +7,8 @@
     "node_args": "--max-old-space-size=32768",
     "autorestart": false,
     "env": {
-      "PRIMARY_HOST": "mms1",
+      "PRIMARY_HOST": "google",
+      "DATABASE_HOST": "macpro2",
       "FORCE_COLOR": 1,
       "NODE_ENV": "production",
       "QUIT_ON_COMPLETE": true,

@@ -164,10 +164,6 @@ else {
   DEFAULT_SSH_PRIVATEKEY = "/Users/tc/.ssh/google_compute_engine";
 }
 
-// const TEST_FIND_CAT_USER_CURSOR_LIMIT = 10;
-// const DEFAULT_CURSOR_BATCH_SIZE = 100;
-// const TEST_CURSOR_BATCH_SIZE = 10;
-
 const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
 const DEFAULT_MIN_TEST_CYCLES = 10;
 const DEFAULT_MIN_WORD_LENGTH = 3;
@@ -1442,21 +1438,25 @@ async function loadConfigFile(params) {
       }
     }
 
-    // if (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL !== undefined) {
-    //   console.log("TFE | LOADED TFE_ENABLE_PROCESS_USER_PARALLEL: " + loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL);
-    //   if ((loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == true) || (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == "true")) {
-    //     newConfiguration.enableProcessUserParallel = true;
-    //   }
-    //   if ((loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == false) || (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == "false")) {
-    //     newConfiguration.enableProcessUserParallel = false;
-    //   }
-    // }
+    if (loadedConfigObj.TFE_USER_CURSOR_BATCH_SIZE !== undefined) {
+      console.log("TFE | LOADED TFE_USER_CURSOR_BATCH_SIZE: " + loadedConfigObj.TFE_USER_CURSOR_BATCH_SIZE);
+      newConfiguration.userCursorBatchSize = loadedConfigObj.TFE_USER_CURSOR_BATCH_SIZE;
+    }
+
+    if (loadedConfigObj.TFE_USER_CURSOR_LIMITmit !== undefined) {
+      console.log("TFE | LOADED TFE_USER_CURSOR_LIMITmit: " + loadedConfigObj.TFE_USER_CURSOR_LIMITmit);
+      newConfiguration.userCursorLimit = loadedConfigObj.TFE_USER_CURSOR_LIMITmit;
+    }
 
     if (loadedConfigObj.TFE_PROCESS_USER_MAX_PARALLEL !== undefined) {
       console.log("TFE | LOADED TFE_PROCESS_USER_MAX_PARALLEL: " + loadedConfigObj.TFE_PROCESS_USER_MAX_PARALLEL);
       newConfiguration.userProcessMaxParallel = loadedConfigObj.TFE_PROCESS_USER_MAX_PARALLEL;
     }
 
+    if (loadedConfigObj.TFE_USER_DB_UPDATE_MAX_PARALLEL !== undefined) {
+      console.log("TFE | LOADED TFE_USER_DB_UPDATE_MAX_PARALLEL: " + loadedConfigObj.TFE_USER_DB_UPDATE_MAX_PARALLEL);
+      newConfiguration.userDbUpdateMaxParallel = loadedConfigObj.TFE_USER_DB_UPDATE_MAX_PARALLEL;
+    }
 
     if (loadedConfigObj.TFE_ENABLE_FETCH_TWEETS !== undefined) {
       console.log("TFE | LOADED TFE_ENABLE_FETCH_TWEETS: " + loadedConfigObj.TFE_ENABLE_FETCH_TWEETS);
@@ -1477,16 +1477,6 @@ async function loadConfigFile(params) {
         newConfiguration.updateGlobalHistograms = false;
       }
     }
-
-    // if (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP !== undefined) {
-    //   console.log("TFE | LOADED TFE_UPDATE_MAX_INPUT_HASHMAP: " + loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP);
-    //   if ((loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == true) || (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == "true")) {
-    //     newConfiguration.updateMaxInputHashMap = true;
-    //   }
-    //   if ((loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == false) || (loadedConfigObj.TFE_UPDATE_MAX_INPUT_HASHMAP == "false")) {
-    //     newConfiguration.updateMaxInputHashMap = false;
-    //   }
-    // }
 
     if (loadedConfigObj.TFE_SAVE_FILE_QUEUE_INTERVAL !== undefined) {
       console.log("TFE | LOADED TFE_SAVE_FILE_QUEUE_INTERVAL: " + loadedConfigObj.TFE_SAVE_FILE_QUEUE_INTERVAL);
@@ -3083,12 +3073,16 @@ function initUserDbUpdateQueueInterval(p) {
 
     const params = p || {};
 
-    const maxParallel = params.maxParallel || configuration.userProcessMaxParallel;
+    const maxParallel = params.maxParallel || configuration.userDbUpdateMaxParallel;
     const interval = params.interval || configuration.userDbUpdateQueueInterval;
 
     statsObj.status = "INIT USER DB UPDATE INTERVAL";
 
-    console.log(chalkBlue("TFE | INIT USER DB UPDATE QUEUE INTERVAL: " + interval + " MS"));
+    console.log(chalkBlue(MODULE_ID_PREFIX 
+      + " | INIT USER DB UPDATE QUEUE"
+      + " | MAX PARALLEL: " + maxParallel
+      + " | INTERVAL: " + interval + " MS"
+    ));
 
     clearInterval(userDbUpdateQueueInterval);
 
@@ -3751,7 +3745,11 @@ async function initProcessUserQueueInterval(p) {
 
   statsObj.status = "INIT PROCESS USER QUEUE";
 
-  console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + interval + " MS"));
+    console.log(chalkBlue(MODULE_ID_PREFIX 
+      + " | INIT PROCESS USER QUEUE"
+      + " | MAX PARALLEL: " + maxParallel
+      + " | INTERVAL: " + interval + " MS"
+    ));
 
   statsObj.processedStartFlag = false;
   clearInterval(processUserQueueInterval);
