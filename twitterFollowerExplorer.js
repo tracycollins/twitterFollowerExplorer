@@ -7,8 +7,8 @@ const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
-const DEFAULT_USER_CURSOR_BATCH_SIZE = 100;
-const DEFAULT_USER_CURSOR_LIMIT = 1000;
+const DEFAULT_USER_CURSOR_BATCH_SIZE = 10;
+const DEFAULT_USER_CURSOR_LIMIT = 100;
 // const DEFAULT_ENABLE_PROCESS_USER_PARALLEL = true;
 const DEFAULT_PROCESS_USER_MAX_PARALLEL = 16;
 const DEFAULT_USER_DB_UPDATE_MAX_PARALLEL = 16;
@@ -932,7 +932,7 @@ async function initCategorizedUserIdSet(p){
     const cursorParams = {};
     cursorParams.query = { categorized: true };
 
-    cursorParams.resultsArray = true;
+    cursorParams.resultsAsArray = true;
     cursorParams.lean = false;
     cursorParams.skip = 0;
     cursorParams.limit = (configuration.testMode) ? parseInt(0.2*configuration.userCursorLimit) : configuration.userCursorLimit;
@@ -983,17 +983,14 @@ async function initCategorizedUserIdSet(p){
           statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.fetched);
 
           // const userIdArray = Object.keys(results.obj);
-
-          // for(const userId of userIdArray){
-            processUserQueue.concat(results.array);
-          // }
+          results.array.forEach((user) => processUserQueue.push(user));
 
           if ((configuration.verbose && (statsObj.users.categorized.fetched % 10 == 0)) 
             || (statsObj.users.categorized.fetched % 1000 == 0)) 
           {
 
             console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-              + " | UIDs: " + userIdArray.length
+              // + " | UIDs: " + userIdArray.length
               + " | PUQ: " + processUserQueue.length
               + " | TOT USERS: " + statsObj.users.categorized.total
               + " | TOT FETCHED: " + statsObj.users.categorized.fetched
@@ -3816,30 +3813,6 @@ async function initProcessUserQueueInterval(p) {
 
         statsObj.queues.processUserQueue.size = processUserQueue.length;
         statsObj.queues.processUserQueue.busy = false;
-        // }
-        // else {
-
-        //   const userObj = processUserQueue.shift();
-
-        //   statsObj.queues.processUserQueue.size = processUserQueue.length;
-
-        //   if (!userObj.end) { 
-        //     await processUser(userObj); 
-
-        //     if (params.verbose || configuration.verbose){
-        //       console.log(chalkLog(
-        //         MODULE_ID_PREFIX 
-        //         + " | PROCESS USER"
-        //         + " [PUQ: " + processUserQueue.length + "]" 
-        //         + " | " + userObj.nodeId
-        //         + " | @" + userObj.screenName
-        //       ));
-        //     }
-        //   }
-
-        //   statsObj.queues.processUserQueue.busy = false;
-        //   statsObj.queues.processUserQueue.size = processUserQueue.length;
-        // }
         
       }
       catch(err){
