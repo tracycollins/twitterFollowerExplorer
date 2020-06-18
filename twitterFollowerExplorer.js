@@ -3592,25 +3592,6 @@ async function processUser(userIn){
 
   try {
 
-    // if (!categorizedUserIdSet.has(userIn.nodeId)){
-    //   console.log(chalkAlert("TFE | !!! NODE ID NOT IN CATEGORIZED SET: " + userIn.nodeId));
-    //   statsObj.users.totalUsersSkipped += 1;
-    //   statsObj.queues.processUserQueue.busy = false;
-    //   return;
-    // }
-
-    // const dbUser = await global.wordAssoDb.User.findOne({nodeId: userIn.nodeId});
-
-    // if (!dbUser) {
-    //   console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
-    //     + " | NID: " + userIn.nodeId
-    //     + " | @" + userIn.screenName
-    //   ));
-    //   statsObj.users.totalUsersSkipped += 1;
-    //   statsObj.queues.processUserQueue.busy = false;
-    //   return;
-    // }
-
     const user = await tcUtils.encodeHistogramUrls({user: userIn});
 
     user.priorityFlag = userIn.priorityFlag;
@@ -3705,17 +3686,6 @@ async function processUser(userIn){
 
     await updateUser({user: user});
 
-    // debug("PROCESSED USER\n" + jsonPrint(processedUser));
-
-    // if (configuration.verbose) {
-    //   console.log(chalkAlert("TFE | PROCESSED USER"
-    //     + " | UID: " + processedUser.userId
-    //     + " | @" + processedUser.screenName
-    //     + " | Ts SINCE: " + processedUser.tweets.sinceId
-    //     + " Ts: " + processedUser.tweets.tweetIds.length
-    //   ));
-    // }
-
     statsObj.queues.processUserQueue.busy = false;
   }
   catch(err){
@@ -3726,6 +3696,15 @@ async function processUser(userIn){
     console.log(err);
     statsObj.queues.processUserQueue.busy = false;
   }
+}
+
+const processWorkerQueue = async.queue(processUser, 16);
+
+async function processParallel(userArray){
+
+  processWorkerQueue.push(userArray);
+  await processWorkerQueue.drain();
+  return;
 }
 
 async function initProcessUserQueueInterval(p) {
@@ -3784,8 +3763,6 @@ async function initProcessUserQueueInterval(p) {
           showStats();
         }
 
-        // if (configuration.enableProcessUserParallel){
-
         more = (processUserQueue.length > 0);
         processUserArray.length = 0;
 
@@ -3797,7 +3774,8 @@ async function initProcessUserQueueInterval(p) {
 
             userObj = processUserQueue.shift();
 
-            processUserArray.push(processUser(userObj));
+            // processUserArray.push(processUser(userObj));
+            if (!userObj.end) { processUserArray.push(userObj); }
 
             if (userObj.end) { more = false; }
             if (processUserQueue.length === 0) { more = false; }
@@ -3807,7 +3785,7 @@ async function initProcessUserQueueInterval(p) {
         }
 
         if (processUserArray.length > 0){
-          await Promise.all(processUserArray);
+          await processParallel(processUserArray);
           processUserArray.length = 0;
         }
 
