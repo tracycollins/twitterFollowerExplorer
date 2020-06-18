@@ -30,6 +30,12 @@ const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+const DEFAULT_USER_CURSOR_BATCH_SIZE = 100;
+const DEFAULT_USER_CURSOR_LIMIT = 500;
+const DEFAULT_ENABLE_PROCESS_USER_PARALLEL = true;
+const DEFAULT_PROCESS_USER_MAX_PARALLEL = 16;
+const DEFAULT_USER_DB_UPDATE_MAX_PARALLEL = 16;
+const DEFAULT_MAX_PROCESS_USER_QUEUE = 500;
 const DEFAULT_SAVE_FILE_QUEUE_INTERVAL = 100;
 
 const TEST_MODE = false; // applies only to parent
@@ -182,10 +188,9 @@ else {
   DEFAULT_SSH_PRIVATEKEY = "/Users/tc/.ssh/google_compute_engine";
 }
 
-const DEFAULT_FIND_CAT_USER_CURSOR_LIMIT = 20;
-const TEST_FIND_CAT_USER_CURSOR_LIMIT = 10;
-const DEFAULT_CURSOR_BATCH_SIZE = 20;
-const TEST_CURSOR_BATCH_SIZE = 10;
+// const TEST_FIND_CAT_USER_CURSOR_LIMIT = 10;
+// const DEFAULT_CURSOR_BATCH_SIZE = 100;
+// const TEST_CURSOR_BATCH_SIZE = 10;
 
 const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
 const DEFAULT_MIN_TEST_CYCLES = 10;
@@ -246,6 +251,12 @@ let configuration = {};
 configuration.offlineMode = false;
 configuration.verbose = false;
 
+configuration.userCursorBatchSize = DEFAULT_USER_CURSOR_BATCH_SIZE;
+configuration.userCursorLimit = DEFAULT_USER_CURSOR_LIMIT;
+configuration.maxProcessUserQueue = DEFAULT_MAX_PROCESS_USER_QUEUE;
+configuration.enableProcessUserParallel = DEFAULT_ENABLE_PROCESS_USER_PARALLEL;
+configuration.userProcessMaxParallel = DEFAULT_PROCESS_USER_MAX_PARALLEL;
+configuration.userDbUpdateMaxParallel = DEFAULT_USER_DB_UPDATE_MAX_PARALLEL;
 configuration.enableFetchTweets = DEFAULT_ENABLE_FETCH_TWEETS;
 
 configuration.saveFileQueueInterval = DEFAULT_SAVE_FILE_QUEUE_INTERVAL;
@@ -283,7 +294,7 @@ const bestNetworkHashMap = new HashMap();
 // let maxInputHashMap = {};
 // let normalization = {};
 
-const categorizedUserIdSet = new Set();
+// const categorizedUserIdSet = new Set();
 
 const processUserQueue = [];
 let processUserQueueInterval;
@@ -934,27 +945,164 @@ function updateDbNetwork(params) {
   });
 }
 
-async function initCategorizedUserIdSet(){
+// async function initCategorizedUserIdSet(){
+
+//   try{
+
+//     let categorizedUserIdSetIntervalReady = true;
+
+//     statsObj.status = "INIT CATEGORIZED USER ID SET";
+
+//     const p = {};
+//     p.query = { categorized: true };
+//     // p.query.$and = [
+//     //   { category: { "$in": ["left", "right", "neutral"] } }
+//     //   // { following: true },
+//     //   // { ignored: { "$in": [false, "false", null] } }
+//     // ];
+
+//     p.lean = false;
+//     p.skip = 0;
+//     p.limit = (configuration.testMode) ? TEST_FIND_CAT_USER_CURSOR_LIMIT : configuration.userCursorLimit;
+//     p.batchSize = (configuration.testMode) ? TEST_CURSOR_BATCH_SIZE : DEFAULT_CURSOR_BATCH_SIZE;
+//     p.toObject = true;
+
+//     let more = true;
+//     statsObj.users.categorized.fetched = 0;
+//     statsObj.users.categorized.total = 0;
+//     statsObj.users.categorized.manual = 0;
+//     statsObj.users.categorized.auto = 0;
+//     statsObj.users.categorized.matched = 0;
+//     statsObj.users.categorized.mismatched = 0;
+//     statsObj.users.categorized.matchRate = 0;
+
+//     const usersCollection = global.dbConnection.collection("users");
+//     statsObj.users.categorized.total = await usersCollection.countDocuments(p.query);
+
+//     const categorizedUserIdSetInterval = setInterval(function(){
+
+//       if (categorizedUserIdSetIntervalReady 
+//         && more 
+//         // && (tcUtils.getSaveFileQueue() < 20)
+//         // && (activateNetworkQueue.length < p.batchSize)
+//         && (processUserQueue.length < p.batchSize)
+//       ){
+
+//         categorizedUserIdSetIntervalReady = false;
+
+//         userServerController.findCategorizedUsersCursor(p, function(err, results){
+
+//           if (err) {
+//             console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserIdSet: " + err));
+//             clearInterval(categorizedUserIdSetInterval);
+//             throw err;
+//           }
+          
+//           if ((!configuration.testMode && results) 
+//             || (configuration.testMode && (statsObj.users.categorized.fetched < TEST_TOTAL_FETCH))) {
+
+//             more = true;
+
+//             statsObj.users.categorized.fetched += results.count;
+//             statsObj.users.categorized.manual += results.manual;
+//             statsObj.users.categorized.auto += results.auto;
+//             statsObj.users.categorized.matched += results.matched;
+//             statsObj.users.categorized.mismatched += results.mismatched;
+
+//             statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.fetched);
+
+//             const userIdArray = Object.keys(results.obj);
+
+//             for(const userId of userIdArray){
+//               categorizedUserIdSet.add(userId);
+//               const user = results.obj[userId];
+//               user.following = true;
+//               user.ignored = false;
+//               processUserQueue.push(user);
+//             }
+
+//             if ((configuration.verbose && (statsObj.users.categorized.fetched % 10 == 0)) || (statsObj.users.categorized.fetched % 1000 == 0)) {
+
+//               console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
+//                 + " | UIDs: " + userIdArray.length
+//                 + " | PUQ: " + processUserQueue.length
+//                 // + " | SFQ: " + tcUtils.getSaveFileQueue()
+//                 + " | TOT USERS: " + statsObj.users.categorized.total
+//                 + " | TOT FETCHED: " + statsObj.users.categorized.fetched
+//                 + " | LIMIT: " + p.limit
+//                 + " | SKIP: " + p.skip
+//                 + " | " + statsObj.users.categorized.manual + " MAN"
+//                 + " | " + statsObj.users.categorized.auto + " AUTO"
+//                 + " | " + statsObj.users.categorized.matched + " MATCHED"
+//                 + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+//                 + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+//               ));
+//             }
+
+//             p.skip += results.count;
+//             categorizedUserIdSetIntervalReady = true;
+
+//           }
+//           else {
+
+//             more = false;
+//             clearInterval(categorizedUserIdSetInterval);
+
+//             console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
+//               + " | PUQ: " + processUserQueue.length
+//               + " | TOT USERS: " + statsObj.users.categorized.total
+//               + " | TOT FETCHED: " + statsObj.users.categorized.fetched
+//               + " | " + statsObj.users.categorized.manual + " MAN"
+//               + " | " + statsObj.users.categorized.auto + " AUTO"
+//               + " | " + statsObj.users.categorized.matched + " MATCHED"
+//               + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+//               + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+//             ));
+
+//             categorizedUserIdSetIntervalReady = true;
+
+//             statsObj.fetchUserEndFlag = true;
+
+//             console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
+//               + " | TOT USERS: " + statsObj.users.categorized.total
+//               + " | TOT FETCHED: " + statsObj.users.categorized.fetched
+//             ));
+
+//             return;
+//           }
+
+//         });
+
+//       }
+
+//     }, DEFAULT_MIN_INTERVAL);
+//   }
+//   catch(err){
+//     console.log(chalkError(MODULE_ID_PREFIX + " | *** initCategorizedUserIdSet ERROR: " + err));
+//     throw err;
+//   }
+// }
+
+async function initCategorizedUserIdSet(p){
 
   try{
 
+    const params = p || {};
+
     let categorizedUserIdSetIntervalReady = true;
+
+    const maxProcessUserQueue = params.maxProcessUserQueue || configuration.maxProcessUserQueue;
 
     statsObj.status = "INIT CATEGORIZED USER ID SET";
 
-    const p = {};
-    p.query = { categorized: true };
-    // p.query.$and = [
-    //   { category: { "$in": ["left", "right", "neutral"] } }
-    //   // { following: true },
-    //   // { ignored: { "$in": [false, "false", null] } }
-    // ];
+    const cursorParams = {};
+    cursorParams.query = { categorized: true };
 
-    p.lean = false;
-    p.skip = 0;
-    p.limit = (configuration.testMode) ? TEST_FIND_CAT_USER_CURSOR_LIMIT : DEFAULT_FIND_CAT_USER_CURSOR_LIMIT;
-    p.batchSize = (configuration.testMode) ? TEST_CURSOR_BATCH_SIZE : DEFAULT_CURSOR_BATCH_SIZE;
-    p.toObject = true;
+    cursorParams.lean = false;
+    cursorParams.skip = 0;
+    cursorParams.limit = (configuration.testMode) ? parseInt(0.2*configuration.userCursorLimit) : configuration.userCursorLimit;
+    cursorParams.batchSize = (configuration.testMode) ? parseInt(0.2*configuration.userCursorBatchSize) : configuration.userCursorBatchSize;
+    // cursorParams.toObject = true;
 
     let more = true;
     statsObj.users.categorized.fetched = 0;
@@ -966,101 +1114,102 @@ async function initCategorizedUserIdSet(){
     statsObj.users.categorized.matchRate = 0;
 
     const usersCollection = global.dbConnection.collection("users");
-    statsObj.users.categorized.total = await usersCollection.countDocuments(p.query);
+    statsObj.users.categorized.total = await usersCollection.countDocuments(cursorParams.query);
 
-    const categorizedUserIdSetInterval = setInterval(function(){
+    console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT USER CURSOR"
+      + " | TOT USERS: " + statsObj.users.categorized.total
+      + " | BATCH SIZE: " + cursorParams.batchSize
+      + " | LIMIT: " + cursorParams.limit
+      + " | SKIP: " + cursorParams.skip
+    ));
+
+    const categorizedUserIdSetInterval = setInterval(async function(){
 
       if (categorizedUserIdSetIntervalReady 
         && more 
         // && (tcUtils.getSaveFileQueue() < 20)
-        && (activateNetworkQueue.length < p.batchSize)
-        && (processUserQueue.length < p.batchSize)
+        // && (activateNetworkQueue.length < cursorParams.batchSize)
+        && (processUserQueue.length < maxProcessUserQueue)
       ){
 
         categorizedUserIdSetIntervalReady = false;
 
-        userServerController.findCategorizedUsersCursor(p, function(err, results){
-
-          if (err) {
-            console.log(chalkError(MODULE_ID_PREFIX + " | ERROR: initCategorizedUserIdSet: " + err));
-            clearInterval(categorizedUserIdSetInterval);
-            throw err;
-          }
+        const results = await userServerController.findCategorizedUsersCursorPromise(cursorParams);
           
-          if ((!configuration.testMode && results) 
-            || (configuration.testMode && (statsObj.users.categorized.fetched < TEST_TOTAL_FETCH))) {
+        if ((!configuration.testMode && results) 
+          || (configuration.testMode && (statsObj.users.categorized.fetched < TEST_TOTAL_FETCH))) {
 
-            more = true;
+          more = true;
 
-            statsObj.users.categorized.fetched += results.count;
-            statsObj.users.categorized.manual += results.manual;
-            statsObj.users.categorized.auto += results.auto;
-            statsObj.users.categorized.matched += results.matched;
-            statsObj.users.categorized.mismatched += results.mismatched;
+          statsObj.users.categorized.fetched += results.count;
+          statsObj.users.categorized.manual += results.manual;
+          statsObj.users.categorized.auto += results.auto;
+          statsObj.users.categorized.matched += results.matched;
+          statsObj.users.categorized.mismatched += results.mismatched;
 
-            statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.fetched);
+          statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.fetched);
 
-            const userIdArray = Object.keys(results.obj);
+          const userIdArray = Object.keys(results.obj);
 
-            for(const userId of userIdArray){
-              categorizedUserIdSet.add(userId);
-              const user = results.obj[userId];
-              user.following = true;
-              user.ignored = false;
-              processUserQueue.push(user);
-            }
-
-            if ((configuration.verbose && (statsObj.users.categorized.fetched % 10 == 0)) || (statsObj.users.categorized.fetched % 1000 == 0)) {
-
-              console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-                + " | UIDs: " + userIdArray.length
-                + " | PUQ: " + processUserQueue.length
-                // + " | SFQ: " + tcUtils.getSaveFileQueue()
-                + " | TOT USERS: " + statsObj.users.categorized.total
-                + " | TOT FETCHED: " + statsObj.users.categorized.fetched
-                + " | LIMIT: " + p.limit
-                + " | SKIP: " + p.skip
-                + " | " + statsObj.users.categorized.manual + " MAN"
-                + " | " + statsObj.users.categorized.auto + " AUTO"
-                + " | " + statsObj.users.categorized.matched + " MATCHED"
-                + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-                + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-              ));
-            }
-
-            p.skip += results.count;
-            categorizedUserIdSetIntervalReady = true;
-
+          for(const userId of userIdArray){
+            // categorizedUserIdSet.add(userId);
+            const user = results.obj[userId];
+            processUserQueue.push(user);
           }
-          else {
 
-            more = false;
-            clearInterval(categorizedUserIdSetInterval);
+          if ((configuration.verbose && (statsObj.users.categorized.fetched % 10 == 0)) 
+            || (statsObj.users.categorized.fetched % 1000 == 0)) 
+          {
 
-            console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
+            console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
+              + " | UIDs: " + userIdArray.length
               + " | PUQ: " + processUserQueue.length
+              // + " | SFQ: " + tcUtils.getSaveFileQueue()
               + " | TOT USERS: " + statsObj.users.categorized.total
               + " | TOT FETCHED: " + statsObj.users.categorized.fetched
+              + " | LIMIT: " + cursorParams.limit
+              + " | SKIP: " + cursorParams.skip
               + " | " + statsObj.users.categorized.manual + " MAN"
               + " | " + statsObj.users.categorized.auto + " AUTO"
               + " | " + statsObj.users.categorized.matched + " MATCHED"
               + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
               + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
             ));
-
-            categorizedUserIdSetIntervalReady = true;
-
-            statsObj.fetchUserEndFlag = true;
-
-            console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
-              + " | TOT USERS: " + statsObj.users.categorized.total
-              + " | TOT FETCHED: " + statsObj.users.categorized.fetched
-            ));
-
-            return;
           }
 
-        });
+          cursorParams.skip += results.count;
+          categorizedUserIdSetIntervalReady = true;
+
+        }
+        else {
+
+          processUserQueue.push({end: true});
+
+          more = false;
+          clearInterval(categorizedUserIdSetInterval);
+
+          console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
+            + " | PUQ: " + processUserQueue.length
+            + " | TOT USERS: " + statsObj.users.categorized.total
+            + " | TOT FETCHED: " + statsObj.users.categorized.fetched
+            + " | " + statsObj.users.categorized.manual + " MAN"
+            + " | " + statsObj.users.categorized.auto + " AUTO"
+            + " | " + statsObj.users.categorized.matched + " MATCHED"
+            + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+            + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+          ));
+
+          categorizedUserIdSetIntervalReady = true;
+
+          statsObj.fetchUserEndFlag = true;
+
+          console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
+            + " | TOT USERS: " + statsObj.users.categorized.total
+            + " | TOT FETCHED: " + statsObj.users.categorized.fetched
+          ));
+
+          return;
+        }
 
       }
 
@@ -1457,6 +1606,22 @@ async function loadConfigFile(params) {
         newConfiguration.testMode = false;
       }
     }
+
+    if (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL !== undefined) {
+      console.log("TFE | LOADED TFE_ENABLE_PROCESS_USER_PARALLEL: " + loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL);
+      if ((loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == true) || (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == "true")) {
+        newConfiguration.enableProcessUserParallel = true;
+      }
+      if ((loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == false) || (loadedConfigObj.TFE_ENABLE_PROCESS_USER_PARALLEL == "false")) {
+        newConfiguration.enableProcessUserParallel = false;
+      }
+    }
+
+    if (loadedConfigObj.TFE_PROCESS_USER_MAX_PARALLEL !== undefined) {
+      console.log("TFE | LOADED TFE_PROCESS_USER_MAX_PARALLEL: " + loadedConfigObj.TFE_PROCESS_USER_MAX_PARALLEL);
+      newConfiguration.userProcessMaxParallel = loadedConfigObj.TFE_PROCESS_USER_MAX_PARALLEL;
+    }
+
 
     if (loadedConfigObj.TFE_ENABLE_FETCH_TWEETS !== undefined) {
       console.log("TFE | LOADED TFE_ENABLE_FETCH_TWEETS: " + loadedConfigObj.TFE_ENABLE_FETCH_TWEETS);
@@ -3037,11 +3202,6 @@ function initActivateNetworkQueueInterval(p) {
           }
           else if ((configuration.testMode && (currentBestNetwork.meta.total % 10 === 0)) 
             || (currentBestNetwork.meta.total % 100 === 0)) {
-            // printNetworkObj(MODULE_ID_PREFIX + " | NN STATS"
-            //   + " [ANQ " + activateNetworkQueue.length + "]"
-            //   + " | @" + anObj.user.screenName 
-            //   + " | CM " + anObj.user.category, currentBestNetwork, chalk.black
-            // );
             await nnTools.printNetworkResults();
           }
 
@@ -3147,6 +3307,7 @@ function initUserDbUpdateQueueInterval(p) {
 
     const params = p || {};
 
+    const maxParallel = params.maxParallel || configuration.userProcessMaxParallel;
     const interval = params.interval || configuration.userDbUpdateQueueInterval;
 
     statsObj.status = "INIT USER DB UPDATE INTERVAL";
@@ -3165,51 +3326,90 @@ function initUserDbUpdateQueueInterval(p) {
       if (userDbUpdateQueueReadyFlag && (userDbUpdateQueue.length > 0)) {
 
         userDbUpdateQueueReadyFlag = false;
-
-        const user = userDbUpdateQueue.shift();
-
         statsObj.queues.userDbUpdateQueue.busy = true;
         statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
 
         try {
-          
-          const updatedUserObj = await userServerController.findOneUserV2({
-            user: user, 
-            mergeHistograms: false, 
-            noInc: true, 
-            updateCountHistory: true
-          });
 
-          statsObj.users.dbUpdated += 1;
+          if (configuration.enableProcessUserParallel && userDbUpdateQueue.length >= maxParallel){
 
-          if (configuration.verbose || (statsObj.users.dbUpdated % 100 == 0)){
-            console.log(chalkInfo("TFE | USER UPDATE"
-              + " [UDUQ: " + userDbUpdateQueue.length + "]"
-              + " [" + statsObj.users.dbUpdated + " UPDATED]"
-              + " | " + updatedUserObj.nodeId
-              + " | LANG ANZD: " + updatedUserObj.languageAnalyzed
-              + " | C: " + updatedUserObj.category
-              + " | CA: " + updatedUserObj.categoryAuto
-              + " | CN: " + updatedUserObj.categorizeNetwork
-              + " | @" + updatedUserObj.screenName
-              + " | Ts: " + updatedUserObj.statusesCount
-              + " | FLWRs: " + updatedUserObj.followersCount
-              + " | FRNDs: " + updatedUserObj.friendsCount
-            ));
+            const processUserArray = [];
+
+            for(let i = 0;i < maxParallel;i++){
+
+              const user = userDbUpdateQueue.shift();
+
+              processUserArray.push(userServerController.findOneUserV2({
+                user: user, 
+                mergeHistograms: false, 
+                noInc: true, 
+                updateCountHistory: true
+              }));
+
+            }
+
+            statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
+
+            await Promise.all(processUserArray);
+
+            statsObj.users.dbUpdated += processUserArray.length;
+
+            if (params.verbose || configuration.verbose){
+              console.log(chalkBlue(
+                MODULE_ID_PREFIX 
+                + " | DB UPDATE USER | MAX PARALLEL: " + maxParallel
+                + " [UDUQ: " + userDbUpdateQueue.length + "] " 
+              ));
+            }
+
+            userDbUpdateQueueReadyFlag = true;
+
+            statsObj.queues.userDbUpdateQueue.busy = false;
+          }
+          else {
+
+            const user = userDbUpdateQueue.shift();
+
+            statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
+
+            await userServerController.findOneUserV2({
+              user: user, 
+              mergeHistograms: false, 
+              noInc: true, 
+              updateCountHistory: true
+            });
+
+            statsObj.users.dbUpdated += 1;
+
+            if (params.verbose || configuration.verbose){
+              console.log(chalkLog(
+                MODULE_ID_PREFIX 
+                + " | DB UPDATE USER"
+                + " [UDUQ: " + userDbUpdateQueue.length + "]" 
+                + " | " + user.nodeId
+                + " | @" + user.screenName
+              ));
+            }
+
+            userDbUpdateQueueReadyFlag = true;
+
+            statsObj.queues.userDbUpdateQueue.busy = false;
           }
 
         }
         catch(err){
           console.log(chalkError("TFE | *** ERROR DB UPDATE USER - updateUserDb"
-            + " | NID: " + user.nodeId
-            + " | @" + user.screenName
+            // + " | NID: " + user.nodeId
+            // + " | @" + user.screenName
             + "\n" + err
           ));
-        }
 
-        userDbUpdateQueueReadyFlag = true;
-        statsObj.queues.userDbUpdateQueue.busy = false;
+          userDbUpdateQueueReadyFlag = true;
+          statsObj.queues.userDbUpdateQueue.busy = false;
+
+        }
       }
+
     }, interval);
 
     resolve();
@@ -3479,7 +3679,7 @@ async function updateUserTweets(params){
   return processedUser;
 }
 
-async function processUser(params) {
+async function updateUser(params) {
 
   const enableFetchTweets = params.enableFetchTweets || configuration.enableFetchTweets;
 
@@ -3658,23 +3858,158 @@ async function allQueuesEmpty(){
   return true;
 }
 
+async function processUser(userIn){
+
+  try {
+
+    // if (!categorizedUserIdSet.has(userIn.nodeId)){
+    //   console.log(chalkAlert("TFE | !!! NODE ID NOT IN CATEGORIZED SET: " + userIn.nodeId));
+    //   statsObj.users.totalUsersSkipped += 1;
+    //   statsObj.queues.processUserQueue.busy = false;
+    //   return;
+    // }
+
+    // const dbUser = await global.wordAssoDb.User.findOne({nodeId: userIn.nodeId});
+
+    // if (!dbUser) {
+    //   console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
+    //     + " | NID: " + userIn.nodeId
+    //     + " | @" + userIn.screenName
+    //   ));
+    //   statsObj.users.totalUsersSkipped += 1;
+    //   statsObj.queues.processUserQueue.busy = false;
+    //   return;
+    // }
+
+    const user = await tcUtils.encodeHistogramUrls({user: userIn});
+
+    user.priorityFlag = userIn.priorityFlag;
+
+    if (!user.latestTweets || (user.latestTweets === undefined)) { 
+      user.latestTweets = [];
+    }
+    if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { 
+      user.tweetHistograms = {}; 
+    }
+    if (!user.profileHistograms || (user.profileHistograms === undefined)) { 
+      user.profileHistograms = {}; 
+    }
+
+    if (user.profileHistograms.images && (user.profileHistograms.images !== undefined)) {
+
+      for(const imageEntity of Object.keys(user.profileHistograms.images)){
+
+        if (imageEntity.includes(".")) { // mongoDb hates '.' in object property
+          const imageEntityEncoded = btoa(imageEntity);
+          user.profileHistograms.images[imageEntityEncoded] = user.profileHistograms.images[imageEntity];
+          delete user.profileHistograms.images[imageEntity];
+          console.log(chalkAlert(MODULE_ID_PREFIX
+            + " | !!! ILLEGAL PROFILE IMAGE KEY"
+            + " | NID: " + user.nodeId
+            + " | @" + user.screenName
+            + " | CONVERT " + imageEntity + " --> " + imageEntityEncoded
+          ));
+        }
+      }
+    }
+
+    if (user.profileHistograms.sentiment && (user.profileHistograms.sentiment !== undefined)) {
+
+      if (user.profileHistograms.sentiment.magnitude !== undefined){
+        if (user.profileHistograms.sentiment.magnitude < 0){
+          console.log(chalkAlert("TFE | !!! NORMALIZATION MAG LESS THAN 0 | CLAMPED: " + user.profileHistograms.sentiment.magnitude));
+          user.profileHistograms.sentiment.magnitude = 0;
+        }
+      }
+
+      if (user.profileHistograms.sentiment.score !== undefined){
+        if (user.profileHistograms.sentiment.score < -1.0){
+          console.log(chalkAlert("TFE | !!! NORMALIZATION SCORE LESS THAN -1.0 | CLAMPED: " + user.profileHistograms.sentiment.score));
+          user.profileHistograms.sentiment.score = -1.0;
+        }
+
+        if (user.profileHistograms.sentiment.score > 1.0){
+          console.log(chalkAlert("TFE | !!! NORMALIZATION SCORE GREATER THAN 1.0 | CLAMPED: " + user.profileHistograms.sentiment.score));
+          user.profileHistograms.sentiment.score = 1.0;
+        }
+      }
+    }
+
+    if (configuration.verbose){
+      printUserObj(MODULE_ID_PREFIX + " | FOUND USER DB", user);
+    }
+
+    if ((userIn.op == "USER_TWEETS") 
+      && (userIn.latestTweets.length > 0) 
+      && (userIn.latestTweets[0].user.id_str == userIn.nodeId))
+    {
+      // update user props
+      const convertedRawUser = await userServerController.convertRawUserPromise({user: userIn.latestTweets[0].user});
+
+      user.bannerImageUrl = convertedRawUser.bannerImageUrl;
+      user.createdAt = convertedRawUser.createdAt;
+      user.description = convertedRawUser.description;
+      user.expandedUrl = convertedRawUser.expandedUrl;
+      user.followersCount = convertedRawUser.followersCount;
+      user.friendsCount = convertedRawUser.friendsCount;
+      user.lang = convertedRawUser.lang;
+      user.location = convertedRawUser.location;
+      user.name = convertedRawUser.name;
+      user.profileImageUrl = convertedRawUser.profileImageUrl;
+      user.profileUrl = convertedRawUser.profileUrl;
+      user.quotedStatusId = convertedRawUser.quotedStatusId;
+      user.screenName = convertedRawUser.screenName;
+      user.status = convertedRawUser.status;
+      user.statusesCount = convertedRawUser.statusesCount;
+      user.statusId = convertedRawUser.statusId;
+      user.url = convertedRawUser.url;
+
+      user.lastSeen = userIn.latestTweets[0].created_at;
+    }
+
+    defaults(user.tweets, userTweetsDefault);
+
+    if (!userIn.latestTweets || (userIn.latestTweets === undefined)) { userIn.latestTweets = []; }
+
+    user.latestTweets = [...user.latestTweets, ...userIn.latestTweets];
+
+    await updateUser({user: user});
+
+    // debug("PROCESSED USER\n" + jsonPrint(processedUser));
+
+    // if (configuration.verbose) {
+    //   console.log(chalkAlert("TFE | PROCESSED USER"
+    //     + " | UID: " + processedUser.userId
+    //     + " | @" + processedUser.screenName
+    //     + " | Ts SINCE: " + processedUser.tweets.sinceId
+    //     + " Ts: " + processedUser.tweets.tweetIds.length
+    //   ));
+    // }
+
+    statsObj.queues.processUserQueue.busy = false;
+  }
+  catch(err){
+    console.log(chalkError("TFE | *** ERROR processUser"
+      + " | USER ID: " + userIn.userId
+      + " | " + err
+    ));
+    console.log(err);
+    statsObj.queues.processUserQueue.busy = false;
+  }
+}
+
 async function initProcessUserQueueInterval(p) {
 
   const params = p || {};
 
+  const maxParallel = params.maxParallel || configuration.userProcessMaxParallel;
   const interval = params.interval || configuration.processUserQueueInterval;
-  // const folder = params.userDataFolder || configuration.userDataFolder;
-  // let file;
-  let processedUser;
+
   let allEmpty;
-  let dbUser;
-  let user;
-  let convertedRawUser;
-  // let trainingSetUser;
+  let more = false;
+  const processUserArray = [];
 
   statsObj.status = "INIT PROCESS USER QUEUE";
-
-  let mObj = {};
 
   console.log(chalkBlue("TFE | INIT PROCESS USER QUEUE INTERVAL | " + interval + " MS"));
 
@@ -3703,156 +4038,212 @@ async function initProcessUserQueueInterval(p) {
     }
     else if (!statsObj.queues.processUserQueue.busy && processUserQueue.length > 0) {
 
-      statsObj.status = "PROCESS USER";
+      try{
 
-      statsObj.queues.processUserQueue.busy = true;
+        statsObj.status = "PROCESS USER";
 
-      mObj = processUserQueue.shift(); // .latestTweets[], .userId
+        statsObj.queues.processUserQueue.busy = true;
 
-      statsObj.queues.processUserQueue.size = processUserQueue.length;
+        if (!statsObj.processedStartFlag) {
+          statsObj.processedStartFlag = true;
+          showStats();
+        }
 
-      if (!statsObj.processedStartFlag) {
-        statsObj.processedStartFlag = true;
-        showStats();
-      }
-      
-      try {
+        // if (configuration.enableProcessUserParallel && processUserQueue.length >= maxParallel){
+        if (configuration.enableProcessUserParallel){
 
-        if (!categorizedUserIdSet.has(mObj.nodeId)){
-          console.log(chalkAlert("TFE | !!! NODE ID NOT IN CATEGORIZED SET: " + mObj.nodeId));
-          statsObj.users.totalUsersSkipped += 1;
+          more = (processUserQueue.length > 0);
+          processUserArray.length = 0;
+
+          while (more) {
+
+            const userObj = processUserQueue.shift();
+            statsObj.queues.processUserQueue.size = processUserQueue.length;
+
+            if (userObj.end) { more = false; }
+            if (processUserQueue.length === 0) { more = false; }
+
+            if (!more && (processUserArray.length > 0) || processUserArray.length >= maxParallel) {
+              await Promise.all(processUserArray);
+            }
+            else if (processUserQueue.length > 0 && processUserArray.length < maxParallel) {
+              processUserArray.push(processUser(userObj));
+            }
+
+          }
+
           statsObj.queues.processUserQueue.busy = false;
-          return;
+
         }
+        else {
 
-        dbUser = await global.wordAssoDb.User.findOne({nodeId: mObj.nodeId});
+          const userObj = processUserQueue.shift();
 
-        if (!dbUser) {
-          console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
-            + " | NID: " + mObj.nodeId
-            + " | @" + mObj.screenName
-          ));
-          statsObj.users.totalUsersSkipped += 1;
-          statsObj.queues.processUserQueue.busy = false;
-          return;
-        }
+          statsObj.queues.processUserQueue.size = processUserQueue.length;
 
-        user = await tcUtils.encodeHistogramUrls({user: dbUser});
-        user.priorityFlag = mObj.priorityFlag;
+          if (!userObj.end) { 
+            await processUser(userObj); 
 
-        if (!user.latestTweets || (user.latestTweets === undefined)) { 
-          user.latestTweets = [];
-        }
-        if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { 
-          user.tweetHistograms = {}; 
-        }
-        if (!user.profileHistograms || (user.profileHistograms === undefined)) { 
-          user.profileHistograms = {}; 
-        }
-
-        if (user.profileHistograms.images && (user.profileHistograms.images !== undefined)) {
-
-          for(const imageEntity of Object.keys(user.profileHistograms.images)){
-
-            if (imageEntity.includes(".")) { // mongoDb hates '.' in object property
-              const imageEntityEncoded = btoa(imageEntity);
-              user.profileHistograms.images[imageEntityEncoded] = user.profileHistograms.images[imageEntity];
-              delete user.profileHistograms.images[imageEntity];
-              console.log(chalkAlert(MODULE_ID_PREFIX
-                + " | !!! ILLEGAL PROFILE IMAGE KEY"
-                + " | NID: " + user.nodeId
-                + " | @" + user.screenName
-                + " | CONVERT " + imageEntity + " --> " + imageEntityEncoded
+            if (params.verbose || configuration.verbose){
+              console.log(chalkLog(
+                MODULE_ID_PREFIX 
+                + " | PROCESS USER"
+                + " [PUQ: " + processUserQueue.length + "]" 
+                + " | " + userObj.nodeId
+                + " | @" + userObj.screenName
               ));
             }
           }
+
+          statsObj.queues.processUserQueue.busy = false;
         }
-
-        if (user.profileHistograms.sentiment && (user.profileHistograms.sentiment !== undefined)) {
-
-          if (user.profileHistograms.sentiment.magnitude !== undefined){
-            if (user.profileHistograms.sentiment.magnitude < 0){
-              console.log(chalkAlert("TFE | !!! NORMALIZATION MAG LESS THAN 0 | CLAMPED: " + user.profileHistograms.sentiment.magnitude));
-              user.profileHistograms.sentiment.magnitude = 0;
-            }
-          }
-
-          if (user.profileHistograms.sentiment.score !== undefined){
-            if (user.profileHistograms.sentiment.score < -1.0){
-              console.log(chalkAlert("TFE | !!! NORMALIZATION SCORE LESS THAN -1.0 | CLAMPED: " + user.profileHistograms.sentiment.score));
-              user.profileHistograms.sentiment.score = -1.0;
-            }
-
-            if (user.profileHistograms.sentiment.score > 1.0){
-              console.log(chalkAlert("TFE | !!! NORMALIZATION SCORE GREATER THAN 1.0 | CLAMPED: " + user.profileHistograms.sentiment.score));
-              user.profileHistograms.sentiment.score = 1.0;
-            }
-          }
-        }
-
-        if (configuration.verbose){
-          printUserObj(MODULE_ID_PREFIX + " | FOUND USER DB", user);
-        }
-
-        if ((mObj.op == "USER_TWEETS") 
-          && (mObj.latestTweets.length > 0) 
-          && (mObj.latestTweets[0].user.id_str == mObj.nodeId))
-        {
-          // update user props
-          convertedRawUser = await userServerController.convertRawUserPromise({user: mObj.latestTweets[0].user});
-
-          user.bannerImageUrl = convertedRawUser.bannerImageUrl;
-          user.createdAt = convertedRawUser.createdAt;
-          user.description = convertedRawUser.description;
-          user.expandedUrl = convertedRawUser.expandedUrl;
-          user.followersCount = convertedRawUser.followersCount;
-          user.friendsCount = convertedRawUser.friendsCount;
-          user.lang = convertedRawUser.lang;
-          user.location = convertedRawUser.location;
-          user.name = convertedRawUser.name;
-          user.profileImageUrl = convertedRawUser.profileImageUrl;
-          user.profileUrl = convertedRawUser.profileUrl;
-          user.quotedStatusId = convertedRawUser.quotedStatusId;
-          user.screenName = convertedRawUser.screenName;
-          user.status = convertedRawUser.status;
-          user.statusesCount = convertedRawUser.statusesCount;
-          user.statusId = convertedRawUser.statusId;
-          user.url = convertedRawUser.url;
-
-          user.lastSeen = mObj.latestTweets[0].created_at;
-        }
-
-        defaults(user.tweets, userTweetsDefault);
-
-        if (!mObj.latestTweets || (mObj.latestTweets === undefined)) { mObj.latestTweets = []; }
-
-        user.latestTweets = [...user.latestTweets, ...mObj.latestTweets];
-
-        processedUser = await processUser({user: user});
-
-        debug("PROCESSED USER\n" + jsonPrint(processedUser));
-
-        if (configuration.verbose) {
-          console.log(chalkAlert("TFE | PROCESSED USER"
-            + " | UID: " + processedUser.userId
-            + " | @" + processedUser.screenName
-            + " | Ts SINCE: " + processedUser.tweets.sinceId
-            + " Ts: " + processedUser.tweets.tweetIds.length
-          ));
-        }
-
-        statsObj.queues.processUserQueue.busy = false;
       }
       catch(err){
         console.log(chalkError("TFE | *** ERROR processUser"
-          + " | USER ID: " + mObj.userId
           + " | " + err
         ));
         console.log(err);
         statsObj.queues.processUserQueue.busy = false;
       }
 
+      // try {
+
+      //   if (!categorizedUserIdSet.has(mObj.nodeId)){
+      //     console.log(chalkAlert("TFE | !!! NODE ID NOT IN CATEGORIZED SET: " + mObj.nodeId));
+      //     statsObj.users.totalUsersSkipped += 1;
+      //     statsObj.queues.processUserQueue.busy = false;
+      //     return;
+      //   }
+
+      //   dbUser = await global.wordAssoDb.User.findOne({nodeId: mObj.nodeId});
+
+      //   if (!dbUser) {
+      //     console.log(chalkAlert("TFE | ??? USER NOT FOUND IN DB"
+      //       + " | NID: " + mObj.nodeId
+      //       + " | @" + mObj.screenName
+      //     ));
+      //     statsObj.users.totalUsersSkipped += 1;
+      //     statsObj.queues.processUserQueue.busy = false;
+      //     return;
+      //   }
+
+      //   user = await tcUtils.encodeHistogramUrls({user: dbUser});
+      //   user.priorityFlag = mObj.priorityFlag;
+
+      //   if (!user.latestTweets || (user.latestTweets === undefined)) { 
+      //     user.latestTweets = [];
+      //   }
+      //   if (!user.tweetHistograms || (user.tweetHistograms === undefined)) { 
+      //     user.tweetHistograms = {}; 
+      //   }
+      //   if (!user.profileHistograms || (user.profileHistograms === undefined)) { 
+      //     user.profileHistograms = {}; 
+      //   }
+
+      //   if (user.profileHistograms.images && (user.profileHistograms.images !== undefined)) {
+
+      //     for(const imageEntity of Object.keys(user.profileHistograms.images)){
+
+      //       if (imageEntity.includes(".")) { // mongoDb hates '.' in object property
+      //         const imageEntityEncoded = btoa(imageEntity);
+      //         user.profileHistograms.images[imageEntityEncoded] = user.profileHistograms.images[imageEntity];
+      //         delete user.profileHistograms.images[imageEntity];
+      //         console.log(chalkAlert(MODULE_ID_PREFIX
+      //           + " | !!! ILLEGAL PROFILE IMAGE KEY"
+      //           + " | NID: " + user.nodeId
+      //           + " | @" + user.screenName
+      //           + " | CONVERT " + imageEntity + " --> " + imageEntityEncoded
+      //         ));
+      //       }
+      //     }
+      //   }
+
+      //   if (user.profileHistograms.sentiment && (user.profileHistograms.sentiment !== undefined)) {
+
+      //     if (user.profileHistograms.sentiment.magnitude !== undefined){
+      //       if (user.profileHistograms.sentiment.magnitude < 0){
+      //         console.log(chalkAlert("TFE | !!! NORMALIZATION MAG LESS THAN 0 | CLAMPED: " + user.profileHistograms.sentiment.magnitude));
+      //         user.profileHistograms.sentiment.magnitude = 0;
+      //       }
+      //     }
+
+      //     if (user.profileHistograms.sentiment.score !== undefined){
+      //       if (user.profileHistograms.sentiment.score < -1.0){
+      //         console.log(chalkAlert("TFE | !!! NORMALIZATION SCORE LESS THAN -1.0 | CLAMPED: " + user.profileHistograms.sentiment.score));
+      //         user.profileHistograms.sentiment.score = -1.0;
+      //       }
+
+      //       if (user.profileHistograms.sentiment.score > 1.0){
+      //         console.log(chalkAlert("TFE | !!! NORMALIZATION SCORE GREATER THAN 1.0 | CLAMPED: " + user.profileHistograms.sentiment.score));
+      //         user.profileHistograms.sentiment.score = 1.0;
+      //       }
+      //     }
+      //   }
+
+      //   if (configuration.verbose){
+      //     printUserObj(MODULE_ID_PREFIX + " | FOUND USER DB", user);
+      //   }
+
+      //   if ((mObj.op == "USER_TWEETS") 
+      //     && (mObj.latestTweets.length > 0) 
+      //     && (mObj.latestTweets[0].user.id_str == mObj.nodeId))
+      //   {
+      //     // update user props
+      //     convertedRawUser = await userServerController.convertRawUserPromise({user: mObj.latestTweets[0].user});
+
+      //     user.bannerImageUrl = convertedRawUser.bannerImageUrl;
+      //     user.createdAt = convertedRawUser.createdAt;
+      //     user.description = convertedRawUser.description;
+      //     user.expandedUrl = convertedRawUser.expandedUrl;
+      //     user.followersCount = convertedRawUser.followersCount;
+      //     user.friendsCount = convertedRawUser.friendsCount;
+      //     user.lang = convertedRawUser.lang;
+      //     user.location = convertedRawUser.location;
+      //     user.name = convertedRawUser.name;
+      //     user.profileImageUrl = convertedRawUser.profileImageUrl;
+      //     user.profileUrl = convertedRawUser.profileUrl;
+      //     user.quotedStatusId = convertedRawUser.quotedStatusId;
+      //     user.screenName = convertedRawUser.screenName;
+      //     user.status = convertedRawUser.status;
+      //     user.statusesCount = convertedRawUser.statusesCount;
+      //     user.statusId = convertedRawUser.statusId;
+      //     user.url = convertedRawUser.url;
+
+      //     user.lastSeen = mObj.latestTweets[0].created_at;
+      //   }
+
+      //   defaults(user.tweets, userTweetsDefault);
+
+      //   if (!mObj.latestTweets || (mObj.latestTweets === undefined)) { mObj.latestTweets = []; }
+
+      //   user.latestTweets = [...user.latestTweets, ...mObj.latestTweets];
+
+      //   processedUser = await updateUser({user: user});
+
+      //   debug("PROCESSED USER\n" + jsonPrint(processedUser));
+
+      //   if (configuration.verbose) {
+      //     console.log(chalkAlert("TFE | PROCESSED USER"
+      //       + " | UID: " + processedUser.userId
+      //       + " | @" + processedUser.screenName
+      //       + " | Ts SINCE: " + processedUser.tweets.sinceId
+      //       + " Ts: " + processedUser.tweets.tweetIds.length
+      //     ));
+      //   }
+
+      //   statsObj.queues.processUserQueue.busy = false;
+      // }
+      // catch(err){
+      //   console.log(chalkError("TFE | *** ERROR processUser"
+      //     + " | USER ID: " + mObj.userId
+      //     + " | " + err
+      //   ));
+      //   console.log(err);
+      //   statsObj.queues.processUserQueue.busy = false;
+      // }
+
     }
+
   }, interval);
 
   return;
