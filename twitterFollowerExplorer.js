@@ -3780,7 +3780,7 @@ async function initProcessUserQueueInterval(p) {
 
         if (processUserArray.length > 0){
           // await processParallel(processUserArray);
-          processWorkerQueue.push(userArray);
+          processWorkerQueue.push(processUserArray);
           await processWorkerQueue.drain();
           processUserArray.length = 0;
         }
