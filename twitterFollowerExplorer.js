@@ -3698,14 +3698,6 @@ async function processUser(userIn){
   }
 }
 
-const processWorkerQueue = async.queue(processUser, 16);
-
-async function processParallel(userArray){
-
-  processWorkerQueue.push(userArray);
-  await processWorkerQueue.drain();
-  return;
-}
 
 async function initProcessUserQueueInterval(p) {
 
@@ -3713,6 +3705,8 @@ async function initProcessUserQueueInterval(p) {
 
   const maxParallel = params.maxParallel || configuration.userProcessMaxParallel;
   const interval = params.interval || configuration.processUserQueueInterval;
+
+  const processWorkerQueue = async.queue(processUser, maxParallel);
 
   let allEmpty;
   let more = false;
@@ -3785,7 +3779,9 @@ async function initProcessUserQueueInterval(p) {
         }
 
         if (processUserArray.length > 0){
-          await processParallel(processUserArray);
+          // await processParallel(processUserArray);
+          processWorkerQueue.push(userArray);
+          await processWorkerQueue.drain();
           processUserArray.length = 0;
         }
 
