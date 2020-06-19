@@ -53,7 +53,7 @@
     "lodash.padstart": "^4.6.1",
     "mentions-regex": "^2.0.3",
     "minimatch": "^3.0.4",
-    "moment": "^2.26.0",
+    "moment": "^2.27.0",
     "mongodb": "^3.5.9",
     "mongoose": "^5.9.19",
     "mongoose-paginate": "^5.0.3",
