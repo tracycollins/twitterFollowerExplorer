@@ -2599,9 +2599,14 @@ async function loadBestRuntimeNetwork(){
       verbose: true
     });
 
+    debug(MODULE_ID_PREFIX
+      + "| bestNetworkObj\n" + jsonPrint(bestNetworkObj)
+    );
+
     const bestNetworkDoc = await global.wordAssoDb.NeuralNetwork.findOne({networkId: bestNetworkObj.networkId}).lean();
 
     if (!bestNetworkDoc) {
+
       console.log(chalkAlert(MODULE_ID_PREFIX
         + " | loadBestRuntimeNetwork"
         + " | !!! BEST RUNTIME NETWORK NOT FOUND IN DB" 
@@ -2611,10 +2616,10 @@ async function loadBestRuntimeNetwork(){
       return;
     }
 
-    console.log(chalkAlert(MODULE_ID_PREFIX
+    console.log(chalkBlue(MODULE_ID_PREFIX
       + " | loadBestRuntimeNetwork"
-      + " | !!! BEST RUNTIME NETWORK NOT FOUND IN DB" 
-      + " | " 
+      + " | BEST RUNTIME NETWORK FOUND IN DB" 
+        + " | " + bestNetworkDoc.networkId
     ));
 
     bestNetworkObj = pick(bestNetworkDoc, bestNetworkPickArray);
@@ -2625,7 +2630,7 @@ async function loadBestRuntimeNetwork(){
 
   }
   catch(err){
-    
+
     console.log(chalkAlert(MODULE_ID_PREFIX
       + " | loadBestRuntimeNetwork"
       + " | !!! COULD NOT LOAD BEST RUNTIME NETWORK FILE"
