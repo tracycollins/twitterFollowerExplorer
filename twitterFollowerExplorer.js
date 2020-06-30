@@ -2656,7 +2656,7 @@ async function initNetworks(){
 
       if (nnId !== bestNetworkObj.networkId){
         bestNetworkHashMap.delete(nnId);
-        console.log(chalkAlert("TFE | REMOVED NN" 
+        console.log(chalkLog("TFE | REMOVED NN" 
           + " | NNID: " + nnId
           + " | LIMIT: " + configuration.networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
