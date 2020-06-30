@@ -2590,14 +2590,42 @@ async function loadBestRuntimeNetwork(){
   //   updatedAt: getTimeStamp()
   // };
   
-  bestNetworkObj = await tcUtils.loadFile({
-    folder: bestNetworkFolder, 
-    file: bestRuntimeNetworkFileName, 
-    noErrorNotFound: true,
-    verbose: true
-  });
+  try{
 
-  if (!bestNetworkObj){
+    bestNetworkObj = await tcUtils.loadFile({
+      folder: bestNetworkFolder, 
+      file: bestRuntimeNetworkFileName, 
+      // noErrorNotFound: true,
+      verbose: true
+    });
+
+    const bestNetworkDoc = await global.wordAssoDb.NeuralNetwork.findOne({networkId: bestNetworkObj.networkId}).lean();
+
+    if (!bestNetworkDoc) {
+      console.log(chalkAlert(MODULE_ID_PREFIX
+        + " | loadBestRuntimeNetwork"
+        + " | !!! BEST RUNTIME NETWORK NOT FOUND IN DB" 
+        + " | " + bestNetworkObj.networkId
+      ));
+
+      return;
+    }
+
+    console.log(chalkAlert(MODULE_ID_PREFIX
+      + " | loadBestRuntimeNetwork"
+      + " | !!! BEST RUNTIME NETWORK NOT FOUND IN DB" 
+      + " | " 
+    ));
+
+    bestNetworkObj = pick(bestNetworkDoc, bestNetworkPickArray);
+
+    bestNetworkHashMap.set(bestNetworkDoc.networkId, bestNetworkDoc);
+
+    return;
+
+  }
+  catch(err){
+    
     console.log(chalkAlert(MODULE_ID_PREFIX
       + " | loadBestRuntimeNetwork"
       + " | !!! COULD NOT LOAD BEST RUNTIME NETWORK FILE"
@@ -2606,30 +2634,6 @@ async function loadBestRuntimeNetwork(){
 
     return;
   }
-
-  const bestNetworkDoc = await global.wordAssoDb.NeuralNetwork.findOne({networkId: bestNetworkObj.networkId}).lean();
-
-  if (!bestNetworkDoc) {
-    console.log(chalkAlert(MODULE_ID_PREFIX
-      + " | loadBestRuntimeNetwork"
-      + " | !!! BEST RUNTIME NETWORK NOT FOUND IN DB" 
-      + " | " + bestNetworkObj.networkId
-    ));
-
-    return;
-  }
-
-  console.log(chalkAlert(MODULE_ID_PREFIX
-    + " | loadBestRuntimeNetwork"
-    + " | !!! BEST RUNTIME NETWORK NOT FOUND IN DB" 
-    + " | " 
-  ));
-
-  bestNetworkObj = pick(bestNetworkDoc, bestNetworkPickArray);
-
-  bestNetworkHashMap.set(bestNetworkDoc.networkId, bestNetworkDoc);
-
-  return;
 
 }
 
