@@ -2,6 +2,7 @@ const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 
 const bestNetworkIdArrayFile = "bestNetworkIdArray.json";
+let bestNetworkObj = {};
 
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
@@ -2423,6 +2424,7 @@ async function loadBestNeuralNetworks() {
   try {
     await loadBestNetworksFolder({folder: bestNetworkFolder});
     await loadBestNetworksDatabase();
+    await loadBestRuntimeNetwork();
     return;
   }
   catch(err){
@@ -2499,7 +2501,7 @@ function initActivateNetworks(){
 
     statsObj.status = "INIT ACTIVATE NNs";
 
-    console.log(chalkGreen(MODULE_ID_PREFIX + " | INIT NETWORKS"));
+    console.log(chalkGreen(MODULE_ID_PREFIX + " | INIT ACTIVATE NETWORKS"));
 
     statsObj.loadedNetworksFlag = false;
 
@@ -2559,19 +2561,22 @@ function initActivateNetworks(){
   });
 }
 
-async function initNetworks(){
+const bestNetworkPickArray = [
+  "networkId",
+  "successRate",
+  "matchRate",
+  "overallMatchRate",
+  "runtimeMatchRate",
+  "testCycles",
+  "testCycleHistory",
+  "rank"
+]
 
-  statsObj.status = "INIT NNs";
+async function loadBestRuntimeNetwork(){
 
-  console.log(chalkTwitter("TFE | INIT NETWORKS"));
+  statsObj.status = "INIT BEST RUNTIME NETWORK";
 
-  await loadBestNeuralNetworks();
-
-  const bestNetworkObj = await tcUtils.loadFile({
-    folder: bestNetworkFolder, 
-    file: bestRuntimeNetworkFileName, 
-    noErrorNotFound: true
-  });
+  console.log(chalkTwitter("TFE | INIT BEST RUNTIME NETWORK"));
 
   // const bestNetworkObj = {
   //   networkId: params.network.networkId,
@@ -2584,6 +2589,57 @@ async function initNetworks(){
   //   rank: params.network.rank,
   //   updatedAt: getTimeStamp()
   // };
+  
+  bestNetworkObj = await tcUtils.loadFile({
+    folder: bestNetworkFolder, 
+    file: bestRuntimeNetworkFileName, 
+    noErrorNotFound: true,
+    verbose: true
+  });
+
+  if (!bestNetworkObj){
+    console.log(chalkAlert(MODULE_ID_PREFIX
+      + " | loadBestRuntimeNetwork"
+      + " | !!! COULD NOT LOAD BEST RUNTIME NETWORK FILE"
+      + " | " + bestNetworkFolder + "/" + bestRuntimeNetworkFileName
+    ));
+
+    return;
+  }
+
+  const bestNetworkDoc = await global.wordAssoDb.NeuralNetwork.findOne({networkId: bestNetworkObj.networkId}).lean();
+
+  if (!bestNetworkDoc) {
+    console.log(chalkAlert(MODULE_ID_PREFIX
+      + " | loadBestRuntimeNetwork"
+      + " | !!! BEST RUNTIME NETWORK NOT FOUND IN DB" 
+      + " | " + bestNetworkObj.networkId
+    ));
+
+    return;
+  }
+
+  console.log(chalkAlert(MODULE_ID_PREFIX
+    + " | loadBestRuntimeNetwork"
+    + " | !!! BEST RUNTIME NETWORK NOT FOUND IN DB" 
+    + " | " 
+  ));
+
+  bestNetworkObj = pick(bestNetworkDoc, bestNetworkPickArray);
+
+  bestNetworkHashMap.set(bestNetworkDoc.networkId, bestNetworkDoc);
+
+  return;
+
+}
+
+async function initNetworks(){
+
+  statsObj.status = "INIT NNs";
+
+  console.log(chalkTwitter("TFE | INIT NETWORKS"));
+
+  await loadBestNeuralNetworks();
 
   if (configuration.networkNumberLimit && bestNetworkHashMap.size > configuration.networkNumberLimit){
 
