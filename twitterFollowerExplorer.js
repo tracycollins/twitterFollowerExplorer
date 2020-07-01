@@ -1,6 +1,9 @@
 const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 
+const DEFAULT_PRIMARY_HOST = "google";
+const DEFAULT_DATABASE_HOST = "macpro2";
+
 const bestNetworkIdArrayFile = "bestNetworkIdArray.json";
 let bestNetworkObj = {};
 
@@ -24,6 +27,23 @@ const DEFAULT_UPDATE_GLOBAL_HISTOGRAMS = false; // will be performed another mod
 const DEFAULT_NN_NUMBER_LIMIT = 10;
 const DEFAULT_NN_DB_LOAD_PER_INPUTS = 3;
 const DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS = 3;
+
+const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
+const DEFAULT_MIN_TEST_CYCLES = 10;
+const DEFAULT_MIN_WORD_LENGTH = 3;
+const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
+
+const DEFAULT_MIN_INTERVAL = 5;
+const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
+const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
+const FSM_TICK_INTERVAL = ONE_SECOND;
+const STATS_UPDATE_INTERVAL = 10*ONE_MINUTE;
+
+const DEFAULT_PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
+const DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
+const DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
+
+const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
 
 const TEST_TWEET_FETCH_COUNT = 11;
 const TWEET_FETCH_COUNT = 100;
@@ -107,8 +127,51 @@ else{
   hostname = hostname.replace(/word/g, "google");
 }
 
-const PRIMARY_HOST = process.env.PRIMARY_HOST || "mms1";
-const HOST = (hostname === PRIMARY_HOST) ? "default" : "local";
+let configuration = {};
+
+configuration.offlineMode = false;
+configuration.verbose = false;
+
+configuration.primaryHost = process.env.PRIMARY_HOST || DEFAULT_PRIMARY_HOST;
+configuration.databaseHost = process.env.DATABASE_HOST || DEFAULT_DATABASE_HOST;
+
+configuration.isPrimaryHost = (configuration.primaryHost === hostname);
+configuration.isDatabaseHost = (configuration.databaseHost === hostname);
+
+const HOST = (configuration.isDatabaseHost) ? "default" : "local";
+
+configuration.userCursorBatchSize = DEFAULT_USER_CURSOR_BATCH_SIZE;
+configuration.userCursorLimit = DEFAULT_USER_CURSOR_LIMIT;
+configuration.maxProcessUserQueue = DEFAULT_MAX_PROCESS_USER_QUEUE;
+configuration.userProcessMaxParallel = DEFAULT_PROCESS_USER_MAX_PARALLEL;
+configuration.userDbUpdateMaxParallel = DEFAULT_USER_DB_UPDATE_MAX_PARALLEL;
+configuration.enableFetchTweets = DEFAULT_ENABLE_FETCH_TWEETS;
+
+configuration.saveFileQueueInterval = DEFAULT_SAVE_FILE_QUEUE_INTERVAL;
+configuration.updateGlobalHistograms = DEFAULT_UPDATE_GLOBAL_HISTOGRAMS;
+configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
+configuration.activateNetworkQueueInterval = DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL;
+configuration.userDbUpdateQueueInterval = DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL;
+
+configuration.networkNumberLimit = DEFAULT_NN_NUMBER_LIMIT;
+configuration.networkDatabaseLoadPerInputsLimit = DEFAULT_NN_DB_LOAD_PER_INPUTS;
+configuration.randomUntestedPerInputsLimit = DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS;
+
+configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
+configuration.enableGeoCode = DEFAULT_ENABLE_GEOCODE;
+
+configuration.bestNetworkIncrementalUpdate = DEFAULT_BEST_INCREMENTAL_UPDATE;
+configuration.archiveNetworkOnInputsMiss = DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
+configuration.minWordLength = DEFAULT_MIN_WORD_LENGTH;
+configuration.minTestCycles = DEFAULT_MIN_TEST_CYCLES;
+configuration.testMode = TEST_MODE;
+configuration.testFetchTweetsMode = TEST_FETCH_TWEETS_MODE;
+configuration.globalTestMode = GLOBAL_TEST_MODE;
+configuration.quitOnComplete = QUIT_ON_COMPLETE;
+configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : TWEET_FETCH_COUNT;
+configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
+configuration.fsmTickInterval = FSM_TICK_INTERVAL;
+configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
@@ -165,22 +228,6 @@ else {
   DEFAULT_SSH_PRIVATEKEY = "/Users/tc/.ssh/google_compute_engine";
 }
 
-const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
-const DEFAULT_MIN_TEST_CYCLES = 10;
-const DEFAULT_MIN_WORD_LENGTH = 3;
-const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
-
-const DEFAULT_MIN_INTERVAL = 5;
-const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
-const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
-const FSM_TICK_INTERVAL = ONE_SECOND;
-const STATS_UPDATE_INTERVAL = 10*ONE_MINUTE;
-
-const DEFAULT_PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
-const DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
-const DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
-
-const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
 
 let waitFileSaveInterval;
 
@@ -220,54 +267,12 @@ const bestInputsSet = new Set();
 const skipLoadNetworkSet = new Set();
 const userTweetFetchSet = new Set();
 
-let configuration = {};
-configuration.offlineMode = false;
-configuration.verbose = false;
-
-configuration.userCursorBatchSize = DEFAULT_USER_CURSOR_BATCH_SIZE;
-configuration.userCursorLimit = DEFAULT_USER_CURSOR_LIMIT;
-configuration.maxProcessUserQueue = DEFAULT_MAX_PROCESS_USER_QUEUE;
-// configuration.enableProcessUserParallel = DEFAULT_ENABLE_PROCESS_USER_PARALLEL;
-configuration.userProcessMaxParallel = DEFAULT_PROCESS_USER_MAX_PARALLEL;
-configuration.userDbUpdateMaxParallel = DEFAULT_USER_DB_UPDATE_MAX_PARALLEL;
-configuration.enableFetchTweets = DEFAULT_ENABLE_FETCH_TWEETS;
-
-configuration.saveFileQueueInterval = DEFAULT_SAVE_FILE_QUEUE_INTERVAL;
-configuration.updateGlobalHistograms = DEFAULT_UPDATE_GLOBAL_HISTOGRAMS;
-// configuration.updateMaxInputHashMap = DEFAULT_UPDATE_MAX_INPUT_HASHMAP;
-configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
-configuration.activateNetworkQueueInterval = DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL;
-configuration.userDbUpdateQueueInterval = DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL;
-
-configuration.networkNumberLimit = DEFAULT_NN_NUMBER_LIMIT;
-configuration.networkDatabaseLoadPerInputsLimit = DEFAULT_NN_DB_LOAD_PER_INPUTS;
-configuration.randomUntestedPerInputsLimit = DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS;
-
-configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
-configuration.enableGeoCode = DEFAULT_ENABLE_GEOCODE;
-
-configuration.bestNetworkIncrementalUpdate = DEFAULT_BEST_INCREMENTAL_UPDATE;
-configuration.archiveNetworkOnInputsMiss = DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
-configuration.minWordLength = DEFAULT_MIN_WORD_LENGTH;
-configuration.minTestCycles = DEFAULT_MIN_TEST_CYCLES;
-configuration.testMode = TEST_MODE;
-configuration.testFetchTweetsMode = TEST_FETCH_TWEETS_MODE;
-configuration.globalTestMode = GLOBAL_TEST_MODE;
-configuration.quitOnComplete = QUIT_ON_COMPLETE;
-configuration.tweetFetchCount = (TEST_MODE) ? TEST_TWEET_FETCH_COUNT : TWEET_FETCH_COUNT;
-configuration.totalFetchCount = (TEST_MODE) ? TEST_TOTAL_FETCH : Infinity;
-configuration.fsmTickInterval = FSM_TICK_INTERVAL;
-configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 
 //=========================================================================
 // HOST
 //=========================================================================
 
 const bestNetworkHashMap = new HashMap();
-// let maxInputHashMap = {};
-// let normalization = {};
-
-// const categorizedUserIdSet = new Set();
 
 const processUserQueue = [];
 let processUserQueueInterval;
@@ -832,15 +837,12 @@ function printNetworkObj(title, nObj, format) {
 
   console.log(chalkFormat(title
     + " | R " + networkObj.rank
-    // + " | ARCHVD: " + networkObj.archived
     + " | T " + networkObj.networkTechnology
     + " | OR " + networkObj.overallMatchRate.toFixed(2) + "%"
     + " | RR " + networkObj.runtimeMatchRate.toFixed(2) + "%"
     + " | MR " + networkObj.matchRate.toFixed(2) + "%"
     + " | SR " + networkObj.successRate.toFixed(2) + "%"
     + " | TC " + networkObj.testCycles
-    // + " | TCH: " + networkObj.testCycleHistory.length
-    // + " | INs: " + networkObj.numInputs
     + " | IN " + networkObj.inputsId
     + " | " + networkObj.networkId
   ));
@@ -2705,7 +2707,7 @@ function saveNetworkHashMap(params) {
 
     const nnIds = bestNetworkHashMap.keys();
 
-    const configFolder = (hostname == PRIMARY_HOST) ? configDefaultFolder : configHostFolder;
+    const configFolder = (configuration.isDatabaseHost) ? configDefaultFolder : configHostFolder;
 
     statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({folder: configFolder, file: bestNetworkIdArrayFile, obj: nnIds});
 
@@ -2983,7 +2985,7 @@ function initActivateNetworkQueueInterval(p) {
           
             bestNetworkHashMap.set(statsObj.currentBestNetworkId, currentBestNetwork);
 
-            if ((hostname == PRIMARY_HOST) 
+            if (configuration.isDatabaseHost
               && (statsObj.prevBestNetworkId != statsObj.currentBestNetworkId) 
               && configuration.bestNetworkIncrementalUpdate) 
             {
@@ -4079,7 +4081,7 @@ const fsmStates = {
 
         currentBestNetwork = bestNetworkHashMap.get(statsObj.currentBestNetworkId);
 
-        if ((hostname == PRIMARY_HOST) || configuration.testMode) {
+        if ((configuration.isDatabaseHost) || configuration.testMode) {
 
           const fileObj = {
             networkId: currentBestNetwork.networkId,
@@ -4106,9 +4108,6 @@ const fsmStates = {
             + " | " + folder + "/" + file
           ));
 
-          // saveCache.set(file, {folder: folder, file: file, obj: currentBestNetwork });
-          // saveCache.set(bestRuntimeNetworkFileName, {folder: folder, file: bestRuntimeNetworkFileName, obj: fileObj});
-
           statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({
             folder: folder, 
             file: file, 
@@ -4120,28 +4119,7 @@ const fsmStates = {
             file: bestRuntimeNetworkFileName, 
             obj: fileObj
           });
-          
         }
-
-        // if (configuration.updateMaxInputHashMap && ((hostname == PRIMARY_HOST) || configuration.testMode)) {
-          
-        //   const folder = (configuration.testMode) ? defaultTrainingSetFolder + "/test" : defaultTrainingSetFolder;
-
-        //   console.log(chalkBlueBold(MODULE_ID_PREFIX
-        //     + " | >>> SAVE MAX INPUT HASHMAP + NORMALIZATION" 
-        //     + " | " + folder + "/" + defaultMaxInputHashmapFile
-        //   ));
-
-        //   const maxInputHashMapObj = {};
-        //   maxInputHashMapObj.maxInputHashMap = {};
-        //   maxInputHashMapObj.normalization = {};
-
-        //   maxInputHashMapObj.maxInputHashMap = tcUtils.getMaxInputHashMap();          
-        //   maxInputHashMapObj.normalization = tcUtils.getNormalization();
-
-        //   await tcUtils.saveFileQueue({folder: folder, file: defaultMaxInputHashmapFile, obj: maxInputHashMap});
-        // }
-
 
         statsObj.loadedNetworksFlag = false;
 
@@ -4255,7 +4233,8 @@ function fsmStart(p) {
 
 console.log(MODULE_ID_PREFIX + " | =================================");
 console.log(MODULE_ID_PREFIX + " | HOST:          " + hostname);
-console.log(MODULE_ID_PREFIX + " | PRIMARY HOST:  " + PRIMARY_HOST);
+console.log(MODULE_ID_PREFIX + " | PRIMARY_HOST:  " + configuration.primaryHost);
+console.log(MODULE_ID_PREFIX + " | DATABASE_HOST: " + configuration.databaseHost);
 console.log(MODULE_ID_PREFIX + " | PROCESS TITLE: " + process.title);
 console.log(MODULE_ID_PREFIX + " | PROCESS ID:    " + process.pid);
 console.log(MODULE_ID_PREFIX + " | RUN ID:        " + statsObj.runId);
