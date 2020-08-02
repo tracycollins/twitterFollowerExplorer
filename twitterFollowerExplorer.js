@@ -886,6 +886,7 @@ function updateDbNetwork(params) {
       matchRate: networkObj.matchRate, 
       overallMatchRate: networkObj.overallMatchRate,
       runtimeMatchRate: networkObj.runtimeMatchRate,
+      previousRank: networkObj.previousRank
       rank: networkObj.rank
     };
 
@@ -912,6 +913,7 @@ function updateDbNetwork(params) {
         return reject(err);
       }
 
+      // if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated, chalkGreen); }
       if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated, chalkGreen); }
 
       resolve(nnDbUpdated);
@@ -2074,7 +2076,7 @@ async function loadNetworkFile(params){
           updateDbNetworkParams.networkObj = networkObj;
           updateDbNetworkParams.incrementTestCycles = false;
           updateDbNetworkParams.addToTestHistory = false;
-          updateDbNetworkParams.verbose = configuration.testMode;
+          updateDbNetworkParams.verbose = true;
 
           updateDbNetworkParams.networkObj.archived = true;
 
@@ -2120,7 +2122,7 @@ async function loadNetworkFile(params){
     updateDbNetworkParams.networkObj = networkObj;
     updateDbNetworkParams.incrementTestCycles = false;
     updateDbNetworkParams.addToTestHistory = false;
-    updateDbNetworkParams.verbose = configuration.verbose;
+    updateDbNetworkParams.verbose = true;
 
     if (skipLoadNetworkSet.has(networkObj.networkId) && !networkObj.archived) {
 
@@ -2795,7 +2797,7 @@ function updateNetworkStats(params) {
           incrementTestCycles: incrementTestCycles,
           testHistoryItem: testHistoryItem,
           addToTestHistory: addToTestHistory,
-          verbose: configuration.testMode
+          verbose: true
         };
 
         updateDbNetwork(updateDbNetworkParams)
