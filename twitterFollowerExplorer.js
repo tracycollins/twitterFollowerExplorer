@@ -2077,7 +2077,6 @@ async function loadNetworkFile(params){
           updateDbNetworkParams.incrementTestCycles = false;
           updateDbNetworkParams.addToTestHistory = false;
           updateDbNetworkParams.verbose = true;
-
           updateDbNetworkParams.networkObj.archived = true;
 
           await updateDbNetwork(updateDbNetworkParams);
