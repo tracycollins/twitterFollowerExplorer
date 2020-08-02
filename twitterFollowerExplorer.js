@@ -2072,7 +2072,6 @@ async function loadNetworkFile(params){
           await renameFileAsync(path.join(folder, entry.name), path.join(globalBestNetworkArchiveFolder, entry.name));
 
           const updateDbNetworkParams = {};
-
           updateDbNetworkParams.networkObj = networkObj;
           updateDbNetworkParams.incrementTestCycles = false;
           updateDbNetworkParams.addToTestHistory = false;
