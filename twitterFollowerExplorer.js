@@ -886,7 +886,7 @@ function updateDbNetwork(params) {
       matchRate: networkObj.matchRate, 
       overallMatchRate: networkObj.overallMatchRate,
       runtimeMatchRate: networkObj.runtimeMatchRate,
-      previousRank: networkObj.previousRank
+      previousRank: networkObj.previousRank,
       rank: networkObj.rank
     };
 
