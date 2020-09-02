@@ -2461,7 +2461,7 @@ async function loadBestNeuralNetworks(params) {
   try {
     await loadBestNetworksFolder({folder: bestNetworkFolder});
     await loadBestNetworksDatabase();
-    // await loadBestRuntimeNetwork();
+    await loadBestRuntimeNetwork();
     return;
   }
   catch(err){
