@@ -2030,7 +2030,7 @@ async function loadNetworkFile(params){
     return;
   }
 
-  if (networkTechnology !== undefined && nnObj.networkTechnology !== networkTechnology) {
+  if (networkTechnology && networkTechnology !== undefined && nnObj.networkTechnology !== networkTechnology) {
     console.log(chalkAlert(MODULE_ID_PREFIX 
       + " | ... SKIP | NN TECH: " + nnObj.networkTechnology + " | TECH FILTER: " + networkTechnology
       + " | " + folder + "/" + entry.name
@@ -2191,6 +2191,7 @@ async function loadBestNetworksFolder(params) {
   statsObj.status = "LOAD BEST NNs FOLDER";
 
   const folder = params.folder;
+  const networkTechnology = params.networkTechnology || false;
 
   console.log(chalkInfo("TFE | LOADING FOLDER BEST NETWORKS | " + folder + "\n" + jsonPrint(params)));
 
@@ -2219,7 +2220,7 @@ async function loadBestNetworksFolder(params) {
       console.log(chalkWarn("TFE | ... SKIP LOAD FOLDER BEST NETWORKS | " + folder + "/" + entry.name));
     }
     else{
-      loadNetworkFilePromiseArray.push(loadNetworkFile({folder: folder, entry: entry, networkTechnology: "carrot"}));
+      loadNetworkFilePromiseArray.push(loadNetworkFile({folder: folder, entry: entry, networkTechnology: networkTechnology}));
     }
   }
 
