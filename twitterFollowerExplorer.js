@@ -2020,11 +2020,20 @@ async function loadNetworkFile(params){
 
   const folder = params.folder;
   const entry = params.entry;
+  const networkTechnology = params.networkTechnology;
 
   let nnObj = await tcUtils.loadFileRetry({folder: folder, file: entry.name});
 
   if (!nnObj || nnObj=== undefined) {
-    console.log(chalkError("NO BEST NN FOUND? | " + folder + "/" + entry.name));
+    console.log(chalkError(MODULE_ID_PREFIX + " | ??? NN NOT FOUND? | " + folder + "/" + entry.name));
+    return;
+  }
+
+  if (networkTechnology !== undefined && nnObj.networkTechnology !== networkTechnology) {
+    console.log(chalkAlert(MODULE_ID_PREFIX 
+      + " | ... SKIP | NN TECH: " + nnObj.networkTechnology + " | TECH FILTER: " + networkTechnology
+      + " | " + folder + "/" + entry.name
+    ));
     return;
   }
 
@@ -2033,8 +2042,9 @@ async function loadNetworkFile(params){
     nnObj.previousRank = nnObj.testCycleHistory[nnObj.testCycleHistory.length-1].rank;
 
     console.log(chalkLog(MODULE_ID_PREFIX
-      + " | PREV RANK " + nnObj.previousRank
-      + " | RANK " + nnObj.rank
+      + " | TECH: " + nnObj.networkTechnology
+      + " | PREV RANK: " + nnObj.previousRank
+      + " | RANK: " + nnObj.rank
       + " | " + nnObj.networkId 
     ));
 
@@ -2181,7 +2191,7 @@ async function loadBestNetworksFolder(params) {
 
   const folder = params.folder;
 
-  console.log(chalkInfo("TFE | LOADING FOLDER BEST NETWORKS | " + folder));
+  console.log(chalkInfo("TFE | LOADING FOLDER BEST NETWORKS | " + folder + "\n" + jsonPrint(params)));
 
   const results = await filesListFolder({folder: folder});
 
@@ -2208,7 +2218,7 @@ async function loadBestNetworksFolder(params) {
       console.log(chalkWarn("TFE | ... SKIP LOAD FOLDER BEST NETWORKS | " + folder + "/" + entry.name));
     }
     else{
-      loadNetworkFilePromiseArray.push(loadNetworkFile({folder: folder, entry: entry}));
+      loadNetworkFilePromiseArray.push(loadNetworkFile({folder: folder, entry: entry, networkTechnology: "carrot"}));
     }
   }
 
@@ -2415,7 +2425,7 @@ async function loadBestNetworksDatabase(p) {
   return bestNetwork;
 }
 
-async function loadBestNeuralNetworks() {
+async function loadBestNeuralNetworks(params) {
 
   statsObj.status = "LOAD BEST NN";
 
@@ -2424,9 +2434,9 @@ async function loadBestNeuralNetworks() {
   ));
 
   try {
-    await loadBestNetworksFolder({folder: bestNetworkFolder});
-    await loadBestNetworksDatabase();
-    await loadBestRuntimeNetwork();
+    await loadBestNetworksFolder({folder: bestNetworkFolder, networkTechnology: "carrot"});
+    await loadBestNetworksDatabase({networkTechnology: "carrot"});
+    // await loadBestRuntimeNetwork();
     return;
   }
   catch(err){
@@ -2644,13 +2654,13 @@ async function loadBestRuntimeNetwork(){
 
 }
 
-async function initNetworks(){
+async function initNetworks(params){
 
   statsObj.status = "INIT NNs";
 
   console.log(chalkTwitter("TFE | INIT NETWORKS"));
 
-  await loadBestNeuralNetworks();
+  await loadBestNeuralNetworks(params);
 
   if (configuration.networkNumberLimit && bestNetworkHashMap.size > configuration.networkNumberLimit){
 
@@ -2684,7 +2694,7 @@ async function initNetworks(){
     }
   }
 
-  await initActivateNetworks();
+  await initActivateNetworks(params);
 
   console.log(chalkAlert("TFE | +++ NETWORKS INITIALIZED | " + bestNetworkHashMap.size + " NETWORKS"));
 
