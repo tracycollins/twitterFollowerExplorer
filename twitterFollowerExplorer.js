@@ -44,12 +44,13 @@ const DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 
 const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
+const TEST_GLOBAL_MIN_SUCCESS_RATE_MULTIPLIER = 0.75;
 
 const TEST_TWEET_FETCH_COUNT = 11;
 const TWEET_FETCH_COUNT = 100;
 
-const TEST_MODE_NUM_NN = 10;
-const TEST_TOTAL_FETCH = 100;
+const TEST_MODE_NUM_NN = 20;
+const TEST_TOTAL_FETCH = 1000;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -2237,8 +2238,11 @@ async function loadNetworksOfInputs(params){
 
   let nnArray = [];
 
-  console.log(chalkLog("TFE | ... LOADING " + params.networkDatabaseLoadPerInputsLimit + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
-  console.log(chalkLog("TFE | ... LOADING " + params.randomUntestedPerInputsLimit + " UNTESTED NNs FROM DB ..."));
+  console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING | TECH FILTER: " + params.networkTechnology));
+  console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING " + params.networkDatabaseLoadPerInputsLimit + " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."));
+  console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING " + params.randomUntestedPerInputsLimit + " UNTESTED NNs FROM DB ..."));
+
+  const minSuccessRate = configuration.testMode ? TEST_GLOBAL_MIN_SUCCESS_RATE_MULTIPLIER * params.globalMinSuccessRate : params.globalMinSuccessRate
 
   for (const inputsId of params.inputsIdArray) {
 
@@ -2248,23 +2252,40 @@ async function loadNetworksOfInputs(params){
 
     query.inputsId = inputsId;
 
+    if (params.networkTechnology) {
+      query.networkTechnology = params.networkTechnology;
+    }
+
     if (params.minTestCycles) {
+
       query = {};
+
       query.$and = [
         { inputsId: inputsId },
-        { overallMatchRate: { "$gte": params.globalMinSuccessRate } }
+        { overallMatchRate: { "$gte": minSuccessRate } }
       ];
+
+      if (params.networkTechnology) {
+        query.$and.push({networkTechnology: params.networkTechnology});
+      }
     }
 
     const randomUntestedQuery = {};
 
     randomUntestedQuery.$and = [
       { inputsId: inputsId },
-      { successRate: { "$gte": params.globalMinSuccessRate } },
+      { successRate: { "$gte": minSuccessRate } },
       { testCycles: { "$lte": params.minTestCycles } }
     ];
 
-    if (configuration.verbose) { console.log(chalkLog("query\n" + jsonPrint(query))); }
+    if (params.networkTechnology) {
+      randomUntestedQuery.$and.push({networkTechnology: params.networkTechnology});
+    }
+
+    if (configuration.verbose) { 
+      console.log(chalkBlueBold("query\n" + jsonPrint(query))); 
+      console.log(chalkBlueBold("randomUntestedQuery\n" + jsonPrint(randomUntestedQuery))); 
+    }
 
     let nnArrayTopOverallMatchRate = [];
     let nnArrayRandomUntested = [];
@@ -2298,12 +2319,14 @@ async function loadBestNetworksDatabase(p) {
 
   const params = p || {};
 
+  const networkTechnology = (params.networkTechnology !== undefined) ? params.networkTechnology : false;
   const minTestCycles = (params.minTestCycles !== undefined) ? params.minTestCycles : configuration.minTestCycles;
   const globalMinSuccessRate = (params.globalMinSuccessRate !== undefined) ? params.globalMinSuccessRate : configuration.globalMinSuccessRate;
   const randomUntestedPerInputsLimit = (params.randomUntestedPerInputsLimit !== undefined) ? params.randomUntestedPerInputsLimit : configuration.randomUntestedPerInputsLimit;
   const networkDatabaseLoadPerInputsLimit = (params.networkDatabaseLoadPerInputsLimit !== undefined) ? params.networkDatabaseLoadPerInputsLimit : configuration.networkDatabaseLoadPerInputsLimit;
 
   console.log(chalkBlue("TFE | ... LOADING BEST NETWORKS DATABASE"
+    + " | FILTER TECH: " + networkTechnology
     + " | GLOBAL MIN SUCCESS RATE: " + globalMinSuccessRate.toFixed(2) + "%"
     + " | MIN TEST CYCs: " + minTestCycles
     + " | PER INPUTS LIMIT: " + networkDatabaseLoadPerInputsLimit
@@ -2322,6 +2345,7 @@ async function loadBestNetworksDatabase(p) {
   let nnArray = [];
 
   nnArray = await loadNetworksOfInputs({
+    networkTechnology: networkTechnology, 
     inputsIdArray: inputsIdArray, 
     globalMinSuccessRate: globalMinSuccessRate,
     networkDatabaseLoadPerInputsLimit: networkDatabaseLoadPerInputsLimit, 
@@ -2434,8 +2458,8 @@ async function loadBestNeuralNetworks(params) {
   ));
 
   try {
-    await loadBestNetworksFolder({folder: bestNetworkFolder, networkTechnology: "carrot"});
-    await loadBestNetworksDatabase({networkTechnology: "carrot"});
+    await loadBestNetworksFolder({folder: bestNetworkFolder});
+    await loadBestNetworksDatabase();
     // await loadBestRuntimeNetwork();
     return;
   }
