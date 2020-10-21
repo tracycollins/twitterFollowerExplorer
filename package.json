@@ -4,7 +4,7 @@
   "description": "twitter user follower explorer",
   "main": "twitterFollowerExplorer.js",
   "dependencies": {
-    "@google-cloud/language": "^4.1.1",
+    "@google-cloud/language": "^4.2.0",
     "@google/maps": "^1.1.3",
     "@slack/client": "^5.0.2",
     "@threeceelabs/histogram-parser": "^1.0.20",
@@ -12,7 +12,7 @@
     "@threeceelabs/mongoose-twitter": "^1.0.334",
     "@threeceelabs/neural-network-tools": "^1.0.226",
     "@threeceelabs/threecee-utilities": "^1.0.389",
-    "@threeceelabs/tweet-server-controller": "^1.0.576",
+    "@threeceelabs/tweet-server-controller": "^1.0.577",
     "@threeceelabs/twitter-image-parser": "^1.0.96",
     "@threeceelabs/twitter-text-parser": "^1.0.101",
     "@threeceelabs/user-server-controller": "^1.0.527",
