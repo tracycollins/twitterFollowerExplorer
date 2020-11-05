@@ -2701,7 +2701,10 @@ async function initNetworks(params){
       const nnId = nnIds.shift();
 
       const nnObj = bestNetworkHashMap.get(nnId)
-
+      if (nnObj.testCycles === undefined){
+        console.log(nnObj)
+      }
+      nnObj.testCycles = nnObj.testCycles || 0;
       if (nnId !== bestNetworkObj.networkId && nnObj.testCycles > 0){
         bestNetworkHashMap.delete(nnId);
         console.log(chalkLog("TFE | REMOVED NN" 
