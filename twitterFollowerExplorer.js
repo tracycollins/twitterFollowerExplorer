@@ -2696,12 +2696,19 @@ async function initNetworks(params){
 
     const nnIds = _.shuffle(bestNetworkHashMap.keys());
 
-    while (bestNetworkHashMap.size > configuration.networkNumberLimit){
+    let whileLoopCount = 0;
+
+    while (bestNetworkHashMap.size > configuration.networkNumberLimit && whileLoopCount < 2){
 
       try{
         const nnId = nnIds.shift();
 
         const nnObj = bestNetworkHashMap.get(nnId)
+
+        if (nnObj === undefined){
+          console.log("!!! UNDEFINED NN OBJ | NNID: ", nnId)
+          continue;
+        }
 
         if (nnObj.testCycles === undefined){
           console.log(nnObj)
@@ -2712,6 +2719,7 @@ async function initNetworks(params){
         if (nnId !== bestNetworkObj.networkId && nnObj.testCycles > 0){
           bestNetworkHashMap.delete(nnId);
           console.log(chalkLog("TFE | REMOVED NN" 
+            + " [ NNIDs: " + nnIds.length + "]"
             + " | BEST NNID: " + bestNetworkObj.networkId
             + " | NNID: " + nnObj.networkId
             + " | TCs: " + nnObj.testCycles
@@ -2721,6 +2729,7 @@ async function initNetworks(params){
         }
         else{
           console.log(chalkAlert("TFE | ... SKIP NN" 
+            + " [ NNIDs: " + nnIds.length + "]"
             + " | BEST NNID: " + bestNetworkObj.networkId
             + " | NNID: " + nnId
             + " | TCs: " + nnObj.testCycles
@@ -2730,7 +2739,7 @@ async function initNetworks(params){
         }
       }
       catch(e){
-        console.log(e)
+        console.log("WHILE ERROR: ", e)
       }
 
     }
