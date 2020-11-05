@@ -2696,7 +2696,8 @@ async function initNetworks(params){
 
     let nnIds = _.shuffle(bestNetworkHashMap.keys());
 
-    let testCycleLimit = 0;
+    let minNetworkSuccessRate = 0;
+    let purgeMinSuccessRate = -Infinity;
 
     while (bestNetworkHashMap.size > configuration.networkNumberLimit && nnIds.length > 0){
 
@@ -2715,13 +2716,17 @@ async function initNetworks(params){
 
       nnObj.testCycles = nnObj.testCycles || 0;
 
-      if (nnId !== bestNetworkObj.networkId && nnObj.testCycles > testCycleLimit){
+      minNetworkSuccessRate = Math.min(nnObj.successRate, minNetworkSuccessRate)
+
+      if (nnId !== bestNetworkObj.networkId && nnObj.successRate > purgeMinSuccessRate){
         bestNetworkHashMap.delete(nnId);
         console.log(chalkLog("TFE | REMOVED NN" 
           + " [ NNIDs: " + nnIds.length + "]"
           + " | BEST NNID: " + bestNetworkObj.networkId
+          + " | PURGE MIN: " + purgeMinSuccessRate.toFixed(3)
           + " | NNID: " + nnObj.networkId
           + " | TCs: " + nnObj.testCycles
+          + " | SR: " + nnObj.successRate.toFixed(3)
           + " | LIMIT: " + configuration.networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
@@ -2732,6 +2737,7 @@ async function initNetworks(params){
           + " | BEST NNID: " + bestNetworkObj.networkId
           + " | NNID: " + nnId
           + " | TCs: " + nnObj.testCycles
+          + " | SR: " + nnObj.successRate.toFixed(3)
           + " | LIMIT: " + configuration.networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
@@ -2741,21 +2747,21 @@ async function initNetworks(params){
 
         console.log(chalkAlert("TFE | END NN IDS BUT GT NN NUM LIMIT" 
           + " [ NNIDs: " + nnIds.length + "]"
-          + " | TEST CYC LIMIT: " + testCycleLimit
+          + " | PURGE MIN: " + purgeMinSuccessRate.toFixed(3)
           + " | NN NUM LIMIT: " + configuration.networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
 
-        testCycleLimit += 1
+        purgeMinSuccessRate = minNetworkSuccessRate;
+
         nnIds = _.shuffle(bestNetworkHashMap.keys());
 
         console.log(chalkAlert("TFE | *** WHILE LOOP RESET" 
           + " [ NNIDs: " + nnIds.length + "]"
-          + " | TEST CYC LIMIT: " + testCycleLimit
+          + " | PURGE MIN: " + purgeMinSuccessRate.toFixed(3)
           + " | NN NUM LIMIT: " + configuration.networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
-
 
       }
 
