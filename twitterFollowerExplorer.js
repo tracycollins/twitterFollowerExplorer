@@ -2753,7 +2753,7 @@ async function initNetworks(params){
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
 
-        purgeMinSuccessRate = minNetworkSuccessRate;
+        purgeMinSuccessRate = minNetworkSuccessRate + 1;
         minNetworkSuccessRate = Infinity;
 
         nnIds = _.shuffle(bestNetworkHashMap.keys());
