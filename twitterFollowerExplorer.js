@@ -2730,10 +2730,10 @@ async function initNetworks(params){
 
     }
 
-    return
+    console.log(chalkAlert("END WHILE"))
   }
 
-  await initActivateNetworks(params);
+  await initActivateNetworks();
 
   console.log(chalkAlert("TFE | +++ NETWORKS INITIALIZED | " + bestNetworkHashMap.size + " NETWORKS"));
 
