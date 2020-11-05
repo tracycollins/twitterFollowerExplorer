@@ -2698,34 +2698,39 @@ async function initNetworks(params){
 
     while (bestNetworkHashMap.size > configuration.networkNumberLimit){
 
-      const nnId = nnIds.shift();
+      try{
+        const nnId = nnIds.shift();
 
-      const nnObj = bestNetworkHashMap.get(nnId)
+        const nnObj = bestNetworkHashMap.get(nnId)
 
-      if (nnObj.testCycles === undefined){
-        console.log(nnObj)
+        if (nnObj.testCycles === undefined){
+          console.log(nnObj)
+        }
+
+        nnObj.testCycles = nnObj.testCycles || 0;
+
+        if (nnId !== bestNetworkObj.networkId && nnObj.testCycles > 0){
+          bestNetworkHashMap.delete(nnId);
+          console.log(chalkLog("TFE | REMOVED NN" 
+            + " | BEST NNID: " + bestNetworkObj.networkId
+            + " | NNID: " + nnObj.networkId
+            + " | TCs: " + nnObj.testCycles
+            + " | LIMIT: " + configuration.networkNumberLimit
+            + " | " + bestNetworkHashMap.size + " NETWORKS"
+          ));
+        }
+        else{
+          console.log(chalkAlert("TFE | ... SKIP NN" 
+            + " | BEST NNID: " + bestNetworkObj.networkId
+            + " | NNID: " + nnId
+            + " | TCs: " + nnObj.testCycles
+            + " | LIMIT: " + configuration.networkNumberLimit
+            + " | " + bestNetworkHashMap.size + " NETWORKS"
+          ));
+        }
       }
-
-      nnObj.testCycles = nnObj.testCycles || 0;
-
-      if (nnId !== bestNetworkObj.networkId && nnObj.testCycles > 0){
-        bestNetworkHashMap.delete(nnId);
-        console.log(chalkLog("TFE | REMOVED NN" 
-          + " | BEST NNID: " + bestNetworkObj.networkId
-          + " | NNID: " + nnObj.networkId
-          + " | TCs: " + nnObj.testCycles
-          + " | LIMIT: " + configuration.networkNumberLimit
-          + " | " + bestNetworkHashMap.size + " NETWORKS"
-        ));
-      }
-      else{
-        console.log(chalkAlert("TFE | ... SKIP NN" 
-          + " | BEST NNID: " + bestNetworkObj.networkId
-          + " | NNID: " + nnId
-          + " | TCs: " + nnObj.testCycles
-          + " | LIMIT: " + configuration.networkNumberLimit
-          + " | " + bestNetworkHashMap.size + " NETWORKS"
-        ));
+      catch(e){
+        console.log(e)
       }
 
     }
