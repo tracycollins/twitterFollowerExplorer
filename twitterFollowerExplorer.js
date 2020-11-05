@@ -2696,11 +2696,10 @@ async function initNetworks(params){
 
     const nnIds = _.shuffle(bestNetworkHashMap.keys());
 
-    let whileLoopCount = 0;
-
-    while (bestNetworkHashMap.size > configuration.networkNumberLimit && whileLoopCount < 2){
+    while (bestNetworkHashMap.size > configuration.networkNumberLimit && nnIds.length > 0){
 
       try{
+
         const nnId = nnIds.shift();
 
         const nnObj = bestNetworkHashMap.get(nnId)
