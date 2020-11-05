@@ -2696,6 +2696,7 @@ async function initNetworks(params){
 
     let nnIds = _.shuffle(bestNetworkHashMap.keys());
 
+    let testCycleLimit = 0;
     let minNetworkSuccessRate = Infinity;
     let purgeMinSuccessRate = -Infinity;
 
@@ -2718,11 +2719,14 @@ async function initNetworks(params){
 
       minNetworkSuccessRate = Math.min(nnObj.successRate, minNetworkSuccessRate)
 
-      if (nnId !== bestNetworkObj.networkId && nnObj.successRate <= purgeMinSuccessRate){
+      if (nnId !== bestNetworkObj.networkId 
+        && (nnObj.successRate <= purgeMinSuccessRate || nnObj.testCycles > testCycleLimit)
+      ){
 
         bestNetworkHashMap.delete(nnId);
         console.log(chalkInfo("TFE | REMOVED NN" 
           + " [ NNIDs: " + nnIds.length + "]"
+          + " | TEST CYC LIMIT: " + testCycleLimit
           + " | BEST NNID: " + bestNetworkObj.networkId
           + " | PURGE MIN: " + purgeMinSuccessRate.toFixed(3)
           + " | NNID: " + nnObj.networkId
@@ -2735,6 +2739,7 @@ async function initNetworks(params){
       else{
         console.log(chalkLog("TFE | ... SKIP NN" 
           + " [ NNIDs: " + nnIds.length + "]"
+          + " | TEST CYC LIMIT: " + testCycleLimit
           + " | BEST NNID: " + bestNetworkObj.networkId
           + " | NNID: " + nnId
           + " | TCs: " + nnObj.testCycles
@@ -2748,11 +2753,13 @@ async function initNetworks(params){
 
         console.log(chalkAlert("TFE | END NN IDS BUT GT NN NUM LIMIT" 
           + " [ NNIDs: " + nnIds.length + "]"
+          + " | TEST CYC LIMIT: " + testCycleLimit
           + " | PURGE MIN: " + purgeMinSuccessRate.toFixed(3)
           + " | NN NUM LIMIT: " + configuration.networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
 
+        testCycleLimit += 1;
         purgeMinSuccessRate = minNetworkSuccessRate + 1;
         minNetworkSuccessRate = Infinity;
 
@@ -2760,6 +2767,7 @@ async function initNetworks(params){
 
         console.log(chalkAlert("TFE | *** WHILE LOOP RESET" 
           + " [ NNIDs: " + nnIds.length + "]"
+          + " | TEST CYC LIMIT: " + testCycleLimit
           + " | PURGE MIN: " + purgeMinSuccessRate.toFixed(3)
           + " | NN NUM LIMIT: " + configuration.networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
