@@ -2696,7 +2696,7 @@ async function initNetworks(params){
 
     let nnIds = _.shuffle(bestNetworkHashMap.keys());
 
-    let minNetworkSuccessRate = 0;
+    let minNetworkSuccessRate = -Infinity;
     let purgeMinSuccessRate = -Infinity;
 
     while (bestNetworkHashMap.size > configuration.networkNumberLimit && nnIds.length > 0){
@@ -2719,8 +2719,9 @@ async function initNetworks(params){
       minNetworkSuccessRate = Math.min(nnObj.successRate, minNetworkSuccessRate)
 
       if (nnId !== bestNetworkObj.networkId && nnObj.successRate <= purgeMinSuccessRate){
+        
         bestNetworkHashMap.delete(nnId);
-        console.log(chalkLog("TFE | REMOVED NN" 
+        console.log(chalkInfo("TFE | REMOVED NN" 
           + " [ NNIDs: " + nnIds.length + "]"
           + " | BEST NNID: " + bestNetworkObj.networkId
           + " | PURGE MIN: " + purgeMinSuccessRate.toFixed(3)
@@ -2732,7 +2733,7 @@ async function initNetworks(params){
         ));
       }
       else{
-        console.log(chalkAlert("TFE | ... SKIP NN" 
+        console.log(chalkLog("TFE | ... SKIP NN" 
           + " [ NNIDs: " + nnIds.length + "]"
           + " | BEST NNID: " + bestNetworkObj.networkId
           + " | NNID: " + nnId
@@ -2753,6 +2754,7 @@ async function initNetworks(params){
         ));
 
         purgeMinSuccessRate = minNetworkSuccessRate;
+        minNetworkSuccessRate = -Infinity;
 
         nnIds = _.shuffle(bestNetworkHashMap.keys());
 
