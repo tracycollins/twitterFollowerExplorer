@@ -2700,69 +2700,63 @@ async function initNetworks(params){
 
     while (bestNetworkHashMap.size > configuration.networkNumberLimit && nnIds.length > 0){
 
-      try{
+      const nnId = nnIds.shift();
 
-        const nnId = nnIds.shift();
+      const nnObj = bestNetworkHashMap.get(nnId)
 
-        const nnObj = bestNetworkHashMap.get(nnId)
-
-        if (nnObj === undefined){
-          console.log("!!! UNDEFINED NN OBJ | NNID: ", nnId)
-          continue;
-        }
-
-        if (nnObj.testCycles === undefined){
-          console.log(nnObj)
-        }
-
-        nnObj.testCycles = nnObj.testCycles || 0;
-
-        if (nnId !== bestNetworkObj.networkId && nnObj.testCycles > testCycleLimit){
-          bestNetworkHashMap.delete(nnId);
-          console.log(chalkLog("TFE | REMOVED NN" 
-            + " [ NNIDs: " + nnIds.length + "]"
-            + " | BEST NNID: " + bestNetworkObj.networkId
-            + " | NNID: " + nnObj.networkId
-            + " | TCs: " + nnObj.testCycles
-            + " | LIMIT: " + configuration.networkNumberLimit
-            + " | " + bestNetworkHashMap.size + " NETWORKS"
-          ));
-        }
-        else{
-          console.log(chalkAlert("TFE | ... SKIP NN" 
-            + " [ NNIDs: " + nnIds.length + "]"
-            + " | BEST NNID: " + bestNetworkObj.networkId
-            + " | NNID: " + nnId
-            + " | TCs: " + nnObj.testCycles
-            + " | LIMIT: " + configuration.networkNumberLimit
-            + " | " + bestNetworkHashMap.size + " NETWORKS"
-          ));
-        }
-
-        if (nnIds.length === 0 && bestNetworkHashMap.size > configuration.networkNumberLimit){
-
-          console.log(chalkAlert("TFE | END NN IDS BUT GT NN NUM LIMIT" 
-            + " [ NNIDs: " + nnIds.length + "]"
-            + " | TEST CYC LIMIT: " + testCycleLimit
-            + " | NN NUM LIMIT: " + configuration.networkNumberLimit
-            + " | " + bestNetworkHashMap.size + " NETWORKS"
-          ));
-
-          testCycleLimit += 1
-          nnIds = _.shuffle(bestNetworkHashMap.keys());
-
-          console.log(chalkAlert("TFE | *** WHILE LOOP RESET" 
-            + " [ NNIDs: " + nnIds.length + "]"
-            + " | TEST CYC LIMIT: " + testCycleLimit
-            + " | NN NUM LIMIT: " + configuration.networkNumberLimit
-            + " | " + bestNetworkHashMap.size + " NETWORKS"
-          ));
-
-
-        }
+      if (nnObj === undefined){
+        console.log("!!! UNDEFINED NN OBJ | NNID: ", nnId)
+        continue;
       }
-      catch(e){
-        console.log("WHILE ERROR: ", e)
+
+      if (nnObj.testCycles === undefined){
+        console.log(nnObj)
+      }
+
+      nnObj.testCycles = nnObj.testCycles || 0;
+
+      if (nnId !== bestNetworkObj.networkId && nnObj.testCycles > testCycleLimit){
+        bestNetworkHashMap.delete(nnId);
+        console.log(chalkLog("TFE | REMOVED NN" 
+          + " [ NNIDs: " + nnIds.length + "]"
+          + " | BEST NNID: " + bestNetworkObj.networkId
+          + " | NNID: " + nnObj.networkId
+          + " | TCs: " + nnObj.testCycles
+          + " | LIMIT: " + configuration.networkNumberLimit
+          + " | " + bestNetworkHashMap.size + " NETWORKS"
+        ));
+      }
+      else{
+        console.log(chalkAlert("TFE | ... SKIP NN" 
+          + " [ NNIDs: " + nnIds.length + "]"
+          + " | BEST NNID: " + bestNetworkObj.networkId
+          + " | NNID: " + nnId
+          + " | TCs: " + nnObj.testCycles
+          + " | LIMIT: " + configuration.networkNumberLimit
+          + " | " + bestNetworkHashMap.size + " NETWORKS"
+        ));
+      }
+
+      if (nnIds.length === 0 && bestNetworkHashMap.size > configuration.networkNumberLimit){
+
+        console.log(chalkAlert("TFE | END NN IDS BUT GT NN NUM LIMIT" 
+          + " [ NNIDs: " + nnIds.length + "]"
+          + " | TEST CYC LIMIT: " + testCycleLimit
+          + " | NN NUM LIMIT: " + configuration.networkNumberLimit
+          + " | " + bestNetworkHashMap.size + " NETWORKS"
+        ));
+
+        testCycleLimit += 1
+        nnIds = _.shuffle(bestNetworkHashMap.keys());
+
+        console.log(chalkAlert("TFE | *** WHILE LOOP RESET" 
+          + " [ NNIDs: " + nnIds.length + "]"
+          + " | TEST CYC LIMIT: " + testCycleLimit
+          + " | NN NUM LIMIT: " + configuration.networkNumberLimit
+          + " | " + bestNetworkHashMap.size + " NETWORKS"
+        ));
+
+
       }
 
     }
