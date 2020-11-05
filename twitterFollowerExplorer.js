@@ -2700,17 +2700,23 @@ async function initNetworks(params){
 
       const nnId = nnIds.shift();
 
-      if (nnId !== bestNetworkObj.networkId){
+      const nnObj = bestNetworkHashMap.get(nnId)
+
+      if (nnId !== bestNetworkObj.networkId && nnObj.testCycles > 0){
         bestNetworkHashMap.delete(nnId);
         console.log(chalkLog("TFE | REMOVED NN" 
-          + " | NNID: " + nnId
+          + " | BEST NNID: " + bestNetworkObj.networkId
+          + " | NNID: " + nnObj.networkId
+          + " | TCs: " + nnObj.testCycles
           + " | LIMIT: " + configuration.networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
       }
       else{
-        console.log(chalkAlert("TFE | ... SKIP NN (BEST)" 
+        console.log(chalkAlert("TFE | ... SKIP NN" 
+          + " | BEST NNID: " + bestNetworkObj.networkId
           + " | NNID: " + nnId
+          + " | TCs: " + nnObj.testCycles
           + " | LIMIT: " + configuration.networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
