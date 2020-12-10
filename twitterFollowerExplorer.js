@@ -1,3 +1,13 @@
+const dotenv = require("dotenv");
+const envConfig = dotenv.config({path: '/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/env'})
+
+if (envConfig.error) {
+  throw envConfig.error
+}
+ 
+console.log("TFE | ENV CONFIG")
+console.log(envConfig.parsed)
+
 const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 
@@ -83,9 +93,6 @@ const debug = require("debug")("TFE");
 const util = require("util");
 const deepcopy = require("deep-copy");
 const async = require("async");
-
-const { WebClient } = require("@slack/client");
-const { RTMClient } = require("@slack/client");
 
 const EventEmitter2 = require("eventemitter2").EventEmitter2;
 
@@ -491,156 +498,54 @@ function getElapsedTimeStamp(){
 //=========================================================================
 // SLACK
 //=========================================================================
+const { WebClient } = require('@slack/web-api');
+
+console.log("process.env.SLACK_BOT_TOKEN: ", process.env.SLACK_BOT_TOKEN)
+const slackBotToken = process.env.SLACK_BOT_TOKEN;
+
+const slackWebClient = new WebClient(slackBotToken);
+
 
 const slackChannel = "tfe";
 const channelsHashMap = new HashMap();
 
-const slackOAuthAccessToken = "xoxp-3708084981-3708084993-206468961315-ec62db5792cd55071a51c544acf0da55";
-const slackConversationId = "D65CSAELX"; // wordbot
-const slackRtmToken = "xoxb-209434353623-bNIoT4Dxu1vv8JZNgu7CDliy";
-
-let slackRtmClient;
-let slackWebClient;
-
-function slackSendRtmMessage(msg){
-  return slackRtmClient.sendMessage(msg, slackConversationId);
-}
-
 async function slackSendWebMessage(msgObj){
-
   try{
-    
-    const token = msgObj.token || slackOAuthAccessToken;
+
     const channel = msgObj.channel || configuration.slackChannel.id;
     const text = msgObj.text || msgObj;
 
-    const message = {
-      token: token, 
+    await slackWebClient.chat.postMessage({
+      text: text,
       channel: channel,
-      text: text
-    };
+    });
 
-    if (msgObj.attachments !== undefined) {
-      message.attachments = msgObj.attachments;
-    }
-
-    if (slackWebClient && slackWebClient !== undefined) {
-      const sendResponse = await slackWebClient.chat.postMessage(message);
-      return sendResponse;
-    }
-    else {
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | SLACK WEB NOT CONFIGURED | SKIPPING SEND SLACK MESSAGE\n" + jsonPrint(message)));
-      return;
-    }
   }
   catch(err){
     console.log(chalkAlert(MODULE_ID_PREFIX + " | *** slackSendWebMessage ERROR: " + err));
-    console.log(chalkAlert(MODULE_ID_PREFIX + " | *** slackSendWebMessage msgObj\n" + jsonPrint(msgObj)));
     throw err;
   }
-}
-
-function slackMessageHandler(message){
-
-  return new Promise(function(resolve, reject){
-
-    try {
-
-      console.log(chalkInfo("TFE | MESSAGE | " + message.type + " | " + message.text));
-
-      if (message.type != "message") {
-        console.log(chalkAlert("Unhandled MESSAGE TYPE: " + message.type));
-        return resolve();
-      }
-
-      const text = message.text.trim();
-      const textArray = text.split("|");
-
-      const sourceMessage = (textArray[2]) ? textArray[2].trim() : "NONE";
-
-      switch (sourceMessage) {
-        case "END FETCH ALL":
-        case "ERROR":
-        case "FETCH FRIENDS":
-        case "FSM INIT":
-        case "FSM FETCH_ALL":
-        case "GEN AUTO CAT":
-        case "INIT CHILD":
-        case "INIT MAX INPUT HASHMAP":
-        case "INIT NNs":
-        case "INIT RAN NNs":
-        case "INIT RNT CHILD":
-        case "INIT TWITTER USERS":
-        case "INIT TWITTER":
-        case "INIT UNFOLLOWABLE USER SET":
-        case "INIT UNFOLLOWABLE":
-        case "INIT":
-        case "LOAD BEST NN":
-        case "LOAD NN":
-        case "MONGO DB CONNECTED":
-        case "PONG":
-        case "QUIT":
-        case "QUITTING":
-        case "READY":
-        case "RESET":
-        case "SAV NN HASHMAP":
-        case "SLACK QUIT":
-        case "SLACK READY":
-        case "SLACK RTM READY":
-        case "START":
-        case "STATS":
-        case "TEXT":
-        case "UPDATE HISTOGRAMS":
-        case "UPDATE NN STATS":
-        case "WAIT UPDATE STATS":
-        case "END UPDATE STATS":
-        case "UPDATE USER CAT STATS":
-          resolve();
-        break;
-        case "STATSUS":
-          console.log(chalkInfo(message.text));
-          resolve();
-        break;
-        case "PING":
-          resolve();
-        break;
-        case "NONE":
-          resolve();
-        break;
-        default:
-          console.log(chalkAlert("TFE | *** UNDEFINED SLACK MESSAGE: " + message.text));
-          resolve({text: "UNDEFINED SLACK MESSAGE", message: message});
-      }
-    }
-    catch(err){
-      reject(err);
-    }
-
-  });
 }
 
 async function initSlackWebClient(){
   try {
 
-    slackWebClient = new WebClient(slackRtmToken);
+    console.log(chalkLog(MODULE_ID + " | INIT SLACK WEB CLIENT"))
 
-    const testResponse = await slackWebClient.api.test();
+    const authTestResponse = await slackWebClient.auth.test()
 
-    if (configuration.verbose) {
-      console.log("TFE | SLACK WEB TEST RESPONSE\n" + jsonPrint(testResponse));
-    }
+    console.log({authTestResponse})
 
-    const conversationsListResponse = await slackWebClient.conversations.list({token: slackOAuthAccessToken});
+    const conversationsListResponse = await slackWebClient.conversations.list();
 
     conversationsListResponse.channels.forEach(async function(channel){
 
-      debug(chalkLog("TFE | CHANNEL | " + channel.id + " | " + channel.name));
+      debug(chalkLog("TNN | SLACK CHANNEL | " + channel.id + " | " + channel.name));
 
-      if (channel.name == slackChannel) {
+      if (channel.name === slackChannel) {
         configuration.slackChannel = channel;
 
         const message = {
-          token: slackOAuthAccessToken, 
           channel: configuration.slackChannel.id,
           text: "OP"
         };
@@ -655,70 +560,21 @@ async function initSlackWebClient(){
           ]
         });
 
-        const chatPostMessageResponse = await slackWebClient.chat.postMessage(message);
-        
-        if (configuration.verbose) {
-          console.log("TFE | SLACK WEB CHAT POST MESSAGE RESPONSE\n" + jsonPrint(chatPostMessageResponse));
-        }
-
+        await slackWebClient.chat.postMessage(message);
       }
 
       channelsHashMap.set(channel.id, channel);
+
     });
 
-    console.log("TFE | SLACK WEB BOTS INITIALIZED");
     return;
-
   }
   catch(err){
-    console.log(chalkError("TFE | *** INIT SLACK WEB CLIENT ERROR: " + err));
+    console.log(chalkError("TNN | *** INIT SLACK WEB CLIENT ERROR: " + err));
     throw err;
   }
 }
 
-async function initSlackRtmClient(){
-  try {
-
-    slackRtmClient = new RTMClient(slackRtmToken);
-
-    const slackInfo = await slackRtmClient.start();
-
-    if (configuration.verbose) {
-      console.log(chalkInfo("TFE | SLACK RTM | INFO\n" + jsonPrint(slackInfo)));
-    }
-
-    slackRtmClient.on("slack_event", async function(eventType, event){
-      switch (eventType) {
-        case "pong":
-          debug(chalkLog("TFE | SLACK RTM PONG | " + getTimeStamp() + " | " + event.reply_to));
-        break;
-        default: debug(chalkInfo("TFE | SLACK RTM EVENT | " + getTimeStamp() + " | " + eventType + "\n" + jsonPrint(event)));
-      }
-    });
-
-
-    slackRtmClient.on("message", async function(message){
-      if (configuration.verbose) { console.log(chalkLog("TFE | RTM R<\n" + jsonPrint(message))); }
-      debug(`TFE | SLACK RTM MESSAGE | R< | CH: ${message.channel} | USER: ${message.user} | ${message.text}`);
-
-      try {
-        await slackMessageHandler(message);
-      }
-      catch(err){
-        console.log(chalkError("TFE | *** SLACK RTM MESSAGE ERROR: " + err));
-      }
-
-    });
-
-    slackRtmClient.on("ready", async function(){
-      if (configuration.verbose) { await slackSendRtmMessage(hostname + " | TFE | SLACK RTM READY"); }
-    });
-  }
-  catch(err){
-    console.log(chalkError("TFE | *** INIT SLACK RTM CLIENT | " + err));
-    throw err;
-  }
-}
 
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.processName = process.env.TFE_PROCESS_NAME || "tfe_node";
@@ -2450,7 +2306,7 @@ async function loadBestNetworksDatabase(p) {
   return bestNetwork;
 }
 
-async function loadBestNeuralNetworks(params) {
+async function loadBestNeuralNetworks() {
 
   statsObj.status = "LOAD BEST NN";
 
@@ -4352,8 +4208,8 @@ setTimeout(async function(){
 
     statsObj.status = "START";
 
-    initSlackRtmClient();
     initSlackWebClient();
+    
     const twitterParams = await tcUtils.initTwitterConfig();
     tcUtils.setEnableLanguageAnalysis(configuration.enableLanguageAnalysis);
     tcUtils.setEnableImageAnalysis(configuration.enableImageAnalysis);
