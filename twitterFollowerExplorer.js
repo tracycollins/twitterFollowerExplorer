@@ -54,6 +54,7 @@ const DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 
 const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 80;
+const DEFAULT_BARE_MIN_SUCCESS_RATE = 70;
 const TEST_GLOBAL_MIN_SUCCESS_RATE_MULTIPLIER = 0.75;
 
 const TEST_TWEET_FETCH_COUNT = 11;
@@ -597,6 +598,10 @@ if (process.env.TFE_QUIT_ON_COMPLETE !== undefined) {
 configuration.globalMinSuccessRate = (process.env.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) 
   ? process.env.TFE_GLOBAL_MIN_SUCCESS_RATE 
   : DEFAULT_GLOBAL_MIN_SUCCESS_RATE;
+
+configuration.bareMinSuccessRate = (process.env.TFE_BARE_MIN_SUCCESS_RATE !== undefined) 
+  ? process.env.TFE_BARE_MIN_SUCCESS_RATE 
+  : DEFAULT_BARE_MIN_SUCCESS_RATE;
 
 configuration.DROPBOX = {};
 configuration.DROPBOX.DROPBOX_TFE_CONFIG_FILE = process.env.DROPBOX_TFE_CONFIG_FILE || "twitterFollowerExplorerConfig.json";
@@ -1407,6 +1412,11 @@ async function loadConfigFile(params) {
       }
     }
 
+    if (loadedConfigObj.TFE_BARE_MIN_SUCCESS_RATE !== undefined) {
+      console.log("TFE | LOADED TFE_BARE_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_BARE_MIN_SUCCESS_RATE);
+      newConfiguration.bareMinSuccessRate = loadedConfigObj.TFE_BARE_MIN_SUCCESS_RATE;
+    }
+
     if (loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE !== undefined) {
       console.log("TFE | LOADED TFE_GLOBAL_MIN_SUCCESS_RATE: " + loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE);
       newConfiguration.globalMinSuccessRate = loadedConfigObj.TFE_GLOBAL_MIN_SUCCESS_RATE;
@@ -1806,10 +1816,22 @@ function isBestNetwork(p){
   const params = (p !== undefined) ? p : {};
 
   const minOverallMatchRate = (params.minOverallMatchRate !== undefined) ? params.minOverallMatchRate : configuration.globalMinSuccessRate;
+  const bareMinSuccessRate = (params.bareMinSuccessRate !== undefined) ? params.bareMinSuccessRate : configuration.bareMinSuccessRate;
   const minTestCycles = (params.minTestCycles !== undefined) ? params.minTestCycles : configuration.minTestCycles;
 
   if (params.networkObj.testCycles <= minTestCycles){
+
     debug("minTestCycles: " + params.networkObj.testCycles);
+
+    // delete if *really* bad nn
+    if ((params.networkObj.testCycles > 0)
+      && (params.networkObj.overallMatchRate > 0) 
+      && (params.networkObj.overallMatchRate < bareMinSuccessRate)
+    ) {
+      debug("less than bareMinSuccessRate: " + params.networkObj.overallMatchRate);
+      return false;
+    }
+
     return true;
   }
   else if (params.networkObj.overallMatchRate && (params.networkObj.overallMatchRate >= minOverallMatchRate)) {
@@ -1972,14 +1994,22 @@ async function loadNetworkFile(params){
 
       skipLoadNetworkSet.add(networkObj.networkId);
 
+      // printNetworkObj(
+      //   MODULE_ID_PREFIX 
+      //     + " | ... NN"
+      //     + " [" + bestNetworkHashMap.size + " HM]"
+      //     + " [" + skipLoadNetworkSet.size + " SKP]",
+      //   networkObj,
+      //   chalk.gray
+      // );
       printNetworkObj(
-        MODULE_ID_PREFIX 
-          + " | ... NN"
-          + " [" + bestNetworkHashMap.size + " HM]"
-          + " [" + skipLoadNetworkSet.size + " SKP]",
+        MODULE_ID_PREFIX + " | XXX DELETE DB NN",
         networkObj,
-        chalk.gray
+        chalk.red
       );
+
+      await global.wordAssoDb.NeuralNetwork.deleteOne({networkId: networkObj.networkId});
+
     }
 
     const updateDbNetworkParams = {};
@@ -2000,9 +2030,17 @@ async function loadNetworkFile(params){
 
       await renameFileAsync(path.join(folder, entry.name), path.join(globalBestNetworkArchiveFolder, entry.name));
 
-      updateDbNetworkParams.networkObj.archived = true;
+      // printNetworkObj(
+      //   MODULE_ID_PREFIX + " | XXX DELETE DB NN",
+      //   networkObj,
+      //   chalk.red
+      // );
 
-      await updateDbNetwork(updateDbNetworkParams);
+      // await global.wordAssoDb.NeuralNetwork.deleteOne({networkId: networkObj.networkId});
+
+      // updateDbNetworkParams.networkObj.archived = true;
+
+      // await updateDbNetwork(updateDbNetworkParams);
       return;
     }
     else {
@@ -2100,7 +2138,7 @@ async function loadNetworksOfInputs(params){
   console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING " + params.randomUntestedPerInputsLimit + " UNTESTED NNs FROM DB ..."));
 
   const minSuccessRate = configuration.testMode ? TEST_GLOBAL_MIN_SUCCESS_RATE_MULTIPLIER * params.globalMinSuccessRate : params.globalMinSuccessRate
-
+  
   for (const inputsId of params.inputsIdArray) {
 
     console.log(chalkLog(MODULE_ID_PREFIX + " | ... LOADING NN FROM DB | INPUTS ID: " + inputsId));
@@ -2172,9 +2210,29 @@ async function loadNetworksOfInputs(params){
   return nnArray;
 }
 
+async function purgeNetworksDb(params){
+
+  const query = {};
+
+  query.$and = [
+    { testCycles: { "$gte": params.minTestCycles } },
+    { overallMatchRate: { "$lt": params.minOverallMatchRate } }
+  ];
+
+  console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! PURGE NETWORKS DB\nQUERY\n" + jsonPrint(query)))
+      
+  const results = await global.wordAssoDb.NeuralNetwork.deleteMany(query);
+
+  console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! PURGE NETWORKS DB | NNs DELETED FROM DB: " + results.deletedCount))
+
+  return results.deletedCount
+}
+
 async function loadBestNetworksDatabase(p) {
 
   const params = p || {};
+
+  await purgeNetworksDb({minOverallMatchRate: configuration.bareMinSuccessRate, minTestCycles: 1})
 
   const networkTechnology = (params.networkTechnology !== undefined) ? params.networkTechnology : false;
   const minTestCycles = (params.minTestCycles !== undefined) ? params.minTestCycles : configuration.minTestCycles;
