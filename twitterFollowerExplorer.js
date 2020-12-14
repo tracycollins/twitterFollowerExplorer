@@ -3172,6 +3172,7 @@ async function generateAutoCategory(params) {
 
   try{
 
+    // only updates profileHistograms
     const user = await tcUtils.updateUserHistograms({
       user: params.user,
       updateGlobalHistograms: configuration.updateGlobalHistograms
