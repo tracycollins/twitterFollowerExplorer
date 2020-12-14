@@ -2212,6 +2212,9 @@ async function loadNetworksOfInputs(params){
 
 async function purgeNetworksDb(params){
 
+  let results = await global.wordAssoDb.NeuralNetwork.deleteMany({successRate: { "$lt": 40 }});
+  console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! PURGE NETWORKS DB | NNs DELETED FROM DB (SUCCESS LT 40): " + results.deletedCount))
+
   const query = {};
 
   query.$and = [
@@ -2221,7 +2224,7 @@ async function purgeNetworksDb(params){
 
   console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! PURGE NETWORKS DB\nQUERY\n" + jsonPrint(query)))
       
-  const results = await global.wordAssoDb.NeuralNetwork.deleteMany(query);
+  results = await global.wordAssoDb.NeuralNetwork.deleteMany(query);
 
   console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! PURGE NETWORKS DB | NNs DELETED FROM DB: " + results.deletedCount))
 
