@@ -12,7 +12,7 @@ const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
 
 const DEFAULT_PRIMARY_HOST = "google";
-const DEFAULT_DATABASE_HOST = "macpro2";
+const DEFAULT_DATABASE_HOST = "mms3";
 
 const bestNetworkIdArrayFile = "bestNetworkIdArray.json";
 let bestNetworkObj = {};

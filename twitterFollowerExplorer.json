@@ -1,18 +1,19 @@
 {
   "apps": [
-  {
-    "name": "tfe",
-    "script": "twitterFollowerExplorer.js",
-    "cwd": "/home/tc/twitterFollowerExplorer",
-    "node_args": "--max-old-space-size=32768",
-    "autorestart": false,
-    "env": {
-      "PRIMARY_HOST": "google",
-      "DATABASE_HOST": "macpro2",
-      "FORCE_COLOR": 1,
-      "NODE_ENV": "production",
-      "QUIT_ON_COMPLETE": true,
-      "TFE_TEST_MODE": false
+    {
+      "name": "tfe",
+      "script": "twitterFollowerExplorer.js",
+      "cwd": "/home/tc/twitterFollowerExplorer",
+      "node_args": "--max-old-space-size=32768",
+      "autorestart": false,
+      "env": {
+        "PRIMARY_HOST": "google",
+        "DATABASE_HOST": "mms3",
+        "FORCE_COLOR": 1,
+        "NODE_ENV": "production",
+        "QUIT_ON_COMPLETE": true,
+        "TFE_TEST_MODE": false
+      }
     }
-  }]
+  ]
 }
