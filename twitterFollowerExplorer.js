@@ -61,7 +61,7 @@ const TEST_TWEET_FETCH_COUNT = 11;
 const TWEET_FETCH_COUNT = 100;
 
 const TEST_MODE_NUM_NN = 20;
-const TEST_TOTAL_FETCH = 1000;
+const TEST_TOTAL_FETCH = 500;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
@@ -2297,7 +2297,8 @@ async function purgeNetworksDb(params){
 
   query.$and = [
     { testCycles: { "$gte": params.minTestCycles } },
-    { overallMatchRate: { "$lt": params.minOverallMatchRate } }
+    // { overallMatchRate: { "$lt": params.minOverallMatchRate } }
+    { successRate: { "$lt": params.minOverallMatchRate } }
   ];
 
   console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! PURGE NETWORKS DB\nQUERY\n" + jsonPrint(query)))
@@ -2313,7 +2314,7 @@ async function loadBestNetworksDatabase(p) {
 
   const params = p || {};
 
-  await purgeNetworksDb({minOverallMatchRate: configuration.bareMinSuccessRate, minTestCycles: 1})
+  await purgeNetworksDb({minOverallMatchRate: configuration.bareMinSuccessRate, minTestCycles: 0})
 
   const networkTechnology = (params.networkTechnology !== undefined) ? params.networkTechnology : false;
   const minTestCycles = (params.minTestCycles !== undefined) ? params.minTestCycles : configuration.minTestCycles;
