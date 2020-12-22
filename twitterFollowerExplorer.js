@@ -710,9 +710,84 @@ function printNetworkObj(title, nObj, format) {
   ));
 }
 
-function updateDbNetwork(params) {
+// function updateDbNetwork(params) {
 
-  return new Promise(function(resolve, reject){
+//   return new Promise(function(resolve, reject){
+
+//     statsObj.status = "UPDATE DB NETWORKS";
+
+//     const networkObj = params.networkObj;
+//     const incrementTestCycles = (params.incrementTestCycles !== undefined) ? params.incrementTestCycles : false;
+//     const testHistoryItem = (params.testHistoryItem !== undefined) ? params.testHistoryItem : false;
+//     const addToTestHistory = (params.addToTestHistory !== undefined) ? params.addToTestHistory : true;
+//     const verbose = params.verbose || false;
+
+//     // if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | >>> NN DB UPDATE ", params.networkObj, chalkInfo); }
+
+//     const query = { networkId: networkObj.networkId };
+
+//     const update = {};
+
+//     update.$setOnInsert = { 
+//       seedNetworkId: networkObj.seedNetworkId,
+//       seedNetworkRes: networkObj.seedNetworkRes,
+//       successRate: networkObj.successRate, 
+//       numInputs: networkObj.numInputs,
+//       numOutputs: networkObj.numOutputs,
+//       inputsId: networkObj.inputsId,
+//       inputsObj: networkObj.inputsObj,
+//       outputs: networkObj.outputs,
+//       evolve: networkObj.evolve,
+//       test: networkObj.test
+//     };
+
+//     update.$set = { 
+//       networkTechnology: networkObj.networkTechnology,
+//       networkJson: networkObj.networkJson,
+//       archived: networkObj.archived,
+//       matchRate: networkObj.matchRate, 
+//       overallMatchRate: networkObj.overallMatchRate,
+//       runtimeMatchRate: networkObj.runtimeMatchRate,
+//       previousRank: networkObj.previousRank,
+//       rank: networkObj.rank
+//     };
+
+//     if (incrementTestCycles) { update.$inc = { testCycles: 1 }; }
+    
+//     if (testHistoryItem) { 
+//       update.$push = { testCycleHistory: testHistoryItem };
+//     }
+//     else if (addToTestHistory) {
+//       update.$addToSet = { testCycleHistory: { $each: networkObj.testCycleHistory } };
+//     }
+
+//     const options = {
+//       new: true,
+//       returnOriginal: false,
+//       upsert: true,
+//       setDefaultsOnInsert: true,
+//     };
+
+//     global.wordAssoDb.NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
+
+//       if (err) {
+//         console.log(chalkError("*** updateDbNetwork | NN FIND ONE ERROR: " + err));
+//         return reject(err);
+//       }
+
+//       // if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated, chalkGreen); }
+//       if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated, chalkGreen); }
+
+//       resolve(nnDbUpdated);
+//     });
+
+//   });
+// }
+
+// function updateDbNetwork(params) {
+async function updateDbNetwork(params){
+
+  try{
 
     statsObj.status = "UPDATE DB NETWORKS";
 
@@ -729,27 +804,33 @@ function updateDbNetwork(params) {
     const update = {};
 
     update.$setOnInsert = { 
+      networkTechnology: networkObj.networkTechnology,
+      networkJson: networkObj.networkJson,
+      binaryMode: networkObj.binaryMode,
+      betterChild: networkObj.betterChild,
       seedNetworkId: networkObj.seedNetworkId,
       seedNetworkRes: networkObj.seedNetworkRes,
+      networkCreateMode: networkObj.networkCreateMode,
       successRate: networkObj.successRate, 
       numInputs: networkObj.numInputs,
+      hiddenLayerSize: networkObj.hiddenLayerSize,
       numOutputs: networkObj.numOutputs,
       inputsId: networkObj.inputsId,
       inputsObj: networkObj.inputsObj,
       outputs: networkObj.outputs,
       evolve: networkObj.evolve,
+      train: networkObj.train,
       test: networkObj.test
     };
 
     update.$set = { 
-      networkTechnology: networkObj.networkTechnology,
-      networkJson: networkObj.networkJson,
       archived: networkObj.archived,
       matchRate: networkObj.matchRate, 
       overallMatchRate: networkObj.overallMatchRate,
       runtimeMatchRate: networkObj.runtimeMatchRate,
       previousRank: networkObj.previousRank,
-      rank: networkObj.rank
+      rank: networkObj.rank,
+      meta: networkObj.meta
     };
 
     if (incrementTestCycles) { update.$inc = { testCycles: 1 }; }
@@ -763,26 +844,23 @@ function updateDbNetwork(params) {
 
     const options = {
       new: true,
-      returnOriginal: false,
       upsert: true,
       setDefaultsOnInsert: true,
     };
 
-    global.wordAssoDb.NeuralNetwork.findOneAndUpdate(query, update, options, function(err, nnDbUpdated){
+    const nnDbUpdated = await global.wordAssoDb.NeuralNetwork.findOneAndUpdate(query, update, options);
 
-      if (err) {
-        console.log(chalkError("*** updateDbNetwork | NN FIND ONE ERROR: " + err));
-        return reject(err);
-      }
+    if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated, chalkGreen); }
 
-      // if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated, chalkGreen); }
-      if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated, chalkGreen); }
+    return nnDbUpdated;
 
-      resolve(nnDbUpdated);
-    });
-
-  });
+  }
+  catch(err){
+    console.log(chalkError(`${MODULE_ID_PREFIX} | *** updateDbNetwork ERROR: ${err}`));
+    throw err;
+  }
 }
+
 
 async function initCategorizedUserIdSet(p){
 
