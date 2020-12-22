@@ -4188,7 +4188,8 @@ const fsmStates = {
             updatedAt: moment()
           };
 
-          const folder = (configuration.testMode) ? bestNetworkFolder + "/test" : bestNetworkFolder;
+          // const folder = (configuration.testMode) ? bestNetworkFolder + "/test" : bestNetworkFolder;
+          const folder = bestNetworkFolder;
           const file = currentBestNetwork.networkId + ".json";
 
           console.log(chalkBlue(MODULE_ID_PREFIX + " | SAVING BEST NN"
