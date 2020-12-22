@@ -356,10 +356,10 @@ statsObj.loadedNetworksFlag = false;
 statsObj.bestNetworkId = false;
 statsObj.currentBestNetworkId = false;
 
-statsObj.randomNetworkTree = {};
-statsObj.randomNetworkTree.memoryUsage = {};
-statsObj.randomNetworkTree.memoryUsage.heap = 0;
-statsObj.randomNetworkTree.memoryUsage.maxHeap = 0;
+// statsObj.randomNetworkTree = {};
+// statsObj.randomNetworkTree.memoryUsage = {};
+// statsObj.randomNetworkTree.memoryUsage.heap = 0;
+// statsObj.randomNetworkTree.memoryUsage.maxHeap = 0;
 
 statsObj.geo = {};
 statsObj.geo.hits = 0;
@@ -621,7 +621,7 @@ const statsPickArray = [
   "userReadyAck", 
   "userReadyAckWait", 
   "userReadyTransmitted",
-  "randomNetworkTree",
+  // "randomNetworkTree",
   "queues"
 ];
 
@@ -2483,7 +2483,7 @@ function initActivateNetworks(){
 
           const networkObj = networkObjArray.shift();
 
-          if (networkObj.networkId == bestNetwork.networkId) {
+          if (networkObj.networkId === bestNetwork.networkId) {
             console.log(chalkGreen("TFE | ... LOADING NETWORK | BEST: " + networkObj.networkId));
             isBestNetworkFlag = true;
           }
@@ -4235,9 +4235,7 @@ function fsmStart(p) {
     clearInterval(fsmTickInterval);
 
     fsmTickInterval = setInterval(function() {
-
       fsm.fsm_tick();
-
     }, interval);
 
     resolve();
