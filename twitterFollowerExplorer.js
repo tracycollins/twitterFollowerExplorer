@@ -803,7 +803,7 @@ async function updateDbNetwork(params){
 
     const update = {};
 
-    update.$setOnInsert = { 
+    update['$setOnInsert'] = { 
       networkTechnology: networkObj.networkTechnology,
       networkJson: networkObj.networkJson,
       binaryMode: networkObj.binaryMode,
@@ -823,7 +823,7 @@ async function updateDbNetwork(params){
       test: networkObj.test
     };
 
-    update.$set = { 
+    update['$set'] = { 
       archived: networkObj.archived,
       matchRate: networkObj.matchRate, 
       overallMatchRate: networkObj.overallMatchRate,
@@ -833,13 +833,13 @@ async function updateDbNetwork(params){
       meta: networkObj.meta
     };
 
-    if (incrementTestCycles) { update.$inc = { testCycles: 1 }; }
+    if (incrementTestCycles) { update['$inc'] = { testCycles: 1 }; }
     
     if (testHistoryItem) { 
-      update.$push = { testCycleHistory: testHistoryItem };
+      update['$push'] = { testCycleHistory: testHistoryItem };
     }
     else if (addToTestHistory) {
-      update.$addToSet = { testCycleHistory: { $each: networkObj.testCycleHistory } };
+      update['$addToSet'] = { testCycleHistory: { $each: networkObj.testCycleHistory } };
     }
 
     const options = {
