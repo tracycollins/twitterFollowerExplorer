@@ -829,8 +829,8 @@ async function updateDbNetwork(params){
       overallMatchRate: networkObj.overallMatchRate,
       runtimeMatchRate: networkObj.runtimeMatchRate,
       previousRank: networkObj.previousRank,
-      rank: networkObj.rank,
-      meta: networkObj.meta
+      rank: networkObj.rank
+      // meta: networkObj.meta
     };
 
     if (incrementTestCycles) { update['$inc'] = { testCycles: 1 }; }
