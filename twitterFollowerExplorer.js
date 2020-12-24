@@ -3190,9 +3190,10 @@ function updateBestNetworkStats(params) {
   });
 }
 
-function saveBestNetworkFileCache(params) {
-  return new Promise(function(resolve){
-    console.log(chalkNetwork("TFE | SAVING NEW BEST NN"
+async function saveBestNetworkFileCache(params) {
+
+  try{    
+    console.log(chalkNetwork(MODULE_ID_PREFIX + " | SAVING NEW BEST NN"
       + " | " + params.network.networkId
       + " | SR: " + params.network.successRate.toFixed(2)
       + " | MR: " + params.network.matchRate.toFixed(2)
@@ -3216,11 +3217,15 @@ function saveBestNetworkFileCache(params) {
 
     const file = statsObj.bestRuntimeNetworkId + ".json";
 
-    // saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: params.network });
-    // saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: params.network });
+    saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
 
-    resolve();
-  });
+    return;
+  }
+  catch(err){
+    console.log(chalkError(`${MODULE_ID_PREFIX}  | *** SAVING NEW BEST NN ERROR: ${err}`))
+    throw err
+  }
 }
 
 function initUserDbUpdateQueueInterval(p) {
