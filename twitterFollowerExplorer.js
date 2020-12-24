@@ -3216,8 +3216,8 @@ function saveBestNetworkFileCache(params) {
 
     const file = statsObj.bestRuntimeNetworkId + ".json";
 
-    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: params.network });
-    saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+    // saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: params.network });
+    // saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
 
     resolve();
   });
