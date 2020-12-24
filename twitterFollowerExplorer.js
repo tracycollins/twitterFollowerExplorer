@@ -2986,7 +2986,7 @@ function initActivateNetworkQueueInterval(p) {
               && configuration.bestNetworkIncrementalUpdate) 
             {
               statsObj.prevBestNetworkId = statsObj.currentBestNetworkId;
-              saveBestNetworkFileCache({network: currentBestNetwork});
+              await saveBestNetworkFileCache({network: currentBestNetwork});
             }
 
             let user = {};
@@ -3136,7 +3136,7 @@ async function saveBestNetworkFileCache(params) {
     return;
   }
   catch(err){
-    console.log(chalkError(`${MODULE_ID_PREFIX}  | *** SAVING NEW BEST NN ERROR: ${err}`))
+    console.trace(chalkError(`${MODULE_ID_PREFIX}  | *** SAVING NEW BEST NN ERROR: ${err}`))
     throw err
   }
 }
