@@ -2815,7 +2815,7 @@ function updateNetworkStats(params) {
     }, async function(err) {
 
       if (err) {
-        console.log(chalkError("TFE | *** UPDATE NN STATS ERROR: " + err));
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** UPDATE NN STATS ERROR: " + err));
         return reject(err);
       }
 
@@ -2883,7 +2883,7 @@ function updateNetworkStats(params) {
 
       }
       catch(e){
-        console.log(chalkError("TFE | *** BEST INPUTS ERROR: " + e));
+        console.log(chalkError(MODULE_ID_PREFIX + " | *** BEST INPUTS ERROR: " + e));
         reject(e);
       }
     });
@@ -3101,7 +3101,7 @@ async function saveBestNetworkFileCache(params) {
     if (params.network.previousRank === Infinity){
       params.network.previousRank = 1000;
     }
-    
+
     console.log(chalkNetwork(MODULE_ID_PREFIX + " | SAVING NEW BEST NN"
       + " | " + params.network.networkId
       + " | SR: " + params.network.successRate.toFixed(2)
