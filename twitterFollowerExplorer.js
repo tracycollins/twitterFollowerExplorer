@@ -3126,7 +3126,7 @@ async function saveBestNetworkFileCache(params) {
       updatedAt: getTimeStamp()
     };
 
-    console.log({fileObj})
+    debug({fileObj})
 
     const file = statsObj.bestRuntimeNetworkId + ".json";
 
