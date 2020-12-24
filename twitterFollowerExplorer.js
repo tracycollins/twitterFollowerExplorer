@@ -692,24 +692,24 @@ const networkDefaults = function (networkObj){
   return networkObj;
 };
 
-function printNetworkObj(title, nObj, format) {
+// function printNetworkObj(title, nObj, format) {
 
-  const chalkFormat = (format !== undefined) ? format : chalkNetwork;
+//   const chalkFormat = (format !== undefined) ? format : chalkNetwork;
 
-  const networkObj = networkDefaults(nObj);
+//   const networkObj = networkDefaults(nObj);
 
-  console.log(chalkFormat(title
-    + " | R " + networkObj.rank
-    + " | T " + networkObj.networkTechnology
-    + " | OR " + networkObj.overallMatchRate.toFixed(2) + "%"
-    + " | RR " + networkObj.runtimeMatchRate.toFixed(2) + "%"
-    + " | MR " + networkObj.matchRate.toFixed(2) + "%"
-    + " | SR " + networkObj.successRate.toFixed(2) + "%"
-    + " | TC " + networkObj.testCycles
-    + " | IN " + networkObj.inputsId
-    + " | " + networkObj.networkId
-  ));
-}
+//   console.log(chalkFormat(title
+//     + " | R " + networkObj.rank
+//     + " | T " + networkObj.networkTechnology
+//     + " | OR " + networkObj.overallMatchRate.toFixed(2) + "%"
+//     + " | RR " + networkObj.runtimeMatchRate.toFixed(2) + "%"
+//     + " | MR " + networkObj.matchRate.toFixed(2) + "%"
+//     + " | SR " + networkObj.successRate.toFixed(2) + "%"
+//     + " | TC " + networkObj.testCycles
+//     + " | IN " + networkObj.inputsId
+//     + " | " + networkObj.networkId
+//   ));
+// }
 
 async function updateDbNetwork(params){
 
@@ -774,7 +774,7 @@ async function updateDbNetwork(params){
 
     const nnDbUpdated = await global.wordAssoDb.NeuralNetwork.findOneAndUpdate(query, update, options);
 
-    if (verbose) { printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated, chalkGreen); }
+    if (verbose) { nnTools.printNetworkObj(MODULE_ID_PREFIX + " | +++ NN DB UPDATED", nnDbUpdated, chalkGreen); }
 
     return nnDbUpdated;
 
@@ -1983,7 +1983,7 @@ async function loadNetworkFile(params){
 
       bestNetworkHashMap.set(networkObj.networkId, networkObj);
 
-      printNetworkObj(
+      nnTools.printNetworkObj(
         MODULE_ID_PREFIX 
           + " | +++ NN"
           + " [" + bestNetworkHashMap.size + " HM]"
@@ -1996,15 +1996,7 @@ async function loadNetworkFile(params){
 
       skipLoadNetworkSet.add(networkObj.networkId);
 
-      // printNetworkObj(
-      //   MODULE_ID_PREFIX 
-      //     + " | ... NN"
-      //     + " [" + bestNetworkHashMap.size + " HM]"
-      //     + " [" + skipLoadNetworkSet.size + " SKP]",
-      //   networkObj,
-      //   chalk.gray
-      // );
-      printNetworkObj(
+      nnTools.printNetworkObj(
         MODULE_ID_PREFIX + " | XXX DELETE DB NN",
         networkObj,
         chalk.red
@@ -2032,17 +2024,6 @@ async function loadNetworkFile(params){
 
       await renameFileAsync(path.join(folder, entry.name), path.join(globalBestNetworkArchiveFolder, entry.name));
 
-      // printNetworkObj(
-      //   MODULE_ID_PREFIX + " | XXX DELETE DB NN",
-      //   networkObj,
-      //   chalk.red
-      // );
-
-      // await global.wordAssoDb.NeuralNetwork.deleteOne({networkId: networkObj.networkId});
-
-      // updateDbNetworkParams.networkObj.archived = true;
-
-      // await updateDbNetwork(updateDbNetworkParams);
       return;
     }
     else {
@@ -2050,7 +2031,7 @@ async function loadNetworkFile(params){
 
         if (networkObj.overallMatchRate >= configuration.globalMinSuccessRate) {
 
-          printNetworkObj(
+          nnTools.printNetworkObj(
             MODULE_ID_PREFIX + " | ??? NN ARCHIVED BUT GLOBAL SUCCESS | SKIP DELETE", 
             networkObj
           );
@@ -2734,7 +2715,7 @@ function saveNetworkHashMap(params) {
 
       const networkObj = bestNetworkHashMap.get(nnId);
 
-      printNetworkObj("TFE | ... SAVING NN", networkObj);
+      nnTools.printNetworkObj("TFE | ... SAVING NN", networkObj);
 
       const file = nnId + ".json";
 
@@ -2988,7 +2969,7 @@ function initActivateNetworkQueueInterval(p) {
 
             if ((cbnn.matchRate > currentBestNetwork.matchRate) 
               && (cbnn.networkId != currentBestNetwork.networkId)){
-              printNetworkObj(MODULE_ID_PREFIX + " | +++ NEW CURRENT BEST NN", cbnn, chalkGreen);
+              nnTools.printNetworkObj(MODULE_ID_PREFIX + " | +++ NEW CURRENT BEST NN", cbnn, chalkGreen);
             }
 
             currentBestNetwork.matchRate = cbnn.matchRate;
@@ -3017,7 +2998,7 @@ function initActivateNetworkQueueInterval(p) {
             statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
           }
           else {
-            console.log(chalkError("TFE | *** ERROR:  NETWORK_OUTPUT | BEST NN NOT IN HASHMAP???"
+            console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR:  NETWORK_OUTPUT | BEST NN NOT IN HASHMAP???"
               + " | " + moment().format(compactDateTimeFormat)
               + " | BEST RT NN ID: " + statsObj.currentBestNetworkId
               + " | BEST NN ID: " + currentBestNetwork.networkId
