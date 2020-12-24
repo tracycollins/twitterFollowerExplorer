@@ -3096,7 +3096,12 @@ function updateBestNetworkStats(params) {
 
 async function saveBestNetworkFileCache(params) {
 
-  try{    
+  try{
+
+    if (params.network.previousRank === Infinity){
+      params.network.previousRank = 1000;
+    }
+    
     console.log(chalkNetwork(MODULE_ID_PREFIX + " | SAVING NEW BEST NN"
       + " | " + params.network.networkId
       + " | SR: " + params.network.successRate.toFixed(2)
