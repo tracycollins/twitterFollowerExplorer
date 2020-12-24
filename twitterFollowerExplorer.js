@@ -3122,7 +3122,8 @@ async function saveBestNetworkFileCache(params) {
       + " | MR: " + params.network.matchRate.toFixed(2)
       + " | OAMR: " + params.network.overallMatchRate.toFixed(2)
       + " | RMR: " + params.network.runtimeMatchRate.toFixed(2)
-      + " | TEST CYCs: " + params.network.testCycles
+      + " | RANK: " + params.network.rank
+      + " | PREV RANK: " + params.network.previousRank
       + " | TC HISTORY: " + params.network.testCycleHistory.length
     ));
 
@@ -3135,6 +3136,7 @@ async function saveBestNetworkFileCache(params) {
       testCycles: params.network.testCycles,
       testCycleHistory: params.network.testCycleHistory,
       rank: params.network.rank,
+      previousRank: params.network.previousRank,
       updatedAt: getTimeStamp()
     };
 
