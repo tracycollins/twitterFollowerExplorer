@@ -3019,7 +3019,7 @@ function initActivateNetworkQueueInterval(p) {
           if (statsObj.users.processed % 100 == 0) { showStats(); }
 
           if (statsObj.currentBestNetwork.rank < currentBestNetwork.rank){
-            printNetworkObj(MODULE_ID_PREFIX + " | +++ UPD BEST NN"
+            nnTools.printNetworkObj(MODULE_ID_PREFIX + " | +++ UPD BEST NN"
               + " [ANQ " + activateNetworkQueue.length + "]"
               + " | @" + anObj.user.screenName 
               + " | CM: " + anObj.user.category, currentBestNetwork, chalk.black
@@ -3130,7 +3130,16 @@ async function saveBestNetworkFileCache(params) {
 
     const file = statsObj.bestRuntimeNetworkId + ".json";
 
-    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: params.network });
+    let saveNetworkObj;
+
+    if (params.network.networkTechnology === "tensorflow"){
+      saveNetworkObj = await nnTools.saveNetwork({networkObj: params.network});
+    }
+    else{
+      saveNetworkObj = params.network;
+    }
+
+    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: saveNetworkObj});
     saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
 
     return;
