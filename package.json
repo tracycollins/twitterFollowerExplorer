@@ -93,7 +93,6 @@
     "tunnel-ssh": "^4.1.4",
     "twit": "^2.2.11",
     "url-parse": "^1.4.7",
-    "url-regex": "^5.0.0",
     "valid-url": "^1.0.9",
     "watch": "^1.0.2",
     "write-json-file": "^4.3.0",
