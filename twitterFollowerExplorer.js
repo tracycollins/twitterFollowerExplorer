@@ -3103,14 +3103,14 @@ async function saveBestNetworkFileCache(params) {
     }
 
     console.log(chalkNetwork(MODULE_ID_PREFIX + " | SAVING NEW BEST NN"
-      + " | " + params.network.networkId
       + " | SR: " + params.network.successRate.toFixed(2)
       + " | MR: " + params.network.matchRate.toFixed(2)
       + " | OAMR: " + params.network.overallMatchRate.toFixed(2)
       + " | RMR: " + params.network.runtimeMatchRate.toFixed(2)
-      + " | RANK: " + params.network.rank
-      + " | PREV RANK: " + params.network.previousRank
-      + " | TC HISTORY: " + params.network.testCycleHistory.length
+      + " | RK: " + params.network.rank
+      + " | PRV RK: " + params.network.previousRank
+      + " | TC HIST: " + params.network.testCycleHistory.length
+      + " | " + params.network.networkId
     ));
 
     const fileObj = {
