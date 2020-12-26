@@ -3150,10 +3150,10 @@ async function saveBestNetworkFileCache(params) {
 
     const file = statsObj.bestRuntimeNetworkId + ".json";
 
-    let saveNetworkObj;
+    // let saveNetworkObj;
 
     if (params.network.networkTechnology === "tensorflow"){
-      saveNetworkObj = await nnTools.saveNetwork({networkObj: params.network});
+      params.network.networkJson = await nnTools.tensorflowCreateJson({networkObj: params.network});
     }
     else{
       saveNetworkObj = params.network;
