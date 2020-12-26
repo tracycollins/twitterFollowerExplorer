@@ -16,11 +16,13 @@ const DEFAULT_DATABASE_HOST = "mms3";
 
 const bestNetworkIdArrayFile = "bestNetworkIdArray.json";
 let bestNetworkObj = {};
+const bestNetworksByTechnology = {};
 
 const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+const DEFAULT_PURGE_MIN_SUCCESS_RATE = 50;
 const DEFAULT_USER_CURSOR_BATCH_SIZE = 10;
 const DEFAULT_USER_CURSOR_LIMIT = 100;
 // const DEFAULT_ENABLE_PROCESS_USER_PARALLEL = true;
@@ -2193,10 +2195,13 @@ async function loadNetworksOfInputs(params){
   return nnArray;
 }
 
-async function purgeNetworksDb(params){
+async function purgeNetworksDb(p){
 
-  let results = await global.wordAssoDb.NeuralNetwork.deleteMany({successRate: { "$lt": 40 }});
-  console.log(chalkAlert(MODULE_ID_PREFIX + " | !!! PURGE NETWORKS DB | NNs DELETED FROM DB (SUCCESS LT 40): " + results.deletedCount))
+  const params = p || {}
+  const minSuccessRate = params.minSuccessRate || DEFAULT_PURGE_MIN_SUCCESS_RATE;
+
+  let results = await global.wordAssoDb.NeuralNetwork.deleteMany({successRate: { "$lt": minSuccessRate }});
+  console.log(chalkAlert(`${MODULE_ID_PREFIX} | !!! PURGE NETWORKS DB | NNs DELETED FROM DB (SUCCESS LT ${minSuccessRate}): ${results.deletedCount}`))
 
   const query = {};
 
@@ -2267,6 +2272,12 @@ async function loadBestNetworksDatabase(p) {
 
   let networkObj;
 
+  for(const tech of ["brain", "carrot", "neataptic", "tensorflow"]){
+    bestNetworksByTechnology[tech] = {}
+    bestNetworksByTechnology[tech].successRate = 0
+    bestNetworksByTechnology[tech].networkId = false
+  }
+
   for (const nnDoc of nnArray){
 
     try{
@@ -2322,6 +2333,11 @@ async function loadBestNetworksDatabase(p) {
         }
 
         bestNetworkHashMap.set(networkObj.networkId, networkObj);
+
+        if (bestNetworksByTechnology[networkObj.networkTechnology].successRate < networkObj.successRate){
+          bestNetworksByTechnology[networkObj.networkTechnology] = { networkId: networkObj.networkId, successRate: networkObj.successRate};
+          console.log(chalkBlue(`${MODULE_ID_PREFIX} | +++ NEW BEST NN BY TECH | ${networkObj.networkTechnology} | ${networkObj.successRate.toFixed(2)} | ${networkObj.networkId}`))
+        }
 
         console.log(chalkInfo("TFE | ADD NN --> HM"
           + " | " + networkObj.networkId
@@ -2620,6 +2636,7 @@ async function initNetworks(params){
       minNetworkSuccessRate = Math.min(nnObj.successRate, minNetworkSuccessRate)
 
       if (nnId !== bestNetworkObj.networkId 
+        && (bestNetworksByTechnology[nnObj.networkTechnology] && bestNetworksByTechnology[nnObj.networkTechnology].networkId !== nnId)
         && (nnObj.successRate <= purgeMinSuccessRate || nnObj.testCycles > testCycleLimit)
       ){
 
@@ -2641,6 +2658,7 @@ async function initNetworks(params){
           + " [ NNIDs: " + nnIds.length + "]"
           + " | TEST CYC LIMIT: " + testCycleLimit
           + " | BEST NNID: " + bestNetworkObj.networkId
+          + " | TECH: " + nnObj.networkTechnology
           + " | NNID: " + nnId
           + " | TCs: " + nnObj.testCycles
           + " | SR: " + nnObj.successRate.toFixed(3)
@@ -2648,6 +2666,8 @@ async function initNetworks(params){
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
       }
+
+      console.log({bestNetworksByTechnology})
 
       if (nnIds.length === 0 && bestNetworkHashMap.size > configuration.networkNumberLimit){
 
