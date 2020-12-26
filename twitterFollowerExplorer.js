@@ -2897,7 +2897,7 @@ function updateNetworkStats(params) {
 
         statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({folder: folder, file: file, obj: bestInputsConfigObj});
 
-        await saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb});
+        await saveNetworkObjHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb});
         console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ updateNetworkStats COMPLETE"));
         resolve();
 
@@ -3155,11 +3155,11 @@ async function saveBestNetworkFileCache(params) {
     if (params.network.networkTechnology === "tensorflow"){
       params.network.networkJson = await nnTools.tensorflowCreateJson({networkObj: params.network});
     }
-    else{
-      saveNetworkObj = params.network;
-    }
+    // else{
+    //   saveNetworkObj = params.network;
+    // }
 
-    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: saveNetworkObj});
+    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: params.network});
     saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
 
     return;
