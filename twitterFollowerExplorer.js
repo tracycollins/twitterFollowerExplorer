@@ -2897,7 +2897,7 @@ function updateNetworkStats(params) {
 
         statsObj.queues.saveFileQueue.size = tcUtils.saveFileQueue({folder: folder, file: file, obj: bestInputsConfigObj});
 
-        await saveNetworkObjHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb});
+        await saveNetworkHashMap({folder: bestNetworkFolder, saveImmediate: saveImmediate, updateDb: updateDb});
         console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ updateNetworkStats COMPLETE"));
         resolve();
 
