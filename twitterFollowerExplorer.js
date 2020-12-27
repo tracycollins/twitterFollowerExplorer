@@ -3159,6 +3159,8 @@ async function saveBestNetworkFileCache(params) {
     //   saveNetworkObj = params.network;
     // }
 
+    delete params.network.network;
+
     saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: params.network});
     saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
 
