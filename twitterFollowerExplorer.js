@@ -2667,7 +2667,7 @@ async function initNetworks(params){
         ));
       }
 
-      console.log({bestNetworksByTechnology})
+      // console.log({bestNetworksByTechnology})
 
       if (nnIds.length === 0 && bestNetworkHashMap.size > configuration.networkNumberLimit){
 
