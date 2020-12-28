@@ -8,7 +8,7 @@
       "autorestart": false,
       "env": {
         "PRIMARY_HOST": "google",
-        "DATABASE_HOST": "mms3",
+        "DATABASE_HOST": "mbp3",
         "FORCE_COLOR": 1,
         "NODE_ENV": "production",
         "QUIT_ON_COMPLETE": true,
