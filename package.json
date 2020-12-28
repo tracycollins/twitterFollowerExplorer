@@ -21,7 +21,6 @@
     "array-unique": "^0.3.2",
     "async": "^3.2.0",
     "autolinker": "^3.14.2",
-    "brain.js": "^2.0.0-beta.2",
     "caller-id": "^0.1.0",
     "caseless": "^0.12.0",
     "chalk": "^4.1.0",
