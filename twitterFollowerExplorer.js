@@ -3006,7 +3006,7 @@ function initActivateNetworkQueueInterval(p) {
               && configuration.bestNetworkIncrementalUpdate) 
             {
               statsObj.prevBestNetworkId = statsObj.currentBestNetworkId;
-              await saveBestNetworkFileCache({network: currentBestNetwork});
+              await saveBestNetworkFileCache({networkObj: currentBestNetwork});
             }
 
             let user = {};
@@ -3118,31 +3118,31 @@ async function saveBestNetworkFileCache(params) {
 
   try{
 
-    if (params.network.previousRank === Infinity){
-      params.network.previousRank = 1000;
+    if (params.networkObj.previousRank === Infinity){
+      params.networkObj.previousRank = 1000;
     }
 
     console.log(chalkNetwork(MODULE_ID_PREFIX + " | SAVING NEW BEST NN"
-      + " | SR: " + params.network.successRate.toFixed(2)
-      + " | MR: " + params.network.matchRate.toFixed(2)
-      + " | OAMR: " + params.network.overallMatchRate.toFixed(2)
-      + " | RMR: " + params.network.runtimeMatchRate.toFixed(2)
-      + " | RK: " + params.network.rank
-      + " | PRV RK: " + params.network.previousRank
-      + " | TC HIST: " + params.network.testCycleHistory.length
-      + " | " + params.network.networkId
+      + " | SR: " + params.networkObj.successRate.toFixed(2)
+      + " | MR: " + params.networkObj.matchRate.toFixed(2)
+      + " | OAMR: " + params.networkObj.overallMatchRate.toFixed(2)
+      + " | RMR: " + params.networkObj.runtimeMatchRate.toFixed(2)
+      + " | RK: " + params.networkObj.rank
+      + " | PRV RK: " + params.networkObj.previousRank
+      + " | TC HIST: " + params.networkObj.testCycleHistory.length
+      + " | " + params.networkObj.networkId
     ));
 
     const fileObj = {
-      networkId: params.network.networkId,
-      successRate: params.network.successRate,
-      matchRate: params.network.matchRate,
-      overallMatchRate: params.network.overallMatchRate,
-      runtimeMatchRate: params.network.runtimeMatchRate,
-      testCycles: params.network.testCycles,
-      testCycleHistory: params.network.testCycleHistory,
-      rank: params.network.rank,
-      previousRank: params.network.previousRank,
+      networkId: params.networkObj.networkId,
+      successRate: params.networkObj.successRate,
+      matchRate: params.networkObj.matchRate,
+      overallMatchRate: params.networkObj.overallMatchRate,
+      runtimeMatchRate: params.networkObj.runtimeMatchRate,
+      testCycles: params.networkObj.testCycles,
+      testCycleHistory: params.networkObj.testCycleHistory,
+      rank: params.networkObj.rank,
+      previousRank: params.networkObj.previousRank,
       updatedAt: getTimeStamp()
     };
 
@@ -3150,18 +3150,9 @@ async function saveBestNetworkFileCache(params) {
 
     const file = statsObj.bestRuntimeNetworkId + ".json";
 
-    // let saveNetworkObj;
+    delete params.networkObj.network;
 
-    if (params.network.networkTechnology === "tensorflow"){
-      params.network.networkJson = await nnTools.tensorflowCreateJson({networkObj: params.network});
-    }
-    // else{
-    //   saveNetworkObj = params.network;
-    // }
-
-    delete params.network.network;
-
-    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: params.network});
+    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: params.networkObj});
     saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
 
     return;
