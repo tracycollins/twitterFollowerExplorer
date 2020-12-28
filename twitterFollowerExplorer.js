@@ -3150,9 +3150,11 @@ async function saveBestNetworkFileCache(params) {
 
     const file = statsObj.bestRuntimeNetworkId + ".json";
 
-    delete params.networkObj.network;
+    const nnObj = deepcopy(params.networkObj)
 
-    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: params.networkObj});
+    delete nnObj.network;
+
+    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: nnObj});
     saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
 
     return;
