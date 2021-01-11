@@ -3133,7 +3133,11 @@ async function saveBestNetworkFileCache(params) {
       + " | " + params.networkObj.networkId
     ));
 
-    const fileObj = {
+    const obj = {}
+    
+    obj.folder = bestNetworkFolder;
+    obj.file = statsObj.bestRuntimeNetworkId + ".json";
+    obj.obj = {
       networkId: params.networkObj.networkId,
       successRate: params.networkObj.successRate,
       matchRate: params.networkObj.matchRate,
@@ -3146,16 +3150,14 @@ async function saveBestNetworkFileCache(params) {
       updatedAt: getTimeStamp()
     };
 
-    debug({fileObj})
+    saveCache.set(obj.file, obj);
 
-    const file = statsObj.bestRuntimeNetworkId + ".json";
 
-    const nnObj = deepcopy(params.networkObj)
+    obj.file = bestRuntimeNetworkFileName;
+    obj.obj = deepcopy(params.networkObj);
+    delete obj.obj.network;
 
-    delete nnObj.network;
-
-    saveCache.set(file, {folder: bestNetworkFolder, file: file, obj: nnObj});
-    saveCache.set(bestRuntimeNetworkFileName, {folder: bestNetworkFolder, file: bestRuntimeNetworkFileName, obj: fileObj });
+    saveCache.set(obj.file, obj);
 
     return;
   }
