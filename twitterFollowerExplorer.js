@@ -3154,7 +3154,7 @@ async function saveBestNetworkFileCache(params) {
 
 
     obj.file = bestRuntimeNetworkFileName;
-    obj.obj = deepcopy(params.networkObj);
+    obj.obj = Object.assign({}, params.networkObj);
     delete obj.obj.network;
 
     saveCache.set(obj.file, obj);
