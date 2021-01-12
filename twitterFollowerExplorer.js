@@ -3268,6 +3268,10 @@ async function generateAutoCategory(params) {
       updateGlobalHistograms: configuration.updateGlobalHistograms
     });
 
+    if (empty(user.profileHistograms) && !empty(params.user.profileHistograms)){
+      console.log(chalkAlert(`${MODULE_ID_PREFIX} | !!! updateUserHistograms profileHistograms | @${user.screenName}`))
+    }
+
     if (user.toObject !== undefined) {
       const userObject = user.toObject();
       activateNetworkQueue.push({user: userObject});
