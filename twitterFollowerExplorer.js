@@ -949,13 +949,13 @@ async function updateDbNetwork(params){
 //   }
 // }
 
-async function cursorDataHandler(user){
+// async function cursorDataHandler(user){
 
-  if (user) { 
-    processUserQueue.push(user);
-  }
-  return;
-}
+//   if (user) { 
+//     processUserQueue.push(user);
+//   }
+//   return;
+// }
 
 
 function wait(params){
@@ -1007,7 +1007,8 @@ async function cursorDataHandlerPromise(user){
 
     if (!user) { return; }
 
-    await cursorDataHandler(user);
+    // await cursorDataHandler(user);
+    processUserQueue.push(user);
 
     const queueOverShoot = processUserQueue - configuration.maxProcessUserQueue;
 
@@ -1118,8 +1119,8 @@ async function cursorStream(p){
 
   await cursor.eachAsync(async function(user){
     await cursorDataHandlerPromise(user);
-  // });
-  }, { parallel: cursorParallel });
+  });
+  // }, { parallel: cursorParallel });
 
   console.log(chalkBlueBold(MODULE_ID_PREFIX + " | cursorStream CURSOR COMPLETE"));
   processUserQueue.push({end: true})
