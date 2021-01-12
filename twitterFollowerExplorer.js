@@ -1118,7 +1118,8 @@ async function cursorStream(p){
 
   await cursor.eachAsync(async function(user){
     await cursorDataHandlerPromise(user);
-  }, { parallel: cursorParallel });
+  });
+  // }, { parallel: cursorParallel });
 
   console.log(chalkBlueBold(MODULE_ID_PREFIX + " | cursorStream CURSOR COMPLETE"));
   processUserQueue.push({end: true})
