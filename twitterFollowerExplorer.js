@@ -23,6 +23,7 @@ const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
 const DEFAULT_BATCH_SIZE = 100;
+const DEFAULT_CURSOR_PARALLEL = 8;
 const DEFAULT_SAVE_FILE_BACKPRESSURE_PERIOD = 10; // ms
 const DEFAULT_MAX_SAVE_FILE_QUEUE = 100;
 const DEFAULT_PURGE_MIN_SUCCESS_RATE = 50;
@@ -158,6 +159,7 @@ const HOST = (configuration.isDatabaseHost) ? "default" : "local";
 
 configuration.limitTestMode = 1047
 configuration.batchSize = DEFAULT_BATCH_SIZE;
+configuration.cursorParallel = DEFAULT_CURSOR_PARALLEL;
 configuration.saveFileBackPressurePeriod = DEFAULT_SAVE_FILE_BACKPRESSURE_PERIOD;
 configuration.maxSaveFileQueue = DEFAULT_MAX_SAVE_FILE_QUEUE;
 configuration.userCursorBatchSize = DEFAULT_USER_CURSOR_BATCH_SIZE;
@@ -1039,6 +1041,7 @@ async function cursorStream(p){
 
   const batchSize = params.batchSize || configuration.batchSize;
   const limit = configuration.testMode ? configuration.limitTestMode : params.limit || configuration.limit;
+  const cursorParallel = params.cursorParallel || configuration.cursorParallel;
 
   statsObj.users.processed.grandTotal = await global.wordAssoDb.User.find({categorized: true}).countDocuments();
 
@@ -1113,7 +1116,7 @@ async function cursorStream(p){
 
   await cursor.eachAsync(async function(user){
     await cursorDataHandlerPromise(user);
-  });
+  }, { parallel: cursorParallel });
 
   console.log(chalkBlueBold(MODULE_ID_PREFIX + " | cursorStream CURSOR COMPLETE"));
   processUserQueue.push({end: true})
