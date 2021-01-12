@@ -2888,10 +2888,15 @@ async function initNetworks(params){
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
 
-        testCycleLimit += 1;
-        purgeMinSuccessRate = minNetworkSuccessRate + 1;
-        minNetworkSuccessRate = Infinity;
+        if (testCycleLimit < 20) { 
+          testCycleLimit += 1;
+          purgeMinSuccessRate = minNetworkSuccessRate + 1;
+        }
+        else{
+          purgeMinSuccessRate += 0.5;
+        }
 
+        minNetworkSuccessRate = Infinity;
         nnIds = _.shuffle(bestNetworkHashMap.keys());
 
         console.log(chalkAlert("TFE | *** WHILE LOOP RESET" 
