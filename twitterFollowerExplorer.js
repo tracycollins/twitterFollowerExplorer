@@ -1056,9 +1056,9 @@ async function cursorStream(p){
   ));
 
   console.log(chalkGreen(MODULE_ID_PREFIX 
-    + " | CATEGORIZE"
-    + "\n" + MODULE_ID_PREFIX
     + " | TEST MODE: " + configuration.testMode
+    + " | CURSOR PARALLEL: " + cursorParallel
+    + " | USER PROCESS PARALLEL: " + configuration.userProcessMaxParallel
     + " | BATCH SIZE: " + batchSize
     + " | MAX PUQ: " + configuration.maxProcessUserQueue
     + " | BACK PRESSURE PERIOD: " + configuration.backPressurePeriod
