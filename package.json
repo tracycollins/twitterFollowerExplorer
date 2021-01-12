@@ -45,6 +45,7 @@
     "hashmap": "^2.4.0",
     "hashtag-regex": "^2.1.0",
     "intervalometer": "^1.0.5",
+    "is-empty": "^1.2.0",
     "isomorphic-fetch": "^3.0.0",
     "json-parse-safe": "^2.0.0",
     "keypress": "^0.2.1",

@@ -86,6 +86,7 @@ const _ = require("lodash");
 const NodeCache = require("node-cache");
 const merge = require("deepmerge");
 const btoa = require("btoa");
+const empty = require("is-empty");
 
 const fs = require("fs");
 const { promisify } = require("util");
@@ -729,7 +730,7 @@ async function updateDbNetwork(params){
 
     const update = {};
 
-    update['$setOnInsert'] = { 
+    update.$setOnInsert = { 
       networkTechnology: networkObj.networkTechnology,
       networkJson: networkObj.networkJson,
       binaryMode: networkObj.binaryMode,
@@ -749,7 +750,7 @@ async function updateDbNetwork(params){
       test: networkObj.test
     };
 
-    update['$set'] = { 
+    update.$set = { 
       archived: networkObj.archived,
       matchRate: networkObj.matchRate, 
       overallMatchRate: networkObj.overallMatchRate,
@@ -759,13 +760,13 @@ async function updateDbNetwork(params){
       // meta: networkObj.meta
     };
 
-    if (incrementTestCycles) { update['$inc'] = { testCycles: 1 }; }
+    if (incrementTestCycles) { update.$inc = { testCycles: 1 }; }
     
     if (testHistoryItem) { 
-      update['$push'] = { testCycleHistory: testHistoryItem };
+      update.$push = { testCycleHistory: testHistoryItem };
     }
     else if (addToTestHistory) {
-      update['$addToSet'] = { testCycleHistory: { $each: networkObj.testCycleHistory } };
+      update.$addToSet = { testCycleHistory: { $each: networkObj.testCycleHistory } };
     }
 
     const options = {
@@ -801,7 +802,7 @@ async function initCategorizedUserIdSet(p){
     statsObj.status = "INIT CATEGORIZED USER ID SET";
 
     const cursorParams = {};
-    cursorParams.query = { categorized: true };
+    cursorParams.query = params.query || { category: { "$in": ["left", "neutral", "right"] }, ignored: false };
 
     cursorParams.resultsAsArray = true;
     cursorParams.lean = false;
@@ -859,7 +860,6 @@ async function initCategorizedUserIdSet(p){
           if ((configuration.verbose && (statsObj.users.categorized.fetched % 10 == 0)) 
             || (statsObj.users.categorized.fetched % 1000 == 0)) 
           {
-
             console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
               // + " | UIDs: " + userIdArray.length
               + " | PUQ: " + processUserQueue.length
@@ -3545,6 +3545,10 @@ async function updateUser(params) {
     prevPropsUser.markModified("latestTweets");
 
     const savedUser = await prevPropsUser.save();
+
+    if (empty(savedUser.profileHistograms) && empty(savedUser.tweetHistograms) && empty(savedUser.friends)){
+      printUserObj(`${MODULE_ID_PREFIX} | !!! EMPTY USER`, savedUser)
+    }
 
     if (configuration.verbose){
 
