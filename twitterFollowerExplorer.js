@@ -2504,7 +2504,13 @@ function initActivateNetworks(){
         }
         catch(err){
           console.log(chalkError(MODULE_ID_PREFIX + " | *** waitEvent ERROR: ", err));
-          console.trace(err);
+          if (networkObjArray.length === 0){
+            clearInterval(loadNetworInterval);
+            statsObj.loadedNetworksFlag = true;
+            console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED NNs COMPLETE"));
+            resolve();
+          }
+          loadNetworkReady = true;
         }
 
       }
