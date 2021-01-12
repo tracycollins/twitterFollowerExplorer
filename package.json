@@ -1,6 +1,6 @@
 {
   "name": "twitterfollowerexplorer",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "twitter user follower explorer",
   "main": "twitterFollowerExplorer.js",
   "dependencies": {
@@ -39,6 +39,7 @@
     "event-stream": "^4.0.1",
     "eventemitter2": "^6.4.3",
     "eventemitter3": "^4.0.7",
+    "fs-extra": "^9.0.1",
     "get-urls": "^10.0.0",
     "google-gax": "^2.10.0",
     "grpc": "^1.24.4",

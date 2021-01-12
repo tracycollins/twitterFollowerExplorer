@@ -22,6 +22,9 @@ const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+const DEFAULT_BATCH_SIZE = 100;
+const DEFAULT_SAVE_FILE_BACKPRESSURE_PERIOD = 10; // ms
+const DEFAULT_MAX_SAVE_FILE_QUEUE = 100;
 const DEFAULT_PURGE_MIN_SUCCESS_RATE = 50;
 const DEFAULT_USER_CURSOR_BATCH_SIZE = 10;
 const DEFAULT_USER_CURSOR_LIMIT = 100;
@@ -62,7 +65,7 @@ const TEST_GLOBAL_MIN_SUCCESS_RATE_MULTIPLIER = 0.95;
 const TEST_TWEET_FETCH_COUNT = 11;
 const TWEET_FETCH_COUNT = 100;
 
-const TEST_MODE_NUM_NN = 20;
+const TEST_MODE_NUM_NN = 10;
 const TEST_TOTAL_FETCH = 1000;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
@@ -76,6 +79,7 @@ const DEFAULT_ENABLE_LANG_ANALYSIS = true;
 
 const DEFAULT_MAX_USER_TWEETIDS = 100;
 
+const fs = require("fs-extra");
 const path = require("path");
 const watch = require("watch");
 const defaults = require("object.defaults");
@@ -88,7 +92,7 @@ const merge = require("deepmerge");
 const btoa = require("btoa");
 const empty = require("is-empty");
 
-const fs = require("fs");
+// const fs = require("fs");
 const { promisify } = require("util");
 const renameFileAsync = promisify(fs.rename);
 const unlinkFileAsync = promisify(fs.unlink);
@@ -152,6 +156,10 @@ configuration.isDatabaseHost = (configuration.databaseHost === hostname);
 
 const HOST = (configuration.isDatabaseHost) ? "default" : "local";
 
+configuration.limitTestMode = 1047
+configuration.batchSize = DEFAULT_BATCH_SIZE;
+configuration.saveFileBackPressurePeriod = DEFAULT_SAVE_FILE_BACKPRESSURE_PERIOD;
+configuration.maxSaveFileQueue = DEFAULT_MAX_SAVE_FILE_QUEUE;
 configuration.userCursorBatchSize = DEFAULT_USER_CURSOR_BATCH_SIZE;
 configuration.userCursorLimit = DEFAULT_USER_CURSOR_LIMIT;
 configuration.maxProcessUserQueue = DEFAULT_MAX_PROCESS_USER_QUEUE;
@@ -187,6 +195,7 @@ configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
+let mongooseDb;
 global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 global.dbConnection = false;
 
@@ -419,7 +428,7 @@ statsObj.twitter.tweetsProcessed = 0;
 statsObj.twitter.tweetsHits = 0;
 statsObj.twitter.tweetsTotal = 0;
 
-statsObj.user = {};
+
 statsObj.userReadyAck = false;
 statsObj.userReadyAckWait = 0;
 statsObj.userReadyTransmitted = false;
@@ -427,8 +436,25 @@ statsObj.userReadyTransmitted = false;
 statsObj.fetchUserEndFlag = false;
 
 statsObj.users = {};
-statsObj.users.categorized = {};
 
+statsObj.users.notCategorized = 0;
+statsObj.users.notFound = 0;
+statsObj.users.screenNameUndefined = 0;
+
+statsObj.users.processed = {};
+statsObj.users.processed.grandTotal = 0;
+statsObj.users.processed.total = 0;
+statsObj.users.processed.percent = 0;
+statsObj.users.processed.empty = 0;
+statsObj.users.processed.errors = 0;
+statsObj.users.processed.elapsed = 0;
+statsObj.users.processed.rate = 0;
+statsObj.users.processed.remain = 0;
+statsObj.users.processed.remainMS = 0;
+statsObj.users.processed.startMoment = 0;
+statsObj.users.processed.endMoment = moment();
+
+statsObj.users.categorized = {};
 statsObj.users.categorized.total = 0;
 statsObj.users.categorized.manual = 0;
 statsObj.users.categorized.auto = 0;
@@ -437,7 +463,6 @@ statsObj.users.categorized.mismatched = 0;
 statsObj.users.categorized.matchRate = 0;
 
 statsObj.users.fetchErrors = 0;
-statsObj.users.processed = 0;
 statsObj.users.dbUpdated = 0;
 statsObj.users.totalUsersSkipped = 0;
 statsObj.users.percentFetched = 0;
@@ -789,135 +814,312 @@ async function updateDbNetwork(params){
 }
 
 
-async function initCategorizedUserIdSet(p){
+// async function initCategorizedUserIdSet(p){
 
-  try{
+//   try{
 
-    const params = p || {};
+//     const params = p || {};
 
-    let categorizedUserIdSetIntervalReady = true;
+//     let categorizedUserIdSetIntervalReady = true;
 
-    const maxProcessUserQueue = params.maxProcessUserQueue || configuration.maxProcessUserQueue;
+//     const maxProcessUserQueue = params.maxProcessUserQueue || configuration.maxProcessUserQueue;
 
-    statsObj.status = "INIT CATEGORIZED USER ID SET";
+//     statsObj.status = "INIT CATEGORIZED USER ID SET";
 
-    const cursorParams = {};
-    cursorParams.query = params.query || { category: { "$in": ["left", "neutral", "right"] }, ignored: false };
+//     const cursorParams = {};
+//     cursorParams.query = params.query || { category: { "$in": ["left", "neutral", "right"] }, ignored: false };
 
-    cursorParams.resultsAsArray = true;
-    cursorParams.lean = false;
-    cursorParams.skip = 0;
-    cursorParams.limit = (configuration.testMode) ? parseInt(0.2*configuration.userCursorLimit) : configuration.userCursorLimit;
-    cursorParams.batchSize = (configuration.testMode) ? parseInt(0.2*configuration.userCursorBatchSize) : configuration.userCursorBatchSize;
-    // cursorParams.toObject = true;
+//     cursorParams.resultsAsArray = true;
+//     cursorParams.lean = false;
+//     cursorParams.skip = 0;
+//     cursorParams.limit = (configuration.testMode) ? parseInt(0.2*configuration.userCursorLimit) : configuration.userCursorLimit;
+//     cursorParams.batchSize = (configuration.testMode) ? parseInt(0.2*configuration.userCursorBatchSize) : configuration.userCursorBatchSize;
+//     // cursorParams.toObject = true;
 
-    let more = true;
-    statsObj.users.categorized.fetched = 0;
-    statsObj.users.categorized.total = 0;
-    statsObj.users.categorized.manual = 0;
-    statsObj.users.categorized.auto = 0;
-    statsObj.users.categorized.matched = 0;
-    statsObj.users.categorized.mismatched = 0;
-    statsObj.users.categorized.matchRate = 0;
+//     let more = true;
+//     statsObj.users.categorized.fetched = 0;
+//     statsObj.users.categorized.total = 0;
+//     statsObj.users.categorized.manual = 0;
+//     statsObj.users.categorized.auto = 0;
+//     statsObj.users.categorized.matched = 0;
+//     statsObj.users.categorized.mismatched = 0;
+//     statsObj.users.categorized.matchRate = 0;
 
-    const usersCollection = global.dbConnection.collection("users");
-    statsObj.users.categorized.total = await usersCollection.countDocuments(cursorParams.query);
+//     const usersCollection = global.dbConnection.collection("users");
+//     statsObj.users.categorized.total = await usersCollection.countDocuments(cursorParams.query);
 
-    console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT USER CURSOR"
-      + " | TOT USERS: " + statsObj.users.categorized.total
-      + " | BATCH SIZE: " + cursorParams.batchSize
-      + " | LIMIT: " + cursorParams.limit
-      + " | SKIP: " + cursorParams.skip
-    ));
+//     console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT USER CURSOR"
+//       + " | TOT USERS: " + statsObj.users.categorized.total
+//       + " | BATCH SIZE: " + cursorParams.batchSize
+//       + " | LIMIT: " + cursorParams.limit
+//       + " | SKIP: " + cursorParams.skip
+//     ));
 
-    const categorizedUserIdSetInterval = setInterval(async function(){
+//     const categorizedUserIdSetInterval = setInterval(async function(){
 
-      if (categorizedUserIdSetIntervalReady 
-        && more 
-        && (processUserQueue.length < maxProcessUserQueue)
-      ){
+//       if (categorizedUserIdSetIntervalReady 
+//         && more 
+//         && (processUserQueue.length < maxProcessUserQueue)
+//       ){
 
-        categorizedUserIdSetIntervalReady = false;
+//         categorizedUserIdSetIntervalReady = false;
 
-        const results = await userServerController.findCategorizedUsersCursorPromise(cursorParams);
+//         const results = await userServerController.findCategorizedUsersCursorPromise(cursorParams);
           
-        if ((!configuration.testMode && results) 
-          || (configuration.testMode && (statsObj.users.categorized.fetched < TEST_TOTAL_FETCH))) {
+//         if ((!configuration.testMode && results) 
+//           || (configuration.testMode && (statsObj.users.categorized.fetched < TEST_TOTAL_FETCH))) {
 
-          more = true;
+//           more = true;
 
-          statsObj.users.categorized.fetched += results.count;
-          statsObj.users.categorized.manual += results.manual;
-          statsObj.users.categorized.auto += results.auto;
-          statsObj.users.categorized.matched += results.matched;
-          statsObj.users.categorized.mismatched += results.mismatched;
+//           statsObj.users.categorized.fetched += results.count;
+//           statsObj.users.categorized.manual += results.manual;
+//           statsObj.users.categorized.auto += results.auto;
+//           statsObj.users.categorized.matched += results.matched;
+//           statsObj.users.categorized.mismatched += results.mismatched;
 
-          statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.fetched);
+//           statsObj.users.categorized.matchRate = 100*(statsObj.users.categorized.matched/statsObj.users.categorized.fetched);
 
-          // const userIdArray = Object.keys(results.obj);
-          results.array.forEach((user) => processUserQueue.push(user));
+//           // const userIdArray = Object.keys(results.obj);
+//           results.array.forEach((user) => processUserQueue.push(user));
 
-          if ((configuration.verbose && (statsObj.users.categorized.fetched % 10 == 0)) 
-            || (statsObj.users.categorized.fetched % 1000 == 0)) 
-          {
-            console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
-              // + " | UIDs: " + userIdArray.length
-              + " | PUQ: " + processUserQueue.length
-              + " | TOT USERS: " + statsObj.users.categorized.total
-              + " | TOT FETCHED: " + statsObj.users.categorized.fetched
-              + " | LIMIT: " + cursorParams.limit
-              + " | SKIP: " + cursorParams.skip
-              + " | " + statsObj.users.categorized.manual + " MAN"
-              + " | " + statsObj.users.categorized.auto + " AUTO"
-              + " | " + statsObj.users.categorized.matched + " MATCHED"
-              + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-              + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
-            ));
-          }
+//           if ((configuration.verbose && (statsObj.users.categorized.fetched % 10 == 0)) 
+//             || (statsObj.users.categorized.fetched % 1000 == 0)) 
+//           {
+//             console.log(chalkLog(MODULE_ID_PREFIX + " | LOADING CATEGORIZED USERS FROM DB"
+//               // + " | UIDs: " + userIdArray.length
+//               + " | PUQ: " + processUserQueue.length
+//               + " | TOT USERS: " + statsObj.users.categorized.total
+//               + " | TOT FETCHED: " + statsObj.users.categorized.fetched
+//               + " | LIMIT: " + cursorParams.limit
+//               + " | SKIP: " + cursorParams.skip
+//               + " | " + statsObj.users.categorized.manual + " MAN"
+//               + " | " + statsObj.users.categorized.auto + " AUTO"
+//               + " | " + statsObj.users.categorized.matched + " MATCHED"
+//               + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+//               + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+//             ));
+//           }
 
-          cursorParams.skip += results.count;
-          categorizedUserIdSetIntervalReady = true;
+//           cursorParams.skip += results.count;
+//           categorizedUserIdSetIntervalReady = true;
 
-        }
-        else {
+//         }
+//         else {
 
-          processUserQueue.push({end: true});
+//           processUserQueue.push({end: true});
 
-          more = false;
+//           more = false;
 
-          clearInterval(categorizedUserIdSetInterval);
+//           clearInterval(categorizedUserIdSetInterval);
 
-          console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
-            + " | PUQ: " + processUserQueue.length
-            + " | TOT USERS: " + statsObj.users.categorized.total
-            + " | TOT FETCHED: " + statsObj.users.categorized.fetched
-            + " | " + statsObj.users.categorized.manual + " MAN"
-            + " | " + statsObj.users.categorized.auto + " AUTO"
-            + " | " + statsObj.users.categorized.matched + " MATCHED"
-            + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
-            + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+//           console.log(chalkBlueBold(MODULE_ID_PREFIX + " | +++ LOADED CATEGORIZED USERS FROM DB"
+//             + " | PUQ: " + processUserQueue.length
+//             + " | TOT USERS: " + statsObj.users.categorized.total
+//             + " | TOT FETCHED: " + statsObj.users.categorized.fetched
+//             + " | " + statsObj.users.categorized.manual + " MAN"
+//             + " | " + statsObj.users.categorized.auto + " AUTO"
+//             + " | " + statsObj.users.categorized.matched + " MATCHED"
+//             + " / " + statsObj.users.categorized.mismatched + " MISMATCHED"
+//             + " | " + statsObj.users.categorized.matchRate.toFixed(2) + "% MATCHRATE"
+//           ));
+
+//           categorizedUserIdSetIntervalReady = true;
+
+//           statsObj.fetchUserEndFlag = true;
+
+//           console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
+//             + " | TOT USERS: " + statsObj.users.categorized.total
+//             + " | TOT FETCHED: " + statsObj.users.categorized.fetched
+//           ));
+
+//           return;
+//         }
+
+//       }
+
+//     }, DEFAULT_MIN_INTERVAL);
+//   }
+//   catch(err){
+//     console.log(chalkError(MODULE_ID_PREFIX + " | *** initCategorizedUserIdSet ERROR: " + err));
+//     throw err;
+//   }
+// }
+
+async function cursorDataHandler(user){
+
+  if (user) { 
+    processUserQueue.push(user);
+  }
+  return;
+}
+
+
+function wait(params){
+
+  return new Promise(function(resolve){
+
+    if (processUserQueue <= configuration.maxSaveFileQueue){
+      return resolve(true);
+    }
+
+    if (params.message && params.verbose) {
+      console.log(chalkLog(MODULE_ID_PREFIX 
+        + " | " + params.message 
+        + " | PERIOD: " + params.period + " MS"
+      ));
+    }
+
+
+    const start = moment().valueOf();
+    const w = setInterval(function(){
+
+      if (processUserQueue < configuration.maxSaveFileQueue){
+
+        const deltaMS = (moment().valueOf() - start);
+
+        clearInterval(w);
+
+        if (params.verbose) {
+          console.log(chalkLog(MODULE_ID_PREFIX 
+            + " | XXX WAIT END BACK PRESSURE"
+            + " | PUQ: " + processUserQueue
+            + " | PERIOD: " + params.period + " MS"
+            + " | TOTAL WAIT: " + deltaMS + " MS"
           ));
-
-          categorizedUserIdSetIntervalReady = true;
-
-          statsObj.fetchUserEndFlag = true;
-
-          console.log(chalkBlueBold("TFE | ### END initCategorizedUserIdSet"
-            + " | TOT USERS: " + statsObj.users.categorized.total
-            + " | TOT FETCHED: " + statsObj.users.categorized.fetched
-          ));
-
-          return;
         }
 
+        return resolve(true);
       }
 
-    }, DEFAULT_MIN_INTERVAL);
+    }, params.period);
+
+  });
+}
+
+
+async function cursorDataHandlerPromise(user){
+
+  try {
+
+    if (!user) { return; }
+
+    await cursorDataHandler(user);
+
+    const queueOverShoot = processUserQueue - configuration.maxSaveFileQueue;
+
+    if (queueOverShoot > 0){
+
+      const period = queueOverShoot * configuration.saveFileBackPressurePeriod;
+
+      await wait({
+        message: "BK PRSSR | PUQ: " + processUserQueue, 
+        period: period,
+        verbose: configuration.verbose
+      });
+    }
+
+    return;
+
   }
   catch(err){
-    console.log(chalkError(MODULE_ID_PREFIX + " | *** initCategorizedUserIdSet ERROR: " + err));
-    throw err;
+    console.log(chalkError(MODULE_ID_PREFIX
+      + " | *** cursorDataHandlerPromise ERROR: " + err
+    ));
   }
+
+}
+
+async function cursorStream(p){
+
+  const params = p || {};
+
+  statsObj.status = "cursorStream";
+
+  statsObj.categorizedCount = 0;
+
+  const batchSize = params.batchSize || configuration.batchSize;
+  const limit = configuration.testMode ? configuration.limitTestMode : params.limit || configuration.limit;
+
+  statsObj.users.processed.grandTotal = await global.wordAssoDb.User.find({categorized: true}).countDocuments();
+
+  if (configuration.testMode){
+    statsObj.users.processed.grandTotal = Math.min(configuration.limitTestMode, statsObj.users.processed.grandTotal)
+  }
+
+  console.log(chalkGreen("\n" + MODULE_ID_PREFIX
+    + " | =============================================================================================================="
+  ));
+
+  console.log(chalkGreen(MODULE_ID_PREFIX 
+    + " | CATEGORIZE"
+    + "\n" + MODULE_ID_PREFIX
+    + " | TEST MODE: " + configuration.testMode
+    + " | BATCH SIZE: " + batchSize
+    + " | MAX SFQ: " + configuration.maxSaveFileQueue
+    + " | SAVE BACK PRESSURE PERIOD: " + configuration.saveFileBackPressurePeriod
+    + " | TOTAL USERS: " + statsObj.users.processed.grandTotal
+  ));
+
+  console.log(chalkGreen(MODULE_ID_PREFIX
+    + " | ==============================================================================================================\n"
+  ));
+
+  const query = params.query || { categorized: true, ignored: false }
+  const session = await mongooseDb.startSession();
+
+  debug("MONGO DB SESSION\n" + session.id);
+
+  console.log(chalkBlue(MODULE_ID_PREFIX
+    + " | cursorStream"
+    + " | batchSize: " + batchSize
+  ));
+
+  let cursor;
+
+  if (configuration.testMode){
+    cursor = global.wordAssoDb.User
+      .find(query, {timeout: false})
+      .batchSize(batchSize)
+      .limit(limit)
+      .session(session)
+      .cursor()
+      .addCursorFlag("noCursorTimeout", true);
+  }
+  else{
+    cursor = global.wordAssoDb.User
+      .find(query, {timeout: false})
+      .batchSize(batchSize)
+      .session(session)
+      .cursor()
+      .addCursorFlag("noCursorTimeout", true);
+  }
+
+  cursor.on("end", function() {
+    console.log(chalkAlert(MODULE_ID_PREFIX + " | --- cursorStream CURSOR END"));
+    processUserQueue.push({end: true})
+  });
+
+  cursor.on("error", function(err) {
+    console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR cursorStream: CURSOR ERROR: " + err));
+    throw err;
+  });
+
+  cursor.on("close", function() {
+    processUserQueue.push({end: true})
+    console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX cursorStream CURSOR CLOSE"));
+  });
+
+  if (statsObj.users.processed.startMoment === 0) { statsObj.users.processed.startMoment = moment(); }
+
+  await cursor.eachAsync(async function(user){
+    await cursorDataHandlerPromise(user);
+  });
+
+  console.log(chalkBlueBold(MODULE_ID_PREFIX + " | cursorStream CURSOR COMPLETE"));
+  processUserQueue.push({end: true})
+  statsObj.fetchUserEndFlag = true;
+
+  return;
 }
 
 process.title = MODULE_ID.toLowerCase() + "_" + process.pid;
@@ -1094,15 +1296,14 @@ async function showStats(options) {
   statsObj.timeStamp = getTimeStamp();
 
   statsObj.elapsedMS = moment().valueOf() - startTimeMoment.valueOf();
-  statsObj.processUserElapsedMS = moment().valueOf() - processUserStartTimeMoment.valueOf();
 
-  statsObj.users.mumProcessed = statsObj.users.processed + statsObj.users.fetchErrors;
-  statsObj.users.numProcessRemaining = statsObj.users.categorized.total-statsObj.users.mumProcessed;
-
-  statsObj.users.processRateMS = statsObj.processUserElapsedMS/statsObj.users.mumProcessed; // ms/userProcessed
-  statsObj.users.processRateSec = statsObj.users.processRateMS/1000;
-
-  statsObj.remainingTimeMs = statsObj.users.processRateMS * statsObj.users.numProcessRemaining;
+  statsObj.users.processed.elapsed = (moment().valueOf() - statsObj.users.processed.startMoment.valueOf()); // mseconds
+  statsObj.users.processed.rate = (statsObj.users.processed.total > 0) ? statsObj.users.processed.elapsed/statsObj.users.processed.total : 0; // msecs/usersArchived
+  statsObj.users.processed.remain = statsObj.users.processed.grandTotal - (statsObj.users.processed.total + statsObj.users.processed.errors);
+  statsObj.users.processed.remainMS = statsObj.users.processed.remain * statsObj.users.processed.rate; // mseconds
+  statsObj.users.processed.endMoment = moment();
+  statsObj.users.processed.endMoment.add(statsObj.users.processed.remainMS, "ms");
+  statsObj.users.processed.percent = 100 * (statsObj.users.processed.total)/statsObj.users.processed.grandTotal;
 
   statsObjSmall = pick(statsObj, statsPickArray);
 
@@ -1127,14 +1328,13 @@ async function showStats(options) {
     console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
       + " | PUQ: " + processUserQueue.length 
       + " | UDUQ: " + userDbUpdateQueue.length 
-      + " | FTCHD/PRCSSD/ERR/REM/TOT: " + statsObj.users.categorized.fetched 
-      + "/" + statsObj.users.processed 
-      + "/" + statsObj.users.fetchErrors 
-      + "/" + statsObj.users.numProcessRemaining 
-      + "/" + statsObj.users.categorized.total 
-      + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
-      + " | ETC (" + statsObj.users.processRateSec.toFixed(3) + " SPU): " + msToTime(statsObj.remainingTimeMs) 
-      + " / " + moment().add(statsObj.remainingTimeMs).format(compactDateTimeFormat)
+      + " | PRCSSD/ERR/REM/TOT: " + statsObj.users.processed.total
+      + "/" + statsObj.users.processed.errors 
+      + "/" + statsObj.users.processed.remain 
+      + "/" + statsObj.users.processed.grandTotal 
+      + " (" + statsObj.users.processed.percent.toFixed(2) + "%)"
+      + " | ETC (" + (statsObj.users.processed.rate/1000).toFixed(3) + " SPU): " + msToTime(statsObj.users.processed.remainMS) 
+      + " / " + moment().add(statsObj.users.processed.remainMS).format(compactDateTimeFormat)
       + " | " + statsObj.users.categorized.manual + " MAN"
       + " | " + statsObj.users.categorized.auto + " AUTO"
       + " | " + statsObj.users.categorized.matched + " MATCH"
@@ -1200,6 +1400,7 @@ configuration.default = {};
 configuration.default.userDataFolder = path.join(configDefaultFolder, "trainingSets/users/data");
 
 configuration.userDataFolder = configuration[HOST].userDataFolder;
+configuration.trainingSetsFolder = path.join(configDefaultFolder, "trainingSets");
 
 const statsFolder = path.join(DROPBOX_ROOT_FOLDER, "stats", hostname);
 const statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
@@ -1635,13 +1836,13 @@ async function quit(opts) {
         ));
       }
 
-      if (!global.dbConnection) {
+      if (!mongooseDb) {
         process.exit();
       }
       else {
         setTimeout(function() {
 
-          global.dbConnection.close(async function () {
+          mongooseDb.close(async function () {
             console.log(chalkBlue(
                 MODULE_ID_PREFIX + " | ==========================\n"
               + MODULE_ID_PREFIX + " | MONGO DB CONNECTION CLOSED\n"
@@ -2470,6 +2671,10 @@ function initActivateNetworks(){
       return resolve();
     }
 
+    if (configuration.testMode){
+      networkObjArray.length = Math.min(5, networkObjArray.length)
+    }
+
     const loadNetworInterval = setInterval(async function(){
 
       if (networkObjArray.length > 0 && loadNetworkReady){
@@ -3039,10 +3244,16 @@ function initActivateNetworkQueueInterval(p) {
             ));
           }
 
-          statsObj.users.processed += 1;
-          statsObj.users.percentProcessed = 100*(statsObj.users.processed+statsObj.users.fetchErrors)/statsObj.users.categorized.total;
+          statsObj.users.processed.total += 1;
+          statsObj.users.processed.elapsed = (moment().valueOf() - statsObj.users.processed.startMoment.valueOf()); // mseconds
+          statsObj.users.processed.rate = (statsObj.users.processed.total > 0) ? statsObj.users.processed.elapsed/statsObj.users.processed.total : 0; // msecs/usersArchived
+          statsObj.users.processed.remain = statsObj.users.processed.grandTotal - (statsObj.users.processed.total + statsObj.users.processed.errors);
+          statsObj.users.processed.remainMS = statsObj.users.processed.remain * statsObj.users.processed.rate; // mseconds
+          statsObj.users.processed.endMoment = moment();
+          statsObj.users.processed.endMoment.add(statsObj.users.processed.remainMS, "ms");
+          statsObj.users.processed.percent = 100 * (statsObj.users.processed.total)/statsObj.users.processed.grandTotal;
 
-          if (statsObj.users.processed % 100 == 0) { showStats(); }
+          if (statsObj.users.processed.total % 100 == 0) { showStats(); }
 
           if (statsObj.currentBestNetwork.rank < currentBestNetwork.rank){
             nnTools.printNetworkObj(MODULE_ID_PREFIX + " | +++ UPD BEST NN"
@@ -3230,7 +3441,10 @@ function initUserDbUpdateQueueInterval(p) {
               }));
             }
 
-            if (userObj.end) { more = false; }
+            if (userObj.end) { 
+              more = false;
+              userDbUpdateQueue.length = 0;
+            }
             if (userDbUpdateQueue.length === 0) { more = false; }
             if (processUserArray.length >= maxParallel) { more = false; }
 
@@ -3889,7 +4103,10 @@ async function initProcessUserQueueInterval(p) {
             // processUserArray.push(processUser(userObj));
             if (!userObj.end) { processUserArray.push(userObj); }
 
-            if (userObj.end) { more = false; }
+            if (userObj.end) { 
+              console.log(chalkAlert(`${MODULE_ID_PREFIX} | END`))
+              more = false; 
+            }
             if (processUserQueue.length === 0) { more = false; }
             if (processUserArray.length >= maxParallel) { more = false; }
 
@@ -4059,11 +4276,11 @@ const fsmStates = {
         statsObj.status = "FSM FETCH_ALL";
 
         try{
-          await initCategorizedUserIdSet();
+          await cursorStream();
           console.log("TFE | FETCH_ALL | onEnter | " + event);
         }
         catch(err){
-          console.log(chalkError("TFE | *** ALL CHILDREN FETCH_ALL ERROR: " + err));
+          console.log(chalkError("TFE | *** FETCH_ALL ERROR: " + err));
           fsm.fsm_error();
         }
 
@@ -4093,7 +4310,7 @@ const fsmStates = {
         console.log(chalk.bold.blue("TFE | ================= END FETCH ALL ===================="));
         console.log(chalk.bold.blue("TFE | ===================================================="));
 
-        console.log(chalk.bold.blue("TFE | TOTAL USERS PROCESSED:    " + statsObj.users.processed));
+        console.log(chalk.bold.blue("TFE | TOTAL USERS PROCESSED:    " + statsObj.users.processed.total));
         console.log(chalk.bold.blue("TFE | TOTAL USERS FETCH ERRORS: " + statsObj.users.fetchErrors));
 
         console.log(chalk.bold.blue("\nTFE | ----------------------------------------------------"
@@ -4183,8 +4400,8 @@ const fsmStates = {
           slackText = slackText + " | RUN: " + statsObj.elapsed;
           slackText = slackText + " | TOT NNs: " + bestNetworkHashMap.size
           slackText = slackText + " | BEST INPUTS SET: : " + bestInputsSet.size
-          slackText = slackText + "\nTOT: " + statsObj.users.processed + " | ERR: " + statsObj.users.fetchErrors;
-          slackText = slackText + " (" + statsObj.users.percentProcessed.toFixed(2) + "%)"
+          slackText = slackText + "\nTOT: " + statsObj.users.processed.total + " | ERR: " + statsObj.users.fetchErrors;
+          slackText = slackText + " (" + statsObj.users.processed.percent.toFixed(2) + "%)"
           slackText = slackText + "\nIN: " + statsObj.bestNetwork.numInputs;
           slackText = slackText + " | INPUTS ID: " + statsObj.bestNetwork.inputsId;
           slackText = slackText + "\nNN: " + statsObj.bestNetwork.networkId;
@@ -4297,6 +4514,29 @@ console.log(chalkBlueBold(
   + "\n=======================================================================\n"
 ));
 
+async function initNormalization(){
+  console.log(chalkLog(MODULE_ID_PREFIX +
+    " | loadTrainingSet | LOAD NORMALIZATION" +
+    " | " + configuration.trainingSetsFolder + "/normalization.json"
+  ));
+
+  const filePath = path.join(configuration.trainingSetsFolder, "normalization.json");
+
+  const normalization = await fs.readJson(filePath);
+
+  if (normalization) {
+    console.log(chalk.black.bold(MODULE_ID_PREFIX + " | loadTrainingSet | SET NORMALIZATION ..."));
+    await nnTools.setNormalization(normalization);
+  } 
+  else {
+    console.log(chalkAlert(MODULE_ID_PREFIX + " | loadTrainingSet | !!! NORMALIZATION NOT LOADED" +
+      " | " + configuration.trainingSetsFolder + "/normalization.json"
+    ));
+  }
+
+  return;
+
+}
 setTimeout(async function(){
 
   try {
@@ -4327,7 +4567,9 @@ setTimeout(async function(){
       + "\n" + MODULE_ID_PREFIX + " | --------------------------------------------------------"
     ));
 
-    global.dbConnection = await connectDb();
+    mongooseDb = await connectDb();
+
+    await initNormalization();
     await initUserDbUpdateQueueInterval({interval: configuration.userDbUpdateQueueInterval});
     await initWatchConfig();
     await initProcessUserQueueInterval({interval: configuration.processUserQueueInterval});
