@@ -2671,10 +2671,6 @@ function initActivateNetworks(){
       return resolve();
     }
 
-    if (configuration.testMode){
-      networkObjArray.length = Math.min(5, networkObjArray.length)
-    }
-
     const loadNetworInterval = setInterval(async function(){
 
       if (networkObjArray.length > 0 && loadNetworkReady){
@@ -2814,10 +2810,12 @@ async function initNetworks(params){
 
   await loadBestNeuralNetworks(params);
 
-  if (configuration.networkNumberLimit && bestNetworkHashMap.size > configuration.networkNumberLimit){
+  const networkNumberLimit = configuration.testMode ? 10 : configuration.networkNumberLimit || 50;
+
+  if (bestNetworkHashMap.size > networkNumberLimit){
 
     console.log(chalkAlert("TFE | +++ NETWORKS NUMBER > LIMIT | REMOVING RANDOM NETWORK" 
-      + " | LIMIT: " + configuration.networkNumberLimit
+      + " | LIMIT: " + networkNumberLimit
       + " | " + bestNetworkHashMap.size + " NETWORKS"
     ));
 
@@ -2827,7 +2825,7 @@ async function initNetworks(params){
     let minNetworkSuccessRate = Infinity;
     let purgeMinSuccessRate = -Infinity;
 
-    while (bestNetworkHashMap.size > configuration.networkNumberLimit && nnIds.length > 0){
+    while (bestNetworkHashMap.size > networkNumberLimit && nnIds.length > 0){
 
       const nnId = nnIds.shift();
 
@@ -2860,7 +2858,7 @@ async function initNetworks(params){
           + " | NNID: " + nnObj.networkId
           + " | TCs: " + nnObj.testCycles
           + " | SR: " + nnObj.successRate.toFixed(3)
-          + " | LIMIT: " + configuration.networkNumberLimit
+          + " | LIMIT: " + networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
       }
@@ -2873,20 +2871,20 @@ async function initNetworks(params){
           + " | NNID: " + nnId
           + " | TCs: " + nnObj.testCycles
           + " | SR: " + nnObj.successRate.toFixed(3)
-          + " | LIMIT: " + configuration.networkNumberLimit
+          + " | LIMIT: " + networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
       }
 
       // console.log({bestNetworksByTechnology})
 
-      if (nnIds.length === 0 && bestNetworkHashMap.size > configuration.networkNumberLimit){
+      if (nnIds.length === 0 && bestNetworkHashMap.size > networkNumberLimit){
 
         console.log(chalkAlert("TFE | END NN IDS BUT GT NN NUM LIMIT" 
           + " [ NNIDs: " + nnIds.length + "]"
           + " | TEST CYC LIMIT: " + testCycleLimit
           + " | PURGE MIN: " + purgeMinSuccessRate.toFixed(3)
-          + " | NN NUM LIMIT: " + configuration.networkNumberLimit
+          + " | NN NUM LIMIT: " + networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
 
@@ -2900,7 +2898,7 @@ async function initNetworks(params){
           + " [ NNIDs: " + nnIds.length + "]"
           + " | TEST CYC LIMIT: " + testCycleLimit
           + " | PURGE MIN: " + purgeMinSuccessRate.toFixed(3)
-          + " | NN NUM LIMIT: " + configuration.networkNumberLimit
+          + " | NN NUM LIMIT: " + networkNumberLimit
           + " | " + bestNetworkHashMap.size + " NETWORKS"
         ));
 
