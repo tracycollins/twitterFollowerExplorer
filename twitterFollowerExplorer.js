@@ -22,13 +22,14 @@ const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
-const DEFAULT_BATCH_SIZE = 500;
-const DEFAULT_CURSOR_PARALLEL = 8;
-const DEFAULT_SAVE_FILE_BACKPRESSURE_PERIOD = 10; // ms
-const DEFAULT_MAX_SAVE_FILE_QUEUE = 1000;
-const DEFAULT_PURGE_MIN_SUCCESS_RATE = 50;
-const DEFAULT_USER_CURSOR_BATCH_SIZE = 10;
+const DEFAULT_CURSOR_PARALLEL = 16;
+const DEFAULT_USER_CURSOR_BATCH_SIZE = 64;
 const DEFAULT_USER_CURSOR_LIMIT = 100;
+
+const DEFAULT_BACKPRESSURE_PERIOD = 5; // ms
+// const DEFAULT_MAX_SAVE_FILE_QUEUE = 1000;
+const DEFAULT_PURGE_MIN_SUCCESS_RATE = 50;
+
 // const DEFAULT_ENABLE_PROCESS_USER_PARALLEL = true;
 const DEFAULT_PROCESS_USER_MAX_PARALLEL = 16;
 const DEFAULT_USER_DB_UPDATE_MAX_PARALLEL = 16;
@@ -158,12 +159,13 @@ configuration.isDatabaseHost = (configuration.databaseHost === hostname);
 const HOST = (configuration.isDatabaseHost) ? "default" : "local";
 
 configuration.limitTestMode = 1047
-configuration.batchSize = DEFAULT_BATCH_SIZE;
+// configuration.batchSize = DEFAULT_BATCH_SIZE;
 configuration.cursorParallel = DEFAULT_CURSOR_PARALLEL;
-configuration.saveFileBackPressurePeriod = DEFAULT_SAVE_FILE_BACKPRESSURE_PERIOD;
-configuration.maxSaveFileQueue = DEFAULT_MAX_SAVE_FILE_QUEUE;
 configuration.userCursorBatchSize = DEFAULT_USER_CURSOR_BATCH_SIZE;
 configuration.userCursorLimit = DEFAULT_USER_CURSOR_LIMIT;
+
+configuration.backPressurePeriod = DEFAULT_BACKPRESSURE_PERIOD;
+// configuration.maxSaveFileQueue = DEFAULT_MAX_SAVE_FILE_QUEUE;
 configuration.maxProcessUserQueue = DEFAULT_MAX_PROCESS_USER_QUEUE;
 configuration.userProcessMaxParallel = DEFAULT_PROCESS_USER_MAX_PARALLEL;
 configuration.userDbUpdateMaxParallel = DEFAULT_USER_DB_UPDATE_MAX_PARALLEL;
@@ -960,7 +962,7 @@ function wait(params){
 
   return new Promise(function(resolve){
 
-    if (processUserQueue <= configuration.maxSaveFileQueue){
+    if (processUserQueue <= configuration.maxProcessUserQueue){
       return resolve(true);
     }
 
@@ -975,7 +977,7 @@ function wait(params){
     const start = moment().valueOf();
     const w = setInterval(function(){
 
-      if (processUserQueue < configuration.maxSaveFileQueue){
+      if (processUserQueue < configuration.maxProcessUserQueue){
 
         const deltaMS = (moment().valueOf() - start);
 
@@ -1007,11 +1009,11 @@ async function cursorDataHandlerPromise(user){
 
     await cursorDataHandler(user);
 
-    const queueOverShoot = processUserQueue - configuration.maxSaveFileQueue;
+    const queueOverShoot = processUserQueue - configuration.maxProcessUserQueue;
 
     if (queueOverShoot > 0){
 
-      const period = queueOverShoot * configuration.saveFileBackPressurePeriod;
+      const period = queueOverShoot * configuration.backPressurePeriod;
 
       await wait({
         message: "BK PRSSR | PUQ: " + processUserQueue, 
@@ -1039,8 +1041,8 @@ async function cursorStream(p){
 
   statsObj.categorizedCount = 0;
 
-  const batchSize = params.batchSize || configuration.batchSize;
-  const limit = configuration.testMode ? configuration.limitTestMode : params.limit || configuration.limit;
+  const batchSize = params.userCursorBatchSize || configuration.userCursorBatchSize;
+  const limit = configuration.testMode ? configuration.limitTestMode : params.userCursorLimit || configuration.userCursorLimit;
   const cursorParallel = params.cursorParallel || configuration.cursorParallel;
 
   statsObj.users.processed.grandTotal = await global.wordAssoDb.User.find({categorized: true}).countDocuments();
@@ -1058,8 +1060,8 @@ async function cursorStream(p){
     + "\n" + MODULE_ID_PREFIX
     + " | TEST MODE: " + configuration.testMode
     + " | BATCH SIZE: " + batchSize
-    + " | MAX SFQ: " + configuration.maxSaveFileQueue
-    + " | SAVE BACK PRESSURE PERIOD: " + configuration.saveFileBackPressurePeriod
+    + " | MAX PUQ: " + configuration.maxProcessUserQueue
+    + " | BACK PRESSURE PERIOD: " + configuration.backPressurePeriod
     + " | TOTAL USERS: " + statsObj.users.processed.grandTotal
   ));
 
@@ -1508,6 +1510,16 @@ async function loadConfigFile(params) {
       if ((loadedConfigObj.TFE_TEST_MODE == false) || (loadedConfigObj.TFE_TEST_MODE == "false")) {
         newConfiguration.testMode = false;
       }
+    }
+
+    if (loadedConfigObj.TFE_BACKPRESSURE_PERIOD !== undefined) {
+      console.log("TFE | LOADED TFE_BACKPRESSURE_PERIOD: " + loadedConfigObj.TFE_BACKPRESSURE_PERIOD);
+      newConfiguration.backPressurePeriod = loadedConfigObj.TFE_BACKPRESSURE_PERIOD;
+    }
+
+    if (loadedConfigObj.TFE_CURSOR_PARALLEL !== undefined) {
+      console.log("TFE | LOADED TFE_CURSOR_PARALLEL: " + loadedConfigObj.TFE_CURSOR_PARALLEL);
+      newConfiguration.cursorParallel = loadedConfigObj.TFE_CURSOR_PARALLEL;
     }
 
     if (loadedConfigObj.TFE_USER_CURSOR_BATCH_SIZE !== undefined) {
