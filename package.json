@@ -8,7 +8,7 @@
     "@slack/client": "^5.0.2",
     "@threeceelabs/histogram-parser": "^1.0.21",
     "@threeceelabs/mergehistograms": "^1.0.8",
-    "@threeceelabs/mongoose-twitter": "^1.0.351",
+    "@threeceelabs/mongoose-twitter": "^1.0.352",
     "@threeceelabs/neural-network-tools": "^1.0.279",
     "@threeceelabs/threecee-utilities": "^1.0.423",
     "@threeceelabs/tweet-server-controller": "^1.0.580",
