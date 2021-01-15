@@ -22,6 +22,7 @@ const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND*60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+const TEST_FETCH_USER_INTERVAL = 100;
 const DEFAULT_CURSOR_PARALLEL = 16;
 const DEFAULT_USER_CURSOR_BATCH_SIZE = 32;
 const DEFAULT_USER_CURSOR_LIMIT = 100;
@@ -56,6 +57,7 @@ const QUIT_WAIT_INTERVAL = 5*ONE_SECOND;
 const FSM_TICK_INTERVAL = ONE_SECOND;
 const STATS_UPDATE_INTERVAL = 10*ONE_MINUTE;
 
+const DEFAULT_FETCH_USER_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
@@ -67,7 +69,7 @@ const TEST_GLOBAL_MIN_SUCCESS_RATE_MULTIPLIER = 0.95;
 const TEST_TWEET_FETCH_COUNT = 11;
 const TWEET_FETCH_COUNT = 100;
 
-const TEST_MODE_NUM_NN = 10;
+const TEST_MODE_NUM_NN = 3;
 const TEST_TOTAL_FETCH = 1000;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
@@ -171,6 +173,7 @@ configuration.userProcessMaxParallel = DEFAULT_PROCESS_USER_MAX_PARALLEL;
 configuration.userDbUpdateMaxParallel = DEFAULT_USER_DB_UPDATE_MAX_PARALLEL;
 configuration.enableFetchTweets = DEFAULT_ENABLE_FETCH_TWEETS;
 
+configuration.fetchUserInterval = DEFAULT_FETCH_USER_INTERVAL
 configuration.saveFileQueueInterval = DEFAULT_SAVE_FILE_QUEUE_INTERVAL;
 configuration.updateGlobalHistograms = DEFAULT_UPDATE_GLOBAL_HISTOGRAMS;
 configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
@@ -203,9 +206,21 @@ let mongooseDb;
 global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 global.dbConnection = false;
 
-const tcuChildName = MODULE_ID_PREFIX + "_TCU";
+const mguAppName = "MGU_" + MODULE_ID;
+const MongooseUtilities = require("@threeceelabs/mongoose-utilities");
+const mgUtils = new MongooseUtilities(mguAppName);
+
+mgUtils.on("ready", async () => {
+  console.log(`${MODULE_ID_PREFIX} | +++ MONGOOSE UTILS READY: ${mguAppName}`);
+})
+
+const tcuAppName = MODULE_ID_PREFIX + "_TCU";
 const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
-const tcUtils = new ThreeceeUtilities(tcuChildName);
+const tcUtils = new ThreeceeUtilities(tcuAppName);
+
+tcUtils.on("ready", async () => {
+  console.log(`${MODULE_ID_PREFIX} | +++ THREECEE UTILS READY: ${tcuAppName}`);
+})
 
 const jsonPrint = tcUtils.jsonPrint;
 const msToTime = tcUtils.msToTime;
@@ -609,7 +624,6 @@ async function initSlackWebClient(){
   }
 }
 
-
 configuration.quitOnComplete = QUIT_ON_COMPLETE;
 configuration.processName = process.env.TFE_PROCESS_NAME || "tfe_node";
 configuration.interruptFlag = false;
@@ -724,25 +738,6 @@ const networkDefaults = function (networkObj){
   return networkObj;
 };
 
-// function printNetworkObj(title, nObj, format) {
-
-//   const chalkFormat = (format !== undefined) ? format : chalkNetwork;
-
-//   const networkObj = networkDefaults(nObj);
-
-//   console.log(chalkFormat(title
-//     + " | R " + networkObj.rank
-//     + " | T " + networkObj.networkTechnology
-//     + " | OR " + networkObj.overallMatchRate.toFixed(2) + "%"
-//     + " | RR " + networkObj.runtimeMatchRate.toFixed(2) + "%"
-//     + " | MR " + networkObj.matchRate.toFixed(2) + "%"
-//     + " | SR " + networkObj.successRate.toFixed(2) + "%"
-//     + " | TC " + networkObj.testCycles
-//     + " | IN " + networkObj.inputsId
-//     + " | " + networkObj.networkId
-//   ));
-// }
-
 async function updateDbNetwork(params){
 
   try{
@@ -817,7 +812,6 @@ async function updateDbNetwork(params){
   }
 }
 
-
 function wait(params){
 
   return new Promise(function(resolve){
@@ -860,14 +854,12 @@ function wait(params){
   });
 }
 
-
-async function cursorDataHandlerPromise(user){
+async function cursorDataHandler(user){
 
   try {
 
     if (!user) { return; }
 
-    // await cursorDataHandler(user);
     processUserQueue.push(user);
 
     const queueOverShoot = processUserQueue - configuration.maxProcessUserQueue;
@@ -879,7 +871,7 @@ async function cursorDataHandlerPromise(user){
       await wait({
         message: "BK PRSSR | PUQ: " + processUserQueue, 
         period: period,
-        verbose: configuration.verbose
+        verbose: true
       });
     }
 
@@ -888,105 +880,10 @@ async function cursorDataHandlerPromise(user){
   }
   catch(err){
     console.log(chalkError(MODULE_ID_PREFIX
-      + " | *** cursorDataHandlerPromise ERROR: " + err
+      + " | *** cursorDataHandler ERROR: " + err
     ));
   }
 
-}
-
-async function cursorStream(p){
-
-  const params = p || {};
-
-  statsObj.status = "cursorStream";
-
-  statsObj.categorizedCount = 0;
-
-  const batchSize = params.userCursorBatchSize || configuration.userCursorBatchSize;
-  const limit = configuration.testMode ? configuration.limitTestMode : params.userCursorLimit || configuration.userCursorLimit;
-  const cursorParallel = params.cursorParallel || configuration.cursorParallel;
-
-  statsObj.users.processed.grandTotal = await global.wordAssoDb.User.find({categorized: true}).countDocuments();
-
-  if (configuration.testMode){
-    statsObj.users.processed.grandTotal = Math.min(configuration.limitTestMode, statsObj.users.processed.grandTotal)
-  }
-
-  console.log(chalkGreen("\n" + MODULE_ID_PREFIX
-    + " | =============================================================================================================="
-  ));
-
-  console.log(chalkGreen(MODULE_ID_PREFIX 
-    + " | TEST MODE: " + configuration.testMode
-    + " | CURSOR PARALLEL: " + cursorParallel
-    + " | USER PROCESS PARALLEL: " + configuration.userProcessMaxParallel
-    + " | BATCH SIZE: " + batchSize
-    + " | MAX PUQ: " + configuration.maxProcessUserQueue
-    + " | BACK PRESSURE PERIOD: " + configuration.backPressurePeriod
-    + " | TOTAL USERS: " + statsObj.users.processed.grandTotal
-  ));
-
-  console.log(chalkGreen(MODULE_ID_PREFIX
-    + " | ==============================================================================================================\n"
-  ));
-
-  const query = params.query || { categorized: true, ignored: false }
-  const session = await mongooseDb.startSession();
-
-  debug("MONGO DB SESSION\n" + session.id);
-
-  console.log(chalkBlue(MODULE_ID_PREFIX
-    + " | cursorStream"
-    + " | batchSize: " + batchSize
-  ));
-
-  let cursor;
-
-  if (configuration.testMode){
-    cursor = global.wordAssoDb.User
-      .find(query, {timeout: false})
-      .batchSize(batchSize)
-      .limit(limit)
-      .session(session)
-      .cursor()
-      .addCursorFlag("noCursorTimeout", true);
-  }
-  else{
-    cursor = global.wordAssoDb.User
-      .find(query, {timeout: false})
-      .batchSize(batchSize)
-      .session(session)
-      .cursor()
-      .addCursorFlag("noCursorTimeout", true);
-  }
-
-  cursor.on("end", function() {
-    console.log(chalkAlert(MODULE_ID_PREFIX + " | --- cursorStream CURSOR END"));
-    processUserQueue.push({end: true})
-  });
-
-  cursor.on("error", function(err) {
-    console.log(chalkError(MODULE_ID_PREFIX + " | *** ERROR cursorStream: CURSOR ERROR: " + err));
-    throw err;
-  });
-
-  cursor.on("close", function() {
-    processUserQueue.push({end: true})
-    console.log(chalkAlert(MODULE_ID_PREFIX + " | XXX cursorStream CURSOR CLOSE"));
-  });
-
-  if (statsObj.users.processed.startMoment === 0) { statsObj.users.processed.startMoment = moment(); }
-
-  await cursor.eachAsync(async function(user){
-    await cursorDataHandlerPromise(user);
-  });
-  // }, { parallel: cursorParallel });
-
-  console.log(chalkBlueBold(MODULE_ID_PREFIX + " | cursorStream CURSOR COMPLETE"));
-  processUserQueue.push({end: true})
-  statsObj.fetchUserEndFlag = true;
-
-  return;
 }
 
 process.title = MODULE_ID.toLowerCase() + "_" + process.pid;
@@ -1272,16 +1169,12 @@ configuration.trainingSetsFolder = path.join(configDefaultFolder, "trainingSets"
 const statsFolder = path.join(DROPBOX_ROOT_FOLDER, "stats", hostname);
 const statsFile = configuration.DROPBOX.DROPBOX_STATS_FILE;
 
-// const defaultTrainingSetFolder = configDefaultFolder + "/trainingSets";
-
 const globalBestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "/config/utility/best/neuralNetworks");
 const globalBestNetworkArchiveFolder = globalBestNetworkFolder + "/archive";
 const bestNetworkFolder = path.join(DROPBOX_ROOT_FOLDER, "config/utility/best/neuralNetworks");
 
 configuration.neuralNetworkFolder = configDefaultFolder + "/neuralNetworks";
 configuration.neuralNetworkFile = "";
-
-// const defaultMaxInputHashmapFile = "maxInputHashMap.json";
 
 const defaultInputsConfigFile = "default_networkInputsConfig.json";
 const hostInputsConfigFile = hostname + "_networkInputsConfig.json";
@@ -2528,7 +2421,7 @@ async function initWatchConfig(){
 
 function initActivateNetworks(){
 
-  return new Promise(function(resolve){
+  return new Promise(function(resolve, reject){
 
     statsObj.status = "INIT ACTIVATE NNs";
 
@@ -2536,21 +2429,21 @@ function initActivateNetworks(){
 
     statsObj.loadedNetworksFlag = false;
 
-    const networkObjArray = bestNetworkHashMap.values();
+    const networkIdArray = bestNetworkHashMap.keys();
 
     let loadNetworkReady = true;
 
-    console.log(chalkGreen("TFE | initActivateNetworks | " + networkObjArray.length + " NETWORKS"));
+    console.log(chalkGreen("TFE | initActivateNetworks | " + networkIdArray.length + " NETWORKS"));
 
-    if (networkObjArray.length === 0){
+    if (networkIdArray.length === 0){
       statsObj.loadedNetworksFlag = true;
-      console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED NNs COMPLETE"));
-      return resolve();
+      console.error(chalkError(MODULE_ID_PREFIX + " | ??? NO LOADED NNs ???"));
+      return reject(new Error("NO NNs LOADED"));
     }
 
     const loadNetworInterval = setInterval(async function(){
 
-      if (networkObjArray.length > 0 && loadNetworkReady){
+      if (networkIdArray.length > 0 && loadNetworkReady){
 
         try{
 
@@ -2558,7 +2451,8 @@ function initActivateNetworks(){
 
           let isBestNetworkFlag = false;
 
-          const networkObj = networkObjArray.shift();
+          const nnId = networkIdArray.shift();
+          const networkObj = bestNetworkHashMap.get(nnId);
 
           if (networkObj.networkId === bestNetwork.networkId) {
             console.log(chalkGreen("TFE | ... LOADING NETWORK | BEST: " + networkObj.networkId));
@@ -2571,22 +2465,22 @@ function initActivateNetworks(){
 
           console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED NN " + networkObj.networkId));
 
-          if (networkObjArray.length === 0){
+          if (networkIdArray.length === 0){
             clearInterval(loadNetworInterval);
             statsObj.loadedNetworksFlag = true;
             console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED NNs COMPLETE"));
-            resolve();
+            return resolve();
           }
 
           loadNetworkReady = true;
         }
         catch(err){
           console.log(chalkError(MODULE_ID_PREFIX + " | *** waitEvent ERROR: ", err));
-          if (networkObjArray.length === 0){
+          if (networkIdArray.length === 0){
             clearInterval(loadNetworInterval);
             statsObj.loadedNetworksFlag = true;
             console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED NNs COMPLETE"));
-            resolve();
+            return resolve();
           }
           loadNetworkReady = true;
         }
@@ -2687,7 +2581,7 @@ async function initNetworks(params){
 
   await loadBestNeuralNetworks(params);
 
-  const networkNumberLimit = configuration.testMode ? 10 : configuration.networkNumberLimit || 50;
+  const networkNumberLimit = configuration.testMode ? TEST_MODE_NUM_NN : configuration.networkNumberLimit || 50;
 
   if (bestNetworkHashMap.size > networkNumberLimit){
 
@@ -3815,8 +3709,17 @@ async function processUser(userIn){
       user.tweetHistograms = {}; 
     }
     if (!user.profileHistograms || (user.profileHistograms === undefined)) { 
-      user.profileHistograms = {}; 
+      user.profileHistograms = {};
+      // force image analysis if no profile histograms
+      user.profileImageAnalyzed = ""
+      user.bannerImageAnalyzed = ""
     }
+
+    user.profileImageUrl = typeof user.profileImageUrl === "string" ? user.profileImageUrl.trim() : ""
+    user.profileImageAnalyzed = typeof user.profileImageAnalyzed === "string" ? user.profileImageAnalyzed.trim() : ""
+
+    user.bannerImageUrl = typeof user.bannerImageUrl === "string" ? user.bannerImageUrl.trim() : ""
+    user.bannerImageAnalyzed = typeof user.bannerImageAnalyzed === "string" ? user.bannerImageAnalyzed.trim() : ""
 
     if (user.profileHistograms.images && (user.profileHistograms.images !== undefined)) {
 
@@ -3980,13 +3883,13 @@ async function initProcessUserQueueInterval(p) {
 
             userObj = processUserQueue.shift();
 
-            // processUserArray.push(processUser(userObj));
             if (!userObj.end) { processUserArray.push(userObj); }
 
             if (userObj.end) { 
               console.log(chalkAlert(`${MODULE_ID_PREFIX} | END`))
               more = false; 
             }
+
             if (processUserQueue.length === 0) { more = false; }
             if (processUserArray.length >= maxParallel) { more = false; }
 
@@ -3994,7 +3897,6 @@ async function initProcessUserQueueInterval(p) {
         }
 
         if (processUserArray.length > 0){
-          // await processParallel(processUserArray);
           processWorkerQueue.push(processUserArray);
           await processWorkerQueue.drain();
           processUserArray.length = 0;
@@ -4019,6 +3921,116 @@ async function initProcessUserQueueInterval(p) {
 }
 
 statsObj.fsmState = "RESET";
+
+const handleMongooseEvent = (eventObj) => {
+
+  console.log({eventObj})
+
+  switch (eventObj.event){
+    case "end":
+    case "close":
+      console.log(`${MODULE_ID_PREFIX} | CURSOR EVENT: ${eventObj.event.toUpperCase()}`)
+    break;
+
+    case "error":
+      console.error(`${MODULE_ID_PREFIX} | CURSOR ERROR: ${eventObj.err}`)
+    break;
+
+    default:
+      console.error(`*** UNKNOWN EVENT: ${eventObj.event}`)
+  }
+  return;
+}
+
+let fetchUserInterval;
+
+async function initFetchUsers(p) {
+
+  clearInterval(fetchUserInterval);
+
+  const params = p || {};
+  const testMode = params.testMode || configuration.testMode;
+
+  let query = {};
+
+  if (params.query){
+    query = params.query
+  }
+  else {
+    query.categorized = true;
+    query.ignored = false;
+  }
+
+  statsObj.users.categorized.total = await global.wordAssoDb.User.find(query).count();
+  statsObj.users.processed.grandTotal = testMode ? Math.min(TEST_TOTAL_FETCH, statsObj.users.categorized.total) : statsObj.users.categorized.total;
+
+  statsObj.users.processed.startMoment = moment();
+
+  const interval = testMode ? TEST_FETCH_USER_INTERVAL : params.interval || configuration.fetchUserInterval;
+
+  console.log(chalkInfo(`${MODULE_ID_PREFIX} | FETCH USERS | TOTAL USERS TO FETCH: ${statsObj.users.processed.grandTotal}`))
+  console.log(chalkInfo(`${MODULE_ID_PREFIX} | FETCH USERS | INTERVAL: ${interval}`))
+  console.log(chalkInfo(`${MODULE_ID_PREFIX} | FETCH USERS | QUERY\n`, jsonPrint(query)))
+
+  const cursor = await mgUtils.initCursor({
+    query: query,
+    cursorLimit: statsObj.users.processed.grandTotal,
+    cursorLean: true,
+  })
+
+  cursor.on("error", async (err) => handleMongooseEvent({event: "error", err: err}));
+  cursor.on("end", async () => handleMongooseEvent({event: "end"}));
+  cursor.on("close", async () => handleMongooseEvent({event: "close"}));
+
+  if (configuration.testMode) {
+    params.interval = TEST_FETCH_USER_INTERVAL;
+  } else {
+    params.interval = params.interval || configuration.fetchUserInterval;
+  }
+
+  await tcUtils.setParseImageRequestTimeout(
+    configuration.parseImageRequestTimeout
+  );
+
+  let fetchUserReady = true;
+
+  statsObj.users.fetched = 0;
+  statsObj.users.skipped = 0;
+
+  intervalsSet.add("fetchUserInterval");
+
+  fetchUserInterval = setInterval(async () => {
+
+    if (fetchUserReady) {
+
+      try {
+
+        fetchUserReady = false;
+
+        const user = await cursor.next();
+
+        if (!user){
+          clearInterval(fetchUserInterval)
+          fsm.fsm_fetchUserEnd();
+          return;
+        }
+
+        await cursorDataHandler(user)
+        fetchUserReady = true;
+
+      } 
+      catch (err) {
+        console.error(`${MODULE_ID_PREFIX} | *** ERROR: ${err}`)
+        fetchUserReady = true;
+      }
+
+    } 
+
+  }, interval);
+
+  return;
+}
+
 
 function reporter(event, oldState, newState) {
 
@@ -4156,16 +4168,20 @@ const fsmStates = {
         statsObj.status = "FSM FETCH_ALL";
 
         try{
-          await cursorStream();
-          console.log("TFE | FETCH_ALL | onEnter | " + event);
+
+          await initFetchUsers();
+          console.log(chalkLog(`${MODULE_ID_PREFIX} | FETCH_ALL | ${event}`));
+
         }
         catch(err){
-          console.log(chalkError("TFE | *** FETCH_ALL ERROR: " + err));
-          fsm.fsm_error();
-        }
 
+          console.log(chalkError(`${MODULE_ID_PREFIX} | *** FETCH_ALL ERROR ${err}`));
+          fsm.fsm_error();
+
+        }
       }
     },
+
     fsm_tick: function() {
 
       statsObj.queues.processUserQueue.size = processUserQueue.length;
@@ -4173,7 +4189,7 @@ const fsmStates = {
     },
     "fsm_error": "ERROR",
     "fsm_reset": "RESET",
-    "fsm_fetchAllEnd": "FETCH_END_ALL"
+    "fsm_fetchUserEnd": "FETCH_END_ALL"
   },
 
   "FETCH_END_ALL": {
