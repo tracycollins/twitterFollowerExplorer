@@ -3963,7 +3963,6 @@ async function initFetchUsers(p) {
   }
 
   console.log(chalkInfo(`${MODULE_ID_PREFIX} | FETCH USERS | COUNT USERS TO FETCH ...`))
-  // statsObj.users.categorized.total = await global.wordAssoDb.User.find(query).countDocuments();
   statsObj.users.categorized.total = await global.wordAssoDb.User.countDocuments({category: {$in: ["left", "right", "neutral"]}, ignored: false})
   statsObj.users.processed.grandTotal = testMode ? Math.min(TEST_TOTAL_FETCH, statsObj.users.categorized.total) : statsObj.users.categorized.total;
 
