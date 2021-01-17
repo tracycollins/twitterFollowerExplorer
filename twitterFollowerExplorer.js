@@ -285,23 +285,23 @@ const USER_PROFILE_PROPERTY_ARRAY = [
   "url"
 ];
 
-const DEFAULT_INPUT_TYPES = [
-  "emoji", 
-  "friends", 
-  "hashtags",  
-  "images", 
-  "locations", 
-  "media", 
-  "mentions", 
-  "ngrams", 
-  "places", 
-  "sentiment", 
-  "urls", 
-  "userMentions", 
-  "words"
-];
+// const DEFAULT_INPUT_TYPES = [
+//   "emoji", 
+//   "friends", 
+//   "hashtags",  
+//   "images", 
+//   "locations", 
+//   "media", 
+//   "mentions", 
+//   "ngrams", 
+//   "places", 
+//   "sentiment", 
+//   "urls", 
+//   "userMentions", 
+//   "words"
+// ];
 
-DEFAULT_INPUT_TYPES.sort();
+// DEFAULT_INPUT_TYPES.sort();
 
 const inputsIdSet = new Set();
 const bestInputsSet = new Set();
@@ -3537,6 +3537,7 @@ async function updateUser(params) {
     const autoCategoryUser = await generateAutoCategory({user: updatedTweetsUser});
     const prevPropsUser = await updatePreviousUserProps({user: autoCategoryUser});
 
+    prevPropsUser.markModified("friends");
     prevPropsUser.markModified("tweetHistograms");
     prevPropsUser.markModified("profileHistograms");
     prevPropsUser.markModified("tweets");
@@ -3961,7 +3962,7 @@ async function initFetchUsers(p) {
     query.ignored = false;
   }
 
-  statsObj.users.categorized.total = await global.wordAssoDb.User.find(query).count();
+  statsObj.users.categorized.total = await global.wordAssoDb.User.find(query).countDocuments();
   statsObj.users.processed.grandTotal = testMode ? Math.min(TEST_TOTAL_FETCH, statsObj.users.categorized.total) : statsObj.users.categorized.total;
 
   statsObj.users.processed.startMoment = moment();

@@ -1,6 +1,6 @@
 {
   "name": "twitterfollowerexplorer",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "twitter user follower explorer",
   "main": "twitterFollowerExplorer.js",
   "dependencies": {
@@ -8,10 +8,10 @@
     "@slack/client": "^5.0.2",
     "@threeceelabs/histogram-parser": "^1.0.21",
     "@threeceelabs/mergehistograms": "^1.0.8",
-    "@threeceelabs/mongoose-twitter": "^1.0.363",
-    "@threeceelabs/mongoose-utilities": "^1.0.6",
+    "@threeceelabs/mongoose-twitter": "^1.0.366",
+    "@threeceelabs/mongoose-utilities": "^1.0.7",
     "@threeceelabs/neural-network-tools": "^1.0.279",
-    "@threeceelabs/threecee-utilities": "^1.0.426",
+    "@threeceelabs/threecee-utilities": "^1.0.427",
     "@threeceelabs/tweet-server-controller": "^1.0.580",
     "@threeceelabs/twitter-image-parser": "^1.0.97",
     "@threeceelabs/twitter-text-parser": "^1.0.103",
