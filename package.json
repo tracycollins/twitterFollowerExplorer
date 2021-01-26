@@ -11,7 +11,7 @@
     "@threeceelabs/mongoose-twitter": "^1.0.370",
     "@threeceelabs/mongoose-utilities": "^1.0.8",
     "@threeceelabs/neural-network-tools": "^1.0.280",
-    "@threeceelabs/threecee-utilities": "^1.0.437",
+    "@threeceelabs/threecee-utilities": "^1.0.449",
     "@threeceelabs/tweet-server-controller": "^1.0.584",
     "@threeceelabs/twitter-image-parser": "^1.0.97",
     "@threeceelabs/twitter-text-parser": "^1.0.103",
