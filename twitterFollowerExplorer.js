@@ -1092,6 +1092,7 @@ async function showStats(options) {
     console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
       + " | PUQ: " + processUserQueue.length 
       + " | UDUQ: " + userDbUpdateQueue.length 
+      + " | DATUM$: " + nnTools.datumCache.getStats().keys
       + " | PRCSSD/ERR/REM/TOT: " + statsObj.users.processed.total
       + "/" + statsObj.users.processed.errors 
       + "/" + statsObj.users.processed.remain 
@@ -3977,6 +3978,7 @@ async function initFetchUsers(p) {
 
   const cursor = await mgUtils.initCursor({
     query: query,
+    cursorBatchSize: 64,
     cursorLimit: statsObj.users.processed.grandTotal,
     cursorLean: true,
   })
@@ -3984,12 +3986,6 @@ async function initFetchUsers(p) {
   cursor.on("error", async (err) => handleMongooseEvent({event: "error", err: err}));
   cursor.on("end", async () => handleMongooseEvent({event: "end"}));
   cursor.on("close", async () => handleMongooseEvent({event: "close"}));
-
-  if (configuration.testMode) {
-    params.interval = TEST_FETCH_USER_INTERVAL;
-  } else {
-    params.interval = params.interval || configuration.fetchUserInterval;
-  }
 
   await tcUtils.setParseImageRequestTimeout(
     configuration.parseImageRequestTimeout
