@@ -1092,7 +1092,7 @@ async function showStats(options) {
     console.log(chalkBlue(MODULE_ID_PREFIX + " | STATUS"
       + " | PUQ: " + processUserQueue.length 
       + " | UDUQ: " + userDbUpdateQueue.length 
-      + " | DATUM$: " + nnTools.datumCache.getStats().keys
+      + " | DATUM $: K: " + nnTools.datumCacheGetStats().keys + " | HR: " + nnTools.datumCacheGetStats().hitRate.toFixed(3) + "%"
       + " | PRCSSD/ERR/REM/TOT: " + statsObj.users.processed.total
       + "/" + statsObj.users.processed.errors 
       + "/" + statsObj.users.processed.remain 
