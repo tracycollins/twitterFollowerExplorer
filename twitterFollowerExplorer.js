@@ -2947,6 +2947,7 @@ function initActivateNetworkQueueInterval(p) {
 
           activateNetworkResults = await nnTools.activate({ 
             user: anObj.user,
+            useDatumCacheFlag: true,
             convertDatumFlag: true
           });
 
