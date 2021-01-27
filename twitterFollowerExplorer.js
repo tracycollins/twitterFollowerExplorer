@@ -812,6 +812,8 @@ async function updateDbNetwork(params){
   }
 }
 
+let waitInterval;
+
 function wait(params){
 
   return new Promise(function(resolve){
@@ -827,15 +829,17 @@ function wait(params){
       ));
     }
 
-
     const start = moment().valueOf();
-    const w = setInterval(function(){
+
+    intervalsSet.add("waitInterval");
+
+    waitInterval = setInterval(function(){
 
       if (processUserQueue < configuration.maxProcessUserQueue){
 
         const deltaMS = (moment().valueOf() - start);
 
-        clearInterval(w);
+        clearInterval(waitInterval);
 
         if (params.verbose) {
           console.log(chalkLog(MODULE_ID_PREFIX 
@@ -999,58 +1003,6 @@ async function initConfig(cnf) {
 // MONGO DB
 //=========================================================================
 
-async function connectDb(){
-
-  try {
-
-    statsObj.status = "CONNECTING MONGO DB";
-
-    const wordAssoDbIpAddress = "localhost";
-
-    const connectDbParams = {};
-
-    connectDbParams.appName = MODULE_ID_PREFIX + "_" + process.pid;
-    connectDbParams.config = {};
-    connectDbParams.config.wordAssoDb = "mongodb://mongo:NksWAF9HsmgPrD@" + wordAssoDbIpAddress + ":27017/wordAsso?replicaSet=rs0";
-
-    console.log(chalkBlue(MODULE_ID_PREFIX + " | CONNECT MONGO DB\n" + jsonPrint(connectDbParams)));
-
-    const db = await global.wordAssoDb.connect(connectDbParams);
-
-    db.on("error", async function(err){
-      statsObj.status = "MONGO ERROR";
-      statsObj.dbConnectionReady = false;
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION ERROR"));
-      db.close();
-      quit({cause: "MONGO DB ERROR: " + err});
-    });
-
-    db.on("close", async function(err){
-      statsObj.status = "MONGO CLOSED";
-      statsObj.dbConnectionReady = false;
-      console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECTION CLOSED"));
-      quit({cause: "MONGO DB CLOSED: " + err});
-    });
-
-    db.on("disconnected", async function(){
-      statsObj.status = "MONGO DISCONNECTED";
-      statsObj.dbConnectionReady = false;
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | *** MONGO DB DISCONNECTED"));
-      quit({cause: "MONGO DB DISCONNECTED"});
-    });
-
-    console.log(chalk.green(MODULE_ID_PREFIX + " | MONGOOSE DEFAULT CONNECTION OPEN"));
-
-    statsObj.dbConnectionReady = true;
-
-    return db;
-
-  }
-  catch(err){
-    console.log(chalkError(MODULE_ID_PREFIX + " | *** MONGO DB CONNECT ERROR: " + err));
-    throw err;
-  }
-}
 
 async function showStats(options) {
 
@@ -1119,6 +1071,8 @@ function initStatsUpdate() {
 
     statsObj.elapsed = getElapsedTimeStamp();
     statsObj.timeStamp = getTimeStamp();
+
+    intervalsSet.add("statsUpdateInterval")
 
     clearInterval(statsUpdateInterval);
 
@@ -2420,6 +2374,8 @@ async function initWatchConfig(){
   return;
 }
 
+let loadNetworkInterval;
+
 function initActivateNetworks(){
 
   return new Promise(function(resolve, reject){
@@ -2442,7 +2398,9 @@ function initActivateNetworks(){
       return reject(new Error("NO NNs LOADED"));
     }
 
-    const loadNetworInterval = setInterval(async function(){
+    intervalsSet.add("loadNetworkInterval")
+
+    loadNetworkInterval = setInterval(async function(){
 
       if (networkIdArray.length > 0 && loadNetworkReady){
 
@@ -2467,7 +2425,7 @@ function initActivateNetworks(){
           console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED NN " + networkObj.networkId));
 
           if (networkIdArray.length === 0){
-            clearInterval(loadNetworInterval);
+            clearInterval(loadNetworkInterval);
             statsObj.loadedNetworksFlag = true;
             console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED NNs COMPLETE"));
             return resolve();
@@ -2478,7 +2436,7 @@ function initActivateNetworks(){
         catch(err){
           console.log(chalkError(MODULE_ID_PREFIX + " | *** waitEvent ERROR: ", err));
           if (networkIdArray.length === 0){
-            clearInterval(loadNetworInterval);
+            clearInterval(loadNetworkInterval);
             statsObj.loadedNetworksFlag = true;
             console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED NNs COMPLETE"));
             return resolve();
@@ -2917,9 +2875,12 @@ function initActivateNetworkQueueInterval(p) {
     let activateNetworkResults = {};
     let cbnn = {};
 
+    intervalsSet.add("activateNetworkQueueInterval")
+
     activateNetworkIntervalBusy = false;
 
     activateNetworkQueueInterval = setInterval(async function () {
+
 
       if (!activateNetworkIntervalBusy && (activateNetworkQueue.length > 0)) {
 
@@ -4319,6 +4280,8 @@ const fsmStates = {
 
         statsObj.status = "WAIT UPDATE STATS";
 
+        intervalsSet.add("waitFileSaveInterval")
+
         waitFileSaveInterval = setInterval(async function() {
 
           statsObj.queues.saveFileQueue.size = tcUtils.getSaveFileQueue();
@@ -4381,6 +4344,8 @@ function fsmStart(p) {
   return new Promise(function(resolve){
 
     console.log(chalkLog(MODULE_ID_PREFIX + " | FSM START | TICK INTERVAL | " + msToTime(interval)));
+
+    intervalsSet.add("fsmTickInterval")
 
     clearInterval(fsmTickInterval);
 
@@ -4462,7 +4427,7 @@ setTimeout(async function(){
       + "\n" + MODULE_ID_PREFIX + " | --------------------------------------------------------"
     ));
 
-    mongooseDb = await connectDb();
+    mongooseDb = await mgUtils.connectDb();
 
     await initNormalization();
     await initUserDbUpdateQueueInterval({interval: configuration.userDbUpdateQueueInterval});
