@@ -1,12 +1,11 @@
 const dotenv = require("dotenv");
-const envConfig = dotenv.config({path: '/Users/tc/Dropbox/Apps/wordAssociation/config/utility/default/env'})
+const envConfig = dotenv.config({ path: process.env.WORD_ENV_VARS_FILE })
 
 if (envConfig.error) {
   throw envConfig.error
 }
  
-console.log("TFE | ENV CONFIG")
-console.log(envConfig.parsed)
+console.log("WAS | +++ ENV CONFIG LOADED")
 
 const MODULE_NAME = "twitterFollowerExplorer";
 const MODULE_ID_PREFIX = "TFE";
@@ -70,7 +69,7 @@ const TEST_TWEET_FETCH_COUNT = 11;
 const TWEET_FETCH_COUNT = 100;
 
 const TEST_MODE_NUM_NN = 3;
-const TEST_TOTAL_FETCH = 1000;
+const TEST_TOTAL_FETCH = 200;
 
 const GLOBAL_TEST_MODE = false; // applies to parent and all children
 const QUIT_ON_COMPLETE = true;
