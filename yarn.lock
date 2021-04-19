@@ -269,6 +269,13 @@
   dependencies:
     "@types/node" ">=8.9.0"
 
+"@slack/logger@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@slack/logger/-/logger-3.0.0.tgz#b736d4e1c112c22a10ffab0c2d364620aedcb714"
+  integrity sha512-DTuBFbqu4gGfajREEMrkq5jBhcnskinhr4+AnfJEk48zhVeEv3XnUKGIX98B74kxhYsIMfApGGySTn7V3b5yBA==
+  dependencies:
+    "@types/node" ">=12.0.0"
+
 "@slack/rtm-api@^5.0.2":
   version "5.0.5"
   resolved "https://registry.yarnpkg.com/@slack/rtm-api/-/rtm-api-5.0.5.tgz#0dd7368dcbcf5a0114feb4f9860ae933f11a2b0e"
@@ -290,6 +297,11 @@
   resolved "https://registry.yarnpkg.com/@slack/types/-/types-1.10.0.tgz#cbf7d83e1027f4cbfd13d6b429f120c7fb09127a"
   integrity sha512-tA7GG7Tj479vojfV3AoxbckalA48aK6giGjNtgH6ihpLwTyHE3fIgRrvt8TWfLwW8X8dyu7vgmAsGLRG7hWWOg==
 
+"@slack/types@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@slack/types/-/types-2.0.0.tgz#7b938ab576cd1d6c9ff9ad67a96f8058d101af10"
+  integrity sha512-Nu4jWC39mDY5egAX4oElwOypdu8Cx9tmR7bo3ghaHYaC7mkKM1+b+soanW5s2ssu4yOLxMdFExMh6wlR34B6CA==
+
 "@slack/web-api@^5.1.0", "@slack/web-api@^5.3.0":
   version "5.15.0"
   resolved "https://registry.yarnpkg.com/@slack/web-api/-/web-api-5.15.0.tgz#6bcf1d0a833c0e87e45150c2fd1f9657e3ec0b0b"
@@ -306,13 +318,13 @@
     p-queue "^6.6.1"
     p-retry "^4.0.0"
 
-"@slack/web-api@^6.1.0":
-  version "6.1.0"
-  resolved "https://registry.yarnpkg.com/@slack/web-api/-/web-api-6.1.0.tgz#27a17f61eb72100d6722ff17f581349c41d19b5f"
-  integrity sha512-9MVHw+rDBaFvkvzm8lDNH/nlkvJCDKRIjFGMdpbyZlVLsm4rcht4qyiL71bqdyLATHXJnWknb/sl0FQGLLobIA==
+"@slack/web-api@^6.2.0-rc.0":
+  version "6.2.0-rc.0"
+  resolved "https://registry.yarnpkg.com/@slack/web-api/-/web-api-6.2.0-rc.0.tgz#23df5500c7b183f83b5b18be04b136ba71f94e45"
+  integrity sha512-aH0/hG2hpJ9IVjQ5UjF3a7T5x1NxF8C3KpzXKwjIRpKwbPfcvl0tXXCBopTrs79WIQg0CtIJbaQzmPTVCKbUDA==
   dependencies:
-    "@slack/logger" ">=1.0.0 <3.0.0"
-    "@slack/types" "^1.7.0"
+    "@slack/logger" "^3.0.0"
+    "@slack/types" "^2.0.0"
     "@types/is-stream" "^1.1.0"
     "@types/node" ">=12.0.0"
     axios "^0.21.1"
@@ -462,75 +474,32 @@
     "@threeceelabs/mongoose-twitter" "^1.1.0"
     eventemitter3 "^4.0.7"
 
-"@threeceelabs/neural-network-tools@^1.0.296":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@threeceelabs/neural-network-tools/-/neural-network-tools-1.1.1.tgz#66036c6f3fb8ce6d7e4587eb8a207f8a60939f27"
-  integrity sha512-3CyE2pApzMLvOKKR+JMjoaBM2lAbteTg84JeYRab5ffr853AoVNyDmOgL9g85tzzGIs7iKhvySJmx0zkClaIOg==
+"@threeceelabs/neural-network-tools@^2.0.2":
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/@threeceelabs/neural-network-tools/-/neural-network-tools-2.0.2.tgz#1fbe8487818e745529b4937eae75d919bbdfb86c"
+  integrity sha512-e/tw3/yctfcCGPOwZiprDNaGCsZMA0nOPTdNW9IQXbpOBLxgUsi2aQiRk+EgSn9LQPBmOhqwq16/aOvqYur2LA==
   dependencies:
     "@liquid-carrot/carrot" "^0.3.20"
     "@mapbox/node-pre-gyp" "^1.0.3"
     "@tensorflow/tfjs-node" "^3.4.0"
     "@threeceelabs/mongoose-twitter" "^1.1.0"
     "@threeceelabs/mongoose-utilities" "^1.0.13"
-    "@threeceelabs/threecee-utilities" "^1.2.10"
+    "@threeceelabs/threeceeutilities" "^3.2.6"
     async "^3.2.0"
     deepcopy "^2.1.0"
     fsevents "^2.3.2"
     hashmap "^2.4.0"
+    is-empty "^1.2.0"
     lodash "^4.17.21"
     moment "^2.29.1"
     neataptic "^1.4.7"
     node-cache "^5.1.2"
-    random-item "^4.0.0"
+    object.pick "^1.3.0"
     seedrandom "^3.0.5"
     shuffle-array "^1.0.1"
     text-table "^0.2.0"
 
-"@threeceelabs/threecee-utilities@^1.0.470", "@threeceelabs/threecee-utilities@^1.2.10":
-  version "1.2.10"
-  resolved "https://registry.yarnpkg.com/@threeceelabs/threecee-utilities/-/threecee-utilities-1.2.10.tgz#f6398f12696dd65b51b159110fabec2671c69273"
-  integrity sha512-YZdbSQ66IgQcSU8DBWFVgXqapRrkIexbeYGqKpMq/Itixny/x3LkRwbrhkjNRkCtWO4naUiSVu8gGo5+EY36Mg==
-  dependencies:
-    "@google-cloud/language" "^4.2.1"
-    "@googlemaps/google-maps-services-js" "^3.1.16"
-    "@threeceelabs/mongoose-twitter" "^1.0.376"
-    "@threeceelabs/tweet-server-controller" "^1.0.586"
-    "@threeceelabs/twitter-image-parser" "^1.0.97"
-    "@threeceelabs/twitter-text-parser" "^1.0.103"
-    async "^3.2.0"
-    async-redis "^1.1.7"
-    atob "^2.1.2"
-    axios "^0.21.1"
-    btoa "^1.2.1"
-    chalk "^4.1.0"
-    d3-scale "^3.2.3"
-    deep-copy "^1.4.2"
-    deepmerge "^4.2.2"
-    dot-prop "^6.0.1"
-    dotenv "^8.2.0"
-    eventemitter3 "^4.0.7"
-    fs-extra "^9.1.0"
-    fsevents "^2.3.2"
-    hashmap "^2.4.0"
-    ioredis "^4.23.0"
-    is-empty "^1.2.0"
-    is-url-superb "^5.0.0"
-    limiter "^1.1.5"
-    lodash "^4.17.21"
-    moment "^2.29.1"
-    object-path "^0.11.5"
-    object-sizeof "^1.6.1"
-    object.defaults "^1.1.0"
-    parse-json "^5.2.0"
-    redis-server "^1.2.2"
-    retry "^0.12.0"
-    touch "^3.1.0"
-    treeify "^1.1.0"
-    twit "^2.2.11"
-    url-parse "^1.5.1"
-    write-json-file "^4.3.0"
-
-"@threeceelabs/threeceeutilities@^3.0.3", "@threeceelabs/threeceeutilities@^3.2.3":
+"@threeceelabs/threeceeutilities@^3.2.3", "@threeceelabs/threeceeutilities@^3.2.6":
   version "3.2.6"
   resolved "https://registry.yarnpkg.com/@threeceelabs/threeceeutilities/-/threeceeutilities-3.2.6.tgz#1a1ceeec094e735a837c9636c2027a82c3f79d9e"
   integrity sha512-u0z4ybj+6e1BwP1UmfgwjtNImkAWoKg7Z2FkeWxMy5tvpiV9wRGbMNdrxMC+HCKPo9O2NZ+srCdl1y49wF5FXA==
@@ -584,7 +553,6 @@
   dependencies:
     "@threeceelabs/mongoose-twitter" "^1.0.374"
     "@threeceelabs/mongoose-utilities" "^1.0.12"
-    "@threeceelabs/threecee-utilities" "^1.0.470"
     "@threeceelabs/user-server-controller" "^1.0.534"
     atob "^2.1.2"
     axios "^0.21.1"
@@ -601,25 +569,29 @@
     twitter-text "^3.1.0"
     uuid "^8.3.2"
 
-"@threeceelabs/tweet-server-controller@^2.0.1":
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/@threeceelabs/tweet-server-controller/-/tweet-server-controller-2.0.1.tgz#fe1e3334f4cbfadaf5df3fda7e1141d5bb0db6b4"
-  integrity sha512-GkyRylGvvd3koUP3DBXOmS16dnZJkxGvkAHW+QTENpzMVnrmiGGzh8TgBkzZqR9cHBsJALIW1COOt+GoRnia1w==
+"@threeceelabs/tweet-server-controller@^3.1.6":
+  version "3.1.6"
+  resolved "https://registry.yarnpkg.com/@threeceelabs/tweet-server-controller/-/tweet-server-controller-3.1.6.tgz#2ef9242291a87b872edcdfca0d4242670bd641de"
+  integrity sha512-22Xr+q3+bNWhFahgJbBoQas8d1Pcfayqxt0NKWJOtZj/8IqW4jMTN8MKEl57D89EnZOSy9X0WrIpa1iGMYUCLA==
   dependencies:
-    "@threeceelabs/mongoose-twitter" "^1.0.376"
-    "@threeceelabs/mongoose-utilities" "^1.0.12"
-    "@threeceelabs/threeceeutilities" "^3.0.3"
+    "@threeceelabs/mongoose-twitter" "^1.1.0"
+    "@threeceelabs/mongoose-utilities" "^1.0.13"
+    "@threeceelabs/threeceeutilities" "^3.2.6"
     "@threeceelabs/user-server-controller" "^2.0.1"
     atob "^2.1.2"
     axios "^0.21.1"
+    chai "^4.3.4"
     deepmerge "^4.2.2"
+    global "^4.4.0"
     is-empty "^1.2.0"
-    mongoose "^5.11.18"
+    mongoose "^5.12.4"
     node-geocoder "^3.27.0"
     recursive-iterator "^3.3.0"
     request "^2.88.2"
     safe-json-parse "^4.0.0"
     shuffle-array "^1.0.1"
+    twit "^2.2.11"
+    twitter "^1.7.1"
     twitter-text "^3.1.0"
     uuid "^8.3.2"
 
@@ -1379,7 +1351,7 @@ chai@^1.10.0:
     assertion-error "1.0.0"
     deep-eql "0.1.3"
 
-chai@^4.3.0:
+chai@^4.3.0, chai@^4.3.4:
   version "4.3.4"
   resolved "https://registry.yarnpkg.com/chai/-/chai-4.3.4.tgz#b55e655b31e1eac7099be4c08c21964fce2e6c49"
   integrity sha512-yS5H68VYOCtN1cjfwumDSuzn/9c+yza4f3reKXlE5rUg7SFcCEy90gJvydNgOYtblyf4Zi6jIWRnXOgErta0KA==
@@ -1896,6 +1868,11 @@ dir-glob@^3.0.1:
   integrity sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==
   dependencies:
     path-type "^4.0.0"
+
+dom-walk@^0.1.0:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/dom-walk/-/dom-walk-0.1.2.tgz#0c548bef048f4d1f2a97249002236060daa3fd84"
+  integrity sha512-6QvTW9mrGeIegrFXdtQi9pk7O/nSK6lSdXW2eqUspN5LWD7UTji2Fqw5V2YLjBpHEoU9Xl/eUWNpDeZvoyOv2w==
 
 dot-object@^2.1.4:
   version "2.1.4"
@@ -2547,6 +2524,14 @@ global-dirs@^3.0.0:
   integrity sha512-v8ho2DS5RiCjftj1nD9NmnfaOzTdud7RRnVd9kFNOjqZbISlx5DQ+OrTkywgd0dIt7oFCvKetZSHoHcP3sDdiA==
   dependencies:
     ini "2.0.0"
+
+global@^4.4.0:
+  version "4.4.0"
+  resolved "https://registry.yarnpkg.com/global/-/global-4.4.0.tgz#3e7b105179006a323ed71aafca3e9c57a5cc6406"
+  integrity sha512-wv/LAoHdRE3BeTGz53FAamhGlPLhlssK45usmGFThIi4XqnBmjKQ16u+RNbP7WvigRZDxUsM0J3gcQ5yicaL0w==
+  dependencies:
+    min-document "^2.19.0"
+    process "^0.11.10"
 
 globby@^11.0.3:
   version "11.0.3"
@@ -3734,6 +3719,13 @@ mimic-response@^1.0.0, mimic-response@^1.0.1:
   resolved "https://registry.yarnpkg.com/mimic-response/-/mimic-response-1.0.1.tgz#4923538878eef42063cb8a3e3b0798781487ab1b"
   integrity sha512-j5EctnkH7amfV/q5Hgmoal1g2QHFJRraOtmx0JpIqkxhBhI/lJSl1nMpQ45hVarwNETOoWEimndZ4QK0RHxuxQ==
 
+min-document@^2.19.0:
+  version "2.19.0"
+  resolved "https://registry.yarnpkg.com/min-document/-/min-document-2.19.0.tgz#7bd282e3f5842ed295bb748cdd9f1ffa2c824685"
+  integrity sha1-e9KC4/WELtKVu3SM3Z8f+iyCRoU=
+  dependencies:
+    dom-walk "^0.1.0"
+
 minimatch@3.0.4, minimatch@^3.0.4:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-3.0.4.tgz#5166e286457f03306064be5497e8dbb0c3d32083"
@@ -4685,7 +4677,7 @@ process-nextick-args@~2.0.0:
   resolved "https://registry.yarnpkg.com/process-nextick-args/-/process-nextick-args-2.0.1.tgz#7820d9b16120cc55ca9ae7792680ae7dba6d7fe2"
   integrity sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==
 
-process@^0.11.1:
+process@^0.11.1, process@^0.11.10:
   version "0.11.10"
   resolved "https://registry.yarnpkg.com/process/-/process-0.11.10.tgz#7332300e840161bda3e69a1d1d91a7d4bc16f182"
   integrity sha1-czIwDoQBYb2j5podHZGn1LwW8YI=
@@ -4821,15 +4813,15 @@ queue-microtask@^1.2.2:
   resolved "https://registry.yarnpkg.com/queue-microtask/-/queue-microtask-1.2.3.tgz#4929228bbc724dfac43e0efb058caf7b6cfb6243"
   integrity sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==
 
-random-float@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/random-float/-/random-float-2.0.0.tgz#ff94c30728ebcb4dc3f70d8d83f1ff4cbf6be2c0"
-  integrity sha512-N3/1AI9Wv+I4GoA1JCCGv/6uaw1XuV+MtF5J0HPaodYul20+A97MmZNtWlSq7mBjWBigPsZ3hg0OaUjDyc/Xbw==
+random-float@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/random-float/-/random-float-3.0.0.tgz#65db807d576451ef4f7eb6ac81932f92ddc0dd70"
+  integrity sha512-8U2ToxX8h6h9gpzyGyxCcd/LatiWcm0sOVG+SlsGyRs+3k8ae/EOH9KDsoquvbdCCqKQW1rx49iRPyBt/TF6NQ==
 
-random-int@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/random-int/-/random-int-2.0.1.tgz#d072fe298e2fd12a730edde7729168b7b88dcea3"
-  integrity sha512-YALjWK2Rt9EMIv9BF/3mvlzFWQathsvb5UZmN1QmhfIOfcQYXc/UcLzg0ablqesSBpBVLt2Tlwv/eTuBh4LXUQ==
+random-int@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/random-int/-/random-int-3.0.0.tgz#69782559c9306c43de1dd174ea616330ef75b749"
+  integrity sha512-QvewnOwigesW2WFyTHiQzR6XUUcSQO/BqmfgRz5N5GpGrKQnTf7ebMz8UtuwaET8IfO1n0wLx8/fHsI8E0Jpow==
 
 random-item@^4.0.0:
   version "4.0.0"
