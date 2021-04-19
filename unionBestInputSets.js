@@ -83,7 +83,7 @@ const DEFAULT_INPUT_TYPES = [
 DEFAULT_INPUT_TYPES.sort();
 
 const tcuChildName = MODULE_ID_PREFIX + "_TCU";
-const ThreeceeUtilities = require("@threeceelabs/threecee-utilities");
+const ThreeceeUtilities = require("@threeceelabs/threeceeutilities");
 const tcUtils = new ThreeceeUtilities(tcuChildName);
 const jsonPrint = tcUtils.jsonPrint;
 const msToTime = tcUtils.msToTime;
