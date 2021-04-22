@@ -24,9 +24,9 @@
     js-tokens "^4.0.0"
 
 "@babel/runtime@^7.3.1":
-  version "7.13.10"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.13.10.tgz#47d42a57b6095f4468da440388fdbad8bebf0d7d"
-  integrity sha512-4QPkjJq6Ns3V/RgpEahRk+AGfL0eO6RHHtTWoNNr5mO49G6B5+X6d6THgWEAvTrznU5xYpbAlVKRYcsCgh/Akw==
+  version "7.13.17"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.13.17.tgz#8966d1fc9593bf848602f0662d6b4d0069e3a7ec"
+  integrity sha512-NCdgJEelPTSh+FEFylhnP1ylq848l1z9t9N0j1Lfbcw0+KXGjsTvUmkxy+voLLXB5SOKMbLLx4jxYliGrYQseA==
   dependencies:
     regenerator-runtime "^0.13.4"
 
@@ -42,7 +42,7 @@
   resolved "https://registry.yarnpkg.com/@google-cloud/promisify/-/promisify-2.0.3.tgz#f934b5cdc939e3c7039ff62b9caaf59a9d89e3a8"
   integrity sha512-d4VSA86eL/AFTe5xtyZX+ePUjE8dIFu2T8zmdeNBSa5/kNgXPCx/o/wbFNHAGLJdGnk1vddRuMESD9HbOC8irw==
 
-"@google-cloud/secret-manager@^3.4.0":
+"@google-cloud/secret-manager@^3.6.0":
   version "3.6.0"
   resolved "https://registry.yarnpkg.com/@google-cloud/secret-manager/-/secret-manager-3.6.0.tgz#408510554d2dd72b30449a85d6030069c85d2c04"
   integrity sha512-1lSYKYJ57PekYvUV2FLt7wtI4toDhMKrbHxMH5kA5X9XLfECasgm/PZo+EbmJ/uIxtz5i2qzQID/NczLrZNG+w==
@@ -93,9 +93,9 @@
     lodash "^4.17.15"
 
 "@mapbox/node-pre-gyp@^1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@mapbox/node-pre-gyp/-/node-pre-gyp-1.0.3.tgz#c740c23ec1007b9278d4c28f767b6e843a88c3d3"
-  integrity sha512-9dTIfQW8HVCxLku5QrJ/ysS/b2MdYngs9+/oPrOTLvp3TrggdANYVW2h8FGJGDf0J7MYfp44W+c90cVJx+ASuA==
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@mapbox/node-pre-gyp/-/node-pre-gyp-1.0.4.tgz#6c76e7a40138eac39e1a4dc869a083e43e236c00"
+  integrity sha512-M669Qo4nRT7iDmQEjQYC7RU8Z6dpz9UmSbkJ1OFEja3uevCdLKh7IZZki7L1TZj02kRyl82snXFY8QqkyfowrQ==
   dependencies:
     detect-libc "^1.0.3"
     https-proxy-agent "^5.0.0"
@@ -176,9 +176,9 @@
     infer-owner "^1.0.4"
 
 "@npmcli/run-script@^1.8.2":
-  version "1.8.4"
-  resolved "https://registry.yarnpkg.com/@npmcli/run-script/-/run-script-1.8.4.tgz#03ced92503a6fe948cbc0975ce39210bc5e824d6"
-  integrity sha512-Yd9HXTtF1JGDXZw0+SOn+mWLYS0e7bHBHVC/2C8yqs4wUrs/k8rwBSinD7rfk+3WG/MFGRZKxjyoD34Pch2E/A==
+  version "1.8.5"
+  resolved "https://registry.yarnpkg.com/@npmcli/run-script/-/run-script-1.8.5.tgz#f250a0c5e1a08a792d775a315d0ff42fc3a51e1d"
+  integrity sha512-NQspusBCpTjNwNRFMtz2C5MxoxyzlbuJ4YEhxAKrIonTiirKDtatsZictx9RgamQIx6+QuHMNmPl0wQdoESs9A==
   dependencies:
     "@npmcli/node-gyp" "^1.0.2"
     "@npmcli/promise-spawn" "^1.3.2"
@@ -466,13 +466,23 @@
     should "^13.2.3"
 
 "@threeceelabs/mongoose-utilities@^1.0.13":
-  version "1.0.13"
-  resolved "https://registry.yarnpkg.com/@threeceelabs/mongoose-utilities/-/mongoose-utilities-1.0.13.tgz#7df9637bbdbf2f01e00df9feba1ba653335a876a"
-  integrity sha512-kUkqY/AnWJ6mKxBpv4vzoEPjYWQv0+t3LnBeC1ZMd53GyU2a3tVVfQylv6KOsE9EJ+Ah3RXSWZTvqMnzbmiTLQ==
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@threeceelabs/mongoose-utilities/-/mongoose-utilities-1.1.0.tgz#992894a44ea2201322bcbf0a4d6bc1fbbc283b4d"
+  integrity sha512-dO/vUBWwnHpjORk4H8vYcrXcdOokteOWlHlyMkhm57O/ZibiF2pVyvWUJWavG9rACwbWCAntaT3hroIcf+vvcQ==
   dependencies:
-    "@google-cloud/secret-manager" "^3.4.0"
+    "@google-cloud/secret-manager" "^3.6.0"
     "@threeceelabs/mongoose-twitter" "^1.1.0"
     eventemitter3 "^4.0.7"
+
+"@threeceelabs/mongoose-utilities@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@threeceelabs/mongoose-utilities/-/mongoose-utilities-2.0.1.tgz#5ee2bfd8c5cac8554d79aaf2e7a7f44232b047b6"
+  integrity sha512-fYECedE9ziaZIX9pH1LgNJBDOGjgGe//cUulk1IjBQevx0c9x3nFi2WjKF1ehYFeLZ0m/HqZUOK3WSQ6lIkgDQ==
+  dependencies:
+    "@google-cloud/secret-manager" "^3.6.0"
+    "@threeceelabs/mongoose-twitter" "^1.1.0"
+    eventemitter3 "^4.0.7"
+    treeify "^1.1.0"
 
 "@threeceelabs/neural-network-tools@^2.0.3":
   version "2.0.3"
@@ -499,10 +509,10 @@
     shuffle-array "^1.0.1"
     text-table "^0.2.0"
 
-"@threeceelabs/threeceeutilities@^3.2.3", "@threeceelabs/threeceeutilities@^3.2.6":
-  version "3.2.6"
-  resolved "https://registry.yarnpkg.com/@threeceelabs/threeceeutilities/-/threeceeutilities-3.2.6.tgz#1a1ceeec094e735a837c9636c2027a82c3f79d9e"
-  integrity sha512-u0z4ybj+6e1BwP1UmfgwjtNImkAWoKg7Z2FkeWxMy5tvpiV9wRGbMNdrxMC+HCKPo9O2NZ+srCdl1y49wF5FXA==
+"@threeceelabs/threeceeutilities@^3.2.17", "@threeceelabs/threeceeutilities@^3.2.3", "@threeceelabs/threeceeutilities@^3.2.6":
+  version "3.2.19"
+  resolved "https://registry.yarnpkg.com/@threeceelabs/threeceeutilities/-/threeceeutilities-3.2.19.tgz#2d86884705dab050eaae86ce0d4b7e85676d8141"
+  integrity sha512-xoPlYagaFfBKIw8gX7vof4d90LD+B5Dtz1gTJG/oQcXwSBWknnSPNT2fiS25YXbllkNfnEa/W5+TxamcB8hT3A==
   dependencies:
     "@google-cloud/language" "^4.2.2"
     "@googlemaps/google-maps-services-js" "^3.1.16"
@@ -512,8 +522,9 @@
     assert "^2.0.0"
     async "^3.2.0"
     atob "^2.1.2"
+    backoff "^2.5.0"
     btoa "^1.2.1"
-    chalk "^4.1.0"
+    chalk "^4.1.1"
     d3-scale "^3.3.0"
     debug "^4.3.1"
     deep-copy "^1.4.2"
@@ -546,18 +557,19 @@
     util "^0.12.3"
     write-json-file "^4.3.0"
 
-"@threeceelabs/tweet-server-controller@^3.1.7":
-  version "3.1.7"
-  resolved "https://registry.yarnpkg.com/@threeceelabs/tweet-server-controller/-/tweet-server-controller-3.1.7.tgz#476a61bf3831abb9bd8d9fc6c6fa34969c043334"
-  integrity sha512-oixsW1vIg5zu7uS/mbel/3nCNIKC09qLvQw+SGlvih9YcCxSF+zAGg32iAvau5VS1fkDajnzGZSnlWcytB41PQ==
+"@threeceelabs/tweet-server-controller@^3.4.1":
+  version "3.4.1"
+  resolved "https://registry.yarnpkg.com/@threeceelabs/tweet-server-controller/-/tweet-server-controller-3.4.1.tgz#87d4d0bdd6af0693aefc90598d02a6551df76607"
+  integrity sha512-sARE+SPh+AHjEXLzDrfSeVsYbSq2em0m3l9Mge3PdPuxi6KqVHC2OpBe9q1dbfqxlqGevsv096tEZ1SxL1+YKw==
   dependencies:
     "@threeceelabs/mongoose-twitter" "^1.1.0"
-    "@threeceelabs/mongoose-utilities" "^1.0.13"
-    "@threeceelabs/threeceeutilities" "^3.2.6"
+    "@threeceelabs/mongoose-utilities" "^2.0.1"
+    "@threeceelabs/threeceeutilities" "^3.2.17"
     "@threeceelabs/user-server-controller" "^2.0.1"
     atob "^2.1.2"
     axios "^0.21.1"
     chai "^4.3.4"
+    deepcopy "^2.1.0"
     deepmerge "^4.2.2"
     global "^4.4.0"
     is-empty "^1.2.0"
@@ -572,7 +584,7 @@
     twitter-text "^3.1.0"
     uuid "^8.3.2"
 
-"@threeceelabs/twitter-image-parser@^1.0.97", "@threeceelabs/twitter-image-parser@^1.1.1":
+"@threeceelabs/twitter-image-parser@^1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@threeceelabs/twitter-image-parser/-/twitter-image-parser-1.1.1.tgz#7d07ae6f884715cc31576f5b04be935b8007da57"
   integrity sha512-Svd8a6VeuMoa7Ovm4H4y8mPwo8PMjQZNUlcnE+yxk37x17oqLhzpwRpEF/PXZ+CUH9XFkJjaaal4XnluTZfC3Q==
@@ -585,7 +597,7 @@
     lodash "^4.17.21"
     moment "^2.29.1"
 
-"@threeceelabs/twitter-text-parser@^2.0.2":
+"@threeceelabs/twitter-text-parser@^2.0.2", "@threeceelabs/twitter-text-parser@^2.1.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@threeceelabs/twitter-text-parser/-/twitter-text-parser-2.1.0.tgz#37bf4a2a42cde91e5ebd9650ee3bed0c796fea31"
   integrity sha512-qZ6ma5RyAm5WkWdV4p/jFl6ltfDzlzNu+jd0nUfHHXfWUbFqvZAG2vDHMUu29k/2eYAw39PN9VFSjIdPRW+EUQ==
@@ -606,7 +618,7 @@
     npm-check-updates "^11.4.1"
     treeify "^1.1.0"
 
-"@threeceelabs/user-server-controller@^2.0.1":
+"@threeceelabs/user-server-controller@^2.0.1", "@threeceelabs/user-server-controller@^2.0.2":
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/@threeceelabs/user-server-controller/-/user-server-controller-2.0.2.tgz#92463b6a58f35303ff6f7ad23cc9c6e8b64b3225"
   integrity sha512-ZoaKn3dhLMNVCwQhdMOTEg4SUhLGnoZw2vgAXpseWiIZ5ly+4ipRfXHE8dGl3w1xLMZ0PV2KC1Eic8Dhy/Y3rA==
@@ -1040,6 +1052,13 @@ backo2@~1.0.2:
   resolved "https://registry.yarnpkg.com/backo2/-/backo2-1.0.2.tgz#31ab1ac8b129363463e35b3ebb69f4dfcfba7947"
   integrity sha1-MasayLEpNjRj41s+u2n038+6eUc=
 
+backoff@^2.5.0:
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/backoff/-/backoff-2.5.0.tgz#f616eda9d3e4b66b8ca7fca79f695722c5f8e26f"
+  integrity sha1-9hbtqdPktmuMp/ynn2lXIsX44m8=
+  dependencies:
+    precond "0.2"
+
 balanced-match@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.2.tgz#e83e3a7e3f300b34cb9d87f615fa0cbf357690ee"
@@ -1263,10 +1282,10 @@ chalk@^2.0.0, chalk@^2.3.2:
     escape-string-regexp "^1.0.5"
     supports-color "^5.3.0"
 
-chalk@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/chalk/-/chalk-4.1.0.tgz#4e14870a618d9e2edd97dd8345fd9d9dc315646a"
-  integrity sha512-qwx12AxXe2Q5xQ43Ac//I6v5aXTipYrSESdOgzrN+9XjgEpyjpKuvSGaN4qE93f7TQTlerQQ8S+EQ0EyDoVL1A==
+chalk@^4.1.0, chalk@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-4.1.1.tgz#c80b3fab28bf6371e6863325eee67e618b77e6ad"
+  integrity sha512-diHzdDKxcU+bAsUboHLPEDQiw0qEe0qd7SYUn3HgcFlWgbDcfLGswOHYeGrHKzG9z6UYf01d9VFMfZxPM1xZSg==
   dependencies:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
@@ -1481,10 +1500,10 @@ console-control-strings@^1.0.0, console-control-strings@~1.1.0:
   resolved "https://registry.yarnpkg.com/console-control-strings/-/console-control-strings-1.1.0.tgz#3d7cf4464db6446ea644bf4b39507f9851008e8e"
   integrity sha1-PXz0Rk22RG6mRL9LOVB/mFEAjo4=
 
-core-js@3, core-js@^3.10.1:
-  version "3.10.2"
-  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.10.2.tgz#17cb038ce084522a717d873b63f2b3ee532e2cd5"
-  integrity sha512-W+2oVYeNghuBr3yTzZFQ5rfmjZtYB/Ubg87R5YOmlGrIb+Uw9f7qjUbhsj+/EkXhcV7eOD3jiM4+sgraX3FZUw==
+core-js@3, core-js@^3.11.0:
+  version "3.11.0"
+  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.11.0.tgz#05dac6aa70c0a4ad842261f8957b961d36eb8926"
+  integrity sha512-bd79DPpx+1Ilh9+30aT5O1sgpQd4Ttg8oqkqi51ZzhedMM1omD2e6IOF48Z/DzDCZ2svp49tN/3vneTK6ZBkXw==
 
 core-js@^2.5.0:
   version "2.6.12"
@@ -3376,10 +3395,10 @@ map-stream@0.0.7:
   resolved "https://registry.yarnpkg.com/map-stream/-/map-stream-0.0.7.tgz#8a1f07896d82b10926bd3744a2420009f88974a8"
   integrity sha1-ih8HiW2CsQkmvTdEokIACfiJdKg=
 
-mem@^8.1.0:
-  version "8.1.0"
-  resolved "https://registry.yarnpkg.com/mem/-/mem-8.1.0.tgz#445e47827fb757a4e5f35b0a6a62743cbfdc0a0d"
-  integrity sha512-FIkgXo0kTi3XpvaznV5Muk6Y6w8SkdmRXcY7ZLonQesuYezp59UooLxAVBcGuN6PH2tXN84mR3vyzSc6oSMUfA==
+mem@^8.1.1:
+  version "8.1.1"
+  resolved "https://registry.yarnpkg.com/mem/-/mem-8.1.1.tgz#cf118b357c65ab7b7e0817bdf00c8062297c0122"
+  integrity sha512-qFCFUDs7U3b8mBDPyz5EToEKoAkgCzqquIgi9nkkR9bixxOVOre+09lbuH7+9Kn2NFpm56M3GUWVbU2hQgdACA==
   dependencies:
     map-age-cleaner "^0.1.3"
     mimic-fn "^3.1.0"
@@ -3795,18 +3814,18 @@ normalize-url@^5.1.0:
   integrity sha512-9/nOVLYYe/dO/eJeQUNaGUF4m4Z5E7cb9oNTKabH+bNf19mqj60txTcveQxL0GlcWLXCxkOu2/LwL8oW0idIDA==
 
 npm-bundled@^1.0.1, npm-bundled@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/npm-bundled/-/npm-bundled-1.1.1.tgz#1edd570865a94cdb1bc8220775e29466c9fb234b"
-  integrity sha512-gqkfgGePhTpAEgUsGEgcq1rqPXA+tv/aVBlgEzfXwA1yiUJF7xtEt3CtVwOjNYQOVknDk0F20w58Fnm3EtG0fA==
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/npm-bundled/-/npm-bundled-1.1.2.tgz#944c78789bd739035b70baa2ca5cc32b8d860bc1"
+  integrity sha512-x5DHup0SuyQcmL3s7Rx/YQ8sbw/Hzg0rj48eN0dV7hf5cmQq5PXIeioroH3raV1QC1yh3uTYuMThvEQF3iKgGQ==
   dependencies:
     npm-normalize-package-bin "^1.0.1"
 
 npm-check-updates@^11.4.1:
-  version "11.4.1"
-  resolved "https://registry.yarnpkg.com/npm-check-updates/-/npm-check-updates-11.4.1.tgz#6079a1a9c84b3d611fabb02c8332a698df9ce249"
-  integrity sha512-bWElM5CeJ9gA/wvtqB4ljcKzAZ3BlPM2g/7mVi8mPdCR2N6dhgS4q5GCzQn4ZvpeKSFll3bUGkiR/lgSQOlN8Q==
+  version "11.5.1"
+  resolved "https://registry.yarnpkg.com/npm-check-updates/-/npm-check-updates-11.5.1.tgz#5cc76ec124fac51c859384cd0f487d9cedc3e2cb"
+  integrity sha512-4b12O2ioGKbS/4a3i/QfHNIMkNEEq7LtngUSFPatJ3FURIjGT13N/glKO/g2tPmuOtuaTXCnTJlyWBLnf+A//g==
   dependencies:
-    chalk "^4.1.0"
+    chalk "^4.1.1"
     cint "^8.2.1"
     cli-table "^0.3.6"
     commander "^6.2.1"
@@ -3819,7 +3838,7 @@ npm-check-updates@^11.4.1:
     jsonlines "^0.1.1"
     libnpmconfig "^1.2.1"
     lodash "^4.17.21"
-    mem "^8.1.0"
+    mem "^8.1.1"
     minimatch "^3.0.4"
     p-map "^4.0.0"
     pacote "^11.3.1"
@@ -4281,6 +4300,11 @@ picomatch@^2.2.1, picomatch@^2.2.3:
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/picomatch/-/picomatch-2.2.3.tgz#465547f359ccc206d3c48e46a1bcb89bf7ee619d"
   integrity sha512-KpELjfwcCDUb9PeigTs2mBJzXUPzAuP2oPcA989He8Rte0+YUAjw1JVedDhuTKPkHjSYzMN3npC9luThGYEKdg==
+
+precond@0.2:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/precond/-/precond-0.2.3.tgz#aa9591bcaa24923f1e0f4849d240f47efc1075ac"
+  integrity sha1-qpWRvKokkj8eD0hJ0kD0fvwQdaw=
 
 prepend-http@^2.0.0:
   version "2.0.0"
