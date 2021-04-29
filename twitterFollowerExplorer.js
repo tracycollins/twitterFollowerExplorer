@@ -36,13 +36,11 @@ const DEFAULT_USER_CURSOR_BATCH_SIZE = 32;
 const DEFAULT_USER_CURSOR_LIMIT = 100;
 const DEFAULT_PARSE_IMAGE_REQUEST_TIMEOUT = ONE_SECOND;
 const DEFAULT_BACKPRESSURE_PERIOD = 5; // ms
-// const DEFAULT_MAX_SAVE_FILE_QUEUE = 1000;
 const DEFAULT_PURGE_MIN_SUCCESS_RATE = 50;
 
-// const DEFAULT_ENABLE_PROCESS_USER_PARALLEL = true;
 const DEFAULT_PROCESS_USER_MAX_PARALLEL = 16;
 const DEFAULT_USER_DB_UPDATE_MAX_PARALLEL = 16;
-const DEFAULT_MAX_PROCESS_USER_QUEUE = 1000;
+const DEFAULT_MAX_USER_DB_UPDATE_QUEUE = 100;
 const DEFAULT_SAVE_FILE_QUEUE_INTERVAL = 100;
 
 const TEST_MODE = false; // applies only to parent
@@ -166,7 +164,7 @@ configuration.userCursorBatchSize = DEFAULT_USER_CURSOR_BATCH_SIZE;
 configuration.userCursorLimit = DEFAULT_USER_CURSOR_LIMIT;
 
 configuration.backPressurePeriod = DEFAULT_BACKPRESSURE_PERIOD;
-configuration.maxProcessUserQueue = DEFAULT_MAX_PROCESS_USER_QUEUE;
+configuration.maxUserDbUpdateQueue = DEFAULT_MAX_USER_DB_UPDATE_QUEUE;
 configuration.userProcessMaxParallel = DEFAULT_PROCESS_USER_MAX_PARALLEL;
 configuration.userDbUpdateMaxParallel = DEFAULT_USER_DB_UPDATE_MAX_PARALLEL;
 configuration.enableFetchTweets = DEFAULT_ENABLE_FETCH_TWEETS;
@@ -389,11 +387,6 @@ statsObj.prevBestNetworkId = false;
 statsObj.loadedNetworksFlag = false;
 statsObj.bestNetworkId = false;
 statsObj.currentBestNetworkId = false;
-
-// statsObj.randomNetworkTree = {};
-// statsObj.randomNetworkTree.memoryUsage = {};
-// statsObj.randomNetworkTree.memoryUsage.heap = 0;
-// statsObj.randomNetworkTree.memoryUsage.maxHeap = 0;
 
 statsObj.geo = {};
 statsObj.geo.hits = 0;
@@ -869,7 +862,7 @@ let waitInterval;
 
 function wait(params) {
   return new Promise(function (resolve) {
-    if (processUserQueue <= configuration.maxProcessUserQueue) {
+    if (userDbUpdateQueue <= configuration.maxUserDbUpdateQueue) {
       return resolve(true);
     }
 
@@ -891,7 +884,7 @@ function wait(params) {
     intervalsSet.add("waitInterval");
 
     waitInterval = setInterval(function () {
-      if (processUserQueue < configuration.maxProcessUserQueue) {
+      if (userDbUpdateQueue < configuration.maxUserDbUpdateQueue) {
         const deltaMS = moment().valueOf() - start;
 
         clearInterval(waitInterval);
@@ -901,8 +894,8 @@ function wait(params) {
             chalkLog(
               MODULE_ID_PREFIX +
                 " | XXX WAIT END BACK PRESSURE" +
-                " | PUQ: " +
-                processUserQueue +
+                " | UDBUQ: " +
+                userDbUpdateQueue +
                 " | PERIOD: " +
                 params.period +
                 " MS" +
@@ -927,13 +920,16 @@ async function cursorDataHandler(user) {
 
     processUserQueue.push(user);
 
-    const queueOverShoot = processUserQueue - configuration.maxProcessUserQueue;
+    // const queueOverShoot = processUserQueue - configuration.maxProcessUserQueue;
+    const queueOverShoot =
+      userDbUpdateQueue - configuration.maxUserDbUpdateQueue;
 
     if (queueOverShoot > 0) {
       const period = queueOverShoot * configuration.backPressurePeriod;
 
       await wait({
-        message: "BK PRSSR | PUQ: " + processUserQueue,
+        // message: "BK PRSSR | PUQ: " + processUserQueue,
+        message: "BK PRSSR | PUQ: " + userDbUpdateQueue,
         period: period,
         verbose: true,
       });
@@ -1483,6 +1479,15 @@ async function loadConfigFile(params) {
           loadedConfigObj.TFE_USER_CURSOR_LIMIT
       );
       newConfiguration.userCursorLimit = loadedConfigObj.TFE_USER_CURSOR_LIMIT;
+    }
+
+    if (loadedConfigObj.TFE_MAX_USER_DB_UPDATE_QUEUE !== undefined) {
+      console.log(
+        "TFE | LOADED TFE_MAX_USER_DB_UPDATE_QUEUE: " +
+          loadedConfigObj.TFE_MAX_USER_DB_UPDATE_QUEUE
+      );
+      newConfiguration.maxUserDbUpdateQueue =
+        loadedConfigObj.TFE_MAX_USER_DB_UPDATE_QUEUE;
     }
 
     if (loadedConfigObj.TFE_PROCESS_USER_MAX_PARALLEL !== undefined) {
@@ -3543,7 +3548,6 @@ async function initNetworks(params) {
     return;
   }
 
-  // await loadMaxInput({folder: defaultTrainingSetFolder, file: defaultMaxInputHashmapFile});
   return;
 }
 
@@ -3975,7 +3979,7 @@ function initActivateNetworkQueueInterval(p) {
             user.categoryAuto = currentBestNetwork.meta.categoryAuto;
             user.categorizeNetwork = currentBestNetwork.networkId;
             userDbUpdateQueue.push(user);
-            statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
+            statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
           } else {
             console.log(
               chalkError(
@@ -4225,7 +4229,7 @@ function initUserDbUpdateQueueInterval(p) {
       if (userDbUpdateQueueReadyFlag && userDbUpdateQueue.length > 0) {
         userDbUpdateQueueReadyFlag = false;
         statsObj.queues.userDbUpdateQueue.busy = true;
-        statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
+        statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
 
         more = userDbUpdateQueue.length > 0;
 
@@ -4269,7 +4273,64 @@ function initUserDbUpdateQueueInterval(p) {
           processUserArray.length = 0;
         }
 
-        statsObj.queues.userDbUpdateQueue.length = userDbUpdateQueue.length;
+        statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
+        userDbUpdateQueueReadyFlag = true;
+        statsObj.queues.userDbUpdateQueue.busy = false;
+      }
+    }, interval);
+
+    resolve();
+  });
+}
+
+function initUserDbUpdateQueueInterval2(p) {
+  return new Promise(function (resolve) {
+    const params = p || {};
+
+    const maxParallel =
+      params.maxParallel || configuration.userDbUpdateMaxParallel;
+    const interval = params.interval || configuration.userDbUpdateQueueInterval;
+
+    statsObj.status = "INIT USER DB UPDATE INTERVAL";
+
+    console.log(
+      chalkBlue(
+        MODULE_ID_PREFIX +
+          " | INIT USER DB UPDATE QUEUE" +
+          " | MAX PARALLEL: " +
+          maxParallel +
+          " | INTERVAL: " +
+          interval +
+          " MS"
+      )
+    );
+
+    clearInterval(userDbUpdateQueueInterval);
+
+    intervalsSet.add("userDbUpdateQueueInterval");
+
+    statsObj.queues.userDbUpdateQueue.busy = false;
+    userDbUpdateQueueReadyFlag = true;
+
+    let userObj = {};
+
+    userDbUpdateQueueInterval = setInterval(async function () {
+      if (userDbUpdateQueueReadyFlag && userDbUpdateQueue.length > 0) {
+        userDbUpdateQueueReadyFlag = false;
+        statsObj.queues.userDbUpdateQueue.busy = true;
+
+        userObj = userDbUpdateQueue.shift();
+
+        if (!userObj.end) {
+          await userServerController.findOneUserV2({
+            user: userObj,
+            mergeHistograms: false,
+            noInc: true,
+            updateCountHistory: true,
+          });
+        }
+
+        statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
         userDbUpdateQueueReadyFlag = true;
         statsObj.queues.userDbUpdateQueue.busy = false;
       }
@@ -5876,7 +5937,7 @@ setTimeout(async function () {
     mongooseDb = await mgUtils.connectDb();
 
     await initNormalization();
-    await initUserDbUpdateQueueInterval({
+    await initUserDbUpdateQueueInterval2({
       interval: configuration.userDbUpdateQueueInterval,
     });
     await initWatchConfig();
