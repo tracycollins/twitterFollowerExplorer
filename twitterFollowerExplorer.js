@@ -27,7 +27,7 @@ const TEST_FETCH_USER_INTERVAL = 100;
 const DEFAULT_CURSOR_PARALLEL = 16;
 const DEFAULT_USER_CURSOR_BATCH_SIZE = 32;
 const DEFAULT_USER_CURSOR_LIMIT = 100;
-
+const DEFAULT_PARSE_IMAGE_REQUEST_TIMEOUT = ONE_SECOND;
 const DEFAULT_BACKPRESSURE_PERIOD = 5; // ms
 // const DEFAULT_MAX_SAVE_FILE_QUEUE = 1000;
 const DEFAULT_PURGE_MIN_SUCCESS_RATE = 50;
@@ -158,7 +158,7 @@ configuration.isPrimaryHost = configuration.primaryHost === hostname;
 configuration.isDatabaseHost = configuration.databaseHost === hostname;
 
 const HOST = configuration.isDatabaseHost ? "default" : "local";
-
+configuration.parseImageRequestTimeout = DEFAULT_PARSE_IMAGE_REQUEST_TIMEOUT;
 configuration.limitTestMode = 1047;
 // configuration.batchSize = DEFAULT_BATCH_SIZE;
 configuration.cursorParallel = DEFAULT_CURSOR_PARALLEL;
@@ -204,7 +204,8 @@ configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
 
 let mongooseDb;
-global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
+import mgt from "@threeceelabs/mongoose-twitter";
+global.wordAssoDb = mgt;
 global.dbConnection = false;
 
 const mguAppName = "MGU_" + MODULE_ID;
@@ -229,11 +230,11 @@ const getTimeStamp = tcUtils.getTimeStamp;
 const formatBoolean = tcUtils.formatBoolean;
 const formatCategory = tcUtils.formatCategory;
 
-import NeuralNetworkTools from "@threeceelabs/neural-network-tools";
+import { NeuralNetworkTools } from "@threeceelabs/neural-network-tools";
 const nnTools = new NeuralNetworkTools(MODULE_ID_PREFIX + "_NNT");
 nnTools.enableTensorflow();
 
-import UserServerController from "@threeceelabs/user-server-controller";
+import { UserServerController } from "@threeceelabs/user-server-controller";
 const userServerController = new UserServerController(
   MODULE_ID_PREFIX + "_USC"
 );
@@ -249,7 +250,7 @@ userServerController.on("ready", function (appname) {
   console.log(chalk.green(MODULE_ID_PREFIX + " | USC READY | " + appname));
 });
 
-import TweetServerController from "@threeceelabs/tweet-server-controller";
+import { TweetServerController } from "@threeceelabs/tweet-server-controller";
 const tweetServerController = new TweetServerController(
   MODULE_ID_PREFIX + "_TSC"
 );
@@ -549,7 +550,7 @@ function getElapsedTimeStamp() {
 //=========================================================================
 // SLACK
 //=========================================================================
-const { WebClient } = require("@slack/web-api");
+import { WebClient } from "@slack/web-api";
 
 console.log("process.env.SLACK_BOT_TOKEN: ", process.env.SLACK_BOT_TOKEN);
 const slackBotToken = process.env.SLACK_BOT_TOKEN;
@@ -1457,6 +1458,15 @@ async function loadConfigFile(params) {
           loadedConfigObj.TFE_CURSOR_PARALLEL
       );
       newConfiguration.cursorParallel = loadedConfigObj.TFE_CURSOR_PARALLEL;
+    }
+
+    if (loadedConfigObj.TFE_PARSE_IMAGE_REQUEST_TIMEOUT !== undefined) {
+      console.log(
+        "TFE | LOADED TFE_PARSE_IMAGE_REQUEST_TIMEOUT: " +
+          loadedConfigObj.TFE_PARSE_IMAGE_REQUEST_TIMEOUT
+      );
+      newConfiguration.parseImageRequestTimeout =
+        loadedConfigObj.TFE_PARSE_IMAGE_REQUEST_TIMEOUT;
     }
 
     if (loadedConfigObj.TFE_USER_CURSOR_BATCH_SIZE !== undefined) {
