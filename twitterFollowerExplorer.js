@@ -23,7 +23,14 @@ const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND * 60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
-const TEST_FETCH_USER_INTERVAL = 100;
+const DEFAULT_MIN_INTERVAL = 2;
+const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
+const QUIT_WAIT_INTERVAL = 5 * ONE_SECOND;
+const FSM_TICK_INTERVAL = ONE_SECOND;
+const STATS_UPDATE_INTERVAL = 10 * ONE_MINUTE;
+
+const DEFAULT_CURSOR_BATCH_SIZE = 100;
+const TEST_FETCH_USER_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_CURSOR_PARALLEL = 16;
 const DEFAULT_USER_CURSOR_BATCH_SIZE = 32;
 const DEFAULT_USER_CURSOR_LIMIT = 100;
@@ -51,12 +58,6 @@ const DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS = true;
 const DEFAULT_MIN_TEST_CYCLES = 10;
 const DEFAULT_MIN_WORD_LENGTH = 3;
 const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
-
-const DEFAULT_MIN_INTERVAL = 5;
-const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
-const QUIT_WAIT_INTERVAL = 5 * ONE_SECOND;
-const FSM_TICK_INTERVAL = ONE_SECOND;
-const STATS_UPDATE_INTERVAL = 10 * ONE_MINUTE;
 
 const DEFAULT_FETCH_USER_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
@@ -160,13 +161,11 @@ configuration.isDatabaseHost = configuration.databaseHost === hostname;
 const HOST = configuration.isDatabaseHost ? "default" : "local";
 configuration.parseImageRequestTimeout = DEFAULT_PARSE_IMAGE_REQUEST_TIMEOUT;
 configuration.limitTestMode = 1047;
-// configuration.batchSize = DEFAULT_BATCH_SIZE;
 configuration.cursorParallel = DEFAULT_CURSOR_PARALLEL;
 configuration.userCursorBatchSize = DEFAULT_USER_CURSOR_BATCH_SIZE;
 configuration.userCursorLimit = DEFAULT_USER_CURSOR_LIMIT;
 
 configuration.backPressurePeriod = DEFAULT_BACKPRESSURE_PERIOD;
-// configuration.maxSaveFileQueue = DEFAULT_MAX_SAVE_FILE_QUEUE;
 configuration.maxProcessUserQueue = DEFAULT_MAX_PROCESS_USER_QUEUE;
 configuration.userProcessMaxParallel = DEFAULT_PROCESS_USER_MAX_PARALLEL;
 configuration.userDbUpdateMaxParallel = DEFAULT_USER_DB_UPDATE_MAX_PARALLEL;
@@ -5210,6 +5209,8 @@ async function initFetchUsers(p) {
 
   const params = p || {};
   const testMode = params.testMode || configuration.testMode;
+  const userCursorBatchSize =
+    params.userCursorBatchSize || configuration.userCursorBatchSize;
 
   let query = {};
 
@@ -5245,12 +5246,17 @@ async function initFetchUsers(p) {
     chalkInfo(`${MODULE_ID_PREFIX} | FETCH USERS | INTERVAL: ${interval}`)
   );
   console.log(
+    chalkInfo(
+      `${MODULE_ID_PREFIX} | FETCH USERS | BATCH SIZE: ${userCursorBatchSize}`
+    )
+  );
+  console.log(
     chalkInfo(`${MODULE_ID_PREFIX} | FETCH USERS | QUERY\n`, jsonPrint(query))
   );
 
   const cursor = await mgUtils.initCursor({
     query: query,
-    cursorBatchSize: 64,
+    cursorBatchSize: userCursorBatchSize,
     cursorLimit: statsObj.users.processed.grandTotal,
     cursorLean: false,
   });
