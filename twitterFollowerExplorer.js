@@ -1,4 +1,4 @@
-const dotenv = require("dotenv");
+import dotenv from "dotenv";
 const envConfig = dotenv.config({ path: process.env.WORD_ENV_VARS_FILE });
 
 if (envConfig.error) {
@@ -84,39 +84,39 @@ const DEFAULT_ENABLE_LANG_ANALYSIS = true;
 
 const DEFAULT_MAX_USER_TWEETIDS = 100;
 
-const fs = require("fs-extra");
-const path = require("path");
-const watch = require("watch");
-const defaults = require("object.defaults");
-const moment = require("moment");
-const HashMap = require("hashmap").HashMap;
-const pick = require("object.pick");
-const _ = require("lodash");
-const NodeCache = require("node-cache");
-const merge = require("deepmerge");
-const btoa = require("btoa");
-const empty = require("is-empty");
+import fs from "fs-extra";
+import path from "path";
+import watch from "watch";
+import defaults from "object.defaults";
+import moment from "moment";
+import HashMap from "hashmap";
+import pick from "object.pick";
+import _ from "lodash";
+import NodeCache from "node-cache";
+import merge from "deepmerge";
+import btoa from "btoa";
+import empty from "is-empty";
 
-// const fs = require("fs");
-const { promisify } = require("util");
+import { promisify } from "util";
 const renameFileAsync = promisify(fs.rename);
 const unlinkFileAsync = promisify(fs.unlink);
 
-const debug = require("debug")("TFE");
-const util = require("util");
-const deepcopy = require("deep-copy");
-const async = require("async");
+import debug from "debug";
+import util from "util";
+import deepcopy from "deep-copy";
+import async from "async";
 
-const EventEmitter2 = require("eventemitter2").EventEmitter2;
+// import EventEmitter2 from "eventemitter2";
+import EventEmitter from "eventemitter3";
 
-const configEvents = new EventEmitter2({
+const configEvents = new EventEmitter({
   wildcard: true,
   newListener: true,
   maxListeners: 20,
   verboseMemoryLeak: true,
 });
 
-const chalk = require("chalk");
+import chalk from "chalk";
 const chalkNetwork = chalk.blue;
 const chalkBlueBold = chalk.blue.bold;
 const chalkTwitter = chalk.blue;
@@ -128,7 +128,7 @@ const chalkWarn = chalk.yellow;
 const chalkLog = chalk.gray;
 const chalkInfo = chalk.black;
 
-const os = require("os");
+import os from "os";
 let hostname = os.hostname();
 
 // GOOGLE CLOUD SHELL hostname is like: "cs-6000-devshell-vm-b4617f5d-3d18-4f0a-9418-5116e89b96e1"
@@ -208,7 +208,7 @@ global.wordAssoDb = require("@threeceelabs/mongoose-twitter");
 global.dbConnection = false;
 
 const mguAppName = "MGU_" + MODULE_ID;
-const MongooseUtilities = require("@threeceelabs/mongoose-utilities");
+import MongooseUtilities from "@threeceelabs/mongoose-utilities";
 const mgUtils = new MongooseUtilities(mguAppName);
 
 mgUtils.on("ready", async () => {
@@ -216,7 +216,7 @@ mgUtils.on("ready", async () => {
 });
 
 const tcuAppName = MODULE_ID_PREFIX + "_TCU";
-const ThreeceeUtilities = require("@threeceelabs/threeceeutilities");
+import { ThreeceeUtilities } from "@threeceelabs/threeceeutilities";
 const tcUtils = new ThreeceeUtilities(tcuAppName);
 
 tcUtils.on("ready", async () => {
@@ -229,11 +229,11 @@ const getTimeStamp = tcUtils.getTimeStamp;
 const formatBoolean = tcUtils.formatBoolean;
 const formatCategory = tcUtils.formatCategory;
 
-const NeuralNetworkTools = require("@threeceelabs/neural-network-tools");
+import NeuralNetworkTools from "@threeceelabs/neural-network-tools";
 const nnTools = new NeuralNetworkTools(MODULE_ID_PREFIX + "_NNT");
 nnTools.enableTensorflow();
 
-const UserServerController = require("@threeceelabs/user-server-controller");
+import UserServerController from "@threeceelabs/user-server-controller";
 const userServerController = new UserServerController(
   MODULE_ID_PREFIX + "_USC"
 );
@@ -249,7 +249,7 @@ userServerController.on("ready", function (appname) {
   console.log(chalk.green(MODULE_ID_PREFIX + " | USC READY | " + appname));
 });
 
-const TweetServerController = require("@threeceelabs/tweet-server-controller");
+import TweetServerController from "@threeceelabs/tweet-server-controller";
 const tweetServerController = new TweetServerController(
   MODULE_ID_PREFIX + "_TSC"
 );
@@ -1988,7 +1988,7 @@ async function quit(opts) {
 let stdin;
 let abortCursor = false;
 
-const cla = require("command-line-args");
+import cla from "command-line-args";
 
 const help = { name: "help", alias: "h", type: Boolean };
 
@@ -2182,7 +2182,7 @@ function initStdIn() {
 //=========================================================================
 // FSM
 //=========================================================================
-const Stately = require("stately.js");
+import Stately from "stately.js";
 
 let fsmTickInterval;
 let fsmPreviousState = "RESET";
