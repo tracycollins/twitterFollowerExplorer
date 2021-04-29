@@ -4322,12 +4322,16 @@ function initUserDbUpdateQueueInterval2(p) {
         userObj = userDbUpdateQueue.shift();
 
         if (!userObj.end) {
-          await userServerController.findOneUserV2({
-            user: userObj,
-            mergeHistograms: false,
-            noInc: true,
-            updateCountHistory: true,
-          });
+          await global.wordAssoDb.User.updateOne(
+            { nodeId: userObj.nodeId },
+            userObj
+          );
+          // await userServerController.findOneUserV2({
+          //   user: userObj,
+          //   mergeHistograms: false,
+          //   noInc: true,
+          //   updateCountHistory: true,
+          // });
         }
 
         statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
