@@ -208,7 +208,7 @@ global.wordAssoDb = mgt;
 global.dbConnection = false;
 
 const mguAppName = "MGU_" + MODULE_ID;
-import MongooseUtilities from "@threeceelabs/mongoose-utilities";
+import { MongooseUtilities } from "@threeceelabs/mongoose-utilities";
 const mgUtils = new MongooseUtilities(mguAppName);
 
 mgUtils.on("ready", async () => {

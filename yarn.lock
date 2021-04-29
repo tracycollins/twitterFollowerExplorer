@@ -482,6 +482,16 @@
     eventemitter3 "^4.0.7"
     treeify "^1.1.0"
 
+"@threeceelabs/mongoose-utilities@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/@threeceelabs/mongoose-utilities/-/mongoose-utilities-3.0.0.tgz#ff2058bda64f2f5abcc71452637ceecd88c87205"
+  integrity sha512-GxhloU+Y5Esny7zkTh57we1JhSoyxkofriq56RvR7af4TbGYR+vue8Kr/yJPtBMbM3OFI369aCzy+VSKNquLNA==
+  dependencies:
+    "@google-cloud/secret-manager" "^3.6.0"
+    "@threeceelabs/mongoose-twitter" "^2.0.1"
+    eventemitter3 "^4.0.7"
+    treeify "^1.1.0"
+
 "@threeceelabs/neural-network-tools@^3.1.1":
   version "3.1.1"
   resolved "https://registry.npmjs.org/@threeceelabs/neural-network-tools/-/neural-network-tools-3.1.1.tgz#067df4eb08911eb24fce95a8bd2699d57bf6a5e6"
