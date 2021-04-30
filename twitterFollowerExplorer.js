@@ -4086,11 +4086,11 @@ function initUserDbUpdateQueueInterval2(p) {
         userDbUpdateQueueReadyFlag = false;
         statsObj.queues.userDbUpdateQueue.busy = true;
 
-        const userObjArray = [...userDbUpdateQueue];
+        const userObjArrayLength = userDbUpdateQueue.length;
 
         const bulkUpdateArray = [];
-        for (const userObj of userObjArray) {
-          userDbUpdateQueue.shift();
+        for (let count = userObjArrayLength; count > 0; count--) {
+          const userObj = userDbUpdateQueue.shift();
           if (!userObj.end) {
             bulkUpdateArray.push({
               updateOne: {
