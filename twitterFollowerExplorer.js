@@ -922,14 +922,14 @@ async function cursorDataHandler(user) {
 
     // const queueOverShoot = processUserQueue - configuration.maxProcessUserQueue;
     const queueOverShoot =
-      userDbUpdateQueue - configuration.maxUserDbUpdateQueue;
+      userDbUpdateQueue.length - configuration.maxUserDbUpdateQueue;
 
     if (queueOverShoot > 0) {
       const period = queueOverShoot * configuration.backPressurePeriod;
 
       await wait({
         // message: "BK PRSSR | PUQ: " + processUserQueue,
-        message: "BK PRSSR | PUQ: " + userDbUpdateQueue,
+        message: "BK PRSSR | PUQ: " + userDbUpdateQueue.length,
         period: period,
         verbose: true,
       });
