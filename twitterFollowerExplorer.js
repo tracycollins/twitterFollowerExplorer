@@ -4101,13 +4101,13 @@ function initUserDbUpdateQueueInterval2(p) {
           }
         }
 
-        const result = await global.wordAssoDb.User.bulkWrite(bulkUpdateArray);
-        console.log(
-          `${PF} | BULK UPDATE | STATUS: ${result.ok}` +
-            ` | userDbUpdateQueue: ${userDbUpdateQueue.length}` +
-            ` | bulkUpdateArray: ${bulkUpdateArray.length}` +
-            ` | modifiedCount: ${result.modifiedCount}`
-        );
+        await global.wordAssoDb.User.bulkWrite(bulkUpdateArray);
+        // console.log(
+        //   `${PF} | BULK UPDATE | STATUS: ${result.ok}` +
+        //     ` | userDbUpdateQueue: ${userDbUpdateQueue.length}` +
+        //     ` | bulkUpdateArray: ${bulkUpdateArray.length}` +
+        //     ` | modifiedCount: ${result.modifiedCount}`
+        // );
 
         //   userObj = userDbUpdateQueue.shift();
 
