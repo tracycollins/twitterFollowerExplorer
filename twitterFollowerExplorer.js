@@ -10,7 +10,7 @@ console.log("TFE | +++ ENV CONFIG LOADED");
 console.log(`SLACK_BOT_TOKEN: ${process.env.SLACK_BOT_TOKEN}`);
 
 const MODULE_NAME = "twitterFollowerExplorer";
-const MODULE_ID_PREFIX = "TFE";
+const PF = "TFE";
 
 const DEFAULT_PRIMARY_HOST = "google";
 const DEFAULT_DATABASE_HOST = "mms3";
@@ -60,7 +60,7 @@ const DEFAULT_BEST_INCREMENTAL_UPDATE = false;
 const DEFAULT_FETCH_USER_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_PROCESS_USER_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
 const DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
-const DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL = DEFAULT_MIN_INTERVAL;
+const DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL = 10 * DEFAULT_MIN_INTERVAL;
 
 const DEFAULT_GLOBAL_MIN_SUCCESS_RATE = 85;
 const DEFAULT_BARE_MIN_SUCCESS_RATE = 75;
@@ -198,7 +198,7 @@ configuration.totalFetchCount = TEST_MODE ? TEST_TOTAL_FETCH : Infinity;
 configuration.fsmTickInterval = FSM_TICK_INTERVAL;
 configuration.statsUpdateIntervalTime = STATS_UPDATE_INTERVAL;
 
-const MODULE_ID = MODULE_ID_PREFIX + "_node_" + hostname;
+const MODULE_ID = PF + "_node_" + hostname;
 
 let mongooseDb;
 import mgt from "@threeceelabs/mongoose-twitter";
@@ -210,15 +210,15 @@ import { MongooseUtilities } from "@threeceelabs/mongoose-utilities";
 const mgUtils = new MongooseUtilities(mguAppName);
 
 mgUtils.on("ready", async () => {
-  console.log(`${MODULE_ID_PREFIX} | +++ MONGOOSE UTILS READY: ${mguAppName}`);
+  console.log(`${PF} | +++ MONGOOSE UTILS READY: ${mguAppName}`);
 });
 
-const tcuAppName = MODULE_ID_PREFIX + "_TCU";
+const tcuAppName = PF + "_TCU";
 import { ThreeceeUtilities } from "@threeceelabs/threeceeutilities";
 const tcUtils = new ThreeceeUtilities(tcuAppName);
 
 tcUtils.on("ready", async () => {
-  console.log(`${MODULE_ID_PREFIX} | +++ THREECEE UTILS READY: ${tcuAppName}`);
+  console.log(`${PF} | +++ THREECEE UTILS READY: ${tcuAppName}`);
 });
 
 const jsonPrint = tcUtils.jsonPrint;
@@ -228,36 +228,32 @@ const formatBoolean = tcUtils.formatBoolean;
 const formatCategory = tcUtils.formatCategory;
 
 import { NeuralNetworkTools } from "@threeceelabs/neural-network-tools";
-const nnTools = new NeuralNetworkTools(MODULE_ID_PREFIX + "_NNT");
+const nnTools = new NeuralNetworkTools(PF + "_NNT");
 nnTools.enableTensorflow();
 
 import { UserServerController } from "@threeceelabs/user-server-controller";
-const userServerController = new UserServerController(
-  MODULE_ID_PREFIX + "_USC"
-);
+const userServerController = new UserServerController(PF + "_USC");
 let userServerControllerReady = false;
 
 userServerController.on("error", function (err) {
   userServerControllerReady = false;
-  console.log(chalkError(MODULE_ID_PREFIX + " | *** USC ERROR | " + err));
+  console.log(chalkError(PF + " | *** USC ERROR | " + err));
 });
 
 userServerController.on("ready", function (appname) {
   userServerControllerReady = true;
-  console.log(chalk.green(MODULE_ID_PREFIX + " | USC READY | " + appname));
+  console.log(chalk.green(PF + " | USC READY | " + appname));
 });
 
 import { TweetServerController } from "@threeceelabs/tweet-server-controller";
-const tweetServerController = new TweetServerController(
-  MODULE_ID_PREFIX + "_TSC"
-);
+const tweetServerController = new TweetServerController(PF + "_TSC");
 
 tweetServerController.on("error", function (err) {
-  console.log(chalkError(MODULE_ID_PREFIX + " | *** TSC ERROR | " + err));
+  console.log(chalkError(PF + " | *** TSC ERROR | " + err));
 });
 
 tweetServerController.on("ready", function (appname) {
-  console.log(chalk.green(MODULE_ID_PREFIX + " | TSC READY | " + appname));
+  console.log(chalk.green(PF + " | TSC READY | " + appname));
 });
 
 let DROPBOX_ROOT_FOLDER;
@@ -562,9 +558,7 @@ async function slackSendWebMessage(msgObj) {
       channel: channel,
     });
   } catch (err) {
-    console.log(
-      chalkAlert(MODULE_ID_PREFIX + " | *** slackSendWebMessage ERROR: " + err)
-    );
+    console.log(chalkAlert(PF + " | *** slackSendWebMessage ERROR: " + err));
     throw err;
   }
 }
@@ -623,9 +617,7 @@ configuration.initMainIntervalTime = DEFAULT_INIT_MAIN_INTERVAL;
 
 if (process.env.TFE_QUIT_ON_COMPLETE !== undefined) {
   console.log(
-    MODULE_ID_PREFIX +
-      " | ENV TFE_QUIT_ON_COMPLETE: " +
-      process.env.TFE_QUIT_ON_COMPLETE
+    PF + " | ENV TFE_QUIT_ON_COMPLETE: " + process.env.TFE_QUIT_ON_COMPLETE
   );
 
   if (
@@ -843,7 +835,7 @@ async function updateDbNetwork(params) {
 
     if (verbose) {
       nnTools.printNetworkObj(
-        MODULE_ID_PREFIX + " | +++ NN DB UPDATED",
+        PF + " | +++ NN DB UPDATED",
         nnDbUpdated,
         chalkGreen
       );
@@ -851,9 +843,7 @@ async function updateDbNetwork(params) {
 
     return nnDbUpdated;
   } catch (err) {
-    console.log(
-      chalkError(`${MODULE_ID_PREFIX} | *** updateDbNetwork ERROR: ${err}`)
-    );
+    console.log(chalkError(`${PF} | *** updateDbNetwork ERROR: ${err}`));
     throw err;
   }
 }
@@ -869,12 +859,7 @@ function wait(params) {
     if (params.message && params.verbose) {
       console.log(
         chalkLog(
-          MODULE_ID_PREFIX +
-            " | " +
-            params.message +
-            " | PERIOD: " +
-            params.period +
-            " MS"
+          PF + " | " + params.message + " | PERIOD: " + params.period + " MS"
         )
       );
     }
@@ -892,7 +877,7 @@ function wait(params) {
         if (params.verbose) {
           console.log(
             chalkLog(
-              MODULE_ID_PREFIX +
+              PF +
                 " | XXX WAIT END BACK PRESSURE" +
                 " | UDBUQ: " +
                 userDbUpdateQueue.length +
@@ -937,9 +922,7 @@ async function cursorDataHandler(user) {
 
     return;
   } catch (err) {
-    console.log(
-      chalkError(MODULE_ID_PREFIX + " | *** cursorDataHandler ERROR: " + err)
-    );
+    console.log(chalkError(PF + " | *** cursorDataHandler ERROR: " + err));
   }
 }
 
@@ -948,7 +931,7 @@ process.title = MODULE_ID.toLowerCase() + "_" + process.pid;
 process.on("exit", function (code, signal) {
   console.log(
     chalkAlert(
-      MODULE_ID_PREFIX +
+      PF +
         " | PROCESS EXIT" +
         " | " +
         getTimeStamp() +
@@ -963,7 +946,7 @@ process.on("exit", function (code, signal) {
 process.on("close", function (code, signal) {
   console.log(
     chalkAlert(
-      MODULE_ID_PREFIX +
+      PF +
         " | PROCESS CLOSE" +
         " | " +
         getTimeStamp() +
@@ -978,7 +961,7 @@ process.on("close", function (code, signal) {
 process.on("SIGHUP", function (code, signal) {
   console.log(
     chalkAlert(
-      MODULE_ID_PREFIX +
+      PF +
         " | PROCESS SIGHUP" +
         " | " +
         getTimeStamp() +
@@ -994,7 +977,7 @@ process.on("SIGHUP", function (code, signal) {
 process.on("SIGINT", function (code, signal) {
   console.log(
     chalkAlert(
-      MODULE_ID_PREFIX +
+      PF +
         " | PROCESS SIGINT" +
         " | " +
         getTimeStamp() +
@@ -1009,7 +992,7 @@ process.on("SIGINT", function (code, signal) {
 
 process.on("unhandledRejection", function (err, promise) {
   console.trace(
-    MODULE_ID_PREFIX + " | *** Unhandled rejection (promise: ",
+    PF + " | *** Unhandled rejection (promise: ",
     promise,
     ", reason: ",
     err,
@@ -1031,7 +1014,7 @@ configuration.slackChannel = {};
 async function initConfig(cnf) {
   statsObj.status = "INIT CONFIG";
 
-  console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT CONFIG"));
+  console.log(chalkBlue(PF + " | INIT CONFIG"));
 
   if (debug.enabled) {
     console.log(
@@ -1062,15 +1045,11 @@ async function initConfig(cnf) {
     for (const arg of configArgs) {
       if (arg === "ssh") {
         console.log(
-          MODULE_ID_PREFIX +
-            " | _FINAL CONFIG | " +
-            arg +
-            " | " +
-            DEFAULT_SSH_PRIVATEKEY
+          PF + " | _FINAL CONFIG | " + arg + " | " + DEFAULT_SSH_PRIVATEKEY
         );
       } else if (_.isObject(configuration[arg])) {
         console.log(
-          MODULE_ID_PREFIX +
+          PF +
             " | _FINAL CONFIG | " +
             arg +
             "\n" +
@@ -1078,11 +1057,7 @@ async function initConfig(cnf) {
         );
       } else {
         console.log(
-          MODULE_ID_PREFIX +
-            " | _FINAL CONFIG | " +
-            arg +
-            ": " +
-            configuration[arg]
+          PF + " | _FINAL CONFIG | " + arg + ": " + configuration[arg]
         );
       }
     }
@@ -1097,9 +1072,7 @@ async function initConfig(cnf) {
 
     return configuration;
   } catch (err) {
-    console.log(
-      chalkError(MODULE_ID_PREFIX + " | *** CONFIG LOAD ERROR: " + err)
-    );
+    console.log(chalkError(PF + " | *** CONFIG LOAD ERROR: " + err));
     throw err;
   }
 }
@@ -1139,12 +1112,12 @@ async function showStats(options) {
   statsObjSmall = pick(statsObj, statsPickArray);
 
   if (options) {
-    console.log(MODULE_ID_PREFIX + " | STATS\n" + jsonPrint(statsObjSmall));
+    console.log(PF + " | STATS\n" + jsonPrint(statsObjSmall));
     return;
   } else {
     console.log(
       chalkBlue(
-        MODULE_ID_PREFIX +
+        PF +
           " | STATUS" +
           " | START: " +
           statsObj.startTime +
@@ -1169,7 +1142,7 @@ async function showStats(options) {
 
     console.log(
       chalkBlue(
-        MODULE_ID_PREFIX +
+        PF +
           " | STATUS" +
           " | PUQ: " +
           processUserQueue.length +
@@ -1225,7 +1198,7 @@ function initStatsUpdate() {
   return new Promise(function (resolve) {
     console.log(
       chalkLog(
-        MODULE_ID_PREFIX +
+        PF +
           " | INIT STATS UPDATE INTERVAL | " +
           msToTime(configuration.statsUpdateIntervalTime)
       )
@@ -1251,9 +1224,7 @@ function initStatsUpdate() {
       try {
         await showStats();
       } catch (err) {
-        console.log(
-          chalkError(MODULE_ID_PREFIX + " | *** SHOW STATS ERROR: " + err)
-        );
+        console.log(chalkError(PF + " | *** SHOW STATS ERROR: " + err));
       }
     }, configuration.statsUpdateIntervalTime);
 
@@ -1383,7 +1354,7 @@ async function loadConfigFile(params) {
       if (params.noErrorNotFound) {
         console.log(
           chalkAlert(
-            MODULE_ID_PREFIX +
+            PF +
               " | ... SKIP LOAD CONFIG FILE: " +
               params.folder +
               "/" +
@@ -1393,10 +1364,7 @@ async function loadConfigFile(params) {
         return newConfiguration;
       } else {
         console.log(
-          chalkError(
-            MODULE_ID_PREFIX +
-              " | *** CONFIG LOAD FILE ERROR | JSON UNDEFINED ??? "
-          )
+          chalkError(PF + " | *** CONFIG LOAD FILE ERROR | JSON UNDEFINED ??? ")
         );
         throw new Error("JSON UNDEFINED");
       }
@@ -1404,15 +1372,13 @@ async function loadConfigFile(params) {
 
     if (loadedConfigObj instanceof Error) {
       console.log(
-        chalkError(
-          MODULE_ID_PREFIX + " | *** CONFIG LOAD FILE ERROR: " + loadedConfigObj
-        )
+        chalkError(PF + " | *** CONFIG LOAD FILE ERROR: " + loadedConfigObj)
       );
     }
 
     console.log(
       chalkInfo(
-        MODULE_ID_PREFIX +
+        PF +
           " | LOADED CONFIG FILE: " +
           params.file +
           "\n" +
@@ -1724,11 +1690,7 @@ async function loadConfigFile(params) {
   } catch (err) {
     console.error(
       chalkError(
-        MODULE_ID_PREFIX +
-          " | ERROR LOAD CONFIG: " +
-          fullPath +
-          "\n" +
-          jsonPrint(err)
+        PF + " | ERROR LOAD CONFIG: " + fullPath + "\n" + jsonPrint(err)
       )
     );
     throw err;
@@ -1748,7 +1710,7 @@ async function loadAllConfigFiles() {
     defaultConfiguration = defaultConfig;
     console.log(
       chalkInfo(
-        MODULE_ID_PREFIX +
+        PF +
           " | <<< LOADED DEFAULT CONFIG " +
           configDefaultFolder +
           "/" +
@@ -1767,7 +1729,7 @@ async function loadAllConfigFiles() {
     hostConfiguration = hostConfig;
     console.log(
       chalkInfo(
-        MODULE_ID_PREFIX +
+        PF +
           " | <<< LOADED HOST CONFIG " +
           configHostFolder +
           "/" +
@@ -1806,9 +1768,7 @@ if (saveCacheTtl === undefined) {
   saveCacheTtl = SAVE_CACHE_DEFAULT_TTL;
 }
 
-console.log(
-  MODULE_ID_PREFIX + " | SAVE CACHE TTL: " + saveCacheTtl + " SECONDS"
-);
+console.log(PF + " | SAVE CACHE TTL: " + saveCacheTtl + " SECONDS");
 
 let saveCacheCheckPeriod = process.env.SAVE_CACHE_CHECK_PERIOD;
 
@@ -1817,10 +1777,7 @@ if (saveCacheCheckPeriod === undefined) {
 }
 
 console.log(
-  MODULE_ID_PREFIX +
-    " | SAVE CACHE CHECK PERIOD: " +
-    saveCacheCheckPeriod +
-    " SECONDS"
+  PF + " | SAVE CACHE CHECK PERIOD: " + saveCacheCheckPeriod + " SECONDS"
 );
 
 const saveCache = new NodeCache({
@@ -1842,7 +1799,7 @@ saveCache.on("expired", saveCacheExpired);
 saveCache.on("set", function (file, fileObj) {
   debug(
     chalkLog(
-      MODULE_ID_PREFIX +
+      PF +
         " | $$$ SAVE CACHE" +
         " [" +
         saveCache.getStats().keys +
@@ -1864,9 +1821,7 @@ function clearAllIntervals() {
   return new Promise(function (resolve, reject) {
     try {
       for (const intervalHandle of intervalsSet) {
-        console.log(
-          chalkInfo(MODULE_ID_PREFIX + " | CLEAR INTERVAL | " + intervalHandle)
-        );
+        console.log(chalkInfo(PF + " | CLEAR INTERVAL | " + intervalHandle));
         clearInterval(intervalHandle);
       }
       resolve();
@@ -1892,13 +1847,9 @@ const readyToQuit = function () {
 
 async function quit(opts) {
   if (quitFlag) {
-    console.log(chalkInfo(MODULE_ID_PREFIX + " | ALREADY IN QUIT"));
+    console.log(chalkInfo(PF + " | ALREADY IN QUIT"));
     if (opts) {
-      console.log(
-        chalkInfo(
-          MODULE_ID_PREFIX + " | REDUNDANT QUIT INFO\n" + jsonPrint(opts)
-        )
-      );
+      console.log(chalkInfo(PF + " | REDUNDANT QUIT INFO\n" + jsonPrint(opts)));
     }
     return;
   }
@@ -1927,11 +1878,11 @@ async function quit(opts) {
     // await childQuitAll();
     await showStats(true);
   } catch (err) {
-    console.log(MODULE_ID_PREFIX + " | *** QUIT ERROR: " + err);
+    console.log(PF + " | *** QUIT ERROR: " + err);
   }
 
   if (options) {
-    console.log(MODULE_ID_PREFIX + " | QUIT INFO\n" + jsonPrint(options));
+    console.log(PF + " | QUIT INFO\n" + jsonPrint(options));
   }
 
   clearInterval(quitWaitInterval);
@@ -1947,7 +1898,7 @@ async function quit(opts) {
       if (forceQuitFlag) {
         console.log(
           chalkAlert(
-            MODULE_ID_PREFIX +
+            PF +
               " | *** FORCE QUIT" +
               " | SAVE CACHE KEYS: " +
               saveCache.getStats().keys +
@@ -1960,7 +1911,7 @@ async function quit(opts) {
       } else {
         console.log(
           chalkGreen(
-            MODULE_ID_PREFIX +
+            PF +
               " | ALL PROCESSES COMPLETE | QUITTING" +
               " | SAVE CACHE KEYS: " +
               saveCache.getStats().keys +
@@ -1979,11 +1930,11 @@ async function quit(opts) {
           mongooseDb.close(async function () {
             console.log(
               chalkBlue(
-                MODULE_ID_PREFIX +
+                PF +
                   " | ==========================\n" +
-                  MODULE_ID_PREFIX +
+                  PF +
                   " | MONGO DB CONNECTION CLOSED\n" +
-                  MODULE_ID_PREFIX +
+                  PF +
                   " | ==========================\n"
               )
             );
@@ -2070,15 +2021,11 @@ const optionDefinitions = [
 const commandLineConfig = cla(optionDefinitions);
 
 console.log(
-  chalkInfo(
-    MODULE_ID_PREFIX + " | COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig)
-  )
+  chalkInfo(PF + " | COMMAND LINE CONFIG\n" + jsonPrint(commandLineConfig))
 );
 
 if (Object.keys(commandLineConfig).includes("help")) {
-  console.log(
-    MODULE_ID_PREFIX + " |optionDefinitions\n" + jsonPrint(optionDefinitions)
-  );
+  console.log(PF + " |optionDefinitions\n" + jsonPrint(optionDefinitions));
   quit("help");
 }
 
@@ -2096,7 +2043,7 @@ function loadCommandLineArgs() {
         if (arg == "evolveIterations") {
           configuration.evolve.iterations = commandLineConfig[arg];
           console.log(
-            MODULE_ID_PREFIX +
+            PF +
               " | --> COMMAND LINE CONFIG | " +
               arg +
               ": " +
@@ -2105,7 +2052,7 @@ function loadCommandLineArgs() {
         } else {
           configuration[arg] = commandLineConfig[arg];
           console.log(
-            MODULE_ID_PREFIX +
+            PF +
               " | --> COMMAND LINE CONFIG | " +
               arg +
               ": " +
@@ -2125,13 +2072,11 @@ function loadCommandLineArgs() {
 
 function toggleVerbose() {
   configuration.verbose = !configuration.verbose;
-  console.log(
-    chalkLog(MODULE_ID_PREFIX + " | VERBOSE: " + configuration.verbose)
-  );
+  console.log(chalkLog(PF + " | VERBOSE: " + configuration.verbose));
 }
 
 function initStdIn() {
-  console.log(MODULE_ID_PREFIX + " | STDIN ENABLED");
+  console.log(PF + " | STDIN ENABLED");
   stdin = process.stdin;
   if (stdin.setRawMode !== undefined) {
     stdin.setRawMode(true);
@@ -2145,9 +2090,7 @@ function initStdIn() {
       // break;
       case "a":
         abortCursor = true;
-        console.log(
-          chalkLog(MODULE_ID_PREFIX + " | STDIN | ABORT: " + abortCursor)
-        );
+        console.log(chalkLog(PF + " | STDIN | ABORT: " + abortCursor));
         break;
 
       case "K":
@@ -2166,9 +2109,7 @@ function initStdIn() {
         try {
           await showStats(key == "S");
         } catch (err) {
-          console.log(
-            chalkError(MODULE_ID_PREFIX + " | *** SHOW STATS ERROR: " + err)
-          );
+          console.log(chalkError(PF + " | *** SHOW STATS ERROR: " + err));
         }
         break;
 
@@ -2260,7 +2201,7 @@ async function fixIncorrectNetworkMetaData(params) {
     ) {
       console.log(
         chalkAlert(
-          MODULE_ID_PREFIX +
+          PF +
             " | !!! INCORRECT NETWORK TECH | CHANGE " +
             params.networkObj.networkTechnology +
             " -> " +
@@ -2282,7 +2223,7 @@ async function fixIncorrectNetworkMetaData(params) {
     ) {
       console.log(
         chalkAlert(
-          MODULE_ID_PREFIX +
+          PF +
             " | !!! INCORRECT BINARY MODE | CHANGE " +
             params.networkObj.binaryMode +
             " -> " +
@@ -2299,7 +2240,7 @@ async function fixIncorrectNetworkMetaData(params) {
     if (incorrectUpdateFlag) {
       console.log(
         chalkLog(
-          MODULE_ID_PREFIX +
+          PF +
             " | ... SAVING UPDATED INCORRECT NN META DATA" +
             " | INCORRECT FLAG: " +
             incorrectUpdateFlag +
@@ -2319,9 +2260,7 @@ async function fixIncorrectNetworkMetaData(params) {
     return params.networkObj;
   } catch (err) {
     console.log(
-      chalkAlert(
-        MODULE_ID_PREFIX + " | *** fixIncorrectNetworkMetaData ERROR | " + err
-      )
+      chalkAlert(PF + " | *** fixIncorrectNetworkMetaData ERROR | " + err)
     );
     throw err;
   }
@@ -2336,9 +2275,7 @@ async function loadNetworkFile(params) {
 
   if (!nnObj || nnObj === undefined) {
     console.log(
-      chalkError(
-        MODULE_ID_PREFIX + " | ??? NN NOT FOUND? | " + folder + "/" + entry.name
-      )
+      chalkError(PF + " | ??? NN NOT FOUND? | " + folder + "/" + entry.name)
     );
     return;
   }
@@ -2350,7 +2287,7 @@ async function loadNetworkFile(params) {
   ) {
     console.log(
       chalkAlert(
-        MODULE_ID_PREFIX +
+        PF +
           " | ... SKIP | NN TECH: " +
           nnObj.networkTechnology +
           " | TECH FILTER: " +
@@ -2374,7 +2311,7 @@ async function loadNetworkFile(params) {
 
     console.log(
       chalkLog(
-        MODULE_ID_PREFIX +
+        PF +
           " | TECH: " +
           nnObj.networkTechnology +
           " | PREV RANK: " +
@@ -2452,7 +2389,7 @@ async function loadNetworkFile(params) {
         } catch (err) {
           console.log(
             chalkError(
-              MODULE_ID_PREFIX +
+              PF +
                 " | *** RENAME ERROR: " +
                 err +
                 " | " +
@@ -2468,7 +2405,7 @@ async function loadNetworkFile(params) {
       bestNetworkHashMap.set(networkObj.networkId, networkObj);
 
       nnTools.printNetworkObj(
-        MODULE_ID_PREFIX +
+        PF +
           " | +++ NN" +
           " [" +
           bestNetworkHashMap.size +
@@ -2483,7 +2420,7 @@ async function loadNetworkFile(params) {
       skipLoadNetworkSet.add(networkObj.networkId);
 
       nnTools.printNetworkObj(
-        MODULE_ID_PREFIX + " | XXX DELETE DB NN",
+        PF + " | XXX DELETE DB NN",
         networkObj,
         chalk.red
       );
@@ -2503,7 +2440,7 @@ async function loadNetworkFile(params) {
     if (skipLoadNetworkSet.has(networkObj.networkId) && !networkObj.archived) {
       console.log(
         chalk.black.bold(
-          MODULE_ID_PREFIX +
+          PF +
             " | vvv ARCHIVE NN" +
             " | " +
             folder +
@@ -2524,17 +2461,14 @@ async function loadNetworkFile(params) {
       if (networkObj.archived) {
         if (networkObj.overallMatchRate >= configuration.globalMinSuccessRate) {
           nnTools.printNetworkObj(
-            MODULE_ID_PREFIX +
-              " | ??? NN ARCHIVED BUT GLOBAL SUCCESS | SKIP DELETE",
+            PF + " | ??? NN ARCHIVED BUT GLOBAL SUCCESS | SKIP DELETE",
             networkObj
           );
           return;
         } else {
           console.log(
             chalkLog(
-              MODULE_ID_PREFIX +
-                " | ... NN ALREADY ARCHIVED | " +
-                networkObj.networkId
+              PF + " | ... NN ALREADY ARCHIVED | " + networkObj.networkId
             )
           );
 
@@ -2544,18 +2478,14 @@ async function loadNetworkFile(params) {
 
           console.log(
             chalkLog(
-              MODULE_ID_PREFIX +
-                " | ... NN ALREADY ARCHIVED | DELETING: " +
-                deletePath
+              PF + " | ... NN ALREADY ARCHIVED | DELETING: " + deletePath
             )
           );
 
           await unlinkFileAsync(deletePath);
           console.log(
             chalkAlert(
-              MODULE_ID_PREFIX +
-                " | ... NN ALREADY ARCHIVED | DELETED: " +
-                deletePath
+              PF + " | ... NN ALREADY ARCHIVED | DELETED: " + deletePath
             )
           );
           return;
@@ -2565,7 +2495,7 @@ async function loadNetworkFile(params) {
   } catch (err) {
     console.log(
       chalkAlert(
-        MODULE_ID_PREFIX +
+        PF +
           " | *** loadNetworkFile ERROR ... SKIP LOAD | " +
           nnObj.networkId +
           " | " +
@@ -2657,15 +2587,11 @@ async function loadNetworksOfInputs(params) {
   let nnArray = [];
 
   console.log(
-    chalkLog(
-      MODULE_ID_PREFIX +
-        " | ... LOADING | TECH FILTER: " +
-        params.networkTechnology
-    )
+    chalkLog(PF + " | ... LOADING | TECH FILTER: " + params.networkTechnology)
   );
   console.log(
     chalkLog(
-      MODULE_ID_PREFIX +
+      PF +
         " | ... LOADING " +
         params.networkDatabaseLoadPerInputsLimit +
         " BEST NNs PER INPUTS ID (by OAMR) FROM DB ..."
@@ -2673,7 +2599,7 @@ async function loadNetworksOfInputs(params) {
   );
   console.log(
     chalkLog(
-      MODULE_ID_PREFIX +
+      PF +
         " | ... LOADING " +
         params.randomUntestedPerInputsLimit +
         " UNTESTED NNs FROM DB ..."
@@ -2686,9 +2612,7 @@ async function loadNetworksOfInputs(params) {
 
   for (const inputsId of params.inputsIdArray) {
     console.log(
-      chalkLog(
-        MODULE_ID_PREFIX + " | ... LOADING NN FROM DB | INPUTS ID: " + inputsId
-      )
+      chalkLog(PF + " | ... LOADING NN FROM DB | INPUTS ID: " + inputsId)
     );
 
     let query = {};
@@ -2790,7 +2714,7 @@ async function purgeNetworksDb(p) {
   });
   console.log(
     chalkAlert(
-      `${MODULE_ID_PREFIX} | !!! PURGE NETWORKS DB | NNs DELETED FROM DB (SUCCESS LT ${minSuccessRate}): ${results.deletedCount}`
+      `${PF} | !!! PURGE NETWORKS DB | NNs DELETED FROM DB (SUCCESS LT ${minSuccessRate}): ${results.deletedCount}`
     )
   );
 
@@ -2802,16 +2726,14 @@ async function purgeNetworksDb(p) {
   ];
 
   console.log(
-    chalkAlert(
-      MODULE_ID_PREFIX + " | !!! PURGE NETWORKS DB\nQUERY\n" + jsonPrint(query)
-    )
+    chalkAlert(PF + " | !!! PURGE NETWORKS DB\nQUERY\n" + jsonPrint(query))
   );
 
   results = await global.wordAssoDb.NeuralNetwork.deleteMany(query);
 
   console.log(
     chalkAlert(
-      MODULE_ID_PREFIX +
+      PF +
         " | !!! PURGE NETWORKS DB | NNs DELETED FROM DB: " +
         results.deletedCount
     )
@@ -2919,7 +2841,7 @@ async function loadBestNetworksDatabase(p) {
 
         console.log(
           chalkLog(
-            MODULE_ID_PREFIX +
+            PF +
               " | loadBestNetworksDatabase" +
               " | PREV RANK " +
               nnDoc.previousRank +
@@ -2932,12 +2854,7 @@ async function loadBestNetworksDatabase(p) {
       }
 
       console.log(
-        chalkInfo(
-          MODULE_ID_PREFIX +
-            " | loadBestNetworksDatabase" +
-            " | " +
-            nnDoc.networkId
-        )
+        chalkInfo(PF + " | loadBestNetworksDatabase" + " | " + nnDoc.networkId)
       );
 
       const nnObj = await fixIncorrectNetworkMetaData({
@@ -2949,7 +2866,7 @@ async function loadBestNetworksDatabase(p) {
       if (!networkObj || networkObj == undefined) {
         console.log(
           chalkError(
-            MODULE_ID_PREFIX +
+            PF +
               " | *** NETWORK CONVERT UNDEFINED ... SKIPPING: " +
               nnObj.networkId
           )
@@ -3011,7 +2928,7 @@ async function loadBestNetworksDatabase(p) {
           };
           console.log(
             chalkBlue(
-              `${MODULE_ID_PREFIX} | +++ NEW BEST NN BY TECH | ${
+              `${PF} | +++ NEW BEST NN BY TECH | ${
                 networkObj.networkTechnology
               } | ${networkObj.successRate.toFixed(2)} | ${
                 networkObj.networkId
@@ -3056,7 +2973,7 @@ async function loadBestNetworksDatabase(p) {
       console.trace(e);
       console.log(
         chalkError(
-          MODULE_ID_PREFIX +
+          PF +
             " | *** LOAD DB NETWORK CONVERT ERROR ... SKIPPING: " +
             nnDoc.networkId
         )
@@ -3066,9 +2983,7 @@ async function loadBestNetworksDatabase(p) {
     }
   }
 
-  console.log(
-    chalkBlueBold(MODULE_ID_PREFIX + " | loadBestNetworksDatabase COMPLETE")
-  );
+  console.log(chalkBlueBold(PF + " | loadBestNetworksDatabase COMPLETE"));
   return bestNetwork;
 }
 
@@ -3101,17 +3016,13 @@ const watchOptions = {
 async function initWatchConfig() {
   statsObj.status = "INIT WATCH CONFIG";
 
-  console.log(chalkLog(MODULE_ID_PREFIX + " | ... INIT WATCH"));
+  console.log(chalkLog(PF + " | ... INIT WATCH"));
 
   const loadConfig = async function (f) {
     try {
       debug(
         chalkInfo(
-          MODULE_ID_PREFIX +
-            " | +++ FILE CREATED or CHANGED | " +
-            getTimeStamp() +
-            " | " +
-            f
+          PF + " | +++ FILE CREATED or CHANGED | " + getTimeStamp() + " | " + f
         )
       );
 
@@ -3123,15 +3034,11 @@ async function initWatchConfig() {
         for (const arg of configArgs) {
           if (arg === "privateKey") {
             console.log(
-              MODULE_ID_PREFIX +
-                " | _FINAL CONFIG | " +
-                arg +
-                " | " +
-                DEFAULT_SSH_PRIVATEKEY
+              PF + " | _FINAL CONFIG | " + arg + " | " + DEFAULT_SSH_PRIVATEKEY
             );
           } else if (_.isObject(configuration[arg])) {
             console.log(
-              MODULE_ID_PREFIX +
+              PF +
                 " | _FINAL CONFIG | " +
                 arg +
                 "\n" +
@@ -3139,20 +3046,14 @@ async function initWatchConfig() {
             );
           } else {
             console.log(
-              MODULE_ID_PREFIX +
-                " | _FINAL CONFIG | " +
-                arg +
-                ": " +
-                configuration[arg]
+              PF + " | _FINAL CONFIG | " + arg + ": " + configuration[arg]
             );
           }
         }
       }
     } catch (err) {
       console.log(
-        chalkError(
-          MODULE_ID_PREFIX + " | *** LOAD ALL CONFIGS ON CREATE ERROR: " + err
-        )
+        chalkError(PF + " | *** LOAD ALL CONFIGS ON CREATE ERROR: " + err)
       );
     }
   };
@@ -3162,13 +3063,7 @@ async function initWatchConfig() {
     monitor.on("changed", loadConfig);
     monitor.on("removed", function (f) {
       debug(
-        chalkAlert(
-          MODULE_ID_PREFIX +
-            " | XXX FILE DELETED | " +
-            getTimeStamp() +
-            " | " +
-            f
-        )
+        chalkAlert(PF + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f)
       );
     });
   });
@@ -3178,13 +3073,7 @@ async function initWatchConfig() {
     monitor.on("changed", loadConfig);
     monitor.on("removed", function (f) {
       debug(
-        chalkAlert(
-          MODULE_ID_PREFIX +
-            " | XXX FILE DELETED | " +
-            getTimeStamp() +
-            " | " +
-            f
-        )
+        chalkAlert(PF + " | XXX FILE DELETED | " + getTimeStamp() + " | " + f)
       );
     });
   });
@@ -3198,7 +3087,7 @@ function initActivateNetworks() {
   return new Promise(function (resolve, reject) {
     statsObj.status = "INIT ACTIVATE NNs";
 
-    console.log(chalkGreen(MODULE_ID_PREFIX + " | INIT ACTIVATE NETWORKS"));
+    console.log(chalkGreen(PF + " | INIT ACTIVATE NETWORKS"));
 
     statsObj.loadedNetworksFlag = false;
 
@@ -3214,7 +3103,7 @@ function initActivateNetworks() {
 
     if (networkIdArray.length === 0) {
       statsObj.loadedNetworksFlag = true;
-      console.error(chalkError(MODULE_ID_PREFIX + " | ??? NO LOADED NNs ???"));
+      console.error(chalkError(PF + " | ??? NO LOADED NNs ???"));
       return reject(new Error("NO NNs LOADED"));
     }
 
@@ -3239,37 +3128,29 @@ function initActivateNetworks() {
             isBestNetworkFlag = true;
           }
 
-          nnTools.printNetworkObj(
-            MODULE_ID_PREFIX + " | LOADING NN ",
-            networkObj,
-            chalkLog
-          );
+          nnTools.printNetworkObj(PF + " | LOADING NN ", networkObj, chalkLog);
 
           await nnTools.loadNetwork({
             networkObj: networkObj,
             isBestNetwork: isBestNetworkFlag,
           });
 
-          console.log(
-            chalkBlue(MODULE_ID_PREFIX + " | LOADED NN " + networkObj.networkId)
-          );
+          console.log(chalkBlue(PF + " | LOADED NN " + networkObj.networkId));
 
           if (networkIdArray.length === 0) {
             clearInterval(loadNetworkInterval);
             statsObj.loadedNetworksFlag = true;
-            console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED NNs COMPLETE"));
+            console.log(chalkBlue(PF + " | LOADED NNs COMPLETE"));
             return resolve();
           }
 
           loadNetworkReady = true;
         } catch (err) {
-          console.log(
-            chalkError(MODULE_ID_PREFIX + " | *** waitEvent ERROR: ", err)
-          );
+          console.log(chalkError(PF + " | *** waitEvent ERROR: ", err));
           if (networkIdArray.length === 0) {
             clearInterval(loadNetworkInterval);
             statsObj.loadedNetworksFlag = true;
-            console.log(chalkBlue(MODULE_ID_PREFIX + " | LOADED NNs COMPLETE"));
+            console.log(chalkBlue(PF + " | LOADED NNs COMPLETE"));
             return resolve();
           }
           loadNetworkReady = true;
@@ -3315,7 +3196,7 @@ async function loadBestRuntimeNetwork() {
       verbose: true,
     });
 
-    debug(MODULE_ID_PREFIX + "| bestNetworkObj\n" + jsonPrint(bestNetworkObj));
+    debug(PF + "| bestNetworkObj\n" + jsonPrint(bestNetworkObj));
 
     const bestNetworkDoc = await global.wordAssoDb.NeuralNetwork.findOne({
       networkId: bestNetworkObj.networkId,
@@ -3324,7 +3205,7 @@ async function loadBestRuntimeNetwork() {
     if (!bestNetworkDoc) {
       console.log(
         chalkAlert(
-          MODULE_ID_PREFIX +
+          PF +
             " | loadBestRuntimeNetwork" +
             " | !!! BEST RUNTIME NETWORK NOT FOUND IN DB" +
             " | " +
@@ -3337,7 +3218,7 @@ async function loadBestRuntimeNetwork() {
 
     console.log(
       chalkBlue(
-        MODULE_ID_PREFIX +
+        PF +
           " | loadBestRuntimeNetwork" +
           " | BEST RUNTIME NETWORK FOUND IN DB" +
           " | " +
@@ -3353,7 +3234,7 @@ async function loadBestRuntimeNetwork() {
   } catch (err) {
     console.log(
       chalkAlert(
-        MODULE_ID_PREFIX +
+        PF +
           " | loadBestRuntimeNetwork" +
           " | !!! COULD NOT LOAD BEST RUNTIME NETWORK FILE" +
           " | " +
@@ -3543,7 +3424,7 @@ async function initNetworks(params) {
   );
 
   if (bestNetworkHashMap.size === 0) {
-    console.log(chalkError(MODULE_ID_PREFIX + " | *** NO NETWORKS LOADED"));
+    console.log(chalkError(PF + " | *** NO NETWORKS LOADED"));
     quit({ source: "TFE", error: "NO_NETWORKS" });
     return;
   }
@@ -3600,9 +3481,7 @@ function saveNetworkHashMap(params) {
           return reject(err);
         }
 
-        console.log(
-          chalkBlueBold(MODULE_ID_PREFIX + " | +++ saveNetworkHashMap COMPLETE")
-        );
+        console.log(chalkBlueBold(PF + " | +++ saveNetworkHashMap COMPLETE"));
         resolve();
       }
     );
@@ -3695,9 +3574,7 @@ function updateNetworkStats(params) {
             })
             .catch(function (err) {
               console.log(
-                chalkError(
-                  MODULE_ID_PREFIX + " | *** updateDbNetwork ERROR: " + err
-                )
+                chalkError(PF + " | *** updateDbNetwork ERROR: " + err)
               );
               return cb(err);
             });
@@ -3712,11 +3589,7 @@ function updateNetworkStats(params) {
       },
       async function (err) {
         if (err) {
-          console.log(
-            chalkError(
-              MODULE_ID_PREFIX + " | *** UPDATE NN STATS ERROR: " + err
-            )
-          );
+          console.log(chalkError(PF + " | *** UPDATE NN STATS ERROR: " + err));
           return reject(err);
         }
 
@@ -3815,16 +3688,10 @@ function updateNetworkStats(params) {
             saveImmediate: saveImmediate,
             updateDb: updateDb,
           });
-          console.log(
-            chalkBlueBold(
-              MODULE_ID_PREFIX + " | +++ updateNetworkStats COMPLETE"
-            )
-          );
+          console.log(chalkBlueBold(PF + " | +++ updateNetworkStats COMPLETE"));
           resolve();
         } catch (e) {
-          console.log(
-            chalkError(MODULE_ID_PREFIX + " | *** BEST INPUTS ERROR: " + e)
-          );
+          console.log(chalkError(PF + " | *** BEST INPUTS ERROR: " + e));
           reject(e);
         }
       }
@@ -3847,12 +3714,7 @@ function initActivateNetworkQueueInterval(p) {
     statsObj.queues.activateNetworkQueue.size = activateNetworkQueue.length;
 
     console.log(
-      chalkLog(
-        MODULE_ID_PREFIX +
-          " | INIT ACTIVATE NN QUEUE INTERVAL: " +
-          interval +
-          " ms"
-      )
+      chalkLog(PF + " | INIT ACTIVATE NN QUEUE INTERVAL: " + interval + " ms")
     );
 
     let activateNetworkResults = {};
@@ -3944,7 +3806,7 @@ function initActivateNetworkQueueInterval(p) {
               cbnn.networkId != currentBestNetwork.networkId
             ) {
               nnTools.printNetworkObj(
-                MODULE_ID_PREFIX + " | +++ NEW CURRENT BEST NN",
+                PF + " | +++ NEW CURRENT BEST NN",
                 cbnn,
                 chalkGreen
               );
@@ -3983,7 +3845,7 @@ function initActivateNetworkQueueInterval(p) {
           } else {
             console.log(
               chalkError(
-                MODULE_ID_PREFIX +
+                PF +
                   " | *** ERROR:  NETWORK_OUTPUT | BEST NN NOT IN HASHMAP???" +
                   " | " +
                   moment().format(compactDateTimeFormat) +
@@ -4043,7 +3905,7 @@ function initActivateNetworkQueueInterval(p) {
 
           if (statsObj.currentBestNetwork.rank < currentBestNetwork.rank) {
             nnTools.printNetworkObj(
-              MODULE_ID_PREFIX +
+              PF +
                 " | +++ UPD BEST NN" +
                 " [ANQ " +
                 activateNetworkQueue.length +
@@ -4069,7 +3931,7 @@ function initActivateNetworkQueueInterval(p) {
         } catch (err) {
           console.log(
             chalkError(
-              MODULE_ID_PREFIX +
+              PF +
                 " | *** ACTIVATE NETWORK ERROR" +
                 " | @" +
                 anObj.user.screenName +
@@ -4137,7 +3999,7 @@ async function saveBestNetworkFileCache(params) {
 
     console.log(
       chalkNetwork(
-        MODULE_ID_PREFIX +
+        PF +
           " | SAVING NEW BEST NN" +
           " | SR: " +
           params.networkObj.successRate.toFixed(2) +
@@ -4185,120 +4047,25 @@ async function saveBestNetworkFileCache(params) {
 
     return;
   } catch (err) {
-    console.trace(
-      chalkError(`${MODULE_ID_PREFIX}  | *** SAVING NEW BEST NN ERROR: ${err}`)
-    );
+    console.trace(chalkError(`${PF}  | *** SAVING NEW BEST NN ERROR: ${err}`));
     throw err;
   }
-}
-
-function initUserDbUpdateQueueInterval(p) {
-  return new Promise(function (resolve) {
-    const params = p || {};
-
-    const maxParallel =
-      params.maxParallel || configuration.userDbUpdateMaxParallel;
-    const interval = params.interval || configuration.userDbUpdateQueueInterval;
-
-    statsObj.status = "INIT USER DB UPDATE INTERVAL";
-
-    console.log(
-      chalkBlue(
-        MODULE_ID_PREFIX +
-          " | INIT USER DB UPDATE QUEUE" +
-          " | MAX PARALLEL: " +
-          maxParallel +
-          " | INTERVAL: " +
-          interval +
-          " MS"
-      )
-    );
-
-    clearInterval(userDbUpdateQueueInterval);
-
-    intervalsSet.add("userDbUpdateQueueInterval");
-
-    statsObj.queues.userDbUpdateQueue.busy = false;
-    userDbUpdateQueueReadyFlag = true;
-
-    const processUserArray = [];
-    let more = false;
-    let userObj = {};
-
-    userDbUpdateQueueInterval = setInterval(async function () {
-      if (userDbUpdateQueueReadyFlag && userDbUpdateQueue.length > 0) {
-        userDbUpdateQueueReadyFlag = false;
-        statsObj.queues.userDbUpdateQueue.busy = true;
-        statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
-
-        more = userDbUpdateQueue.length > 0;
-
-        processUserArray.length = 0;
-
-        while (more) {
-          statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
-
-          if (
-            userDbUpdateQueue.length > 0 &&
-            processUserArray.length < maxParallel
-          ) {
-            userObj = userDbUpdateQueue.shift();
-
-            if (!userObj.end) {
-              processUserArray.push(
-                userServerController.findOneUserV2({
-                  user: userObj,
-                  mergeHistograms: false,
-                  noInc: true,
-                  updateCountHistory: true,
-                })
-              );
-            }
-
-            if (userObj.end) {
-              more = false;
-              userDbUpdateQueue.length = 0;
-            }
-            if (userDbUpdateQueue.length === 0) {
-              more = false;
-            }
-            if (processUserArray.length >= maxParallel) {
-              more = false;
-            }
-          }
-        }
-
-        if (processUserArray.length > 0) {
-          await Promise.all(processUserArray);
-          processUserArray.length = 0;
-        }
-
-        statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
-        userDbUpdateQueueReadyFlag = true;
-        statsObj.queues.userDbUpdateQueue.busy = false;
-      }
-    }, interval);
-
-    resolve();
-  });
 }
 
 function initUserDbUpdateQueueInterval2(p) {
   return new Promise(function (resolve) {
     const params = p || {};
-
-    const maxParallel =
-      params.maxParallel || configuration.userDbUpdateMaxParallel;
+    const maxBulkUpdateArray = params.maxBulkUpdateArray || 10;
     const interval = params.interval || configuration.userDbUpdateQueueInterval;
 
     statsObj.status = "INIT USER DB UPDATE INTERVAL";
 
     console.log(
       chalkBlue(
-        MODULE_ID_PREFIX +
+        PF +
           " | INIT USER DB UPDATE QUEUE" +
-          " | MAX PARALLEL: " +
-          maxParallel +
+          " | MAX BULK ARRAY: " +
+          maxBulkUpdateArray +
           " | INTERVAL: " +
           interval +
           " MS"
@@ -4319,20 +4086,43 @@ function initUserDbUpdateQueueInterval2(p) {
         userDbUpdateQueueReadyFlag = false;
         statsObj.queues.userDbUpdateQueue.busy = true;
 
-        userObj = userDbUpdateQueue.shift();
+        const userObjArray = [...userDbUpdateQueue];
 
-        if (!userObj.end) {
-          await global.wordAssoDb.User.updateOne(
-            { nodeId: userObj.nodeId },
-            userObj
-          );
-          // await userServerController.findOneUserV2({
-          //   user: userObj,
-          //   mergeHistograms: false,
-          //   noInc: true,
-          //   updateCountHistory: true,
-          // });
+        const bulkUpdateArray = [];
+        for (const userObj of userObjArray) {
+          userDbUpdateQueue.shift();
+          if (!userObj.end) {
+            bulkUpdateArray.push({
+              updateOne: {
+                filter: { nodeId: userObj.nodeId },
+                update: userObj,
+              },
+            });
+          }
         }
+
+        const result = await global.wordAssoDb.User.bulkWrite(bulkUpdateArray);
+        console.log(
+          `${PF} | BULK UPDATE | STATUS: ${result.ok}` +
+            ` | userDbUpdateQueue: ${userDbUpdateQueue.length}` +
+            ` | bulkUpdateArray: ${bulkUpdateArray.length}` +
+            ` | modifiedCount: ${result.modifiedCount}`
+        );
+
+        //   userObj = userDbUpdateQueue.shift();
+
+        //   if (!userObj.end) {
+        //     await global.wordAssoDb.User.updateOne(
+        //       { nodeId: userObj.nodeId },
+        //       userObj
+        //     );
+        //     // await userServerController.findOneUserV2({
+        //     //   user: userObj,
+        //     //   mergeHistograms: false,
+        //     //   noInc: true,
+        //     //   updateCountHistory: true,
+        //     // });
+        //   }
 
         statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
         userDbUpdateQueueReadyFlag = true;
@@ -4361,7 +4151,7 @@ async function generateAutoCategory(params) {
     ) {
       console.log(
         chalkAlert(
-          `${MODULE_ID_PREFIX} | !!! updateUserHistograms profileHistograms | @${user.screenName}`
+          `${PF} | !!! updateUserHistograms profileHistograms | @${user.screenName}`
         )
       );
     }
@@ -4585,7 +4375,7 @@ async function processUserTweets(params) {
     });
 
     if (tweetHistogramsEmpty) {
-      // printUserObj(MODULE_ID_PREFIX + " | >>> processUserTweetArray USER", processedUser);
+      // printUserObj(PF + " | >>> processUserTweetArray USER", processedUser);
 
       debug(
         chalkLog(
@@ -4748,11 +4538,11 @@ async function updateUser(params) {
       empty(savedUser.tweetHistograms) &&
       empty(savedUser.friends)
     ) {
-      printUserObj(`${MODULE_ID_PREFIX} | !!! EMPTY USER`, savedUser);
+      printUserObj(`${PF} | !!! EMPTY USER`, savedUser);
     }
 
     if (configuration.verbose) {
-      printUserObj(MODULE_ID_PREFIX + " | >>> SAVED USER", savedUser);
+      printUserObj(PF + " | >>> SAVED USER", savedUser);
 
       console.log(
         chalkLog(
@@ -5015,7 +4805,7 @@ async function processUser(userIn) {
           delete user.profileHistograms.images[imageEntity];
           console.log(
             chalkAlert(
-              MODULE_ID_PREFIX +
+              PF +
                 " | !!! ILLEGAL PROFILE IMAGE KEY" +
                 " | NID: " +
                 user.nodeId +
@@ -5071,7 +4861,7 @@ async function processUser(userIn) {
     }
 
     if (configuration.verbose) {
-      printUserObj(MODULE_ID_PREFIX + " | FOUND USER DB", user);
+      printUserObj(PF + " | FOUND USER DB", user);
     }
 
     if (
@@ -5149,7 +4939,7 @@ async function initProcessUserQueueInterval(p) {
 
   console.log(
     chalkBlue(
-      MODULE_ID_PREFIX +
+      PF +
         " | INIT PROCESS USER QUEUE" +
         " | MAX PARALLEL: " +
         maxParallel +
@@ -5212,7 +5002,7 @@ async function initProcessUserQueueInterval(p) {
             }
 
             if (userObj.end) {
-              console.log(chalkAlert(`${MODULE_ID_PREFIX} | END`));
+              console.log(chalkAlert(`${PF} | END`));
               more = false;
             }
 
@@ -5252,13 +5042,11 @@ const handleMongooseEvent = (eventObj) => {
   switch (eventObj.event) {
     case "end":
     case "close":
-      console.log(
-        `${MODULE_ID_PREFIX} | CURSOR EVENT: ${eventObj.event.toUpperCase()}`
-      );
+      console.log(`${PF} | CURSOR EVENT: ${eventObj.event.toUpperCase()}`);
       break;
 
     case "error":
-      console.error(`${MODULE_ID_PREFIX} | CURSOR ERROR: ${eventObj.err}`);
+      console.error(`${PF} | CURSOR ERROR: ${eventObj.err}`);
       break;
 
     default:
@@ -5286,9 +5074,7 @@ async function initFetchUsers(p) {
     query.ignored = false;
   }
 
-  console.log(
-    chalkInfo(`${MODULE_ID_PREFIX} | FETCH USERS | COUNT USERS TO FETCH ...`)
-  );
+  console.log(chalkInfo(`${PF} | FETCH USERS | COUNT USERS TO FETCH ...`));
   statsObj.users.categorized.total = await global.wordAssoDb.User.countDocuments(
     { category: { $in: ["left", "right", "neutral"] }, ignored: false }
   );
@@ -5304,20 +5090,14 @@ async function initFetchUsers(p) {
 
   console.log(
     chalkInfo(
-      `${MODULE_ID_PREFIX} | FETCH USERS | TOTAL USERS TO FETCH: ${statsObj.users.processed.grandTotal}`
+      `${PF} | FETCH USERS | TOTAL USERS TO FETCH: ${statsObj.users.processed.grandTotal}`
     )
   );
+  console.log(chalkInfo(`${PF} | FETCH USERS | INTERVAL: ${interval}`));
   console.log(
-    chalkInfo(`${MODULE_ID_PREFIX} | FETCH USERS | INTERVAL: ${interval}`)
+    chalkInfo(`${PF} | FETCH USERS | BATCH SIZE: ${userCursorBatchSize}`)
   );
-  console.log(
-    chalkInfo(
-      `${MODULE_ID_PREFIX} | FETCH USERS | BATCH SIZE: ${userCursorBatchSize}`
-    )
-  );
-  console.log(
-    chalkInfo(`${MODULE_ID_PREFIX} | FETCH USERS | QUERY\n`, jsonPrint(query))
-  );
+  console.log(chalkInfo(`${PF} | FETCH USERS | QUERY\n`, jsonPrint(query)));
 
   const cursor = await mgUtils.initCursor({
     query: query,
@@ -5359,7 +5139,7 @@ async function initFetchUsers(p) {
         await cursorDataHandler(user);
         fetchUserReady = true;
       } catch (err) {
-        console.error(`${MODULE_ID_PREFIX} | *** ERROR: ${err}`);
+        console.error(`${PF} | *** ERROR: ${err}`);
         fetchUserReady = true;
       }
     }
@@ -5375,9 +5155,9 @@ function reporter(event, oldState, newState) {
 
   console.log(
     chalkLog(
-      MODULE_ID_PREFIX +
+      PF +
         " | --------------------------------------------------------\n" +
-        MODULE_ID_PREFIX +
+        PF +
         " | << FSM >> MAIN" +
         " | " +
         event +
@@ -5386,7 +5166,7 @@ function reporter(event, oldState, newState) {
         " -> " +
         newState +
         "\n" +
-        MODULE_ID_PREFIX +
+        PF +
         " | --------------------------------------------------------"
     )
   );
@@ -5396,7 +5176,7 @@ const fsmStates = {
   RESET: {
     onEnter: async function (event, oldState, newState) {
       if (event != "fsm_tick") {
-        console.log(chalkTwitter(MODULE_ID_PREFIX + " | FSM RESET"));
+        console.log(chalkTwitter(PF + " | FSM RESET"));
 
         reporter(event, oldState, newState);
         statsObj.status = "FSM RESET";
@@ -5404,7 +5184,7 @@ const fsmStates = {
         try {
           await showStats(true);
         } catch (err) {
-          console.log(MODULE_ID_PREFIX + " | *** QUIT ERROR: " + err);
+          console.log(PF + " | *** QUIT ERROR: " + err);
         }
       }
     },
@@ -5419,7 +5199,7 @@ const fsmStates = {
   ERROR: {
     onEnter: async function (event, oldState, newState) {
       if (event != "fsm_tick") {
-        console.log(chalkError(MODULE_ID_PREFIX + " | *** FSM ERROR"));
+        console.log(chalkError(PF + " | *** FSM ERROR"));
 
         reporter(event, oldState, newState);
         statsObj.status = "FSM ERROR";
@@ -5454,14 +5234,12 @@ const fsmStates = {
         statsObj.status = "FSM INIT";
 
         try {
-          console.log(chalkBlue(MODULE_ID_PREFIX + " | INIT"));
+          console.log(chalkBlue(PF + " | INIT"));
           fsm.fsm_ready();
-          // console.log(chalkBlue(MODULE_ID_PREFIX + " | CREATED ALL CHILDREN: " + Object.keys(childHashMap).length));
+          // console.log(chalkBlue(PF + " | CREATED ALL CHILDREN: " + Object.keys(childHashMap).length));
         } catch (err) {
           console.log(
-            chalkError(
-              MODULE_ID_PREFIX + " | *** CREATE ALL CHILDREN ERROR: " + err
-            )
+            chalkError(PF + " | *** CREATE ALL CHILDREN ERROR: " + err)
           );
           fsm.fsm_error();
         }
@@ -5503,11 +5281,9 @@ const fsmStates = {
 
         try {
           await initFetchUsers();
-          console.log(chalkLog(`${MODULE_ID_PREFIX} | FETCH_ALL | ${event}`));
+          console.log(chalkLog(`${PF} | FETCH_ALL | ${event}`));
         } catch (err) {
-          console.log(
-            chalkError(`${MODULE_ID_PREFIX} | *** FETCH_ALL ERROR ${err}`)
-          );
+          console.log(chalkError(`${PF} | *** FETCH_ALL ERROR ${err}`));
           fsm.fsm_error();
         }
       }
@@ -5602,11 +5378,7 @@ const fsmStates = {
           )
         );
 
-        console.log(
-          chalkLog(
-            MODULE_ID_PREFIX + " | Q STATS\n" + jsonPrint(statsObj.queues)
-          )
-        );
+        console.log(chalkLog(PF + " | Q STATS\n" + jsonPrint(statsObj.queues)));
 
         const networkStats = await nnTools.getNetworkStats();
 
@@ -5622,7 +5394,7 @@ const fsmStates = {
         if (!bestNetworkHashMap.has(statsObj.currentBestNetworkId)) {
           console.log(
             chalkAlert(
-              MODULE_ID_PREFIX +
+              PF +
                 " | *** NN NOT IN BEST NETWORK HASHMAP: " +
                 statsObj.currentBestNetworkId
             )
@@ -5654,7 +5426,7 @@ const fsmStates = {
 
           console.log(
             chalkBlue(
-              MODULE_ID_PREFIX +
+              PF +
                 " | SAVING BEST NN" +
                 " | " +
                 currentBestNetwork.networkId +
@@ -5811,11 +5583,7 @@ function fsmStart(p) {
 
   return new Promise(function (resolve) {
     console.log(
-      chalkLog(
-        MODULE_ID_PREFIX +
-          " | FSM START | TICK INTERVAL | " +
-          msToTime(interval)
-      )
+      chalkLog(PF + " | FSM START | TICK INTERVAL | " + msToTime(interval))
     );
 
     intervalsSet.add("fsmTickInterval");
@@ -5830,28 +5598,24 @@ function fsmStart(p) {
   });
 }
 
-console.log(MODULE_ID_PREFIX + " | =================================");
-console.log(MODULE_ID_PREFIX + " | HOST:          " + hostname);
+console.log(PF + " | =================================");
+console.log(PF + " | HOST:          " + hostname);
+console.log(PF + " | PRIMARY_HOST:  " + configuration.primaryHost);
+console.log(PF + " | DATABASE_HOST: " + configuration.databaseHost);
+console.log(PF + " | PROCESS TITLE: " + process.title);
+console.log(PF + " | PROCESS ID:    " + process.pid);
+console.log(PF + " | RUN ID:        " + statsObj.runId);
 console.log(
-  MODULE_ID_PREFIX + " | PRIMARY_HOST:  " + configuration.primaryHost
-);
-console.log(
-  MODULE_ID_PREFIX + " | DATABASE_HOST: " + configuration.databaseHost
-);
-console.log(MODULE_ID_PREFIX + " | PROCESS TITLE: " + process.title);
-console.log(MODULE_ID_PREFIX + " | PROCESS ID:    " + process.pid);
-console.log(MODULE_ID_PREFIX + " | RUN ID:        " + statsObj.runId);
-console.log(
-  MODULE_ID_PREFIX +
+  PF +
     " | PROCESS ARGS   " +
     util.inspect(process.argv, { showHidden: false, depth: 1 })
 );
-console.log(MODULE_ID_PREFIX + " | =================================");
+console.log(PF + " | =================================");
 
 console.log(
   chalkBlueBold(
     "\n=======================================================================\n" +
-      MODULE_ID_PREFIX +
+      PF +
       " | " +
       MODULE_ID +
       " STARTED | " +
@@ -5863,7 +5627,7 @@ console.log(
 async function initNormalization() {
   console.log(
     chalkLog(
-      MODULE_ID_PREFIX +
+      PF +
         " | loadTrainingSet | LOAD NORMALIZATION" +
         " | " +
         configuration.trainingSetsFolder +
@@ -5880,15 +5644,13 @@ async function initNormalization() {
 
   if (normalization) {
     console.log(
-      chalk.black.bold(
-        MODULE_ID_PREFIX + " | loadTrainingSet | SET NORMALIZATION ..."
-      )
+      chalk.black.bold(PF + " | loadTrainingSet | SET NORMALIZATION ...")
     );
     await nnTools.setNormalization(normalization);
   } else {
     console.log(
       chalkAlert(
-        MODULE_ID_PREFIX +
+        PF +
           " | loadTrainingSet | !!! NORMALIZATION NOT LOADED" +
           " | " +
           configuration.trainingSetsFolder +
@@ -5920,20 +5682,20 @@ setTimeout(async function () {
     });
 
     if (configuration.testMode) {
-      console.log(chalkAlert(MODULE_ID_PREFIX + " | TEST MODE"));
+      console.log(chalkAlert(PF + " | TEST MODE"));
     }
 
     console.log(
       chalkBlueBold(
         "\n" +
-          MODULE_ID_PREFIX +
+          PF +
           " | --------------------------------------------------------" +
           "\n" +
-          MODULE_ID_PREFIX +
+          PF +
           " | " +
           configuration.processName +
           "\n" +
-          MODULE_ID_PREFIX +
+          PF +
           " | --------------------------------------------------------"
       )
     );
@@ -5955,9 +5717,7 @@ setTimeout(async function () {
     });
   } catch (err) {
     console.log(
-      chalkError(
-        MODULE_ID_PREFIX + " | **** INIT CONFIG ERROR *****\n" + jsonPrint(err)
-      )
+      chalkError(PF + " | **** INIT CONFIG ERROR *****\n" + jsonPrint(err))
     );
     console.trace(err);
     if (err.code != 404) {
