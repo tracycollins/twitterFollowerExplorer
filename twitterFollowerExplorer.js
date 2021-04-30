@@ -895,7 +895,7 @@ function wait(params) {
               MODULE_ID_PREFIX +
                 " | XXX WAIT END BACK PRESSURE" +
                 " | UDBUQ: " +
-                userDbUpdateQueue +
+                userDbUpdateQueue.length +
                 " | PERIOD: " +
                 params.period +
                 " MS" +
