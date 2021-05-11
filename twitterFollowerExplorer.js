@@ -173,18 +173,21 @@ configuration.fetchUserInterval = DEFAULT_FETCH_USER_INTERVAL;
 configuration.saveFileQueueInterval = DEFAULT_SAVE_FILE_QUEUE_INTERVAL;
 configuration.updateGlobalHistograms = DEFAULT_UPDATE_GLOBAL_HISTOGRAMS;
 configuration.processUserQueueInterval = DEFAULT_PROCESS_USER_QUEUE_INTERVAL;
-configuration.activateNetworkQueueInterval = DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL;
+configuration.activateNetworkQueueInterval =
+  DEFAULT_ACTIVATE_NETWORK_QUEUE_INTERVAL;
 configuration.userDbUpdateQueueInterval = DEFAULT_USER_DB_UPDATE_QUEUE_INTERVAL;
 
 configuration.networkNumberLimit = DEFAULT_NN_NUMBER_LIMIT;
 configuration.networkDatabaseLoadPerInputsLimit = DEFAULT_NN_DB_LOAD_PER_INPUTS;
-configuration.randomUntestedPerInputsLimit = DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS;
+configuration.randomUntestedPerInputsLimit =
+  DEFAULT_RANDOM_UNTESTED_NN_PER_INPUTS;
 
 configuration.enableLanguageAnalysis = DEFAULT_ENABLE_LANG_ANALYSIS;
 configuration.enableGeoCode = DEFAULT_ENABLE_GEOCODE;
 
 configuration.bestNetworkIncrementalUpdate = DEFAULT_BEST_INCREMENTAL_UPDATE;
-configuration.archiveNetworkOnInputsMiss = DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
+configuration.archiveNetworkOnInputsMiss =
+  DEFAULT_ARCHIVE_NETWORK_ON_INPUT_MISS;
 configuration.minWordLength = DEFAULT_MIN_WORD_LENGTH;
 configuration.minTestCycles = DEFAULT_MIN_TEST_CYCLES;
 configuration.testMode = TEST_MODE;
@@ -4102,27 +4105,6 @@ function initUserDbUpdateQueueInterval2(p) {
         }
 
         await global.wordAssoDb.User.bulkWrite(bulkUpdateArray);
-        // console.log(
-        //   `${PF} | BULK UPDATE | STATUS: ${result.ok}` +
-        //     ` | userDbUpdateQueue: ${userDbUpdateQueue.length}` +
-        //     ` | bulkUpdateArray: ${bulkUpdateArray.length}` +
-        //     ` | modifiedCount: ${result.modifiedCount}`
-        // );
-
-        //   userObj = userDbUpdateQueue.shift();
-
-        //   if (!userObj.end) {
-        //     await global.wordAssoDb.User.updateOne(
-        //       { nodeId: userObj.nodeId },
-        //       userObj
-        //     );
-        //     // await userServerController.findOneUserV2({
-        //     //   user: userObj,
-        //     //   mergeHistograms: false,
-        //     //   noInc: true,
-        //     //   updateCountHistory: true,
-        //     // });
-        //   }
 
         statsObj.queues.userDbUpdateQueue.size = userDbUpdateQueue.length;
         userDbUpdateQueueReadyFlag = true;
@@ -5075,9 +5057,11 @@ async function initFetchUsers(p) {
   }
 
   console.log(chalkInfo(`${PF} | FETCH USERS | COUNT USERS TO FETCH ...`));
-  statsObj.users.categorized.total = await global.wordAssoDb.User.countDocuments(
-    { category: { $in: ["left", "right", "neutral"] }, ignored: false }
-  );
+  statsObj.users.categorized.total =
+    await global.wordAssoDb.User.countDocuments({
+      category: { $in: ["left", "right", "neutral"] },
+      ignored: false,
+    });
   statsObj.users.processed.grandTotal = testMode
     ? Math.min(TEST_TOTAL_FETCH, statsObj.users.categorized.total)
     : statsObj.users.categorized.total;
