@@ -23,6 +23,7 @@ const ONE_SECOND = 1000;
 const ONE_MINUTE = ONE_SECOND * 60;
 const compactDateTimeFormat = "YYYYMMDD_HHmmss";
 
+const DEFAULT_REMAIN_MIN = 1000; // use bulk update if > DEFAULT_REMAIN_MIN
 const DEFAULT_MIN_INTERVAL = 2;
 const DEFAULT_INIT_MAIN_INTERVAL = ONE_MINUTE;
 const QUIT_WAIT_INTERVAL = 5 * ONE_SECOND;
@@ -163,6 +164,7 @@ configuration.cursorParallel = DEFAULT_CURSOR_PARALLEL;
 configuration.userCursorBatchSize = DEFAULT_USER_CURSOR_BATCH_SIZE;
 configuration.userCursorLimit = DEFAULT_USER_CURSOR_LIMIT;
 
+configuration.remainMin = DEFAULT_REMAIN_MIN;
 configuration.backPressurePeriod = DEFAULT_BACKPRESSURE_PERIOD;
 configuration.maxUserDbUpdateQueue = DEFAULT_MAX_USER_DB_UPDATE_QUEUE;
 configuration.userProcessMaxParallel = DEFAULT_PROCESS_USER_MAX_PARALLEL;
@@ -4060,18 +4062,16 @@ function initUserDbUpdateQueueInterval2(p) {
     const params = p || {};
     const maxBulkUpdateArray = params.maxBulkUpdateArray || 10;
     const interval = params.interval || configuration.userDbUpdateQueueInterval;
+    const remainMin = params.remainMin || configuration.remainMin;
 
     statsObj.status = "INIT USER DB UPDATE INTERVAL";
 
     console.log(
       chalkBlue(
-        PF +
-          " | INIT USER DB UPDATE QUEUE" +
-          " | MAX BULK ARRAY: " +
-          maxBulkUpdateArray +
-          " | INTERVAL: " +
-          interval +
-          " MS"
+        `${PF} | INIT USER DB UPDATE QUEUE` +
+          ` | MAX BULK ARRAY: ${maxBulkUpdateArray}` +
+          ` | BULK remainMin: ${remainMin}` +
+          ` | INTERVAL: ${interval} MS`
       )
     );
 
@@ -4085,7 +4085,12 @@ function initUserDbUpdateQueueInterval2(p) {
     let userObj = {};
 
     userDbUpdateQueueInterval = setInterval(async function () {
-      if (userDbUpdateQueueReadyFlag && userDbUpdateQueue.length > 0) {
+      if (
+        userDbUpdateQueueReadyFlag &&
+        (userDbUpdateQueue.length >= maxBulkUpdateArray ||
+          (userDbUpdateQueue.length > 0 &&
+            statsObj.users.processed.remain < remainMin))
+      ) {
         userDbUpdateQueueReadyFlag = false;
         statsObj.queues.userDbUpdateQueue.busy = true;
 
