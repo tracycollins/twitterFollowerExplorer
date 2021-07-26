@@ -415,9 +415,9 @@
     treeify "^1.1.0"
 
 "@threeceelabs/neural-network-tools@^3.1.5":
-  version "3.1.5"
-  resolved "https://registry.yarnpkg.com/@threeceelabs/neural-network-tools/-/neural-network-tools-3.1.5.tgz#8199f831ea90672721d8c6d8e617d0ad06aec10e"
-  integrity sha512-94ZlwBxAR4aqWI30wvd3yNwqcMsU3eOwAlWeyb7rSjnpbegwykpRKKEfPkzCcaw3VoPYvKp77xWgYg4o+IqrLA==
+  version "3.1.6"
+  resolved "https://registry.yarnpkg.com/@threeceelabs/neural-network-tools/-/neural-network-tools-3.1.6.tgz#8bc8b0341d03c7ef244ea73cca68f9781b693749"
+  integrity sha512-suSY/LWE2xMp0wAExkyz0vTiwCuHBKKkrzJva8iSNUWWXAivH36SPNxo2onvjIkNuNsG1Y/4IQVkxboRNFyhJA==
   dependencies:
     "@liquid-carrot/carrot" "^0.3.20"
     "@mapbox/node-pre-gyp" "^1.0.5"
@@ -476,9 +476,9 @@
     write-json-file "^4.3.0"
 
 "@threeceelabs/tweet-server-controller@^3.5.3":
-  version "3.5.3"
-  resolved "https://registry.yarnpkg.com/@threeceelabs/tweet-server-controller/-/tweet-server-controller-3.5.3.tgz#1d70801a39877e88fd67d2c89bc3d5d809a25bcf"
-  integrity sha512-8BgyvfIzul2bEvCSGktOPEffTqB9FzeKqZ5MTATlrt2JEimAJxddYvLFkQ9IqkpLJATDt+2fHSzEqulvQ/nN1w==
+  version "3.5.4"
+  resolved "https://registry.yarnpkg.com/@threeceelabs/tweet-server-controller/-/tweet-server-controller-3.5.4.tgz#ce4f9297f82e0e1f4b53817b5e726d4978a77640"
+  integrity sha512-RyXkPs0BZExDKuQ0eTFqBWHChoV1sxUE5kSC4fKfVYX7Mq4zQaALPmSkTv0jMCLWXWpZiR7KASBaJ0NHVbMTaw==
   dependencies:
     "@threeceelabs/mongoose-twitter" "^2.0.1"
     "@threeceelabs/mongoose-utilities" "^3.0.0"
