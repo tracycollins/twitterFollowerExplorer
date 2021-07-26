@@ -118,5 +118,6 @@
   "bugs": {
     "url": "https://github.com/tracycollins/twitterFollowerExplorer/issues"
   },
-  "homepage": "https://github.com/tracycollins/twitterFollowerExplorer#readme"
+  "homepage": "https://github.com/tracycollins/twitterFollowerExplorer#readme",
+  "packageManager": "yarn@3.0.0"
 }
