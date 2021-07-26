@@ -4,6 +4,9 @@
   "type": "module",
   "description": "twitter user follower explorer",
   "main": "twitterFollowerExplorer.js",
+  "installConfig": {
+    "pnp": true
+  },
   "dependencies": {
     "@google-cloud/language": "^4.2.8",
     "@slack/client": "^5.0.2",
