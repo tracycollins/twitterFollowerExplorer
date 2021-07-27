@@ -1,23 +1,19 @@
 {
   "name": "twitterfollowerexplorer",
-  "version": "3.1.10",
+  "version": "3.1.11",
   "type": "module",
   "description": "twitter user follower explorer",
   "main": "twitterFollowerExplorer.js",
-  "installConfig": {
-    "pnp": true
-  },
   "dependencies": {
     "@google-cloud/language": "^4.2.8",
     "@slack/client": "^5.0.2",
     "@slack/web-api": "^6.3.0",
     "@tensorflow/tfjs-node": "^3.8.0",
     "@threeceelabs/histogram-parser": "^1.0.21",
-    "@threeceelabs/mergehistograms": "^1.1.5",
     "@threeceelabs/mongoose-twitter": "^2.0.1",
     "@threeceelabs/mongoose-utilities": "^3.0.0",
     "@threeceelabs/neural-network-tools": "^3.1.6",
-    "@threeceelabs/threeceeutilities": "^5.2.10",
+    "@threeceelabs/threeceeutilities": "^5.2.19",
     "@threeceelabs/tweet-server-controller": "^3.5.4",
     "@threeceelabs/twitter-image-parser": "^2.1.2",
     "@threeceelabs/twitter-text-parser": "^2.1.4",

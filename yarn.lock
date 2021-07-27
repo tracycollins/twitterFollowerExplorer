@@ -502,16 +502,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@threeceelabs/mergehistograms@npm:^1.1.5":
-  version: 1.1.5
-  resolution: "@threeceelabs/mergehistograms@npm:1.1.5"
-  dependencies:
-    async: ^3.2.0
-    treeify: ^1.1.0
-  checksum: b76b0a8948df86b5b5ad7db842cec7917fa47aeb2721e2c4293c2d15dd1a539b741c33b42246c593511e24c995934d36653ceb60f3b9647587bbc444d2618042
-  languageName: node
-  linkType: hard
-
 "@threeceelabs/mongoose-twitter@npm:^1.0.138":
   version: 1.1.0
   resolution: "@threeceelabs/mongoose-twitter@npm:1.1.0"
@@ -615,14 +605,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@threeceelabs/threeceeutilities@npm:^5.2.10":
-  version: 5.2.10
-  resolution: "@threeceelabs/threeceeutilities@npm:5.2.10"
+"@threeceelabs/threeceeutilities@npm:^5.2.19":
+  version: 5.2.19
+  resolution: "@threeceelabs/threeceeutilities@npm:5.2.19"
   dependencies:
     "@google-cloud/language": ^4.2.8
     "@googlemaps/google-maps-services-js": ^3.1.16
     "@threeceelabs/mongoose-twitter": ^2.0.1
-    "@threeceelabs/twitter-image-parser": ^2.1.1
+    "@threeceelabs/twitter-image-parser": ^2.1.2
     "@threeceelabs/twitter-text-parser": ^2.1.4
     async: ^3.2.0
     atob: ^2.1.2
@@ -638,7 +628,7 @@ __metadata:
     ioredis: ^4.27.6
     is-empty: ^1.2.0
     isurl: ^4.0.2
-    limiter: 2.1.0
+    limiter: 2.0.1
     lodash: ^4.17.21
     object-path: ^0.11.5
     object-sizeof: ^1.6.1
@@ -649,7 +639,7 @@ __metadata:
     twit: ^2.2.11
     url-parse: ^1.5.3
     write-json-file: ^4.3.0
-  checksum: 2c9aad2f48a44944bc8e3934727631bda04ef8722d8a19f6b2aa88b6c140018db80bc00bef0a1e317a56d6d497ee04ab2a1c065190b0606ebadcd621109a684e
+  checksum: 175f8b60aed7d6b3097e86f8f044b3ba682d39b3039bb2eb68969f95cff22d9a4c3e1b99f89aeb86ce930a8b1a1593e56d5c58448a0c11601405ffa461d26794
   languageName: node
   linkType: hard
 
@@ -3404,13 +3394,6 @@ fsevents@^2.3.2:
   languageName: node
   linkType: hard
 
-"just-performance@npm:4.3.0":
-  version: 4.3.0
-  resolution: "just-performance@npm:4.3.0"
-  checksum: 37e226e308689b27ad7e0cdb2b2181c8be85f28cb0026db4b68c189f4894828a2865ea4a7a5f3488f4e3390bac1f9428fc6e40a554c068b08e5992e26920e376
-  languageName: node
-  linkType: hard
-
 "jwa@npm:^2.0.0":
   version: 2.0.0
   resolution: "jwa@npm:2.0.0"
@@ -3503,15 +3486,6 @@ fsevents@^2.3.2:
   dependencies:
     just-performance: 4.2.0
   checksum: 3ef63820e5bb29e37d23bf9d28247a7451f17467b0a57cad092caf8d2d68a2d0e0476d79e6b5aac7436fde1b169185934b43ceffffa49fcc3ad86109b589d52d
-  languageName: node
-  linkType: hard
-
-"limiter@npm:2.1.0":
-  version: 2.1.0
-  resolution: "limiter@npm:2.1.0"
-  dependencies:
-    just-performance: 4.3.0
-  checksum: 989092bfdafeefb37bd139f6451f165d449a628cd6fbe9308ed5147a9af24631f031e16466a3e48283418e0bea45c06aa1710f8f8945bc56ea7ef01f94ed5c65
   languageName: node
   linkType: hard
 
@@ -5727,11 +5701,10 @@ resolve@^1.1.6:
     "@slack/web-api": ^6.3.0
     "@tensorflow/tfjs-node": ^3.8.0
     "@threeceelabs/histogram-parser": ^1.0.21
-    "@threeceelabs/mergehistograms": ^1.1.5
     "@threeceelabs/mongoose-twitter": ^2.0.1
     "@threeceelabs/mongoose-utilities": ^3.0.0
     "@threeceelabs/neural-network-tools": ^3.1.6
-    "@threeceelabs/threeceeutilities": ^5.2.10
+    "@threeceelabs/threeceeutilities": ^5.2.19
     "@threeceelabs/tweet-server-controller": ^3.5.4
     "@threeceelabs/twitter-image-parser": ^2.1.2
     "@threeceelabs/twitter-text-parser": ^2.1.4
