@@ -1170,6 +1170,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"async@npm:^3.2.1":
+  version: 3.2.1
+  resolution: "async@npm:3.2.1"
+  checksum: fcd6dc73d36bdb0e5bf978ea27832136cc8116cef15e0a2dc9a5c63f362c5f82363996a349bf3046d590587b7f30614ac340a4f3db6d48780a07f40f81941e0c
+  languageName: node
+  linkType: hard
+
 "asynckit@npm:^0.4.0":
   version: 0.4.0
   resolution: "asynckit@npm:0.4.0"
@@ -1492,6 +1499,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"chalk@npm:^4.1.2":
+  version: 4.1.2
+  resolution: "chalk@npm:4.1.2"
+  dependencies:
+    ansi-styles: ^4.1.0
+    supports-color: ^7.1.0
+  checksum: fe75c9d5c76a7a98d45495b91b2172fa3b7a09e0cc9370e5c8feb1c567b85c4288e2b3fded7cfdd7359ac28d6b3844feb8b82b8686842e93d23c827c417e83fc
+  languageName: node
+  linkType: hard
+
 "check-error@npm:^1.0.2":
   version: 1.0.2
   resolution: "check-error@npm:1.0.2"
@@ -1665,15 +1682,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"command-line-args@npm:^5.1.3":
-  version: 5.1.3
-  resolution: "command-line-args@npm:5.1.3"
+"command-line-args@npm:^5.2.0":
+  version: 5.2.0
+  resolution: "command-line-args@npm:5.2.0"
   dependencies:
     array-back: ^3.1.0
     find-replace: ^3.0.0
     lodash.camelcase: ^4.3.0
     typical: ^4.0.0
-  checksum: 24d8199cc7157889c071d3fb14140ebc967d7752bedadf2929b5ee2ae4ad451fdab5524ee89ebf1dd85914eae48c3677e16ca32aeecc85f8621231de4c260fea
+  checksum: a63dd41541fc98fcef7a5f4f63e626a6c5955fae57247b604077f1d0cfbff58c5830240880903342785a0c40952c4bbd3a977425ba3f4c7d515253296843a566
   languageName: node
   linkType: hard
 
@@ -1705,7 +1722,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"core-js@npm:3, core-js@npm:^3.15.2":
+"core-js@npm:3":
   version: 3.15.2
   resolution: "core-js@npm:3.15.2"
   checksum: f8f61569c4c3bdf50679226f5a1045551192a2f4bc3fa46a873b6fa834cff6d1634ee138a6e4bae3eea99f1b1db2d588fa693de74640447476292b41f595a4c3
@@ -1716,6 +1733,13 @@ __metadata:
   version: 2.6.12
   resolution: "core-js@npm:2.6.12"
   checksum: 44fa9934a85f8c78d61e0c8b7b22436330471ffe59ec5076fe7f324d6e8cf7f824b14b1c81ca73608b13bdb0fef035bd820989bf059767ad6fa13123bb8bd016
+  languageName: node
+  linkType: hard
+
+"core-js@npm:^3.16.1":
+  version: 3.16.1
+  resolution: "core-js@npm:3.16.1"
+  checksum: 7924fa2a7f00e3a33bbe92fe42ba59fbbe7e01557a59824d000976300be3ba224cca20161f61654b3861ea80d244d6adfee6ed3ae6d6d9931210a37510fb7c9b
   languageName: node
   linkType: hard
 
@@ -2003,14 +2027,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dropbox@npm:^10.4.3":
-  version: 10.4.3
-  resolution: "dropbox@npm:10.4.3"
+"dropbox@npm:^10.5.0":
+  version: 10.5.0
+  resolution: "dropbox@npm:10.5.0"
   dependencies:
     node-fetch: ^2.6.1
   peerDependencies:
     "@types/node-fetch": ^2.5.7
-  checksum: 7bd4426fb39fb2a67dedc1ff1c9a0c2485e22e81c2adce12961ce6532438859c0af4170e1f6cfc4c585c5523ee8c42a970f00b06babaac1175d0947fefb93a1f
+  checksum: d9d18e28944ba0cfb02cadfed5a43ba74afa867eff874e0ab7e003abf7cbae28026d6f309d2b921e838e22b9d60f7c75c0209dd3c3514d71e404392d8a9f3786
   languageName: node
   linkType: hard
 
@@ -2618,7 +2642,7 @@ fsevents@^2.3.2:
   languageName: node
   linkType: hard
 
-"google-gax@npm:^2.17.1, google-gax@npm:^2.19.0":
+"google-gax@npm:^2.17.1":
   version: 2.19.0
   resolution: "google-gax@npm:2.19.0"
   dependencies:
@@ -2637,6 +2661,29 @@ fsevents@^2.3.2:
   bin:
     compileProtos: build/tools/compileProtos.js
   checksum: 5948edeac0353f1982852d94e6be420beb7e34416439631808125d87fb8c645bf10b9a250d7e21966bec702eb8dc6d15f4f1cb322cd35739f111ca68388a8ab7
+  languageName: node
+  linkType: hard
+
+"google-gax@npm:^2.22.1":
+  version: 2.22.1
+  resolution: "google-gax@npm:2.22.1"
+  dependencies:
+    "@grpc/grpc-js": ~1.3.0
+    "@grpc/proto-loader": ^0.6.1
+    "@types/long": ^4.0.0
+    abort-controller: ^3.0.0
+    duplexify: ^4.0.0
+    fast-text-encoding: ^1.0.3
+    google-auth-library: ^7.3.0
+    is-stream-ended: ^0.1.4
+    node-fetch: ^2.6.1
+    object-hash: ^2.1.1
+    proto3-json-serializer: ^0.1.0
+    protobufjs: 6.11.2
+    retry-request: ^4.0.0
+  bin:
+    compileProtos: build/tools/compileProtos.js
+  checksum: 0b37e242f77b72deda205a743bb2670238b8e2e324a6b3844098784014b8c7635805e208edc5551446cbb7fe189876a5f3eda93c6bc07464b77f70f6d5fa1279
   languageName: node
   linkType: hard
 
@@ -3864,9 +3911,9 @@ fsevents@^2.3.2:
   languageName: node
   linkType: hard
 
-"mongodb@npm:^4.0.1":
-  version: 4.0.1
-  resolution: "mongodb@npm:4.0.1"
+"mongodb@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "mongodb@npm:4.1.0"
   dependencies:
     bson: ^4.4.0
     denque: ^1.5.0
@@ -3875,7 +3922,7 @@ fsevents@^2.3.2:
   dependenciesMeta:
     saslprep:
       optional: true
-  checksum: f3584d6bb7e5fbcddabc0cb6b000f605fffc1569bad500e420243af8161a3630bf18d8dc3a5e2d1476373245d617a6d49f0fddff300733af230dc1d664f754e9
+  checksum: cc118f88e8abb701d969728d5960da9a025c31b847f7e50bbce4abdbfbda097f34c819bf55dca8f44aa3f08e466699d8990bb41291e4ad207a002775a20df272
   languageName: node
   linkType: hard
 
@@ -3897,7 +3944,7 @@ fsevents@^2.3.2:
   languageName: node
   linkType: hard
 
-"mongoose@npm:5.13.3, mongoose@npm:^5.11.18, mongoose@npm:^5.12.6, mongoose@npm:^5.13.2, mongoose@npm:^5.13.3, mongoose@npm:^5.2.5":
+"mongoose@npm:5.13.3, mongoose@npm:^5.11.18, mongoose@npm:^5.12.6, mongoose@npm:^5.13.2, mongoose@npm:^5.2.5":
   version: 5.13.3
   resolution: "mongoose@npm:5.13.3"
   dependencies:
@@ -3915,6 +3962,27 @@ fsevents@^2.3.2:
     sift: 13.5.2
     sliced: 1.0.1
   checksum: bdfca938159feb77e5e033bbc29672c4b49c6637b1dc3e9c3e6c18ccbfc8fab4035b48b2fefc15b5d687cc94f60ebedd4d5d79080980e3ee319338dd058e2a00
+  languageName: node
+  linkType: hard
+
+"mongoose@npm:5.13.5, mongoose@npm:^5.13.5":
+  version: 5.13.5
+  resolution: "mongoose@npm:5.13.5"
+  dependencies:
+    "@types/mongodb": ^3.5.27
+    bson: ^1.1.4
+    kareem: 2.3.2
+    mongodb: 3.6.10
+    mongoose-legacy-pluralize: 1.0.2
+    mpath: 0.8.3
+    mquery: 3.2.5
+    ms: 2.1.2
+    optional-require: 1.0.x
+    regexp-clone: 1.0.0
+    safe-buffer: 5.2.1
+    sift: 13.5.2
+    sliced: 1.0.1
+  checksum: 392a9ee0ffb0d1cc609c97e50bfc876f6f5c47033f9cc96825c969df73daa06ce308c41fd6b4c113f3af78be40184a0053972c921eae40b633cbb533a58a645c
   languageName: node
   linkType: hard
 
@@ -4237,6 +4305,13 @@ fsevents@^2.3.2:
   languageName: node
   linkType: hard
 
+"optional-require@npm:1.0.x":
+  version: 1.0.3
+  resolution: "optional-require@npm:1.0.3"
+  checksum: 113d376ee2a130afbca1610c17f25f4d1d7c7e42029f3b4d56334ee5408fec2c3fe31617abdb699025cced274d75fd6f0b2ed5eb49bec47acabeecc3feb76f19
+  languageName: node
+  linkType: hard
+
 "optional-require@npm:^1.0.3":
   version: 1.1.0
   resolution: "optional-require@npm:1.1.0"
@@ -4473,21 +4548,14 @@ fsevents@^2.3.2:
   languageName: node
   linkType: hard
 
-"protobufjs@npm:^5.0.3":
-  version: 5.0.3
-  resolution: "protobufjs@npm:5.0.3"
-  dependencies:
-    ascli: ~1
-    bytebuffer: ~5
-    glob: ^7.0.5
-    yargs: ^3.10.0
-  bin:
-    pbjs: ./bin/pbjs
-  checksum: 3ffb785028696efc642555c8fb7c56b5ecbbe2db42da71997a7d637b15bd555bca0a93b7bc8dd542e1369da214d0a5e669f2ad34ac191c80c1e7e8edc25406c0
+"proto3-json-serializer@npm:^0.1.0":
+  version: 0.1.1
+  resolution: "proto3-json-serializer@npm:0.1.1"
+  checksum: 4c14b81880abe0fc367bc6b6869a57ba48774972efef66ad94ad2a46fad455f0d352d277e05ea38c0335983b6798a7b8e03bc9f4e018499dc1ad61dee133f96d
   languageName: node
   linkType: hard
 
-"protobufjs@npm:^6.10.0, protobufjs@npm:^6.10.2":
+"protobufjs@npm:6.11.2, protobufjs@npm:^6.10.0, protobufjs@npm:^6.10.2":
   version: 6.11.2
   resolution: "protobufjs@npm:6.11.2"
   dependencies:
@@ -4508,6 +4576,20 @@ fsevents@^2.3.2:
     pbjs: bin/pbjs
     pbts: bin/pbts
   checksum: 80e9d9610c3eb66f9eae4e44a1ae30381cedb721b7d5f635d781fe4c507e2c77bb7c879addcd1dda79733d3ae589d9e66fd18d42baf99b35df7382a0f9920795
+  languageName: node
+  linkType: hard
+
+"protobufjs@npm:^5.0.3":
+  version: 5.0.3
+  resolution: "protobufjs@npm:5.0.3"
+  dependencies:
+    ascli: ~1
+    bytebuffer: ~5
+    glob: ^7.0.5
+    yargs: ^3.10.0
+  bin:
+    pbjs: ./bin/pbjs
+  checksum: 3ffb785028696efc642555c8fb7c56b5ecbbe2db42da71997a7d637b15bd555bca0a93b7bc8dd542e1369da214d0a5e669f2ad34ac191c80c1e7e8edc25406c0
   languageName: node
   linkType: hard
 
@@ -5713,29 +5795,29 @@ resolve@^1.1.6:
     JSONStream: ^1.3.5
     array-normalize: ^2.0.0
     array-unique: ^0.3.2
-    async: ^3.2.0
+    async: ^3.2.1
     autolinker: ^3.14.3
     caller-id: ^0.1.0
     caseless: ^0.12.0
-    chalk: ^4.1.1
+    chalk: ^4.1.2
     co: ^4.6.0
     columnify: ^1.5.4
-    command-line-args: ^5.1.3
-    core-js: ^3.15.2
+    command-line-args: ^5.2.0
+    core-js: ^3.16.1
     debug: ^4.3.2
     deep-copy: ^1.4.2
     deepcopy: ^2.1.0
     deepmerge: ^4.2.2
     dot-object: ^2.1.4
     dotenv: ^10.0.0
-    dropbox: ^10.4.3
+    dropbox: ^10.5.0
     emoji-regex: ^9.2.2
     event-stream: ^4.0.1
     eventemitter2: ^6.4.4
     eventemitter3: ^4.0.7
     fs-extra: ^10.0.0
     get-urls: ^10.0.0
-    google-gax: ^2.19.0
+    google-gax: ^2.22.1
     grpc: ^1.24.11
     hashmap: ^2.4.0
     hashtag-regex: ^2.1.0
@@ -5751,8 +5833,8 @@ resolve@^1.1.6:
     mentions-regex: ^2.0.3
     minimatch: ^3.0.4
     moment: ^2.29.1
-    mongodb: ^4.0.1
-    mongoose: ^5.13.3
+    mongodb: ^4.1.0
+    mongoose: ^5.13.5
     mongoose-paginate: ^5.0.3
     neataptic: ^1.4.7
     node-cache: ^5.1.2
